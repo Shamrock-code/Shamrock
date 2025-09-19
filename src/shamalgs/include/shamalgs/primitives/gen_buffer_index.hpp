@@ -20,9 +20,24 @@
 
 namespace shamalgs::primitives {
 
-    /// generate a buffer where buf[i] = i
+    /**
+     * @brief Generates a buffer where buf[i] = i.
+     *
+     * @param sched The scheduler to run on.
+     * @param len Length of the buffer to generate.
+     * @return sham::DeviceBuffer<u32> The generated buffer containing sequential indices.
+     */
     sham::DeviceBuffer<u32> gen_buffer_index(sham::DeviceScheduler_ptr sched, u32 len);
 
-    /// fill a buffer where buf[i] = i
+    /**
+     * @brief Fills a buffer with sequential indices, such that buf[i] = i.
+     *
+     * The buffer must have a size of at least `len`. If `len` is 0, the function has no effect.
+     *
+     * @param buf The buffer to fill.
+     * @param len The number of elements to fill from the start of the buffer.
+     * @throws std::invalid_argument if buf.get_size() < len.
+     */
     void fill_buffer_index(sham::DeviceBuffer<u32> &buf, u32 len);
+
 } // namespace shamalgs::primitives

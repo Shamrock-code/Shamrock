@@ -34,7 +34,7 @@ namespace shamtree {
         auto map_morton_id_to_obj_id
             = std::forward<sham::DeviceBuffer<u32>>(cached_map_morton_id_to_obj_id);
 
-            map_morton_id_to_obj_id.resize(morton_count);
+        map_morton_id_to_obj_id.resize(morton_count);
         shamalgs::primitives::fill_buffer_index(map_morton_id_to_obj_id, morton_count);
 
         shamalgs::algorithm::sort_by_key(

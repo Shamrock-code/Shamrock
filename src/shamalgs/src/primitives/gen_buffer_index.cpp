@@ -26,6 +26,10 @@ namespace shamalgs::primitives {
                 "buf.get_size() < len\n  buf.get_size() = {},\n  len = {}", buf.get_size(), len));
         }
 
+        if (len == 0) {
+            return; // early return for zero length
+        }
+
         sham::kernel_call(
             buf.get_queue(), sham::MultiRef{}, sham::MultiRef{buf}, len, [](u32 i, u32 *idx) {
                 idx[i] = i;

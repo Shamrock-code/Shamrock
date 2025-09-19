@@ -26,6 +26,7 @@
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
+#include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -883,11 +884,33 @@ void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisTotalMomentum_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisTotalMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisTotalMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_total_momentum", [](modules::AnalysisTotalMomentum<Tvec, SPHKernel> &self) {
+            return self.get_total_momentum();
+        });
+}
+
 using namespace shammodels::sph;
 template<typename Tvec, template<class> class SPHKernel>
 auto analysisBarycenter_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
     -> modules::AnalysisBarycenter<Tvec, SPHKernel> {
     return modules::AnalysisBarycenter<Tvec, SPHKernel>(model);
+}
+
+template<typename Tvec, template<class> class SPHKernel>
+auto analysisTotalMomentum_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
+    -> modules::AnalysisTotalMomentum<Tvec, SPHKernel> {
+    return modules::AnalysisTotalMomentum<Tvec, SPHKernel>(model);
 }
 
 Register_pymod(pysphmodel) {
@@ -965,6 +988,14 @@ Register_pymod(pysphmodel) {
     add_analysisBarycenter_instance<f64_3, shammath::C4>(msph, "AnalysisBarycenter_f64_3_C4");
     add_analysisBarycenter_instance<f64_3, shammath::C6>(msph, "AnalysisBarycenter_f64_3_C6");
 
+    add_analysisTotalMomentum_instance<f64_3, shammath::M4>(msph, "AnalysisTotalMomentum_f64_3_M4");
+    add_analysisTotalMomentum_instance<f64_3, shammath::M6>(msph, "AnalysisTotalMomentum_f64_3_M6");
+    add_analysisTotalMomentum_instance<f64_3, shammath::M8>(msph, "AnalysisTotalMomentum_f64_3_M8");
+
+    add_analysisTotalMomentum_instance<f64_3, shammath::C2>(msph, "AnalysisTotalMomentum_f64_3_C2");
+    add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
+    add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
+
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
     using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
     using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
@@ -1017,6 +1048,54 @@ Register_pymod(pysphmodel) {
         "analysisBarycenter",
         [](SPHModel_f64_3_C6 &model) {
             return analysisBarycenter_impl<f64_3, shammath::C6>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_M4 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::M4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_M6 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::M6>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_M8 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::M8>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_C2 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::C2>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_C4 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::C4>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        "analysisTotalMomentum",
+        [](SPHModel_f64_3_C6 &model) {
+            return analysisTotalMomentum_impl<f64_3, shammath::C6>(model);
         },
         py::kw_only(),
         py::arg("model"));

@@ -318,7 +318,7 @@ def save_rho_integ(ext, arr_rho, iplot):
             json.dump(metadata, fp)
 
 
-def analysis_plot(iplot):
+def analysis(ianalysis):
 
     ext = rout * 1.5
     nx = 1024
@@ -334,7 +334,49 @@ def analysis_plot(iplot):
         ny=ny,
     )
 
-    save_rho_integ(ext, arr_rho2, iplot)
+    save_rho_integ(ext, arr_rho2, ianalysis)
+
+    analysis = shamrock.model_sph.analysisBarycenter(model=model)
+    barycenter, disc_mass = analysis.get_barycenter()
+
+    analysis = shamrock.model_sph.analysisTotalMomentum(model=model)
+    total_momentum = analysis.get_total_momentum()
+
+    # same with (t, barycenter)
+    if shamrock.sys.world_rank() == 0:
+        if not os.path.exists(dump_folder + "barycenter.json"):
+            with open(dump_folder + "barycenter.json", "w") as fp:
+                json.dump({"barycenter": []}, fp, indent=4)
+        with open(dump_folder + "barycenter.json", "r") as fp:
+            data = json.load(fp)
+        data["barycenter"] = data["barycenter"][:ianalysis]
+        data["barycenter"].append({"t": model.get_time(), "barycenter": barycenter})
+        with open(dump_folder + "barycenter.json", "w") as fp:
+            json.dump(data, fp, indent=4)
+
+    # same with (t, disc_mass)
+    if shamrock.sys.world_rank() == 0:
+        if not os.path.exists(dump_folder + "disc_mass.json"):
+            with open(dump_folder + "disc_mass.json", "w") as fp:
+                json.dump({"disc_mass": []}, fp, indent=4)
+        with open(dump_folder + "disc_mass.json", "r") as fp:
+            data = json.load(fp)
+        data["disc_mass"] = data["disc_mass"][:ianalysis]
+        data["disc_mass"].append({"t": model.get_time(), "disc_mass": disc_mass})
+        with open(dump_folder + "disc_mass.json", "w") as fp:
+            json.dump(data, fp, indent=4)
+
+    # same with (t, total_momentum)
+    if shamrock.sys.world_rank() == 0:
+        if not os.path.exists(dump_folder + "total_momentum.json"):
+            with open(dump_folder + "total_momentum.json", "w") as fp:
+                json.dump({"total_momentum": []}, fp, indent=4)
+        with open(dump_folder + "total_momentum.json", "r") as fp:
+            data = json.load(fp)
+        data["total_momentum"] = data["total_momentum"][:ianalysis]
+        data["total_momentum"].append({"t": model.get_time(), "total_momentum": total_momentum})
+        with open(dump_folder + "total_momentum.json", "w") as fp:
+            json.dump(data, fp, indent=4)
 
 
 # %%
@@ -359,7 +401,7 @@ for ttarg in t_stop:
             purge_old_dumps()
 
         if istop % plot_freq_stop == 0:
-            analysis_plot(iplot)
+            analysis(iplot)
 
     if istop % dump_freq_stop == 0:
         idump += 1
@@ -510,3 +552,62 @@ if render_gif and shamrock.sys.world_rank() == 0:
 
     # Show the animation
     plt.show()
+
+
+# %%
+# load the json file for barycenter
+with open(dump_folder + "barycenter.json", "r") as fp:
+    data = json.load(fp)
+barycenter = data["barycenter"]
+t = [d["t"] for d in barycenter]
+barycenter_x = [d["barycenter"][0] for d in barycenter]
+barycenter_y = [d["barycenter"][1] for d in barycenter]
+barycenter_z = [d["barycenter"][2] for d in barycenter]
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, barycenter_x)
+plt.plot(t, barycenter_y)
+plt.plot(t, barycenter_z)
+plt.xlabel("t")
+plt.ylabel("barycenter")
+plt.legend(["x", "y", "z"])
+plt.savefig(dump_folder + "barycenter.png")
+plt.show()
+
+# %%
+# load the json file for disc_mass
+with open(dump_folder + "disc_mass.json", "r") as fp:
+    data = json.load(fp)
+disc_mass = data["disc_mass"]
+t = [d["t"] for d in disc_mass]
+disc_mass = [d["disc_mass"] for d in disc_mass]
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, disc_mass)
+plt.xlabel("t")
+plt.ylabel("disc_mass")
+plt.savefig(dump_folder + "disc_mass.png")
+plt.show()
+
+# %%
+# load the json file for total_momentum
+with open(dump_folder + "total_momentum.json", "r") as fp:
+    data = json.load(fp)
+total_momentum = data["total_momentum"]
+t = [d["t"] for d in total_momentum]
+total_momentum_x = [d["total_momentum"][0] for d in total_momentum]
+total_momentum_y = [d["total_momentum"][1] for d in total_momentum]
+total_momentum_z = [d["total_momentum"][2] for d in total_momentum]
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, total_momentum_x)
+plt.plot(t, total_momentum_y)
+plt.plot(t, total_momentum_z)
+plt.xlabel("t")
+plt.ylabel("total_momentum")
+plt.legend(["x", "y", "z"])
+plt.savefig(dump_folder + "total_momentum.png")
+plt.show()

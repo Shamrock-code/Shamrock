@@ -82,7 +82,7 @@ namespace shammodels::sph {
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;
 
-        Component<shamrock::ComputeField<Tscal>> alpha_av_updated;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> alpha_av_updated;
         Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;
 
         Component<shamrock::ComputeField<Tscal>> pressure;

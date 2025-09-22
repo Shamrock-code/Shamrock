@@ -26,7 +26,7 @@ function(_check_git_submodule_cloned directory expect_hash)
 
     if(SHAMROCK_FOLDER_IS_GIT AND SHAMROCK_CHECK_SUBMODULES_COMMIT_HASH)
         execute_process(
-            COMMAND git log -1 --format=%h
+            COMMAND git log -1 --format=%H
             WORKING_DIRECTORY "${directory}"
             OUTPUT_VARIABLE submodule_commit_hash
             RESULT_VARIABLE GIT_HASH_RETURN_CODE

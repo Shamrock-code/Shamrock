@@ -17,7 +17,7 @@
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 
 namespace shamrock::patch {
-    std::string PatchDataLayerLayout::get_description_str() {
+    std::string PatchDataLayerLayout::get_description_str() const {
         std::stringstream ss;
 
         if (fields.empty()) {
@@ -25,7 +25,7 @@ namespace shamrock::patch {
         } else {
 
             u32 index = 0;
-            for (var_t &v : fields) {
+            for (const var_t &v : fields) {
                 v.visit([&](auto &field) {
                     using f_t    = typename std::remove_reference<decltype(field)>::type;
                     using base_t = typename f_t::field_T;
@@ -64,6 +64,8 @@ namespace shamrock::patch {
                         ss << "u32_3 ";
                     } else if (std::is_same<base_t, u64_3>::value) {
                         ss << "u64_3 ";
+                    } else if (std::is_same<base_t, i64_3>::value) {
+                        ss << "i64_3 ";
                     } else {
                         ss << "unknown";
                     }
@@ -141,11 +143,12 @@ namespace shamrock::patch {
                 }
             };
 
-            entries.push_back(json{
-                {"type", get_tname()},
-                {"nvar", field.nvar},
-                {"field_name", field.name},
-            });
+            entries.push_back(
+                json{
+                    {"type", get_tname()},
+                    {"nvar", field.nvar},
+                    {"field_name", field.name},
+                });
         });
 
         j = entries;

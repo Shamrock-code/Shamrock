@@ -10,23 +10,22 @@
 #pragma once
 
 /**
- * @file IDataEdgeNamed.hpp
+ * @file IEdgeNamed.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/IEdge.hpp"
 
 namespace shamrock::solvergraph {
 
-    class IDataEdgeNamed : public IDataEdge {
+    class IEdgeNamed : public IEdge {
         std::string name;
         std::string texsymbol;
 
         public:
-        IDataEdgeNamed(std::string name, std::string texsymbol)
-            : name(name), texsymbol(texsymbol) {}
+        IEdgeNamed(std::string name, std::string texsymbol) : name(name), texsymbol(texsymbol) {}
 
         virtual std::string _impl_get_dot_label() const { return name; }
         virtual std::string _impl_get_tex_symbol() const { return "{" + texsymbol + "}"; }

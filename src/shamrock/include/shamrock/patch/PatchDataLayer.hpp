@@ -44,6 +44,7 @@ namespace shamrock::patch {
         using field_variant_t = var_t;
 
         inline PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+        inline const PatchDataLayerLayout &pdl() const { return shambase::get_check_ref(pdl_ptr); }
 
         inline std::shared_ptr<PatchDataLayerLayout> get_layout_ptr() const { return pdl_ptr; }
 
@@ -86,8 +87,8 @@ namespace shamrock::patch {
 
         PatchDataLayer &operator=(const PatchDataLayer &other) = delete;
 
-        static PatchDataLayer
-        mock_patchdata(u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
+        static PatchDataLayer mock_patchdata(
+            u64 seed, u32 obj_cnt, const std::shared_ptr<PatchDataLayerLayout> &pdl);
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
@@ -192,15 +193,15 @@ namespace shamrock::patch {
 
         void append_subset_to(const std::vector<u32> &idxs, PatchDataLayer &pdat);
         void append_subset_to(sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
-        void
-        append_subset_to(const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat);
+        void append_subset_to(
+            const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const;
 
-        inline u32 get_obj_cnt() {
+        inline u32 get_obj_cnt() const {
 
             bool is_empty = fields.empty();
 
             if (!is_empty) {
-                return fields[0].visit_return([](auto &field) {
+                return fields[0].visit_return([](const auto &field) {
                     return field.get_obj_cnt();
                 });
             }
@@ -268,7 +269,32 @@ namespace shamrock::patch {
         }
 
         template<class T>
+        const PatchDataField<T> &get_field(u32 idx) const {
+
+            const var_t &tmp = fields.at(idx);
+
+            const PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
+
+            if (pval) {
+                return *pval;
+            }
+
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "the request id is not of correct type\n"
+                "   current map is : \n"
+                + pdl().get_description_str()
+                + "\n"
+                  "    arg : idx = "
+                + std::to_string(idx));
+        }
+
+        template<class T>
         PatchDataField<T> &get_field(const std::string &field_name) {
+            return get_field<T>(pdl().get_field_idx<T>(field_name));
+        }
+
+        template<class T>
+        const PatchDataField<T> &get_field(const std::string &field_name) const {
             return get_field<T>(pdl().get_field_idx<T>(field_name));
         }
 

@@ -404,8 +404,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v2;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v2(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v2(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt     = shambase::group_count(len, group_size);
         u32 corrected_len = group_cnt * group_size;
@@ -542,8 +542,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v3;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v3(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v3(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt     = shambase::group_count(len, group_size);
         u32 corrected_len = group_cnt * group_size;
@@ -680,8 +680,8 @@ namespace shamalgs::numeric::details {
     class KernelExclusiveSumAtomicSyncDecoupled_v4;
 
     template<class T, u32 group_size>
-    sycl::buffer<T>
-    exclusive_sum_atomic_decoupled_v4(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
+    sycl::buffer<T> exclusive_sum_atomic_decoupled_v4(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
 
         u32 group_cnt = shambase::group_count(len, group_size);
 

@@ -26,7 +26,7 @@
 
 #include "shambase/DistributedDataShared.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shamrock::solvergraph {
 
@@ -53,7 +53,7 @@ namespace shamrock::solvergraph {
      * sharedLayer->free_alloc();
      * @endcode
      */
-    class PatchDataLayerDDShared : public IDataEdgeNamed {
+    class PatchDataLayerDDShared : public IEdgeNamed {
 
         public:
         /**
@@ -67,7 +67,7 @@ namespace shamrock::solvergraph {
         shambase::DistributedDataShared<patch::PatchDataLayer> patchdatas;
 
         /// Inherit constructors from IDataEdgeNamed
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         /// Free allocated resources
         inline virtual void free_alloc() { patchdatas = {}; }

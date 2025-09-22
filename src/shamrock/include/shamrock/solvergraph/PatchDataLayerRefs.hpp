@@ -18,30 +18,36 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/FieldSpan.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
-#include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/Indexes.hpp"
-#include <functional>
+#include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 
 namespace shamrock::solvergraph {
 
-    class PatchDataLayerRefs : public IDataEdgeNamed {
+    class PatchDataLayerRefs : public IPatchDataLayerRefs {
 
         public:
-        shambase::DistributedData<std::reference_wrapper<patch::PatchDataLayer>> patchdatas;
+        shambase::DistributedData<PatchDataLayerRef> patchdatas;
 
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IPatchDataLayerRefs::IPatchDataLayerRefs;
 
-        inline virtual patch::PatchDataLayer &get(u64 id_patch) const {
+        inline virtual patch::PatchDataLayer &get(u64 id_patch) override {
             return patchdatas.get(id_patch);
         }
 
-        inline virtual void free_alloc() { patchdatas = {}; }
+        inline virtual const patch::PatchDataLayer &get(u64 id_patch) const override {
+            return patchdatas.get(id_patch);
+        }
+
+        inline virtual shambase::DistributedData<PatchDataLayerRef> &get_refs() override {
+            return patchdatas;
+        }
+
+        inline virtual const shambase::DistributedData<PatchDataLayerRef> &get_const_refs()
+            const override {
+            return patchdatas;
+        }
+
+        inline virtual void free_alloc() override { patchdatas = {}; }
     };
 
 } // namespace shamrock::solvergraph

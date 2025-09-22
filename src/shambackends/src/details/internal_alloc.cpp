@@ -122,6 +122,12 @@ namespace sham::details {
 
     MemPerfInfos get_mem_perf_info() { return mem_perf_infos; }
 
+    void reset_mem_info_max() {
+        mem_perf_infos.max_allocated_byte_host   = mem_perf_infos.allocated_byte_host;
+        mem_perf_infos.max_allocated_byte_device = mem_perf_infos.allocated_byte_device;
+        mem_perf_infos.max_allocated_byte_shared = mem_perf_infos.allocated_byte_shared;
+    }
+
     std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
         std::string fmt = R"log(
@@ -326,16 +332,16 @@ namespace sham::details {
     }
 
 #ifndef DOXYGEN
-    template void
-    internal_free<host>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<host>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<host>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
-    template void
-    internal_free<device>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<device>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<device>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
-    template void
-    internal_free<shared>(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+    template void internal_free<shared>(
+        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
     template void *internal_alloc<shared>(
         size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
 #endif

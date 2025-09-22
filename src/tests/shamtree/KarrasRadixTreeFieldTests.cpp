@@ -48,7 +48,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTreeField", test_karras_radix_tree_fiel
     auto bvh                = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
     bvh.rebuild_from_positions(partpos_buf, bb, 1);
     auto &tree   = bvh.structure;
-    auto cell_it = bvh.reduced_morton_set.get_cell_iterator();
+    auto cell_it = bvh.reduced_morton_set.get_leaf_cell_iterator();
 
     // Prepare output buffer
     auto tree_field = shamtree::new_empty_karras_radix_tree_field<Tval>();

@@ -15,12 +15,27 @@
  *
  */
 
-#include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shambase/memory.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/AddForceCentralGravPotential.hpp"
+#include "shammodels/common/modules/AddForceShearingBoxInertialPart.hpp"
+#include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
+
+namespace shambase {
+
+    template<class T>
+    std::shared_ptr<T> to_shared(T &&t) {
+        return std::make_shared<T>(std::forward<T>(t));
+    }
+} // namespace shambase
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
@@ -46,71 +61,148 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     sink_update.compute_sph_forces();
 
+    auto field_xyz = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_xyz(
+        [&](shamrock::solvergraph::FieldRefs<Tvec> &field_xyz_edge) {
+            shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(0);
+                field_xyz_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_xyz_edge.set_refs(field_xyz_refs);
+        });
+    set_field_xyz.set_edges(field_xyz);
+    set_field_xyz.evaluate();
+
+    auto field_axyz_ext = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_axyz_ext(
+        [&](shamrock::solvergraph::FieldRefs<Tvec> &field_axyz_ext_edge) {
+            shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(iaxyz_ext);
+                field_axyz_ext_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_axyz_ext_edge.set_refs(field_axyz_ext_refs);
+        });
+    set_field_axyz_ext.set_edges(field_axyz_ext);
+    set_field_axyz_ext.evaluate();
+
+    auto sizes = shamrock::solvergraph::Indexes<u32>::make_shared("", "");
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Indexes<u32>> set_sizes(
+        [&](shamrock::solvergraph::Indexes<u32> &sizes) {
+            sizes.indexes = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                sizes.indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        });
+    set_sizes.set_edges(sizes);
+    set_sizes.evaluate();
+
+    auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+
+    shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_constant_G(
+        [&](shamrock::solvergraph::IDataEdge<Tscal> &constant_G) {
+            constant_G.data = solver_config.get_constant_G();
+        });
+
+    set_constant_G.set_edges(constant_G);
+
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
+
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
-            Tscal cmass = ext_force->central_mass;
-            Tscal G     = solver_config.get_constant_G();
+            auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
+                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = ext_force->central_mass;
+                });
+            set_central_mass.set_edges(central_mass);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a       = xyz[gid];
-                        Tscal abs_ra   = sycl::length(r_a);
-                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                    });
-            });
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
+                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = {}; // no support for offset yet
+                });
+            set_central_pos.set_edges(central_pos);
+
+            common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
+            add_force_central_grav_potential.set_edges(
+                constant_G, central_mass, central_pos, field_xyz, sizes, field_axyz_ext);
+
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Point mass",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        shambase::to_shared(std::move(set_central_pos)),
+                        shambase::to_shared(std::move(set_central_mass)),
+                        shambase::to_shared(std::move(add_force_central_grav_potential))}));
 
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
-            Tscal cmass = ext_force->central_mass;
-            Tscal G     = solver_config.get_constant_G();
+            auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>>
+                set_central_mass([&](shamrock::solvergraph::IDataEdge<Tscal> &central_mass) {
+                    central_mass.data = ext_force->central_mass;
+                });
+            set_central_mass.set_edges(central_mass);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [mGM = -cmass * G](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a       = xyz[gid];
-                        Tscal abs_ra   = sycl::length(r_a);
-                        Tscal abs_ra_3 = abs_ra * abs_ra * abs_ra;
-                        axyz_ext[gid] += mGM * r_a / abs_ra_3;
-                    });
-            });
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tvec>>
+                set_central_pos([&](shamrock::solvergraph::IDataEdge<Tvec> &central_pos) {
+                    central_pos.data = {}; // no support for offset yet
+                });
+            set_central_pos.set_edges(central_pos);
+
+            common::modules::AddForceCentralGravPotential<Tvec> add_force_central_grav_potential;
+            add_force_central_grav_potential.set_edges(
+                constant_G, central_mass, central_pos, field_xyz, sizes, field_axyz_ext);
+
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Point mass",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        shambase::to_shared(std::move(set_central_pos)),
+                        shambase::to_shared(std::move(set_central_mass)),
+                        shambase::to_shared(std::move(add_force_central_grav_potential))}));
+
         } else if (
             EF_ShearingBoxForce *ext_force = std::get_if<EF_ShearingBoxForce>(&var_force.val)) {
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(0);
-                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+            auto eta = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_eta(
+                [&](shamrock::solvergraph::IDataEdge<Tscal> &eta) {
+                    eta.data = ext_force->eta;
+                });
+            set_eta.set_edges(eta);
 
-                sham::kernel_call(
-                    q,
-                    sham::MultiRef{buf_xyz},
-                    sham::MultiRef{buf_axyz_ext},
-                    pdat.get_obj_cnt(),
-                    [two_eta = 2 * ext_force->eta](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                        Tvec r_a = xyz[gid];
-                        axyz_ext[gid] += Tvec{r_a.x() * two_eta, 0, 0};
-                    });
-            });
+            common::modules::AddForceShearingBoxInertialPart<Tvec>
+                add_force_shearing_box_inertial_part{};
+            add_force_shearing_box_inertial_part.set_edges(eta, field_xyz, sizes, field_axyz_ext);
+
+            add_ext_forces_seq.push_back(
+                std::make_shared<shamrock::solvergraph::OperationSequence>(
+                    "Shearing box force",
+                    std::vector<std::shared_ptr<shamrock::solvergraph::INode>>{
+                        shambase::to_shared(std::move(set_eta)),
+                        shambase::to_shared(std::move(add_force_shearing_box_inertial_part))}));
 
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");
         }
+    }
+
+    set_constant_G.evaluate();
+
+    if (add_ext_forces_seq.size() > 0) {
+        shamrock::solvergraph::OperationSequence seq(
+            "Add external forces", std::move(add_ext_forces_seq));
+        seq.evaluate();
     }
 }
 
@@ -251,7 +343,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
 
@@ -311,16 +405,15 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
 
                 Tscal acc_mass = gpart_mass * Naccrete;
 
-                sycl::buffer<Tvec> pxyz_acc(Naccrete);
+                sham::DeviceBuffer<Tvec> pxyz_acc(Naccrete, dev_sched);
 
                 sham::EventList depends_list;
 
-                auto vxyz = buf_vxyz.get_read_access(depends_list);
+                auto vxyz        = buf_vxyz.get_read_access(depends_list);
+                auto accretion_p = pxyz_acc.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&, gpart_mass](sycl::handler &cgh) {
                     sycl::accessor id_acc{*std::get<0>(id_list_accrete), cgh, sycl::read_only};
-
-                    sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
 
                     shambase::parallel_for(
                         cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
@@ -329,8 +422,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::point_mass_accre
                 });
 
                 buf_vxyz.complete_event_state(e);
+                pxyz_acc.complete_event_state(e);
 
-                Tvec acc_pxyz = shamalgs::reduction::sum(q.q, pxyz_acc, 0, Naccrete);
+                Tvec acc_pxyz = shamalgs::primitives::sum(dev_sched, pxyz_acc, 0, Naccrete);
 
                 logger::raw_ln("central potential accretion : += ", acc_mass);
 

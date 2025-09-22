@@ -17,28 +17,38 @@
  *
  */
 
-#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shambase/memory.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/INode.hpp"
+#include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
+#include <memory>
 
 namespace shamrock::solvergraph {
 
     template<class T>
     class GetFieldRefFromLayer : public INode {
 
+        u32 field_idx;
+
         public:
         GetFieldRefFromLayer(u32 field_idx) : field_idx(field_idx) {}
-        u32 field_idx;
 
         GetFieldRefFromLayer(
             shamrock::patch::PatchDataLayerLayout &layout, const std::string &field_name)
             : GetFieldRefFromLayer(layout.get_field_idx<T>(field_name)) {}
 
+        GetFieldRefFromLayer(
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &layout,
+            const std::string &field_name)
+            : GetFieldRefFromLayer(shambase::get_check_ref(layout), field_name) {}
+
         struct Edges {
-            const PatchDataLayerRefs &source;
+            const IPatchDataLayerRefs &source;
             shamrock::solvergraph::FieldRefs<T> &out_ref;
         };
 
         void set_edges(
-            std::shared_ptr<PatchDataLayerRefs> source,
+            std::shared_ptr<IPatchDataLayerRefs> source,
             std::shared_ptr<shamrock::solvergraph::FieldRefs<T>> out_ref) {
             __internal_set_ro_edges({source});
             __internal_set_rw_edges({out_ref});
@@ -46,7 +56,7 @@ namespace shamrock::solvergraph {
 
         Edges get_edges() {
             return Edges{
-                get_ro_edge<PatchDataLayerRefs>(0),
+                get_ro_edge<IPatchDataLayerRefs>(0),
                 get_rw_edge<shamrock::solvergraph::FieldRefs<T>>(0)};
         }
 
@@ -54,10 +64,11 @@ namespace shamrock::solvergraph {
             auto edges = get_edges();
 
             edges.out_ref.set_refs(
-                edges.source.patchdatas.template map<std::reference_wrapper<PatchDataField<T>>>(
-                    [&](u64 id_patch, shamrock::patch::PatchDataLayer &pdat) {
-                        return std::ref(pdat.get_field<T>(field_idx));
-                    }));
+                edges.source.get_const_refs()
+                    .template map<std::reference_wrapper<PatchDataField<T>>>(
+                        [&](u64 id_patch, shamrock::patch::PatchDataLayer &pdat) {
+                            return std::ref(pdat.get_field<T>(field_idx));
+                        }));
         }
 
         std::string _impl_get_label() { return "GetFieldRefFromLayer"; }

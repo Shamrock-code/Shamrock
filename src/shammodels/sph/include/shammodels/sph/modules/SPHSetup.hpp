@@ -49,8 +49,8 @@ namespace shammodels::sph::modules {
             bool part_reordering,
             std::optional<u32> insert_step = std::nullopt);
 
-        std::shared_ptr<ISPHSetupNode>
-        make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box);
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
+            Tscal dr, std::pair<Tvec, Tvec> box);
 
         std::shared_ptr<ISPHSetupNode> make_generator_disc_mc(
             Tscal part_mass,
@@ -64,17 +64,23 @@ namespace shammodels::sph::modules {
             std::mt19937 eng,
             Tscal init_h_factor);
 
-        std::shared_ptr<ISPHSetupNode>
-        make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2);
+        std::shared_ptr<ISPHSetupNode> make_combiner_add(
+            SetupNodePtr parent1, SetupNodePtr parent2);
 
         std::shared_ptr<ISPHSetupNode> make_modifier_warp_disc(
             SetupNodePtr parent, Tscal Rwarp, Tscal Hwarp, Tscal inclination, Tscal posangle);
 
-        std::shared_ptr<ISPHSetupNode>
-        make_modifier_add_offset(SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
+        std::shared_ptr<ISPHSetupNode> make_modifier_custom_warp(
+            SetupNodePtr parent,
+            std::function<Tscal(Tscal)> inc_profile,
+            std::function<Tscal(Tscal)> psi_profile,
+            std::function<Tvec(Tscal)> k_profile);
 
-        std::shared_ptr<ISPHSetupNode>
-        make_modifier_filter(SetupNodePtr parent, std::function<bool(Tvec)> filter);
+        std::shared_ptr<ISPHSetupNode> make_modifier_add_offset(
+            SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
+
+        std::shared_ptr<ISPHSetupNode> make_modifier_filter(
+            SetupNodePtr parent, std::function<bool(Tvec)> filter);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

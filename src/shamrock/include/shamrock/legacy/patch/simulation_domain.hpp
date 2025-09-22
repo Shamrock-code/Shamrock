@@ -43,9 +43,9 @@ class SimulationDomain {
 
     inline bool has_outdomain_object() {
         switch (boundary_type) {
-        case Periodic: return true; break;
+        case Periodic        : return true; break;
         case PeriodicShearing: return true; break;
-        default:;
+        default              :;
         }
         return false;
     }

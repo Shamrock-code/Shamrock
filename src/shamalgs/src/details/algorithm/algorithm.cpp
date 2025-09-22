@@ -28,27 +28,9 @@ namespace shamalgs::algorithm {
         });
     }
 
-    void
-    fill_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf) {
-        buf.resize(len);
-
-        sham::kernel_call(
-            sched->get_queue(), sham::MultiRef{}, sham::MultiRef{buf}, len, [](u32 i, u32 *idx) {
-                idx[i] = i;
-            });
-    }
-
-    sham::DeviceBuffer<u32> gen_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len) {
-        sham::DeviceBuffer<u32> ret(len, sched);
-
-        fill_buffer_index_usm(sched, len, ret);
-
-        return ret;
-    }
-
     template<class T>
-    sycl::buffer<T>
-    index_remap(sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
+    sycl::buffer<T> index_remap(
+        sycl::queue &q, sycl::buffer<T> &buf, sycl::buffer<u32> &index_map, u32 len) {
 
         sycl::buffer<T> ret(len);
 

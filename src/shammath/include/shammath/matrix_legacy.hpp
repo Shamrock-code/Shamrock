@@ -22,8 +22,8 @@
 namespace shammath {
 
     template<class T>
-    inline auto
-    compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat) -> std::array<sycl::vec<T, 3>, 3> {
+    inline auto compute_inv_33(std::array<sycl::vec<T, 3>, 3> mat)
+        -> std::array<sycl::vec<T, 3>, 3> {
 
         using vec = sycl::vec<T, 3>;
 
@@ -50,8 +50,8 @@ namespace shammath {
     }
 
     template<class T>
-    inline auto
-    mat_prod_33(std::array<sycl::vec<T, 3>, 3> mat_a, std::array<sycl::vec<T, 3>, 3> mat_b)
+    inline auto mat_prod_33(
+        std::array<sycl::vec<T, 3>, 3> mat_a, std::array<sycl::vec<T, 3>, 3> mat_b)
         -> std::array<sycl::vec<T, 3>, 3> {
 
         using vec = sycl::vec<T, 3>;

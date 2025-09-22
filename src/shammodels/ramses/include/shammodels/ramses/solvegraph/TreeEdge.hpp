@@ -17,14 +17,14 @@
  */
 
 #include "shambase/DistributedData.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamtree/RadixTree.hpp"
 
 namespace shammodels::basegodunov::solvergraph {
     template<class Umorton, class Tvec>
-    class TreeEdge : public shamrock::solvergraph::IDataEdgeNamed {
+    class TreeEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
         using RTree = RadixTree<Umorton, Tvec>;
 
         shambase::DistributedData<RTree> trees;

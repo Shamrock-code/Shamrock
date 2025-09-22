@@ -208,8 +208,8 @@ namespace shambase {
 
         /// const version
         template<class Tmap>
-        inline DistributedDataShared<Tmap>
-        map(std::function<Tmap(u64, u64, const T &)> map_func) const {
+        inline DistributedDataShared<Tmap> map(
+            std::function<Tmap(u64, u64, const T &)> map_func) const {
             DistributedDataShared<Tmap> ret;
             for_each([&](u64 left, u64 right, const T &ref) {
                 ret.add_obj(left, right, map_func(left, right, ref));

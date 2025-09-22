@@ -30,6 +30,7 @@ set(Sources
     src/TreeCellRanges.cpp
     src/TreeMortonCodes.cpp
     src/TreeReducedMortonCodes.cpp
+    src/CLBVHDualTreeTraversal.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

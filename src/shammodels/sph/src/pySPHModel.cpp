@@ -24,6 +24,7 @@
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
+#include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
@@ -42,6 +43,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T = Model<Tvec, SPHKernel>;
 
     using TAnalysisSodTube = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
+    using TAnalysisDisc    = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>;
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
@@ -53,6 +55,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",
             [](TConfig &self, py::object max_neigh_cache_size) {
@@ -62,6 +65,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is a no-op,\n"
                               "    -> you can remove the call to that function"););
             })
+        .def("set_smoothing_length_density_based", &TConfig::set_smoothing_length_density_based)
+        .def(
+            "set_smoothing_length_density_based_neigh_lim",
+            &TConfig::set_smoothing_length_density_based_neigh_lim)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
@@ -221,6 +228,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             return {ret.rho, ret.v, ret.P};
         });
 
+    std::string disc_analysis_name = name_model + "_AnalysisDisc";
+    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
+        .def(
+            "collect_data",
+            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, ShamrockCtx &ctx) {
+                auto anal = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
+                py::dict dic_out;
+
+                auto radius  = anal.radius.copy_to_stdvec();
+                auto counter = anal.counter.copy_to_stdvec();
+                auto Sigma   = anal.Sigma.copy_to_stdvec();
+                auto lx      = anal.lx.copy_to_stdvec();
+                auto ly      = anal.ly.copy_to_stdvec();
+                auto lz      = anal.lz.copy_to_stdvec();
+                auto tilt    = anal.tilt.copy_to_stdvec();
+                auto twist   = anal.twist.copy_to_stdvec();
+                auto psi     = anal.psi.copy_to_stdvec();
+                auto Hsq     = anal.Hsq.copy_to_stdvec();
+
+                dic_out["radius"]  = radius;
+                dic_out["counter"] = counter;
+                dic_out["Sigma"]   = Sigma;
+                dic_out["lx"]      = lx;
+                dic_out["ly"]      = ly;
+                dic_out["lz"]      = lz;
+                dic_out["tilt"]    = tilt;
+                dic_out["twist"]   = twist;
+                dic_out["psi"]     = psi;
+                dic_out["Hsq"]     = Hsq;
+
+                return dic_out;
+            });
+
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
@@ -282,11 +322,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_modifier_warp_disc(parent, Rwarp, Hwarp, inclination, posangle);
             },
             py::kw_only(),
-            py::arg("setup2warp"),
+            py::arg("parent"),
             py::arg("Rwarp"),
             py::arg("Hwarp"),
             py::arg("inclination"),
             py::arg("posangle") = 0.)
+        .def(
+            "make_modifier_custom_warp",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::function<Tscal(Tscal)> inc_profile,
+               std::function<Tscal(Tscal)> psi_profile,
+               std::function<Tvec(Tscal)> k_profile) {
+                return self.make_modifier_custom_warp(parent, inc_profile, psi_profile, k_profile);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("inc_profile"),
+            py::arg("psi_profile"),
+            py::arg("k_profile"))
         .def(
             "make_modifier_offset",
             [](TSPHSetup &self,
@@ -755,7 +809,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, Tscal cstiff) {
                 return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
             })
-        .def("change_htolerance", &T::change_htolerance)
+        .def(
+            "change_htolerance",
+            [](T &self, Tscal in) {
+                ON_RANK_0(shamlog_warn_ln(
+                              "SPH",
+                              ".change_htolerance(val) is deprecated,\n"
+                              "    -> calling this is replaced internally by "
+                              ".change_htolerances(coarse=val, fine=min(val, 1.1))\n"
+                              "    see: "
+                              "https://shamrock-code.github.io/Shamrock/mkdocs/models/sph/"
+                              "smoothing_length_tolerance"););
+                self.change_htolerances(in, std::min(in, (Tscal) 1.1));
+            })
+        .def(
+            "change_htolerances",
+            [](T &self, Tscal coarse, Tscal fine) {
+                self.change_htolerances(coarse, fine);
+            },
+            py::kw_only(),
+            py::arg("coarse"),
+            py::arg("fine"))
         .def(
             "make_analysis_sodtube",
             [](T &self,
@@ -775,6 +849,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_ref,
                     x_min,
                     x_max);
+            })
+        .def(
+            "make_analysis_disc",
+            [](T &self) {
+                return std::make_unique<TAnalysisDisc>(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
             })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)

@@ -29,8 +29,8 @@ namespace shamalgs::numeric::details {
      * @param len the length of the buffer considered
      * @return sycl::buffer<u32> table of the index to extract
      */
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_excl_scan(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len);
 
     /**
      * @brief Performs stream compaction using exclusive scan on a device.

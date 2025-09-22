@@ -30,10 +30,9 @@ template<class Tvec, class Tmorton, template<class> class SPHKernel>
 void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_neighbors_cache() {
 
     // interface_control
-    using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-    using GhostHandleCache   = typename GhostHandle::CacheMap;
-    using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-    using RTree              = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+    using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+    using GhostHandleCache = typename GhostHandle::CacheMap;
+    using RTree            = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
     shambase::Timer time_neigh;
     time_neigh.start();
@@ -46,10 +45,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
         NamedStackEntry cache_build_stack_loc{"build cache"};
 
-        PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
+        auto &mfield = storage.merged_xyzh.get().get(patch_id);
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.field_pos.get_buf();
-        sham::DeviceBuffer<Tscal> &buf_hpart = mfield.field_hpart.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.template get_field_buf_ref<Tvec>(0);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mfield.template get_field_buf_ref<Tscal>(1);
 
         sham::DeviceBuffer<Tscal> &tree_field_rint
             = storage.rtree_rint_field.get().get(patch_id).buf_field;
@@ -57,11 +56,11 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         RTree &tree = storage.merged_pos_trees.get().get(patch_id);
         auto obj_it = tree.get_object_iterator();
 
-        u32 obj_cnt = mfield.original_elements;
+        u32 obj_cnt = shambase::get_check_ref(storage.part_counts).indexes.get(patch_id);
 
-        sycl::range range_npart{mfield.original_elements};
+        sycl::range range_npart{obj_cnt};
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 
@@ -225,10 +224,9 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
     start_neighbors_cache_2stages() {
 
     // interface_control
-    using GhostHandle        = sph::BasicSPHGhostHandler<Tvec>;
-    using GhostHandleCache   = typename GhostHandle::CacheMap;
-    using PreStepMergedField = typename GhostHandle::PreStepMergedField;
-    using RTree              = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+    using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+    using GhostHandleCache = typename GhostHandle::CacheMap;
+    using RTree            = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
     shambase::Timer time_neigh;
     time_neigh.start();
@@ -241,10 +239,10 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
         NamedStackEntry cache_build_stack_loc{"build cache"};
 
-        PreStepMergedField &mfield = storage.merged_xyzh.get().get(patch_id);
+        auto &mfield = storage.merged_xyzh.get().get(patch_id);
 
-        sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.field_pos.get_buf();
-        sham::DeviceBuffer<Tscal> &buf_hpart = mfield.field_hpart.get_buf();
+        sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.template get_field_buf_ref<Tvec>(0);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mfield.template get_field_buf_ref<Tscal>(1);
 
         sham::DeviceBuffer<Tscal> &tree_field_rint
             = storage.rtree_rint_field.get().get(patch_id).buf_field;
@@ -255,13 +253,14 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
 
         u32 leaf_cnt    = tree.get_leaf_cell_count();
         u32 intnode_cnt = tree.get_internal_cell_count();
-        u32 obj_cnt     = mfield.original_elements;
+
+        u32 obj_cnt = shambase::get_check_ref(storage.part_counts).indexes.get(patch_id);
 
         sycl::range range_nleaf{leaf_cnt};
         sycl::range range_nobj{obj_cnt};
         using namespace shamrock;
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 
@@ -504,7 +503,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
                         SHAM_ASSERT(leaf_b >= offset_leaf);
 
-                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
+                        particle_looper.for_each_in_leaf_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;
@@ -565,7 +564,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
                         SHAM_ASSERT(leaf_b >= offset_leaf);
 
-                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
+                        particle_looper.for_each_in_leaf_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;

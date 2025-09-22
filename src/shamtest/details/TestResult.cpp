@@ -31,11 +31,11 @@ namespace shamtest::details {
 
         auto get_type_name = [](TestType t) -> std::string {
             switch (t) {
-            case Benchmark: return "Benchmark";
-            case LongBenchmark: return "LongBenchmark";
-            case ValidationTest: return "ValidationTest";
+            case Benchmark         : return "Benchmark";
+            case LongBenchmark     : return "LongBenchmark";
+            case ValidationTest    : return "ValidationTest";
             case LongValidationTest: return "LongValidationTest";
-            case Unittest: return "Unittest";
+            case Unittest          : return "Unittest";
             }
         };
 

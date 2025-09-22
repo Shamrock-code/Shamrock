@@ -191,8 +191,10 @@ namespace shammath {
         T norm_A = 0;
         mat_L1_norm<T>(A, norm_A);
 
-        i32 s_tilde = static_cast<i32>(sycl::ceil(sham::max(
-            static_cast<f64>(0.0), static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
+        i32 s_tilde = static_cast<i32>(sycl::ceil(
+            sham::max(
+                static_cast<f64>(0.0),
+                static_cast<f64>(sycl::log2(norm_A / seq_theta_mk[K - 1])))));
         s_star      = s_tilde;
         i32 k       = 2;
         bool cond   = false;

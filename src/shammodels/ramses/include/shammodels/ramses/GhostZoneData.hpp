@@ -18,6 +18,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/DistributedDataShared.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammath/AABB.hpp"
 

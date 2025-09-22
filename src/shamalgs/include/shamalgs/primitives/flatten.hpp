@@ -23,7 +23,7 @@
 #include <stdexcept>
 #include <utility>
 
-namespace shamalgs {
+namespace shamalgs::primitives {
 
     /**
      * @brief Flatten a buffer of vector type into a buffer of scalar type.
@@ -37,7 +37,7 @@ namespace shamalgs {
      */
     template<class Tvec, sham::USMKindTarget target>
     inline sham::DeviceBuffer<typename shambase::VectorProperties<Tvec>::component_type, target>
-    flatten_buffer(sham::DeviceBuffer<Tvec, target> &buffer) {
+    flatten_buffer(const sham::DeviceBuffer<Tvec, target> &buffer) {
 
         using Tscal = typename shambase::VectorProperties<Tvec>::component_type;
         auto &sched = buffer.get_dev_scheduler_ptr();
@@ -114,7 +114,7 @@ namespace shamalgs {
      */
     template<class Tvec, sham::USMKindTarget target>
     inline sham::DeviceBuffer<Tvec, target> unflatten_buffer(
-        sham::DeviceBuffer<typename shambase::VectorProperties<Tvec>::component_type, target>
+        const sham::DeviceBuffer<typename shambase::VectorProperties<Tvec>::component_type, target>
             &buffer) {
 
         using Tscal = typename shambase::VectorProperties<Tvec>::component_type;
@@ -183,4 +183,4 @@ namespace shamalgs {
         }
     }
 
-} // namespace shamalgs
+} // namespace shamalgs::primitives

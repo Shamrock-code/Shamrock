@@ -23,6 +23,9 @@
     #if SHAM_ASSERT_IS == ASSERT_MODE_RUNTIME_ERROR
         #include "shambase/exception.hpp"
     #endif
+    #if SHAM_ASSERT_IS == ASSERT_MODE_CASSERT
+        #include <cassert>
+    #endif
 #endif
 
 /*

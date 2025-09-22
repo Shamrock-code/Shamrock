@@ -36,8 +36,8 @@ class MergedPatchData {
         : data(pdl) {};
 
     [[nodiscard]]
-    static std::unordered_map<u64, MergedPatchData<flt>>
-    merge_patches(PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
+    static std::unordered_map<u64, MergedPatchData<flt>> merge_patches(
+        PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
 
     inline void write_back(shamrock::patch::PatchDataLayer &pdat) {
         pdat.overwrite(data, or_element_cnt);
@@ -230,7 +230,7 @@ inline void make_merge_patches(
                 *merged_buf->fields_##arg[idx],                                                    \
                 *pdat_buf.fields_##arg[idx],                                                       \
                 0,                                                                                 \
-                pdat_buf.element_count *nvar);                                                     \
+                pdat_buf.element_count * nvar);                                                    \
             fields_##arg##_offset[idx] += pdat_buf.element_count * nvar;                           \
         }
         XMAC_LIST_ENABLED_FIELD
@@ -262,7 +262,7 @@ inline void make_merge_patches(
                 *merged_buf->fields_##arg[idx],                                                    \
                 *interfpdat.fields_##arg[idx],                                                     \
                 fields_##arg##_offset[idx],                                                        \
-                interfpdat.element_count *nvar);                                                   \
+                interfpdat.element_count * nvar);                                                  \
             fields_##arg##_offset[idx] += interfpdat.element_count * nvar;                         \
         }
                 XMAC_LIST_ENABLED_FIELD
@@ -312,7 +312,7 @@ inline void write_back_merge_patches(
                 *pdat_buf.fields_##arg[idx],                                                       \
                 *merge_pdat_buf.at(id_patch).data->fields_##arg[idx],                              \
                 0,                                                                                 \
-                pdat_buf.element_count *nvar);                                                     \
+                pdat_buf.element_count * nvar);                                                    \
         }
         XMAC_LIST_ENABLED_FIELD
     #undef X

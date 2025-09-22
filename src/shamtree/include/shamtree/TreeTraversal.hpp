@@ -492,7 +492,7 @@ namespace shamrock::tree {
 
         public:
         // clang-format off
-        ObjectCacheIterator(ObjectCache::ptrs_read & cache):
+        ObjectCacheIterator(const ObjectCache::ptrs_read & cache):
             neigh_cnt          {cache.cnt_neigh       },
             table_neigh_offset {cache.scanned_cnt     },
             table_neigh        {cache.index_neigh_map }

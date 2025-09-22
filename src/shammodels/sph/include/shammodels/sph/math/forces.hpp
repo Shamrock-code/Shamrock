@@ -22,8 +22,8 @@
 namespace shamrock::sph {
 
     template<class Tscal>
-    inline static constexpr Tscal
-    vsig_hydro(Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
+    inline static constexpr Tscal vsig_hydro(
+        Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
         return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
         ;
     };

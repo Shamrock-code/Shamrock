@@ -24,6 +24,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
@@ -154,6 +155,26 @@ namespace shammodels::sph {
                     "SPH::config",
                     "Dust config != None is work in progress, use it at your own risk");
             }
+        }
+    };
+
+    struct SmoothingLengthConfig {
+        struct DensityBased {};
+        struct DensityBasedNeighLim {
+            u32 max_neigh_count = 500;
+        };
+
+        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+
+        mode config = DensityBased{};
+
+        void set_density_based() { config = DensityBased{}; }
+        void set_density_based_neigh_lim(u32 max_neigh_count) {
+            config = DensityBasedNeighLim{max_neigh_count};
+        }
+
+        bool is_density_based_neigh_lim() const {
+            return std::holds_alternative<DensityBasedNeighLim>(config);
         }
     };
 
@@ -339,6 +360,8 @@ struct shammodels::sph::SolverConfig {
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
 
+    bool show_neigh_stats = false;
+    inline void set_show_neigh_stats(bool enable) { show_neigh_stats = enable; }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -349,13 +372,22 @@ struct shammodels::sph::SolverConfig {
 
     bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
     /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
-    /// @note This value must be larger or equal to htol_up_iter
-    Tscal htol_up_tol = 1.1;
+    /// @note This value must be larger or equal to htol_up_fine_cycle
+    Tscal htol_up_coarse_cycle = 1.1;
     /// Maximum factor of the smoothing length evolution per subcycles
-    Tscal htol_up_iter        = 1.1;
+    Tscal htol_up_fine_cycle  = 1.1;
     Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
     u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
     u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
+
+    SmoothingLengthConfig smoothing_length_config;
+
+    inline void set_smoothing_length_density_based() {
+        smoothing_length_config.set_density_based();
+    }
+    inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
+        smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
@@ -589,8 +621,8 @@ struct shammodels::sph::SolverConfig {
      * @param[in] a_spin The spin of the central object
      * @param[in] dir_spin The direction of the spin of the central object
      */
-    inline void
-    add_ext_force_lense_thirring(Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+    inline void add_ext_force_lense_thirring(
+        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
         ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
     }
 
@@ -687,27 +719,7 @@ struct shammodels::sph::SolverConfig {
             return;
         }
         logger::raw_ln("----- SPH Solver configuration -----");
-
-        logger::raw_ln("units : ");
-        if (unit_sys) {
-            logger::raw_ln("unit_length      :", unit_sys->m_inv);
-            logger::raw_ln("unit_mass        :", unit_sys->kg_inv);
-            logger::raw_ln("unit_current     :", unit_sys->A_inv);
-            logger::raw_ln("unit_temperature :", unit_sys->K_inv);
-            logger::raw_ln("unit_qte         :", unit_sys->mol_inv);
-            logger::raw_ln("unit_lumint      :", unit_sys->cd_inv);
-        } else {
-            logger::raw_ln("not set");
-        }
-
-        logger::raw_ln("part mass", gpart_mass, "( can be changed using .set_part_mass() )");
-        logger::raw_ln("cfl force", cfl_config.cfl_force);
-        logger::raw_ln("cfl courant", cfl_config.cfl_cour);
-
-        artif_viscosity.print_status();
-        eos_config.print_status();
-        boundary_config.print_status();
-
+        logger::raw_ln(nlohmann::json{*this}.dump(4));
         logger::raw_ln("------------------------------------");
     }
 
@@ -816,6 +828,38 @@ namespace shammodels::sph {
         }
     }
 
+    // JSON serialization for SmoothingLengthConfig
+    inline void to_json(nlohmann::json &j, const SmoothingLengthConfig &p) {
+        if (const SmoothingLengthConfig::DensityBased *conf
+            = std::get_if<SmoothingLengthConfig::DensityBased>(&p.config)) {
+            j = {
+                {"type", "density_based"},
+            };
+
+        } else if (
+            const SmoothingLengthConfig::DensityBasedNeighLim *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedNeighLim>(&p.config)) {
+
+            j = {
+                {"type", "density_based_neigh_lim"},
+                {"max_neigh_count", conf->max_neigh_count},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    inline void from_json(const nlohmann::json &j, SmoothingLengthConfig &p) {
+        if (j.at("type").get<std::string>() == "density_based") {
+            p.config = SmoothingLengthConfig::DensityBased{};
+        } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
+            p.config
+                = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -847,11 +891,13 @@ namespace shammodels::sph {
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
+            {"show_neigh_stats", p.show_neigh_stats},
             // solver behavior config
             {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
-            {"htol_up_tol", p.htol_up_tol},
-            {"htol_up_iter", p.htol_up_iter},
+            {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
+            {"htol_up_fine_cycle", p.htol_up_fine_cycle},
             {"epsilon_h", p.epsilon_h},
+            {"smoothing_length_config", p.smoothing_length_config},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
 
@@ -916,10 +962,42 @@ namespace shammodels::sph {
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
 
+        if (j.contains("show_neigh_stats")) {
+            j.at("show_neigh_stats").get_to(p.show_neigh_stats);
+        } else {
+            // Already set to default value
+            ON_RANK_0(shamlog_warn_ln(
+                "SPHConfig",
+                "show_neigh_stats not found when deserializing, defaulting to ",
+                p.show_neigh_stats));
+        }
+
         j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
-        j.at("htol_up_tol").get_to(p.htol_up_tol);
-        j.at("htol_up_iter").get_to(p.htol_up_iter);
+
+        // Try new names first, fall back to old names for backward compatibility
+        if (j.contains("htol_up_coarse_cycle")) {
+            j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
+        } else {
+            j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
+        }
+
+        if (j.contains("htol_up_fine_cycle")) {
+            j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
+        } else {
+            j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
+        }
+
         j.at("epsilon_h").get_to(p.epsilon_h);
+
+        if (j.contains("smoothing_length_config")) {
+            j.at("smoothing_length_config").get_to(p.smoothing_length_config);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "smoothing_length_config not found when deserializing, defaulting to ",
+                nlohmann::json{p.smoothing_length_config}.dump(4));
+        }
+
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
 

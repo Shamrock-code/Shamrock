@@ -15,62 +15,104 @@
  *
  */
 
-#include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
+#include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::ComputeOmega<Tvec, SPHKernel>::compute_omega() {
+void shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
-    NamedStackEntry stack_loc{"compute omega"};
+    __shamrock_stack_entry();
 
-    shamrock::SchedulerUtility utility(scheduler());
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-    SPHUtils sph_utils(scheduler());
+    auto edges = get_edges();
 
-    using namespace shamrock;
-    using namespace shamrock::patch;
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+    edges.omega.ensure_sizes(edges.part_counts.indexes);
 
-    shamrock::solvergraph::Field<Tscal> &omega = shambase::get_check_ref(storage.omega);
+    sham::distributed_data_kernel_call(
+        dev_sched,
+        sham::DDMultiRef{
+            edges.xyz.get_spans(), edges.hpart.get_spans(), edges.neigh_cache.neigh_cache},
+        sham::DDMultiRef{edges.omega.get_spans()},
+        edges.part_counts.indexes,
+        [part_mass = this->part_mass, Rkern = kernel_radius](
+            u32 id_a, const Tvec *r, const Tscal *hpart, const auto ploop_ptrs, Tscal *omega) {
+            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-    shambase::DistributedData<u32> original_part_count = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        original_part_count.add_obj(p.id_patch, pdat.get_obj_cnt());
-    });
+            Tvec xyz_a = r[id_a]; // could be recovered from lambda
 
-    omega.ensure_sizes(original_part_count);
+            Tscal h_a  = hpart[id_a];
+            Tscal dint = h_a * h_a * Rkern * Rkern;
 
-    // ComputeField<Tscal> omega = utility.make_compute_field<Tscal>("omega", 1);
+            Tscal rho_sum        = 0;
+            Tscal part_omega_sum = 0;
 
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        shamlog_debug_ln("SPHLeapfrog", "patch : n°", p.id_patch, "->", "compute omega");
+            particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                Tvec dr    = xyz_a - r[id_b];
+                Tscal rab2 = sycl::dot(dr, dr);
 
-        sham::DeviceBuffer<Tscal> &omega_h = omega.get_buf(p.id_patch);
+                if (rab2 > dint) {
+                    return;
+                }
 
-        sham::DeviceBuffer<Tscal> &hnew = pdat.get_field<Tscal>(ihpart).get_buf();
-        sham::DeviceBuffer<Tvec> &merged_r
-            = storage.merged_xyzh.get().get(p.id_patch).field_pos.get_buf();
+                Tscal rab = sycl::sqrt(rab2);
 
-        sycl::range range_npart{pdat.get_obj_cnt()};
+                rho_sum += part_mass * SPHKernel<Tscal>::W_3d(rab, h_a);
+                part_omega_sum += part_mass * SPHKernel<Tscal>::dhW_3d(rab, h_a);
+            });
 
-        tree::ObjectCache &neigh_cache
-            = shambase::get_check_ref(storage.neigh_cache).get_cache(p.id_patch);
+            using namespace shamrock::sph;
 
-        sph_utils.compute_omega(
-            merged_r, hnew, omega_h, range_npart, neigh_cache, solver_config.gpart_mass);
-    });
-
-    // storage.omega.set(std::move(omega));
+            Tscal rho_ha  = rho_h(part_mass, h_a, SPHKernel<Tscal>::hfactd);
+            Tscal omega_a = 1 + (h_a / (3 * rho_ha)) * part_omega_sum;
+            omega[id_a]   = omega_a;
+        });
 }
 
-using namespace shammath;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M4>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M6>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, M8>;
+template<class Tvec, template<class> class SPHKernel>
+std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_get_tex() {
+    return "TODO";
+}
 
-template class shammodels::sph::modules::ComputeOmega<f64_3, C2>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, C4>;
-template class shammodels::sph::modules::ComputeOmega<f64_3, C6>;
+template<class T>
+void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
+    __shamrock_stack_entry();
+
+    auto edges = get_edges();
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    edges.mask.check_sizes(edges.part_counts.indexes);
+    edges.field_to_set.ensure_sizes(edges.part_counts.indexes);
+
+    sham::distributed_data_kernel_call(
+        dev_sched,
+        sham::DDMultiRef{edges.mask.get_spans()},
+        sham::DDMultiRef{edges.field_to_set.get_spans()},
+        edges.part_counts.indexes,
+        [val_to_set = this->val_to_set](u32 id, const u32 *mask, T *field_to_set) {
+            if (mask[id] == 1) {
+                field_to_set[id] = val_to_set;
+            }
+        });
+}
+
+template<class T>
+std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() {
+    return "TODO";
+}
+
+template class shammodels::sph::modules::SetWhenMask<f64>;
+
+using namespace shammath;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M4>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M6>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, M8>;
+
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C2>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C4>;
+template class shammodels::sph::modules::NodeComputeOmega<f64_3, C6>;

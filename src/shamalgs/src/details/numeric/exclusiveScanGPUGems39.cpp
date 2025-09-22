@@ -230,13 +230,13 @@ namespace shamalgs::numeric::details {
         return std::move(get_in_buf_ref(step));
     }
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_1(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_1(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_2(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_2(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_3(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_3(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 } // namespace shamalgs::numeric::details

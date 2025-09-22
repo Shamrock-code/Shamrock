@@ -19,30 +19,30 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 
 namespace shammodels::basegodunov::solvergraph {
 
     template<class Tvec, class TgridVec>
-    class OrientedAMRGraphEdge : public shamrock::solvergraph::IDataEdgeNamed {
+    class OrientedAMRGraphEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
         using OrientedAMRGraph = modules::OrientedAMRGraph<Tvec, TgridVec>;
 
         shambase::DistributedData<OrientedAMRGraph> graph;
 
         inline virtual void free_alloc() { graph = {}; }
 
-        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
-        get_refs_dir(modules::Direction dir) {
+        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> get_refs_dir(
+            modules::Direction dir) {
             return graph.template map<std::reference_wrapper<modules::AMRGraph>>(
                 [&](u64 id,
                     OrientedAMRGraph &neigh_graph) -> std::reference_wrapper<modules::AMRGraph> {
                     return std::ref(shambase::get_check_ref(neigh_graph.graph_links[dir]));
                 });
         }
-        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>>
-        get_refs_dir(modules::Direction dir) const {
+        inline shambase::DistributedData<std::reference_wrapper<modules::AMRGraph>> get_refs_dir(
+            modules::Direction dir) const {
             return graph.template map<std::reference_wrapper<modules::AMRGraph>>(
                 [&](u64 id, const OrientedAMRGraph &neigh_graph)
                     -> std::reference_wrapper<modules::AMRGraph> {

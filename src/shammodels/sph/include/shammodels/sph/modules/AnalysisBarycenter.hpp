@@ -18,6 +18,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -86,7 +87,7 @@ namespace shammodels::sph::modules {
                         [pmass](u32 i, const Tvec *__restrict xyz, Tvec *__restrict pm) {
                             pm[i] = pmass * xyz[i];
                         });
-                    barycenter += shamalgs::reduction::sum(dev_sched_ptr, pm, 0, len);
+                    barycenter += shamalgs::primitives::sum(dev_sched_ptr, pm, 0, len);
                 });
 
             Tvec tot_barycenter = shamalgs::collective::allreduce_sum(barycenter);

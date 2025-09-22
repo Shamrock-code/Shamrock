@@ -25,7 +25,7 @@ jobs:
       matrix:
         os: [macos-13, macos-14, macos-15]
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -57,6 +57,11 @@ jobs:
       - name: install dependencies
         run: |
           set +e
+
+          # Uninstall cmake to ensure that we test the version on peoples computers,
+          # why have you done this mess github, couldn't you just use the version in default brew???
+          brew uninstall cmake
+
           brew update
           brew install cmake libomp boost open-mpi adaptivecpp
           set -e

@@ -40,9 +40,10 @@ namespace shamrock::solvergraph {
             auto &source_field = edges.original.get_field(id_patch);
             if (field.get_nvar() != source_field.get_nvar()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
-                    "nvar mismatch between source and target fields for patch " + std::to_string(id_patch) +
-                    ". Source nvar: " + std::to_string(source_field.get_nvar()) +
-                    ", Target nvar: " + std::to_string(field.get_nvar()));
+                    "nvar mismatch between source and target fields for patch "
+                    + std::to_string(id_patch)
+                    + ". Source nvar: " + std::to_string(source_field.get_nvar())
+                    + ", Target nvar: " + std::to_string(field.get_nvar()));
             }
             field.overwrite(source_field, field.get_obj_cnt());
         });

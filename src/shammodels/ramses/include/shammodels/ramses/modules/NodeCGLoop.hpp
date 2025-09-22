@@ -35,7 +35,6 @@
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
-#include <memory>
 
 namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>

@@ -37,7 +37,14 @@ namespace shamrock::solvergraph {
 
         // Copy the fields from the original to the target
         edges.target.get_refs().for_each([&](u64 id_patch, PatchDataField<T> &field) {
-            field.overwrite(edges.original.get_field(id_patch), field.get_obj_cnt());
+            auto &source_field = edges.original.get_field(id_patch);
+            if (field.get_nvar() != source_field.get_nvar()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "nvar mismatch between source and target fields for patch " + std::to_string(id_patch) +
+                    ". Source nvar: " + std::to_string(source_field.get_nvar()) +
+                    ", Target nvar: " + std::to_string(field.get_nvar()));
+            }
+            field.overwrite(source_field, field.get_obj_cnt());
         });
     }
 

@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/ExtractGhostField.hpp"
 
 template<class T>

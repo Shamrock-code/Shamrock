@@ -106,7 +106,10 @@ namespace shamrock::solvergraph {
             sync();
         }
 
-        inline virtual void free_alloc() { field.field_data = {}; }
+        inline virtual void free_alloc() {
+            field.field_data = {};
+            sync();
+        }
 
         inline ComputeField<T> extract() { return std::exchange(field, {}); }
 
@@ -115,5 +118,10 @@ namespace shamrock::solvergraph {
         }
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field.field_data.get(id_patch); }
+
+        void set_fields(ComputeField<T> fields) {
+            field = fields;
+            sync();
+        }
     };
 } // namespace shamrock::solvergraph

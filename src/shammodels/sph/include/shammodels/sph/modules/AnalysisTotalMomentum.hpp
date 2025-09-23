@@ -51,11 +51,14 @@ namespace shammodels::sph::modules {
 
             Tvec total_momentum = {};
 
+            sham::DeviceBuffer<Tvec> total_momentum_part(0, dev_sched_ptr);
+
             sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
                                                   shamrock::patch::PatchDataLayer &pdat) {
                 u32 len = pdat.get_obj_cnt();
 
-                sham::DeviceBuffer<Tvec> total_momentum_part(len, dev_sched_ptr);
+                total_momentum_part.resize(len);
+
                 sham::DeviceBuffer<Tvec> &vxyz_buf = pdat.get_field_buf_ref<Tvec>(ivxyz);
 
                 sham::kernel_call(

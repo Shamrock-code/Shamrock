@@ -148,7 +148,7 @@ namespace shammodels::sph::modules {
                     Tvec delta = sink1.pos - sink2.pos;
                     Tscal d    = sycl::length(delta);
 
-                    tot_epot += -G * sink1.mass * sink2.mass / sham::inv_sat_positive(d, 1e-16);
+                    tot_epot += -G * sink1.mass * sink2.mass * sham::inv_sat_positive(d, 1e-16);
                 }
             }
 

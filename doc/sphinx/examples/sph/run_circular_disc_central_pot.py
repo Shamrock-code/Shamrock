@@ -358,13 +358,14 @@ def analysis(ianalysis):
 
     save_rho_integ(ext, arr_rho2, ianalysis)
 
-    analysis = shamrock.model_sph.analysisBarycenter(model=model)
-    barycenter, disc_mass = analysis.get_barycenter()
+    barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
-    analysis = shamrock.model_sph.analysisTotalMomentum(model=model)
-    total_momentum = analysis.get_total_momentum()
+    total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
 
-    potential_energy = shamrock.model_sph.analysisEnergyPotential(model=model).get_potential_energy()
+    potential_energy = shamrock.model_sph.analysisEnergyPotential(
+        model=model
+    ).get_potential_energy()
+
     kinetic_energy = shamrock.model_sph.analysisEnergyKinetic(model=model).get_kinetic_energy()
 
     save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)

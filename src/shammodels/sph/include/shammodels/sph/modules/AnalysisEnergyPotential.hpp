@@ -12,8 +12,8 @@
 /**
  * @file AnalysisEnergyPotential.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_baycenter()
- *
+ * @brief AnalysisEnergyPotential class with one method
+ * AnalysisEnergyPotential.get_potential_energy() *
  */
 
 #include "shambase/memory.hpp"
@@ -33,7 +33,7 @@ namespace shammodels::sph::modules {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Solver = Solver<Tvec, SPHKernel>;
+        using Solver = ::shammodels::sph::Solver<Tvec, SPHKernel>;
 
         Model<Tvec, SPHKernel> &model;
         Solver &solver;

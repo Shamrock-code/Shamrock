@@ -31,7 +31,7 @@ namespace shammodels::sph::modules {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using Solver = Solver<Tvec, SPHKernel>;
+        using Solver = ::shammodels::sph::Solver<Tvec, SPHKernel>;
 
         Model<Tvec, SPHKernel> &model;
         Solver &solver;
@@ -45,7 +45,6 @@ namespace shammodels::sph::modules {
             auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
             sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
 
-            const u32 ixyz    = sched.pdl().template get_field_idx<Tvec>("xyz");
             const u32 ivxyz   = sched.pdl().template get_field_idx<Tvec>("vxyz");
             const Tscal pmass = solver.solver_config.gpart_mass;
 
@@ -56,19 +55,14 @@ namespace shammodels::sph::modules {
                     u32 len = pdat.get_obj_cnt();
 
                     sham::DeviceBuffer<Tscal> ekin_part(len, dev_sched_ptr);
-                    sham::DeviceBuffer<Tvec> &xyz_buf  = pdat.get_field_buf_ref<Tvec>(ixyz);
                     sham::DeviceBuffer<Tvec> &vxyz_buf = pdat.get_field_buf_ref<Tvec>(ivxyz);
 
                     sham::kernel_call(
                         q,
-                        sham::MultiRef{xyz_buf, vxyz_buf},
+                        sham::MultiRef{vxyz_buf},
                         sham::MultiRef{ekin_part},
                         len,
-                        [pmass](
-                            u32 i,
-                            const Tvec *__restrict xyz,
-                            const Tvec *__restrict vxyz,
-                            Tscal *__restrict ekin_part) {
+                        [pmass](u32 i, const Tvec *__restrict vxyz, Tscal *__restrict ekin_part) {
                             ekin_part[i] = Tscal{0.5} * pmass * sham::dot(vxyz[i], vxyz[i]);
                         });
 

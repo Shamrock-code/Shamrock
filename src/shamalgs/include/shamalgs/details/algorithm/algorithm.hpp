@@ -168,23 +168,4 @@ namespace shamalgs::algorithm {
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len);
 
-    /**
-     * @brief generate a buffer such that for i in [0,len[, buf[i] = i
-     *
-     * @param sched the scheduler to run on
-     * @param len length of the buffer to generate
-     * @return sham::DeviceBuffer<u32> the returned buffer
-     */
-    sham::DeviceBuffer<u32> gen_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len);
-
-    /**
-     * @brief Fill a given buffer such that for i in [0,len[, buf[i] = i
-     *
-     * @param sched the scheduler to run on
-     * @param len length of the buffer to fill
-     * @param buf the buffer to fill
-     */
-    void fill_buffer_index_usm(
-        sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf);
-
 } // namespace shamalgs::algorithm

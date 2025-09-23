@@ -364,9 +364,17 @@ def analysis(ianalysis):
     analysis = shamrock.model_sph.analysisTotalMomentum(model=model)
     total_momentum = analysis.get_total_momentum()
 
+    analysis = shamrock.model_sph.analysisEnergyPotential(model=model)
+    potential_energy = analysis.get_potential_energy()
+
+    analysis = shamrock.model_sph.analysisEnergyKinetic(model=model)
+    kinetic_energy = analysis.get_kinetic_energy()
+
     save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
     save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
     save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
+    save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
+    save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
 
 
 # %%
@@ -598,4 +606,30 @@ plt.xlabel("t")
 plt.ylabel("total_momentum")
 plt.legend(["x", "y", "z"])
 plt.savefig(analysis_folder + "total_momentum.png")
+plt.show()
+
+# %%
+# load the json file for energies
+with open(analysis_folder + "potential_energy.json", "r") as fp:
+    data = json.load(fp)
+potential_energy = data["potential_energy"]
+t = [d["t"] for d in potential_energy]
+potential_energy = [d["potential_energy"] for d in potential_energy]
+
+with open(analysis_folder + "kinetic_energy.json", "r") as fp:
+    data = json.load(fp)
+kinetic_energy = data["kinetic_energy"]
+t = [d["t"] for d in kinetic_energy]
+kinetic_energy = [d["kinetic_energy"] for d in kinetic_energy]
+
+total_energy = [potential_energy[i] + kinetic_energy[i] for i in range(len(potential_energy))]
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, potential_energy)
+plt.plot(t, kinetic_energy)
+plt.plot(t, total_energy)
+plt.xlabel("t")
+plt.ylabel("energy")
+plt.legend(["potential_energy", "kinetic_energy", "total_energy"])
+plt.savefig(analysis_folder + "energies.png")
 plt.show()

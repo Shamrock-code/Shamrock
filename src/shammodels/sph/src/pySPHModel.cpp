@@ -1001,14 +1001,6 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
         },
         py::kw_only(),
         py::arg("model"));
-
-    msph.def(
-        name_class,
-        [](SPHModel_f64_3_M4 &model) {
-            return analysis_impl<Analysis<f64_3, shammath::M4>>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
 }
 
 Register_pymod(pysphmodel) {
@@ -1116,6 +1108,7 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
+    register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
         msph, "analysisEnergyKinetic");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyPotential>(

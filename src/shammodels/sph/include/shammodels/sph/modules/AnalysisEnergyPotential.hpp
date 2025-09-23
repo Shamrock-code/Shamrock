@@ -12,8 +12,8 @@
 /**
  * @file AnalysisEnergyPotential.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisEnergyPotential class with one method
- * AnalysisEnergyPotential.get_potential_energy() *
+ * @brief AnalysisEnergyPotential class with one method 
+ * AnalysisEnergyPotential.get_potential_energy()
  */
 
 #include "shambase/memory.hpp"
@@ -70,8 +70,8 @@ namespace shammodels::sph::modules {
             using EF_LenseThirring     = typename SolverConfigExtForce::LenseThirring;
             using EF_ShearingBoxForce  = typename SolverConfigExtForce::ShearingBoxForce;
 
-            for (auto var_force : solver.solver_config.ext_force_config.ext_forces) {
-                if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+            for (const auto &var_force : solver.solver_config.ext_force_config.ext_forces) {
+                                if (const EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
                     grav_sources.push_back({Tvec{}, ext_force->central_mass});
                 } else if (
                     const EF_LenseThirring *ext_force

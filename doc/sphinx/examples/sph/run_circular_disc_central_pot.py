@@ -547,16 +547,23 @@ if render_gif and shamrock.sys.world_rank() == 0:
     # Show the animation
     plt.show()
 
+# %%
+# helper function to load data from JSON files
+def load_data_from_json(filename, key):
+    filepath = os.path.join(analysis_folder, filename)
+    with open(filepath, "r") as fp:
+        data = json.load(fp)[key]
+    t = [d["t"] for d in data]
+    values = [d[key] for d in data]
+    return t, values
+
 
 # %%
 # load the json file for barycenter
-with open(analysis_folder + "barycenter.json", "r") as fp:
-    data = json.load(fp)
-barycenter = data["barycenter"]
-t = [d["t"] for d in barycenter]
-barycenter_x = [d["barycenter"][0] for d in barycenter]
-barycenter_y = [d["barycenter"][1] for d in barycenter]
-barycenter_z = [d["barycenter"][2] for d in barycenter]
+t, barycenter = load_data_from_json("barycenter.json", "barycenter")
+barycenter_x = [d[0] for d in barycenter]
+barycenter_y = [d[1] for d in barycenter]
+barycenter_z = [d[2] for d in barycenter]
 
 plt.figure(figsize=(8, 5), dpi=200)
 
@@ -571,11 +578,7 @@ plt.show()
 
 # %%
 # load the json file for disc_mass
-with open(analysis_folder + "disc_mass.json", "r") as fp:
-    data = json.load(fp)
-disc_mass = data["disc_mass"]
-t = [d["t"] for d in disc_mass]
-disc_mass = [d["disc_mass"] for d in disc_mass]
+t, disc_mass = load_data_from_json("disc_mass.json", "disc_mass")
 
 plt.figure(figsize=(8, 5), dpi=200)
 
@@ -587,13 +590,10 @@ plt.show()
 
 # %%
 # load the json file for total_momentum
-with open(analysis_folder + "total_momentum.json", "r") as fp:
-    data = json.load(fp)
-total_momentum = data["total_momentum"]
-t = [d["t"] for d in total_momentum]
-total_momentum_x = [d["total_momentum"][0] for d in total_momentum]
-total_momentum_y = [d["total_momentum"][1] for d in total_momentum]
-total_momentum_z = [d["total_momentum"][2] for d in total_momentum]
+t, total_momentum = load_data_from_json("total_momentum.json", "total_momentum")
+total_momentum_x = [d[0] for d in total_momentum]
+total_momentum_y = [d[1] for d in total_momentum]
+total_momentum_z = [d[2] for d in total_momentum]
 
 plt.figure(figsize=(8, 5), dpi=200)
 
@@ -608,14 +608,8 @@ plt.show()
 
 # %%
 # load the json file for energies
-with open(analysis_folder + "potential_energy.json", "r") as fp:
-    potential_energy_data = json.load(fp)["potential_energy"]
-t = [d["t"] for d in potential_energy_data]
-potential_energy = [d["potential_energy"] for d in potential_energy_data]
-
-with open(analysis_folder + "kinetic_energy.json", "r") as fp:
-    kinetic_energy_data = json.load(fp)["kinetic_energy"]
-kinetic_energy = [d["kinetic_energy"] for d in kinetic_energy_data]
+t, potential_energy = load_data_from_json("potential_energy.json", "potential_energy")
+_, kinetic_energy = load_data_from_json("kinetic_energy.json", "kinetic_energy")
 
 total_energy = [p + k for p, k in zip(potential_energy, kinetic_energy)]
 

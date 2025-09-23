@@ -70,7 +70,7 @@ namespace shammodels::sph::modules {
                             const Tvec *__restrict xyz,
                             const Tvec *__restrict vxyz,
                             Tscal *__restrict ekin_part) {
-                            ekin_part[i] = pmass * sham::dot(vxyz[i], vxyz[i]);
+                            ekin_part[i] = Tscal{0.5} * pmass * sham::dot(vxyz[i], vxyz[i]);
                         });
 
                     ekin += shamalgs::primitives::sum(dev_sched_ptr, ekin_part, 0, len);
@@ -80,7 +80,7 @@ namespace shammodels::sph::modules {
 
             if (!solver.storage.sinks.is_empty()) {
                 for (auto &sink : solver.storage.sinks.get()) {
-                    tot_ekin += sink.mass * sham::dot(sink.velocity, sink.velocity);
+                    tot_ekin += Tscal{0.5} * sink.mass * sham::dot(sink.velocity, sink.velocity);
                 }
             }
 

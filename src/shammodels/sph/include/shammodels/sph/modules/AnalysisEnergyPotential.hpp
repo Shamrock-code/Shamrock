@@ -114,8 +114,12 @@ namespace shammodels::sph::modules {
             if (!solver.storage.sinks.is_empty()) {
                 Tscal G = solver.solver_config.get_constant_G();
 
-                for (auto &sink1 : solver.storage.sinks.get()) {
-                    for (auto &sink2 : solver.storage.sinks.get()) {
+                auto &sinks = solver.storage.sinks.get();
+                for (size_t i = 0; i < sinks.size(); ++i) {
+                    for (size_t j = i + 1; j < sinks.size(); ++j) {
+                        const auto &sink1 = sinks[i];
+                        const auto &sink2 = sinks[j];
+
                         Tvec delta = sink1.pos - sink2.pos;
                         Tscal d    = sycl::length(delta);
 

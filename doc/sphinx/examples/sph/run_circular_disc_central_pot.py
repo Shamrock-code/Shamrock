@@ -611,16 +611,13 @@ plt.show()
 # %%
 # load the json file for energies
 with open(analysis_folder + "potential_energy.json", "r") as fp:
-    data = json.load(fp)
-potential_energy = data["potential_energy"]
-t = [d["t"] for d in potential_energy]
-potential_energy = [d["potential_energy"] for d in potential_energy]
+    potential_energy_data = json.load(fp)["potential_energy"]
+t = [d["t"] for d in potential_energy_data]
+potential_energy = [d["potential_energy"] for d in potential_energy_data]
 
 with open(analysis_folder + "kinetic_energy.json", "r") as fp:
-    data = json.load(fp)
-kinetic_energy = data["kinetic_energy"]
-t = [d["t"] for d in kinetic_energy]
-kinetic_energy = [d["kinetic_energy"] for d in kinetic_energy]
+    kinetic_energy_data = json.load(fp)["kinetic_energy"]
+kinetic_energy = [d["kinetic_energy"] for d in kinetic_energy_data]
 
 total_energy = [p + k for p, k in zip(potential_energy, kinetic_energy)]
 

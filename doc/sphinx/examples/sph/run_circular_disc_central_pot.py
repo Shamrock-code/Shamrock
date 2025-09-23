@@ -84,7 +84,7 @@ dump_freq_stop = 2
 plot_freq_stop = 1
 
 dt_stop = 0.01
-nstop = 10
+nstop = 30
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
@@ -116,7 +116,7 @@ sim_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
 
 dump_folder = sim_folder + "dump/"
 analysis_folder = sim_folder + "analysis/"
-plot_folder = sim_folder + "analysis/plots/"
+plot_folder = analysis_folder + "plots/"
 
 dump_prefix = dump_folder + "dump_"
 

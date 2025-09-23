@@ -12,7 +12,7 @@
 /**
  * @file AnalysisTotalMomentum.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_baycenter()
+ * @brief AnalysisTotalMomentum class with one method AnalysisTotalMomentum.get_total_momentum()
  *
  */
 

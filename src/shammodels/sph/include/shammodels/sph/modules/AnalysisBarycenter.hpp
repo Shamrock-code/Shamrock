@@ -13,7 +13,7 @@
  * @file AnalysisBarycenter.hpp
  * @author David Fang (fang.david03@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_baycenter()
+ * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_barycenter()
  *
  */
 

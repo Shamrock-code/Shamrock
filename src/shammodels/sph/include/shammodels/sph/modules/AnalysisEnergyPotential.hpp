@@ -80,8 +80,6 @@ namespace shammodels::sph::modules {
                 }
             }
 
-            logger::raw_ln("S", grav_sources.size());
-
             if (!grav_sources.empty()) {
                 for (auto &grav_source : grav_sources) {
                     sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,

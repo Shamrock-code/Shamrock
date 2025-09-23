@@ -12,7 +12,7 @@
 /**
  * @file AnalysisEnergyPotential.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisEnergyPotential class with one method 
+ * @brief AnalysisEnergyPotential class with one method
  * AnalysisEnergyPotential.get_potential_energy()
  */
 
@@ -20,6 +20,7 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shambackends/math.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -60,7 +61,7 @@ namespace shammodels::sph::modules {
             std::vector<GravSource> grav_sources;
 
             if (!solver.storage.sinks.is_empty()) {
-                for (auto &sink : solver.storage.sinks.get()) {
+                for (const auto &sink : solver.storage.sinks.get()) {
                     grav_sources.push_back({sink.pos, sink.mass});
                 }
             }
@@ -71,7 +72,7 @@ namespace shammodels::sph::modules {
             using EF_ShearingBoxForce  = typename SolverConfigExtForce::ShearingBoxForce;
 
             for (const auto &var_force : solver.solver_config.ext_force_config.ext_forces) {
-                                if (const EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+                if (const EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
                     grav_sources.push_back({Tvec{}, ext_force->central_mass});
                 } else if (
                     const EF_LenseThirring *ext_force
@@ -85,7 +86,7 @@ namespace shammodels::sph::modules {
                 using Tscal4 = sycl::vec<Tscal, 4>;
                 std::vector<Tscal4> sources{};
 
-                for (auto &grav_source : grav_sources) {
+                for (const auto &grav_source : grav_sources) {
                     sources.push_back(
                         {grav_source.pos.x(),
                          grav_source.pos.y(),
@@ -137,22 +138,17 @@ namespace shammodels::sph::modules {
 
             Tscal tot_epot = shamalgs::collective::allreduce_sum(epot);
 
-            if (!solver.storage.sinks.is_empty()) {
-                Tscal G = solver.solver_config.get_constant_G();
+            Tscal G = solver.solver_config.get_constant_G();
 
-                auto &sinks = solver.storage.sinks.get();
-                for (size_t i = 0; i < sinks.size(); ++i) {
-                    for (size_t j = i + 1; j < sinks.size(); ++j) {
-                        const auto &sink1 = sinks[i];
-                        const auto &sink2 = sinks[j];
+            for (size_t i = 0; i < grav_sources.size(); ++i) {
+                for (size_t j = i + 1; j < grav_sources.size(); ++j) {
+                    const auto &sink1 = grav_sources[i];
+                    const auto &sink2 = grav_sources[j];
 
-                        Tvec delta = sink1.pos - sink2.pos;
-                        Tscal d    = sycl::length(delta);
+                    Tvec delta = sink1.pos - sink2.pos;
+                    Tscal d    = sycl::length(delta);
 
-                        if (d > 1e-6 * (sink1.accretion_radius + sink2.accretion_radius)) {
-                            tot_epot += -G * sink1.mass * sink2.mass / d;
-                        }
-                    }
+                    tot_epot += -G * sink1.mass * sink2.mass / sham::inv_sat_positive(d, 1e-16);
                 }
             }
 

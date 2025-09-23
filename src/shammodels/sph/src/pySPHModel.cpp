@@ -935,28 +935,80 @@ void add_analysisTotalMomentum_instance(py::module &m, std::string name_model) {
 }
 
 using namespace shammodels::sph;
-template<typename Tvec, template<class> class SPHKernel>
-auto analysisBarycenter_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
-    -> modules::AnalysisBarycenter<Tvec, SPHKernel> {
-    return modules::AnalysisBarycenter<Tvec, SPHKernel>(model);
+
+template<class Analysis, typename Tvec, template<class> class SPHKernel>
+auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
+    return Analysis(model);
 }
 
-template<typename Tvec, template<class> class SPHKernel>
-auto analysisEnergyKinetic_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
-    -> modules::AnalysisEnergyKinetic<Tvec, SPHKernel> {
-    return modules::AnalysisEnergyKinetic<Tvec, SPHKernel>(model);
-}
+template<template<class, template<class> class> class Analysis>
+void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
 
-template<typename Tvec, template<class> class SPHKernel>
-auto analysisEnergyPotential_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
-    -> modules::AnalysisEnergyPotential<Tvec, SPHKernel> {
-    return modules::AnalysisEnergyPotential<Tvec, SPHKernel>(model);
-}
+    using namespace shammodels::sph;
 
-template<typename Tvec, template<class> class SPHKernel>
-auto analysisTotalMomentum_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
-    -> modules::AnalysisTotalMomentum<Tvec, SPHKernel> {
-    return modules::AnalysisTotalMomentum<Tvec, SPHKernel>(model);
+    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
+    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
+    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+
+    using SPHModel_f64_3_C2 = shammodels::sph::Model<f64_3, shammath::C2>;
+    using SPHModel_f64_3_C4 = shammodels::sph::Model<f64_3, shammath::C4>;
+    using SPHModel_f64_3_C6 = shammodels::sph::Model<f64_3, shammath::C6>;
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M4 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M4>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M6 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M6>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M8 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M8>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C2 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C2>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C4 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C4>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C6 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C6>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M4 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M4>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
 }
 
 Register_pymod(pysphmodel) {
@@ -1064,203 +1116,10 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
-    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
-    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
-    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
-
-    using SPHModel_f64_3_C2 = shammodels::sph::Model<f64_3, shammath::C2>;
-    using SPHModel_f64_3_C4 = shammodels::sph::Model<f64_3, shammath::C4>;
-    using SPHModel_f64_3_C6 = shammodels::sph::Model<f64_3, shammath::C6>;
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M4 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M6 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M8 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M8>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C2 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C2>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C4 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C6 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_M4 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::M4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_M6 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::M6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_M8 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::M8>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_C2 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::C2>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_C4 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::C4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyKinetic",
-        [](SPHModel_f64_3_C6 &model) {
-            return analysisEnergyKinetic_impl<f64_3, shammath::C6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_M4 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::M4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_M6 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::M6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_M8 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::M8>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_C2 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::C2>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_C4 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::C4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisEnergyPotential",
-        [](SPHModel_f64_3_C6 &model) {
-            return analysisEnergyPotential_impl<f64_3, shammath::C6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_M4 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::M4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_M6 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::M6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_M8 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::M8>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_C2 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::C2>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_C4 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::C4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisTotalMomentum",
-        [](SPHModel_f64_3_C6 &model) {
-            return analysisTotalMomentum_impl<f64_3, shammath::C6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
+        msph, "analysisEnergyKinetic");
+    register_analysis_impl_for_each_kernel<modules::AnalysisEnergyPotential>(
+        msph, "analysisEnergyPotential");
+    register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
+        msph, "analysisTotalMomentum");
 }

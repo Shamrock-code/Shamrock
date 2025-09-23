@@ -364,11 +364,8 @@ def analysis(ianalysis):
     analysis = shamrock.model_sph.analysisTotalMomentum(model=model)
     total_momentum = analysis.get_total_momentum()
 
-    analysis = shamrock.model_sph.analysisEnergyPotential(model=model)
-    potential_energy = analysis.get_potential_energy()
-
-    analysis = shamrock.model_sph.analysisEnergyKinetic(model=model)
-    kinetic_energy = analysis.get_kinetic_energy()
+    potential_energy = shamrock.model_sph.analysisEnergyPotential(model=model).get_potential_energy()
+    kinetic_energy = shamrock.model_sph.analysisEnergyKinetic(model=model).get_kinetic_energy()
 
     save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
     save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)

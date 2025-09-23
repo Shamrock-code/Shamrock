@@ -622,7 +622,7 @@ kinetic_energy = data["kinetic_energy"]
 t = [d["t"] for d in kinetic_energy]
 kinetic_energy = [d["kinetic_energy"] for d in kinetic_energy]
 
-total_energy = [potential_energy[i] + kinetic_energy[i] for i in range(len(potential_energy))]
+total_energy = [p + k for p, k in zip(potential_energy, kinetic_energy)]
 
 plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, potential_energy)

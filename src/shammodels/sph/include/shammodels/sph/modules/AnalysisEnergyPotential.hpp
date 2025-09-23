@@ -81,30 +81,58 @@ namespace shammodels::sph::modules {
             }
 
             if (!grav_sources.empty()) {
+
+                using Tscal4 = sycl::vec<Tscal, 4>;
+                std::vector<Tscal4> sources{};
+
                 for (auto &grav_source : grav_sources) {
-                    sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                          shamrock::patch::PatchDataLayer &pdat) {
-                        u32 len = pdat.get_obj_cnt();
-
-                        sham::DeviceBuffer<Tscal> epot_part(len, dev_sched_ptr);
-                        sham::DeviceBuffer<Tvec> &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
-
-                        sham::kernel_call(
-                            q,
-                            sham::MultiRef{xyz_buf},
-                            sham::MultiRef{epot_part},
-                            len,
-                            [pmass,
-                             smass    = grav_source.mass,
-                             G        = solver.solver_config.get_constant_G(),
-                             sink_pos = grav_source.pos](
-                                u32 i, const Tvec *__restrict xyz, Tscal *__restrict epot_part) {
-                                epot_part[i] = -pmass * G * smass / sycl::length(xyz[i] - sink_pos);
-                            });
-
-                        epot += shamalgs::primitives::sum(dev_sched_ptr, epot_part, 0, len);
-                    });
+                    sources.push_back(
+                        {grav_source.pos.x(),
+                         grav_source.pos.y(),
+                         grav_source.pos.z(),
+                         grav_source.mass});
                 }
+
+                sham::DeviceBuffer<Tscal4> sources_buf(sources.size(), dev_sched_ptr);
+                sources_buf.copy_from_stdvec(sources);
+
+                sched.for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+                                                      shamrock::patch::PatchDataLayer &pdat) {
+                    u32 len = pdat.get_obj_cnt();
+
+                    sham::DeviceBuffer<Tscal> epot_part(len, dev_sched_ptr);
+                    sham::DeviceBuffer<Tvec> &xyz_buf = pdat.get_field_buf_ref<Tvec>(ixyz);
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{xyz_buf, sources_buf},
+                        sham::MultiRef{epot_part},
+                        len,
+                        [pmass,
+                         G            = solver.solver_config.get_constant_G(),
+                         source_count = sources.size()](
+                            u32 i,
+                            const Tvec *__restrict xyz,
+                            const Tscal4 *__restrict sources,
+                            Tscal *__restrict epot_part) {
+                            Tscal loc_epot = 0;
+
+                            Tscal smass;
+                            Tvec sink_pos;
+
+                            for (u32 j = 0; j < source_count; ++j) {
+                                Tscal4 source = sources[j];
+
+                                smass    = source.w();
+                                sink_pos = {source.x(), source.y(), source.z()};
+
+                                loc_epot += -pmass * G * smass / sycl::length(xyz[i] - sink_pos);
+                            }
+                            epot_part[i] = loc_epot;
+                        });
+
+                    epot += shamalgs::primitives::sum(dev_sched_ptr, epot_part, 0, len);
+                });
             }
 
             Tscal tot_epot = shamalgs::collective::allreduce_sum(epot);

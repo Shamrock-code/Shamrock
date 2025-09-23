@@ -12,8 +12,7 @@
 /**
  * @file AnalysisEnergyKinetic.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisBarycenter class with one method AnalysisBarycenter.get_baycenter()
- *
+ * @brief AnalysisEnergyKinetic class with one method AnalysisEnergyKinetic.get_kinetic_energy()
  */
 
 #include "shambase/memory.hpp"

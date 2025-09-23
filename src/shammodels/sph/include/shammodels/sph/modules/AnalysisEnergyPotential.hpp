@@ -134,5 +134,4 @@ namespace shammodels::sph::modules {
         }
     };
 
-    template class AnalysisEnergyPotential<f64_3, shammath::M4>;
 } // namespace shammodels::sph::modules

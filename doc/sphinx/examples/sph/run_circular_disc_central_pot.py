@@ -84,7 +84,7 @@ dump_freq_stop = 2
 plot_freq_stop = 1
 
 dt_stop = 0.01
-nstop = 100
+nstop = 10
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
@@ -112,8 +112,12 @@ beta_AV = 2.0
 C_cour = 0.3
 C_force = 0.25
 
+sim_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
 
-dump_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
+dump_folder = sim_folder + "dump/"
+analysis_folder = sim_folder + "analysis/"
+plot_folder = sim_folder + "analysis/plots/"
+
 dump_prefix = dump_folder + "dump_"
 
 
@@ -139,7 +143,10 @@ def cs_profile(r):
 # %%
 # Create the dump directory if it does not exist
 if shamrock.sys.world_rank() == 0:
+    os.makedirs(sim_folder, exist_ok=True)
     os.makedirs(dump_folder, exist_ok=True)
+    os.makedirs(analysis_folder, exist_ok=True)
+    os.makedirs(plot_folder, exist_ok=True)
 
 # %%
 # Utility functions and quantities deduced from the base one
@@ -312,10 +319,25 @@ else:
 def save_rho_integ(ext, arr_rho, iplot):
     if shamrock.sys.world_rank() == 0:
         metadata = {"extent": [-ext, ext, -ext, ext], "time": model.get_time()}
-        np.save(dump_folder + f"rho_integ_{iplot:07}.npy", arr_rho)
+        np.save(plot_folder + f"rho_integ_{iplot:07}.npy", arr_rho)
 
-        with open(dump_folder + f"rho_integ_{iplot:07}.json", "w") as fp:
+        with open(plot_folder + f"rho_integ_{iplot:07}.json", "w") as fp:
             json.dump(metadata, fp)
+
+
+def save_analysis_data(filename, key, value, ianalysis):
+    """Helper to save analysis data to a JSON file."""
+    if shamrock.sys.world_rank() == 0:
+        filepath = os.path.join(analysis_folder, filename)
+        if not os.path.exists(filepath):
+            with open(filepath, "w") as fp:
+                json.dump({key: []}, fp, indent=4)
+        with open(filepath, "r") as fp:
+            data = json.load(fp)
+        data[key] = data[key][:ianalysis]
+        data[key].append({"t": model.get_time(), key: value})
+        with open(filepath, "w") as fp:
+            json.dump(data, fp, indent=4)
 
 
 def analysis(ianalysis):
@@ -342,41 +364,9 @@ def analysis(ianalysis):
     analysis = shamrock.model_sph.analysisTotalMomentum(model=model)
     total_momentum = analysis.get_total_momentum()
 
-    # same with (t, barycenter)
-    if shamrock.sys.world_rank() == 0:
-        if not os.path.exists(dump_folder + "barycenter.json"):
-            with open(dump_folder + "barycenter.json", "w") as fp:
-                json.dump({"barycenter": []}, fp, indent=4)
-        with open(dump_folder + "barycenter.json", "r") as fp:
-            data = json.load(fp)
-        data["barycenter"] = data["barycenter"][:ianalysis]
-        data["barycenter"].append({"t": model.get_time(), "barycenter": barycenter})
-        with open(dump_folder + "barycenter.json", "w") as fp:
-            json.dump(data, fp, indent=4)
-
-    # same with (t, disc_mass)
-    if shamrock.sys.world_rank() == 0:
-        if not os.path.exists(dump_folder + "disc_mass.json"):
-            with open(dump_folder + "disc_mass.json", "w") as fp:
-                json.dump({"disc_mass": []}, fp, indent=4)
-        with open(dump_folder + "disc_mass.json", "r") as fp:
-            data = json.load(fp)
-        data["disc_mass"] = data["disc_mass"][:ianalysis]
-        data["disc_mass"].append({"t": model.get_time(), "disc_mass": disc_mass})
-        with open(dump_folder + "disc_mass.json", "w") as fp:
-            json.dump(data, fp, indent=4)
-
-    # same with (t, total_momentum)
-    if shamrock.sys.world_rank() == 0:
-        if not os.path.exists(dump_folder + "total_momentum.json"):
-            with open(dump_folder + "total_momentum.json", "w") as fp:
-                json.dump({"total_momentum": []}, fp, indent=4)
-        with open(dump_folder + "total_momentum.json", "r") as fp:
-            data = json.load(fp)
-        data["total_momentum"] = data["total_momentum"][:ianalysis]
-        data["total_momentum"].append({"t": model.get_time(), "total_momentum": total_momentum})
-        with open(dump_folder + "total_momentum.json", "w") as fp:
-            json.dump(data, fp, indent=4)
+    save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
+    save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
+    save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
 
 
 # %%
@@ -449,14 +439,14 @@ def plot_rho_integ(metadata, arr_rho, iplot):
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
 
-    plt.savefig(dump_folder + "plot_rho_integ_{:04}.png".format(iplot))
+    plt.savefig(plot_folder + "rho_integ_{:04}.png".format(iplot))
     plt.close()
 
 
 def get_list_dumps_id():
     import glob
 
-    list_files = glob.glob(dump_folder + "rho_integ_*.npy")
+    list_files = glob.glob(plot_folder + "rho_integ_*.npy")
     list_files.sort()
     list_dumps_id = []
     for f in list_files:
@@ -465,9 +455,9 @@ def get_list_dumps_id():
 
 
 def load_rho_integ(iplot):
-    with open(dump_folder + f"rho_integ_{iplot:07}.json") as fp:
+    with open(plot_folder + f"rho_integ_{iplot:07}.json") as fp:
         metadata = json.load(fp)
-    return np.load(dump_folder + f"rho_integ_{iplot:07}.npy"), metadata
+    return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
 
 
 if shamrock.sys.world_rank() == 0:
@@ -538,17 +528,15 @@ def show_image_sequence(glob_str, render_gif):
 # %%
 # Do it for rho integ
 render_gif = True
-glob_str = os.path.join(dump_folder, "plot_rho_integ_*.png")
+glob_str = os.path.join(plot_folder, "rho_integ_*.png")
 
 # If the animation is not returned only a static image will be shown in the doc
 ani = show_image_sequence(glob_str, render_gif)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif
-    # writer = animation.PillowWriter(fps=15,
-    #                                 metadata=dict(artist='Me'),
-    #                                 bitrate=1800)
-    # ani.save('scatter.gif', writer=writer)
+    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+    ani.save(analysis_folder + "rho_integ.gif", writer=writer)
 
     # Show the animation
     plt.show()
@@ -556,7 +544,7 @@ if render_gif and shamrock.sys.world_rank() == 0:
 
 # %%
 # load the json file for barycenter
-with open(dump_folder + "barycenter.json", "r") as fp:
+with open(analysis_folder + "barycenter.json", "r") as fp:
     data = json.load(fp)
 barycenter = data["barycenter"]
 t = [d["t"] for d in barycenter]
@@ -572,12 +560,12 @@ plt.plot(t, barycenter_z)
 plt.xlabel("t")
 plt.ylabel("barycenter")
 plt.legend(["x", "y", "z"])
-plt.savefig(dump_folder + "barycenter.png")
+plt.savefig(analysis_folder + "barycenter.png")
 plt.show()
 
 # %%
 # load the json file for disc_mass
-with open(dump_folder + "disc_mass.json", "r") as fp:
+with open(analysis_folder + "disc_mass.json", "r") as fp:
     data = json.load(fp)
 disc_mass = data["disc_mass"]
 t = [d["t"] for d in disc_mass]
@@ -588,12 +576,12 @@ plt.figure(figsize=(8, 5), dpi=200)
 plt.plot(t, disc_mass)
 plt.xlabel("t")
 plt.ylabel("disc_mass")
-plt.savefig(dump_folder + "disc_mass.png")
+plt.savefig(analysis_folder + "disc_mass.png")
 plt.show()
 
 # %%
 # load the json file for total_momentum
-with open(dump_folder + "total_momentum.json", "r") as fp:
+with open(analysis_folder + "total_momentum.json", "r") as fp:
     data = json.load(fp)
 total_momentum = data["total_momentum"]
 t = [d["t"] for d in total_momentum]
@@ -609,5 +597,5 @@ plt.plot(t, total_momentum_z)
 plt.xlabel("t")
 plt.ylabel("total_momentum")
 plt.legend(["x", "y", "z"])
-plt.savefig(dump_folder + "total_momentum.png")
+plt.savefig(analysis_folder + "total_momentum.png")
 plt.show()

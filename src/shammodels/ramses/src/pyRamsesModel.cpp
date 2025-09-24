@@ -177,8 +177,29 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
                 })
-            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
-                self.npscal_gas_config.npscal_gas = npscal_gas;
+            .def(
+                "set_npscal_gas",
+                [](TConfig &self, u32 npscal_gas) {
+                    self.npscal_gas_config.npscal_gas = npscal_gas;
+                })
+            .def(
+                "set_self_gravity_G_values",
+                [](TConfig &self, bool set_G, f32 G_values) {
+                    self.gravity_config.set_G = set_G;
+                    self.gravity_config.G     = G_values;
+                })
+            .def(
+                "set_self_gravity_Niter_max",
+                [](TConfig &self, u32 Niter) {
+                    self.gravity_config.Niter_max = Niter;
+                })
+            .def(
+                "set_self_gravity_tol",
+                [](TConfig &self, f32 tol) {
+                    self.gravity_config.tol = tol;
+                })
+            .def("set_self_gravity_happy_breakdown_tol", [](TConfig &self, f32 tol) {
+                self.gravity_config.tol_hp_bk = tol;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

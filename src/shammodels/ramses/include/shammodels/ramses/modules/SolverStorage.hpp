@@ -11,6 +11,7 @@
 
 /**
  * @file SolverStorage.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -35,6 +36,7 @@
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/DDSharedScalar.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
@@ -243,6 +245,27 @@ namespace shammodels::basegodunov {
             /// Reset the timings logged in the storage
             void reset() { *this = {}; }
         } timings_details;
+
+        // self-gravity fields
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_p;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_Ap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_hadamard_prod;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> e_norm;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> new_val;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> old_val;
+
+        // for PCG
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_pres;
+
+        // for BICGSTAB
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res_bis;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_s;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_As;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> wstab_val;
     };
 
 } // namespace shammodels::basegodunov

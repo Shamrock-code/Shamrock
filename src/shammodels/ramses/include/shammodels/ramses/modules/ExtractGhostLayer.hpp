@@ -58,6 +58,6 @@ namespace shammodels::basegodunov::modules {
 
         inline virtual std::string _impl_get_label() { return "ExtractGhostLayer"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() { return "TODO"; };
     };
 } // namespace shammodels::basegodunov::modules

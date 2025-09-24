@@ -782,6 +782,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_debug_dump", &T::set_debug_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+        .def("solver_logs_cumulated_step_time", &T::solver_logs_cumulated_step_time)
+        .def("solver_logs_reset_cumulated_step_time", &T::solver_logs_reset_cumulated_step_time)
+        .def("solver_logs_step_count", &T::solver_logs_step_count)
+        .def("solver_logs_reset_step_count", &T::solver_logs_reset_step_count)
         .def(
             "get_time",
             [](T &self) {

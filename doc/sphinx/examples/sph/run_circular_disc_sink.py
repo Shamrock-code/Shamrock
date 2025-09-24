@@ -1,9 +1,9 @@
 """
-Production run: Circular disc & central potential
-=================================================
+Production run: Circular disc & central sink particle
+=====================================================
 
 This example demonstrates how to run a smoothed particle hydrodynamics (SPH)
-simulation of a circular disc orbiting around a central point mass potential.
+simulation of a circular disc orbiting around a central sink.
 
 The simulation models:
 
@@ -113,7 +113,7 @@ beta_AV = 2.0
 C_cour = 0.3
 C_force = 0.25
 
-sim_folder = f"_to_trash/circular_disc_central_pot_{Npart}/"
+sim_folder = f"_to_trash/circular_disc_sink_{Npart}/"
 
 dump_folder = sim_folder + "dump/"
 analysis_folder = sim_folder + "analysis/"
@@ -249,7 +249,6 @@ else:
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
     cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
 
-    cfg.add_ext_force_point_mass(center_mass, center_racc)
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 
     cfg.set_units(codeu)
@@ -311,7 +310,7 @@ else:
 
     model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
 
-    # Correct the barycenter
+    # Correct the barycenter before adding the sink
     analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
     barycenter, disc_mass = analysis_barycenter.get_barycenter()
 
@@ -343,6 +342,9 @@ else:
         and np.isclose(barycenter[2], 0)
     ):
         raise RuntimeError("disc barycenter is not 0")
+
+    # now that the barycenter & momentum are 0, we can add the sink
+    model.add_sink(center_mass, (0, 0, 0), (0, 0, 0), center_racc)
 
     # Run a single step to init the integrator and smoothing length of the particles
     # Here the htolerance is the maximum factor of evolution of the smoothing length in each
@@ -416,6 +418,9 @@ def analysis(ianalysis):
     save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
     save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
     save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
+
+    sinks = model.get_sinks()
+    save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
 
 # %%
@@ -665,4 +670,46 @@ plt.xlabel("t")
 plt.ylabel("energy")
 plt.legend(["potential_energy", "kinetic_energy", "total_energy"])
 plt.savefig(analysis_folder + "energies.png")
+plt.show()
+
+# %%
+# load the json file for sinks
+t, sinks = load_data_from_json("sinks.json", "sinks")
+
+sinks_x = [d[0]["pos"][0] for d in sinks]
+sinks_y = [d[0]["pos"][1] for d in sinks]
+sinks_z = [d[0]["pos"][2] for d in sinks]
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_x, label="sink 0 (x)")
+plt.plot(t, sinks_y, label="sink 0 (y)")
+plt.plot(t, sinks_z, label="sink 0 (z)")
+plt.xlabel("t")
+plt.ylabel("sink position")
+plt.legend()
+plt.savefig(analysis_folder + "sinks.png")
+plt.show()
+
+# %%
+# Sink to barycenter distance
+t, sinks = load_data_from_json("sinks.json", "sinks")
+_, barycenter = load_data_from_json("barycenter.json", "barycenter")
+
+barycenter_x = np.array([d[0] for d in barycenter])
+barycenter_y = np.array([d[1] for d in barycenter])
+barycenter_z = np.array([d[2] for d in barycenter])
+
+sinks_x = np.array([d[0]["pos"][0] for d in sinks])
+sinks_y = np.array([d[0]["pos"][1] for d in sinks])
+sinks_z = np.array([d[0]["pos"][2] for d in sinks])
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_x - barycenter_x, label="sink 0 (x)")
+plt.plot(t, sinks_y - barycenter_y, label="sink 0 (y)")
+plt.plot(t, sinks_z - barycenter_z, label="sink 0 (z)")
+plt.xlabel("t")
+plt.ylabel("sink pos - barycenter pos")
+plt.legend()
+plt.savefig(analysis_folder + "sink_to_barycenter_distance.png")
 plt.show()

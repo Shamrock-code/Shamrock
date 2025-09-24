@@ -714,6 +714,68 @@ namespace shammodels::sph {
 
         Tvec get_closest_part_to(Tvec pos);
 
+        inline void apply_momentum_offset(Tvec offset) {
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            u32 ivxyz = sched.pdl().get_field_idx<Tvec>("vxyz");
+
+            // compute the total mass
+            Tscal tot_mass = 0;
+
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    tot_mass += solver.solver_config.gpart_mass * pdat.get_obj_cnt();
+                });
+
+            tot_mass = shamalgs::collective::allreduce_sum(tot_mass);
+
+            // add the mass of the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    tot_mass += s.mass;
+                }
+            }
+
+            // compute the offset velocity
+            Tvec offset_vel = offset / tot_mass;
+
+            // apply the offset velocity to the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    s.velocity += offset_vel;
+                }
+            }
+
+            // apply the offset velocity to the particles
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    PatchDataField<Tvec> &vxyz = pdat.get_field<Tvec>(ivxyz);
+                    vxyz.apply_offset(offset_vel);
+                });
+        }
+
+        inline void apply_position_offset(Tvec offset) {
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            u32 ixyz = sched.pdl().get_field_idx<Tvec>("xyz");
+
+            // apply the offset velocity to the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    s.pos += offset;
+                }
+            }
+
+            // apply the offset velocity to the particles
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    PatchDataField<Tvec> &xyz = pdat.get_field<Tvec>(ixyz);
+                    xyz.apply_offset(offset);
+                });
+        }
+
         // inline void enable_barotropic_mode(){
         //     sconfig.enable_barotropic();
         // }

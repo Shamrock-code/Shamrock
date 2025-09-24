@@ -320,28 +320,19 @@ else:
 
     model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
 
-    total_momentum = analysis_momentum.get_total_momentum()
+    total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
 
     if shamrock.sys.world_rank() == 0:
-        print(f"disc momentum = {total_momentum}")
+        print(f"disc momentum after correction = {total_momentum}")
 
-    barycenter, disc_mass = analysis_barycenter.get_barycenter()
+    barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
     if shamrock.sys.world_rank() == 0:
-        print(f"disc barycenter = {barycenter}")
+        print(f"disc barycenter after correction = {barycenter}")
 
-    if not (
-        np.isclose(total_momentum[0], 0)
-        and np.isclose(total_momentum[1], 0)
-        and np.isclose(total_momentum[2], 0)
-    ):
+    if not np.allclose(total_momentum, 0.0):
         raise RuntimeError("disc momentum is not 0")
-
-    if not (
-        np.isclose(barycenter[0], 0)
-        and np.isclose(barycenter[1], 0)
-        and np.isclose(barycenter[2], 0)
-    ):
+    if not np.allclose(barycenter, 0.0):
         raise RuntimeError("disc barycenter is not 0")
 
     # Run a single step to init the integrator and smoothing length of the particles

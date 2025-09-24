@@ -45,7 +45,6 @@ then after the run is done (or while it is running), one can run the following t
 import glob
 import json
 import os  # for makedirs
-from math import isclose
 
 import numpy as np
 

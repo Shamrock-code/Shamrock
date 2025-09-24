@@ -738,7 +738,8 @@ namespace shammodels::sph {
             }
 
             // compute the offset velocity
-            Tvec offset_vel = offset / tot_mass;
+            Tvec offset_vel = (tot_mass > 0) ? (offset / tot_mass)
+                                             : shambase::VectorProperties<Tvec>::get_zero();
 
             // apply the offset velocity to the sinks
             if (!solver.storage.sinks.is_empty()) {

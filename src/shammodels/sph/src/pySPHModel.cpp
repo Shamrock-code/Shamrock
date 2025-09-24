@@ -72,6 +72,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
+        .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
@@ -782,6 +784,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_debug_dump", &T::set_debug_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+        .def("solver_logs_cumulated_step_time", &T::solver_logs_cumulated_step_time)
+        .def("solver_logs_reset_cumulated_step_time", &T::solver_logs_reset_cumulated_step_time)
+        .def("solver_logs_step_count", &T::solver_logs_step_count)
+        .def("solver_logs_reset_step_count", &T::solver_logs_reset_step_count)
         .def(
             "get_time",
             [](T &self) {

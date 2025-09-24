@@ -1281,7 +1281,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     u64 Npart_all = scheduler().get_total_obj_count();
 
-    if (false) {
+    if (solver_config.enable_particle_reordering
+        && solve_logs.step_count % solver_config.particle_reordering_step_freq == 0) {
+        logger::info_ln("SPH", "Reordering particles at step ", solve_logs.step_count);
         modules::ParticleReordering<Tvec, u_morton, Kern>(context, solver_config, storage)
             .reorder_particles();
     }

@@ -209,7 +209,6 @@ def get_last_dump():
         try:
             dump_num = int(f[len(dump_prefix) : -5])
             if dump_num > num_max:
-                f_max = f
                 num_max = dump_num
         except ValueError:
             pass
@@ -362,11 +361,11 @@ def save_analysis_data(filename, key, value, ianalysis):
     """Helper to save analysis data to a JSON file."""
     if shamrock.sys.world_rank() == 0:
         filepath = os.path.join(analysis_folder, filename)
-        if not os.path.exists(filepath):
-            with open(filepath, "w") as fp:
-                json.dump({key: []}, fp, indent=4)
-        with open(filepath, "r") as fp:
-            data = json.load(fp)
+        try:
+            with open(filepath, "r") as fp:
+                data = json.load(fp)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {key: []}
         data[key] = data[key][:ianalysis]
         data[key].append({"t": model.get_time(), key: value})
         with open(filepath, "w") as fp:

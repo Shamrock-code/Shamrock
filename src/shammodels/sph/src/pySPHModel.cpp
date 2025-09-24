@@ -600,6 +600,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, f64_3 pos) -> f64_3 {
                 return self.get_closest_part_to(pos);
             })
+        .def("get_patch_count", &T::get_patch_count)
         .def(
             "gen_default_config",
             [](T &self) {

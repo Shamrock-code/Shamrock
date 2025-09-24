@@ -714,6 +714,8 @@ namespace shammodels::sph {
 
         Tvec get_closest_part_to(Tvec pos);
 
+        inline u64 get_patch_count() { return ctx.get_patch_list_global().size(); }
+
         // inline void enable_barotropic_mode(){
         //     sconfig.enable_barotropic();
         // }

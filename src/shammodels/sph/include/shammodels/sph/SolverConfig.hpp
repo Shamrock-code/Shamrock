@@ -913,6 +913,7 @@ namespace shammodels::sph {
             {"h_max_subcycles_count", p.h_max_subcycles_count},
 
             {"enable_particle_reordering", p.enable_particle_reordering},
+            {"particle_reordering_step_freq", p.particle_reordering_step_freq},
 
             {"eos_config", p.eos_config},
 

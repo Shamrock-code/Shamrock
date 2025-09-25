@@ -1024,6 +1024,15 @@ namespace shammodels::sph {
                 p.enable_particle_reordering);
         }
 
+        if (j.contains("particle_reordering_step_freq")) {
+            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "particle_reordering_step_freq not found when deserializing, defaulting to ",
+                p.particle_reordering_step_freq);
+        }
+
         j.at("eos_config").get_to(p.eos_config);
         j.at("artif_viscosity").get_to(p.artif_viscosity);
         j.at("boundary_config").get_to(p.boundary_config);

@@ -12,7 +12,7 @@
 /**
  * @file unique_name_macro.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides macros for generating unique identifiers at compile time.
  *
  */
 

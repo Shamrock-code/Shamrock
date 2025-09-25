@@ -25,8 +25,8 @@
  * @fn __shamrock_unique_name
  * @brief Macro to create a unique name.
  *
- * This macro defines a `base_name` variable with a unique name, either using
- * `__COUNTER__` or `__LINE__` to ensure uniqueness.
+ * This macro creates a unique identifier from `base_name` using `__COUNTER__` or `__LINE__`.
+ * @note The `__LINE__` fallback is not unique for multiple uses on the same line.
  */
 
 #ifdef __COUNTER__

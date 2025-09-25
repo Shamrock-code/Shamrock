@@ -393,6 +393,10 @@ struct shammodels::sph::SolverConfig {
     inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
     u64 particle_reordering_step_freq = 1000;
     inline void set_particle_reordering_step_freq(u64 freq) {
+        if (freq == 0) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "particle_reordering_step_freq cannot be zero");
+        }
         particle_reordering_step_freq = freq;
     }
 

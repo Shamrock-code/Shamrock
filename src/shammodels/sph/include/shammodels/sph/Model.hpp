@@ -796,6 +796,14 @@ namespace shammodels::sph {
 
         inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
         inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline f64 solver_logs_cumulated_step_time() {
+            return solver.solve_logs.get_cumulated_step_time();
+        }
+        inline void solver_logs_reset_cumulated_step_time() {
+            solver.solve_logs.reset_cumulated_step_time();
+        }
+        inline u64 solver_logs_step_count() { return solver.solve_logs.get_step_count(); }
+        inline void solver_logs_reset_step_count() { solver.solve_logs.reset_step_count(); }
 
         inline void change_htolerances(Tscal in_coarse, Tscal in_fine) {
             if (in_coarse < in_fine) {

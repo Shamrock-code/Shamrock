@@ -41,12 +41,26 @@ struct shammodels::sph::SolverLog {
         f64 wtime;
     };
 
-    std::vector<StepInfo> step_logs;
+    std::vector<StepInfo> step_logs = {};
 
-    inline void register_log(StepInfo info) { step_logs.push_back(info); }
+    f64 cumulated_step_time = 0;
+    u64 step_count          = 0;
+
+    inline void register_log(StepInfo info) {
+        step_logs.push_back(info);
+        cumulated_step_time += info.elasped_sec;
+        step_count++;
+    }
 
     f64 get_last_rate();
     u64 get_last_obj_count();
 
     u64 get_iteration_count() { return step_logs.size(); }
+
+    f64 get_cumulated_step_time() { return cumulated_step_time; }
+
+    void reset_cumulated_step_time() { cumulated_step_time = 0; }
+
+    u64 get_step_count() { return step_count; }
+    void reset_step_count() { step_count = 0; }
 };

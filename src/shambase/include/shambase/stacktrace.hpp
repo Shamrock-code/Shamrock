@@ -209,8 +209,8 @@ using NamedStackEntry = shambase::details::NamedBasicStackEntry;
 /**
  * @brief Macro to create a stack entry.
  *
- * This macro defines a `StackEntry` variable with a unique name, either using
- * `__COUNTER__` or `__LINE__` to ensure uniqueness.
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
  */
 #define __shamrock_stack_entry()                                                                   \
     [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}

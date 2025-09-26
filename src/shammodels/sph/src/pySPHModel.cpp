@@ -210,6 +210,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TConfig &self, Tscal cfl_force) {
                 self.cfl_config.cfl_force = cfl_force;
             })
+        .def(
+            "set_eta_sink",
+            [](TConfig &self, Tscal eta_sink) {
+                self.cfl_config.eta_sink = eta_sink;
+            })
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
         .def(
@@ -400,6 +405,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
+        .def("set_eta_sink", &T::set_eta_sink)
         .def("set_particle_mass", &T::set_particle_mass)
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)

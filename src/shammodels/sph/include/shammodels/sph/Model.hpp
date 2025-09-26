@@ -86,6 +86,9 @@ namespace shammodels::sph {
         inline void set_cfl_force(Tscal cfl_force) {
             solver.solver_config.cfl_config.cfl_force = cfl_force;
         }
+        inline void set_eta_sink(Tscal eta_sink) {
+            solver.solver_config.cfl_config.eta_sink = eta_sink;
+        }
         inline void set_particle_mass(Tscal gpart_mass) {
             solver.solver_config.gpart_mass = gpart_mass;
         }

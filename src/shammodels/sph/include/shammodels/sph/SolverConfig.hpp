@@ -82,6 +82,9 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+
+        /// eta sink to control the sink integrator
+        Tscal eta_sink = 0.05;
     };
 
     template<class Tvec>
@@ -768,7 +771,8 @@ namespace shammodels::sph {
         j = nlohmann::json{
             {"cfl_cour", p.cfl_cour},
             {"cfl_force", p.cfl_force},
-            {"cfl_multiplier_stiffness", p.cfl_multiplier_stiffness}};
+            {"cfl_multiplier_stiffness", p.cfl_multiplier_stiffness},
+            {"eta_sink", p.eta_sink}};
     }
 
     /**
@@ -782,6 +786,14 @@ namespace shammodels::sph {
         j.at("cfl_cour").get_to<Tscal>(p.cfl_cour);
         j.at("cfl_force").get_to<Tscal>(p.cfl_force);
         j.at("cfl_multiplier_stiffness").get_to<Tscal>(p.cfl_multiplier_stiffness);
+
+        if (j.contains("eta_sink")) {
+            j.at("eta_sink").get_to<Tscal>(p.eta_sink);
+        } else {
+            // Already set to default value
+            ON_RANK_0(shamlog_warn_ln(
+                "SPHConfig", "eta_sink not found when deserializing, defaulting to", p.eta_sink));
+        }
     }
 
     /**

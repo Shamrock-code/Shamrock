@@ -85,7 +85,8 @@ namespace shambase::logs {
         else if constexpr (std::is_pointer_v<T>) {
             // Convert the pointer to a void pointer, format it as a hexadecimal string, and
             // concatenate it with the formatted string from the remaining arguments
-            return shambase::format("{} ", static_cast<void *>(var1)) + format_message(var2...);
+            return shambase::format("{} ", static_cast<const void *>(var1))
+                   + format_message(var2...);
         }
 
         else {

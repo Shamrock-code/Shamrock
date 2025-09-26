@@ -1865,6 +1865,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     SinkParticle<Tvec> &s_i = sink_parts[i];
                     Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
 
+                    Tvec f_i = s_i.ext_acceleration;
+
+                    Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+
+                    if (grad_phi_i_sq == 0) {
+                        continue;
+                    }
+
                     for (u32 j = 0; j < sink_parts.size(); j++) {
                         SinkParticle<Tvec> &s_j = sink_parts[j];
 
@@ -1874,16 +1882,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                         Tvec rij       = s_i.pos - s_j.pos;
                         Tscal rij_scal = sycl::length(rij);
-                        Tscal phi_ij   = G * s_i.mass * s_j.mass / rij_scal;
 
-                        Tscal grad_phi_i_sq = sham::dot(s_i.ext_acceleration, s_i.ext_acceleration);
+                        Tscal phi_ij  = G * s_j.mass / rij_scal;           // J / kg = m^2.s^-2
+                        Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
+                        Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
 
-                        if (grad_phi_i_sq == 0) {
-                            continue;
-                        }
-
-                        Tscal dt_ij
-                            = C_force * eta_phi * sycl::sqrt(sham::abs(phi_ij) / grad_phi_i_sq);
                         sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
                     }
 

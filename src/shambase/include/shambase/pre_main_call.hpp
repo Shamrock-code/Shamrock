@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file unique_name_macro.hpp
+ * @file pre_main_call.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Provides a macro to call a lambda before main
  *
@@ -39,8 +39,6 @@
  * });
  * PRE_MAIN_FUNCTION_CALL(pre_main_call_function);
  * @endcode
- *
- * @param lambda The lambda or function to call
  *
  * @param lambda The lambda or function to call
  */

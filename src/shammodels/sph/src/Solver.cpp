@@ -1850,7 +1850,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             Tscal rank_dt = cfl_dt.compute_rank_min();
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
-            {
+            if (!storage.sinks.is_empty()) {
                 // sink sink CFL
 
                 Tscal G = solver_config.get_constant_G();
@@ -1861,18 +1861,29 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
 
-                for (SinkParticle<Tvec> &s_i : sink_parts) {
-                    Tscal sink_sink_cfl_i = shambase::get_infty<Tscal>();
+                for (u32 i = 0; i < sink_parts.size(); i++) {
+                    SinkParticle<Tvec> &s_i = sink_parts[i];
+                    Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
 
-                    for (SinkParticle<Tvec> &s_j : sink_parts) {
+                    for (u32 j = 0; j < sink_parts.size(); j++) {
+                        SinkParticle<Tvec> &s_j = sink_parts[j];
+
+                        if (i == j) {
+                            continue;
+                        }
+
                         Tvec rij       = s_i.pos - s_j.pos;
                         Tscal rij_scal = sycl::length(rij);
                         Tscal phi_ij   = G * s_i.mass * s_j.mass / rij_scal;
 
-                        Tscal dt_ij = C_force * eta_phi
-                                      * sycl::sqrt(
-                                          sham::abs(phi_ij)
-                                          / sham::dot(s_i.ext_acceleration, s_i.ext_acceleration));
+                        Tscal grad_phi_i_sq = sham::dot(s_i.ext_acceleration, s_i.ext_acceleration);
+
+                        if (grad_phi_i_sq == 0) {
+                            continue;
+                        }
+
+                        Tscal dt_ij
+                            = C_force * eta_phi * sycl::sqrt(sham::abs(phi_ij) / grad_phi_i_sq);
                         sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
                     }
 

@@ -154,9 +154,10 @@ namespace shammodels::sph {
             bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
                                || bool(std::get_if<MonofluidComplete>(&current_mode));
             if (is_not_none) {
-                ON_RANK_0(logger::warn_ln(
-                    "SPH::config",
-                    "Dust config != None is work in progress, use it at your own risk"));
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "Dust config != None is work in progress, use it at your own risk"));
             }
         }
     };

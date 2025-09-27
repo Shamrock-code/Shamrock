@@ -465,11 +465,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                     mu *= (-dt / (ndust + 1));
 
                     // get ptr to datas
-                    f64 *ptr_loc_A  = local_A.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_B  = local_B.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_F  = local_F.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_I  = local_I.get_pointer() + mat_size_squared * loc_id;
-                    f64 *ptr_loc_Id = local_Id.get_pointer() + mat_size_squared * loc_id;
+                    f64 *ptr_loc_A  = &(local_A[0]) + mat_size_squared * loc_id;
+                    f64 *ptr_loc_B  = &(local_B[0]) + mat_size_squared * loc_id;
+                    f64 *ptr_loc_F  = &(local_F[0]) + mat_size_squared * loc_id;
+                    f64 *ptr_loc_I  = &(local_I[0]) + mat_size_squared * loc_id;
+                    f64 *ptr_loc_Id = &(local_Id[0]) + mat_size_squared * loc_id;
 
                     // create mdspan(s)
                     std::mdspan<f64, std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>

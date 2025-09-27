@@ -205,7 +205,7 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     inline Tscal get_constant_G() {
         if (!unit_sys) {
-            logger::warn_ln("amr::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("amr::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
         } else {
@@ -270,11 +270,11 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_dust_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Dust is experimental"));
         }
 
         if (is_gravity_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 
             if (!shamrock::are_experimental_features_allowed()) {
@@ -292,7 +292,7 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_gas_passive_scalar_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "

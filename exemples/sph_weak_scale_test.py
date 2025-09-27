@@ -65,7 +65,9 @@ model.resize_simulation_box(bmin, bmax)
 
 setup = model.get_setup()
 gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
-setup.apply_setup(gen, insert_step=scheduler_split_val)
+
+# On aurora /2 was correct to avoid out of memory
+setup.apply_setup(gen, insert_step=int(scheduler_split_val / 2))
 
 
 xc, yc, zc = model.get_closest_part_to((0, 0, 0))

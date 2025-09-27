@@ -61,6 +61,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     sink_update.compute_sph_forces();
 
+    if (solver_config.ext_force_config.ext_forces.empty()) {
+        return;
+    }
+
     auto field_xyz = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
 
     shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_xyz(

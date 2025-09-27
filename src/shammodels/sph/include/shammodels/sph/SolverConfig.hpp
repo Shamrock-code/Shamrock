@@ -154,9 +154,10 @@ namespace shammodels::sph {
             bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
                                || bool(std::get_if<MonofluidComplete>(&current_mode));
             if (is_not_none) {
-                logger::warn_ln(
-                    "SPH::config",
-                    "Dust config != None is work in progress, use it at your own risk");
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "Dust config != None is work in progress, use it at your own risk"));
             }
         }
     };
@@ -232,7 +233,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant G based on the unit system.
     inline Tscal get_constant_G() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
         } else {
@@ -243,7 +244,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant c based on the unit system.
     inline Tscal get_constant_c() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.c();
         } else {
@@ -254,7 +255,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant mu_0 based on the unit system.
     inline Tscal get_constant_mu_0() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.mu_0();
         } else {

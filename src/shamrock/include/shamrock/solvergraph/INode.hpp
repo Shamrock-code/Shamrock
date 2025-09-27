@@ -80,6 +80,31 @@ namespace shamrock::solvergraph {
         inline std::string get_tex() { return _impl_get_tex(); };
         inline std::string get_tex_partial() { return _impl_get_tex(); };
 
+        inline virtual std::string print_node_info() {
+            std::string node_info = shambase::format("Node info :\n");
+            node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
+            node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
+            node_info += shambase::format(" - Node label : {}\n", _impl_get_label());
+
+            auto append_edges_info = [&](const char *title, const auto &edges) {
+                node_info += shambase::format(" - {}: {}\n", title, edges.size());
+                for (const auto &edge : edges) {
+                    const auto &e = *edge; // necessary to avoid -Wpotentially-evaluated-expression
+                    node_info += shambase::format(
+                        "     - Edge ptr = {}, uuid = {}, label = {},\n          type = {} \n",
+                        static_cast<void *>(edge.get()),
+                        edge->get_uuid(),
+                        edge->get_label(),
+                        typeid(e).name());
+                }
+            };
+
+            append_edges_info("Node Read Only edges", ro_edges);
+            append_edges_info("Node Read Write edges", rw_edges);
+
+            return node_info;
+        };
+
         protected:
         virtual void _impl_evaluate_internal() = 0;
 

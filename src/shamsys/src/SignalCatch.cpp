@@ -21,40 +21,43 @@
 namespace shamsys::details {
     void signal_callback_handler(int signum) {
 
-        auto get_signame = [&]() -> std::string {
-            if (signum == SIGKILL) {
-                return "SIGKILL";
-            }
-            if (signum == SIGTERM) {
-                return "SIGTERM";
-            }
-            if (signum == SIGINT) {
-                return "SIGINT";
-            }
-            if (signum == SIGSEGV) {
-                return "SIGSEGV";
-            }
-            return std::to_string(signum);
-        };
+        const char *signame = nullptr;
+        switch (signum) {
+        case SIGTERM: signame = "SIGTERM"; break;
+        case SIGINT : signame = "SIGINT"; break;
+        case SIGSEGV: signame = "SIGSEGV"; break;
+        default     : signame = "UNKNOWN"; break;
+        }
 
+        // ensure that we print in one block to avoid interleaving
         std::string log = fmt::format(
-            "!!! Received signal : {} from world rank {}\nCurrent stacktrace : \n{}\nexiting ...",
-            get_signame(),
+            "!!! Received signal : {} (code {}) from world rank {}\n"
+            "Current stacktrace : \n"
+            "{}\n"
+            "exiting ...",
+            signame,
+            signum,
             shamcomm::world_rank(),
             shambase::fmt_callstack());
 
         std::cout << log << std::endl;
 
-        // Restore default handler and raise signal again
-        signal(signum, SIG_DFL);
+        // raise signal again since the handler was reset to the default (see SA_RESETHAND)
         raise(signum);
     }
 } // namespace shamsys::details
 
 namespace shamsys {
     void register_signals() {
-        signal(SIGTERM, details::signal_callback_handler);
-        signal(SIGINT, details::signal_callback_handler);
-        signal(SIGSEGV, details::signal_callback_handler);
+        struct sigaction sa = {};
+
+        sa.sa_handler = details::signal_callback_handler;
+        sigemptyset(&sa.sa_mask);
+        // SA_RESETHAND resets the signal action to the default before calling the handler.
+        sa.sa_flags = SA_RESETHAND;
+
+        sigaction(SIGTERM, &sa, NULL);
+        sigaction(SIGINT, &sa, NULL);
+        sigaction(SIGSEGV, &sa, NULL);
     }
 } // namespace shamsys

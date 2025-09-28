@@ -31,23 +31,23 @@ namespace shamsys::details {
             if (signum == SIGINT) {
                 return "SIGINT";
             }
+            if (signum == SIGSEGV) {
+                return "SIGSEGV";
+            }
             return std::to_string(signum);
         };
 
-        std::cout << "... received signal world rank=" + std::to_string(shamcomm::world_rank())
-                         + " : " + get_signame() + "\ncurrent stacktrace : \n"
-                         + shambase::fmt_callstack()
-                  << std::endl;
+        std::string log = fmt::format(
+            "!!! Received signal : {} from world rank {}\nCurrent stacktrace : \n{}\nexiting ...",
+            get_signame(),
+            shamcomm::world_rank(),
+            shambase::fmt_callstack());
 
-        // std::cout << "dump profiling : " << std::endl;
+        std::cout << log << std::endl;
 
-#ifdef SHAMROCK_USE_PROFILING
-// shambase::details::dump_profiling(shamcomm::world_rank());
-#endif
-
-        std::cout << "exiting ... " << std::endl;
-        // Terminate program
-        exit(signum);
+        // Restore default handler and raise signal again
+        signal(signum, SIG_DFL);
+        raise(signum);
     }
 } // namespace shamsys::details
 
@@ -55,6 +55,6 @@ namespace shamsys {
     void register_signals() {
         signal(SIGTERM, details::signal_callback_handler);
         signal(SIGINT, details::signal_callback_handler);
-        signal(SIGKILL, details::signal_callback_handler);
+        signal(SIGSEGV, details::signal_callback_handler);
     }
 } // namespace shamsys

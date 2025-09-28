@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
+#include "shamsys/SignalCatch.hpp"
 
 /// Call bindings init for the shamrock python module
 PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
@@ -185,6 +186,8 @@ int main(int argc, char *argv[]) {
             std::string pybin = std::string(opts::get_option("--pypath-from-bin"));
             shambindings::setpypath_from_binary(pybin);
         }
+
+        shamsys::register_signals();
 
         shamtest::TestConfig cfg{};
 

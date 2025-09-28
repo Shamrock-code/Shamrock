@@ -29,6 +29,7 @@
 #include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/SignalCatch.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include "shamtest/shamtest.hpp"
 #include <pybind11/embed.h>
@@ -36,7 +37,6 @@
 #include <cstdlib>
 #include <stdexcept>
 #include <string>
-#include "shamsys/SignalCatch.hpp"
 
 /// Call bindings init for the shamrock python module
 PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }

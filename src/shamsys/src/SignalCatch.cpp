@@ -13,10 +13,12 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <csignal>
+#include <stdexcept>
 
 namespace shamsys::details {
     void signal_callback_handler(int signum) {
@@ -56,8 +58,17 @@ namespace shamsys {
         // SA_RESETHAND resets the signal action to the default before calling the handler.
         sa.sa_flags = SA_RESETHAND;
 
-        sigaction(SIGTERM, &sa, NULL);
-        sigaction(SIGINT, &sa, NULL);
-        sigaction(SIGSEGV, &sa, NULL);
+        if (sigaction(SIGTERM, &sa, NULL) != 0) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Failed to register SIGTERM signal handler");
+        }
+        if (sigaction(SIGINT, &sa, NULL) != 0) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Failed to register SIGINT signal handler");
+        }
+        if (sigaction(SIGSEGV, &sa, NULL) != 0) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Failed to register SIGSEGV signal handler");
+        }
     }
 } // namespace shamsys

@@ -23,13 +23,17 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void NodeSumReduction<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
+        // logger::raw_ln("SRed: \t", &edges.spans_in,"\n");
         edges.spans_in.check_sizes(edges.sizes.indexes);
         T loc_val = {};
 
         edges.spans_in.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
             loc_val += res_field_ref.compute_sum();
+            // logger::raw_ln("id_a = [ ", i, " ] : ", loc_val, "\n");
         });
         edges.out_scal.value = shamalgs::collective::allreduce_sum(loc_val);
+
+        // logger::raw_ln("global = [ ",edges.out_scal.value ,"\n");
     }
 
     template<class T>

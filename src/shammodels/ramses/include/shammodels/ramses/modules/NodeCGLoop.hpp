@@ -21,6 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/CGInit.hpp"
+#include "shammodels/ramses/modules/NodeAXPYThreeVectors.hpp"
 #include "shammodels/ramses/modules/NodeAXPYTwoVectors.hpp"
 #include "shammodels/ramses/modules/NodeAYPXTwoVectors.hpp"
 #include "shammodels/ramses/modules/NodeHadamardProd.hpp"
@@ -30,11 +31,19 @@
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
+#include "shamrock/solvergraph/DDSharedBuffers.hpp"
+#include "shamrock/solvergraph/ExchangeGhostField.hpp"
+#include "shamrock/solvergraph/ExtractGhostField.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamrock/solvergraph/ReplaceGhostFields.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include <memory>
 
 namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
@@ -70,12 +79,43 @@ namespace shammodels::basegodunov::modules {
         // New-A-conjugate vector p node
         modules::NodeAYPXTwoVectors<Tscal> node8{block_size};
 
+        //
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> copy_phi_p
+            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                AMRBlock::block_size, "phi_p_cp", "phi_p_cp");
+        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> p_ghosts
+            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
+                "p_ghots", "p_ghots");
+
+        // Copy original phi_p node
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_cp_phi_p{};
+
+        // Extract ghosts for Field
+        shamrock::solvergraph::ExtractGhostField<Tscal> node_gz{block_size};
+
+        // Exchange ghosts for field
+        shamrock::solvergraph::ExchangeGhostField<Tscal> node_exch_gz{};
+
+        // Replace ghosts for field
+        shamrock::solvergraph::ReplaceGhostFields<Tscal> node_replace_gz{block_size};
+
+        // Copy original phi_p back after modif node
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_cp_phi_p_back{};
+
+        // New-A-conjugate vector p node
+        modules::NodeAYPXTwoVectors<Tscal> node8_bis{block_size};
+
+        // ramdom node
+        modules::NodeAXPYThreeVectors<Tscal> node_test{block_size};
+
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
             const shamrock::solvergraph::Field<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::FieldRefs<Tscal> &spans_rho;
             const shamrock::solvergraph::ScalarEdge<Tscal> &mean_rho;
+            const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghost;
+            const shamrock::solvergraph::ScalarsEdge<u32> &rank_owner;
             shamrock::solvergraph::FieldRefs<Tscal> &spans_phi;
             shamrock::solvergraph::Field<Tscal> &spans_phi_res;
             shamrock::solvergraph::Field<Tscal> &spans_phi_p;
@@ -94,6 +134,8 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_block_cell_sizes,
             std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> spans_rho,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> mean_rho,
+            std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost,
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> rank_owner,
             std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> spans_phi,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_res,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_p,
@@ -107,7 +149,13 @@ namespace shammodels::basegodunov::modules {
 
         ) {
             __internal_set_ro_edges(
-                {sizes, cell_neigh_graph, spans_block_cell_sizes, spans_rho, mean_rho});
+                {sizes,
+                 cell_neigh_graph,
+                 spans_block_cell_sizes,
+                 spans_rho,
+                 mean_rho,
+                 idx_in_ghost,
+                 rank_owner});
             __internal_set_rw_edges(
                 {spans_phi,
                  spans_phi_res,
@@ -149,14 +197,34 @@ namespace shammodels::basegodunov::modules {
             // set node5 edges
             node5.set_edges(sizes, spans_phi_p, alpha, spans_phi);
 
-            // set node6 sedges
+            // set node6 edges
             node6.set_edges(sizes, spans_phi_Ap, alpha, spans_phi_res);
 
             // set node7 edges
             node7.set_edges(spans_phi_res, new_values);
 
             // set node8 edges
+            // node8.set_edges(sizes, spans_phi_res, beta, spans_phi_p);
+            node_cp_phi_p.set_edges(spans_phi_p, copy_phi_p);
+
+            // node8.set_edges(sizes, spans_phi_res, beta, copy_phi_p);
+
             node8.set_edges(sizes, spans_phi_res, beta, spans_phi_p);
+
+            // // set node_gz edges
+            node_gz.set_edges(spans_phi_p, idx_in_ghost, p_ghosts);
+
+            // // set node_exch_gz edges
+            node_exch_gz.set_edges(rank_owner, p_ghosts);
+
+            // // Replace ghosts
+            // node_replace_gz.set_edges(p_ghosts,spans_phi_p);
+            node_replace_gz.set_edges(p_ghosts, spans_phi_p);
+
+            // // copy phi_p back edges
+            node_cp_phi_p_back.set_edges(copy_phi_p, spans_phi_p);
+            node8_bis.set_edges(sizes, spans_phi_res, beta, spans_phi_p);
+            node_test.set_edges(sizes, spans_phi_p, copy_phi_p, alpha, beta, spans_phi_Ap);
         }
 
         inline Edges get_edges() {
@@ -166,6 +234,8 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::Field<Tscal>>(2),
                 get_ro_edge<shamrock::solvergraph::FieldRefs<Tscal>>(3),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(4),
+                get_ro_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(5),
+                get_ro_edge<shamrock::solvergraph::ScalarsEdge<u32>>(6),
                 get_rw_edge<shamrock::solvergraph::FieldRefs<Tscal>>(0),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(1),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(2),

@@ -118,6 +118,9 @@ namespace shamrock::solvergraph {
         }
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field.field_data.get(id_patch); }
+        inline const PatchDataField<T> &get_field(u64 id_patch) const {
+            return field.field_data.get(id_patch);
+        }
 
         void set_fields(ComputeField<T> fields) {
             field = fields;

@@ -20,13 +20,17 @@ void shammodels::basegodunov::modules::FuseGhostLayer::_impl_evaluate_internal()
 
     auto &ghost_layer       = edges.ghost_layer;
     auto &patch_data_layers = edges.patch_data_layers;
-
+    // logger::raw_ln("Fuse ghost Layer ==== bf ==== : ",  patch_data_layers.get(0).get_obj_cnt(),
+    // "\n");
     ghost_layer.patchdatas.for_each(
         [&]([[maybe_unused]] u64 sender,
             u64 receiver,
             const shamrock::patch::PatchDataLayer &ghost_layer_element) {
             patch_data_layers.get(receiver).insert_elements(ghost_layer_element);
         });
+
+    // logger::raw_ln("Fuse ghost Layer ==== af ==== : ", patch_data_layers.get(0).get_obj_cnt(),
+    // "\n");
 }
 
 std::string shammodels::basegodunov::modules::FuseGhostLayer::_impl_get_tex() { return "TODO"; }

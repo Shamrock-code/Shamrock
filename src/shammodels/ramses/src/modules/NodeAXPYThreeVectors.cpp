@@ -45,6 +45,8 @@ namespace {
                 cell_counts,
                 [alpha,
                  beta](u32 i, const T *__restrict x, const T *__restrict y, T *__restrict z) {
+                    // logger::raw_ln("id_a = x-y-z[ ", i, " ] : ", x[i] - y[i], "  ","\n");
+
                     z[i] = z[i] + alpha * x[i] + beta * y[i];
                 });
         }

@@ -27,29 +27,32 @@ namespace shamrock::solvergraph {
     template<class T>
     class ReplaceGhostFields : public INode {
 
-        ReplaceGhostFields() {}
+        u32 block_size;
+
+        public:
+        ReplaceGhostFields(u32 block_size) : block_size(block_size) {}
 
         struct Edges {
-            const shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
-            shamrock::solvergraph::Field<T> &fields;
+            shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
+            shamrock::solvergraph::IFieldRefs<T> &fields;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields,
-            std::shared_ptr<shamrock::solvergraph::Field<T>> fields) {
-            __internal_set_ro_edges({ghost_fields});
-            __internal_set_rw_edges({fields});
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> fields) {
+            __internal_set_ro_edges({});
+            __internal_set_rw_edges({ghost_fields, fields});
         }
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0),
-                get_rw_edge<shamrock::solvergraph::Field<T>>(0)};
+                get_rw_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0),
+                get_rw_edge<shamrock::solvergraph::IFieldRefs<T>>(1)};
         }
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_lable() { return "ReplaceGhostField"; };
+        inline virtual std::string _impl_get_label() { return "ReplaceGhostField"; };
 
         virtual std::string _impl_get_tex() { return "TODO"; };
     };

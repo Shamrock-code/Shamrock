@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 32
+    base = 8
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -23,16 +23,16 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     cfg.set_eos_gamma(1.4)
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(False)
-    # cfg.set_gravity_mode_cg()
+    cfg.set_gravity_mode_cg()
     # cfg.set_gravity_mode_pcg()
-    cfg.set_gravity_mode_bicgstab()
+    # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(20)
+    cfg.set_self_gravity_Niter_max(50)
     cfg.set_self_gravity_tol(1e-18)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 
     model.set_solver_config(cfg)
-    model.init_scheduler(int(1e7), 1)
+    model.init_scheduler(int(100), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     def rho_map(rmin, rmax):

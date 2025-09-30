@@ -24,6 +24,7 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void ResidualDot<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
+        // logger::raw_ln("DDot: \t", &edges.spans_phi_res,"\n");
 
         Tscal loc_val = {};
         edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {

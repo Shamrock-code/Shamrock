@@ -20,6 +20,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/modules/CGLaplacianStencil.hpp"
 #include "shammodels/ramses/modules/NodeSpMVPoisson3D.hpp"
@@ -103,6 +104,18 @@ namespace {
                                 });
 
                             out[cell_global_id] = Ap_id;
+
+                            // if(cell_global_id % 25 == 0)
+                            // {
+                            //     logger::raw_ln("id_a = [ ", cell_global_id, " ] : ",
+                            //     in[cell_global_id], " --- ",out[cell_global_id], "  ","\n");
+                            // }
+
+                            // if( (cell_global_id % 150) == 0)
+                            // {
+                            //     logger::raw_ln("id_a = [ ", cell_global_id, " ] : ",
+                            //     out[cell_global_id], "\n");
+                            // }
                         });
                 });
         }
@@ -115,6 +128,7 @@ namespace shammodels::basegodunov::modules {
     void NodeSpMVPoisson3D<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
+        // logger::raw_ln("SPMV:[p, Ap] \t", &edges.spans_in, "-", &edges.spans_out,"\n");
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_in.check_sizes(edges.sizes.indexes);
         edges.spans_out.ensure_sizes(edges.sizes.indexes);

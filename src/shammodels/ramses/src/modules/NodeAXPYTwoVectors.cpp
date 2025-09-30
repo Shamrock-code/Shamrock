@@ -43,6 +43,11 @@ namespace {
                 cell_counts,
                 [alpha](u32 i, const T *__restrict x, T *__restrict y) {
                     y[i] = y[i] + alpha * x[i];
+
+                    // if( (i >= 480) && (i <= 540 ))
+                    // {
+                    //     logger::raw_ln("id_a = [ ", i, " ] : ", x[i], "\n");
+                    // }
                 });
         }
     };
@@ -54,6 +59,9 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void NodeAXPYTwoVectors<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
+
+        // logger::raw_ln("AXPY:[x, y] \t", &edges.spans_x, "-", &edges.spans_y,"\n");
+        // logger::raw_ln(&edges.spans_x,&edges.spans_y,&edges.sizes,&edges.alpha);
 
         edges.spans_x.check_sizes(edges.sizes.indexes);
         edges.spans_y.ensure_sizes(edges.sizes.indexes);

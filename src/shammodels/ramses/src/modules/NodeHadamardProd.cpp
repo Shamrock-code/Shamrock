@@ -45,6 +45,11 @@ namespace {
                 [block_size](
                     u32 i, const T *__restrict in1, const T *__restrict in2, T *__restrict out) {
                     out[i] = in1[i] * in2[i];
+
+                    // if( (i >= 480) && (i <= 540 ))
+                    // {
+                    //     logger::raw_ln("id_a = [ ", i, " ] : ", out[i], "\n");
+                    // }
                 });
         }
     };
@@ -56,6 +61,8 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void NodeHadamardProd<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
+        // logger::raw_ln("Had:[p,Ap,had] \t", &edges.spans_in1, "-", &edges.spans_in2,"-",
+        // &edges.spans_out,"\n");
 
         edges.spans_in1.check_sizes(edges.sizes.indexes);
         edges.spans_in2.check_sizes(edges.sizes.indexes);

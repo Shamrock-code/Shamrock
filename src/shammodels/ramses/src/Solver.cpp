@@ -664,8 +664,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 std::make_shared<decltype(attach_rhov_dust)>(std::move(attach_rhov_dust)));
         }
 
-        if (solver_config.is_gravity_on()){
-             shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_phi
+        if (solver_config.is_gravity_on()) {
+            shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_phi
                 = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(storage.ghost_layout, "phi");
             attach_phi.set_edges(storage.merged_patchdata_ghost, storage.refs_phi);
             solver_sequence.push_back(
@@ -755,6 +755,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.block_cell_sizes,
                 storage.refs_rho,
                 storage.rho_mean,
+                storage.idx_in_ghost,
+                storage.patch_rank_owner,
                 storage.refs_phi,
                 storage.phi_res,
                 storage.phi_p,

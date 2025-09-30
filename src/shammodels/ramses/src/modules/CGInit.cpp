@@ -115,6 +115,16 @@ namespace shammodels::basegodunov::modules {
     void CGInit<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
+        logger::raw_ln(
+            "Init:[phi,rho,res,p] \t",
+            &edges.spans_phi,
+            "-",
+            &edges.spans_rho,
+            "-",
+            &edges.spans_phi_res,
+            "-",
+            &edges.spans_phi_p,
+            "\n");
 
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_phi.check_sizes(edges.sizes.indexes);

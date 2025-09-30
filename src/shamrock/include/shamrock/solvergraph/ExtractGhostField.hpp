@@ -17,9 +17,13 @@
  *
  */
 
+#include "shambase/DistributedDataShared.hpp"
 #include "shambase/aliases_int.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
@@ -31,26 +35,36 @@ namespace shamrock::solvergraph {
     template<class T>
     class ExtractGhostField : public INode {
 
+        u32 block_size;
+
         public:
-        ExtractGhostField() {}
+        ExtractGhostField(u32 block_size) : block_size(block_size) {}
+
+        shamrock::solvergraph::CopyPatchDataField<T> node_cpy_field{};
 
         struct Edges {
-            const shamrock::solvergraph::Field<T> &original_fields;
+            const shamrock::solvergraph::IFieldRefs<T> &original_fields;
             const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghots;
             shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
         };
 
+        //     std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> copy_field =
+        //     std::make_shared<shamrock::solvergraph::Field<T>>(
+        //    block_size, "copy_field", "copy_field");
+
         inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Field<T>> original_fields,
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> original_fields,
             std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghosts,
             std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields) {
             __internal_set_ro_edges({original_fields, idx_in_ghosts});
             __internal_set_rw_edges({ghost_fields});
+
+            // node_cpy_field.set_edges(original_fields, copy_field);
         }
 
         Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::Field<T>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
                 get_ro_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(1),
                 get_rw_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0)};
         }
@@ -59,6 +73,6 @@ namespace shamrock::solvergraph {
 
         inline virtual std::string _impl_get_label() { return "ExtractGhostField"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() { return "TODO"; };
     };
 } // namespace shamrock::solvergraph

@@ -83,6 +83,20 @@ namespace shamalgs::collective {
                 return true;
             },
             recv_distrib_data);
+        recv_distrib_data.get_element_count();
+
+        u32 cnt_obj = 0, cnt_cells = 0;
+        for (const auto &[key, sender_idx_in_ghost] : recv_distrib_data) {
+            auto [sender, receiver] = key;
+            cnt_obj += 1;
+            cnt_cells += sender_idx_in_ghost.get_obj_cnt();
+
+            // logger::raw_ln("[sparse comm]", "--", sender, "--", receiver,
+            // "--",(u32)sender_idx_in_ghost.get_obj_cnt() ,"\n"); logger::raw_ln("[sparse
+            // comm]-","-obj= ", cnt_obj, "-- cells=",cnt_cells ,"\n");
+
+            // logger::raw_ln("\n\n");
+        }
     }
 
     /**

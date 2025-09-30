@@ -24,6 +24,7 @@
 template<class T>
 void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
     auto edges = get_edges();
+    // logger::raw_ln("Exchg:[cpy-ghost] \t", &edges.ghost_layer,"\n");
 
     // outputs
     auto &ghost_layer                                         = edges.ghost_layer;

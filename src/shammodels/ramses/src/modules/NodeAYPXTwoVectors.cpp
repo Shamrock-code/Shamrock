@@ -33,6 +33,7 @@ namespace {
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
                       u32 cell_count = block_count * block_size;
+                      // logger::raw_ln("i = [ ", id , "] = ",cell_count, "\n");
                       return cell_count;
                   });
 
@@ -42,7 +43,16 @@ namespace {
                 sham::DDMultiRef{spans_y},
                 cell_counts,
                 [alpha](u32 i, const T *__restrict x, T *__restrict y) {
-                    y[i] = alpha * y[i] + x[i];
+                    auto tmp = y[i];
+                    y[i]     = alpha * y[i] + x[i];
+
+                    // if( (i >= 145) && (i <= 196 ))
+                    // if(i % 25 == 0)
+                    // {
+                    //     logger::raw_ln("id_a = [ ", i, " ] : ", y[i], " --- ",x[i], " *** ", tmp,
+                    //     "  ","\n");
+                    // }
+                    // logger::raw_ln("i = [ ", i , "] = ",y[i], "\n");
                 });
         }
     };
@@ -54,7 +64,7 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void NodeAYPXTwoVectors<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
-
+        //   logger::raw_ln("AYPX:[x, y] \t", &edges.spans_x, "-", &edges.spans_y,"\n");
         edges.spans_x.check_sizes(edges.sizes.indexes);
         edges.spans_y.ensure_sizes(edges.sizes.indexes);
 

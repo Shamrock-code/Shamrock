@@ -24,6 +24,7 @@ namespace shamrock::solvergraph {
         StackEntry stack_loc{};
 
         auto edges = get_edges();
+        // logger::raw_ln("Cpy_Dat: \t", &edges.original, "-", &edges.target,"\n");
 
         // Collect size information from source fields
         shambase::DistributedData<u32> sizes = {};
@@ -45,7 +46,7 @@ namespace shamrock::solvergraph {
                     + ". Source nvar: " + std::to_string(source_field.get_nvar())
                     + ", Target nvar: " + std::to_string(field.get_nvar()));
             }
-            field.overwrite(source_field, field.get_obj_cnt());
+            field.overwrite(source_field, source_field.get_obj_cnt());
         });
     }
 

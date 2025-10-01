@@ -35,20 +35,7 @@ void shammodels::basegodunov::modules::ExtractGhostLayer::_impl_evaluate_interna
     for (const auto &[key, sender_idx_in_ghost] : idx_in_ghost.buffers) {
         auto [sender, receiver] = key;
 
-        // logger::raw_ln(sender, "--", receiver, "--",(u32)sender_idx_in_ghost.get_size() ,"\n");
-
         shamrock::patch::PatchDataLayer ghost_zone(ghost_layer_layout);
-
-        u64 r = receiver + 1, s = sender + 1;
-
-        sham::kernel_call(
-            shamsys::instance::get_compute_scheduler_ptr()->get_queue(),
-            sham::MultiRef{sender_idx_in_ghost},
-            sham::MultiRef{},
-            (u32) sender_idx_in_ghost.get_size(),
-            [&, r, s](u32 idd, const u32 *__restrict acc_idxs) {
-                // logger::raw_ln("(",r,",",s,")","-- idd = [", idd ,"]: ", acc_idxs[idd],"\n");
-            });
 
         // extract the actual data
         patch_data_layers.get(sender).append_subset_to(
@@ -56,13 +43,4 @@ void shammodels::basegodunov::modules::ExtractGhostLayer::_impl_evaluate_interna
 
         ghost_layer.patchdatas.add_obj(sender, receiver, std::move(ghost_zone));
     }
-
-    // for(const auto &[key, sender_layer]: ghost_layer.patchdatas){
-    //     auto [sender, receiver] = key;
-    //     cnt_obj += 1;
-    //     cnt_cells += sender_layer.get_obj_cnt();
-
-    //     logger::raw_ln(sender, "--", receiver, "--", sender_layer.get_obj_cnt() ,"\n");
-    //     logger::raw_ln("obj= ", cnt_obj, "-- cells=",cnt_cells ,"\n");
-    // }
 }

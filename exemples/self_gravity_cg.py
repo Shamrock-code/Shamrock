@@ -4,7 +4,7 @@ import numpy as np
 import shamrock
 
 
-def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=0):
+def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0=1):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 8
+    base = 16
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -27,7 +27,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(50)
+    cfg.set_self_gravity_Niter_max(250)
     cfg.set_self_gravity_tol(1e-18)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 
@@ -117,8 +117,9 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
         #     model.dump_vtk("test" + str(k) + ".vtk")
 
         model.evolve_once_override_time(t, dt)
+        ctx_data = ctx.collect_data()
 
-        dic = convert_to_cell_coords(ctx.collect_data())
+        dic = convert_to_cell_coords(ctx_data)
 
         cc = -(4.0 * np.pi * G) / (3 * (2 * np.pi) ** 2)
 
@@ -152,19 +153,19 @@ phi_ana = []
 
 run_sim(X, Y, Z, rho, phi, phi_ana)
 
-# def analytic_phi(X,Y,Z, Lx,Ly,Lz,G,A,phi_0):
-#     cx=(2*np.pi)/Lx
-#     cy=(2*np.pi)/Ly
-#     cz=(2*np.pi)/Lz
+
+def analytic_phi(X, Y, Z, Lx, Ly, Lz, G, A, phi_0):
+    cx = (2 * np.pi) / Lx
+    cy = (2 * np.pi) / Ly
+    cz = (2 * np.pi) / Lz
+
+    C = -(4 * np.pi * G * A) / (cx * cx + cy * cy + cz * cz)
+    return phi_0 + C * (np.sin(cx * X) * np.sin(cy * Y) * np.sin(cz * Z))
 
 
-#     C = -(4*np.pi*G*A)/(cx*cx + cy*cy + cz*cz)
-#     return phi_0 + C*(np.sin(cx*X) *np.sin(cy*Y) *np.sin(cz*Z))
-
-
-# ana = analytic_phi(np.array(X),np.array(Y),np.array(Z),1,1,1,1,1,0)
+ana = analytic_phi(np.array(X), np.array(Y), np.array(Z), 1, 1, 1, 1, 1, 0)
 # plt.plot(X,np.array(phi), ".", label="phi-num")
 # plt.plot(X, ana, ".", label="phi-ana-t")
-# plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
-# plt.legend()
-# plt.savefig("with-ghost-64-pcg.png", format="png")
+plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
+plt.legend()
+plt.savefig("with-ghost-64-pcg.png", format="png")

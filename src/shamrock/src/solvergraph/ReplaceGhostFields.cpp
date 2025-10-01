@@ -39,73 +39,14 @@ namespace shamrock::solvergraph {
             gz_map[r] += pdat_field.get_obj_cnt();
         });
 
-        shambase::DistributedData<u32> cell_counts = {};
-        fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
-            cell_counts.add_obj(id_patch, u32(block_size * field.get_obj_cnt()));
-        });
-
-        /*********************************************************/
-        // logger::raw_ln("\n\n ================= Before ghost replacement =============== \n\n");
-        // logger::raw_ln("block size = ", block_size);
-
-        // sham::distributed_data_kernel_call(
-        //     shamsys::instance::get_compute_scheduler_ptr(),
-        //     sham::DDMultiRef{fields.get_spans()},
-        //     sham::DDMultiRef{},
-        //     cell_counts,
-        //     [=](u32 id, const T *__restrict x) {
-        //         logger::raw_ln("id_b= [ ", id, " ] : ", x[id], "\n");
-        //     });
-
-        /********************************************************/
-
-        /** Is there any other way to do this ? get_spans ?
-        **  std::map<u32, PatchDataField<T>> recv_map;
-        **  Add more methods to patchdata-field to do on place
-        **
-        */
-
-        // std::map<u32, PatchDataField<T>> recv_map;
-        // ghost_fields.patchdata_fields.for_each(
-        //     [&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
-        //         recv_map.at(r).insert(pdat_field);
-        //     });
-
         fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
             PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
             field.shrink(gz_map.at(id_patch));
-
-            // logger::raw_ln("\n\n", field.get_obj_cnt(), "**aa*", gz_map.at(id_patch) ,"\n\n");
         });
 
         ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
             fields.get_field(r).insert(pdat_field);
         });
-
-        // fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
-        //     PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
-        //     ghost_fields.patchdata_fields.for_each(
-        //         [&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
-        //             if (r == id_patch) {
-        //                 temp_pdat.insert(pdat_field);
-        //             }
-        //         });
-
-        //     logger::raw_ln("\n\n", field.get_obj_cnt(), "**bb*", gz_map.at(id_patch) ,"\n\n");
-        //     field.resize(field.get_obj_cnt() - gz_map.at(id_patch));
-        //     field.insert(temp_pdat);
-        // });
-
-        // logger::raw_ln("\n\n ================= After ghost replacement =============== \n\n");
-
-        // sham::distributed_data_kernel_call(
-        // shamsys::instance::get_compute_scheduler_ptr(),
-        // sham::DDMultiRef{fields.get_spans()},
-        // sham::DDMultiRef{},
-        // cell_counts,
-        // [=](u32 id, const T *__restrict x) {
-        //     logger::raw_ln("id_a = [ ", id, " ] : ", x[id], "\n");
-        // });
     }
 
     template class shamrock::solvergraph::ReplaceGhostFields<f64>;

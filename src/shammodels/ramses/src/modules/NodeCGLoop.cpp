@@ -55,16 +55,23 @@ namespace shammodels::basegodunov::modules {
         while ((k < Niter_max)) {
             // increment iteration
             k = k + 1;
-            // node8.evaluate();
+
+            // exchange p vector
             node_gz.evaluate();
             node_exch_gz.evaluate();
+            node_replace_gz.evaluate();
+
+            // exchange residual vector
+            node_gz_res.evaluate();
+            node_exch_gz_res.evaluate();
+            node_replace_gz_res.evaluate();
 
             logger::raw_ln(" ================== k = ", k, "=======================");
             /* compute Ap_{k} */
             node2.evaluate();
 
-            // /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} =
-            // left( p_{i} * (Ap)_{i} \right) */
+            /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} = left(
+             * p_{i} * (Ap)_{i} \right) */
             node3.evaluate();
 
             /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
@@ -88,56 +95,17 @@ namespace shammodels::basegodunov::modules {
 
             /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
             edges.beta.value = edges.new_values.value / edges.old_values.value;
-            // logger::raw_ln(" beta = ", edges.beta.value, "\n");
+            logger::raw_ln(" beta = ", edges.beta.value, "\n");
 
             /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
             edges.old_values.value = edges.new_values.value;
-            // logger::raw_ln(" new = ", edges.old_values.value, "\n");
+            logger::raw_ln(" new = ", edges.old_values.value, "\n");
 
             logger::raw_ln(" k = ", k);
             logger::raw_ln(" RES = ", edges.old_values.value);
 
             /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
-
-            /********************/
-
-            // logger::raw_ln("\n\n ============ p_before =============== \n\n");
             node8.evaluate();
-            // node_cp_phi_p.evaluate();
-            // node_test.evaluate();
-
-            // node_gz.evaluate();
-            // node_exch_gz.evaluate();
-            // node_replace_gz.evaluate();
-
-            //  node_cp_phi_p_back.evaluate();
-            // node_test.evaluate();
-
-            /**/
-            // node_gz.evaluate();
-            // node_exch_gz.evaluate();
-            // node_replace_gz.evaluate();
-            // node_test.evaluate();
-            /**/
-            // node_cp_phi_p_back.evaluate();
-
-            // logger::raw_ln("\n\n ============ p_after =============== \n\n");
-            // node_cp_phi_p_back.evaluate();
-            // node8_bis.evaluate();
-            // node_cp_phi_p_back.evaluate();
-
-            // /*************  MAYBE USE DIFFERENT NODE FOR THIS *******/
-
-            // node_cp_phi_p.evaluate();
-            // node_gz.evaluate();
-            // node_exch_gz.evaluate();
-
-            // node_replace_gz.evaluate();
-
-            // node_cp_phi_p_back.evaluate();
-
-            /****** What about overwrite directly with the corresponding index *******/
-            /****** use base =1 and print all p value befor and after the exchange */
 
             if (sycl::sqrt(edges.old_values.value) < tol)
                 break;

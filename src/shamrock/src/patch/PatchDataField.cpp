@@ -216,13 +216,9 @@ void PatchDataField<T>::append_subset_to(
             u32 idx_extr = acc_idxs[gid] * nvar_loc;
             u32 idx_push = start_enque_loc + gid * nvar_loc;
 
-            // logger::raw_ln("idx-in_ghost \n");
             for (u32 a = 0; a < nvar_loc; a++) {
                 acc_other[idx_push + a] = acc_curr[idx_extr + a];
-
-                // logger::raw_ln("-- ", idx_extr);
             }
-            // logger::raw_ln("\n");
         });
 }
 

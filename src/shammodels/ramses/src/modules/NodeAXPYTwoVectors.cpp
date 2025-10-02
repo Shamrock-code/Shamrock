@@ -28,10 +28,17 @@ namespace {
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_y,
             const T alpha,
             const shambase::DistributedData<u32> &sizes,
+            const shambase::DistributedData<u32> &sizes_no_gz,
             u32 block_size) {
 
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
+                      u32 cell_count = block_count * block_size;
+                      return cell_count;
+                  });
+
+            shambase::DistributedData<u32> cell_counts_no_ghost
+                = sizes_no_gz.map<u32>([&](u64 id, u32 block_count) {
                       u32 cell_count = block_count * block_size;
                       return cell_count;
                   });
@@ -41,6 +48,7 @@ namespace {
                 sham::DDMultiRef{spans_x},
                 sham::DDMultiRef{spans_y},
                 cell_counts,
+                // cell_counts_no_ghost,
                 [alpha](u32 i, const T *__restrict x, T *__restrict y) {
                     y[i] = y[i] + alpha * x[i];
                 });
@@ -60,11 +68,15 @@ namespace shammodels::basegodunov::modules {
         edges.spans_x.check_sizes(edges.sizes.indexes);
         edges.spans_y.ensure_sizes(edges.sizes.indexes);
 
+        // edges.spans_x.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_y.ensure_sizes(edges.sizes_no_gz.indexes);
+
         KernelAXPYTwoVectors<T>::kernel(
             edges.spans_x.get_spans(),
             edges.spans_y.get_spans(),
             edges.alpha.value,
             edges.sizes.indexes,
+            edges.sizes_no_gz.indexes,
             block_size);
     }
 

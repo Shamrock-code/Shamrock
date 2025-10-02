@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include <shambackends/sycl.hpp>
 
@@ -53,12 +54,14 @@ namespace shammodels::basegodunov {
         const AMRGraphLinkiterator &graph_iter_zp,
         const AMRGraphLinkiterator &graph_iter_zm,
         ACCField &&field_access) {
-
+        u32 g_cnt          = 0;
         auto get_avg_neigh = [&](auto &graph_links) -> T {
             T acc   = shambase::VectorProperties<T>::get_zero();
             u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
                 acc += field_access(id_b);
             });
+            // g_cnt += cnt;
+            // logger::raw(cnt, g_cnt);
             return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
         };
 
@@ -70,12 +73,23 @@ namespace shammodels::basegodunov {
         T W_zp               = get_avg_neigh(graph_iter_zp);
         T W_zm               = get_avg_neigh(graph_iter_zm);
         T inv_delta_cell_sqr = 1.0 / (delta_cell * delta_cell);
+        // logger::raw("global", g_cnt);
+
+        // logger::raw_ln(cell_global_id, W_xm, W_ym, W_zm, W_xp, W_yp, W_zp, "\n");
+
+        //  logger::raw_ln(W_i);
+
+        // logger::raw_ln(inv_delta_cell_sqr);
 
         T laplace_x = inv_delta_cell_sqr * (-W_xm + 2. * W_i - W_xp);
         T laplace_y = inv_delta_cell_sqr * (-W_ym + 2. * W_i - W_yp);
         T laplace_z = inv_delta_cell_sqr * (-W_zm + 2. * W_i - W_zp);
 
-        T res = (laplace_x + laplace_y + laplace_z);
+        T res = 0;
+
+        // if(0 <= cell_global_id && cell_global_id <= 63 )
+        res = (laplace_x + laplace_y + laplace_z);
+        // logger::raw_ln(res);
 
         return res;
     }

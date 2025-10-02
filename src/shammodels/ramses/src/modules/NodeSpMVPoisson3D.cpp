@@ -61,6 +61,8 @@ namespace {
                         oriented_cell_graph.graph_links[shammodels::basegodunov::Direction::zm]);
                     u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
+                    u32 cell_count_no_gz = (edges.sizes_no_gz.indexes.get(id)) * block_size;
+
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
                     sham::kernel_call(
@@ -75,6 +77,7 @@ namespace {
                             graph_neigh_zp,
                             graph_neigh_zm},
                         sham::MultiRef{out_span},
+                        // cell_count_no_gz,
                         cell_count,
                         [block_size](
                             i32 cell_global_id,
@@ -129,6 +132,10 @@ namespace shammodels::basegodunov::modules {
         StackEntry stack_loc{};
         auto edges = get_edges();
         // logger::raw_ln("SPMV:[p, Ap] \t", &edges.spans_in, "-", &edges.spans_out,"\n");
+        // edges.spans_block_cell_sizes.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_in.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_out.ensure_sizes(edges.sizes_no_gz.indexes);
+
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_in.check_sizes(edges.sizes.indexes);
         edges.spans_out.ensure_sizes(edges.sizes.indexes);

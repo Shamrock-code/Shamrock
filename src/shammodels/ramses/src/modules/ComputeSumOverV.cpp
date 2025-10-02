@@ -37,8 +37,6 @@ namespace shammodels::basegodunov::modules {
         T global_sum = shamalgs::collective::allreduce_sum(loc_val);
 
         edges.mean_val.value = (global_sum / edges.total_volume.value);
-
-        // logger::raw_ln(loc_val, global_sum, edges.mean_val.value,edges.total_volume.value);
     }
 
     template<class T>

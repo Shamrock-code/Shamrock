@@ -52,11 +52,11 @@ set(Sources
     src/modules/NodeOverwrite.cpp
     src/modules/NodeAYPXTwoVectors.cpp
     src/modules/NodeCGLoop.cpp
-    src/modules/PCGInit.cpp
-    src/modules/NodePCGLoop.cpp
+    # src/modules/PCGInit.cpp
+    # src/modules/NodePCGLoop.cpp
     src/modules/NodeLinCombThreeVectors.cpp
-    src/modules/BICGSTABInit.cpp
-    src/modules/NodeBICGSTABLoop.cpp
+    # src/modules/BICGSTABInit.cpp
+    # src/modules/NodeBICGSTABLoop.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

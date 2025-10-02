@@ -32,22 +32,25 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
+            const shamrock::solvergraph::Indexes<u32> &sizes_no_gz;
             const shamrock::solvergraph::IFieldRefs<T> &spans_in;
             shamrock::solvergraph::ScalarEdge<T> &out_scal;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes_no_gz,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_in,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> out_scal) {
-            __internal_set_ro_edges({sizes, spans_in});
+            __internal_set_ro_edges({sizes, sizes_no_gz, spans_in});
             __internal_set_rw_edges({out_scal});
         }
 
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(1),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(2),
                 get_rw_edge<shamrock::solvergraph::ScalarEdge<T>>(0),
             };
         }

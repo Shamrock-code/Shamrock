@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 16
+    base = 2
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -27,12 +27,12 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(250)
-    cfg.set_self_gravity_tol(1e-18)
+    cfg.set_self_gravity_Niter_max(1)
+    cfg.set_self_gravity_tol(1e-7)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 
     model.set_solver_config(cfg)
-    model.init_scheduler(int(100), 1)
+    model.init_scheduler(int(200), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     def rho_map(rmin, rmax):
@@ -117,21 +117,22 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
         #     model.dump_vtk("test" + str(k) + ".vtk")
 
         model.evolve_once_override_time(t, dt)
-        ctx_data = ctx.collect_data()
 
-        dic = convert_to_cell_coords(ctx_data)
+        dic = ctx.collect_data()
 
-        cc = -(4.0 * np.pi * G) / (3 * (2 * np.pi) ** 2)
+        if shamrock.sys.world_rank() == 0:
+            dic = convert_to_cell_coords(dic)
+            cc = -(4.0 * np.pi * G) / (3 * (2 * np.pi) ** 2)
 
-        tmp = (dic["rho"] - rho0) * cc
+            tmp = (dic["rho"] - rho0) * cc
 
-        for i in range(len(dic["xmin"])):
-            X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
-            Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
-            Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
-            rho.append(dic["rho"][i])
-            phi.append(dic["phi"][i])
-            phi_ana.append(tmp[i])
+            for i in range(len(dic["xmin"])):
+                X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
+                Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
+                Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
+                rho.append(dic["rho"][i])
+                phi.append(dic["phi"][i])
+                phi_ana.append(tmp[i])
 
         t = dt * k
         # dt = next_dt
@@ -164,7 +165,7 @@ def analytic_phi(X, Y, Z, Lx, Ly, Lz, G, A, phi_0):
 
 
 ana = analytic_phi(np.array(X), np.array(Y), np.array(Z), 1, 1, 1, 1, 1, 0)
-# plt.plot(X,np.array(phi), ".", label="phi-num")
+plt.plot(X, np.array(phi), ".", label="phi-num")
 # plt.plot(X, ana, ".", label="phi-ana-t")
 plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
 plt.legend()

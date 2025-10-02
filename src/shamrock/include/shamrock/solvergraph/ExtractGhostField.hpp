@@ -48,18 +48,12 @@ namespace shamrock::solvergraph {
             shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
         };
 
-        //     std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> copy_field =
-        //     std::make_shared<shamrock::solvergraph::Field<T>>(
-        //    block_size, "copy_field", "copy_field");
-
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> original_fields,
             std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghosts,
             std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields) {
             __internal_set_ro_edges({original_fields, idx_in_ghosts});
             __internal_set_rw_edges({ghost_fields});
-
-            // node_cpy_field.set_edges(original_fields, copy_field);
         }
 
         Edges get_edges() {

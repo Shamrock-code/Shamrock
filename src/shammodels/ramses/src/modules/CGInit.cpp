@@ -56,7 +56,10 @@ namespace {
                     AMRGraph &graph_neigh_zm = shambase::get_check_ref(
                         oriented_cell_graph.graph_links[shammodels::basegodunov::Direction::zm]);
 
-                    u32 cell_count       = (edges.sizes.indexes.get(id)) * block_size;
+                    u32 cell_count_no_gz = (edges.sizes_no_gz.indexes.get(id)) * block_size;
+
+                    u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
+
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
                     sham::kernel_call(
@@ -73,6 +76,7 @@ namespace {
                             graph_neigh_zm},
                         sham::MultiRef{phi_res_span, phi_p_span},
                         cell_count,
+                        // cell_count_no_gz,
                         [block_size, fourPiG, mean_rho](
                             i32 cell_global_id,
                             const Tscal *__restrict cell_sizes,
@@ -115,22 +119,28 @@ namespace shammodels::basegodunov::modules {
     void CGInit<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        logger::raw_ln(
-            "Init:[phi,rho,res,p] \t",
-            &edges.spans_phi,
-            "-",
-            &edges.spans_rho,
-            "-",
-            &edges.spans_phi_res,
-            "-",
-            &edges.spans_phi_p,
-            "\n");
+        // logger::raw_ln(
+        //     "Init:[phi,rho,res,p] \t",
+        //     &edges.spans_phi,
+        //     "-",
+        //     &edges.spans_rho,
+        //     "-",
+        //     &edges.spans_phi_res,
+        //     "-",
+        //     &edges.spans_phi_p,
+        //     "\n");
 
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_phi.check_sizes(edges.sizes.indexes);
         edges.spans_rho.check_sizes(edges.sizes.indexes);
         edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
         edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
+
+        // edges.spans_block_cell_sizes.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_phi.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_rho.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_phi_res.ensure_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_phi_p.ensure_sizes(edges.sizes_no_gz.indexes);
 
         _Kernel<Tvec, TgridVec>::kernel(edges, block_size, fourPiG);
     }

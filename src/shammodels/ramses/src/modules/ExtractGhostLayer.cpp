@@ -29,7 +29,6 @@ void shammodels::basegodunov::modules::ExtractGhostLayer::_impl_evaluate_interna
 
     // outputs
     auto &ghost_layer = edges.ghost_layer;
-    u32 cnt_obj = 0, cnt_cells = 0;
 
     // iterate on buffer storing indexes in ghost layer
     for (const auto &[key, sender_idx_in_ghost] : idx_in_ghost.buffers) {

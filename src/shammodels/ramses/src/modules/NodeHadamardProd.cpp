@@ -29,10 +29,17 @@ namespace {
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_in2,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_out,
             const shambase::DistributedData<u32> &sizes,
+            const shambase::DistributedData<u32> &sizes_no_gz,
             u32 block_size) {
 
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
+                      u32 cell_count = block_count * block_size;
+                      return cell_count;
+                  });
+
+            shambase::DistributedData<u32> cell_counts_no_gz
+                = sizes_no_gz.map<u32>([&](u64 id, u32 block_count) {
                       u32 cell_count = block_count * block_size;
                       return cell_count;
                   });
@@ -42,6 +49,7 @@ namespace {
                 sham::DDMultiRef{spans_in1, spans_in2},
                 sham::DDMultiRef{spans_out},
                 cell_counts,
+                // cell_counts_no_gz,
                 [block_size](
                     u32 i, const T *__restrict in1, const T *__restrict in2, T *__restrict out) {
                     out[i] = in1[i] * in2[i];
@@ -64,6 +72,11 @@ namespace shammodels::basegodunov::modules {
         // logger::raw_ln("Had:[p,Ap,had] \t", &edges.spans_in1, "-", &edges.spans_in2,"-",
         // &edges.spans_out,"\n");
 
+        // edges.spans_in1.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_in2.check_sizes(edges.sizes_no_gz.indexes);
+
+        // edges.spans_out.ensure_sizes(edges.sizes_no_gz.indexes);
+
         edges.spans_in1.check_sizes(edges.sizes.indexes);
         edges.spans_in2.check_sizes(edges.sizes.indexes);
 
@@ -74,6 +87,7 @@ namespace shammodels::basegodunov::modules {
             edges.spans_in2.get_spans(),
             edges.spans_out.get_spans(),
             edges.sizes.indexes,
+            edges.sizes_no_gz.indexes,
             block_size);
     }
 

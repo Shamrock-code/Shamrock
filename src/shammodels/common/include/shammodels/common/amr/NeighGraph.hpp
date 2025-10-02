@@ -23,6 +23,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
+#include "shamcomm/logs.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -87,7 +88,9 @@ namespace shammodels::basegodunov::modules {
                 u32 max_ids = node_link_offset[cell_id + 1];
                 for (u32 id_s = min_ids; id_s < max_ids; id_s++) {
                     func_it(node_links[id_s]);
+                    // logger::raw_ln(cell_id, " : ",id_s );
                 }
+                // logger::raw_ln("\n" );
                 return max_ids - min_ids;
             }
         };

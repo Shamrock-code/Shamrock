@@ -35,6 +35,7 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
+            const shamrock::solvergraph::Indexes<u32> &sizes_no_gz;
             const shamrock::solvergraph::IFieldSpan<T> &spans_in1;
             const shamrock::solvergraph::IFieldSpan<T> &spans_in2;
             shamrock::solvergraph::IFieldSpan<T> &spans_out;
@@ -42,18 +43,20 @@ namespace shammodels::basegodunov::modules {
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes_no_gz,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_in1,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_in2,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> spans_out) {
-            __internal_set_ro_edges({sizes, spans_in1, spans_in2});
+            __internal_set_ro_edges({sizes, sizes_no_gz, spans_in1, spans_in2});
             __internal_set_rw_edges({spans_out});
         }
 
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<T>>(1),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<T>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<T>>(3),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0)};
         }
 

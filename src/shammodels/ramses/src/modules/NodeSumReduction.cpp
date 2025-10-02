@@ -24,6 +24,7 @@ namespace shammodels::basegodunov::modules {
     void NodeSumReduction<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
         // logger::raw_ln("SRed: \t", &edges.spans_in,"\n");
+        // edges.spans_in.check_sizes(edges.sizes_no_gz.indexes);
         edges.spans_in.check_sizes(edges.sizes.indexes);
         T loc_val = {};
 
@@ -33,7 +34,7 @@ namespace shammodels::basegodunov::modules {
         });
         edges.out_scal.value = shamalgs::collective::allreduce_sum(loc_val);
 
-        // logger::raw_ln("global = [ ",edges.out_scal.value ,"\n");
+        logger::raw_ln("global = [ ", edges.out_scal.value, "\n");
     }
 
     template<class T>

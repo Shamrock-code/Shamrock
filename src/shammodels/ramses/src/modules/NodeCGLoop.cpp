@@ -19,6 +19,7 @@
 #include "shambase/memory.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/NodeCGLoop.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
@@ -36,80 +37,332 @@ namespace shammodels::basegodunov::modules {
     void NodeCGLoop<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_phi.check_sizes(edges.sizes.indexes);
-        edges.spans_rho.check_sizes(edges.sizes.indexes);
-        edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
-        edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
+        // edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+        // edges.spans_phi.check_sizes(edges.sizes.indexes);
+        // edges.spans_rho.check_sizes(edges.sizes.indexes);
+        // edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
+        // edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
+
+        // edges.spans_block_cell_sizes.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_phi.check_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_rho.check_sizes(edges.sizes_no_gz.indexes);
+        edges.spans_phi_res.ensure_sizes(edges.sizes_no_gz.indexes);
+        edges.spans_phi_p.ensure_sizes(edges.sizes_no_gz.indexes);
+
+        // /****/     RES =  1263.3093633394387
+
+        // node_copy_phi.evaluate();
 
         /* compute r0 = p0 = 4*\pi*G* \left( \rho - \bar{\rho} \right) - A \phi_{0}*/
-        node0.evaluate();
+        // node0.evaluate();
+        if (false) {
+            for (auto id = 0; id < 1; id++) {
+                auto &buf = edges.spans_phi_res.get_buf(id);
+                auto vec  = buf.copy_to_stdvec();
+                logger::raw_ln(id, "buf res 0 =", "--", buf.get_size());
+                for (int i = 0; i < buf.get_size(); i++) {
+                    logger::raw_ln(i, vec[i]);
+                }
+            }
+        }
+
+        //     node_gz_cpy_r.evaluate();
+        //     node_exch_gz_cpy_r.evaluate();
+        //     node_replace_gz_cpy_r.evaluate();
 
         /* compute <r0,r0> and assign its value to  edges.old_values.value */
-        node1.evaluate();
+        // edges.spans_phi_res.ensure_sizes(edges.sizes_no_gz.indexes);
+
+        if (false) {
+            for (auto id = 0; id < 1; id++) {
+                auto &buf = edges.spans_phi_res.get_buf(id);
+                auto vec  = buf.copy_to_stdvec();
+                logger::raw_ln(id, "buf truc bf =", "--", buf.get_size());
+                for (int i = 0; i < buf.get_size(); i++) {
+                    logger::raw_ln(i, vec[i]);
+                }
+            }
+        }
+        // node1.evaluate();
 
         u32 k = 0;
         logger::raw_ln(" k = ", k);
         logger::raw_ln(" RES = ", edges.old_values.value);
-        /* Main loop */
-        while ((k < Niter_max)) {
-            // increment iteration
-            k = k + 1;
 
-            // exchange p vector
-            node_gz.evaluate();
-            node_exch_gz.evaluate();
-            node_replace_gz.evaluate();
+        // while ((k < Niter_max)) {
+        //     // increment iteration
+        //     k = k + 1;
+        //         edges.spans_phi_p.ensure_sizes(edges.sizes_no_gz.indexes);
 
-            // exchange residual vector
-            node_gz_res.evaluate();
-            node_exch_gz_res.evaluate();
-            node_replace_gz_res.evaluate();
+        //         if (true) {
+        //             // exchange p vector
+        //             node_gz.evaluate();
+        //             node_exch_gz.evaluate();
+        //             node_replace_gz.evaluate();
+        //         }
 
-            logger::raw_ln(" ================== k = ", k, "=======================");
-            /* compute Ap_{k} */
-            node2.evaluate();
+        //         // if (true) {
+        //         //     for (auto id = 0; id < 1; id++) {
+        //         //         auto &buf = edges.spans_phi_p.get_buf(id);
+        //         //         auto vec  = buf.copy_to_stdvec();
+        //         //         logger::raw_ln(id, "buf p =", "--", buf.get_size());
+        //         //         // for (int i = 0; i < buf.get_size(); i++) {
+        //         //         //     logger::raw_ln(i, vec[i]);
+        //         //         // }
+        //         //     }
+        //         // }
 
-            /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} = left(
-             * p_{i} * (Ap)_{i} \right) */
-            node3.evaluate();
+        // node2.evaluate();
 
-            /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
-             * edges.e_norm.value */
-            node4.evaluate();
+        //         edges.spans_phi_p.ensure_sizes(edges.sizes_no_gz.indexes);
+        //         edges.spans_phi_Ap.ensure_sizes(edges.sizes_no_gz.indexes);
 
-            /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
-            edges.alpha.value = edges.old_values.value / edges.e_norm.value;
-            logger::raw_ln(" alpha = ", edges.alpha.value, "\n");
+        //         if (false) {
+        //         for (auto id = 0; id < 1; id++) {
+        //             auto &buf = edges.spans_phi_p.get_buf(id);
+        //             auto vec  = buf.copy_to_stdvec();
+        //             logger::raw_ln(id, "buf p =", "--", buf.get_size());
+        //             for (int i = 0; i < buf.get_size(); i++) {
+        //                 logger::raw_ln(i, vec[i]);
+        //             }
+        //         }
+        //     }
 
-            /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
-            node5.evaluate();
+        // if (true) {
+        //     for (auto id = 0; id < 1; id++) {
+        //         auto &buf = edges.spans_phi_Ap.get_buf(id);
+        //         auto vec  = buf.copy_to_stdvec();
+        //         logger::raw_ln(id, "buf Ap =", "--", buf.get_size());
+        //         for (int i = 0; i < buf.get_size(); i++) {
+        //             logger::raw_ln(i, vec[i]);
+        //         }
+        //     }
+        // }
 
-            edges.alpha.value = -edges.alpha.value;
+        // node3.evaluate();
 
-            /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
-            node6.evaluate();
+        // if (true) {
+        //     for (auto id = 0; id < 1; id++) {
+        //         auto &buf = edges.spans_phi_hadamard_prod.get_buf(id);
+        //         auto vec  = buf.copy_to_stdvec();
+        //         logger::raw_ln(id, "buf truc had =", "--", buf.get_size());
+        //         for (int i = 0; i < buf.get_size(); i++) {
+        //             logger::raw_ln(i, vec[i]);
+        //         }
+        //     }
+        // }
 
-            /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
-            node7.evaluate();
+        //         node4.evaluate();
 
-            /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
-            edges.beta.value = edges.new_values.value / edges.old_values.value;
-            logger::raw_ln(" beta = ", edges.beta.value, "\n");
+        //         logger::raw_ln(" e-norm  = ", edges.e_norm.value, "\n");
+        //         edges.alpha.value = edges.old_values.value / edges.e_norm.value;
+        //         logger::raw_ln(" alpha  = ", edges.alpha.value, "\n");
 
-            /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
-            edges.old_values.value = edges.new_values.value;
-            logger::raw_ln(" new = ", edges.old_values.value, "\n");
+        // //         edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
+        // //           if (false) {
+        // //             for (auto id = 0; id < 1; id++) {
+        // //                 auto &buf = edges.spans_phi_cpy.get_buf(id);
+        // //                 auto vec  = buf.copy_to_stdvec();
+        // //                 logger::raw_ln(id, "buf phi =", "--", buf.get_size());
+        // //                 for (int i = 0; i < buf.get_size(); i++) {
+        // //                     logger::raw_ln(i, vec[i]);
+        // //                 }
+        // //                 }
+        // //           }
 
-            logger::raw_ln(" k = ", k);
-            logger::raw_ln(" RES = ", edges.old_values.value);
+        // //         if (false) {
+        // //         for (auto id = 0; id < 1; id++) {
+        // //             auto &buf_ap = edges.spans_phi_Ap.get_buf(id);
+        // //             auto &buf_p = edges.spans_phi_p.get_buf(id);
+        // //             auto &buf_res = edges.spans_phi_res.get_buf(id);
+        // //             auto &buf_phi = edges.spans_phi_cpy.get_buf(id);
+        // //             auto &buf_had = edges.spans_phi_hadamard_prod.get_buf(id);
+        // //             // auto vec_ap  = buf_ap.copy_to_stdvec();
+        // //             // auto vec_p  = buf_p.copy_to_stdvec();
+        // //             // auto vec_res  = buf_res.copy_to_stdvec();
+        // //             // auto vec_  = buf_phi.copy_to_stdvec();
+        // //             logger::raw_ln(id, "buf truc had =", "--", buf_had.get_size());
+        // //             logger::raw_ln(id, "buf truc ap =", "--", buf_ap.get_size());
+        // //             logger::raw_ln(id, "buf truc p =", "--", buf_p.get_size());
+        // //             logger::raw_ln(id, "buf truc res =", "--", buf_res.get_size());
+        // //             logger::raw_ln(id, "buf truc af =", "--", buf_phi.get_size());
 
-            /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
-            node8.evaluate();
+        // //         }
+        // //     }
 
-            if (sycl::sqrt(edges.old_values.value) < tol)
-                break;
-        }
+        //         node5.evaluate();
+
+        //         edges.alpha.value = -edges.alpha.value;
+        //         logger::raw_ln(" alpha af = ", edges.alpha.value, "\n");
+
+        // //   if (false) {
+        // //         for (auto id = 0; id < 1; id++) {
+        // //             auto &buf_ap = edges.spans_phi_Ap.get_buf(id);
+        // //             auto &buf_p = edges.spans_phi_p.get_buf(id);
+        // //             auto &buf_res = edges.spans_phi_res.get_buf(id);
+        // //             auto &buf_phi = edges.spans_phi_cpy.get_buf(id);
+        // //             auto &buf_had = edges.spans_phi_hadamard_prod.get_buf(id);
+        // //             // auto vec_ap  = buf_ap.copy_to_stdvec();
+        // //             // auto vec_p  = buf_p.copy_to_stdvec();
+        // //             // auto vec_res  = buf_res.copy_to_stdvec();
+        // //             // auto vec_  = buf_phi.copy_to_stdvec();
+        // //             logger::raw_ln(id, "buf truc had =", "--", buf_had.get_size());
+        // //             logger::raw_ln(id, "buf truc ap =", "--", buf_ap.get_size());
+        // //             logger::raw_ln(id, "buf truc p =", "--", buf_p.get_size());
+        // //             logger::raw_ln(id, "buf truc res =", "--", buf_res.get_size());
+        // //             logger::raw_ln(id, "buf truc phi =", "--", buf_phi.get_size());
+
+        // //         }
+        // //     }
+
+        // //         if (false) {
+        // //         for (auto id = 0; id < 1; id++) {
+        // //             auto &buf = edges.spans_phi_res.get_buf(id);
+        // //             auto vec  = buf.copy_to_stdvec();
+        // //             logger::raw_ln(id, "bphi-res =", "--", buf.get_size());
+        // //             for (int i = 0; i < buf.get_size(); i++) {
+        // //                 logger::raw_ln(i, vec[i]);
+        // //             }
+        // //         }
+        // //     }
+
+        // // if (false) {
+        // //     for (auto id = 0; id < 1; id++) {
+        // //         auto &buf = edges.spans_phi_res.get_buf(id);
+        // //         auto &buf_ap = edges.spans_phi_Ap.get_buf(id);
+        // //         auto vec  = buf.copy_to_stdvec();
+        // //         auto vec_ap  = buf_ap.copy_to_stdvec();
+        // //         logger::raw_ln(id, "bphi-res =", "--", buf.get_size());
+        // //         for (int i = 0; i < buf.get_size(); i++) {
+        // //             logger::raw_ln(i, vec[i] , edges.alpha.value*vec_ap[i]);
+        // //         }
+        // //     }
+        // // }
+        // // edges.spans_phi_res.ensure_sizes(edges.sizes_no_gz.indexes);
+
+        //         node6.evaluate();
+
+        // // //     if (true) {
+        // // //     for (auto id = 0; id < 1; id++) {
+        // // //         auto &buf = edges.spans_phi_res.get_buf(id);
+        // // //         auto &buf_ap = edges.spans_phi_Ap.get_buf(id);
+        // // //         auto vec  = buf.copy_to_stdvec();
+        // // //         auto vec_ap  = buf_ap.copy_to_stdvec();
+        // // //         logger::raw_ln(id, "bphi-res =", "--", buf.get_size());
+        // // //         for (int i = 0; i < buf.get_size(); i++) {
+        // // //             logger::raw_ln(i, vec[i] , vec_ap[i]);
+        // // //         }
+        // // //     }
+        // // // }
+
+        //         node7.evaluate();
+        //         logger::raw_ln(" new-val = ", edges.new_values.value, "\n");
+
+        // //         edges.beta.value = edges.new_values.value / edges.old_values.value;
+        // //         logger::raw_ln(" beta = ", edges.beta.value, "\n");
+
+        // //         edges.old_values.value = edges.new_values.value;
+
+        // //         logger::raw_ln(" new = ", edges.old_values.value, "\n");
+
+        // //         logger::raw_ln(" RES = ", edges.old_values.value);
+
+        // //         node8.evaluate();
+
+        // }
+
+        // /* Main loop */
+        // while ((k < Niter_max)) {
+        //     // increment iteration
+        //     k = k + 1;
+
+        //     logger::raw_ln(" ================== k = ", k, "=======================\n");
+        //     /* compute Ap_{k} */
+        //     node2.evaluate();
+
+        //     /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} =
+        //     left(
+        //      * p_{i} * (Ap)_{i} \right) */
+        //     node3.evaluate();
+
+        //     // auto &buf = edges.spans_phi_p.get_buf(0);
+        //     // auto vec = buf.copy_to_stdvec();
+        //     // logger::raw_ln("buf truc =", "--", buf.get_size());
+        //     // for (int i =0; i <  buf.get_size(); i++)
+        //     // {
+        //     //     logger::raw_ln(i , vec[i]);
+        //     // }
+
+        //     /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
+        //      * edges.e_norm.value */
+        //     node4.evaluate();
+
+        //     logger::raw_ln(" OLD = ", edges.old_values.value);
+        //     /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
+        //     edges.alpha.value = edges.old_values.value / edges.e_norm.value;
+        //     logger::raw_ln(" alpha bf = ", edges.alpha.value, "\n");
+
+        //     /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
+        //     node5.evaluate();
+
+        //     edges.alpha.value = -edges.alpha.value;
+        //     logger::raw_ln(" alpha af = ", edges.alpha.value, "\n");
+
+        // if (false) {
+        //     for (auto id = 0; id < 2; id++) {
+        //         auto &buf = edges.spans_phi_res.get_buf(id);
+        //         auto &buf_ap = edges.spans_phi_Ap.get_buf(id);
+        //         auto vec  = buf.copy_to_stdvec();
+        //         auto vec_ap  = buf_ap.copy_to_stdvec();
+        //         logger::raw_ln(id, "bphi-res =", "--", buf.get_size());
+        //         for (int i = 0; i < buf.get_size(); i++) {
+        //             logger::raw_ln(i, vec[i] , edges.alpha.value*vec_ap[i]);
+        //         }
+        //     }
+        // }
+
+        //         /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
+        //         node6.evaluate();
+
+        //         /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
+        //         node7.evaluate();
+
+        //         /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
+        //         edges.beta.value = edges.new_values.value / edges.old_values.value;
+        //         logger::raw_ln(" beta = ", edges.beta.value, "\n");
+
+        //         /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
+        //         edges.old_values.value = edges.new_values.value;
+        //         logger::raw_ln(" new = ", edges.old_values.value, "\n");
+
+        //         logger::raw_ln(" RES = ", edges.old_values.value);
+
+        //         /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
+        //         node8.evaluate();
+
+        // if(false){
+        //         // exchange p vector
+        //         node_gz.evaluate();
+        //         node_exch_gz.evaluate();
+        //         node_replace_gz.evaluate();
+
+        //         // exchange residual vector
+        //         node_gz_res.evaluate();
+        //         node_exch_gz_res.evaluate();
+        //         node_replace_gz_res.evaluate();
+        // }
+
+        //     // auto &buf = edges.spans_phi_p.get_buf(0);
+        //     // auto vec = buf.copy_to_stdvec();
+        //     // logger::raw_ln("buf truc =", "--", buf.get_size());
+        //     // for (int i =0; i <  buf.get_size(); i++)
+        //     // {
+        //     //     logger::raw_ln(i , vec[i]);
+        //     // }
+
+        //     if (sycl::sqrt(edges.old_values.value) < tol)
+        //         break;
+        // }
     }
 
     template<class Tvec, class TgridVec>

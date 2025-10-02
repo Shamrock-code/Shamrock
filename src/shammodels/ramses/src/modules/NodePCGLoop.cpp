@@ -109,6 +109,16 @@ namespace shammodels::basegodunov::modules {
             /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
             node10.evaluate();
 
+            // exchange p vector
+            node_gz.evaluate();
+            node_exch_gz.evaluate();
+            node_replace_gz.evaluate();
+
+            // exchange residual vector
+            node_gz_res.evaluate();
+            node_exch_gz_res.evaluate();
+            node_replace_gz_res.evaluate();
+
             if (sycl::sqrt(edges.old_values.value) < tol)
                 break;
         }

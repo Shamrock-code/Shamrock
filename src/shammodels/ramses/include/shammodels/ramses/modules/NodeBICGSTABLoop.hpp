@@ -223,8 +223,8 @@ namespace shammodels::basegodunov::modules {
             // set node5_2
             node5_2.set_edges(spans_phi_res, e_norm);
 
-            // set node6_1
-            node6_1.set_edges(sizes, spans_phi_res, spans_phi_res_bis, spans_phi_hadamard_prod);
+            // // set node6_1
+            // node6_1.set_edges(sizes, spans_phi_res, spans_phi_res_bis, spans_phi_hadamard_prod);
             // set node6_2
             node6_2.set_edges(sizes, spans_phi_hadamard_prod, new_values);
 

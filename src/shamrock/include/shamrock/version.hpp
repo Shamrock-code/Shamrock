@@ -21,6 +21,9 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/term_colors.hpp"
 #include "shamcomm/logs.hpp"
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 extern const std::string git_info_str;
@@ -42,6 +45,14 @@ inline std::string shamrock_title_bar_big = "\n\
  ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ \n\
 ";
 
+inline std::string get_date_hour_string() {
+    auto now       = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %H:%M:%S");
+    return ss.str();
+}
+
 inline void print_title_bar() {
     logger::raw_ln(shamrock_title_bar_big);
     logger::raw_ln(
@@ -51,6 +62,10 @@ inline void print_title_bar() {
     logger::raw_ln(
         shambase::term_colors::col8b_cyan() + "SPDX-License-Identifier"
         + shambase::term_colors::reset() + " : CeCILL Free Software License Agreement v2.1");
+    logger::raw_ln(
+        shambase::term_colors::col8b_cyan() + "Start time" + shambase::term_colors::reset() + " : "
+        + get_date_hour_string());
+
     logger::print_faint_row();
 
     logger::raw_ln(

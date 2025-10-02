@@ -16,7 +16,6 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
-#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <shamcomm/mpi.hpp>
 
@@ -26,14 +25,10 @@ namespace shamalgs::collective {
 
         __shamrock_stack_entry();
 
-        // bool out = false;
-        // shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
+        bool out = false;
+        shamcomm::mpi::Allreduce(&input, &out, 1, MPI_C_BOOL, MPI_LAND, comm);
 
-        int out = 0;
-        int in  = input ? 1 : 0;
-        shamcomm::mpi::Allreduce(&in, &out, 1, MPI_INT, MPI_SUM, comm);
-
-        return out == shamcomm::world_size();
+        return out;
     }
 
 } // namespace shamalgs::collective

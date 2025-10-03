@@ -32,7 +32,7 @@ namespace shamrock::solvergraph {
         std::vector<std::shared_ptr<IEdge>> ro_edges;
         std::vector<std::shared_ptr<IEdge>> rw_edges;
 
-        inline std::shared_ptr<IEdge> &get_ro_edge_base_ptr(int slot) {
+        inline std::shared_ptr<IEdge> &get_ro_edge_base_ptr(size_t slot) {
             try {
                 return ro_edges.at(slot);
             } catch (const std::out_of_range &e) {
@@ -41,7 +41,7 @@ namespace shamrock::solvergraph {
             }
         }
 
-        inline std::shared_ptr<IEdge> &get_rw_edge_base_ptr(int slot) {
+        inline std::shared_ptr<IEdge> &get_rw_edge_base_ptr(size_t slot) {
             try {
                 return rw_edges.at(slot);
             } catch (const std::out_of_range &e) {
@@ -72,22 +72,22 @@ namespace shamrock::solvergraph {
         }
 
         template<class T>
-        inline const T &get_ro_edge(int slot) {
+        inline const T &get_ro_edge(size_t slot) {
             return shambase::get_check_ref(
                 std::dynamic_pointer_cast<T>(get_ro_edge_base_ptr(slot)));
         }
 
         template<class T>
-        inline T &get_rw_edge(int slot) {
+        inline T &get_rw_edge(size_t slot) {
             return shambase::get_check_ref(
                 std::dynamic_pointer_cast<T>(get_rw_edge_base_ptr(slot)));
         }
 
-        inline const IEdge &get_ro_edge_base(int slot) {
+        inline const IEdge &get_ro_edge_base(size_t slot) {
             return shambase::get_check_ref(get_ro_edge_base_ptr(slot));
         }
 
-        inline IEdge &get_rw_edge_base(int slot) {
+        inline IEdge &get_rw_edge_base(size_t slot) {
             return shambase::get_check_ref(get_rw_edge_base_ptr(slot));
         }
 

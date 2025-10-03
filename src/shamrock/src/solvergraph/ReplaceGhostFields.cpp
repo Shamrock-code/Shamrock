@@ -34,15 +34,15 @@ namespace shamrock::solvergraph {
         auto &ghost_fields = edges.ghost_fields;
         auto &fields       = edges.fields;
 
-        // std::map<u32, u32> gz_map;
-        // ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
-        //     gz_map[r] += pdat_field.get_obj_cnt();
-        // });
+        std::map<u32, u32> gz_map;
+        ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
+            gz_map[r] += pdat_field.get_obj_cnt();
+        });
 
-        // fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
-        //     PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
-        //     field.shrink(gz_map.at(id_patch));
-        // });
+        fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
+            PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
+            field.shrink(gz_map.at(id_patch));
+        });
 
         ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
             fields.get_field(r).insert(pdat_field);

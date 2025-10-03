@@ -253,6 +253,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_p;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_Ap;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_hadamard_prod;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_hadamard_prod_cpy;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> e_norm;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta;

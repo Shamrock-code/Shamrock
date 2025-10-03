@@ -472,6 +472,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             AMRBlock::block_size, "Phi_Ap", "Phi_Ap");
         storage.phi_hadamard_prod = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "Phi_Hadamard_prod", "Phi_Hadamard_prod");
+        storage.phi_hadamard_prod_cpy = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Phi_Hadamard_prod_cpy", "Phi_Hadamard_prod_cpy");
         storage.e_norm
             = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("e_norm", "e_norm");
         storage.alpha
@@ -766,6 +768,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.phi_p,
                 storage.phi_Ap,
                 storage.phi_hadamard_prod,
+                storage.phi_hadamard_prod_cpy,
                 storage.old_val,
                 storage.new_val,
                 storage.e_norm,

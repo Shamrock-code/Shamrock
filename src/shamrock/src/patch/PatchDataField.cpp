@@ -508,6 +508,8 @@ T PatchDataField<T>::compute_sum() const {
     if (is_empty()) {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
+    // logger::raw_ln("obj count in compute_sum of PatchDataField ",obj_cnt * nvar,nvar,obj_cnt,"\n"
+    // );
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     return shamalgs::primitives::sum(dev_sched, buf, 0, obj_cnt * nvar);
@@ -521,6 +523,8 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
     }
 
     auto tmp = buf.copy_to_sycl_buffer();
+    // logger::raw_ln("obj count in compute_dot_sum of PatchDataField ",obj_cnt *
+    // nvar,nvar,obj_cnt,"\n" );
 
     return shamalgs::reduction::dot_sum(
         shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);

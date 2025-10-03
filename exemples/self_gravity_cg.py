@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 2
+    base = 8
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -27,12 +27,12 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(1)
+    cfg.set_self_gravity_Niter_max(10000)
     cfg.set_self_gravity_tol(1e-7)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 
     model.set_solver_config(cfg)
-    model.init_scheduler(int(200), 1)
+    model.init_scheduler(int(5000000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     def rho_map(rmin, rmax):
@@ -161,12 +161,23 @@ def analytic_phi(X, Y, Z, Lx, Ly, Lz, G, A, phi_0):
     cz = (2 * np.pi) / Lz
 
     C = -(4 * np.pi * G * A) / (cx * cx + cy * cy + cz * cz)
+    a = np.sin(cx * X)
+    b = np.sin(cy * Y)
+    c = np.sin(cz * Z)
+    d = a * b * c
+    print(f"{a.shape}, {b.shape}, {c.shape}, {d.shape}\n")
     return phi_0 + C * (np.sin(cx * X) * np.sin(cy * Y) * np.sin(cz * Z))
 
 
 ana = analytic_phi(np.array(X), np.array(Y), np.array(Z), 1, 1, 1, 1, 1, 0)
-plt.plot(X, np.array(phi), ".", label="phi-num")
-# plt.plot(X, ana, ".", label="phi-ana-t")
-plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
+diff = np.array(phi) - ana
+plt.plot(np.array(X), ana, ".", label="phi-ana-t")
+plt.plot(np.array(X), phi, "+", label="phi-num")
+plt.plot(np.array(X), diff, "*", label="diff")
 plt.legend()
 plt.savefig("with-ghost-64-pcg.png", format="png")
+# plt.plot(X, np.array(phi), ".", label="phi-num")
+# # plt.plot(X, ana, ".", label="phi-ana-t")
+# plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")
+# plt.legend()
+# plt.savefig("with-ghost-64-pcg.png", format="png")

@@ -60,9 +60,9 @@ namespace shammodels::common::modules {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
                 get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(6),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(7),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(4),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
         }
 

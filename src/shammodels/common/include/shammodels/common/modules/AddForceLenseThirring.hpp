@@ -83,7 +83,7 @@ namespace shammodels::common::modules {
                 get_ro_edge<shamrock::solvergraph::IDataEdge<Tvec>>(5),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(6),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(7),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(2),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(8),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
         }
 

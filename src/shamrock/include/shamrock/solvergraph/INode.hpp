@@ -17,6 +17,7 @@
  */
 
 #include "shambase/WithUUID.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include <memory>
@@ -30,6 +31,24 @@ namespace shamrock::solvergraph {
 
         std::vector<std::shared_ptr<IEdge>> ro_edges;
         std::vector<std::shared_ptr<IEdge>> rw_edges;
+
+        inline std::shared_ptr<IEdge> &get_ro_edge_base_ptr(int slot) {
+            try {
+                return ro_edges.at(slot);
+            } catch (const std::out_of_range &e) {
+                throw shambase::make_except_with_loc<std::out_of_range>(
+                    shambase::format("Edge at slot {} is not found, {}", slot, print_node_info()));
+            }
+        }
+
+        inline std::shared_ptr<IEdge> &get_rw_edge_base_ptr(int slot) {
+            try {
+                return rw_edges.at(slot);
+            } catch (const std::out_of_range &e) {
+                throw shambase::make_except_with_loc<std::out_of_range>(
+                    shambase::format("Edge at slot {} is not found, {}", slot, print_node_info()));
+            }
+        }
 
         public:
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
@@ -54,20 +73,22 @@ namespace shamrock::solvergraph {
 
         template<class T>
         inline const T &get_ro_edge(int slot) {
-            return shambase::get_check_ref(std::dynamic_pointer_cast<T>(ro_edges.at(slot)));
+            return shambase::get_check_ref(
+                std::dynamic_pointer_cast<T>(get_ro_edge_base_ptr(slot)));
         }
 
         template<class T>
         inline T &get_rw_edge(int slot) {
-            return shambase::get_check_ref(std::dynamic_pointer_cast<T>(rw_edges.at(slot)));
+            return shambase::get_check_ref(
+                std::dynamic_pointer_cast<T>(get_rw_edge_base_ptr(slot)));
         }
 
         inline const IEdge &get_ro_edge_base(int slot) {
-            return shambase::get_check_ref(ro_edges.at(slot));
+            return shambase::get_check_ref(get_ro_edge_base_ptr(slot));
         }
 
         inline IEdge &get_rw_edge_base(int slot) {
-            return shambase::get_check_ref(rw_edges.at(slot));
+            return shambase::get_check_ref(get_rw_edge_base_ptr(slot));
         }
 
         inline void evaluate() { _impl_evaluate_internal(); }

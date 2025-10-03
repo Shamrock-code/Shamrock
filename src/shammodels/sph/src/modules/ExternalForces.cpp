@@ -314,6 +314,59 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         add_ext_forces_seq.push_back(set_constant_c);
     }
 
+    auto field_xyz      = solver_graph.register_edge("field_xyz", FieldRefs<Tvec>("", ""));
+    auto field_vxyz     = solver_graph.register_edge("field_vxyz", FieldRefs<Tvec>("", ""));
+    auto field_axyz_ext = solver_graph.register_edge("field_axyz_ext", FieldRefs<Tvec>("", ""));
+    auto field_sizes    = solver_graph.register_edge("field_sizes", Indexes<u32>("", ""));
+
+    auto set_field_xyz = solver_graph.register_node(
+        "set_field_xyz", NodeSetEdge<FieldRefs<Tvec>>([&](FieldRefs<Tvec> &field_xyz_edge) {
+            DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(0);
+                field_xyz_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_xyz_edge.set_refs(field_xyz_refs);
+        }));
+    shambase::get_check_ref(set_field_xyz).set_edges(field_xyz);
+
+    auto set_field_vxyz = solver_graph.register_node(
+        "set_field_vxyz", NodeSetEdge<FieldRefs<Tvec>>([&](FieldRefs<Tvec> &field_vxyz_edge) {
+            DDPatchDataFieldRef<Tvec> field_vxyz_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(ivxyz);
+                field_vxyz_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_vxyz_edge.set_refs(field_vxyz_refs);
+        }));
+    shambase::get_check_ref(set_field_vxyz).set_edges(field_vxyz);
+
+    auto set_field_axyz_ext = solver_graph.register_node(
+        "set_field_axyz_ext",
+        NodeSetEdge<FieldRefs<Tvec>>([&](FieldRefs<Tvec> &field_axyz_ext_edge) {
+            DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = pdat.get_field<Tvec>(iaxyz_ext);
+                field_axyz_ext_refs.add_obj(p.id_patch, std::ref(field));
+            });
+            field_axyz_ext_edge.set_refs(field_axyz_ext_refs);
+        }));
+    shambase::get_check_ref(set_field_axyz_ext).set_edges(field_axyz_ext);
+
+    auto set_field_sizes = solver_graph.register_node(
+        "set_field_sizes", NodeSetEdge<Indexes<u32>>([&](Indexes<u32> &sizes) {
+            sizes.indexes = {};
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                sizes.indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
+        }));
+    shambase::get_check_ref(set_field_sizes).set_edges(field_sizes);
+
+    add_ext_forces_seq.push_back(set_field_xyz);
+    add_ext_forces_seq.push_back(set_field_vxyz);
+    add_ext_forces_seq.push_back(set_field_axyz_ext);
+    add_ext_forces_seq.push_back(set_field_sizes);
+
     for (u32 i = 0; i < solver_config.ext_force_config.ext_forces.size(); i++) {
 
         auto &var_force = solver_config.ext_force_config.ext_forces[i];
@@ -357,10 +410,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_pos),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_a_spin),
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_dir_spin),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_positions"),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_velocities"),
-                    solver_graph.get_edge_ptr<Indexes<u32>>("sizes"),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_accel_ext"));
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_xyz"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("field_sizes"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_axyz_ext"));
 
             add_ext_forces_seq.push_back(set_cmass);
             add_ext_forces_seq.push_back(set_central_pos);
@@ -390,10 +443,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                 .set_edges(
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_Omega_0),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_q),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_positions"),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_velocities"),
-                    solver_graph.get_edge_ptr<Indexes<u32>>("sizes"),
-                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("spans_accel_ext"));
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_xyz"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("field_sizes"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_axyz_ext"));
 
             add_ext_forces_seq.push_back(set_Omega_0);
             add_ext_forces_seq.push_back(set_q);

@@ -404,8 +404,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         }
     }
 
-    OperationSequence seq("Add external forces", std::move(add_ext_forces_seq));
-    seq.evaluate();
+    if (add_ext_forces_seq.size() > 0) {
+        OperationSequence seq("Add external forces", std::move(add_ext_forces_seq));
+        seq.evaluate();
+    }
 }
 
 template<class Tvec, template<class> class SPHKernel>

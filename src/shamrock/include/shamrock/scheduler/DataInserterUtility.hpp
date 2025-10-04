@@ -44,6 +44,23 @@ namespace shamrock {
          */
         DataInserterUtility(PatchScheduler &sched) : sched(sched) {}
 
+        inline void balance_load(std::function<void(void)> load_balance_update) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "Compute load ...");
+            }
+
+            load_balance_update();
+
+            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln("DataInserterUtility", "run scheduler step ...");
+            }
+
+            sched.scheduler_step(false, false);
+            sched.scheduler_step(true, true);
+        }
+
         /**
          * @brief Pushes data into the scheduler.
          *
@@ -108,20 +125,7 @@ namespace shamrock {
             }
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
 
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "Compute load ...");
-            }
-
-            load_balance_update();
-
-            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "run scheduler step ...");
-            }
-
-            sched.scheduler_step(false, false);
-            sched.scheduler_step(true, true);
+            balance_load(load_balance_update);
 
             return sum_push;
         }

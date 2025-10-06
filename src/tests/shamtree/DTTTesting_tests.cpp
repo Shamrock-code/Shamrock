@@ -36,7 +36,8 @@ inline void validate_dtt_results(
     const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
     Tscal theta_crit,
     std::vector<u32_2> &internal_node_interactions,
-    std::vector<u32_2> &unrolled_interact) {
+    std::vector<u32_2> &unrolled_interact,
+    bool ordered_result) {
 
     u32 Npart    = positions.get_size();
     u32 Npart_sq = Npart * Npart;
@@ -57,6 +58,29 @@ inline void validate_dtt_results(
 
     std::vector<std::tuple<u32, u32>> part_interact_node_node{};
     std::vector<std::tuple<u32, u32>> part_interact_leaf_leaf{};
+
+    if (ordered_result) {
+
+        auto test_ordered = [](std::vector<u32_2> &part_interact) {
+            u32 offenses = 0;
+
+            u32 last_id_a = 0;
+            for (auto r : part_interact) {
+                u32 id_a = r.x();
+                u32 id_b = r.y();
+
+                if (id_a < last_id_a) {
+                    offenses++;
+                }
+
+                last_id_a = id_a;
+            }
+            return offenses;
+        };
+
+        REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
+        REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+    }
 
     for (auto r : internal_node_interactions) {
 
@@ -119,7 +143,7 @@ inline void validate_dtt_results(
     REQUIRE_EQUAL(part_interact.size(), Npart_sq);
 }
 
-TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
+void dtt_test(bool ordered_result) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
@@ -165,7 +189,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::details::DTTCpuReference<Tmorton, Tvec, 3>::dtt(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, false);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         timer.end();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
@@ -174,7 +198,12 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+            partpos_buf,
+            bvh,
+            theta_crit,
+            internal_node_interactions,
+            unrolled_interact,
+            ordered_result);
 
         m2m_ref = internal_node_interactions;
         p2p_ref = unrolled_interact;
@@ -188,7 +217,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::clbvh_dual_tree_traversal(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, false);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         timer.end();
         logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
 
@@ -197,7 +226,12 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
 
         validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
+            partpos_buf,
+            bvh,
+            theta_crit,
+            internal_node_interactions,
+            unrolled_interact,
+            ordered_result);
 
         REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
@@ -206,3 +240,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
     // reset to current impl
     shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
 }
+
+TestStart(Unittest, "DTT_testing_base", dtt_testing1, 1) { dtt_test(false); }
+
+TestStart(Unittest, "DTT_testing_ordered", dtt_testing2, 1) { dtt_test(true); }

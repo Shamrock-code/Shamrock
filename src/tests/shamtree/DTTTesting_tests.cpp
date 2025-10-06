@@ -35,9 +35,11 @@ inline void validate_dtt_results(
     const sham::DeviceBuffer<Tvec> &positions,
     const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
     Tscal theta_crit,
-    std::vector<u32_2> &internal_node_interactions,
-    std::vector<u32_2> &unrolled_interact,
+    shamtree::DTTResult &result,
     bool ordered_result) {
+
+    std::vector<u32_2> internal_node_interactions = result.node_interactions_m2m.copy_to_stdvec();
+    std::vector<u32_2> unrolled_interact          = result.node_interactions_p2p.copy_to_stdvec();
 
     u32 Npart    = positions.get_size();
     u32 Npart_sq = Npart * Npart;
@@ -61,6 +63,9 @@ inline void validate_dtt_results(
 
     if (ordered_result) {
 
+        REQUIRE(result.is_ordered());
+        REQUIRE(bool(result.ordered_result));
+
         auto test_ordered = [](std::vector<u32_2> &part_interact) {
             u32 offenses = 0;
 
@@ -80,6 +85,17 @@ inline void validate_dtt_results(
 
         REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
         REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+
+        auto m2m_offset = result.ordered_result->offset_m2m.copy_to_stdvec();
+        auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
+
+        // test that if i go in slot i I find only stuff with i in x part
+
+        // TODO
+
+    } else {
+        REQUIRE(!result.is_ordered());
+        REQUIRE(!bool(result.ordered_result));
     }
 
     for (auto r : internal_node_interactions) {
@@ -193,20 +209,10 @@ void dtt_test(bool ordered_result) {
         timer.end();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
-        std::vector<u32_2> internal_node_interactions
-            = result.node_interactions_m2m.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
+        validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 
-        validate_dtt_results(
-            partpos_buf,
-            bvh,
-            theta_crit,
-            internal_node_interactions,
-            unrolled_interact,
-            ordered_result);
-
-        m2m_ref = internal_node_interactions;
-        p2p_ref = unrolled_interact;
+        m2m_ref = result.node_interactions_m2m.copy_to_stdvec();
+        p2p_ref = result.node_interactions_p2p.copy_to_stdvec();
     }
 
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
@@ -221,17 +227,11 @@ void dtt_test(bool ordered_result) {
         timer.end();
         logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
 
+        validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
+
         std::vector<u32_2> internal_node_interactions
             = result.node_interactions_m2m.copy_to_stdvec();
         std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
-
-        validate_dtt_results(
-            partpos_buf,
-            bvh,
-            theta_crit,
-            internal_node_interactions,
-            unrolled_interact,
-            ordered_result);
 
         REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);

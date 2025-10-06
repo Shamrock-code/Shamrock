@@ -165,7 +165,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::details::DTTCpuReference<Tmorton, Tvec, 3>::dtt(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, false);
         timer.end();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
@@ -188,7 +188,7 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::clbvh_dual_tree_traversal(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, false);
         timer.end();
         logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
 

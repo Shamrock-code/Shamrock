@@ -117,7 +117,8 @@ namespace shamtree::details {
         inline static shamtree::DTTResult dtt(
             sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-            shambase::VecComponent<Tvec> theta_crit) {
+            shambase::VecComponent<Tvec> theta_crit,
+            bool ordered_result) {
             StackEntry stack_loc{};
 
             std::vector<u32_2> interact_m2m{};

@@ -69,16 +69,19 @@ namespace shamtree {
     DTTResult clbvh_dual_tree_traversal(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-        shambase::VecComponent<Tvec> theta_crit) {
+        shambase::VecComponent<Tvec> theta_crit,
+        bool ordered_result) {
 
         using ImplRef = details::DTTCpuReference<Tmorton, Tvec, dim>;
         using ImplPar = details::DTTParallelSelect<Tmorton, Tvec, dim>;
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
+        bool ord = ordered_result;
+
         switch (dtt_impl) {
-        case DTTImpl::REFERENCE      : return ImplRef::dtt(dev_sched, bvh, theta_crit);
-        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit);
-        case DTTImpl::SCAN_MULTIPASS : return ImplSca::dtt(dev_sched, bvh, theta_crit);
+        case DTTImpl::REFERENCE      : return ImplRef::dtt(dev_sched, bvh, theta_crit, ord);
+        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit, ord);
+        case DTTImpl::SCAN_MULTIPASS : return ImplSca::dtt(dev_sched, bvh, theta_crit, ord);
         default                      : shambase::throw_unimplemented();
         }
     }
@@ -86,6 +89,7 @@ namespace shamtree {
     template DTTResult clbvh_dual_tree_traversal<u64, f64_3, 3>(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<u64, f64_3, 3> &bvh,
-        shambase::VecComponent<f64_3> theta_crit);
+        shambase::VecComponent<f64_3> theta_crit,
+        bool ordered_result);
 
 } // namespace shamtree

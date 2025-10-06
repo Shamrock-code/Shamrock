@@ -12,7 +12,7 @@
 /**
  * @file AddForceLenseThirring.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Adds the inertial part of the acceleration for a shearing box force.
+ * @brief Adds the Lense-Thirring force acceleration.
  *
  */
 

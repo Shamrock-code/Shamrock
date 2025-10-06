@@ -314,11 +314,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         add_ext_forces_seq.push_back(set_constant_c);
     }
 
-    auto field_xyz      = solver_graph.register_edge("field_xyz", FieldRefs<Tvec>("", ""));
-    auto field_vxyz     = solver_graph.register_edge("field_vxyz", FieldRefs<Tvec>("", ""));
-    auto field_axyz_ext = solver_graph.register_edge("field_axyz_ext", FieldRefs<Tvec>("", ""));
-    auto field_axyz     = solver_graph.register_edge("field_axyz", FieldRefs<Tvec>("", ""));
-    auto field_sizes    = solver_graph.register_edge("field_sizes", Indexes<u32>("", ""));
+    auto field_xyz   = solver_graph.register_edge("field_xyz", FieldRefs<Tvec>("", ""));
+    auto field_vxyz  = solver_graph.register_edge("field_vxyz", FieldRefs<Tvec>("", ""));
+    auto field_axyz  = solver_graph.register_edge("field_axyz", FieldRefs<Tvec>("", ""));
+    auto field_sizes = solver_graph.register_edge("field_sizes", Indexes<u32>("", ""));
 
     auto set_field_xyz = solver_graph.register_node(
         "set_field_xyz", NodeSetEdge<FieldRefs<Tvec>>([&](FieldRefs<Tvec> &field_xyz_edge) {

@@ -22,7 +22,7 @@
 
 namespace shamtree::details {
 
-    void reorder_scan_dtt_result(
+    inline void reorder_scan_dtt_result(
         u32 N, sham::DeviceBuffer<u32_2> &in_out, sham::DeviceBuffer<u32> &offsets) {
 
         size_t interact_count = in_out.get_size();

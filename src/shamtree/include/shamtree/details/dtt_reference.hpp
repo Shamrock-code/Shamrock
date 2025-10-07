@@ -18,6 +18,7 @@
 #include "shambackends/vec.hpp"
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/details/reoder_scan_dtt_result.hpp"
 
 namespace shamtree::details {
 
@@ -136,7 +137,26 @@ namespace shamtree::details {
             // afterward to avoid an issue with clang-tidy complaining when initializing under the
             // hood multiple unique_ptr in a structured binding initialization
             // see : https://github.com/llvm/llvm-project/issues/153300
-            return shamtree::DTTResult{std::move(interact_m2m_buf), std::move(interact_p2p_buf)};
+            DTTResult result{std::move(interact_m2m_buf), std::move(interact_p2p_buf)};
+
+            if (ordered_result) {
+                DTTResult::OrderedResult ordering{
+                    sham::DeviceBuffer<u32>(0, dev_sched), sham::DeviceBuffer<u32>(0, dev_sched)};
+
+                shamtree::details::reorder_scan_dtt_result(
+                    bvh.structure.get_total_cell_count(),
+                    result.node_interactions_m2m,
+                    ordering.offset_m2m);
+
+                shamtree::details::reorder_scan_dtt_result(
+                    bvh.structure.get_total_cell_count(),
+                    result.node_interactions_p2p,
+                    ordering.offset_p2p);
+
+                result.ordered_result = std::move(ordering);
+            }
+
+            return result;
         }
     };
 } // namespace shamtree::details

@@ -277,10 +277,14 @@ namespace shamtree::details {
                     }
                 });
 
-            return DTTResult{
-                std::move(idx_m2m),
-                std::move(idx_p2p),
-                DTTResult::OrderedResult{std::move(scan_m2m), std::move(scan_p2p)}};
+            DTTResult ret{std::move(idx_m2m), std::move(idx_p2p)};
+
+            if (ordered_result) {
+                DTTResult::OrderedResult ordering{std::move(scan_m2m), std::move(scan_p2p)};
+                ret.ordered_result = std::move(ordering);
+            }
+
+            return ret;
         }
     };
 

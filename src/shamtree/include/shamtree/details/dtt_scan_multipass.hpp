@@ -24,6 +24,7 @@
 #include "shammath/AABB.hpp"
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/details/reoder_scan_dtt_result.hpp"
 
 namespace shamtree::details {
 
@@ -271,6 +272,23 @@ namespace shamtree::details {
                             interact_p2p[res_sz_leaf_leaf + scan_p2p_i] = pushed_p2p[i];
                         }
                     });
+            }
+
+            if (ordered_result) {
+                DTTResult::OrderedResult ordering{
+                    sham::DeviceBuffer<u32>(0, dev_sched), sham::DeviceBuffer<u32>(0, dev_sched)};
+
+                shamtree::details::reorder_scan_dtt_result(
+                    bvh.structure.get_total_cell_count(),
+                    result.node_interactions_m2m,
+                    ordering.offset_m2m);
+
+                shamtree::details::reorder_scan_dtt_result(
+                    bvh.structure.get_total_cell_count(),
+                    result.node_interactions_p2p,
+                    ordering.offset_p2p);
+
+                result.ordered_result = std::move(ordering);
             }
 
             return result;

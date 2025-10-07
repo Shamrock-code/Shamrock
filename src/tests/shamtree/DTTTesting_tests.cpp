@@ -66,32 +66,59 @@ inline void validate_dtt_results(
         REQUIRE(result.is_ordered());
         REQUIRE(bool(result.ordered_result));
 
-        auto test_ordered = [](std::vector<u32_2> &part_interact) {
-            u32 offenses = 0;
+        if (result.ordered_result.has_value()) {
 
-            u32 last_id_a = 0;
-            for (auto r : part_interact) {
-                u32 id_a = r.x();
-                u32 id_b = r.y();
+            auto test_ordered = [](std::vector<u32_2> &part_interact) {
+                u32 offenses = 0;
 
-                if (id_a < last_id_a) {
-                    offenses++;
+                u32 last_id_a = 0;
+                for (auto r : part_interact) {
+                    u32 id_a = r.x();
+                    u32 id_b = r.y();
+
+                    if (id_a < last_id_a) {
+                        offenses++;
+                    }
+
+                    last_id_a = id_a;
                 }
+                return offenses;
+            };
 
-                last_id_a = id_a;
+            REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
+            REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+
+            auto m2m = result.node_interactions_m2m.copy_to_stdvec();
+            auto p2p = result.node_interactions_p2p.copy_to_stdvec();
+
+            auto m2m_offset = result.ordered_result->offset_m2m.copy_to_stdvec();
+            auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
+
+            // test that if I look in slot i I find only stuff with i in x part
+
+            u32 m2m_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = m2m_offset[i]; j < m2m_offset[i + 1]; j++) {
+                    u32_2 interact = m2m[j];
+                    if (interact.x() != i) {
+                        m2m_sorting_offenses++;
+                    }
+                }
             }
-            return offenses;
-        };
 
-        REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
-        REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+            u32 p2p_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = p2p_offset[i]; j < p2p_offset[i + 1]; j++) {
+                    u32_2 interact = p2p[j];
+                    if (interact.x() != i) {
+                        p2p_sorting_offenses++;
+                    }
+                }
+            }
 
-        auto m2m_offset = result.ordered_result->offset_m2m.copy_to_stdvec();
-        auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
-
-        // test that if i go in slot i I find only stuff with i in x part
-
-        // TODO
+            REQUIRE_EQUAL(m2m_sorting_offenses, 0);
+            REQUIRE_EQUAL(p2p_sorting_offenses, 0);
+        }
 
     } else {
         REQUIRE(!result.is_ordered());
@@ -225,7 +252,7 @@ void dtt_test(bool ordered_result) {
         auto result = shamtree::clbvh_dual_tree_traversal(
             shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         timer.end();
-        logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
+        logger::raw_ln(impl.impl_name, " :", timer.get_time_str());
 
         validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 

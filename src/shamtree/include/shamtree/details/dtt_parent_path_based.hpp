@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file dtt_reference.hpp
+ * @file dtt_parent_path_based.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

@@ -53,7 +53,7 @@ namespace shamtree::details {
 
         shamalgs::primitives::scan_exclusive_sum_in_place(offsets, offsets_count);
 
-        // here we can global sort in_out, or atomic store then local sort, 
+        // here we can global sort in_out, or atomic store then local sort,
         // for now i do a CPU sort for testing
         if (true) {
             sham::DeviceBuffer<u32_2> in_out_sorted(
@@ -108,7 +108,7 @@ namespace shamtree::details {
                     for (int i = start_index + 1; i < end_index; ++i) {
                         auto key = in_out_sorted[i];
                         int j    = i - 1;
-                        while (j >= start_index && comp(key,in_out_sorted[j])) {
+                        while (j >= start_index && comp(key, in_out_sorted[j])) {
                             in_out_sorted[j + 1] = in_out_sorted[j];
                             --j;
                         }

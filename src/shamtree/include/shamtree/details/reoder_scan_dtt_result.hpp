@@ -16,6 +16,7 @@
  */
 
 #include "shambase/assert.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -24,6 +25,12 @@ namespace shamtree::details {
 
     inline void reorder_scan_dtt_result(
         u32 N, sham::DeviceBuffer<u32_2> &in_out, sham::DeviceBuffer<u32> &offsets) {
+
+        __shamrock_stack_entry();
+
+        if (in_out.get_size() == 0) {
+            return; // no kernel call if there is no interaction
+        }
 
         size_t interact_count = in_out.get_size();
         size_t offsets_count  = N + 1;
@@ -92,27 +99,34 @@ namespace shamtree::details {
                 sham::MultiRef{offsets},
                 sham::MultiRef{in_out_sorted},
                 N,
-                [N](u32 gid, const u32 *__restrict__ offsets, u32_2 *__restrict__ in_out_sorted) {
+                [interact_count](
+                    u32 gid, const u32 *__restrict__ offsets, u32_2 *__restrict__ in_out_sorted) {
                     u32 start_index = offsets[gid];
                     u32 end_index   = offsets[gid + 1];
 
-                    SHAM_ASSERT(start_index < end_index);
-                    SHAM_ASSERT(start_index < N);
-                    SHAM_ASSERT(end_index <= N);
+                    // can be equal if there is no interaction for this sender
+                    SHAM_ASSERT(start_index <= end_index);
+                    SHAM_ASSERT(start_index < interact_count);
+                    SHAM_ASSERT(end_index <= interact_count);
+
+                    // skip empty ranges to avoid unnecessary work
+                    if (start_index == end_index) {
+                        return;
+                    }
 
                     auto comp = [](u32_2 a, u32_2 b) {
                         return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());
                     };
 
                     // simple insertion sort between those indexes
-                    for (int i = start_index + 1; i < end_index; ++i) {
+                    for (u32 i = start_index + 1; i < end_index; ++i) {
                         auto key = in_out_sorted[i];
-                        int j    = i - 1;
-                        while (j >= start_index && comp(key, in_out_sorted[j])) {
-                            in_out_sorted[j + 1] = in_out_sorted[j];
+                        u32 j    = i;
+                        while (j > start_index && comp(key, in_out_sorted[j - 1])) {
+                            in_out_sorted[j] = in_out_sorted[j - 1];
                             --j;
                         }
-                        in_out_sorted[j + 1] = key;
+                        in_out_sorted[j] = key;
                     }
                 });
 
@@ -121,7 +135,7 @@ namespace shamtree::details {
 
             std::vector<u32_2> in_out_stdvec = in_out.copy_to_stdvec();
             std::sort(in_out_stdvec.begin(), in_out_stdvec.end(), [](u32_2 a, u32_2 b) {
-                return a.x() < b.x();
+                return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());
             });
             in_out.copy_from_stdvec(in_out_stdvec);
         }

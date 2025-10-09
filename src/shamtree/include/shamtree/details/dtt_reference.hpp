@@ -15,7 +15,9 @@
  * @brief
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/details/reoder_scan_dtt_result.hpp"
@@ -51,6 +53,7 @@ namespace shamtree::details {
             return theta_sq < theta_crit * theta_crit;
         }
 
+        /// We make the assumption that the root is not a leaf
         inline static void dtt_recursive_internal(
             u32 cell_a,
             u32 cell_b,
@@ -109,9 +112,20 @@ namespace shamtree::details {
             std::vector<u32_2> &interact_m2m,
             std::vector<u32_2> &interact_p2p) {
 
+            __shamrock_stack_entry();
+
             auto obj_it_host = bvh.get_object_iterator_host();
             auto acc         = obj_it_host.get_read_access();
 
+            auto &ttrav = acc.tree_traverser.tree_traverser;
+
+            // Is the root a leaf ?
+            if (ttrav.is_id_leaf(0)) {
+                interact_p2p.push_back({0, 0});
+                return;
+            }
+
+            /// We make the assumption that the root is not a leaf in this function
             dtt_recursive_internal(0, 0, acc, theta_crit, interact_m2m, interact_p2p);
         }
 

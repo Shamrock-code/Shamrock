@@ -176,7 +176,7 @@ inline void validate_dtt_results(
     for (u32 i = 0; i < Npart; i++) {
         for (u32 j = 0; j < Npart; j++) {
             if (part_interact.find({i, j}) == part_interact.end()) {
-                // logger::raw_ln("pair not found :", i, j);
+                logger::raw_ln("pair not found :", i, j);
                 missing_pairs++;
             }
         }
@@ -186,14 +186,10 @@ inline void validate_dtt_results(
     REQUIRE_EQUAL(part_interact.size(), Npart_sq);
 }
 
-void dtt_test(bool ordered_result) {
+void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_result) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
-
-    u32 Npart           = 1000;
-    u32 reduction_level = 1;
-    Tscal theta_crit    = 0.5;
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
 
@@ -268,10 +264,16 @@ void dtt_test(bool ordered_result) {
     shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
 }
 
+inline void dtt_tests(bool ordered_result) {
+    dtt_test(1000, 1, 0.5, ordered_result);
+    dtt_test(1000, 1, 0.0, ordered_result);
+    dtt_test(1, 1, 0.5, ordered_result);
+}
+
 TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {
-    dtt_test(false);
+    dtt_tests(false);
 }
 
 TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", dtt_testing2, 1) {
-    dtt_test(true);
+    dtt_tests(true);
 }

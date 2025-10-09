@@ -99,11 +99,19 @@ namespace shamtree::details {
 
                     shambase::FixedStack<u32_2, ObjItAcc::tree_depth_max + 1> stack;
 
-                    // push root-root interact on stack
-                    stack.push({0, 0});
+                    auto &ttrav = obj_it.tree_traverser.tree_traverser;
 
                     u32 count_m2m_i = 0;
                     u32 count_p2p_i = 0;
+
+                    // Am I a leaf before we start going down the tree ?
+                    if (i == 0 && ttrav.is_id_leaf(0)) {
+                        count_p2p_i++;
+                    } else {
+                        // push root-root interact on stack
+                        // We make the assumption that the root is not a leaf
+                        stack.push({0, 0});
+                    }
 
                     while (stack.is_not_empty()) {
                         u32_2 t = stack.pop_ret();
@@ -120,7 +128,6 @@ namespace shamtree::details {
                         bool crit = mac(aabb_a, aabb_b, theta_crit) == false;
 
                         if (crit) {
-                            auto &ttrav = obj_it.tree_traverser.tree_traverser;
 
                             u32 child_a_1 = ttrav.get_left_child(a);
                             u32 child_a_2 = ttrav.get_right_child(a);
@@ -213,8 +220,17 @@ namespace shamtree::details {
 
                     shambase::FixedStack<u32_2, ObjItAcc::tree_depth_max + 1> stack;
 
-                    // push root-root interact on stack
-                    stack.push({0, 0});
+                    auto &ttrav = obj_it.tree_traverser.tree_traverser;
+
+                    // Am I a leaf before we start going down the tree ?
+                    if (i == 0 && ttrav.is_id_leaf(0)) {
+                        idx_p2p[offset_p2p] = {0, 0};
+                        offset_p2p++;
+                    } else {
+                        // push root-root interact on stack
+                        // We make the assumption that the root is not a leaf
+                        stack.push({0, 0});
+                    }
 
                     while (stack.is_not_empty()) {
                         u32_2 t = stack.pop_ret();
@@ -231,7 +247,6 @@ namespace shamtree::details {
                         bool crit = mac(aabb_a, aabb_b, theta_crit) == false;
 
                         if (crit) {
-                            auto &ttrav = obj_it.tree_traverser.tree_traverser;
 
                             u32 child_a_1 = ttrav.get_left_child(a);
                             u32 child_a_2 = ttrav.get_right_child(a);

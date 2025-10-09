@@ -66,6 +66,35 @@ namespace shamtree::details {
             shamtree::DTTResult result{
                 sham::DeviceBuffer<u32_2>(0, dev_sched), sham::DeviceBuffer<u32_2>(0, dev_sched)};
 
+            auto add_ordering = [&]() {
+                if (ordered_result) {
+                    DTTResult::OrderedResult ordering{
+                        sham::DeviceBuffer<u32>(0, dev_sched),
+                        sham::DeviceBuffer<u32>(0, dev_sched)};
+
+                    shamtree::details::reorder_scan_dtt_result(
+                        bvh.structure.get_total_cell_count(),
+                        result.node_interactions_m2m,
+                        ordering.offset_m2m);
+
+                    shamtree::details::reorder_scan_dtt_result(
+                        bvh.structure.get_total_cell_count(),
+                        result.node_interactions_p2p,
+                        ordering.offset_p2p);
+
+                    result.ordered_result = std::move(ordering);
+                }
+            };
+
+            if (bvh.is_root_leaf()) {
+                result.node_interactions_p2p.resize(1);
+                result.node_interactions_p2p.set_val_at_idx(0, {0, 0});
+                add_ordering();
+                return result;
+            }
+
+            // we assume from this point that the root is not a leaf
+
             sham::DeviceBuffer<u32_2> task_current(1, dev_sched);
             task_current.set_val_at_idx(0, {0, 0});
 
@@ -274,22 +303,7 @@ namespace shamtree::details {
                     });
             }
 
-            if (ordered_result) {
-                DTTResult::OrderedResult ordering{
-                    sham::DeviceBuffer<u32>(0, dev_sched), sham::DeviceBuffer<u32>(0, dev_sched)};
-
-                shamtree::details::reorder_scan_dtt_result(
-                    bvh.structure.get_total_cell_count(),
-                    result.node_interactions_m2m,
-                    ordering.offset_m2m);
-
-                shamtree::details::reorder_scan_dtt_result(
-                    bvh.structure.get_total_cell_count(),
-                    result.node_interactions_p2p,
-                    ordering.offset_p2p);
-
-                result.ordered_result = std::move(ordering);
-            }
+            add_ordering();
 
             return result;
         }

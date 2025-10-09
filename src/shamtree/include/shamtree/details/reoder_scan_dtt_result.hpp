@@ -28,15 +28,16 @@ namespace shamtree::details {
 
         __shamrock_stack_entry();
 
-        if (in_out.get_size() == 0) {
-            return; // no kernel call if there is no interaction
-        }
-
         size_t interact_count = in_out.get_size();
         size_t offsets_count  = N + 1;
 
         offsets.resize(offsets_count);
         offsets.fill(0);
+
+        if (in_out.get_size() == 0) {
+            return; // no kernel call if there is no interaction, but we still need to return an
+                    // offset table that is [0,0]
+        }
 
         auto &q = in_out.get_dev_scheduler().get_queue();
 

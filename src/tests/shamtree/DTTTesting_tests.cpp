@@ -38,6 +38,8 @@ inline void validate_dtt_results(
     shamtree::DTTResult &result,
     bool ordered_result) {
 
+    __shamrock_stack_entry();
+
     std::vector<u32_2> internal_node_interactions = result.node_interactions_m2m.copy_to_stdvec();
     std::vector<u32_2> unrolled_interact          = result.node_interactions_p2p.copy_to_stdvec();
 
@@ -62,6 +64,7 @@ inline void validate_dtt_results(
     std::vector<std::tuple<u32, u32>> part_interact_leaf_leaf{};
 
     if (ordered_result) {
+        logger::raw_ln("testing ordered result");
 
         REQUIRE(result.is_ordered());
         REQUIRE(bool(result.ordered_result));
@@ -187,6 +190,7 @@ inline void validate_dtt_results(
 }
 
 void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_result) {
+    __shamrock_stack_entry();
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
@@ -265,6 +269,7 @@ void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_res
 }
 
 inline void dtt_tests(bool ordered_result) {
+    __shamrock_stack_entry();
     dtt_test(1000, 1, 0.5, ordered_result);
     dtt_test(1000, 1, 0.0, ordered_result);
     dtt_test(1, 1, 0.5, ordered_result);

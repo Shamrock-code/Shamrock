@@ -268,6 +268,10 @@ void dtt_test(bool ordered_result) {
     shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
 }
 
-TestStart(Unittest, "DTT_testing_base", dtt_testing1, 1) { dtt_test(false); }
+TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {
+    dtt_test(false);
+}
 
-TestStart(Unittest, "DTT_testing_ordered", dtt_testing2, 1) { dtt_test(true); }
+TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", dtt_testing2, 1) {
+    dtt_test(true);
+}

@@ -86,6 +86,9 @@ class shamtree::CompressedLeafBVH {
     /// make an empty BVH
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 
+    /// is the BVH empty ?
+    inline bool is_empty() const { return reduced_morton_set.is_empty(); }
+
     /**
      * @brief rebuild the BVH from the given positions
      *

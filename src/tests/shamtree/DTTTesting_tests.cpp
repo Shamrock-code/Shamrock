@@ -268,11 +268,35 @@ void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_res
     shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
 }
 
+inline void dtt_test_empty(bool ordered_result) {
+    __shamrock_stack_entry();
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+    auto bvh       = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+
+    auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
+
+    for (auto impl : shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
+        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl.impl_name, impl.params);
+
+        auto run_dtt = [&]() {
+            shamtree::clbvh_dual_tree_traversal(
+                shamsys::instance::get_compute_scheduler_ptr(), bvh, 0.5, ordered_result);
+        };
+
+        REQUIRE_EXCEPTION_THROW(run_dtt(), std::invalid_argument);
+    }
+    // reset to current impl
+    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
+}
+
 inline void dtt_tests(bool ordered_result) {
     __shamrock_stack_entry();
     dtt_test(1000, 1, 0.5, ordered_result);
     dtt_test(1000, 1, 0.0, ordered_result);
     dtt_test(1, 1, 0.5, ordered_result);
+    dtt_test_empty(ordered_result);
 }
 
 TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {

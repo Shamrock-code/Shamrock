@@ -72,6 +72,11 @@ namespace shamtree {
         shambase::VecComponent<Tvec> theta_crit,
         bool ordered_result) {
 
+        if (bvh.is_empty()) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "BVH is empty, cannot perform DTT");
+        }
+
         using ImplRef = details::DTTCpuReference<Tmorton, Tvec, dim>;
         using ImplPar = details::DTTParallelSelect<Tmorton, Tvec, dim>;
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;

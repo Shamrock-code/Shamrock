@@ -106,13 +106,18 @@ namespace shamtree::details {
 
                     // can be equal if there is no interaction for this sender
                     SHAM_ASSERT(start_index <= end_index);
-                    SHAM_ASSERT(start_index < interact_count);
-                    SHAM_ASSERT(end_index <= interact_count);
 
                     // skip empty ranges to avoid unnecessary work
                     if (start_index == end_index) {
                         return;
                     }
+
+                    // if there is no interactions at the end of the offset list
+                    // offsets[gid] can be equal to interact_count
+                    // but we check that start_index != end_index, so here the correct assertions
+                    // is indeed start_index < interact_count
+                    SHAM_ASSERT(start_index < interact_count);
+                    SHAM_ASSERT(end_index <= interact_count); // see the for loop for this one
 
                     auto comp = [](u32_2 a, u32_2 b) {
                         return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());

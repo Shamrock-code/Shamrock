@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file reoder_scan_dtt_result.hpp
+ * @file reorder_scan_dtt_result.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

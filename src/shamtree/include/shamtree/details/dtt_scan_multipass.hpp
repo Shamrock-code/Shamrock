@@ -24,7 +24,7 @@
 #include "shammath/AABB.hpp"
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/reoder_scan_dtt_result.hpp"
+#include "shamtree/details/reorder_scan_dtt_result.hpp"
 
 namespace shamtree::details {
 

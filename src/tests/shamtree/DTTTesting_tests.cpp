@@ -179,7 +179,7 @@ inline void validate_dtt_results(
     for (u32 i = 0; i < Npart; i++) {
         for (u32 j = 0; j < Npart; j++) {
             if (part_interact.find({i, j}) == part_interact.end()) {
-                logger::raw_ln("pair not found :", i, j);
+                // logger::raw_ln("pair not found :", i, j);
                 missing_pairs++;
             }
         }

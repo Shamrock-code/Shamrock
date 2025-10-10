@@ -54,7 +54,9 @@ def benchmark_dtt_core(N, theta_crit, compression_level, ordered_result, nb_repe
 
 
 def benchmark_dtt(N, theta_crit, compression_level, ordered_result, nb_repeat=10):
-    times, max_mem_delta = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
+    times, max_mem_delta = benchmark_dtt_core(
+        N, theta_crit, compression_level, ordered_result, nb_repeat
+    )
     return min(times), max(times), sum(times) / nb_repeat, max_mem_delta
 
 

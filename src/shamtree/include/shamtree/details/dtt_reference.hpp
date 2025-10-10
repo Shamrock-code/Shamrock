@@ -154,18 +154,16 @@ namespace shamtree::details {
             DTTResult result{std::move(interact_m2m_buf), std::move(interact_p2p_buf)};
 
             if (ordered_result) {
-                DTTResult::OrderedResult ordering{
-                    sham::DeviceBuffer<u32>(0, dev_sched), sham::DeviceBuffer<u32>(0, dev_sched)};
+                auto offset_m2m = sham::DeviceBuffer<u32>(0, dev_sched);
+                auto offset_p2p = sham::DeviceBuffer<u32>(0, dev_sched);
 
                 shamtree::details::reorder_scan_dtt_result(
-                    bvh.structure.get_total_cell_count(),
-                    result.node_interactions_m2m,
-                    ordering.offset_m2m);
+                    bvh.structure.get_total_cell_count(), result.node_interactions_m2m, offset_m2m);
 
                 shamtree::details::reorder_scan_dtt_result(
-                    bvh.structure.get_total_cell_count(),
-                    result.node_interactions_p2p,
-                    ordering.offset_p2p);
+                    bvh.structure.get_total_cell_count(), result.node_interactions_p2p, offset_p2p);
+
+                DTTResult::OrderedResult ordering{std::move(offset_m2m), std::move(offset_p2p)};
 
                 result.ordered_result = std::move(ordering);
             }

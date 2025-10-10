@@ -63,24 +63,28 @@ namespace shamtree::details {
 
             auto q = shambase::get_check_ref(dev_sched).get_queue();
 
+            sham::DeviceBuffer<u32_2> node_interactions_m2m(0, dev_sched);
+            sham::DeviceBuffer<u32_2> node_interactions_p2p(0, dev_sched);
+
             shamtree::DTTResult result{
-                sham::DeviceBuffer<u32_2>(0, dev_sched), sham::DeviceBuffer<u32_2>(0, dev_sched)};
+                std::move(node_interactions_m2m), std::move(node_interactions_p2p)};
 
             auto add_ordering = [&]() {
                 if (ordered_result) {
-                    DTTResult::OrderedResult ordering{
-                        sham::DeviceBuffer<u32>(0, dev_sched),
-                        sham::DeviceBuffer<u32>(0, dev_sched)};
+                    auto offset_m2m = sham::DeviceBuffer<u32>(0, dev_sched);
+                    auto offset_p2p = sham::DeviceBuffer<u32>(0, dev_sched);
 
                     shamtree::details::reorder_scan_dtt_result(
                         bvh.structure.get_total_cell_count(),
                         result.node_interactions_m2m,
-                        ordering.offset_m2m);
+                        offset_m2m);
 
                     shamtree::details::reorder_scan_dtt_result(
                         bvh.structure.get_total_cell_count(),
                         result.node_interactions_p2p,
-                        ordering.offset_p2p);
+                        offset_p2p);
+
+                    DTTResult::OrderedResult ordering{std::move(offset_m2m), std::move(offset_p2p)};
 
                     result.ordered_result = std::move(ordering);
                 }

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeCGLoop.hpp
+ * @file NodeCGLoop-old1.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
@@ -78,76 +78,6 @@ namespace shammodels::basegodunov::modules {
         modules::ResidualDot<Tscal> node7{};
         // New-A-conjugate vector p node
         modules::NodeAYPXTwoVectors<Tscal> node8{block_size};
-
-        //
-        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> p_ghosts
-            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
-                "p_ghots", "p_ghots");
-
-        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> res_ghosts
-            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
-                "res_ghots", "res_ghots");
-
-        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> cpy_ghosts
-            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
-                "cpy_ghots", "cpy_ghots");
-
-        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> Ap_ghosts
-            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
-                "Ap_ghots", "Ap_ghots");
-
-        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> had_ghosts
-            = std::make_shared<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>>(
-                "had_ghots", "had_ghots");
-
-        /***********************************/
-        // Extract ghosts for Field
-        shamrock::solvergraph::ExtractGhostField<Tscal> node_gz_p{block_size};
-
-        // Exchange ghosts for field
-        shamrock::solvergraph::ExchangeGhostField<Tscal> node_exch_gz_p{};
-
-        // Replace ghosts for field
-        shamrock::solvergraph::ReplaceGhostFields<Tscal> node_replace_gz_p{block_size};
-
-        /***********************************/
-
-        // Extract ghosts for field (residuals)
-        shamrock::solvergraph::ExtractGhostField<Tscal> node_gz_res{block_size};
-
-        // Exchange ghosts for field  (residuals)
-        shamrock::solvergraph::ExchangeGhostField<Tscal> node_exch_gz_res{};
-
-        // Replace ghosts for field (residuals)
-        shamrock::solvergraph::ReplaceGhostFields<Tscal> node_replace_gz_res{block_size};
-
-        /***********************************/
-        // Extract ghosts for Field
-        shamrock::solvergraph::ExtractGhostField<Tscal> node_Ap_gz{block_size};
-
-        // Exchange ghosts for field
-        shamrock::solvergraph::ExchangeGhostField<Tscal> node_Ap_exch_gz{};
-
-        // Replace ghosts for field
-        shamrock::solvergraph::ReplaceGhostFields<Tscal> node_Ap_replace_gz{block_size};
-
-        /*********************************/
-        // Extract ghosts for Field
-        shamrock::solvergraph::ExtractGhostField<Tscal> node_had_gz{block_size};
-
-        // Exchange ghosts for field
-        shamrock::solvergraph::ExchangeGhostField<Tscal> node_had_exch_gz{};
-
-        // Replace ghosts for field
-        shamrock::solvergraph::ReplaceGhostFields<Tscal> node_had_replace_gz{block_size};
-
-        /***********************/
-        // Copy original phi_p back after modif node
-        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_phi_res{};
-
-        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_phi{};
-
-        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_had_prod{};
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
@@ -219,9 +149,6 @@ namespace shammodels::basegodunov::modules {
                  alpha,
                  beta});
 
-            node_copy_phi.set_edges(spans_phi_res, spans_phi_cpy);
-            node_copy_had_prod.set_edges(spans_phi_hadamard_prod, spans_phi_hadamard_prod_cpy);
-
             // set node0 edges
             node0.set_edges(
                 sizes,
@@ -229,17 +156,13 @@ namespace shammodels::basegodunov::modules {
                 cell_neigh_graph,
                 spans_block_cell_sizes,
                 spans_phi,
-                // spans_phi_cpy, // c'est la copie de phi plutot
                 spans_rho,
-                // copy_rho,
                 mean_rho,
                 spans_phi_res,
                 spans_phi_p);
 
             // set node1 edges
-            // node1.set_edges(spans_phi_res, old_values);
-
-            node1.set_edges(spans_phi_cpy, old_values);
+            node1.set_edges(spans_phi_res, old_values);
 
             // set node2 edges
             node2.set_edges(
@@ -253,8 +176,8 @@ namespace shammodels::basegodunov::modules {
             // set node3 edges
             node3.set_edges(sizes, sizes_no_gz, spans_phi_p, spans_phi_Ap, spans_phi_hadamard_prod);
 
-            node4.set_edges(sizes, sizes_no_gz, spans_phi_hadamard_prod_cpy, e_norm);
-            // node4.set_edges(sizes, sizes_no_gz, spans_phi_hadamard_prod, e_norm);
+            // set node4 edges
+            node4.set_edges(sizes, sizes_no_gz, spans_phi_hadamard_prod, e_norm);
 
             // set node5 edges
             node5.set_edges(sizes, sizes_no_gz, spans_phi_p, alpha, spans_phi);
@@ -265,46 +188,8 @@ namespace shammodels::basegodunov::modules {
             // // set node7 edges
             node7.set_edges(spans_phi_res, new_values);
 
-            // node7.set_edges(spans_phi_cpy, new_values);
-
             // // set node8 edges
             node8.set_edges(sizes, sizes_no_gz, spans_phi_res, beta, spans_phi_p);
-
-            // set node_gz edges  for p-vectors
-            node_gz_p.set_edges(spans_phi_p, idx_in_ghost, p_ghosts);
-
-            // set node_exch_gz edges for p-vectors
-            node_exch_gz_p.set_edges(rank_owner, p_ghosts);
-
-            // replace ghosts for p-vectors
-            node_replace_gz_p.set_edges(p_ghosts, spans_phi_p);
-
-            // // set node_gz edges  for Ap-vectors
-            node_Ap_gz.set_edges(spans_phi_Ap, idx_in_ghost, Ap_ghosts);
-
-            // set node_exch_gz edges for Ap-vectors
-            node_Ap_exch_gz.set_edges(rank_owner, Ap_ghosts);
-
-            // replace ghosts for Ap-vectors
-            node_Ap_replace_gz.set_edges(Ap_ghosts, spans_phi_Ap);
-
-            // // set node_gz edges for res-vectors
-            node_gz_res.set_edges(spans_phi_res, idx_in_ghost, res_ghosts);
-
-            // set node_exch_gz edges for res-vectors
-            node_exch_gz_res.set_edges(rank_owner, res_ghosts);
-
-            // replace ghosts for cpy-vectors
-            node_replace_gz_res.set_edges(res_ghosts, spans_phi_res);
-
-            // set node_gz edges  for Ap-vectors
-            node_had_gz.set_edges(spans_phi_hadamard_prod, idx_in_ghost, had_ghosts);
-
-            // set node_exch_gz edges for had-vectors
-            node_had_exch_gz.set_edges(rank_owner, had_ghosts);
-
-            // replace ghosts for had-vectors
-            node_had_replace_gz.set_edges(had_ghosts, spans_phi_hadamard_prod);
         }
 
         inline Edges get_edges() {

@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeCGLoop.cpp
+ * @file NodeCGLoop-old.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
@@ -56,49 +56,47 @@ namespace shammodels::basegodunov::modules {
             }
         }
 
-        /* compute <r0,r0> and assign its value to  edges.old_values.value */
+        // /* compute <r0,r0> and assign its value to  edges.old_values.value */
         node_copy_phi.evaluate();
         edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
-        if (false) {
-            for (auto id = 0; id < 1; id++) {
-                auto &buf = edges.spans_phi_cpy.get_buf(id);
-                auto vec  = buf.copy_to_stdvec();
-                logger::raw_ln(id, "buf cpy_phi bf=", "--", buf.get_size());
-                // for (int i = 0; i < buf.get_size(); i++) {
-                //     logger::raw_ln(i, vec[i]);
-                // }
-            }
-        }
-
         node1.evaluate();
 
         u32 k = 0;
         logger::raw_ln(" k = ", k);
         logger::raw_ln(" RES = ", edges.old_values.value);
 
-        /*** Main loop */
+        /* Main loop */
         while ((k < Niter_max)) {
             // increment iteration
             k = k + 1;
 
             logger::raw_ln(" ================== k = ", k, "=======================\n");
             /* compute Ap_{k} */
-
-            if (false) {
-                // //exchange p vector
-                node_gz_p.evaluate();
-                node_exch_gz_p.evaluate();
-                node_replace_gz_p.evaluate();
-            }
-
             node2.evaluate();
 
-            if (true) {
-                // //exchange Ap vector
+            if (false) {
+                // exchange p vector
+                node_gz.evaluate();
+                node_exch_gz.evaluate();
+                node_replace_gz.evaluate();
 
                 node_Ap_gz.evaluate();
                 node_Ap_exch_gz.evaluate();
                 node_Ap_replace_gz.evaluate();
+            }
+
+            if (false) {
+                for (auto id = 0; id < 1; id++) {
+                    auto &buf   = edges.spans_phi_Ap.get_buf(id);
+                    auto &buf_p = edges.spans_phi_p.get_buf(id);
+                    auto vec    = buf.copy_to_stdvec();
+                    auto vec_p  = buf_p.copy_to_stdvec();
+                    logger::raw_ln(id, "buf Ap size  = ", "--", buf.get_size());
+                    logger::raw_ln(id, "buf p size  = ", "--", buf_p.get_size());
+                    for (int i = 0; i < buf.get_size(); i++) {
+                        logger::raw_ln(i, vec[i], vec_p[i]);
+                    }
+                }
             }
 
             /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} =
@@ -106,8 +104,32 @@ namespace shammodels::basegodunov::modules {
              * p_{i} * (Ap)_{i} \right) */
             node3.evaluate();
 
-            /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
-             * edges.e_norm.value */
+            if (false) {
+                // exchange had vector
+                node_had_gz.evaluate();
+                node_had_exch_gz.evaluate();
+                node_had_replace_gz.evaluate();
+            }
+
+            if (false) {
+                for (auto id = 0; id < 1; id++) {
+                    auto &buf     = edges.spans_phi_Ap.get_buf(id);
+                    auto &buf_p   = edges.spans_phi_p.get_buf(id);
+                    auto &buf_had = edges.spans_phi_hadamard_prod.get_buf(id);
+                    auto vec      = buf.copy_to_stdvec();
+                    auto vec_p    = buf_p.copy_to_stdvec();
+                    auto vec_had  = buf_had.copy_to_stdvec();
+                    logger::raw_ln(id, "buf Ap size  = ", "--", buf.get_size());
+                    logger::raw_ln(id, "buf p size  = ", "--", buf_p.get_size());
+                    logger::raw_ln(id, "buf had size  = ", "--", buf_had.get_size());
+                    for (int i = 0; i < buf.get_size(); i++) {
+                        logger::raw_ln(i, vec[i], vec_p[i], vec_had[i]);
+                    }
+                }
+            }
+
+            //     /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
+            //      * edges.e_norm.value */
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes.indexes);
             node_copy_had_prod.evaluate();
             // edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
@@ -123,9 +145,28 @@ namespace shammodels::basegodunov::modules {
 
             edges.alpha.value = -edges.alpha.value;
             logger::raw_ln(" alpha af = ", edges.alpha.value, "\n");
+
+            //     if(true){
+            //     //  // exchange residual vector
+            //     //     node_gz_res.evaluate();
+            //     //     node_exch_gz_res.evaluate();
+            //     //     node_replace_gz_res.evaluate();
+            //     }
+
             /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
             node6.evaluate();
-            /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
+
+            if (true) {
+                // exchange residual vector
+                node_gz_res.evaluate();
+                node_exch_gz_res.evaluate();
+                node_replace_gz_res.evaluate();
+            }
+
+            //     /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
+            edges.spans_phi_cpy.ensure_sizes(edges.sizes.indexes);
+            node_copy_phi.evaluate();
+            // edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
             node7.evaluate();
             logger::raw_ln(" new-norm = ", edges.new_values.value);
             /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
@@ -133,22 +174,21 @@ namespace shammodels::basegodunov::modules {
             logger::raw_ln(" beta = ", edges.beta.value, "\n");
             /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
             edges.old_values.value = edges.new_values.value;
-            logger::raw_ln(" new = ", edges.old_values.value, "\n");
             logger::raw_ln(" RES = ", edges.old_values.value);
-            /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
+            //     /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
             node8.evaluate();
 
-            // if(true){
-            //         // exchange p vector
-            //         node_gz.evaluate();
-            //         node_exch_gz.evaluate();
-            //         node_replace_gz.evaluate();
+            //     // if(true){
+            //     //         // exchange p vector
+            //     //         node_gz.evaluate();
+            //     //         node_exch_gz.evaluate();
+            //     //         node_replace_gz.evaluate();
 
-            // // exchange residual vector
-            //             node_gz_res.evaluate();
-            //             node_exch_gz_res.evaluate();
-            //             node_replace_gz_res.evaluate();
-            // }
+            //     // // exchange residual vector
+            //     //             node_gz_res.evaluate();
+            //     //             node_exch_gz_res.evaluate();
+            //     //             node_replace_gz_res.evaluate();
+            //     // }
 
             if (sycl::sqrt(edges.old_values.value) < tol)
                 break;

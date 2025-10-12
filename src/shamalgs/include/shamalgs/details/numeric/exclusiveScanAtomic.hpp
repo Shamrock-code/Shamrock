@@ -845,10 +845,10 @@ namespace shamalgs::numeric::details {
 
             cgh.parallel_for<KernelExclusivesum_sycl_jointalg<T, group_size>>(
                 sycl::nd_range<1>{corrected_len, group_size}, [=](sycl::nd_item<1> id) {
-                    T *first = acc_in.get_pointer();
+                    T *first = &(acc_in[0]);
                     T *last  = first + acc_in.size();
 
-                    T *first_out = acc_out.get_pointer();
+                    T *first_out = &(acc_out[0]);
 
                     T excl_val;
                     sycl::joint_inclusive_scan(

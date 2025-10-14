@@ -58,7 +58,7 @@ namespace shammodels::basegodunov::modules {
 
         /* compute <r0,r0> and assign its value to  edges.old_values.value */
         node_copy_phi.evaluate();
-        edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
+        // edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
         if (false) {
             for (auto id = 0; id < 1; id++) {
                 auto &buf = edges.spans_phi_cpy.get_buf(id);
@@ -93,13 +93,13 @@ namespace shammodels::basegodunov::modules {
 
             node2.evaluate();
 
-            if (true) {
-                // //exchange Ap vector
+            // if (true) {
+            //     // //exchange Ap vector
 
-                node_Ap_gz.evaluate();
-                node_Ap_exch_gz.evaluate();
-                node_Ap_replace_gz.evaluate();
-            }
+            //     node_Ap_gz.evaluate();
+            //     node_Ap_exch_gz.evaluate();
+            //     node_Ap_replace_gz.evaluate();
+            // }
 
             /** compute Hadamard product p X Ap such that \left( p_{k} X Ap_{k} \right)_{i} =
             left(
@@ -110,7 +110,7 @@ namespace shammodels::basegodunov::modules {
              * edges.e_norm.value */
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes.indexes);
             node_copy_had_prod.evaluate();
-            // edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
+            edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
             node4.evaluate();
             logger::raw_ln(" e-norm = ", edges.e_norm.value);
 
@@ -138,17 +138,17 @@ namespace shammodels::basegodunov::modules {
             /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
             node8.evaluate();
 
-            // if(true){
-            //         // exchange p vector
-            //         node_gz.evaluate();
-            //         node_exch_gz.evaluate();
-            //         node_replace_gz.evaluate();
+            if(true){
+                    // exchange p vector
+                    node_gz_p.evaluate();
+                    node_exch_gz_p.evaluate();
+                    node_replace_gz_p.evaluate();
 
             // // exchange residual vector
             //             node_gz_res.evaluate();
             //             node_exch_gz_res.evaluate();
             //             node_replace_gz_res.evaluate();
-            // }
+            }
 
             if (sycl::sqrt(edges.old_values.value) < tol)
                 break;

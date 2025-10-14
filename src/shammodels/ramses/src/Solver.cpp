@@ -737,12 +737,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.should_compute_rho_mean()) {
         modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};
         node.set_edges(
-            storage.block_counts, storage.block_cell_sizes, storage.refs_rho, storage.cell_mass);
+            storage.block_counts,
+             storage.block_cell_sizes, storage.refs_rho, storage.cell_mass);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
 
         modules::NodeComputeSumOverV<Tscal> node2{AMRBlock::block_size};
         node2.set_edges(
-            storage.block_counts, storage.cell_mass, storage.simulation_volume, storage.rho_mean);
+            storage.block_counts,
+             storage.cell_mass, storage.simulation_volume, storage.rho_mean);
         solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
     }
 

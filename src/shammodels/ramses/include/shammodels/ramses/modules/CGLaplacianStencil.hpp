@@ -60,9 +60,10 @@ namespace shammodels::basegodunov {
             u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
                 acc += field_access(id_b);
             });
-            // g_cnt += cnt;
-            // logger::raw(cnt, g_cnt);
-            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+
+            T err_val = std::numeric_limits<T>::quiet_NaN();
+            return (cnt > 0) ? acc / cnt : err_val;
+            // return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
         };
 
         T W_i                = field_access(cell_global_id);

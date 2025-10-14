@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 8
+    base = 2
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -27,7 +27,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(10)
+    cfg.set_self_gravity_Niter_max(2)
     cfg.set_self_gravity_tol(1e-6)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
 

@@ -105,9 +105,9 @@ namespace {
                                 [=](u32 id) {
                                     return phi[id];
                                 });
-                            auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
+                            auto res = Aphi - fourPiG * (rho[cell_global_id] - mean_rho);
                             phi_res[cell_global_id] = res;
-                            phi_p[cell_global_id]   = res;
+                            phi_p[cell_global_id]   = -res;
                         });
                 });
         }

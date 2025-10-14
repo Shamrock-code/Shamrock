@@ -263,9 +263,9 @@ namespace shammodels::basegodunov::modules {
             node6.set_edges(sizes, sizes_no_gz, spans_phi_Ap, alpha, spans_phi_res);
 
             // // set node7 edges
-            node7.set_edges(spans_phi_res, new_values);
+            // node7.set_edges(spans_phi_res, new_values);
 
-            // node7.set_edges(spans_phi_cpy, new_values);
+            node7.set_edges(spans_phi_cpy, new_values);
 
             // // set node8 edges
             node8.set_edges(sizes, sizes_no_gz, spans_phi_res, beta, spans_phi_p);

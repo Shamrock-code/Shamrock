@@ -45,7 +45,7 @@ namespace shammodels::basegodunov::modules {
 
         /* compute r0 = p0 = 4*\pi*G* \left( \rho - \bar{\rho} \right) - A \phi_{0}*/
         node0.evaluate();
-        if (false) {
+        if (true) {
             for (auto id = 0; id < 1; id++) {
                 auto &buf = edges.spans_phi_res.get_buf(id);
                 auto vec  = buf.copy_to_stdvec();
@@ -58,7 +58,7 @@ namespace shammodels::basegodunov::modules {
 
         /* compute <r0,r0> and assign its value to  edges.old_values.value */
         node_copy_phi.evaluate();
-        // edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
+        edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
         if (false) {
             for (auto id = 0; id < 1; id++) {
                 auto &buf = edges.spans_phi_cpy.get_buf(id);
@@ -84,12 +84,12 @@ namespace shammodels::basegodunov::modules {
             logger::raw_ln(" ================== k = ", k, "=======================\n");
             /* compute Ap_{k} */
 
-            if (false) {
-                // //exchange p vector
-                node_gz_p.evaluate();
-                node_exch_gz_p.evaluate();
-                node_replace_gz_p.evaluate();
-            }
+            // if (true) {
+            //     // //exchange p vector
+            //     node_gz_p.evaluate();
+            //     node_exch_gz_p.evaluate();
+            //     node_replace_gz_p.evaluate();
+            // }
 
             node2.evaluate();
 
@@ -105,12 +105,38 @@ namespace shammodels::basegodunov::modules {
             left(
              * p_{i} * (Ap)_{i} \right) */
             node3.evaluate();
+            auto gg = 0.;
+
+            if (true) {
+                for (auto id = 0; id < 1; id++) {
+                    auto &buf = edges.spans_phi_res.get_buf(id);
+                    auto vec  = buf.copy_to_stdvec();
+
+                    auto &buf_p = edges.spans_phi_p.get_buf(id);
+                    auto vec_p  = buf_p.copy_to_stdvec();
+
+                    auto &buf_Ap = edges.spans_phi_Ap.get_buf(id);
+                    auto vec_Ap  = buf_Ap.copy_to_stdvec();
+
+                    logger::raw_ln(id, "buf res 0 =", "--", buf.get_size());
+                    logger::raw_ln(
+                        " no-gz  : ", edges.sizes_no_gz.indexes.get(id) * block_size, "\n");
+                    for (int i = 0; i < buf.get_size(); i++) {
+                        if (i < edges.sizes_no_gz.indexes.get(id) * block_size) {
+                            gg += vec_p[i] * vec_Ap[i];
+                            logger::raw_ln(i, vec[i], vec_p[i], vec_Ap[i], vec_p[i] * vec_Ap[i]);
+                        }
+                    }
+                    logger::raw_ln("global e-nrm : ", gg, "\n");
+                }
+            }
 
             /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
              * edges.e_norm.value */
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes.indexes);
             node_copy_had_prod.evaluate();
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
+
             node4.evaluate();
             logger::raw_ln(" e-norm = ", edges.e_norm.value);
 
@@ -121,12 +147,19 @@ namespace shammodels::basegodunov::modules {
             //     /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
             node5.evaluate();
 
-            edges.alpha.value = -edges.alpha.value;
+            // edges.alpha.value = -edges.alpha.value;
             logger::raw_ln(" alpha af = ", edges.alpha.value, "\n");
             /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
+
             node6.evaluate();
+
+            edges.spans_phi_cpy.ensure_sizes(edges.sizes.indexes);
+            node_copy_phi.evaluate();
+            edges.spans_phi_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
             /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
+
             node7.evaluate();
+
             logger::raw_ln(" new-norm = ", edges.new_values.value);
             /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
             edges.beta.value = edges.new_values.value / edges.old_values.value;
@@ -136,18 +169,14 @@ namespace shammodels::basegodunov::modules {
             logger::raw_ln(" new = ", edges.old_values.value, "\n");
             logger::raw_ln(" RES = ", edges.old_values.value);
             /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
+
             node8.evaluate();
 
-            if(true){
-                    // exchange p vector
-                    node_gz_p.evaluate();
-                    node_exch_gz_p.evaluate();
-                    node_replace_gz_p.evaluate();
-
-            // // exchange residual vector
-            //             node_gz_res.evaluate();
-            //             node_exch_gz_res.evaluate();
-            //             node_replace_gz_res.evaluate();
+            if (false) {
+                // exchange p vector
+                node_gz_p.evaluate();
+                node_exch_gz_p.evaluate();
+                node_replace_gz_p.evaluate();
             }
 
             if (sycl::sqrt(edges.old_values.value) < tol)

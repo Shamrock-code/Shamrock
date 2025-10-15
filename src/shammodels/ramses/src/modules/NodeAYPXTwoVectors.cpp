@@ -51,6 +51,7 @@ namespace {
                 // cell_counts_no_gz,
                 [alpha](u32 i, const T *__restrict x, T *__restrict y) {
                     y[i] = alpha * y[i] + x[i];
+                    // y[i] = alpha * y[i] - x[i];
                 });
         }
     };

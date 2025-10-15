@@ -19,6 +19,7 @@
 #include "shambackends/EventList.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/modules/CGLaplacianStencil.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -105,8 +106,9 @@ namespace {
                                 [=](u32 id) {
                                     return phi[id];
                                 });
-                            auto res = Aphi - fourPiG * (rho[cell_global_id] - mean_rho);
-                            phi_res[cell_global_id] = res;
+                            // logger::raw_ln("mean- rho : ", mean_rho);
+                            auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
+                            phi_res[cell_global_id] = -res;
                             phi_p[cell_global_id]   = -res;
                         });
                 });

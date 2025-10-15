@@ -289,13 +289,13 @@ namespace shammodels::basegodunov::modules {
             node_Ap_replace_gz.set_edges(Ap_ghosts, spans_phi_Ap);
 
             // // set node_gz edges for res-vectors
-            node_gz_res.set_edges(spans_phi_res, idx_in_ghost, res_ghosts);
+            node_gz_res.set_edges(spans_rho, idx_in_ghost, res_ghosts);
 
             // set node_exch_gz edges for res-vectors
             node_exch_gz_res.set_edges(rank_owner, res_ghosts);
 
             // replace ghosts for cpy-vectors
-            node_replace_gz_res.set_edges(res_ghosts, spans_phi_res);
+            node_replace_gz_res.set_edges(res_ghosts, spans_rho);
 
             // set node_gz edges  for Ap-vectors
             node_had_gz.set_edges(spans_phi_hadamard_prod, idx_in_ghost, had_ghosts);

@@ -14,13 +14,15 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     multz = 1
 
     sz = 1 << 1
-    base = 8
+    base = 32
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
     cfg.set_scale_factor(scale_fact)
     center = (base * scale_fact, base * scale_fact, base * scale_fact)
     xc, yc, zc = center
+
+    print(f"center {center}")
 
     cfg.set_riemann_solver_hllc()
     cfg.set_eos_gamma(1.4)
@@ -30,26 +32,30 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(100)
-    cfg.set_self_gravity_tol(1e-20)
+    cfg.set_self_gravity_Niter_max(300)
+    cfg.set_self_gravity_tol(1e-10)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
     model.set_solver_config(cfg)
 
-    model.init_scheduler(int(5000000), 1)
+    model.init_scheduler(int(5000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     def rho_map(rmin, rmax):
         x_mn, y_mn, z_mn = rmin
         x_mx, y_mx, z_mx = rmax
-        x0 = 0.5 * (x_mn + x_mx)
-        y0 = 0.5 * (y_mn + y_mx)
-        z0 = 0.5 * (z_mn + z_mx)
-        # x = x_mn- xc
-        # y = y_mn - yc
-        # z = z_mn - zc
-        y = y0 - yc
-        x = x0 - xc
-        z = z0 - zc
+
+        # x0 = 0.5 * (x_mn + x_mx)
+        # y0 = 0.5 * (y_mn + y_mx)
+        # z0 = 0.5 * (z_mn + z_mx)
+
+        x = x_mn - xc
+        y = y_mn - yc
+        z = z_mn - zc
+
+        # x = x0 - xc
+        # y = y0 - yc
+        # z = z0 - zc
+
         r = np.sqrt(x * x + y * y + z * z)
         res = 0.0
         if r <= r0:
@@ -125,7 +131,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
 
     for k in range(1):
         # if k % freq == 0:
-        #     model.dump_vtk("test" + str(k) + ".vtk")
+        model.dump_vtk("test" + str(k) + ".vtk")
 
         model.evolve_once_override_time(t, dt)
 
@@ -138,9 +144,11 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
                 # X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
                 # Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
                 # Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
+
                 X.append(dic["xmin"][i])
                 Y.append(dic["ymin"][i])
                 Z.append(dic["zmin"][i])
+
                 rho.append(dic["rho"][i])
                 phi.append(dic["phi"][i])
 
@@ -170,11 +178,17 @@ x_c, y_c, z_c = run_sim(X, Y, Z, rho, phi)
 def analytical_phi(r0, rho0, X, Y, Z, x_c, y_c, z_c):
     M = (32.0 * np.pi * rho0 * (r0**3)) / 105.0
 
-    x = X - x_c
-    y = Y - y_c
-    z = Z - z_c
+    x = X - 0.5
+    y = Y - 0.5
+    z = Z - 0.5
 
     r = np.sqrt(np.pow(x, 2) + np.pow(y, 2) + np.pow(z, 2))
+    r2 = np.pow(r, 2)
+    r4 = np.pow(r, 4)
+    r6 = np.pow(r, 6)
+
+    # r[r <= r0] =  4 * np.pi * rho0 * ( (1.0 / 6) * r2 - (1.0 / 10.0) *(r4 /r2)   + (1.0 / 42.0) * (r6/(r0**4)))
+
     res = []
 
     N = X.shape[0]
@@ -189,23 +203,24 @@ def analytical_phi(r0, rho0, X, Y, Z, x_c, y_c, z_c):
                 * (
                     (1.0 / 6) * (r[i] ** 2)
                     - (1.0 / 10.0) * (r[i] ** 4) / (r0**2)
-                    + (1.0 / 42.0) * (r[i] ** 6) / (r[i] ** 4)
+                    + (1.0 / 42.0) * (r[i] ** 6) / (r0**4)
                 )
             )
         else:
             res.append(-M / r[i])
 
-    # res[res <= r0] = (-2./3.)*np.pi*rho0*(r0**2) + 4*np.pi*rho0*((1./6)*(r**2) -(1./10.)*(r**4)/(r0**2) + (1./42.)*(r**6)/(r**4))
-    # res[res > r0] = -M/r
-
     return res
 
 
-ana = analytical_phi(r0, rho0, np.array(X), np.array(Y), np.array(Z), x_c, y_c, z_c)
-diff = np.array(phi) - np.array(ana)
+if shamrock.sys.world_rank() == 0:
+    ana = analytical_phi(r0, rho0, np.array(X), np.array(Y), np.array(Z), x_c, y_c, z_c)
+    diff = np.array(phi) - np.array(ana)
 
-plt.plot(np.array(X), np.array(phi), "+", label="phi-num")
-plt.plot(np.array(X), np.array(ana), "-", label="phi-ana")
-plt.plot(np.array(X), diff, "*", label="diff")
-plt.legend()
-plt.savefig("pluto-test-plots-center-based-1.png", format="png")
+    plt.plot(np.array(X), np.array(phi), "+", label="phi-num")
+    plt.plot(np.array(X), np.array(rho), "x", label="rho")
+    plt.plot(np.array(X), np.array(ana), "o", label="phi-ana")
+    # plt.plot(np.array(X), diff, "*", label="diff")
+    plt.legend()
+    plt.savefig(
+        f"pluto-test-plots-center-based-{shamrock.sys.world_size()}-{len(X)}.png", format="png"
+    )

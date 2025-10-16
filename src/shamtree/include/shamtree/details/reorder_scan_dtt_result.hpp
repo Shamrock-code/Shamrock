@@ -18,6 +18,7 @@
 #include "shambase/assert.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
+#include "shamalgs/primitives/segmented_sort_in_place.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 
@@ -95,46 +96,7 @@ namespace shamtree::details {
                 });
 
             // we now perform a local sort on each slots which make the result deterministic
-            sham::kernel_call(
-                q,
-                sham::MultiRef{offsets},
-                sham::MultiRef{in_out_sorted},
-                N,
-                [interact_count](
-                    u32 gid, const u32 *__restrict__ offsets, u32_2 *__restrict__ in_out_sorted) {
-                    u32 start_index = offsets[gid];
-                    u32 end_index   = offsets[gid + 1];
-
-                    // can be equal if there is no interaction for this sender
-                    SHAM_ASSERT(start_index <= end_index);
-
-                    // skip empty ranges to avoid unnecessary work
-                    if (start_index == end_index) {
-                        return;
-                    }
-
-                    // if there is no interactions at the end of the offset list
-                    // offsets[gid] can be equal to interact_count
-                    // but we check that start_index != end_index, so here the correct assertions
-                    // is indeed start_index < interact_count
-                    SHAM_ASSERT(start_index < interact_count);
-                    SHAM_ASSERT(end_index <= interact_count); // see the for loop for this one
-
-                    auto comp = [](u32_2 a, u32_2 b) {
-                        return (a.x() == b.x()) ? (a.y() < b.y()) : (a.x() < b.x());
-                    };
-
-                    // simple insertion sort between those indexes
-                    for (u32 i = start_index + 1; i < end_index; ++i) {
-                        auto key = in_out_sorted[i];
-                        u32 j    = i;
-                        while (j > start_index && comp(key, in_out_sorted[j - 1])) {
-                            in_out_sorted[j] = in_out_sorted[j - 1];
-                            --j;
-                        }
-                        in_out_sorted[j] = key;
-                    }
-                });
+            shamalgs::primitives::segmented_sort_in_place(in_out_sorted, offsets);
 
             in_out = std::move(in_out_sorted);
         } else {

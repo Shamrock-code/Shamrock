@@ -172,7 +172,7 @@ namespace shammodels::basegodunov::modules {
                                 i, vec[i], vec_p[i], vec_Ap[i], vec_p[i] * vec_Ap[i], vec_phi[i]);
                         }
                     }
-                    logger::raw_ln("global e-nrm : ", gg, "\n");
+                    logger::raw_ln("global e-nrm : ", gg);
                 }
             }
 
@@ -194,7 +194,7 @@ namespace shammodels::basegodunov::modules {
             /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
             edges.alpha.value = edges.old_values.value / edges.e_norm.value;
             if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" alpha bf = ", edges.alpha.value, "\n");
+                logger::raw_ln(" alpha bf = ", edges.alpha.value);
             }
 
             //     /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
@@ -231,8 +231,8 @@ namespace shammodels::basegodunov::modules {
                         l2diff_loc_patch
                             += (edges.alpha.value * vec_p[i]) * (edges.alpha.value * vec_p[i]);
                         l1diff_loc_patch += sycl::fabs(edges.alpha.value * vec_p[i]);
-                        linfdiff_loc_patch
-                            = sycl::fmax(edges.alpha.value * vec_p[i], linfdiff_loc_patch);
+                        linfdiff_loc_patch = sycl::fmax(
+                            sycl::fabs(edges.alpha.value * vec_p[i]), linfdiff_loc_patch);
                         // }
                     }
 
@@ -263,7 +263,7 @@ namespace shammodels::basegodunov::modules {
             edges.alpha.value = -edges.alpha.value;
 
             if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" alpha af = ", edges.alpha.value, "\n");
+                logger::raw_ln(" alpha af = ", edges.alpha.value);
             }
 
             /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
@@ -286,13 +286,13 @@ namespace shammodels::basegodunov::modules {
             edges.beta.value = edges.new_values.value / edges.old_values.value;
 
             if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" beta = ", edges.beta.value, "\n");
+                logger::raw_ln(" beta = ", edges.beta.value);
             }
 
             /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
             edges.old_values.value = edges.new_values.value;
             if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" new = ", edges.old_values.value, "\n");
+                logger::raw_ln(" new = ", edges.old_values.value);
                 logger::raw_ln(" RES = ", edges.old_values.value);
             }
 
@@ -300,10 +300,11 @@ namespace shammodels::basegodunov::modules {
 
             node8.evaluate();
 
-            diff_l2 = l2diff;
-            diff_l1 = l1diff;
+            diff_l2   = l2diff;
+            diff_l1   = l1diff;
+            diff_linf = linfdiff;
 
-            if ((diff_l2 <= tol) && (diff_l1 <= tol) && (diff_linf <= tol)) {
+            if ((diff_l2 <= tol) && (diff_l1 <= tol) /* && (diff_linf <= tol) */) {
                 if (shamcomm::world_rank() == 0) {
                     logger::raw_ln("The solution converged after ", k, "iterations");
                 }

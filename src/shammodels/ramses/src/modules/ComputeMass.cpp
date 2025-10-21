@@ -17,6 +17,8 @@
 
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shambackends/math.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
@@ -52,6 +54,12 @@ namespace {
                     Tscal dV     = csize[block_id];
                     dV           = dV * dV * dV;
 
+                    // mass[i] = dV;
+
+                    // if( sham::abs(rho[i]) > 1e-3)
+                    // {
+                    //     logger::raw_ln(rho[i]);
+                    // }
                     mass[i] = rho[i] * dV;
                 });
         }

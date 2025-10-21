@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     multz = 1
 
     sz = 1 << 1
-    base = 32
+    base = 16
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -37,33 +37,33 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
     model.set_solver_config(cfg)
 
-    model.init_scheduler(int(5000), 1)
+    model.init_scheduler(int(500000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     def rho_map(rmin, rmax):
         x_mn, y_mn, z_mn = rmin
         x_mx, y_mx, z_mx = rmax
 
-        # x0 = 0.5 * (x_mn + x_mx)
-        # y0 = 0.5 * (y_mn + y_mx)
-        # z0 = 0.5 * (z_mn + z_mx)
+        x0 = 0.5 * (x_mn + x_mx)
+        y0 = 0.5 * (y_mn + y_mx)
+        z0 = 0.5 * (z_mn + z_mx)
 
-        x = x_mn - xc
-        y = y_mn - yc
-        z = z_mn - zc
+        # x = x_mn - xc
+        # y = y_mn - yc
+        # z = z_mn - zc
 
-        # x = x0 - xc
-        # y = y0 - yc
-        # z = z0 - zc
+        x = x0 - xc
+        y = y0 - xc
+        z = z0 - xc
 
         r = np.sqrt(x * x + y * y + z * z)
         res = 0.0
         if r <= r0:
-            rr = r * (1.0 / rho_0)
+            rr = r * (1.0 / r0)
             cc = 1 - (rr * rr)
             res = rho_0 * (cc * cc)
         else:
-            res = 0.0
+            res = 0
         return res
 
     def rhoe_map(rmin, rmax):
@@ -141,13 +141,13 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
             dic = convert_to_cell_coords(dic)
 
             for i in range(len(dic["xmin"])):
-                # X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
-                # Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
-                # Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
+                X.append(0.5 * (dic["xmin"][i] + dic["xmax"][i]))
+                Y.append(0.5 * (dic["ymin"][i] + dic["ymax"][i]))
+                Z.append(0.5 * (dic["zmin"][i] + dic["zmax"][i]))
 
-                X.append(dic["xmin"][i])
-                Y.append(dic["ymin"][i])
-                Z.append(dic["zmin"][i])
+                # X.append(dic["xmin"][i])
+                # Y.append(dic["ymin"][i])
+                # Z.append(dic["zmin"][i])
 
                 rho.append(dic["rho"][i])
                 phi.append(dic["phi"][i])
@@ -178,6 +178,8 @@ x_c, y_c, z_c = run_sim(X, Y, Z, rho, phi)
 def analytical_phi(r0, rho0, X, Y, Z, x_c, y_c, z_c):
     M = (32.0 * np.pi * rho0 * (r0**3)) / 105.0
 
+    # M = 0.060981660945458316
+
     x = X - 0.5
     y = Y - 0.5
     z = Z - 0.5
@@ -201,7 +203,7 @@ def analytical_phi(r0, rho0, X, Y, Z, x_c, y_c, z_c):
                 * np.pi
                 * rho0
                 * (
-                    (1.0 / 6) * (r[i] ** 2)
+                    (1.0 / 6.0) * (r[i] ** 2)
                     - (1.0 / 10.0) * (r[i] ** 4) / (r0**2)
                     + (1.0 / 42.0) * (r[i] ** 6) / (r0**4)
                 )
@@ -215,12 +217,13 @@ def analytical_phi(r0, rho0, X, Y, Z, x_c, y_c, z_c):
 if shamrock.sys.world_rank() == 0:
     ana = analytical_phi(r0, rho0, np.array(X), np.array(Y), np.array(Z), x_c, y_c, z_c)
     diff = np.array(phi) - np.array(ana)
+    # np.abs()/  np.abs(np.array(ana))
 
     plt.plot(np.array(X), np.array(phi), "+", label="phi-num")
-    plt.plot(np.array(X), np.array(rho), "x", label="rho")
-    plt.plot(np.array(X), np.array(ana), "o", label="phi-ana")
-    # plt.plot(np.array(X), diff, "*", label="diff")
+    # plt.plot(np.array(X), np.array(rho), "x", label="rho")
+    # plt.plot(np.array(X), np.array(ana), "o", label="phi-ana")
+    plt.plot(np.array(X), diff, "*", label="diff")
     plt.legend()
     plt.savefig(
-        f"pluto-test-plots-center-based-{shamrock.sys.world_size()}-{len(X)}.png", format="png"
+        f"pluto-test-plots-center-based-{shamrock.sys.world_size()}-{len(X)}-14.png", format="png"
     )

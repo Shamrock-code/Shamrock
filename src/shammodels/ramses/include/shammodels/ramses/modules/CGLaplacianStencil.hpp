@@ -92,6 +92,6 @@ namespace shammodels::basegodunov {
         res = (laplace_x + laplace_y + laplace_z);
         // logger::raw_ln(res);
 
-        return res;
+        return -res;
     }
 } // namespace shammodels::basegodunov

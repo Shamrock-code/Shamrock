@@ -107,18 +107,6 @@ namespace {
                                 });
 
                             out[cell_global_id] = Ap_id;
-
-                            // if(cell_global_id % 25 == 0)
-                            // {
-                            //     logger::raw_ln("id_a = [ ", cell_global_id, " ] : ",
-                            //     in[cell_global_id], " --- ",out[cell_global_id], "  ","\n");
-                            // }
-
-                            // if( (cell_global_id % 150) == 0)
-                            // {
-                            //     logger::raw_ln("id_a = [ ", cell_global_id, " ] : ",
-                            //     out[cell_global_id], "\n");
-                            // }
                         });
                 });
         }

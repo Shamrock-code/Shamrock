@@ -134,6 +134,7 @@ namespace shammodels::basegodunov::modules {
 
             node2.evaluate();
 
+            /** Prevent NaN to propagate. This can happen for the second cell in the ghost-zone. */
             if (true) {
                 // //exchange Ap vector
 
@@ -179,12 +180,8 @@ namespace shammodels::basegodunov::modules {
             /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
              * edges.e_norm.value */
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes.indexes);
-            // logger::raw_ln("sz had-prod bf",
-            // edges.spans_phi_hadamard_prod_cpy.get_buf(0).get_size());
             node_copy_had_prod.evaluate();
             edges.spans_phi_hadamard_prod_cpy.ensure_sizes(edges.sizes_no_gz.indexes);
-            // logger::raw_ln("sz had-prod af",
-            // edges.spans_phi_hadamard_prod_cpy.get_buf(0).get_size());
 
             node4.evaluate();
             if (shamcomm::world_rank() == 0) {
@@ -221,13 +218,7 @@ namespace shammodels::basegodunov::modules {
                     auto &buf_phi = edges.spans_phi.get(id).get_buf();
                     auto vec_phi  = buf_phi.copy_to_stdvec();
 
-                    // logger::raw_ln(id, "buf res 0 =", "--", buf_p.get_size());
-                    // logger::raw_ln(
-                    //     " no-gz  : ", edges.sizes_no_gz.indexes.get(id) * block_size, "\n");
                     for (int i = 0; i < edges.sizes_no_gz.indexes.get(id); i++) {
-                        // if (i < edges.sizes_no_gz.indexes.get(id) * block_size) {
-
-                        // logger::raw_ln(i, vec_p[i], vec_phi[i], edges.alpha.value * vec_phi[i] );
                         l2diff_loc_patch
                             += (edges.alpha.value * vec_p[i]) * (edges.alpha.value * vec_p[i]);
                         l1diff_loc_patch += sycl::fabs(edges.alpha.value * vec_p[i]);
@@ -240,8 +231,6 @@ namespace shammodels::basegodunov::modules {
                     l1diff_loc += l1diff_loc_patch;
                     linfdiff_loc = sycl::fmax(linfdiff_loc_patch, linfdiff_loc);
                     lszz_loc += edges.sizes_no_gz.indexes.get(id) * block_size;
-
-                    // lszz += edges.sizes_no_gz.indexes.get(id) * block_size;
                 });
                 l2diff += l2diff_loc;
                 l1diff += l1diff_loc;

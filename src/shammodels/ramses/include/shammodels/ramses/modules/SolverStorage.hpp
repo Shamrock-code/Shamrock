@@ -268,6 +268,17 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_s;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_As;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> wstab_val;
+
+        // gravitational acceleration
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_old;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_new;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_old;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_new;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_old;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_new;
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_new;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_old;
     };
 
 } // namespace shammodels::basegodunov

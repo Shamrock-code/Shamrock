@@ -51,17 +51,13 @@ namespace shamrock {
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));
             for (int i = 0; i < 3; i++) {
-                if (shamcomm::world_rank() == 0) {
-                    logger::info_ln("DataInserterUtility", "Compute load ...");
-                }
+                ON_RANK_0(logger::info_ln("DataInserterUtility", "Compute load ..."));
 
                 load_balance_update();
 
                 shamcomm::mpi::Barrier(MPI_COMM_WORLD);
 
-                if (shamcomm::world_rank() == 0) {
-                    logger::info_ln("DataInserterUtility", "run scheduler step ...");
-                }
+                ON_RANK_0(logger::info_ln("DataInserterUtility", "run scheduler step ..."));
 
                 sched.scheduler_step(false, false);
                 sched.scheduler_step(true, true);

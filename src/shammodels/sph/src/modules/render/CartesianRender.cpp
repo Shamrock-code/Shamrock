@@ -15,10 +15,11 @@
  *
  */
 
-#include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shambase/exception.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/AABB.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -48,13 +49,33 @@ namespace shammodels::sph::modules {
     sham::DeviceBuffer<shammath::Ray<Tvec>> pixel_to_orthographic_rays(
         Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny) {
 
+        using Tscal = shambase::VecComponent<Tvec>;
+
         sham::DeviceBuffer<shammath::Ray<Tvec>> ret{
             nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        Tvec e_z = sycl::cross(delta_x, delta_y);
-        e_z /= sycl::length(e_z);
+        Tvec e_z  = sycl::cross(delta_x, delta_y);
+        Tscal len = sycl::length(e_z);
+        if (!(len > 0)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                "The cross product of delta_x and delta_y is zero\n"
+                "  args :"
+                "    center  = {}\n"
+                "    delta_x = {}\n"
+                "    delta_y = {}\n"
+                "    nx      = {}\n"
+                "    ny      = {}\n"
+                "  -> e_z = {}\n",
+                center,
+                delta_x,
+                delta_y,
+                nx,
+                ny,
+                e_z));
+        }
+        e_z /= len;
 
         sham::kernel_call(
             q,

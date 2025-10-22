@@ -16,12 +16,63 @@
  */
 
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/AABB.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 namespace shammodels::sph::modules {
+
+    template<class Tvec>
+    sham::DeviceBuffer<Tvec> pixel_to_positions(
+        Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny) {
+
+        sham::DeviceBuffer<Tvec> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        sham::kernel_call(
+            q, sham::MultiRef{}, sham::MultiRef{ret}, nx * ny, [=](u32 gid, Tvec *position) {
+                u32 ix        = gid % nx;
+                u32 iy        = gid / nx;
+                f64 fx        = ((f64(ix) + 0.5) / nx) - 0.5;
+                f64 fy        = ((f64(iy) + 0.5) / ny) - 0.5;
+                position[gid] = center + delta_x * fx + delta_y * fy;
+            });
+
+        return ret;
+    }
+
+    template<class Tvec>
+    sham::DeviceBuffer<shammath::Ray<Tvec>> pixel_to_orthographic_rays(
+        Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny) {
+
+        sham::DeviceBuffer<shammath::Ray<Tvec>> ret{
+            nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        Tvec e_z = sycl::cross(delta_x, delta_y);
+        e_z /= sycl::length(e_z);
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{},
+            sham::MultiRef{ret},
+            nx * ny,
+            [=](u32 gid, shammath::Ray<Tvec> *ray) {
+                u32 ix          = gid % nx;
+                u32 iy          = gid / nx;
+                f64 fx          = ((f64(ix) + 0.5) / nx) - 0.5;
+                f64 fy          = ((f64(iy) + 0.5) / ny) - 0.5;
+                Tvec pos_render = center + delta_x * fx + delta_y * fy;
+
+                ray[gid] = shammath::Ray<Tvec>(pos_render, e_z);
+            });
+
+        return ret;
+    }
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
@@ -113,6 +164,8 @@ namespace shammodels::sph::modules {
         sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
         ret.fill(sham::VectorProperties<Tfield>::get_zero());
 
+        auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
+
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
 
@@ -153,6 +206,8 @@ namespace shammodels::sph::modules {
             sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
+            const Tvec *pixel_positions = positions.get_read_access(depends_list);
+
             auto xyz      = buf_xyz.get_read_access(depends_list);
             auto hpart    = buf_hpart.get_read_access(depends_list);
             auto torender = buf_field_to_render.get_read_access(depends_list);
@@ -168,11 +223,7 @@ namespace shammodels::sph::modules {
                 Tscal partmass = solver_config.gpart_mass;
 
                 shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
-                    u32 ix          = gid % nx;
-                    u32 iy          = gid / nx;
-                    f64 fx          = ((f64(ix) + 0.5) / nx) - 0.5;
-                    f64 fy          = ((f64(iy) + 0.5) / ny) - 0.5;
-                    Tvec pos_render = center + delta_x * fx + delta_y * fy;
+                    Tvec pos_render = pixel_positions[gid];
 
                     Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
@@ -211,6 +262,7 @@ namespace shammodels::sph::modules {
             buf_hpart.complete_event_state(e2);
             buf_field_to_render.complete_event_state(e2);
             ret.complete_event_state(e2);
+            positions.complete_event_state(e2);
         });
 
         shamalgs::collective::reduce_buffer_in_place_sum(ret, MPI_COMM_WORLD);
@@ -228,6 +280,8 @@ namespace shammodels::sph::modules {
 
         sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
         ret.fill(sham::VectorProperties<Tfield>::get_zero());
+
+        auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
 
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
@@ -269,6 +323,8 @@ namespace shammodels::sph::modules {
             sham::EventList depends_list;
             Tfield *render_field = ret.get_write_access(depends_list);
 
+            const shammath::Ray<Tvec> *image_rays = rays.get_read_access(depends_list);
+
             auto xyz      = buf_xyz.get_read_access(depends_list);
             auto hpart    = buf_hpart.get_read_access(depends_list);
             auto torender = buf_field_to_render.get_read_access(depends_list);
@@ -283,9 +339,6 @@ namespace shammodels::sph::modules {
 
                 Tscal partmass = solver_config.gpart_mass;
 
-                Tvec e_z = sycl::cross(delta_x, delta_y);
-                e_z /= sycl::length(e_z);
-
                 shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
                     u32 ix          = gid % nx;
                     u32 iy          = gid / nx;
@@ -295,7 +348,7 @@ namespace shammodels::sph::modules {
 
                     Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
-                    shammath::Ray<Tvec> ray(pos_render, e_z);
+                    shammath::Ray<Tvec> ray = image_rays[gid];
 
                     particle_looper.rtree_for(
                         [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
@@ -308,7 +361,7 @@ namespace shammodels::sph::modules {
                         [&](u32 id_b) {
                             Tvec dr = pos_render - xyz[id_b];
 
-                            dr -= e_z * sycl::dot(dr, e_z);
+                            dr -= ray.direction * sycl::dot(dr, ray.direction);
 
                             Tscal rab2 = sycl::dot(dr, dr);
                             Tscal h_b  = hpart[id_b];
@@ -334,6 +387,7 @@ namespace shammodels::sph::modules {
             buf_hpart.complete_event_state(e2);
             buf_field_to_render.complete_event_state(e2);
             ret.complete_event_state(e2);
+            rays.complete_event_state(e2);
         });
 
         shamalgs::collective::reduce_buffer_in_place_sum(ret, MPI_COMM_WORLD);

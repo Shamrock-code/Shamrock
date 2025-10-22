@@ -41,7 +41,6 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::Indexes<u32> &sizes_no_gz;
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi;
@@ -50,24 +49,21 @@ namespace shammodels::basegodunov::modules {
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes_no_gz,
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g) {
 
-            __internal_set_ro_edges(
-                {sizes, sizes_no_gz, cell_neigh_graph, spans_block_cell_sizes, spans_phi});
+            __internal_set_ro_edges({sizes, cell_neigh_graph, spans_block_cell_sizes, spans_phi});
             __internal_set_rw_edges({spans_phi_g});
         }
 
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
-                get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(2),
+                get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
         }
 

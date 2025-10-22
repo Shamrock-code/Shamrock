@@ -40,13 +40,16 @@
 #include "shammodels/ramses/modules/NodeBICGSTABLoop.hpp"
 #include "shammodels/ramses/modules/NodeCGLoop.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
+#include "shammodels/ramses/modules/NodeNextRho.hpp"
 #include "shammodels/ramses/modules/NodePCGLoop.hpp"
+#include "shammodels/ramses/modules/NodeSelfGravityAcceleration.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -63,6 +66,7 @@
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
 #include <memory>
+#include <utility>
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
@@ -462,6 +466,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.is_gravity_on()) {
         storage.refs_phi
             = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi", "\\phi");
+        storage.refs_phi_new
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi-new", "\\phi");
         storage.phi_res = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "Res", "Res");
         storage.phi_copy = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -512,6 +518,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gz_old", "g_{z}^{n}");
         storage.phi_gz_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
             "phi_gz_new", "g_{z}^{n+1}");
+
+        storage.phi_g_old
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("phi_g_old", "g^{n}");
+        storage.phi_g_new
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("phi_g_new", "g^{n+1}");
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -528,12 +539,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 modules::GhostType::Periodic,
                 modules::GhostType::Periodic,
                 modules::GhostType::Periodic});
+
         find_ghost_layer_candidates.set_edges(
             storage.local_patch_ids,
             storage.sim_box_edge,
             graph.get_edge_ptr<SerialPatchTreeRefEdge<TgridVec>>("sptree"),
             graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.ghost_layers_candidates_edge);
+
         solver_sequence.push_back(
             std::make_shared<decltype(find_ghost_layer_candidates)>(
                 std::move(find_ghost_layer_candidates)));
@@ -543,12 +556,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 modules::GhostType::Periodic,
                 modules::GhostType::Periodic,
                 modules::GhostType::Periodic});
+
         find_ghost_layer_indices.set_edges(
             storage.sim_box_edge,
             storage.source_patches,
             storage.ghost_layers_candidates_edge,
             graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.idx_in_ghost);
+
         solver_sequence.push_back(
             std::make_shared<decltype(find_ghost_layer_indices)>(
                 std::move(find_ghost_layer_indices)));
@@ -757,7 +772,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         node2.set_edges(
             storage.block_counts, storage.cell_mass, storage.simulation_volume, storage.rho_mean);
         solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
-    }
+    } // TODO Set rho_mean to 0 if not periodic boundary condition
 
     if (solver_config.is_gravity_on()) {
         if (solver_config.gravity_config.gravity_mode == CG) {
@@ -853,6 +868,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     solver_sequence.push_back(std::make_shared<decltype(node_2)>(std::move(node_2)));
                 }
             */
+
+        modules::NodeSelfGravityAcceleration<Tvec, TgridVec> node_g_old{AMRBlock::block_size};
+        node_g_old.set_edges(
+            storage.block_counts_with_ghost,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.refs_phi,
+            storage.phi_g_old);
+        solver_sequence.push_back(std::make_shared<decltype(node_g_old)>(std::move(node_g_old)));
     }
 
     { // Build ConsToPrim node
@@ -1285,6 +1309,99 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         shamrock::solvergraph::OperationSequence seq("Compute fluxes", std::move(flux_sequence));
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
+    }
+
+    if (solver_config.is_gravity_on()) {
+        /****/
+        modules::NodeNextRho<Tvec, TgridVec> node_rho_next{
+            AMRBlock::block_size, 2 * shambase::get_check_ref(storage.dt_over2).value};
+
+        node_rho_next.set_edges(
+            storage.block_counts_with_ghost,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_face_xp,
+            storage.flux_rho_face_xm,
+            storage.flux_rho_face_yp,
+            storage.flux_rho_face_ym,
+            storage.flux_rho_face_zp,
+            storage.flux_rho_face_zm,
+            storage.refs_rho_next);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_rho_next)>(std::move(node_rho_next)));
+
+        /****/
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_phi_old2new;
+        node_copy_phi_old2new.set_edges(storage.refs_phi, storage.refs_phi_new);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_copy_phi_old2new)>(std::move(node_copy_phi_old2new)));
+
+        /****/
+        if (solver_config.should_compute_rho_mean()) {
+            modules::NodeComputeMass<Tvec, TgridVec> node_compute_new_mass{AMRBlock::block_size};
+            node_compute_new_mass.set_edges(
+                storage.block_counts,
+                storage.block_cell_sizes,
+                storage.refs_rho_next,
+                storage.cell_mass);
+            solver_sequence.push_back(
+                std::make_shared<decltype(node_compute_new_mass)>(
+                    std::move(node_compute_new_mass)));
+
+            modules::NodeComputeSumOverV<Tscal> node_compute_new_sum_overV{AMRBlock::block_size};
+            node_compute_new_sum_overV.set_edges(
+                storage.block_counts,
+                storage.cell_mass,
+                storage.simulation_volume,
+                storage.rho_mean);
+            solver_sequence.push_back(
+                std::make_shared<decltype(node_compute_new_sum_overV)>(
+                    std::move(node_compute_new_sum_overV)));
+        }
+
+        /****/
+        if (solver_config.gravity_config.gravity_mode == CG) {
+            modules::NodeCGLoop<Tvec, TgridVec> node_cg_next{
+                AMRBlock::block_size,
+                solver_config.get_constant_4piG(),
+                solver_config.gravity_config.Niter_max,
+                solver_config.get_grav_tol()};
+
+            node_cg_next.set_edges(
+                storage.block_counts_with_ghost,
+                storage.block_counts,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.refs_rho_next,
+                storage.rho_mean /*this is the new rho-mean*/,
+                storage.idx_in_ghost,
+                storage.patch_rank_owner,
+                storage.refs_phi_new,
+                storage.phi_copy,
+                storage.phi_res,
+                storage.phi_p,
+                storage.phi_Ap,
+                storage.phi_hadamard_prod,
+                storage.phi_hadamard_prod_cpy,
+                storage.old_val,
+                storage.new_val,
+                storage.e_norm,
+                storage.alpha,
+                storage.beta);
+            solver_sequence.push_back(
+                std::make_shared<decltype(node_cg_next)>(std::move(node_cg_next)));
+        }
+
+        /****/
+        modules::NodeSelfGravityAcceleration<Tvec, TgridVec> node_g_new{AMRBlock::block_size};
+        node_g_new.set_edges(
+            storage.block_counts_with_ghost,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.refs_phi_new,
+            storage.phi_g_new);
+        solver_sequence.push_back(std::make_shared<decltype(node_g_new)>(std::move(node_g_new)));
     }
 
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));

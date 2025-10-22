@@ -248,6 +248,7 @@ namespace shammodels::basegodunov {
 
         // self-gravity fields
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_new;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_copy;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_p;
@@ -279,6 +280,7 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_new;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_old;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho_next;
     };
 
 } // namespace shammodels::basegodunov

@@ -28,11 +28,10 @@ namespace {
     using Direction = shammodels::basegodunov::modules::Direction;
 
     /**
-     * @brief Get the 3d, slope limited gradient of a field
+     * @brief Get the 3d, phi's gradient
      *
      * @tparam T
      * @tparam Tvec
-     * @tparam mode
      * @tparam ACCField
      * @param cell_global_id
      * @param delta_cell
@@ -93,7 +92,7 @@ namespace {
     template<class Tvec, class TgridVec>
     class KernelSelfGravAcc {
 
-        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tscal     = sham::VecComponent<Tvec>;
         using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
         using OrientedAMRGraph = shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>;
         using AMRGraph         = shammodels::basegodunov::modules::AMRGraph;
@@ -103,7 +102,7 @@ namespace {
         public:
         inline static void kernel(Edges &edges, u32 block_size) {
 
-            edges.cell_neigh_graph.for_each(
+            edges.cell_neigh_graph.graph.for_each(
                 [&](u64 id, const OrientedAMRGraph &oriented_cell_graph) {
                     auto &phi_span        = edges.spans_phi.get_spans().get(id);
                     auto &phi_g_span      = edges.spans_phi_g.get_spans().get(id);
@@ -122,8 +121,7 @@ namespace {
                     AMRGraph &graph_neigh_zm
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
-                    u32 cell_count       = (edges.sizes.indexes.get(id)) * block_size;
-                    u32 cell_count_no_gz = (edges.sizes_no_gz.indexes.get(id)) * block_size;
+                    u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 

@@ -50,6 +50,8 @@
     X(Na /***********/, Uget(mole, -1))                                                            \
     X(Kcd /**********/, Uget(lm, 1) * Uget(Watt, -1))                                              \
     /* times */                                                                                    \
+    X(second /**/, Uget(s, 1))                                                                     \
+    X(minute /**/, Uget(s, 1))                                                                     \
     X(hour /**/, Uget(s, 1))                                                                       \
     X(day /***/, Uget(s, 1))                                                                       \
     X(year /**/, Uget(s, 1))                                                                       \
@@ -132,9 +134,11 @@ namespace shamunits {
             /// Stephan Boltzmann constant (W.m-2.K-4)
             static constexpr T sigma = 5.670374419e-8;
 
-            static constexpr T hour = Conv::hr_to_s; //(s)
-            static constexpr T day  = Conv::dy_to_s; //(s)
-            static constexpr T year = Conv::yr_to_s; //(s)
+            static constexpr T second = 1;             //(s)
+            static constexpr T minute = Conv::mn_to_s; //(s)
+            static constexpr T hour   = Conv::hr_to_s; //(s)
+            static constexpr T day    = Conv::dy_to_s; //(s)
+            static constexpr T year   = Conv::yr_to_s; //(s)
 
             static constexpr T astronomical_unit = Conv::au_to_m;     //(m)
             static constexpr T au                = astronomical_unit; //(m)

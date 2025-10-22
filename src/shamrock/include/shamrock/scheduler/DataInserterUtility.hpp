@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shamcomm/worldInfo.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
@@ -45,20 +46,29 @@ namespace shamrock {
         DataInserterUtility(PatchScheduler &sched) : sched(sched) {}
 
         inline void balance_load(std::function<void(void)> load_balance_update) {
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "Compute load ...");
+            // it seems that we need multiple runs to converge the load balance
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility", "---------------------------------------------"));
+            for (int i = 0; i < 3; i++) {
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln("DataInserterUtility", "Compute load ...");
+                }
+
+                load_balance_update();
+
+                shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln("DataInserterUtility", "run scheduler step ...");
+                }
+
+                sched.scheduler_step(false, false);
+                sched.scheduler_step(true, true);
             }
-
-            load_balance_update();
-
-            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "run scheduler step ...");
-            }
-
-            sched.scheduler_step(false, false);
-            sched.scheduler_step(true, true);
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility", "---------------------------------------------"));
         }
 
         /**

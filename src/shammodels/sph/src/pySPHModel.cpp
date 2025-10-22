@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -640,6 +641,45 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 return list_out;
+            })
+        .def(
+            "render_slice",
+            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_slice(name, positions).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_slice(name, positions).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown slice type");
+            })
+        .def(
+            "render_column_integ",
+            [](T &self,
+               std::string name,
+               std::string field_type,
+               std::vector<shammath::Ray<Tvec>> rays)
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown slice type");
             })
         .def(
             "render_cartesian_slice",

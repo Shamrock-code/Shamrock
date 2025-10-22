@@ -46,6 +46,13 @@ namespace shammodels::sph::modules {
             const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat);
 
         sham::DeviceBuffer<Tfield> compute_slice(
+            std::function<field_getter_t> field_getter, const sham::DeviceBuffer<Tvec> &positions);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::function<field_getter_t> field_getter,
+            const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
             std::function<field_getter_t> field_getter,
             Tvec center,
             Tvec delta_x,
@@ -60,6 +67,12 @@ namespace shammodels::sph::modules {
             Tvec delta_y,
             u32 nx,
             u32 ny);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
+            std::string field_name, const sham::DeviceBuffer<Tvec> &positions);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::string field_name, const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
 
         sham::DeviceBuffer<Tfield> compute_slice(
             std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);

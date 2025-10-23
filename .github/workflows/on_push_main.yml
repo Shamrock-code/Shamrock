@@ -19,6 +19,7 @@ env:
 jobs:
 
   make_code_archive:
+    name: Make Code Archive
     uses: ./.github/workflows/make_code_archive.yml
 
   src_check:

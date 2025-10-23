@@ -1,11 +1,12 @@
-name: Make Code Archive
+name: Archive workflow
 
 on:
   workflow_call:
 
 jobs:
+
   make_code_archive:
-    name: Code Archive
+    name: Build & Upload
     runs-on: ubuntu-latest
     steps:
       - name: Reconfigure git

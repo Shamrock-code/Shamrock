@@ -1,0 +1,36 @@
+name: Extract Version
+
+on:
+  workflow_call:
+    outputs:
+      version:
+        description: "Shamrock version extracted from CMake"
+        value: ${{ jobs.extract_version.outputs.version }}
+
+jobs:
+  extract_version:
+    name: Extract Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Extract version from CMake
+        id: version
+        continue-on-error: true
+        run: |
+          mkdir -p build
+          cd build
+          cmake .. 2>&1 | tee cmake_output.txt || true
+          VERSION=$(grep -F 'Shamrock version :' cmake_output.txt | sed 's/-- Shamrock version : //' || echo "unknown")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Detected version: $VERSION"
+

@@ -4,10 +4,14 @@ on:
   workflow_call:
 
 jobs:
+  extract_version:
+    name: Extract Version
+    uses: ./.github/workflows/extract_version.yml
 
   make_code_archive:
     name: Build & Upload
     runs-on: ubuntu-latest
+    needs: extract_version
     steps:
       - name: Reconfigure git
         run: |
@@ -27,19 +31,8 @@ jobs:
         run: |
           ./git-archive-all.sh
 
-      - name: Extract version from CMake
-        id: version
-        continue-on-error: true
-        run: |
-          mkdir -p build
-          cd build
-          cmake .. 2>&1 | tee cmake_output.txt || true
-          VERSION=$(grep -F 'Shamrock version :' cmake_output.txt | sed 's/-- Shamrock version : //' || echo "unknown")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Detected version: $VERSION"
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: shamrock-${{ steps.version.outputs.version }}.tar
+          name: shamrock-${{ needs.extract_version.outputs.version }}.tar
           path: Shamrock.tar

@@ -41,7 +41,7 @@ git clone --recurse-submodules https://github.com/Shamrock-code/Shamrock.git
 
 ## Getting in touch
 
-Join us on any of the networks below or just by opening  a discussion or issue in this repository.
+Join us on any of the networks below or just by opening a discussion or issue in this repository.
 
  - [Discord](https://discord.gg/Q69s5buyr5)
  - [Slack](https://join.slack.com/t/shamrock-code/shared_invite/zt-3geto97g3-QXfTOcg1BUmgIcoJ5PS2EQ)

@@ -37,7 +37,7 @@ namespace shambase {
         args_info() = default;
 
         template<class T>
-        args_info(std::string name, T value) : name(name) {
+        args_info(std::string name, const T& value) : name(std::move(name)) {
             try {
                 this->value = shambase::format("{}", value);
             } catch (const std::exception &e) {

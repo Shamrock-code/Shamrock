@@ -15,29 +15,5 @@ jobs:
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
 
   make_code_archive:
-    runs-on: ubuntu-latest
-    steps:
-
-      - name : Reconfigure git
-        run:  |
-          git config --global --add safe.directory '*'
-          git config --global --list
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name : Download git-archive-all.sh
-        run: |
-          wget https://raw.githubusercontent.com/fabacab/git-archive-all.sh/refs/heads/master/git-archive-all.sh
-          chmod +x git-archive-all.sh
-
-      - name : Archive Shamrock with submodules
-        run: |
-          ./git-archive-all.sh
-
-      - name: Upload artifcat
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shamrock_Release.tar
-          path: Shamrock.tar
+    name: Code Archive
+    uses: ./.github/workflows/make_code_archive.yml

@@ -16,7 +16,6 @@ concurrency:
 jobs:
 
   make_code_archive:
-    name: Code Archive
     uses: ./.github/workflows/make_code_archive.yml
 
   upload_pr_detail:

@@ -15,5 +15,4 @@ jobs:
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
 
   make_code_archive:
-    name: Code Archive
     uses: ./.github/workflows/make_code_archive.yml

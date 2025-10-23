@@ -5,6 +5,7 @@ on:
 
 jobs:
   make_code_archive:
+    name: Code Archive
     runs-on: ubuntu-latest
     steps:
       - name: Reconfigure git

@@ -17,7 +17,9 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shammath/symtensor_collections.hpp"
-#include "shamphys/fmm.hpp"
+#include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/grav_moments.hpp"
+#include "shamphys/fmm/offset_multipole.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtest/PyScriptHandle.hpp"
@@ -79,9 +81,9 @@ class FMM_prec_eval {
 
             auto Q_n = SymTensorCollection<f64, 0, order>::load(multipoles, 0);
 
-            auto D_n = GreenFuncGravCartesian<f64, 0, order>::get_der_tensors(r_fmm);
+            auto D_n = shamphys::GreenFuncGravCartesian<f64, 0, order>::get_der_tensors(r_fmm);
 
-            auto M_k = get_M_mat(D_n, Q_n);
+            auto M_k = shamphys::get_M_mat(D_n, Q_n);
 
             f64 phi_val = M_k.t0 * a_k.t0;
             if constexpr (order >= 1) {
@@ -159,9 +161,9 @@ class FMM_prec_eval {
 
             auto Q_n = moment_types::load(multipoles, 0);
 
-            auto D_n = GreenFuncGravCartesian<f64, 1, order>::get_der_tensors(r_fmm);
+            auto D_n = shamphys::GreenFuncGravCartesian<f64, 1, order>::get_der_tensors(r_fmm);
 
-            auto dM_k = get_dM_mat(D_n, Q_n);
+            auto dM_k = shamphys::get_dM_mat(D_n, Q_n);
 
             auto tensor_to_sycl = [](SymTensor3d_1<T> a) {
                 return sycl::vec<T, 3>{a.v_0, a.v_1, a.v_2};
@@ -425,7 +427,7 @@ TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_mome
 
     SymTensorCollection<f64, 0, 5> d_ = SymTensorCollection<f64, 0, 5>::from_vec(d);
 
-    auto B_nb_offseted = offset_multipole(B_nB, d);
+    auto B_nb_offseted = shamphys::offset_multipole(B_nB, d);
 
     auto diff_0 = B_nBp.t0 - B_nb_offseted.t0;
     auto diff_1 = B_nBp.t1 - B_nb_offseted.t1;
@@ -483,7 +485,7 @@ TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_mome
         d_.t2.v_12,
         d_.t2.v_22);
 
-    auto DG = GreenFuncGravCartesian<f64, 0, 5>::get_der_tensors(s_b - f64_3{5, 1, 2});
+    auto DG = shamphys::GreenFuncGravCartesian<f64, 0, 5>::get_der_tensors(s_b - f64_3{5, 1, 2});
 
     printf(
         "%e %e %e %e %e %e\n",
@@ -687,7 +689,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
                             multipoles,
                             s_cid * SymTensorCollection<flt, 0, fmm_order>::num_component);
 
-                        auto B_ns_offseted = offset_multipole(B_ns, d);
+                        auto B_ns_offseted = shamphys::offset_multipole(B_ns, d);
 
                         B_n += B_ns_offseted;
                     };
@@ -991,9 +993,10 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
                     auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(
                         multipoles, node_b * SymTensorCollection<flt, 0, fmm_order>::num_component);
                     auto D_n
-                        = GreenFuncGravCartesian<flt, 1, fmm_order + 1>::get_der_tensors(r_fmm);
+                        = shamphys::GreenFuncGravCartesian<flt, 1, fmm_order + 1>::get_der_tensors(
+                            r_fmm);
 
-                    dM_k += get_dM_mat(D_n, Q_n);
+                    dM_k += shamphys::get_dM_mat(D_n, Q_n);
                 });
 
             walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a) {

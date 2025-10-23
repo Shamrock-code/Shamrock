@@ -154,11 +154,11 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::Indexes<u32> &sizes_no_gz;
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
             const shamrock::solvergraph::Field<Tscal> &spans_block_cell_sizes;
-            const shamrock::solvergraph::FieldRefs<Tscal> &spans_rho;
+            const shamrock::solvergraph::IFieldRefs<Tscal> &spans_rho;
             const shamrock::solvergraph::ScalarEdge<Tscal> &mean_rho;
             const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghost;
             const shamrock::solvergraph::ScalarsEdge<u32> &rank_owner;
-            shamrock::solvergraph::FieldRefs<Tscal> &spans_phi;
+            shamrock::solvergraph::IFieldRefs<Tscal> &spans_phi;
             shamrock::solvergraph::Field<Tscal> &spans_phi_cpy;
             shamrock::solvergraph::Field<Tscal> &spans_phi_res;
             shamrock::solvergraph::Field<Tscal> &spans_phi_p;
@@ -177,11 +177,11 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes_no_gz,
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_block_cell_sizes,
-            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> spans_rho,
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> spans_rho,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> mean_rho,
             std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost,
             std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> rank_owner,
-            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> spans_phi,
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> spans_phi,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_cpy,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_res,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_p,
@@ -313,11 +313,11 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
                 get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(2),
                 get_ro_edge<shamrock::solvergraph::Field<Tscal>>(3),
-                get_ro_edge<shamrock::solvergraph::FieldRefs<Tscal>>(4),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(4),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(5),
                 get_ro_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(6),
                 get_ro_edge<shamrock::solvergraph::ScalarsEdge<u32>>(7),
-                get_rw_edge<shamrock::solvergraph::FieldRefs<Tscal>>(0),
+                get_rw_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(1),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(2),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(3),

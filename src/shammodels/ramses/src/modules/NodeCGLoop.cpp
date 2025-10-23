@@ -54,10 +54,10 @@ namespace shammodels::basegodunov::modules {
 
             for (auto id = 0; id < 1; id++) {
 
-                auto &buf_rho = edges.spans_rho.get(id).get_buf();
+                auto &buf_rho = edges.spans_rho.get_field(id).get_buf();
                 auto vec_rho  = buf_rho.copy_to_stdvec();
 
-                auto &buf_phi = edges.spans_phi.get(id).get_buf();
+                auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
                 auto vec_phi  = buf_phi.copy_to_stdvec();
 
                 logger::raw_ln(id, "buf rho 0 =", "--", buf_rho.get_size());
@@ -160,7 +160,7 @@ namespace shammodels::basegodunov::modules {
                     auto &buf_Ap = edges.spans_phi_Ap.get_buf(id);
                     auto vec_Ap  = buf_Ap.copy_to_stdvec();
 
-                    auto &buf_phi = edges.spans_phi.get(id).get_buf();
+                    auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
                     auto vec_phi  = buf_phi.copy_to_stdvec();
 
                     logger::raw_ln(id, "buf res 0 =", "--", buf.get_size());
@@ -215,7 +215,7 @@ namespace shammodels::basegodunov::modules {
                     auto &buf_p = edges.spans_phi_p.get_buf(id);
                     auto vec_p  = buf_p.copy_to_stdvec();
 
-                    auto &buf_phi = edges.spans_phi.get(id).get_buf();
+                    auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
                     auto vec_phi  = buf_phi.copy_to_stdvec();
 
                     for (int i = 0; i < edges.sizes_no_gz.indexes.get(id); i++) {

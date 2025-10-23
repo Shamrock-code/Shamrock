@@ -248,7 +248,7 @@ namespace shammodels::basegodunov {
 
         // self-gravity fields
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_new;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_phi_new;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_copy;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_p;
@@ -271,16 +271,20 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> wstab_val;
 
         // gravitational acceleration
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_old;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_new;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_old;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_new;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_old;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_new;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_old;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gx_new;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_old;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gy_new;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_old;
+        // std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> phi_gz_new;
 
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_new;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> phi_g_old;
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho_next;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_new;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_old;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rho_next;
+        /** TOBE REMOVE*/
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> refs_rhov_next;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rhoe_next;
+        /** TOBE REMOVE*/
     };
 
 } // namespace shammodels::basegodunov

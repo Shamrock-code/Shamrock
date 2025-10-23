@@ -466,8 +466,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.is_gravity_on()) {
         storage.refs_phi
             = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi", "\\phi");
-        storage.refs_phi_new
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi-new", "\\phi");
+        storage.refs_phi_new = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "phi-new", "\\phi");
         storage.phi_res = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "Res", "Res");
         storage.phi_copy = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -506,23 +506,33 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         //         "wstab_val", "wstab_val");
         // }
 
-        storage.phi_gx_old
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gx_old", "g_{x}^{n}");
-        storage.phi_gx_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            "phi_gx_new", "g_{x}^{n+1}");
-        storage.phi_gy_old
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gy_old", "g_{y}^{n}");
-        storage.phi_gy_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            "phi_gy_new", "g_{y}^{n+1}");
-        storage.phi_gz_old
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gz_old", "g_{z}^{n}");
-        storage.phi_gz_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            "phi_gz_new", "g_{z}^{n+1}");
+        // storage.phi_gx_old
+        //     = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gx_old",
+        //     "g_{x}^{n}");
+        // storage.phi_gx_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+        //     "phi_gx_new", "g_{x}^{n+1}");
+        // storage.phi_gy_old
+        //     = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gy_old",
+        //     "g_{y}^{n}");
+        // storage.phi_gy_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+        //     "phi_gy_new", "g_{y}^{n+1}");
+        // storage.phi_gz_old
+        //     = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_gz_old",
+        //     "g_{z}^{n}");
+        // storage.phi_gz_new = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+        //     "phi_gz_new", "g_{z}^{n+1}");
 
-        storage.phi_g_old
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("phi_g_old", "g^{n}");
-        storage.phi_g_new
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("phi_g_new", "g^{n+1}");
+        storage.phi_g_old = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "phi_g_old", "g^{n}");
+        storage.phi_g_new = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "phi_g_new", "g^{n+1}");
+
+        storage.refs_rho_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho-next", "\\rho_{n+1}");
+        storage.refs_rhov_next = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "rhov-next", "\\rho_{n+1}v");
+        storage.refs_rhoe_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rhoe-next", "\\rho_{n+1}e");
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -1402,6 +1412,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.refs_phi_new,
             storage.phi_g_new);
         solver_sequence.push_back(std::make_shared<decltype(node_g_new)>(std::move(node_g_new)));
+
+        /*****/
     }
 
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));

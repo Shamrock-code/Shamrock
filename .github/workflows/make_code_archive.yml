@@ -38,8 +38,8 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 
-      - name: Upload artifcat
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Shamrock_Release.tar
+          name: shamrock-${{ steps.version.outputs.version }}.tar
           path: Shamrock.tar

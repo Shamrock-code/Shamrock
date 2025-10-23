@@ -658,7 +658,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return render.compute_slice(name, positions).copy_to_stdvec();
                 }
 
-                throw shambase::make_except_with_loc<std::runtime_error>("unknown slice type");
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
             })
         .def(
             "render_column_integ",
@@ -679,7 +679,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return render.compute_column_integ(name, rays).copy_to_stdvec();
                 }
 
-                throw shambase::make_except_with_loc<std::runtime_error>("unknown slice type");
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
             })
         .def(
             "render_cartesian_slice",
@@ -731,7 +731,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return ret;
                 }
 
-                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
                 return py::array_t<Tscal>({nx, ny});
             },
             py::arg("name"),
@@ -791,7 +791,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return ret;
                 }
 
-                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
                 return py::array_t<Tscal>({nx, ny});
             },
             py::arg("name"),

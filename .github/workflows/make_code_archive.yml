@@ -34,7 +34,7 @@ jobs:
           mkdir -p build
           cd build
           cmake .. 2>&1 | tee cmake_output.txt || true
-          VERSION=$(grep -oP '-- Shamrock version : \K.*' cmake_output.txt || echo "unknown")
+          VERSION=$(grep '-- Shamrock version :' cmake_output.txt | sed 's/-- Shamrock version : //' || echo "unknown")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
 

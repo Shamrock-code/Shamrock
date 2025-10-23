@@ -1,0 +1,42 @@
+name: Archive workflow
+
+on:
+  workflow_call:
+
+jobs:
+  extract_version:
+    name: Extract Version
+    uses: ./.github/workflows/extract_version.yml
+
+  make_code_archive:
+    name: Build & Upload
+    runs-on: ubuntu-latest
+    needs: extract_version
+    steps:
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Download git-archive-all.sh
+        run: |
+          wget https://raw.githubusercontent.com/fabacab/git-archive-all.sh/refs/heads/master/git-archive-all.sh
+          chmod +x git-archive-all.sh
+
+      - name: Archive Shamrock with submodules
+        run: |
+          ./git-archive-all.sh
+
+      - name: rename archive
+        run: |
+          mv Shamrock.tar shamrock-${{ needs.extract_version.outputs.version }}.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: shamrock-${{ needs.extract_version.outputs.version }}.tar
+          path: shamrock-${{ needs.extract_version.outputs.version }}.tar

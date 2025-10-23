@@ -97,21 +97,16 @@ namespace shammodels::sph::modules {
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
-        std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
+        std::string field_name, const sham::DeviceBuffer<Tvec> &positions)
         -> sham::DeviceBuffer<Tfield> {
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
                 shambase::format(
-                    "compute_slice field_name: {}, center: {}, delta_x: {}, delta_y: {}, nx: {}, "
-                    "ny: {}",
+                    "compute_slice field_name: {}, positions count: {}",
                     field_name,
-                    center,
-                    delta_x,
-                    delta_y,
-                    nx,
-                    ny));
+                    positions.get_size()));
         }
 
         shambase::Timer t;
@@ -120,7 +115,7 @@ namespace shammodels::sph::modules {
         auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
                        .runner_function(
                            field_name, [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
-                               return compute_slice(field_getter, center, delta_x, delta_y, nx, ny);
+                               return compute_slice(field_getter, positions);
                            });
 
         t.end();
@@ -135,22 +130,16 @@ namespace shammodels::sph::modules {
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
-        std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
+        std::string field_name, const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays)
         -> sham::DeviceBuffer<Tfield> {
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
                 shambase::format(
-                    "compute_column_integ field_name: {}, center: {}, delta_x: {}, delta_y: {}, "
-                    "nx: {}, "
-                    "ny: {}",
+                    "compute_column_integ field_name: {}, rays count: {}",
                     field_name,
-                    center,
-                    delta_x,
-                    delta_y,
-                    nx,
-                    ny));
+                    rays.get_size()));
         }
 
         shambase::Timer t;
@@ -159,8 +148,7 @@ namespace shammodels::sph::modules {
         auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
                        .runner_function(
                            field_name, [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
-                               return compute_column_integ(
-                                   field_getter, center, delta_x, delta_y, nx, ny);
+                               return compute_column_integ(field_getter, rays);
                            });
 
         t.end();
@@ -175,17 +163,12 @@ namespace shammodels::sph::modules {
 
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
-        std::function<field_getter_t> field_getter,
-        Tvec center,
-        Tvec delta_x,
-        Tvec delta_y,
-        u32 nx,
-        u32 ny) -> sham::DeviceBuffer<Tfield> {
+        std::function<field_getter_t> field_getter, const sham::DeviceBuffer<Tvec> &positions)
+        -> sham::DeviceBuffer<Tfield> {
 
-        sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
+        sham::DeviceBuffer<Tfield> ret{
+            positions.get_size(), shamsys::instance::get_compute_scheduler_ptr()};
         ret.fill(sham::VectorProperties<Tfield>::get_zero());
-
-        auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
 
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
@@ -243,40 +226,41 @@ namespace shammodels::sph::modules {
 
                 Tscal partmass = solver_config.gpart_mass;
 
-                shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
-                    Tvec pos_render = pixel_positions[gid];
+                shambase::parallel_for(
+                    cgh, positions.get_size(), "compute slice render", [=](u32 gid) {
+                        Tvec pos_render = pixel_positions[gid];
 
-                    Tfield ret = sham::VectorProperties<Tfield>::get_zero();
+                        Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
-                    particle_looper.rtree_for(
-                        [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
-                            Tscal rint_cell = hmax[node_id] * Kernel::Rkern;
+                        particle_looper.rtree_for(
+                            [&](u32 node_id, Tvec bmin, Tvec bmax) -> bool {
+                                Tscal rint_cell = hmax[node_id] * Kernel::Rkern;
 
-                            auto interbox
-                                = shammath::CoordRange<Tvec>{bmin, bmax}.expand_all(rint_cell);
+                                auto interbox
+                                    = shammath::CoordRange<Tvec>{bmin, bmax}.expand_all(rint_cell);
 
-                            return interbox.contain_pos(pos_render);
-                        },
-                        [&](u32 id_b) {
-                            Tvec dr    = pos_render - xyz[id_b];
-                            Tscal rab2 = sycl::dot(dr, dr);
-                            Tscal h_b  = hpart[id_b];
+                                return interbox.contain_pos(pos_render);
+                            },
+                            [&](u32 id_b) {
+                                Tvec dr    = pos_render - xyz[id_b];
+                                Tscal rab2 = sycl::dot(dr, dr);
+                                Tscal h_b  = hpart[id_b];
 
-                            if (rab2 > h_b * h_b * Rker2) {
-                                return;
-                            }
+                                if (rab2 > h_b * h_b * Rker2) {
+                                    return;
+                                }
 
-                            Tscal rab = sycl::sqrt(rab2);
+                                Tscal rab = sycl::sqrt(rab2);
 
-                            Tfield val = torender[id_b];
+                                Tfield val = torender[id_b];
 
-                            Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
+                                Tscal rho_b = shamrock::sph::rho_h(partmass, h_b, Kernel::hfactd);
 
-                            ret += partmass * val * Kernel::W_3d(rab, h_b) / rho_b;
-                        });
+                                ret += partmass * val * Kernel::W_3d(rab, h_b) / rho_b;
+                            });
 
-                    render_field[gid] += ret;
-                });
+                        render_field[gid] += ret;
+                    });
             });
 
             buf_xyz.complete_event_state(e2);
@@ -290,19 +274,15 @@ namespace shammodels::sph::modules {
 
         return ret;
     }
+
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
         std::function<field_getter_t> field_getter,
-        Tvec center,
-        Tvec delta_x,
-        Tvec delta_y,
-        u32 nx,
-        u32 ny) -> sham::DeviceBuffer<Tfield> {
+        const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays) -> sham::DeviceBuffer<Tfield> {
 
-        sham::DeviceBuffer<Tfield> ret{nx * ny, shamsys::instance::get_compute_scheduler_ptr()};
+        sham::DeviceBuffer<Tfield> ret{
+            rays.get_size(), shamsys::instance::get_compute_scheduler_ptr()};
         ret.fill(sham::VectorProperties<Tfield>::get_zero());
-
-        auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
 
         using u_morton = u32;
         using RTree    = RadixTree<u_morton, Tvec>;
@@ -360,13 +340,7 @@ namespace shammodels::sph::modules {
 
                 Tscal partmass = solver_config.gpart_mass;
 
-                shambase::parallel_for(cgh, nx * ny, "compute slice render", [=](u32 gid) {
-                    u32 ix          = gid % nx;
-                    u32 iy          = gid / nx;
-                    f64 fx          = ((f64(ix) + 0.5) / nx) - 0.5;
-                    f64 fy          = ((f64(iy) + 0.5) / ny) - 0.5;
-                    Tvec pos_render = center + delta_x * fx + delta_y * fy;
-
+                shambase::parallel_for(cgh, rays.get_size(), "compute slice render", [=](u32 gid) {
                     Tfield ret = sham::VectorProperties<Tfield>::get_zero();
 
                     shammath::Ray<Tvec> ray = image_rays[gid];
@@ -380,7 +354,7 @@ namespace shammodels::sph::modules {
                             return interbox.intersect_ray(ray);
                         },
                         [&](u32 id_b) {
-                            Tvec dr = pos_render - xyz[id_b];
+                            Tvec dr = ray.origin - xyz[id_b];
 
                             dr -= ray.direction * sycl::dot(dr, ray.direction);
 
@@ -414,6 +388,50 @@ namespace shammodels::sph::modules {
         shamalgs::collective::reduce_buffer_in_place_sum(ret, MPI_COMM_WORLD);
 
         return ret;
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+        std::function<field_getter_t> field_getter,
+        Tvec center,
+        Tvec delta_x,
+        Tvec delta_y,
+        u32 nx,
+        u32 ny) -> sham::DeviceBuffer<Tfield> {
+
+        auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
+
+        return compute_slice(field_getter, positions);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+        std::function<field_getter_t> field_getter,
+        Tvec center,
+        Tvec delta_x,
+        Tvec delta_y,
+        u32 nx,
+        u32 ny) -> sham::DeviceBuffer<Tfield> {
+
+        auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
+
+        return compute_column_integ(field_getter, rays);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+        std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
+        -> sham::DeviceBuffer<Tfield> {
+        auto positions = pixel_to_positions(center, delta_x, delta_y, nx, ny);
+        return compute_slice(field_name, positions);
+    }
+
+    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+        std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny)
+        -> sham::DeviceBuffer<Tfield> {
+        auto rays = pixel_to_orthographic_rays(center, delta_x, delta_y, nx, ny);
+        return compute_column_integ(field_name, rays);
     }
 
 } // namespace shammodels::sph::modules

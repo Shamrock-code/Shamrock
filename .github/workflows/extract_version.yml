@@ -20,8 +20,6 @@ jobs:
           git config --global --list
 
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Extract version from CMake
         id: version
@@ -33,4 +31,3 @@ jobs:
           VERSION=$(grep -F 'Shamrock version :' cmake_output.txt | sed 's/-- Shamrock version : //' || echo "unknown")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Detected version: $VERSION"
-

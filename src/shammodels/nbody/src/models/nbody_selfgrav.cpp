@@ -16,8 +16,8 @@
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammath/symtensor_collections.hpp"
-#include "shamphys/fmm.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/grav_moments.hpp"
 #include "shamphys/fmm/offset_multipole.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
@@ -880,7 +880,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                             auto D_n = shamphys::GreenFuncGravCartesian<flt, 1, fmm_order + 1>::
                                 get_der_tensors(r_fmm);
 
-                            dM_k += get_dM_mat(D_n, Q_n);
+                            dM_k += shamphys::get_dM_mat(D_n, Q_n);
                         });
 
                     // #endif
@@ -1094,7 +1094,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                                 auto D_n = shamphys::GreenFuncGravCartesian<flt, 1, fmm_order + 1>::
                                     get_der_tensors(r_fmm);
 
-                                dM_k += get_dM_mat(D_n, Q_n);
+                                dM_k += shamphys::get_dM_mat(D_n, Q_n);
                             });
 
                         walker::iter_object_in_cell(tree_acc_curr, id_cell_a, [&](u32 id_a) {

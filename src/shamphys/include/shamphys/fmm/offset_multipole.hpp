@@ -21,6 +21,7 @@
 
 namespace shamphys {
 
+    /// utility to offset a multipole, see PHD
     template<class T, u32 low_order, u32 high_order>
     inline shammath::SymTensorCollection<T, low_order, high_order> offset_multipole(
         const shammath::SymTensorCollection<T, low_order, high_order> &Q_old,

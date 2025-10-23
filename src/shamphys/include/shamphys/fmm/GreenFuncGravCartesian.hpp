@@ -21,6 +21,19 @@
 
 namespace shamphys {
 
+    /**
+     * @brief Utility to get the derivatives of the Green function for gravity in Cartesian
+     * coordinates
+     *
+     * At a given order i, the Green function derivative is denoted as \f$\nabla^{(i)}_r G(r)\f$
+     * This function return the collection of the orders from low_order to high_order.
+     *
+     * @param T the type of the coordinates
+     * @param low_order the lowest order of the derivative
+     * @param high_order the highest order of the derivative
+     * @return The symetric tensor collection of the derivatives of the Green function for gravity
+     * in Cartesian coordinates
+     */
     template<class T, u32 low_order, u32 high_order>
     class GreenFuncGravCartesian {
         public:

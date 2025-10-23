@@ -292,11 +292,9 @@ dpi = 200
 
 plt.figure(num=1, clear=True, dpi=dpi)
 plot_rho_integ(metadata, arr_rho)
-plt.show()
 
 plt.figure(num=1, clear=True, dpi=dpi)
 plot_vz_integ(metadata, arr_vxyz[:, :, 2])
-plt.show()
 
 # %%
 # Cylindrical rendering
@@ -393,8 +391,8 @@ metadata = {"extent": [0, ext, -np.pi, np.pi], "time": model.get_time()}
 
 plt.figure(num=1, clear=True, dpi=dpi)
 plot_rho_integ_cylindrical(metadata, arr_rho_cylindrical)
-plt.show()
 
 plt.figure(num=1, clear=True, dpi=dpi)
 plot_rho_slice_cylindrical(metadata, arr_rho_pos)
+
 plt.show()

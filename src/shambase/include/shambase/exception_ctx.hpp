@@ -24,59 +24,115 @@
 
 namespace shambase {
 
+    /**
+     * @brief An argument containing a name and a value
+     *
+     * This struct is used to store the name and value of an argument when creating
+     * exceptions with context.
+     */
     struct args_info {
         std::string name;
         std::string value;
-        std::optional<std::string> special_print;
 
         args_info() = default;
 
         template<class T>
-        args_info(std::string name, T value) : name(name), value(shambase::format("{}", value)) {}
-
-        args_info(std::string special_print) : special_print(special_print) {}
+        args_info(std::string name, T value) : name(name) {
+            try {
+                this->value = shambase::format("{}", value);
+            } catch (const std::exception &e) {
+                this->value = "format failed : " + std::string(e.what());
+                throw;
+            }
+        }
     };
 
     /**
-     * @brief Make an exception with a message and a context
+     * @brief A context group containing a section name and a list of arguments
      *
-     * This function allows to make an exception with a message and a context.
-     * The context is a vector of args_info objects, that are used to print the
-     * arguments of the exception.
+     * This struct is used to group arguments under a named section when creating
+     * exceptions with context.
+     */
+    struct arg_group {
+        std::string section_name;
+        std::vector<args_info> args;
+
+        arg_group() = default;
+
+        template<typename... Args>
+        arg_group(std::string name, Args &&...args_list)
+            : section_name(name), args{std::forward<Args>(args_list)...} {}
+    };
+
+    /**
+     * @brief A context containing a list of argument groups
      *
-     * Usage :
+     * This struct is used to group argument groups under a named section when creating
+     * exceptions with context.
+     */
+    struct context {
+        std::vector<arg_group> groups;
+
+        context() = default;
+
+        template<typename... Args>
+        context(Args &&...args_list) : groups{std::forward<Args>(args_list)...} {}
+    };
+
+    /**
+     * @brief Make an exception with a message and variadic context groups
+     *
+     * This function allows to make an exception with multiple context groups.
+     * Each context group has a section name and a list of arguments.
+     *
+     * Usage:
      * @code{.cpp}
      * throw shambase::make_except_with_loc_with_ctx<std::invalid_argument>(
-     *     "The cross product of delta_x and delta_y is zero",
-     *     std::vector<shambase::args_info>{
-     *         shambase::args_info("--function args--"), // special print
-     *         shambase::args_info("center", center), // name and value
-     *         shambase::args_info("delta_x", delta_x), // name and value
-     *         shambase::args_info("delta_y", delta_y), // name and value
-     *         shambase::args_info("nx", nx), // name and value
-     *         shambase::args_info("ny", ny), // name and value
-     *         shambase::args_info("--internal variables--"), // special print
-     *         shambase::args_info("e_z", e_z)}); // name and value
+     *          "The cross product is zero",
+     *          {shambase::arg_group{
+     *               "function args",
+     *               ARG_INFO(center),
+     *               ARG_INFO(delta_x),
+     *               ARG_INFO(delta_y),
+     *               ARG_INFO(nx),
+     *               ARG_INFO(ny)},
+     *           shambase::arg_group{"internal variables", ARG_INFO(e_z)}});
      * @endcode
      *
      * @tparam ExcptTypes The type of the exception to make
      * @param message The message of the exception
-     * @param args The arguments of the exception
-     * @param loc The location of the exception
+     * @param ctx The context containing the arguments
+     * @param loc The source location where the exception is thrown
      * @return ExcptTypes The exception
      */
-    template<class ExcptTypes>
+    template<class ExcptTypes, typename... Contexts>
     inline ExcptTypes make_except_with_loc_with_ctx(
-        std::string message, std::vector<args_info> args, SourceLocation loc = SourceLocation{}) {
+        std::string message, context ctx, SourceLocation loc = SourceLocation{}) {
         std::string msg = message;
-        msg += "\n  context :\n";
-        for (const auto &arg : args) {
-            if (arg.special_print) {
-                msg += shambase::format("    {}\n", arg.special_print.value());
-            } else {
+        msg += "\nexception context :\n";
+
+        for (const auto &group : ctx.groups) {
+            msg += shambase::format("  {}:\n", group.section_name);
+            for (const auto &arg : group.args) {
                 msg += shambase::format("    {} = {}\n", arg.name, arg.value);
             }
         }
+
         return shambase::make_except_with_loc<ExcptTypes>(msg, loc);
     }
+
 } // namespace shambase
+
+/**
+ * @brief Macro to automatically capture variable name and value for exception context
+ *
+ * This macro stringifies the variable name and passes both the name and value
+ * to create an args_info object.
+ *
+ * Example:
+ * @code{.cpp}
+ * int value = 42;
+ * SHAM_ARG(value) // Creates args_info("value", 42)
+ * @endcode
+ */
+#define ARG_INFO(var) shambase::args_info(#var, var)

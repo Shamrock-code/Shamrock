@@ -7,10 +7,9 @@ This example demonstrates how to use the Shamrock SPH rendering module to render
 """
 
 # %%
-# Runscript (runscript.py)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# The runscript is the actual simulation with on the fly analysis & rolling dumps
+# The test simulation to showcase the rendering module
 
+# sphinx_gallery_multi_image = "single"
 
 import glob
 import json

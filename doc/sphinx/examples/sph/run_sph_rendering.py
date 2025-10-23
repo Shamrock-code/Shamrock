@@ -328,11 +328,7 @@ def make_cylindrical_coords(nr, ntheta):
 
 
 def positions_to_rays(positions):
-    rays = []
-    for position in positions:
-        x, y, z = position
-        rays.append(shamrock.math.Ray_f64_3((x, y, z), (0.0, 0.0, 1.0)))
-    return rays
+    return [shamrock.math.Ray_f64_3(tuple(position), (0.0, 0.0, 1.0)) for position in positions]
 
 
 positions_cylindrical = make_cylindrical_coords(nr, ntheta)

@@ -180,7 +180,7 @@ Register_pymod(pysham_mathinit) {
         return shammath::mat_identity<f64, 4>();
     });
 
-    math_module.def("mat_mul", [](f64_4x4 a, f64_4x4 b) -> f64_4x4 {
+    math_module.def("mat_mul", [](const f64_4x4 &a, const f64_4x4 &b) -> f64_4x4 {
         f64_4x4 ret;
         shammath::mat_prod(a.get_mdspan(), b.get_mdspan(), ret.get_mdspan());
         return ret;

@@ -18,6 +18,8 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammath/derivatives.hpp"
+#include "shammath/matrix.hpp"
+#include "shammath/matrix_op.hpp"
 #include "shammath/paving_function.hpp"
 #include "shampylib/math/pyAABB.hpp"
 #include "shampylib/math/pyRay.hpp"
@@ -121,4 +123,72 @@ Register_pymod(pysham_mathinit) {
         .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb)
         .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv);
+
+    py::class_<f64_4x4>(math_module, "f64_4x4")
+        .def(py::init([]() {
+            return std::make_unique<f64_4x4>();
+        }))
+        .def(
+            "__getitem__",
+            [](f64_4x4 &m, std::pair<int, int> idx) -> double {
+                return m(idx.first, idx.second);
+            })
+        .def(
+            "__setitem__",
+            [](f64_4x4 &m, std::pair<int, int> idx, double value) {
+                m(idx.first, idx.second) = value;
+            })
+        .def(
+            "__repr__",
+            [](const f64_4x4 &m) {
+                std::ostringstream oss;
+                oss << "[";
+                for (size_t i = 0; i < 4; ++i) {
+                    oss << "[";
+                    for (size_t j = 0; j < 4; ++j) {
+                        oss << m(i, j);
+                        if (j + 1 < 4)
+                            oss << ", ";
+                    }
+                    oss << "]";
+                    if (i + 1 < 4)
+                        oss << ",\n ";
+                }
+                oss << "]";
+                return oss.str();
+            })
+        .def(
+            "__mul__",
+            [](const f64_4x4 &a, const f64_4x4 &b) {
+                f64_4x4 ret;
+                shammath::mat_prod(a.get_mdspan(), b.get_mdspan(), ret.get_mdspan());
+                return ret;
+            },
+            py::is_operator())
+        .def(
+            "to_pyarray", [](const f64_4x4 &self) {
+                py::array_t<f64> ret({4,4});
+                for (u32 iy = 0; iy < 4; iy++) {
+                    for (u32 ix = 0; ix < 4; ix++) {
+                        ret.mutable_at(ix, iy) = self(ix,iy);
+                    }
+                }
+
+                return ret;
+            }
+        );
+
+    math_module.def("get_identity_f64_4x4", []() -> f64_4x4 {
+        return shammath::mat_identity<f64, 4>();
+    });
+
+    math_module.def("mat_mul", [](f64_4x4 a, f64_4x4 b) -> f64_4x4 {
+        f64_4x4 ret;
+        shammath::mat_prod(a.get_mdspan(), b.get_mdspan(), ret.get_mdspan());
+        return ret;
+    });
+
+    math_module.def("mat_set_identity", [](f64_4x4 &a) {
+        shammath::mat_set_identity(a.get_mdspan());
+    });
 }

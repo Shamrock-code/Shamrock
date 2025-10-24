@@ -167,9 +167,9 @@ Register_pymod(pysham_mathinit) {
             py::is_operator())
         .def("to_pyarray", [](const f64_4x4 &self) {
             py::array_t<f64> ret({4, 4});
-            for (u32 iy = 0; iy < 4; iy++) {
-                for (u32 ix = 0; ix < 4; ix++) {
-                    ret.mutable_at(ix, iy) = self(ix, iy);
+            for (u32 i = 0; i < 4; i++) {
+                for (u32 j = 0; j < 4; j++) {
+                    ret.mutable_at(i, j) = self(i, j);
                 }
             }
 

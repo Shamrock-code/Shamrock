@@ -69,19 +69,21 @@ inline void register_dtt_alg(py::module &m) {
     m.def(
         "clbvh_dual_tree_traversal",
         [](shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-           shambase::VecComponent<Tvec> theta_crit) {
+           shambase::VecComponent<Tvec> theta_crit,
+           bool ordered_result) {
             return shamtree::clbvh_dual_tree_traversal(
-                shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+                shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         });
 
     m.def(
         "benchmark_clbvh_dual_tree_traversal",
         [](shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-           shambase::VecComponent<Tvec> theta_crit) {
+           shambase::VecComponent<Tvec> theta_crit,
+           bool ordered_result) {
             shambase::Timer t;
             t.start();
             shamtree::clbvh_dual_tree_traversal(
-                shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+                shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
             t.end();
             return t.elasped_sec();
         });

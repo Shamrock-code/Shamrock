@@ -160,6 +160,9 @@ struct shamtree::KarrasTreeTraverser {
         buf_lchild_flag.complete_event_state(e);
         buf_rchild_flag.complete_event_state(e);
     }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return offset_leaf == 0; }
 };
 
 struct shamtree::KarrasTreeTraverserHost {

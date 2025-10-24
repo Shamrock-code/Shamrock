@@ -35,8 +35,13 @@ inline void validate_dtt_results(
     const sham::DeviceBuffer<Tvec> &positions,
     const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
     Tscal theta_crit,
-    std::vector<u32_2> &internal_node_interactions,
-    std::vector<u32_2> &unrolled_interact) {
+    shamtree::DTTResult &result,
+    bool ordered_result) {
+
+    __shamrock_stack_entry();
+
+    std::vector<u32_2> internal_node_interactions = result.node_interactions_m2m.copy_to_stdvec();
+    std::vector<u32_2> unrolled_interact          = result.node_interactions_p2p.copy_to_stdvec();
 
     u32 Npart    = positions.get_size();
     u32 Npart_sq = Npart * Npart;
@@ -57,6 +62,71 @@ inline void validate_dtt_results(
 
     std::vector<std::tuple<u32, u32>> part_interact_node_node{};
     std::vector<std::tuple<u32, u32>> part_interact_leaf_leaf{};
+
+    if (ordered_result) {
+        logger::raw_ln("testing ordered result");
+
+        REQUIRE(result.is_ordered());
+        REQUIRE(bool(result.ordered_result));
+
+        if (result.ordered_result.has_value()) {
+
+            auto test_ordered = [](std::vector<u32_2> &part_interact) {
+                u32 offenses = 0;
+
+                u32 last_id_a = 0;
+                for (auto r : part_interact) {
+                    u32 id_a = r.x();
+                    u32 id_b = r.y();
+
+                    if (id_a < last_id_a) {
+                        offenses++;
+                    }
+
+                    last_id_a = id_a;
+                }
+                return offenses;
+            };
+
+            REQUIRE_EQUAL(test_ordered(unrolled_interact), 0);
+            REQUIRE_EQUAL(test_ordered(internal_node_interactions), 0);
+
+            auto m2m = result.node_interactions_m2m.copy_to_stdvec();
+            auto p2p = result.node_interactions_p2p.copy_to_stdvec();
+
+            auto m2m_offset = result.ordered_result->offset_m2m.copy_to_stdvec();
+            auto p2p_offset = result.ordered_result->offset_p2p.copy_to_stdvec();
+
+            // test that if I look in slot i I find only stuff with i in x part
+
+            u32 m2m_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = m2m_offset[i]; j < m2m_offset[i + 1]; j++) {
+                    u32_2 interact = m2m[j];
+                    if (interact.x() != i) {
+                        m2m_sorting_offenses++;
+                    }
+                }
+            }
+
+            u32 p2p_sorting_offenses = 0;
+            for (u32 i = 0; i < Npart; i++) {
+                for (u32 j = p2p_offset[i]; j < p2p_offset[i + 1]; j++) {
+                    u32_2 interact = p2p[j];
+                    if (interact.x() != i) {
+                        p2p_sorting_offenses++;
+                    }
+                }
+            }
+
+            REQUIRE_EQUAL(m2m_sorting_offenses, 0);
+            REQUIRE_EQUAL(p2p_sorting_offenses, 0);
+        }
+
+    } else {
+        REQUIRE(!result.is_ordered());
+        REQUIRE(!bool(result.ordered_result));
+    }
 
     for (auto r : internal_node_interactions) {
 
@@ -119,14 +189,11 @@ inline void validate_dtt_results(
     REQUIRE_EQUAL(part_interact.size(), Npart_sq);
 }
 
-TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
+void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_result) {
+    __shamrock_stack_entry();
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();
-
-    u32 Npart           = 1000;
-    u32 reduction_level = 1;
-    Tscal theta_crit    = 0.5;
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>({-1, -1, -1}, {1, 1, 1});
 
@@ -165,19 +232,14 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::details::DTTCpuReference<Tmorton, Tvec, 3>::dtt(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         timer.end();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
-        std::vector<u32_2> internal_node_interactions
-            = result.node_interactions_m2m.copy_to_stdvec();
-        std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
+        validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 
-        validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
-
-        m2m_ref = internal_node_interactions;
-        p2p_ref = unrolled_interact;
+        m2m_ref = result.node_interactions_m2m.copy_to_stdvec();
+        p2p_ref = result.node_interactions_p2p.copy_to_stdvec();
     }
 
     auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
@@ -188,16 +250,15 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
         shambase::Timer timer;
         timer.start();
         auto result = shamtree::clbvh_dual_tree_traversal(
-            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit);
+            shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
         timer.end();
-        logger::raw_ln("clbvh_dual_tree_traversal :", timer.get_time_str());
+        logger::raw_ln(impl.impl_name, " :", timer.get_time_str());
+
+        validate_dtt_results(partpos_buf, bvh, theta_crit, result, ordered_result);
 
         std::vector<u32_2> internal_node_interactions
             = result.node_interactions_m2m.copy_to_stdvec();
         std::vector<u32_2> unrolled_interact = result.node_interactions_p2p.copy_to_stdvec();
-
-        validate_dtt_results(
-            partpos_buf, bvh, theta_crit, internal_node_interactions, unrolled_interact);
 
         REQUIRE_EQUAL_CUSTOM_COMP(internal_node_interactions, m2m_ref, equals_unordered);
         REQUIRE_EQUAL_CUSTOM_COMP(unrolled_interact, p2p_ref, equals_unordered);
@@ -205,4 +266,43 @@ TestStart(Unittest, "DTT_testing1", dtt_testing1, 1) {
 
     // reset to current impl
     shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
+}
+
+inline void dtt_test_empty(bool ordered_result) {
+    __shamrock_stack_entry();
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+    auto bvh       = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>::make_empty(dev_sched);
+
+    auto current_impl = shamtree::impl::get_current_impl_clbvh_dual_tree_traversal_impl();
+
+    for (auto impl : shamtree::impl::get_default_impl_list_clbvh_dual_tree_traversal()) {
+        shamtree::impl::set_impl_clbvh_dual_tree_traversal(impl.impl_name, impl.params);
+
+        auto run_dtt = [&]() {
+            shamtree::clbvh_dual_tree_traversal(
+                shamsys::instance::get_compute_scheduler_ptr(), bvh, 0.5, ordered_result);
+        };
+
+        REQUIRE_EXCEPTION_THROW(run_dtt(), std::invalid_argument);
+    }
+    // reset to current impl
+    shamtree::impl::set_impl_clbvh_dual_tree_traversal(current_impl.impl_name, current_impl.params);
+}
+
+inline void dtt_tests(bool ordered_result) {
+    __shamrock_stack_entry();
+    dtt_test(1000, 1, 0.5, ordered_result);
+    dtt_test(1000, 1, 0.0, ordered_result);
+    dtt_test(1, 1, 0.5, ordered_result);
+    dtt_test_empty(ordered_result);
+}
+
+TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {
+    dtt_tests(false);
+}
+
+TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", dtt_testing2, 1) {
+    dtt_tests(true);
 }

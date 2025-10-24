@@ -24,6 +24,7 @@
 #include "shammath/AABB.hpp"
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/details/reorder_scan_dtt_result.hpp"
 
 namespace shamtree::details {
 
@@ -56,13 +57,47 @@ namespace shamtree::details {
         inline static shamtree::DTTResult dtt(
             sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-            shambase::VecComponent<Tvec> theta_crit) {
+            shambase::VecComponent<Tvec> theta_crit,
+            bool ordered_result) {
             StackEntry stack_loc{};
 
             auto q = shambase::get_check_ref(dev_sched).get_queue();
 
+            sham::DeviceBuffer<u32_2> node_interactions_m2m(0, dev_sched);
+            sham::DeviceBuffer<u32_2> node_interactions_p2p(0, dev_sched);
+
             shamtree::DTTResult result{
-                sham::DeviceBuffer<u32_2>(0, dev_sched), sham::DeviceBuffer<u32_2>(0, dev_sched)};
+                std::move(node_interactions_m2m), std::move(node_interactions_p2p)};
+
+            auto add_ordering = [&]() {
+                if (ordered_result) {
+                    auto offset_m2m = sham::DeviceBuffer<u32>(0, dev_sched);
+                    auto offset_p2p = sham::DeviceBuffer<u32>(0, dev_sched);
+
+                    shamtree::details::reorder_scan_dtt_result(
+                        bvh.structure.get_total_cell_count(),
+                        result.node_interactions_m2m,
+                        offset_m2m);
+
+                    shamtree::details::reorder_scan_dtt_result(
+                        bvh.structure.get_total_cell_count(),
+                        result.node_interactions_p2p,
+                        offset_p2p);
+
+                    DTTResult::OrderedResult ordering{std::move(offset_m2m), std::move(offset_p2p)};
+
+                    result.ordered_result = std::move(ordering);
+                }
+            };
+
+            if (bvh.is_root_leaf()) {
+                result.node_interactions_p2p.resize(1);
+                result.node_interactions_p2p.set_val_at_idx(0, {0, 0});
+                add_ordering();
+                return result;
+            }
+
+            // we assume from this point that the root is not a leaf
 
             sham::DeviceBuffer<u32_2> task_current(1, dev_sched);
             task_current.set_val_at_idx(0, {0, 0});
@@ -271,6 +306,8 @@ namespace shamtree::details {
                         }
                     });
             }
+
+            add_ordering();
 
             return result;
         }

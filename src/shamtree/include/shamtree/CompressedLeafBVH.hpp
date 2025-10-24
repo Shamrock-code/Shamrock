@@ -51,6 +51,9 @@ class shamtree::CompressedLeafBVH {
     /// Get internal cell count
     inline u32 get_internal_cell_count() { return structure.get_internal_cell_count(); }
 
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return structure.is_root_leaf(); }
+
     /// Get leaf cell count
     inline u32 get_leaf_cell_count() { return structure.get_leaf_count(); }
 
@@ -82,6 +85,9 @@ class shamtree::CompressedLeafBVH {
 
     /// make an empty BVH
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
+
+    /// is the BVH empty ?
+    inline bool is_empty() const { return reduced_morton_set.is_empty(); }
 
     /**
      * @brief rebuild the BVH from the given positions

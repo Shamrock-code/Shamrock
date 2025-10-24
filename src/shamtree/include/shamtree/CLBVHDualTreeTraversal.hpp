@@ -30,13 +30,23 @@ namespace shamtree {
         sham::DeviceBuffer<u32_2> node_interactions_m2m;
         /// Pairs of nodes that interact using P2P interactions
         sham::DeviceBuffer<u32_2> node_interactions_p2p;
+
+        struct OrderedResult {
+            sham::DeviceBuffer<u32> offset_m2m;
+            sham::DeviceBuffer<u32> offset_p2p;
+        };
+
+        std::optional<OrderedResult> ordered_result;
+
+        bool is_ordered() const { return ordered_result.has_value(); }
     };
 
     template<class Tmorton, class Tvec, u32 dim>
     DTTResult clbvh_dual_tree_traversal(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
-        shambase::VecComponent<Tvec> theta_crit);
+        shambase::VecComponent<Tvec> theta_crit,
+        bool ordered_result = false);
 
     /// namespace to control implementation behavior
     namespace impl {

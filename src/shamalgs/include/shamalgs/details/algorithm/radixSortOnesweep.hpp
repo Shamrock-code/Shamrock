@@ -108,13 +108,12 @@ namespace shamalgs::algorithm::details {
 
             sycl::host_accessor acc{digit_histogram, sycl::read_write};
 
+            auto ptr = &(acc[0]);
+
             for (u32 digit_place = 0; digit_place < Binner::digit_bit_places; digit_place++) {
                 u32 offset_ptr = Binner::digit_count * digit_place;
                 std::exclusive_scan(
-                    acc.get_pointer() + offset_ptr,
-                    acc.get_pointer() + offset_ptr + Binner::digit_count,
-                    acc.get_pointer() + offset_ptr,
-                    0);
+                    ptr + offset_ptr, ptr + offset_ptr + Binner::digit_count, ptr + offset_ptr, 0);
             }
         }
 

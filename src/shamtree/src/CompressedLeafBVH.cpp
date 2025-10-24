@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -33,7 +34,12 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     u32 obj_cnt,
     const shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
+
+    if (obj_cnt == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "obj_cnt is 0, cannot build a CompressedLeafBVH");
+    }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 

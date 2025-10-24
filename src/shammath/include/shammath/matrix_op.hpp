@@ -301,7 +301,8 @@ namespace shammath {
      *   number of columns of the output matrix.
      */
     template<
-        class Ta,class Tb,
+        class Ta,
+        class Tb,
         class Extents1,
         class Extents2,
         class Extents3,

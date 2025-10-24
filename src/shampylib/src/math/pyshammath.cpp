@@ -165,18 +165,16 @@ Register_pymod(pysham_mathinit) {
                 return ret;
             },
             py::is_operator())
-        .def(
-            "to_pyarray", [](const f64_4x4 &self) {
-                py::array_t<f64> ret({4,4});
-                for (u32 iy = 0; iy < 4; iy++) {
-                    for (u32 ix = 0; ix < 4; ix++) {
-                        ret.mutable_at(ix, iy) = self(ix,iy);
-                    }
+        .def("to_pyarray", [](const f64_4x4 &self) {
+            py::array_t<f64> ret({4, 4});
+            for (u32 iy = 0; iy < 4; iy++) {
+                for (u32 ix = 0; ix < 4; ix++) {
+                    ret.mutable_at(ix, iy) = self(ix, iy);
                 }
-
-                return ret;
             }
-        );
+
+            return ret;
+        });
 
     math_module.def("get_identity_f64_4x4", []() -> f64_4x4 {
         return shammath::mat_identity<f64, 4>();

@@ -130,7 +130,7 @@ Register_pymod(pysham_mathinit) {
         }))
         .def(
             "__getitem__",
-            [](f64_4x4 &m, std::pair<int, int> idx) -> double {
+            [](const f64_4x4 &m, std::pair<int, int> idx) -> double {
                 return m(idx.first, idx.second);
             })
         .def(

@@ -158,7 +158,7 @@ Register_pymod(pysham_mathinit) {
                 return oss.str();
             })
         .def(
-            "__mul__",
+            "__matmul__",
             [](const f64_4x4 &a, const f64_4x4 &b) {
                 f64_4x4 ret;
                 shammath::mat_prod(a.get_mdspan(), b.get_mdspan(), ret.get_mdspan());

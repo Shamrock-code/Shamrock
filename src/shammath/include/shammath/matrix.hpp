@@ -57,7 +57,7 @@ namespace shammath {
         /// Check if this matrix is equal to another one
         bool operator==(const mat<T, m, n> &other) const { return data == other.data; }
 
-        inline mat &operator+=(const mat other) {
+        inline mat &operator+=(const mat &other) {
 #pragma unroll
             for (size_t i = 0; i < m * n; i++) {
                 data[i] += other.data[i];

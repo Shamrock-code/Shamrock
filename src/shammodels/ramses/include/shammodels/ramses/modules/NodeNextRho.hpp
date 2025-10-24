@@ -55,8 +55,9 @@ namespace shammodels::basegodunov::modules {
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_ym;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zp;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zm;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_old;
 
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
+            shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_next;
         };
 
         inline void set_edges(
@@ -70,19 +71,22 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_ym,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zm,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho) {
-            __internal_set_ro_edges(
-                {sizes,
-                 cell_neigh_graph,
-                 spans_block_cell_sizes,
-                 spans_cell0block_aabb_lower,
-                 flux_rho_face_xp,
-                 flux_rho_face_xm,
-                 flux_rho_face_yp,
-                 flux_rho_face_ym,
-                 flux_rho_face_zp,
-                 flux_rho_face_zm});
-            __internal_set_rw_edges({spans_rho});
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_old,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_next) {
+            __internal_set_ro_edges({
+                sizes,
+                cell_neigh_graph,
+                spans_block_cell_sizes,
+                spans_cell0block_aabb_lower,
+                flux_rho_face_xp,
+                flux_rho_face_xm,
+                flux_rho_face_yp,
+                flux_rho_face_ym,
+                flux_rho_face_zp,
+                flux_rho_face_zm,
+                spans_rho_old,
+            });
+            __internal_set_rw_edges({spans_rho_next});
         }
 
         inline Edges get_edges() {
@@ -97,6 +101,7 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(7),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(8),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(9),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(10),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
         }
 

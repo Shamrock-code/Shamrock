@@ -266,8 +266,15 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
+        edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+        edges.spans_rho_next.check_sizes(edges.sizes.indexes);
+        edges.spans_rhov_old.check_sizes(edges.sizes.indexes);
+        edges.spans_rhoe_old.check_sizes(edges.sizes.indexes);
+        edges.spans_phi_g_old.check_sizes(edges.sizes.indexes);
+        edges.spans_phi_g_next.check_sizes(edges.sizes.indexes);
 
-        /**** TODO ***/
+        edges.spans_rhov_next.ensure_sizes(edges.sizes.indexes);
+        edges.spans_rhoe_next.ensure_sizes(edges.sizes.indexes);
 
         KernelGetNextConsVar<Tvec, TgridVec>::kernel(edges, block_size, dt);
     }

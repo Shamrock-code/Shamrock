@@ -37,7 +37,7 @@ namespace {
         using AMRBlock = typename Config::AMRBlock;
 
         public:
-        inline static void kernel(Edges &edges, u32 block_size) {
+        inline static void kernel(Edges &edges, u32 block_size, Tscal dt) {
 
             edges.cell_neigh_graph.graph.for_each([&](u64 id,
                                                       const OrientedAMRGraph &oriented_cell_graph) {
@@ -74,7 +74,8 @@ namespace {
                 auto &block_lower_span = edges.spans_cell0block_aabb_lower.get_spans().get(id);
                 auto &cell_size_span   = edges.spans_block_cell_sizes.get_spans().get(id);
 
-                auto &span_next_rho = edges.spans_rho.get_spans().get(id);
+                auto &span_old_rho  = edges.spans_rho_old.get_spans().get(id);
+                auto &span_next_rho = edges.spans_rho_next.get_spans().get(id);
 
                 sham::kernel_call(
                     q,
@@ -92,10 +93,11 @@ namespace {
                         graph_neigh_yp,
                         graph_neigh_ym,
                         graph_neigh_zp,
-                        graph_neigh_zm},
+                        graph_neigh_zm,
+                        span_old_rho},
                     sham::MultiRef{span_next_rho},
                     cell_count,
-                    [block_size](
+                    [block_size, dt](
                         i32 i,
                         const Tscal *__restrict cell_size,
                         const Tvec *__restrict aabb_lower,
@@ -111,6 +113,7 @@ namespace {
                         const auto graph_iter_ym,
                         const auto graph_iter_zp,
                         const auto graph_iter_zm,
+                        const Tscal *__restrict old_rho,
                         Tscal *__restrict next_rho) {
                         /**/
                         auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
@@ -185,7 +188,7 @@ namespace {
 
                         dtrho /= V_i;
 
-                        next_rho[i] = dtrho;
+                        next_rho[i] = old_rho[i] + dt * dtrho;
                     });
             });
         }
@@ -199,9 +202,10 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
-        edges.spans_rho.ensure_sizes(edges.sizes.indexes);
+        edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+        edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
 
-        KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size);
+        KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size, dt);
     }
 } // namespace shammodels::basegodunov::modules
 

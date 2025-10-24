@@ -12,7 +12,7 @@
 /**
  * @file exception_ctx.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides utilities for adding context to exceptions.
  *
  */
 
@@ -37,12 +37,11 @@ namespace shambase {
         args_info() = default;
 
         template<class T>
-        args_info(std::string name, const T& value) : name(std::move(name)) {
+        args_info(std::string name, const T &value) : name(std::move(name)) {
             try {
                 this->value = shambase::format("{}", value);
             } catch (const std::exception &e) {
                 this->value = "format failed : " + std::string(e.what());
-                throw;
             }
         }
     };
@@ -61,7 +60,7 @@ namespace shambase {
 
         template<typename... Args>
         arg_group(std::string name, Args &&...args_list)
-            : section_name(name), args{std::forward<Args>(args_list)...} {}
+            : section_name(std::move(name)), args{std::forward<Args>(args_list)...} {}
     };
 
     /**
@@ -99,26 +98,27 @@ namespace shambase {
      *           shambase::arg_group{"internal variables", ARG_INFO(e_z)}});
      * @endcode
      *
-     * @tparam ExcptTypes The type of the exception to make
+     * @tparam exception_type The type of the exception to make
      * @param message The message of the exception
      * @param ctx The context containing the arguments
      * @param loc The source location where the exception is thrown
-     * @return ExcptTypes The exception
+     * @return exception_type The exception
      */
-    template<class ExcptTypes, typename... Contexts>
-    inline ExcptTypes make_except_with_loc_with_ctx(
+    template<class exception_type>
+    inline exception_type make_except_with_loc_with_ctx(
         std::string message, context ctx, SourceLocation loc = SourceLocation{}) {
-        std::string msg = message;
-        msg += "\nexception context :\n";
+        std::string msg;
+        auto out = std::back_inserter(msg);
+        fmt::format_to(out, "{}\nexception context :\n", message);
 
         for (const auto &group : ctx.groups) {
-            msg += shambase::format("  {}:\n", group.section_name);
+            fmt::format_to(out, "  {}:\n", group.section_name);
             for (const auto &arg : group.args) {
-                msg += shambase::format("    {} = {}\n", arg.name, arg.value);
+                fmt::format_to(out, "    {} = {}\n", arg.name, arg.value);
             }
         }
 
-        return shambase::make_except_with_loc<ExcptTypes>(msg, loc);
+        return shambase::make_except_with_loc<exception_type>(msg, loc);
     }
 
 } // namespace shambase
@@ -132,7 +132,7 @@ namespace shambase {
  * Example:
  * @code{.cpp}
  * int value = 42;
- * SHAM_ARG(value) // Creates args_info("value", 42)
+ * ARG_INFO(value) // Creates args_info("value", 42)
  * @endcode
  */
 #define ARG_INFO(var) shambase::args_info(#var, var)

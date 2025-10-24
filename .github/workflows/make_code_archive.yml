@@ -30,6 +30,7 @@ jobs:
       - name: Archive Shamrock with submodules
         run: |
           ./git-archive-all.sh
+          ls
 
       - name: rename archive
         run: |

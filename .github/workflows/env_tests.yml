@@ -1,0 +1,139 @@
+name: Compile & Unit tests
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+
+  compile_and_test:
+    name: Env ${{ matrix.env }} ${{ matrix.args}}
+    runs-on: ubuntu-latest
+
+    container:
+      image: ${{ matrix.container }}
+
+    strategy:
+      matrix:
+        include:
+          - env: archlinux.acpp
+            args: --backend generic --arch none
+            container: archlinux
+            runtest: yes
+
+    timeout-minutes: 120
+    steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name: ls local
+        run : ls -la
+
+      - name: Setup env
+        run : ./env/new-env --machine ${{ matrix.env }} --builddir build -- ${{ matrix.args }}
+
+      - name: Configure
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shamconfigure
+
+      - name: Configure sham install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pyinstall_test
+
+      - name: Build & install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shammake install
+
+      - name: Pull reference files
+        run: |
+          cd build
+          git clone https://github.com/Shamrock-code/reference-files.git
+
+      - name: run Shamrock help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock --help
+          ./shamrock --help --color
+
+      - name: run Shamrock Test help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --help
+          ./shamrock_test --help --color
+
+      - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Try starting Shamrock (installed version)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
+
+      - name: Try starting Shamrock (installed python libs)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test
+
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          PYTHONPATH=$(pwd)/../pyinstall_test:$PYTHONPATH \
+          LD_LIBRARY_PATH=$(pwd)/lib:$LD_LIBRARY_PATH \
+          python3 -c "import shamrock;print(shamrock.__file__);shamrock.change_loglevel(125);shamrock.sys.init('0:0')"

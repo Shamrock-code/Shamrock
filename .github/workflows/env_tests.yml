@@ -11,7 +11,7 @@ jobs:
 
 
   compile_and_test:
-    name: "machine=${{ matrix.machine }} args=${{ matrix.args }}"
+    name: "${{ matrix.machine }} -- ${{ matrix.args }}"
     runs-on: ubuntu-latest
 
     container:
@@ -21,7 +21,7 @@ jobs:
       matrix:
         include:
           - machine: archlinux.acpp
-            args: --backend generic --arch none
+            args: --backend generic
             container: archlinux/archlinux:base-devel
             runtest: yes
 

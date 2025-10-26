@@ -7,7 +7,20 @@ echo " ---------- Activating sham environment ---------- "
 echo "Checking required packages..."
 
 local missing_packages=()
-local all_packages=("python" "cmake" "clang19" "llvm19" "boost" "ninja" "openmp" "openmpi" "doxygen")
+local all_packages=(
+    "base-devel"
+    "git"
+    "python"
+    "cmake"
+    "boost"
+    "ninja"
+    "openmp"
+    "openmpi"
+    "doxygen"
+    "llvm19"
+    "clang19"
+    "lld"
+)
 
 for package in "${all_packages[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then

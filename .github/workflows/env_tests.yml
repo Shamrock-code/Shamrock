@@ -22,7 +22,7 @@ jobs:
         include:
           - env: archlinux.acpp
             args: --backend generic --arch none
-            container: archlinux
+            container: archlinux/archlinux:base-devel
             runtest: yes
 
     timeout-minutes: 120

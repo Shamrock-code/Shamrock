@@ -11,7 +11,7 @@ jobs:
 
 
   compile_and_test:
-    name: Env ${{ matrix.env }} ${{ matrix.args}}
+    name: "machine=${{ matrix.machine }} args=${{ matrix.args }}"
     runs-on: ubuntu-latest
 
     container:
@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - env: archlinux.acpp
+          - machine: archlinux.acpp
             args: --backend generic --arch none
             container: archlinux/archlinux:base-devel
             runtest: yes
@@ -63,7 +63,7 @@ jobs:
         run : ls -la
 
       - name: Setup env
-        run : ./env/new-env --machine ${{ matrix.env }} --builddir build -- ${{ matrix.args }}
+        run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
 
       - name: Configure
         shell: bash # In docker container github action default to sh

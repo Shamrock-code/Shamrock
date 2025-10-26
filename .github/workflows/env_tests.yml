@@ -29,9 +29,10 @@ jobs:
     steps:
 
       # if archlinux container
-      - if: matrix.container == 'archlinux/archlinux:base-devel'
+      - name : Install archlinux dependencies
+        if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-            sudo pacman -Sy --noconfirm git
+            sudo pacman -Sy --noconfirm base-devel git python
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

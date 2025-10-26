@@ -31,7 +31,7 @@ jobs:
       # if archlinux container
       - if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-            sudo pacman -S --noconfirm git
+            sudo pacman -Sy --noconfirm git
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

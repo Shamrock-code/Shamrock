@@ -11,7 +11,7 @@ jobs:
 
 
   compile_and_test:
-    name: "${{ matrix.machine }} -- ${{ matrix.args }}"
+    name: "${{ matrix.imagename }} / ${{ matrix.machine }} -- ${{ matrix.args }}"
     runs-on: ubuntu-latest
 
     container:
@@ -23,6 +23,7 @@ jobs:
           - machine: archlinux.acpp
             args: --backend generic
             container: archlinux/archlinux:base-devel
+            imagename: ArchLinux
             runtest: yes
 
     timeout-minutes: 120

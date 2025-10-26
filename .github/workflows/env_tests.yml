@@ -11,7 +11,7 @@ jobs:
 
 
   compile_and_test:
-    name: "${{ matrix.imagename }} / ${{ matrix.machine }} -- ${{ matrix.args }}"
+    name: "${{ matrix.imagename }} -- ${{ matrix.machine }} -- ${{ matrix.args }}"
     runs-on: ubuntu-latest
 
     container:

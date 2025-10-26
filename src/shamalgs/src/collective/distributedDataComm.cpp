@@ -144,8 +144,9 @@ namespace shamalgs::collective {
                 sham::DeviceBuffer<u8> buf
                     = shamcomm::CommunicationBuffer::convert_usm(std::move(comm_buf));
 
-                recv_payload_bufs.push_back(RecvPayloadSer{
-                    payload.sender_ranks, SerializeHelper(dev_sched, std::move(buf))});
+                recv_payload_bufs.push_back(
+                    RecvPayloadSer{
+                        payload.sender_ranks, SerializeHelper(dev_sched, std::move(buf))});
             }
         }
 

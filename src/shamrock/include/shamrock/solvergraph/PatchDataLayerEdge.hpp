@@ -20,7 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <memory>
 
@@ -75,8 +75,8 @@ namespace shamrock::solvergraph {
             return patchdatas_refs;
         }
 
-        inline virtual const shambase::DistributedData<PatchDataLayerRef> &
-        get_const_refs() const override {
+        inline virtual const shambase::DistributedData<PatchDataLayerRef> &get_const_refs()
+            const override {
             return patchdatas_refs;
         }
 

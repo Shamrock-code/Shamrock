@@ -42,7 +42,7 @@ namespace shamalgs::reduction::details {
     template<class T>
     T sum_usm_group(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
@@ -83,7 +83,7 @@ namespace shamalgs::reduction::details {
     template<class T>
     T max_usm_group(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
@@ -127,7 +127,7 @@ namespace shamalgs::reduction::details {
     template<class T>
     T min_usm_group(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         u32 work_group_size) {
@@ -188,19 +188,19 @@ namespace shamalgs::reduction::details {
         #define X(_arg_)                                                                           \
             template _arg_ shamalgs::reduction::details::sum_usm_group<_arg_>(                     \
                 const sham::DeviceScheduler_ptr &sched,                                            \
-                sham::DeviceBuffer<_arg_> &buf1,                                                   \
+                const sham::DeviceBuffer<_arg_> &buf1,                                             \
                 u32 start_id,                                                                      \
                 u32 end_id,                                                                        \
                 u32 work_group_size);                                                              \
             template _arg_ shamalgs::reduction::details::max_usm_group<_arg_>(                     \
                 const sham::DeviceScheduler_ptr &sched,                                            \
-                sham::DeviceBuffer<_arg_> &buf1,                                                   \
+                const sham::DeviceBuffer<_arg_> &buf1,                                             \
                 u32 start_id,                                                                      \
                 u32 end_id,                                                                        \
                 u32 work_group_size);                                                              \
             template _arg_ shamalgs::reduction::details::min_usm_group<_arg_>(                     \
                 const sham::DeviceScheduler_ptr &sched,                                            \
-                sham::DeviceBuffer<_arg_> &buf1,                                                   \
+                const sham::DeviceBuffer<_arg_> &buf1,                                             \
                 u32 start_id,                                                                      \
                 u32 end_id,                                                                        \
                 u32 work_group_size);

@@ -13,6 +13,7 @@
  * @file matrix_op.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
  * @brief
  *
  */
@@ -65,8 +66,8 @@ namespace shammath {
      * element of the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor, class Func>
-    inline void
-    mat_update_vals(const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+    inline void mat_update_vals(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
 
         shambase::check_functor_signature<void, T &, int, int>(func);
 
@@ -108,8 +109,8 @@ namespace shammath {
      * value, and stores the result back in the matrix.
      */
     template<class T, class Extents, class Layout, class Accessor>
-    inline void
-    mat_mul_scalar(const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
+    inline void mat_mul_scalar(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, const T &scalar) {
         mat_update_vals(input, [&](T &v, auto i, auto j) {
             v *= scalar;
         });
@@ -301,7 +302,8 @@ namespace shammath {
      *   number of columns of the output matrix.
      */
     template<
-        class T,
+        class Ta,
+        class Tb,
         class Extents1,
         class Extents2,
         class Extents3,
@@ -312,9 +314,9 @@ namespace shammath {
         class Accessor2,
         class Accessor3>
     inline void mat_prod(
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
-        const std::mdspan<T, Extents2, Layout2, Accessor2> &input2,
-        const std::mdspan<T, Extents3, Layout3, Accessor3> &output) {
+        const std::mdspan<Ta, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<Ta, Extents2, Layout2, Accessor2> &input2,
+        const std::mdspan<Tb, Extents3, Layout3, Accessor3> &output) {
 
         SHAM_ASSERT(input1.extent(0) == output.extent(0));
         SHAM_ASSERT(input1.extent(1) == input2.extent(0));
@@ -323,7 +325,7 @@ namespace shammath {
         // output_ij = mat1_ik mat2_jk
         for (int i = 0; i < input1.extent(0); i++) {
             for (int j = 0; j < input2.extent(1); j++) {
-                T sum = 0;
+                Tb sum = 0;
                 for (int k = 0; k < input1.extent(1); k++) {
                     sum += input1(i, k) * input2(k, j);
                 }

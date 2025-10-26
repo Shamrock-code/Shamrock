@@ -60,7 +60,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
 
         sycl::range range_npart{obj_cnt};
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 
@@ -260,7 +260,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         sycl::range range_nobj{obj_cnt};
         using namespace shamrock;
 
-        Tscal h_tolerance = solver_config.htol_up_tol;
+        Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
         NamedStackEntry stack_loc1{"init cache"};
 
@@ -503,7 +503,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
                         SHAM_ASSERT(leaf_b >= offset_leaf);
 
-                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
+                        particle_looper.for_each_in_leaf_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;
@@ -564,7 +564,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
                     neigh_leaf_looper.for_each_object(leaf_own_a, [&](u32 leaf_b) {
                         SHAM_ASSERT(leaf_b >= offset_leaf);
 
-                        particle_looper.for_each_in_cell(leaf_b - offset_leaf, [&](u32 id_b) {
+                        particle_looper.for_each_in_leaf_cell(leaf_b - offset_leaf, [&](u32 id_b) {
                             Tvec dr      = xyz_a - xyz[id_b];
                             Tscal rab2   = sycl::dot(dr, dr);
                             Tscal rint_b = hpart[id_b] * h_tolerance;

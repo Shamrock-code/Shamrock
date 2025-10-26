@@ -110,4 +110,40 @@ namespace sham {
         });
     }
 
+    // version where one supplies a kernel generator in the form of [&](sycl::handler &cgh) { ... }
+    template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
+    inline void distributed_data_kernel_call_hndl(
+        sham::DeviceScheduler_ptr dev_sched,
+        RefIn in,
+        RefOut in_out,
+        const shambase::DistributedData<index_t> &thread_counts,
+        Functor &&kernel_gen,
+        Targs... args) {
+
+        auto mrefs_in
+            = thread_counts.template map<decltype(in.get(0))>([&](u64 id, const index_t &n) {
+                  shamlog_debug_ln("kern call", "build multi ref in for patch", id);
+                  return in.get(id);
+              });
+
+        auto mrefs_in_out
+            = thread_counts.template map<decltype(in_out.get(0))>([&](u64 id, const index_t &n) {
+                  shamlog_debug_ln("kern call", "build multi ref in_out for patch", id);
+                  return in_out.get(id);
+              });
+
+        thread_counts.for_each([&](u64 id, const index_t &n) {
+            shamlog_debug_ln(
+                "kern call", "calling sham::kernel_call_hndl on patch", id, " thread count", n);
+
+            sham::kernel_call_hndl(
+                dev_sched->get_queue(),
+                mrefs_in.get(id),
+                mrefs_in_out.get(id),
+                n,
+                std::forward<Functor>(kernel_gen),
+                std::forward<Targs>(args)...);
+        });
+    }
+
 } // namespace sham

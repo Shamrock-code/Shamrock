@@ -13,13 +13,14 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 
 template<class Tmorton, class Tvec, u32 dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>
-shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::make_empty(sham::DeviceScheduler_ptr dev_sched) {
+shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::
+    make_empty(sham::DeviceScheduler_ptr dev_sched) {
     StackEntry stack_loc{};
     return {
         MortonReducedSet<Tmorton, Tvec, dim>::make_empty(dev_sched),
@@ -33,7 +34,12 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     u32 obj_cnt,
     const shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
+
+    if (obj_cnt == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "obj_cnt is 0, cannot build a CompressedLeafBVH");
+    }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -66,7 +72,7 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
         std::move(structure));
 
     auto tree_aabbs = shamtree::compute_tree_aabb_from_positions(
-        tree, reduced_set.get_cell_iterator(), std::move(aabbs), positions);
+        tree, reduced_set.get_leaf_cell_iterator(), std::move(aabbs), positions);
 
     this->reduced_morton_set = std::move(reduced_set);
     this->structure          = std::move(tree);

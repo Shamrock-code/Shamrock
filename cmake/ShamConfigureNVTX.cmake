@@ -18,7 +18,7 @@ option(SHAMROCK_USE_NVTX "use nvtx tooling" On)
 if(SHAMROCK_USE_NVTX)
     #include(NVTX/c/nvtxImportedTargets.cmake)
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/NVTX b44f81c)
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/NVTX b44f81c3d294223ec3c1f3965ac16ab12b1f6e24)
 
     add_subdirectory(external/NVTX/c)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSHAMROCK_USE_NVTX")

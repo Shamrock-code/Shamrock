@@ -20,6 +20,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <stack>
 
 namespace shambase::details {
@@ -204,3 +205,12 @@ using StackEntry = shambase::details::BasicStackEntry;
  * This alias is used to simplify the use of the NamedBasicStackEntry class.
  */
 using NamedStackEntry = shambase::details::NamedBasicStackEntry;
+
+/**
+ * @brief Macro to create a stack entry.
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry()                                                                   \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}

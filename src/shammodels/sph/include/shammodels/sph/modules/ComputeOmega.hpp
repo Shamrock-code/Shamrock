@@ -25,26 +25,86 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class ComputeOmega {
+    class NodeComputeOmega : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
+        Tscal part_mass;
+
         public:
-        using Tscal              = shambase::VecComponent<Tvec>;
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using Kernel             = SPHKernel<Tscal>;
+        NodeComputeOmega(Tscal part_mass) : part_mass(part_mass) {}
 
-        using Config  = SolverConfig<Tvec, SPHKernel>;
-        using Storage = SolverStorage<Tvec, u32>;
+        struct Edges {
+            const shamrock::solvergraph::Indexes<u32> &part_counts;
+            const shammodels::sph::solvergraph::NeighCache &neigh_cache;
+            const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
+            shamrock::solvergraph::IFieldSpan<Tscal> &omega;
+        };
 
-        ShamrockCtx &context;
-        Config &solver_config;
-        Storage &storage;
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
+            std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega) {
+            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart});
+            __internal_set_rw_edges({omega});
+        }
 
-        ComputeOmega(ShamrockCtx &context, Config &solver_config, Storage &storage)
-            : context(context), solver_config(solver_config), storage(storage) {}
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
+                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
+            };
+        }
 
-        void compute_omega();
+        void _impl_evaluate_internal();
 
-        private:
-        inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
+        inline virtual std::string _impl_get_label() { return "ComputeOmega"; };
+
+        virtual std::string _impl_get_tex();
+    };
+
+    template<class T>
+    class SetWhenMask : public shamrock::solvergraph::INode {
+
+        T val_to_set;
+
+        public:
+        SetWhenMask(T val_to_set) : val_to_set(val_to_set) {}
+
+        struct Edges {
+            const shamrock::solvergraph::Indexes<u32> &part_counts;
+            const shamrock::solvergraph::IFieldSpan<u32> &mask;
+            shamrock::solvergraph::IFieldSpan<T> &field_to_set;
+        };
+
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> mask,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<T>> field_to_set) {
+            __internal_set_ro_edges({part_counts, mask});
+            __internal_set_rw_edges({field_to_set});
+        }
+
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<u32>>(1),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<T>>(0),
+            };
+        }
+
+        void _impl_evaluate_internal();
+
+        inline virtual std::string _impl_get_label() { return "SetWhenMask"; };
+
+        virtual std::string _impl_get_tex();
     };
 
 } // namespace shammodels::sph::modules

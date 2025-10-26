@@ -28,13 +28,13 @@
 
 template<class vecprec>
 [[deprecated("Legacy module")]]
-inline std::unordered_map<u64, sycl::buffer<u64>>
-get_new_id_map(PatchScheduler &sched, SerialPatchTree<vecprec> &sptree);
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map(
+    PatchScheduler &sched, SerialPatchTree<vecprec> &sptree);
 
 template<>
 [[deprecated("Legacy module")]]
-inline std::unordered_map<u64, sycl::buffer<u64>>
-get_new_id_map<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(
+    PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
@@ -64,8 +64,8 @@ get_new_id_map<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree) {
 
 template<>
 [[deprecated("Legacy module")]]
-inline std::unordered_map<u64, sycl::buffer<u64>>
-get_new_id_map<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
+inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(
+    PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
 
     std::unordered_map<u64, sycl::buffer<u64>> newid_buf_map;
 
@@ -95,13 +95,13 @@ get_new_id_map<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree) {
 
 template<class vecprec>
 [[deprecated("Legacy module")]]
-inline void
-reatribute_particles(PatchScheduler &sched, SerialPatchTree<vecprec> &sptree, bool periodic);
+inline void reatribute_particles(
+    PatchScheduler &sched, SerialPatchTree<vecprec> &sptree, bool periodic);
 
 template<>
 [[deprecated("Legacy module")]]
-inline void
-reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptree, bool periodic) {
+inline void reatribute_particles<f32_3>(
+    PatchScheduler &sched, SerialPatchTree<f32_3> &sptree, bool periodic) {
 
     using namespace shamrock::patch;
 
@@ -255,9 +255,10 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
                     // std::cout << "send " << id << " -> " << receiver_pid <<  " len : " <<
                     // pdat_ptr->pos_s.size()<<std::endl;
 
-                    comm_vec.push_back(u64_2{
-                        sched.patch_list.id_patch_to_global_idx[id],
-                        sched.patch_list.id_patch_to_global_idx[receiver_pid]});
+                    comm_vec.push_back(
+                        u64_2{
+                            sched.patch_list.id_patch_to_global_idx[id],
+                            sched.patch_list.id_patch_to_global_idx[receiver_pid]});
                     comm_pdat.push_back(std::move(pdat_ptr));
                 }
             }
@@ -339,8 +340,8 @@ reatribute_particles<f32_3>(PatchScheduler &sched, SerialPatchTree<f32_3> &sptre
 
 template<>
 [[deprecated("Legacy module")]]
-inline void
-reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptree, bool periodic) {
+inline void reatribute_particles<f64_3>(
+    PatchScheduler &sched, SerialPatchTree<f64_3> &sptree, bool periodic) {
 
     using namespace shamrock::patch;
 
@@ -495,9 +496,10 @@ reatribute_particles<f64_3>(PatchScheduler &sched, SerialPatchTree<f64_3> &sptre
                     // std::cout << "send " << id << " -> " << receiver_pid <<  " len : " <<
                     // pdat_ptr->pos_s.size()<<std::endl;
 
-                    comm_vec.push_back(u64_2{
-                        sched.patch_list.id_patch_to_global_idx[id],
-                        sched.patch_list.id_patch_to_global_idx[receiver_pid]});
+                    comm_vec.push_back(
+                        u64_2{
+                            sched.patch_list.id_patch_to_global_idx[id],
+                            sched.patch_list.id_patch_to_global_idx[receiver_pid]});
                     comm_pdat.push_back(std::move(pdat_ptr));
                 }
             }

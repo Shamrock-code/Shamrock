@@ -18,9 +18,13 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shamcmdopt/tty.hpp"
+#include <pybind11/eval.h>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
+#include <exception>
 #include <memory>
+#include <stdexcept>
 
 // Before we used to redirect std::cout to python stdout but this creates deadlocks
 // in adaptive cpp, hence the use of python printing functions
@@ -59,6 +63,58 @@ void register_pybind_init_func(fct_sig fct) {
     static_init_shamrock_pybind->push_back(std::move(fct));
 }
 
+void register_py_to_sham_print(py::module &m) {
+
+    struct wrapper_io {
+        int _fileno;
+        wrapper_io(int fileno) : _fileno(fileno) {}
+        void write(py::object &buffer) { shambase::print(buffer.cast<std::string>()); }
+        void flush() { shambase::flush(); }
+        bool isatty() { return shamcmdopt::is_a_tty(); }
+        int fileno() { return _fileno; }
+    };
+
+    py::class_<wrapper_io>(m, "wrapper_io")
+        .def(py::init<int>())
+        .def("write", &wrapper_io::write)
+        .def("flush", &wrapper_io::flush)
+        .def("isatty", &wrapper_io::isatty)
+        .def("fileno", &wrapper_io::fileno);
+
+    m.def("hook_stdout", [&]() {
+        try {
+            auto sys = py::module::import("sys");
+
+            py::exec(R"(
+                 class PyStdWrapper:
+                     def __init__(self, backend):
+                         self.backend = backend
+                     def write(self, text):
+                         self.backend.write(text)
+                     def flush(self):
+                         self.backend.flush()
+                     def isatty(self):
+                         return self.backend.isatty()
+                     def fileno(self):
+                         return self.backend.fileno()
+                 )");
+
+            py::object py_wrapper_class = py::globals()["PyStdWrapper"];
+
+            py::object backend_out    = py::cast(wrapper_io(1));
+            py::object backend_err    = py::cast(wrapper_io(2));
+            py::object stdout_wrapper = py_wrapper_class(backend_out);
+            py::object stderr_wrapper = py_wrapper_class(backend_err);
+
+            sys.attr("stdout") = stdout_wrapper;
+            sys.attr("stderr") = stderr_wrapper;
+
+        } catch (std::exception &e) {
+            shambase::throw_with_loc<std::runtime_error>(e.what());
+        }
+    });
+}
+
 namespace shambindings {
 
     enum { None = 0, Lib = 1, Embed = 2 } init_state = None;
@@ -88,7 +144,13 @@ namespace shambindings {
 
     void init_lib(py::module &m) { shambindings::init<true>(m); }
 
-    void init_embed(py::module &m) { shambindings::init<false>(m); }
+    void init_embed(py::module &m, bool hook_stdout) {
+        shambindings::init<false>(m);
+        if (hook_stdout) {
+            register_py_to_sham_print(m);
+            m.attr("hook_stdout")();
+        }
+    }
 
     void expect_init_lib(SourceLocation loc) {
         if (init_state != Lib) {

@@ -213,7 +213,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTreeAABB", test_karras_radix_tree_aabb,
 
     auto aabbs = shamtree::compute_tree_aabb_from_positions(
         tree,
-        reduced_set.get_cell_iterator(),
+        reduced_set.get_leaf_cell_iterator(),
         shamtree::new_empty_karras_radix_tree_aabb<Tvec>(),
         partpos_buf);
 
@@ -371,7 +371,7 @@ TestStart(
 
     auto aabbs = shamtree::compute_tree_aabb_from_positions(
         tree,
-        reduced_set.get_cell_iterator(),
+        reduced_set.get_leaf_cell_iterator(),
         shamtree::new_empty_karras_radix_tree_aabb<Tvec>(),
         partpos_buf);
 

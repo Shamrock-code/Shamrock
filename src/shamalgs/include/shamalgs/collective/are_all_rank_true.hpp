@@ -10,29 +10,17 @@
 #pragma once
 
 /**
- * @file ITDataEdge.hpp
+ * @file are_all_rank_true.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Collective boolean reduction to check if all ranks have true as input
  *
  */
 
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
-#include <string>
-#include <utility>
+#include <shamcomm/mpi.hpp>
 
-namespace shamrock::solvergraph {
+namespace shamalgs::collective {
 
-    template<class T>
-    class ITDataEdge : public IDataEdgeNamed {
+    /// return true only if all ranks have true as input
+    bool are_all_rank_true(bool input, MPI_Comm comm);
 
-        public:
-        T data;
-
-        using IDataEdgeNamed::IDataEdgeNamed;
-
-        inline virtual void free_alloc() { data = {}; }
-
-        virtual ~ITDataEdge() {}
-    };
-
-} // namespace shamrock::solvergraph
+} // namespace shamalgs::collective

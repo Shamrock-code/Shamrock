@@ -16,24 +16,28 @@
  *
  */
 
-#include "shambase/WithUUID.hpp"
-#include "shambase/aliases_int.hpp"
-#include "shamrock/solvergraph/IFreeable.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include <memory>
 #include <string>
+#include <utility>
 
 namespace shamrock::solvergraph {
 
-    class INode;
+    template<class T>
+    class IDataEdge : public IEdgeNamed {
 
-    class IDataEdge : public shambase::WithUUID<IDataEdge, u64>, public IFreeable {
         public:
-        inline std::string get_label() const { return _impl_get_dot_label(); }
-        inline std::string get_tex_symbol() const { return _impl_get_tex_symbol(); }
+        T data;
 
-        virtual std::string _impl_get_dot_label() const  = 0;
-        virtual std::string _impl_get_tex_symbol() const = 0;
+        using IEdgeNamed::IEdgeNamed;
+
+        inline virtual void free_alloc() { data = {}; }
 
         virtual ~IDataEdge() {}
+
+        static std::shared_ptr<IDataEdge<T>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<IDataEdge<T>>(name, texsymbol);
+        }
     };
 
 } // namespace shamrock::solvergraph

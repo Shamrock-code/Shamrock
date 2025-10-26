@@ -24,7 +24,8 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     StackEntry stack_loc{};
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
@@ -107,17 +108,16 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         PatchDataField<Tscal> &field_du = pdat.get_field<Tscal>(iduint);
         PatchDataField<Tvec> &field_a   = pdat.get_field<Tvec>(iaxyz);
 
-        sycl::buffer<Tscal> temp_de(pdat.get_obj_cnt());
+        sham::DeviceBuffer<Tscal> temp_de(pdat.get_obj_cnt(), dev_sched);
 
         sham::EventList depends_list;
         auto u  = field_u.get_buf().get_read_access(depends_list);
         auto du = field_du.get_buf().get_read_access(depends_list);
         auto v  = field_v.get_buf().get_read_access(depends_list);
         auto a  = field_a.get_buf().get_read_access(depends_list);
+        auto de = temp_de.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
-            sycl::accessor de{temp_de, cgh, sycl::write_only, sycl::no_init};
-
             cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                 de[item] = pmass * (sycl::dot(v[item], a[item]) + du[item]);
             });
@@ -127,9 +127,9 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
         field_du.get_buf().complete_event_state(e);
         field_v.get_buf().complete_event_state(e);
         field_a.get_buf().complete_event_state(e);
+        temp_de.complete_event_state(e);
 
-        Tscal de_p = shamalgs::reduction::sum(
-            shamsys::instance::get_compute_queue(), temp_de, 0, pdat.get_obj_cnt());
+        Tscal de_p = shamalgs::primitives::sum(dev_sched, temp_de, 0, pdat.get_obj_cnt());
         tmp_de += de_p;
     });
 

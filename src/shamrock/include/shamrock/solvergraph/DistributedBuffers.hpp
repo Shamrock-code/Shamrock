@@ -19,8 +19,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shamrock/patch/PatchDataFieldSpan.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamrock::solvergraph {
@@ -37,9 +36,9 @@ namespace shamrock::solvergraph {
      * @tparam T The primitive type of the field
      */
     template<class T>
-    class DistributedBuffers : public IDataEdgeNamed {
+    class DistributedBuffers : public IEdgeNamed {
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         DDDeviceBuffer<T> buffers;
 

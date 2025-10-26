@@ -146,6 +146,15 @@ namespace sham {
          */
         ~EventList();
 
+        /// Get the list of events
+        inline std::vector<sycl::event> &get_events() { return events; }
+
+        /// Get the list of events (const)
+        inline const std::vector<sycl::event> &get_events() const { return events; }
+
+        /// Set the consumed state of the EventList (to be used with interop)
+        inline void set_consumed(bool consumed) { this->consumed = consumed; }
+
         private:
         std::vector<sycl::event> events = {};    ///< The list of SYCL events
         bool consumed                   = false; ///< Whether the list is considered consumed

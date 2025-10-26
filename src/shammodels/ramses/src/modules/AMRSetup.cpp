@@ -103,7 +103,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     sched.set_coord_domain_bound(bmin, bmax);
 
     if ((cell_size.x() != cell_size.y()) || (cell_size.y() != cell_size.z())) {
-        logger::warn_ln("AMR Grid", "your cells aren't cube");
+        ON_RANK_0(logger::warn_ln("AMR Grid", "your cells aren't cube"));
     }
 
     static_assert(dim == 3, "this is not implemented for dim != 3");

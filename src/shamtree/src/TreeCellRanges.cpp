@@ -113,23 +113,27 @@ namespace shamrock::tree {
 
     template<class u_morton, class pos_t>
     TreeCellRanges<u_morton, pos_t>::TreeCellRanges(const TreeCellRanges<u_morton, pos_t> &other)
-        : buf_pos_min_cell(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_pos_min_cell)), // size = total count
-          buf_pos_max_cell(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_pos_max_cell)), // size = total count
-          buf_pos_min_cell_flt(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_pos_min_cell_flt)), // size = total count
-          buf_pos_max_cell_flt(shamalgs::memory::duplicate(
-              shamsys::instance::get_compute_queue(),
-              other.buf_pos_max_cell_flt)) // size = total count
+        : buf_pos_min_cell(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_pos_min_cell)), // size = total count
+          buf_pos_max_cell(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_pos_max_cell)), // size = total count
+          buf_pos_min_cell_flt(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_pos_min_cell_flt)), // size = total count
+          buf_pos_max_cell_flt(
+              shamalgs::memory::duplicate(
+                  shamsys::instance::get_compute_queue(),
+                  other.buf_pos_max_cell_flt)) // size = total count
     {}
 
     template<class u_morton, class pos_t>
-    bool
-    TreeCellRanges<u_morton, pos_t>::operator==(const TreeCellRanges<u_morton, pos_t> &rhs) const {
+    bool TreeCellRanges<u_morton, pos_t>::operator==(
+        const TreeCellRanges<u_morton, pos_t> &rhs) const {
         bool cmp = true;
 
         using namespace shamalgs::primitives;

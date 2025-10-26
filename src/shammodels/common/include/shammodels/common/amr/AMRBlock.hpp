@@ -106,8 +106,8 @@ namespace shammodels::amr {
             return {};
         }
 
-        inline static std::pair<Tvec, Tvec>
-        utils_get_cell_coords(std::pair<TgridVec, TgridVec> input, u32 lid) {
+        inline static std::pair<Tvec, Tvec> utils_get_cell_coords(
+            std::pair<TgridVec, TgridVec> input, u32 lid) {
             Tvec block_min  = input.first.template convert<Tscal>();
             Tvec block_max  = input.second.template convert<Tscal>();
             Tvec delta_cell = (block_max - block_min) / side_size;
@@ -159,8 +159,8 @@ namespace shammodels::amr {
          * @param f
          */
         template<class Func>
-        inline static void
-        for_each_cells(sycl::handler &cgh, u32 block_cnt, const char *name, Func &&f) {
+        inline static void for_each_cells(
+            sycl::handler &cgh, u32 block_cnt, const char *name, Func &&f) {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding
@@ -171,8 +171,8 @@ namespace shammodels::amr {
         }
 
         template<class Func>
-        inline static void
-        for_each_cells_lid(sycl::handler &cgh, u32 block_cnt, const char *name, Func &&f) {
+        inline static void for_each_cells_lid(
+            sycl::handler &cgh, u32 block_cnt, const char *name, Func &&f) {
             // we use one thread per subcell because :
             // double load are avoided because of contiguous L2 cache hit
             // and CF perf opti for GPU, finer threading lead to better latency hidding

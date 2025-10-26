@@ -18,6 +18,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include <vector>
 
 namespace shamtree {
 
@@ -26,6 +27,9 @@ namespace shamtree {
      * @brief Utility struct to traverse a Karras Radix Tree
      */
     struct KarrasTreeTraverser;
+
+    /// host version of the traverser
+    struct KarrasTreeTraverserHost;
 
     /// read only accessor to buffer data
     struct KarrasTreeTraverserAccessed;
@@ -65,14 +69,12 @@ struct shamtree::KarrasTreeTraverserAccessed {
     /// stack based tree traversal
     template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
     inline void stack_based_traversal(
+        u32 root_node,
         Functor1 &&traverse_condition,
         Functor2 &&on_found_leaf,
         Functor3 &&on_excluded_node) const {
 
         static constexpr u32 _nindex = 4294967295;
-
-        // On a Karras tree, the root is always 0
-        u32 root_node = 0;
 
         // Init the stack state
         std::array<u32, tree_depth> id_stack;
@@ -114,6 +116,23 @@ struct shamtree::KarrasTreeTraverserAccessed {
             }
         }
     }
+
+    /// stack based tree traversal
+    template<u32 tree_depth, class Functor1, class Functor2, class Functor3>
+    inline void stack_based_traversal(
+        Functor1 &&traverse_condition,
+        Functor2 &&on_found_leaf,
+        Functor3 &&on_excluded_node) const {
+
+        // On a Karras tree, the root is always 0
+        u32 root_node = 0;
+
+        stack_based_traversal<tree_depth>(
+            root_node,
+            std::forward<Functor1>(traverse_condition),
+            std::forward<Functor2>(on_found_leaf),
+            std::forward<Functor3>(on_excluded_node));
+    }
 };
 
 struct shamtree::KarrasTreeTraverser {
@@ -140,5 +159,27 @@ struct shamtree::KarrasTreeTraverser {
         buf_rchild_id.complete_event_state(e);
         buf_lchild_flag.complete_event_state(e);
         buf_rchild_flag.complete_event_state(e);
+    }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return offset_leaf == 0; }
+};
+
+struct shamtree::KarrasTreeTraverserHost {
+
+    std::vector<u32> buf_lchild_id;  ///< ref to left child id buffer
+    std::vector<u32> buf_rchild_id;  ///< ref to right child id buffer
+    std::vector<u8> buf_lchild_flag; ///< ref to left child flag buffer
+    std::vector<u8> buf_rchild_flag; ///< ref to right child flag buffer
+    u32 offset_leaf;                 ///< how many internal nodes before the first leaf ?
+
+    /// get read only accessor
+    inline KarrasTreeTraverserAccessed get_read_access() const {
+        return KarrasTreeTraverserAccessed{
+            buf_lchild_id.data(),
+            buf_rchild_id.data(),
+            buf_lchild_flag.data(),
+            buf_rchild_flag.data(),
+            offset_leaf};
     }
 };

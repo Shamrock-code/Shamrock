@@ -57,8 +57,8 @@ namespace shammodels::sph {
     }
 
     template<class Tvec>
-    void
-    write_shamrock_eos_in_phantom_dump(EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error) {
+    void write_shamrock_eos_in_phantom_dump(
+        EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error) {
 
         using EOS_Isothermal              = typename EOSConfig<Tvec>::Isothermal;
         using EOS_Adiabatic               = typename EOSConfig<Tvec>::Adiabatic;

@@ -168,8 +168,8 @@ using ShearPeriodicInfo =
     typename shammodels::sph::BasicSPHGhostHandlerConfig<sycl::vec<T, 3>>::ShearingPeriodic;
 
 template<class T>
-inline ShiftInfo<T>
-compute_shift_infos(i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T, 3> bsize) {
+inline ShiftInfo<T> compute_shift_infos(
+    i32_3 ioff, ShearPeriodicInfo<T> shear, sycl::vec<T, 3> bsize) {
 
     i32 dx = ioff.x() * shear.shear_base.x();
     i32 dy = ioff.y() * shear.shear_base.y();

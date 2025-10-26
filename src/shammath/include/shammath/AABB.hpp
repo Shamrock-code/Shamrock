@@ -17,6 +17,7 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambase/assert.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 #include <limits>
@@ -34,7 +35,10 @@ namespace shammath {
 
         inline Ray(T origin, T direction)
             : origin(origin), direction(direction), inv_direction(1 / direction) {
+
             Tscal f = sycl::length(direction);
+            SHAM_ASSERT(f > 0);
+
             this->direction /= f;
             this->inv_direction *= f;
         }
@@ -186,6 +190,12 @@ namespace shammath {
          */
         inline AABB get_intersect(AABB other) const noexcept {
             return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
+        }
+
+        inline bool contains(AABB other) const noexcept {
+            // return lower <= other.lower && upper >= other.upper;
+            return sham::vec_compare_leq(lower, other.lower)
+                   && sham::vec_compare_geq(upper, other.upper);
         }
 
         /**

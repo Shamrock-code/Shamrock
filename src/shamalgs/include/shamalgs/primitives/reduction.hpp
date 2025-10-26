@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shamalgs/impl_utils.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 
@@ -54,7 +55,7 @@ namespace shamalgs::primitives {
     template<class T>
     T sum(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
 
@@ -92,7 +93,7 @@ namespace shamalgs::primitives {
     template<class T>
     T min(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
 
@@ -130,8 +131,22 @@ namespace shamalgs::primitives {
     template<class T>
     T max(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id);
+
+    /// namespace to control implementation behavior
+    namespace impl {
+
+        /// Get list of available reduction implementations
+        std::vector<shamalgs::impl_param> get_default_impl_list_reduction();
+
+        /// Get the current implementation for reduction
+        shamalgs::impl_param get_current_impl_reduction();
+
+        /// Set the implementation for reduction
+        void set_impl_reduction(const std::string &impl, const std::string &param = "");
+
+    } // namespace impl
 
 } // namespace shamalgs::primitives

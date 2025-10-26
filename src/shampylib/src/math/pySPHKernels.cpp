@@ -18,83 +18,55 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammath/sphkernels.hpp"
 
+namespace {
+    // this is a container to store the string for the lifetime of the code
+    std::vector<std::string> names = {};
+
+    template<typename Kernel>
+    void bind_sph_kernel(py::module &m, const std::string &name) {
+
+        // yeah this looks weird, the idea is to first store the string for the lifetime of the code
+        // and return its c_str pointer, which is then garanteed to be valid until shutdown
+
+        auto get_name = [&](std::string suffix) -> const char * {
+            return names.emplace_back(name + suffix).c_str();
+        };
+
+        m.def(get_name("_Rkern"), []() {
+            return Kernel::Rkern;
+        });
+        m.def(get_name("_f"), &Kernel::f);
+        m.def(get_name("_df"), &Kernel::df);
+        m.def(get_name("_W1d"), &Kernel::W_1d);
+        m.def(get_name("_W2d"), &Kernel::W_2d);
+        m.def(get_name("_W3d"), &Kernel::W_3d);
+        m.def(get_name("_dW3d"), &Kernel::dW_3d);
+        m.def(get_name("_dhW3d"), &Kernel::dhW_3d);
+        m.def(get_name("_f3d_integ_z"), &Kernel::f3d_integ_z);
+    }
+
+} // namespace
+
 namespace shampylib {
 
     void init_shamrock_math_sphkernels(py::module &m) {
 
         py::module sphkernel_module = m.def_submodule("sphkernel", "Shamrock sph kernels math lib");
 
-        sphkernel_module.def("M4_Rkern", []() {
-            return shammath::M4<f64>::Rkern;
-        });
-        sphkernel_module.def("M4_f", &shammath::M4<f64>::f);
-        sphkernel_module.def("M4_df", &shammath::M4<f64>::df);
-        sphkernel_module.def("M4_W1d", &shammath::M4<f64>::W_1d);
-        sphkernel_module.def("M4_W2d", &shammath::M4<f64>::W_2d);
-        sphkernel_module.def("M4_W3d", &shammath::M4<f64>::W_3d);
-        sphkernel_module.def("M4_dW3d", &shammath::M4<f64>::dW_3d);
-        sphkernel_module.def("M4_dhW3d", &shammath::M4<f64>::dhW_3d);
-        sphkernel_module.def("M4_f3d_integ_z", &shammath::M4<f64>::f3d_integ_z);
-
-        sphkernel_module.def("M6_Rkern", []() {
-            return shammath::M6<f64>::Rkern;
-        });
-        sphkernel_module.def("M6_f", &shammath::M6<f64>::f);
-        sphkernel_module.def("M6_df", &shammath::M6<f64>::df);
-        sphkernel_module.def("M6_W1d", &shammath::M6<f64>::W_1d);
-        sphkernel_module.def("M6_W2d", &shammath::M6<f64>::W_2d);
-        sphkernel_module.def("M6_W3d", &shammath::M6<f64>::W_3d);
-        sphkernel_module.def("M6_dW3d", &shammath::M6<f64>::dW_3d);
-        sphkernel_module.def("M6_dhW3d", &shammath::M6<f64>::dhW_3d);
-        sphkernel_module.def("M6_f3d_integ_z", &shammath::M6<f64>::f3d_integ_z);
-
-        sphkernel_module.def("M8_Rkern", []() {
-            return shammath::M8<f64>::Rkern;
-        });
-        sphkernel_module.def("M8_f", &shammath::M8<f64>::f);
-        sphkernel_module.def("M8_df", &shammath::M8<f64>::df);
-        sphkernel_module.def("M8_W1d", &shammath::M8<f64>::W_1d);
-        sphkernel_module.def("M8_W2d", &shammath::M8<f64>::W_2d);
-        sphkernel_module.def("M8_W3d", &shammath::M8<f64>::W_3d);
-        sphkernel_module.def("M8_dW3d", &shammath::M8<f64>::dW_3d);
-        sphkernel_module.def("M8_dhW3d", &shammath::M8<f64>::dhW_3d);
-        sphkernel_module.def("M8_f3d_integ_z", &shammath::M8<f64>::f3d_integ_z);
-
-        sphkernel_module.def("C2_Rkern", []() {
-            return shammath::C2<f64>::Rkern;
-        });
-        sphkernel_module.def("C2_f", &shammath::C2<f64>::f);
-        sphkernel_module.def("C2_df", &shammath::C2<f64>::df);
-        sphkernel_module.def("C2_W1d", &shammath::C2<f64>::W_1d);
-        sphkernel_module.def("C2_W2d", &shammath::C2<f64>::W_2d);
-        sphkernel_module.def("C2_W3d", &shammath::C2<f64>::W_3d);
-        sphkernel_module.def("C2_dW3d", &shammath::C2<f64>::dW_3d);
-        sphkernel_module.def("C2_dhW3d", &shammath::C2<f64>::dhW_3d);
-        sphkernel_module.def("C2_f3d_integ_z", &shammath::C2<f64>::f3d_integ_z);
-
-        sphkernel_module.def("C4_Rkern", []() {
-            return shammath::C4<f64>::Rkern;
-        });
-        sphkernel_module.def("C4_f", &shammath::C4<f64>::f);
-        sphkernel_module.def("C4_df", &shammath::C4<f64>::df);
-        sphkernel_module.def("C4_W1d", &shammath::C4<f64>::W_1d);
-        sphkernel_module.def("C4_W2d", &shammath::C4<f64>::W_2d);
-        sphkernel_module.def("C4_W3d", &shammath::C4<f64>::W_3d);
-        sphkernel_module.def("C4_dW3d", &shammath::C4<f64>::dW_3d);
-        sphkernel_module.def("C4_dhW3d", &shammath::C4<f64>::dhW_3d);
-        sphkernel_module.def("C4_f3d_integ_z", &shammath::C4<f64>::f3d_integ_z);
-
-        sphkernel_module.def("C6_Rkern", []() {
-            return shammath::C6<f64>::Rkern;
-        });
-        sphkernel_module.def("C6_f", &shammath::C6<f64>::f);
-        sphkernel_module.def("C6_df", &shammath::C6<f64>::df);
-        sphkernel_module.def("C6_W1d", &shammath::C6<f64>::W_1d);
-        sphkernel_module.def("C6_W2d", &shammath::C6<f64>::W_2d);
-        sphkernel_module.def("C6_W3d", &shammath::C6<f64>::W_3d);
-        sphkernel_module.def("C6_dW3d", &shammath::C6<f64>::dW_3d);
-        sphkernel_module.def("C6_dhW3d", &shammath::C6<f64>::dhW_3d);
-        sphkernel_module.def("C6_f3d_integ_z", &shammath::C6<f64>::f3d_integ_z);
+        bind_sph_kernel<shammath::M4<f64>>(sphkernel_module, "M4");
+        bind_sph_kernel<shammath::M6<f64>>(sphkernel_module, "M6");
+        bind_sph_kernel<shammath::M8<f64>>(sphkernel_module, "M8");
+        bind_sph_kernel<shammath::C2<f64>>(sphkernel_module, "C2");
+        bind_sph_kernel<shammath::C4<f64>>(sphkernel_module, "C4");
+        bind_sph_kernel<shammath::C6<f64>>(sphkernel_module, "C6");
+        bind_sph_kernel<shammath::M4DH<f64>>(sphkernel_module, "M4DH");
+        bind_sph_kernel<shammath::M4DH3<f64>>(sphkernel_module, "M4DH3");
+        bind_sph_kernel<shammath::M4DH5<f64>>(sphkernel_module, "M4DH5");
+        bind_sph_kernel<shammath::M4DH7<f64>>(sphkernel_module, "M4DH7");
+        bind_sph_kernel<shammath::M4Shift2<f64>>(sphkernel_module, "M4Shift2");
+        bind_sph_kernel<shammath::M4Shift4<f64>>(sphkernel_module, "M4Shift4");
+        bind_sph_kernel<shammath::M4Shift8<f64>>(sphkernel_module, "M4Shift8");
+        bind_sph_kernel<shammath::M4Shift16<f64>>(sphkernel_module, "M4Shift16");
     }
 
 } // namespace shampylib

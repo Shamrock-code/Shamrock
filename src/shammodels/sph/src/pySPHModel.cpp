@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
@@ -24,7 +25,11 @@
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
+#include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
+#include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
+#include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -42,6 +47,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using T = Model<Tvec, SPHKernel>;
 
     using TAnalysisSodTube = shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>;
+    using TAnalysisDisc    = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>;
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
@@ -53,6 +59,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
+        .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",
             [](TConfig &self, py::object max_neigh_cache_size) {
@@ -62,6 +69,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is a no-op,\n"
                               "    -> you can remove the call to that function"););
             })
+        .def("set_smoothing_length_density_based", &TConfig::set_smoothing_length_density_based)
+        .def(
+            "set_smoothing_length_density_based_neigh_lim",
+            &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
+        .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
@@ -198,6 +211,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TConfig &self, Tscal cfl_force) {
                 self.cfl_config.cfl_force = cfl_force;
             })
+        .def(
+            "set_eta_sink",
+            [](TConfig &self, Tscal eta_sink) {
+                self.cfl_config.eta_sink = eta_sink;
+            })
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
         .def(
@@ -220,6 +238,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             auto ret = self.compute_L2_dist();
             return {ret.rho, ret.v, ret.P};
         });
+
+    std::string disc_analysis_name = name_model + "_AnalysisDisc";
+    py::class_<TAnalysisDisc>(m, disc_analysis_name.c_str())
+        .def(
+            "collect_data",
+            [](TAnalysisDisc &self, Tscal Rmin, Tscal Rmax, u32 Nbin, ShamrockCtx &ctx) {
+                auto anal = self.compute_analysis(Rmin, Rmax, Nbin, ctx);
+                py::dict dic_out;
+
+                auto radius  = anal.radius.copy_to_stdvec();
+                auto counter = anal.counter.copy_to_stdvec();
+                auto Sigma   = anal.Sigma.copy_to_stdvec();
+                auto lx      = anal.lx.copy_to_stdvec();
+                auto ly      = anal.ly.copy_to_stdvec();
+                auto lz      = anal.lz.copy_to_stdvec();
+                auto tilt    = anal.tilt.copy_to_stdvec();
+                auto twist   = anal.twist.copy_to_stdvec();
+                auto psi     = anal.psi.copy_to_stdvec();
+                auto Hsq     = anal.Hsq.copy_to_stdvec();
+
+                dic_out["radius"]  = radius;
+                dic_out["counter"] = counter;
+                dic_out["Sigma"]   = Sigma;
+                dic_out["lx"]      = lx;
+                dic_out["ly"]      = ly;
+                dic_out["lz"]      = lz;
+                dic_out["tilt"]    = tilt;
+                dic_out["twist"]   = twist;
+                dic_out["psi"]     = psi;
+                dic_out["Hsq"]     = Hsq;
+
+                return dic_out;
+            });
 
     std::string setup_name = name_model + "_SPHSetup";
     py::class_<TSPHSetup>(m, setup_name.c_str())
@@ -355,6 +406,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour)
         .def("set_cfl_force", &T::set_cfl_force)
+        .def("set_eta_sink", &T::set_eta_sink)
         .def("set_particle_mass", &T::set_particle_mass)
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)
@@ -591,6 +643,45 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return list_out;
             })
         .def(
+            "render_slice",
+            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_slice(name, positions).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_slice(name, positions).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            })
+        .def(
+            "render_column_integ",
+            [](T &self,
+               std::string name,
+               std::string field_type,
+               std::vector<shammath::Ray<Tvec>> rays)
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            })
+        .def(
             "render_cartesian_slice",
             [](T &self,
                std::string name,
@@ -640,7 +731,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return ret;
                 }
 
-                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
                 return py::array_t<Tscal>({nx, ny});
             },
             py::arg("name"),
@@ -700,7 +791,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     return ret;
                 }
 
-                shambase::throw_with_loc<std::runtime_error>("unknown slice type");
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
                 return py::array_t<Tscal>({nx, ny});
             },
             py::arg("name"),
@@ -739,6 +830,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_debug_dump", &T::set_debug_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+        .def("solver_logs_cumulated_step_time", &T::solver_logs_cumulated_step_time)
+        .def("solver_logs_reset_cumulated_step_time", &T::solver_logs_reset_cumulated_step_time)
+        .def("solver_logs_step_count", &T::solver_logs_step_count)
+        .def("solver_logs_reset_step_count", &T::solver_logs_reset_step_count)
         .def(
             "get_time",
             [](T &self) {
@@ -769,7 +864,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, Tscal cstiff) {
                 return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
             })
-        .def("change_htolerance", &T::change_htolerance)
+        .def(
+            "change_htolerance",
+            [](T &self, Tscal in) {
+                ON_RANK_0(shamlog_warn_ln(
+                              "SPH",
+                              ".change_htolerance(val) is deprecated,\n"
+                              "    -> calling this is replaced internally by "
+                              ".change_htolerances(coarse=val, fine=min(val, 1.1))\n"
+                              "    see: "
+                              "https://shamrock-code.github.io/Shamrock/mkdocs/models/sph/"
+                              "smoothing_length_tolerance"););
+                self.change_htolerances(in, std::min(in, (Tscal) 1.1));
+            })
+        .def(
+            "change_htolerances",
+            [](T &self, Tscal coarse, Tscal fine) {
+                self.change_htolerances(coarse, fine);
+            },
+            py::kw_only(),
+            py::arg("coarse"),
+            py::arg("fine"))
         .def(
             "make_analysis_sodtube",
             [](T &self,
@@ -790,13 +905,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_min,
                     x_max);
             })
+        .def(
+            "make_analysis_disc",
+            [](T &self) {
+                return std::make_unique<TAnalysisDisc>(
+                    self.ctx, self.solver.solver_config, self.solver.storage);
+            })
         .def("load_from_dump", &T::load_from_dump)
         .def("dump", &T::dump)
         .def("get_setup", &T::get_setup)
-        .def("get_patch_transform", [](T &self) {
-            PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
-            return sched.get_patch_transform<Tvec>();
-        });
+        .def(
+            "get_patch_transform",
+            [](T &self) {
+                PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
+                return sched.get_patch_transform<Tvec>();
+            })
+        .def("apply_momentum_offset", &T::apply_momentum_offset)
+        .def("apply_position_offset", &T::apply_position_offset);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -817,11 +942,121 @@ void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisEnergyKinetic_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisEnergyKinetic<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisEnergyKinetic<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_kinetic_energy", [](modules::AnalysisEnergyKinetic<Tvec, SPHKernel> &self) {
+            return self.get_kinetic_energy();
+        });
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisEnergyPotential_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisEnergyPotential<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisEnergyPotential<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_potential_energy", [](modules::AnalysisEnergyPotential<Tvec, SPHKernel> &self) {
+            return self.get_potential_energy();
+        });
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisTotalMomentum_instance(py::module &m, std::string name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisTotalMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisTotalMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_total_momentum", [](modules::AnalysisTotalMomentum<Tvec, SPHKernel> &self) {
+            return self.get_total_momentum();
+        });
+}
+
 using namespace shammodels::sph;
-template<typename Tvec, template<class> class SPHKernel>
-auto analysisBarycenter_impl(shammodels::sph::Model<Tvec, SPHKernel> &model)
-    -> modules::AnalysisBarycenter<Tvec, SPHKernel> {
-    return modules::AnalysisBarycenter<Tvec, SPHKernel>(model);
+
+template<class Analysis, typename Tvec, template<class> class SPHKernel>
+auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
+    return Analysis(model);
+}
+
+template<template<class, template<class> class> class Analysis>
+void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
+
+    using namespace shammodels::sph;
+
+    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
+    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
+    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+
+    using SPHModel_f64_3_C2 = shammodels::sph::Model<f64_3, shammath::C2>;
+    using SPHModel_f64_3_C4 = shammodels::sph::Model<f64_3, shammath::C4>;
+    using SPHModel_f64_3_C6 = shammodels::sph::Model<f64_3, shammath::C6>;
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M4 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M4>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M6 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M6>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_M8 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::M8>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C2 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C2>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C4 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C4>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
+
+    msph.def(
+        name_class,
+        [](SPHModel_f64_3_C6 &model) {
+            return analysis_impl<Analysis<f64_3, shammath::C6>>(model);
+        },
+        py::kw_only(),
+        py::arg("model"));
 }
 
 Register_pymod(pysphmodel) {
@@ -899,59 +1134,41 @@ Register_pymod(pysphmodel) {
     add_analysisBarycenter_instance<f64_3, shammath::C4>(msph, "AnalysisBarycenter_f64_3_C4");
     add_analysisBarycenter_instance<f64_3, shammath::C6>(msph, "AnalysisBarycenter_f64_3_C6");
 
-    using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
-    using SPHModel_f64_3_M6 = shammodels::sph::Model<f64_3, shammath::M6>;
-    using SPHModel_f64_3_M8 = shammodels::sph::Model<f64_3, shammath::M8>;
+    add_analysisEnergyKinetic_instance<f64_3, shammath::M4>(msph, "AnalysisEnergyKinetic_f64_3_M4");
+    add_analysisEnergyKinetic_instance<f64_3, shammath::M6>(msph, "AnalysisEnergyKinetic_f64_3_M6");
+    add_analysisEnergyKinetic_instance<f64_3, shammath::M8>(msph, "AnalysisEnergyKinetic_f64_3_M8");
 
-    using SPHModel_f64_3_C2 = shammodels::sph::Model<f64_3, shammath::C2>;
-    using SPHModel_f64_3_C4 = shammodels::sph::Model<f64_3, shammath::C4>;
-    using SPHModel_f64_3_C6 = shammodels::sph::Model<f64_3, shammath::C6>;
+    add_analysisEnergyKinetic_instance<f64_3, shammath::C2>(msph, "AnalysisEnergyKinetic_f64_3_C2");
+    add_analysisEnergyKinetic_instance<f64_3, shammath::C4>(msph, "AnalysisEnergyKinetic_f64_3_C4");
+    add_analysisEnergyKinetic_instance<f64_3, shammath::C6>(msph, "AnalysisEnergyKinetic_f64_3_C6");
 
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M4 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    add_analysisEnergyPotential_instance<f64_3, shammath::M4>(
+        msph, "AnalysisEnergyPotential_f64_3_M4");
+    add_analysisEnergyPotential_instance<f64_3, shammath::M6>(
+        msph, "AnalysisEnergyPotential_f64_3_M6");
+    add_analysisEnergyPotential_instance<f64_3, shammath::M8>(
+        msph, "AnalysisEnergyPotential_f64_3_M8");
 
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M6 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    add_analysisEnergyPotential_instance<f64_3, shammath::C2>(
+        msph, "AnalysisEnergyPotential_f64_3_C2");
+    add_analysisEnergyPotential_instance<f64_3, shammath::C4>(
+        msph, "AnalysisEnergyPotential_f64_3_C4");
+    add_analysisEnergyPotential_instance<f64_3, shammath::C6>(
+        msph, "AnalysisEnergyPotential_f64_3_C6");
 
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_M8 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::M8>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    add_analysisTotalMomentum_instance<f64_3, shammath::M4>(msph, "AnalysisTotalMomentum_f64_3_M4");
+    add_analysisTotalMomentum_instance<f64_3, shammath::M6>(msph, "AnalysisTotalMomentum_f64_3_M6");
+    add_analysisTotalMomentum_instance<f64_3, shammath::M8>(msph, "AnalysisTotalMomentum_f64_3_M8");
 
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C2 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C2>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    add_analysisTotalMomentum_instance<f64_3, shammath::C2>(msph, "AnalysisTotalMomentum_f64_3_C2");
+    add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
+    add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C4 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C4>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
-
-    msph.def(
-        "analysisBarycenter",
-        [](SPHModel_f64_3_C6 &model) {
-            return analysisBarycenter_impl<f64_3, shammath::C6>(model);
-        },
-        py::kw_only(),
-        py::arg("model"));
+    register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
+    register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
+        msph, "analysisEnergyKinetic");
+    register_analysis_impl_for_each_kernel<modules::AnalysisEnergyPotential>(
+        msph, "analysisEnergyPotential");
+    register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
+        msph, "analysisTotalMomentum");
 }

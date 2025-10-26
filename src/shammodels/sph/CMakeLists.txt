@@ -41,10 +41,14 @@ set(Sources
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
+    src/modules/AnalysisDisc.cpp
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp
     src/modules/IterateSmoothingLengthDensity.cpp
+    src/modules/IterateSmoothingLengthDensityNeighLim.cpp
+    src/modules/LoopSmoothingLengthIter.cpp
+    src/modules/ComputeNeighStats.cpp
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierApplyCustomWarp.cpp

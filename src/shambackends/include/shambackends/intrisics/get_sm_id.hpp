@@ -58,6 +58,34 @@ namespace sham {
         return cu_id;
     }
 
+#elif defined(_IS_ACPP_SSCP)
+    #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
+
+    inline u32 get_sm_id() {
+        u32 ret = -1;
+
+        namespace jit = sycl::AdaptiveCpp_jit;
+
+    #if __has_builtin(__nvvm_read_ptx_sreg_smid)
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    ret = __nvvm_read_ptx_sreg_smid();
+                }););
+
+    #else
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    asm("mov.u32 %0, %%smid;" : "=r"(ret));
+                }););
+    #endif
+
+        return ret;
+    }
+
 #elif defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST && defined(linux)
     // #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
     //

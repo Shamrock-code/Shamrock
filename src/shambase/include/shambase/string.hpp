@@ -87,8 +87,8 @@ namespace shambase {
      * @throws std::invalid_argument if the format string is invalid
      */
     template<class It, typename... Tformat>
-    inline std::string
-    format_array(It &iter, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
+    inline std::string format_array(
+        It &iter, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
 
         std::string accum;
 

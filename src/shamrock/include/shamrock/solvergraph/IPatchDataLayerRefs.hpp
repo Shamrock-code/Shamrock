@@ -19,17 +19,17 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {
 
     using PatchDataLayerRef = std::reference_wrapper<patch::PatchDataLayer>;
 
-    class IPatchDataLayerRefs : public IDataEdgeNamed {
+    class IPatchDataLayerRefs : public IEdgeNamed {
 
         public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         virtual ~IPatchDataLayerRefs() = default;
 

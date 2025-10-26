@@ -30,7 +30,7 @@ Choose the appropriate solvergraph edge type based on your data:
 
 #### Basic Data Edges
 
-- **`IDataEdgeNamed`**: For simple named data with no special requirements
+- **`IEdgeNamed`**: For simple named data with no special requirements
 - **`ScalarEdge<T>`**: For scalar values
 - **`Indexes<T>`**: For index arrays
 
@@ -63,20 +63,20 @@ std::shared_ptr<shamrock::solvergraph::Field<T>> my_field;
 
 #### Option B: Create Custom Edge
 
-If you need a custom edge, create a new class inheriting from `IDataEdgeNamed`:
+If you need a custom edge, create a new class inheriting from `IEdgeNamed`:
 
 ```cpp
 // Header file: include/yourmodel/solvergraph/YourCustomEdge.hpp
 #pragma once
 
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "your_data_type.hpp"
 
 namespace yourmodel::solvergraph {
 
-    class YourCustomEdge : public shamrock::solvergraph::IDataEdgeNamed {
+    class YourCustomEdge : public shamrock::solvergraph::IEdgeNamed {
     public:
-        using IDataEdgeNamed::IDataEdgeNamed;
+        using IEdgeNamed::IEdgeNamed;
 
         // Your data members
         YourDataType data;
@@ -174,7 +174,7 @@ Component<shambase::DistributedData<MyType>> distributed_data;
 std::shared_ptr<MyCustomEdge> distributed_data;
 ```
 
-Where `MyCustomEdge` inherits from `IDataEdgeNamed` and contains:
+Where `MyCustomEdge` inherits from `IEdgeNamed` and contains:
 ```cpp
 shambase::DistributedData<MyType> data;
 ```
@@ -245,9 +245,9 @@ storage.neigh_cache = std::make_shared<shammodels::sph::solvergraph::NeighCache>
 **Custom Edge Implementation:**
 ```cpp
 // In NeighCache.hpp
-class NeighCache : public shamrock::solvergraph::IDataEdgeNamed {
+class NeighCache : public shamrock::solvergraph::IEdgeNamed {
 public:
-    using IDataEdgeNamed::IDataEdgeNamed;
+    using IEdgeNamed::IEdgeNamed;
 
     shambase::DistributedData<shamrock::tree::ObjectCache> neigh_cache;
 

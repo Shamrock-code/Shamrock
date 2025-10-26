@@ -32,10 +32,14 @@ set(Sources
         src/serialize.cpp
         src/collective/distributedDataComm.cpp
         src/collective/sparseXchg.cpp
+        src/collective/are_all_rank_true.cpp
         src/primitives/sort_by_keys.cpp
         src/primitives/is_all_true.cpp
         src/primitives/mock_value.cpp
         src/primitives/reduction.cpp
+        src/primitives/scan_exclusive_sum_in_place.cpp
+        src/primitives/gen_buffer_index.cpp
+        src/primitives/segmented_sort_in_place.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

@@ -49,7 +49,7 @@ PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     opts::register_opt(
         "--smi", {}, "print information about available SYCL devices in the cluster");
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
         {
 
             if (opts::has_option("--ipython")) {
-                StackEntry stack_loc{};
+                __shamrock_stack_entry();
 
                 if (shamcomm::world_size() > 1) {
                     throw shambase::make_except_with_loc<std::runtime_error>(
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
                 shambindings::start_ipython(true);
 
             } else if (opts::has_option("--rscript")) {
-                StackEntry stack_loc{};
+                __shamrock_stack_entry();
                 std::string fname = std::string(opts::get_option("--rscript"));
 
                 shambindings::run_py_file(fname, shamcomm::world_rank() == 0);

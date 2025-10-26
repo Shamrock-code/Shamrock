@@ -29,6 +29,7 @@
 #include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include "shamsys/SignalCatch.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include "shamtest/shamtest.hpp"
 #include <pybind11/embed.h>
@@ -185,6 +186,8 @@ int main(int argc, char *argv[]) {
             std::string pybin = std::string(opts::get_option("--pypath-from-bin"));
             shambindings::setpypath_from_binary(pybin);
         }
+
+        shamsys::register_signals();
 
         shamtest::TestConfig cfg{};
 

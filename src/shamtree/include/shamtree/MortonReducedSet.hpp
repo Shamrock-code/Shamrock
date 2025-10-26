@@ -16,6 +16,7 @@
  */
 
 #include "shamtree/CellIterator.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include "shamtree/MortonCodeSortedSet.hpp"
 
 namespace shamtree {
@@ -58,8 +59,34 @@ namespace shamtree {
               buf_reduc_index_map(std::move(buf_reduc_index_map)),
               reduced_morton_codes(std::move(reduced_morton_codes)) {}
 
-        inline CellIterator get_cell_iterator() {
-            return CellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
+        inline bool is_empty() const { return reduce_code_count == 0; }
+
+        inline LeafCellIterator get_leaf_cell_iterator() const {
+            return LeafCellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
+        }
+
+        inline LeafCellIteratorHost get_leaf_cell_iterator_host() const {
+            return LeafCellIteratorHost{
+                morton_codes_set.map_morton_id_to_obj_id.copy_to_stdvec(),
+                buf_reduc_index_map.copy_to_stdvec()};
+        }
+
+        inline CellIterator get_cell_iterator(
+            const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
+            return CellIterator{
+                morton_codes_set.map_morton_id_to_obj_id,
+                buf_reduc_index_map,
+                buf_endrange,
+                offset_leaf};
+        }
+
+        inline CellIteratorHost get_cell_iterator_host(
+            const sham::DeviceBuffer<u32> &buf_endrange, u32 offset_leaf) const {
+            return CellIteratorHost{
+                morton_codes_set.map_morton_id_to_obj_id.copy_to_stdvec(),
+                buf_reduc_index_map.copy_to_stdvec(),
+                buf_endrange.copy_to_stdvec(),
+                offset_leaf};
         }
 
         inline static MortonReducedSet make_empty(sham::DeviceScheduler_ptr dev_sched) {

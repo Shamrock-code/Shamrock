@@ -29,7 +29,7 @@ jobs:
     steps:
 
       # if archlinux container
-      - if: matrix.container == 'archlinux'
+      - if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
             sudo pacman -S --noconfirm git
 

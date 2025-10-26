@@ -32,7 +32,7 @@ jobs:
       - name : Install archlinux dependencies
         if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-            sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen
+            sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen llvm19 clang19
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

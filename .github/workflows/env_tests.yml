@@ -25,29 +25,22 @@ jobs:
             runson: ubuntu-latest
             imagename: ArchLinux
             runtest: yes
+
           - machine: macos-generic.acpp
-            args: 
-            container: 
             runson: macos-14
-            imagename: macOS-14
+            imagename: MacOS-14
             runtest: yes
           - machine: macos-generic.acpp
-            args: 
-            container: 
             runson: macos-15
-            imagename: macOS-15
+            imagename: MacOS-15
             runtest: yes
           - machine: macos-generic.acpp
-            args: 
-            container: 
             runson: macos-15-intel
-            imagename: macOS-15 (intel)
+            imagename: MacOS-15 (intel)
             runtest: yes
           - machine: macos-generic.acpp
-            args: 
-            container: 
             runson: macos-26
-            imagename: macOS-26
+            imagename: MacOS-26
             runtest: yes
 
     timeout-minutes: 120

@@ -9,10 +9,9 @@ on:
 
 jobs:
 
-
   compile_and_test:
     name: "${{ matrix.imagename }} -- ${{ matrix.machine }} -- ${{ matrix.args }}"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runson }}
 
     container:
       image: ${{ matrix.container }}
@@ -23,7 +22,32 @@ jobs:
           - machine: archlinux.acpp
             args: --backend generic
             container: archlinux/archlinux:base-devel
+            runson: ubuntu-latest
             imagename: ArchLinux
+            runtest: yes
+          - machine: macos-generic.acpp
+            args: 
+            container: 
+            runson: macos-14
+            imagename: macOS-14
+            runtest: yes
+          - machine: macos-generic.acpp
+            args: 
+            container: 
+            runson: macos-15
+            imagename: macOS-15
+            runtest: yes
+          - machine: macos-generic.acpp
+            args: 
+            container: 
+            runson: macos-15-intel
+            imagename: macOS-15 (intel)
+            runtest: yes
+          - machine: macos-generic.acpp
+            args: 
+            container: 
+            runson: macos-26
+            imagename: macOS-26
             runtest: yes
 
     timeout-minutes: 120
@@ -33,7 +57,21 @@ jobs:
       - name : Install archlinux dependencies
         if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-            sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
+          sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
+
+      # if macos container
+      - name : Install macos dependencies
+        if: matrix.machine == 'macos-generic.acpp'
+        run: |
+          set +e
+
+          # Uninstall cmake to ensure that we test the version on peoples computers,
+          # why have you done this mess github, couldn't you just use the version in default brew???
+          brew uninstall cmake
+
+          brew update
+          brew install cmake libomp boost open-mpi adaptivecpp
+          set -e
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default

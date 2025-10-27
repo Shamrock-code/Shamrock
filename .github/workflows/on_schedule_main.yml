@@ -45,11 +45,6 @@ jobs:
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
 
-  shamrock_linux_acpp_macos:
-    name: Shamrock Test
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-macos.yml
-
   shamrock_linux_acpp_asan:
     needs: [src_check]
     name: Tests

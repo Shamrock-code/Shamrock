@@ -44,7 +44,7 @@ jobs:
             imagename: MacOS-15 (intel)
             runtest: yes
             mpiargs: --oversubscribe
-            
+
           - machine: macos-generic.acpp
             runson: macos-26
             imagename: MacOS-26

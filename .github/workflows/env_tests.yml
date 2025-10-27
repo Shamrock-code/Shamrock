@@ -25,6 +25,7 @@ jobs:
             runson: ubuntu-latest
             imagename: ArchLinux
             runtest: yes
+            runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
 
           - machine: macos-generic.acpp
@@ -176,7 +177,7 @@ jobs:
 
       - name: Try starting Shamrock (installed python libs)
         shell: bash # In docker container github action default to sh
-        if: matrix.runtest
+        if: matrix.runtestpy
         run: |
           cd build/install_test
 

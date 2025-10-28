@@ -17,6 +17,7 @@
 
 #include "shammodels/ramses/modules/NodeSelfGravityAcceleration.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include <type_traits>
@@ -167,6 +168,8 @@ namespace {
                                 });
 
                             out[cell_global_id] = {grad_res[0], grad_res[1], grad_res[2]};
+                            // logger::raw_ln(out[cell_global_id][0], out[cell_global_id][1],
+                            // out[cell_global_id][2], "\n");
                         }
 
                     );

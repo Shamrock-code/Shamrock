@@ -72,6 +72,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt;
 
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_min;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_max;
@@ -280,6 +281,7 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_new;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_old;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_next_accumulator;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rho_next;
         /** TOBE REMOVE*/
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> refs_rhov_next;

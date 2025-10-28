@@ -19,6 +19,7 @@
  *
  */
 
+#include "shambase/memory.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
@@ -91,6 +92,7 @@ namespace shammodels::basegodunov {
         inline Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
             solver_config.set_time(t_current);
             solver_config.set_next_dt(dt_input);
+            shambase::get_check_ref(storage.dt).value = dt_input;
             evolve_once();
             return solver_config.get_dt();
         }

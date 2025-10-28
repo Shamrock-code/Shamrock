@@ -49,18 +49,18 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_cell0block_aabb_lower;
 
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_xp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_xm;
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_yp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_ym;
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_zp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tvec> flux_rhov_face_zm;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_xp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_xm;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_yp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_ym;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_zp;
-            const solvergraph::NeighGraphLinkFieldEdge<Tscal> flux_rhoe_face_zm;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_xp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_xm;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_yp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_ym;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_zp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tvec> &flux_rhov_face_zm;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_xp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_xm;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_yp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_ym;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_zp;
+            const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rhoe_face_zm;
 
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_old;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_next;
@@ -152,9 +152,9 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(18),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(19),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(20),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(21),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(21),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1)};
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1)};
         }
 
         void _impl_evaluate_internal();

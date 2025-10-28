@@ -48,6 +48,17 @@ namespace shamrock::solvergraph {
             }
             field.overwrite(source_field, source_field.get_obj_cnt());
         });
+
+        if (false) {
+            for (auto id = 0; id < 1; id++) {
+                auto &buf = edges.target.get_field(id).get_buf();
+                auto vec  = buf.copy_to_stdvec();
+                logger::raw_ln(id, "phi-af-copy = ", "--", buf.get_size());
+                for (int i = 0; i < buf.get_size(); i++) {
+                    logger::raw_ln("phi-af-copy", i, vec[i]);
+                }
+            }
+        }
     }
 
     template<class T>

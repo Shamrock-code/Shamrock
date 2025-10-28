@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     multz = 1
 
     sz = 1 << 1
-    base = 16
+    base = 32
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -39,6 +39,20 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
 
     model.init_scheduler(int(500000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+
+    # def rho_map(rmin, rmax):
+    #     x_mn, y_mn, z_mn = rmin
+    #     x_mx, y_mx, z_mx = rmax
+    #     # x, y, z = rmin
+
+    #     x = 0.5 * (x_mn + x_mx)
+    #     y = 0.5 * (y_mn + y_mx)
+    #     z = 0.5 * (z_mn + z_mx)
+
+    #     res = rho0 +   np.sin((2 * np.pi * x) ) * np.sin((2 * np.pi * y) ) * np.sin(
+    #         (2 * np.pi * z)
+    #     )
+    #     return res
 
     def rho_map(rmin, rmax):
         x_mn, y_mn, z_mn = rmin

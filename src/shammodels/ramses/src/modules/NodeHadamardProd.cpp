@@ -53,11 +53,6 @@ namespace {
                 [block_size](
                     u32 i, const T *__restrict in1, const T *__restrict in2, T *__restrict out) {
                     out[i] = in1[i] * in2[i];
-
-                    // if( (i >= 480) && (i <= 540 ))
-                    // {
-                    //     logger::raw_ln("id_a = [ ", i, " ] : ", out[i], "\n");
-                    // }
                 });
         }
     };

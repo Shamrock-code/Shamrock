@@ -29,6 +29,10 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     using namespace shamrock;
     using namespace shammath;
 
+    shamrock::ComputeField<Tscal> &cfield_dtrho  = storage.dtrho.get();
+    shamrock::ComputeField<Tvec> &cfield_dtrhov  = storage.dtrhov.get();
+    shamrock::ComputeField<Tscal> &cfield_dtrhoe = storage.dtrhoe.get();
+
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
@@ -38,70 +42,16 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
-    if (!solver_config.is_gravity_on()) {
-        shamrock::ComputeField<Tscal> &cfield_dtrho  = storage.dtrho.get();
-        shamrock::ComputeField<Tvec> &cfield_dtrhov  = storage.dtrhov.get();
-        shamrock::ComputeField<Tscal> &cfield_dtrhoe = storage.dtrhoe.get();
-
-        scheduler().for_each_patchdata_nonempty(
-            [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-                shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
-
-                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-                u32 id               = p.id_patch;
-
-                sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
-                sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
-                sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
-
-                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
-
-                sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
-                sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
-                sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
-
-                sham::EventList depends_list;
-                auto acc_dt_rho_patch  = dt_rho_patch.get_read_access(depends_list);
-                auto acc_dt_rhov_patch = dt_rhov_patch.get_read_access(depends_list);
-                auto acc_dt_rhoe_patch = dt_rhoe_patch.get_read_access(depends_list);
-
-                auto rho  = buf_rho.get_write_access(depends_list);
-                auto rhov = buf_rhov.get_write_access(depends_list);
-                auto rhoe = buf_rhoe.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                    shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
-                        const u32 cell_global_id = (u32) id_a;
-
-                        rho[id_a] += dt * acc_dt_rho_patch[id_a];
-                        rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
-                        rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
-                    });
-                });
-
-                dt_rho_patch.complete_event_state(e);
-                dt_rhov_patch.complete_event_state(e);
-                dt_rhoe_patch.complete_event_state(e);
-
-                buf_rho.complete_event_state(e);
-                buf_rhov.complete_event_state(e);
-                buf_rhoe.complete_event_state(e);
-            });
-    } else if (solver_config.is_gravity_on()) {
-        auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
-        auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
-        auto &rhoe_next = shambase::get_check_ref(storage.refs_rhoe_next);
-
-        scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                    shamrock::patch::PatchDataLayer &pdat) {
+    scheduler().for_each_patchdata_nonempty(
+        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
             u32 id               = p.id_patch;
 
-            sham::DeviceBuffer<Tscal> &rho_next_patch  = rho_next.get_buf(p.id_patch);
-            sham::DeviceBuffer<Tvec> &rhov_next_patch  = rhov_next.get_buf(p.id_patch);
-            sham::DeviceBuffer<Tscal> &rhoe_next_patch = rhoe_next.get_buf(p.id_patch);
+            sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
+            sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
 
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
@@ -110,33 +60,84 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
 
             sham::EventList depends_list;
-            auto acc_rho_next_patch  = rho_next_patch.get_read_access(depends_list);
-            auto acc_rhov_next_patch = rhov_next_patch.get_read_access(depends_list);
-            auto acc_rhoe_next_patch = rhoe_next_patch.get_read_access(depends_list);
+            auto acc_dt_rho_patch  = dt_rho_patch.get_read_access(depends_list);
+            auto acc_dt_rhov_patch = dt_rhov_patch.get_read_access(depends_list);
+            auto acc_dt_rhoe_patch = dt_rhoe_patch.get_read_access(depends_list);
 
-            auto rho_old  = buf_rho.get_write_access(depends_list);
-            auto rhov_old = buf_rhov.get_write_access(depends_list);
-            auto rhoe_old = buf_rhoe.get_write_access(depends_list);
+            auto rho  = buf_rho.get_write_access(depends_list);
+            auto rhov = buf_rhov.get_write_access(depends_list);
+            auto rhoe = buf_rhoe.get_write_access(depends_list);
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                shambase::parallel_for(cgh, cell_count, "next-times-step-cons-var", [=](u32 id_a) {
+            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
 
-                    rho_old[id_a]  = acc_rho_next_patch[id_a];
-                    rhov_old[id_a] = acc_rhov_next_patch[id_a];
-                    rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
+                    rho[id_a] += dt * acc_dt_rho_patch[id_a];
+                    rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
+                    rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
                 });
             });
 
-            rho_next_patch.complete_event_state(e);
-            rhov_next_patch.complete_event_state(e);
-            rhoe_next_patch.complete_event_state(e);
+            dt_rho_patch.complete_event_state(e);
+            dt_rhov_patch.complete_event_state(e);
+            dt_rhoe_patch.complete_event_state(e);
 
             buf_rho.complete_event_state(e);
             buf_rhov.complete_event_state(e);
             buf_rhoe.complete_event_state(e);
         });
-    }
+
+    // if (solver_config.is_gravity_on() && solver_config.is_coupling_gravity_on()) {
+    //     auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
+    //     auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
+    //     auto &rhoe_next = shambase::get_check_ref(storage.refs_rhoe_next);
+
+    //     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+    //                                                 shamrock::patch::PatchDataLayer &pdat) {
+    //         shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
+
+    //         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    //         u32 id               = p.id_patch;
+
+    //         sham::DeviceBuffer<Tscal> &rho_next_patch  = rho_next.get_buf(p.id_patch);
+    //         sham::DeviceBuffer<Tvec> &rhov_next_patch  = rhov_next.get_buf(p.id_patch);
+    //         sham::DeviceBuffer<Tscal> &rhoe_next_patch = rhoe_next.get_buf(p.id_patch);
+
+    //         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+    //         sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
+    //         sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
+    //         sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
+
+    //         sham::EventList depends_list;
+    //         auto acc_rho_next_patch  = rho_next_patch.get_read_access(depends_list);
+    //         auto acc_rhov_next_patch = rhov_next_patch.get_read_access(depends_list);
+    //         auto acc_rhoe_next_patch = rhoe_next_patch.get_read_access(depends_list);
+
+    //         auto rho_old  = buf_rho.get_write_access(depends_list);
+    //         auto rhov_old = buf_rhov.get_write_access(depends_list);
+    //         auto rhoe_old = buf_rhoe.get_write_access(depends_list);
+
+    //         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+    //             shambase::parallel_for(cgh, cell_count, "next-times-step-cons-var", [=](u32 id_a)
+    //             {
+    //                 const u32 cell_global_id = (u32) id_a;
+
+    //                 rho_old[id_a]  = acc_rho_next_patch[id_a];
+    //                 rhov_old[id_a] = acc_rhov_next_patch[id_a];
+    //                 rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
+    //             });
+    //         });
+
+    //         rho_next_patch.complete_event_state(e);
+    //         rhov_next_patch.complete_event_state(e);
+    //         rhoe_next_patch.complete_event_state(e);
+
+    //         buf_rho.complete_event_state(e);
+    //         buf_rhov.complete_event_state(e);
+    //         buf_rhoe.complete_event_state(e);
+    //     });
+    // }
 
     if (solver_config.is_dust_on()) {
         shamrock::ComputeField<Tscal> &cfield_dtrho_dust = storage.dtrho_dust.get();
@@ -184,7 +185,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
         });
     }
 
-    if (solver_config.is_gravity_on()) {
+    if (solver_config.is_gravity_on() && dt != 0) {
         shamrock::solvergraph::DDPatchDataFieldRef<Tscal> &phi_new
             = shambase::get_check_ref(storage.refs_phi).get_refs();
         const u32 iphi = pdl.get_field_idx<Tscal>("phi");

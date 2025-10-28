@@ -27,7 +27,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_pcg()
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
-    cfg.set_self_gravity_Niter_max(10)
+    cfg.set_self_gravity_Niter_max(100)
     cfg.set_self_gravity_tol(1e-10)
     cfg.set_self_gravity_happy_breakdown_tol(1e-10)
 
@@ -35,23 +35,45 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     model.init_scheduler(int(400000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
+    # def rho_map(rmin, rmax):
+    #     x_mn, y_mn, z_mn = rmin
+    #     x_mx, y_mx, z_mx = rmax
+
+    #     # x,y,z =  rmin
+
+    #     x = 0.5 * (x_mn + x_mx)
+    #     y = 0.5 * (y_mn + y_mx)
+    #     z = 0.5 * (z_mn + z_mx)
+
+    #     cx = (2 * np.pi) / Lx
+    #     cy = (2 * np.pi) / Ly
+    #     cz = (2 * np.pi) / Lz
+
+    #     return rho0 + A * (np.cos(cx * x) * np.cos(cy * y) * np.cos(cz * z))
+
+    #     # return rho0 + A * np.cos(cx * x)  * np.cos(cy * y) * np.cos(cz * z )
+
     def rho_map(rmin, rmax):
         x_mn, y_mn, z_mn = rmin
         x_mx, y_mx, z_mx = rmax
-
-        # x,y,z =  rmin
+        # x, y, z = rmin
 
         x = 0.5 * (x_mn + x_mx)
         y = 0.5 * (y_mn + y_mx)
         z = 0.5 * (z_mn + z_mx)
 
-        cx = (2 * np.pi) / Lx
-        cy = (2 * np.pi) / Ly
-        cz = (2 * np.pi) / Lz
+        # rho0 = 6./144.
 
-        return rho0 + A * (np.cos(cx * x) * np.cos(cy * y) * np.cos(cz * z))
+        # res =  1./(4*np.pi*G) * ( 2*(y-0.5)*(y-0.5)*(z-0.5)*(z-0.5) + 2*(x-0.5)*(x-0.5)*(z-0.5)*(z-0.5) + 2*(y-0.5)*(y-0.5)*(x-0.5)*(x-0.5) )
 
-        # return rho0 + A * np.cos(cx * x)  * np.cos(cy * y) * np.cos(cz * z )
+        res = (
+            np.cos(2 * np.pi * x) * np.cos(2 * np.pi * y) * np.cos(2 * np.pi * z)
+            + 0.5 * np.cos(4 * np.pi * x) * np.cos(2 * np.pi * y) * np.cos(2 * np.pi * z)
+            + (1 / 3) * np.cos(2 * np.pi * x) * np.cos(4 * np.pi * y) * np.cos(6 * np.pi * z)
+            + x * y * z
+        )
+
+        return res + 10
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
@@ -117,11 +139,17 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     t = 0
     tend = 0.245
 
-    for k in range(1):
+    for k in range(5):
         # if k % freq == 0:
         #     model.dump_vtk("test" + str(k) + ".vtk")
 
-        model.evolve_once_override_time(t, dt)
+        next_dt = model.evolve_once_override_time(t, dt)
+
+        t += dt
+        dt = next_dt
+
+        if tend < t + next_dt:
+            dt = tend - t
 
         dic = ctx.collect_data()
 
@@ -132,7 +160,8 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
             # cc =  -(4.0 * np.pi * G) / (((2* np.pi) / Lx)**2 + ((2* np.pi) / Ly)**2 +( (2* np.pi) / Lz)**2 )
             # cc = -(4 * np.pi * G ) / (cx * cx + cy * cy + cz * cz)
 
-            tmp = (dic["rho"] - rho0) * cc
+            # tmp = (dic["rho"] - rho0) * cc
+            tmp = dic["rho"] * (4.0 * np.pi * G)
 
             for i in range(len(dic["xmin"])):
 
@@ -148,13 +177,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
                 phi.append(dic["phi"][i])
                 phi_ana.append(tmp[i])
 
-        t = dt * k
-        # dt = next_dt
-
-        # if tend < t + next_dt:
-        #     dt = tend - t
-
-        if t > tend:
+        if t >= tend:
             break
 
 
@@ -170,18 +193,26 @@ run_sim(X, Y, Z, rho, phi, phi_ana, A=1)
 
 
 def analytic_phi(X, Y, Z, Lx, Ly, Lz, G, A=1, phi_0=0):
-    cx = (2 * np.pi) / Lx
-    cy = (2 * np.pi) / Ly
-    cz = (2 * np.pi) / Lz
+    # cx = (2 * np.pi) / Lx
+    # cy = (2 * np.pi) / Ly
+    # cz = (2 * np.pi) / Lz
 
-    C = -(4 * np.pi * G * A) / (cx * cx + cy * cy + cz * cz)
+    # C = -(4 * np.pi * G * A) / (cx * cx + cy * cy + cz * cz)
 
-    a = np.cos(cx * X)
-    b = np.cos(cy * Y)
-    c = np.cos(cz * Z)
-    d = a * b * c
-    print(f"{a.shape}, {b.shape}, {c.shape}, {d.shape}\n")
-    return phi_0 + C * d
+    # a = np.cos(cx * X)
+    # b = np.cos(cy * Y)
+    # c = np.cos(cz * Z)
+    # d = a * b * c
+    # print(f"{a.shape}, {b.shape}, {c.shape}, {d.shape}\n")
+    # return phi_0 + C * d
+
+    res = -(G / np.pi) * (
+        (1 / 3) * np.cos(2 * np.pi * X) * np.cos(2 * np.pi * Y) * np.cos(2 * np.pi * Z)
+        + (1 / 12) * np.cos(4 * np.pi * X) * np.cos(2 * np.pi * Y) * np.cos(2 * np.pi * Z)
+        + (1 / 42) * np.cos(2 * np.pi * X) * np.cos(4 * np.pi * Y) * np.cos(6 * np.pi * Z)
+    )
+
+    return res
 
 
 ana = analytic_phi(np.array(X), np.array(Y), np.array(Z), Lx=1, Ly=1, Lz=1, G=1)
@@ -196,10 +227,10 @@ ana = analytic_phi(np.array(X), np.array(Y), np.array(Z), Lx=1, Ly=1, Lz=1, G=1)
 diff = np.array(phi) - ana
 plt.plot(np.array(X), ana, ".", label="phi-ana")
 plt.plot(np.array(X), phi, "+", label="phi-num")
-plt.plot(np.array(X), np.array(phi_ana), ".", label="phi-ana-ap")
+# plt.plot(np.array(X), np.array(phi_ana), ".", label="phi-ana-ap")
 plt.plot(np.array(X), diff, "*", label="diff")
 plt.legend()
-plt.savefig("with-ghost-64-pcg_bis.png", format="png")
+plt.savefig("Polynomial-sol-test.png", format="png")
 # plt.plot(X, np.array(phi), ".", label="phi-num")
 # # plt.plot(X, ana, ".", label="phi-ana-t")
 # plt.plot(X, np.array(phi_ana), ".", label="phi-ana-ap")

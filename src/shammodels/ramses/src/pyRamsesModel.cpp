@@ -21,6 +21,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
 #include <pybind11/functional.h>
 #include <memory>
@@ -176,6 +177,16 @@ namespace shammodels::basegodunov {
                 "set_gravity_mode_bicgstab",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
+                })
+            .def(
+                "set_coupling_gravity_mode_no_coupling",
+                [](TConfig &self) {
+                    self.gravity_config.coupling_gravity_mode = NoCoupling;
+                })
+            .def(
+                "set_coupling_gravity_mode_ramses_like",
+                [](TConfig &self) {
+                    self.gravity_config.coupling_gravity_mode = RAMSES_LIKE;
                 })
             .def(
                 "set_npscal_gas",

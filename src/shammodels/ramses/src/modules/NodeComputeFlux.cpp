@@ -17,6 +17,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/ComputeFluxUtilities.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 
@@ -77,7 +78,8 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
                 Tprim{rho_ij[1], press_ij[1], vel_ij[1]},
                 gamma);
 
-            flux_rho_face[link_id]  = flux_dir.rho;
+            flux_rho_face[link_id] = flux_dir.rho;
+            // logger::raw_ln("flux -face mod ",  flux_rho_face[link_id]);
             flux_rhov_face[link_id] = flux_dir.rhovel;
             flux_rhoe_face[link_id] = flux_dir.rhoe;
         });

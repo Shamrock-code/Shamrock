@@ -17,12 +17,14 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/NodeNextRho.hpp"
 #include <type_traits>
 
 namespace {
+
     using Direction = shammodels::basegodunov::modules::Direction;
 
     template<class Tvec, class TgridVec>
@@ -37,7 +39,7 @@ namespace {
         using AMRBlock = typename Config::AMRBlock;
 
         public:
-        inline static void kernel(Edges &edges, u32 block_size, Tscal dt) {
+        inline static void kernel(Edges &edges, u32 block_size) {
 
             edges.cell_neigh_graph.graph.for_each([&](u64 id,
                                                       const OrientedAMRGraph &oriented_cell_graph) {
@@ -76,6 +78,9 @@ namespace {
 
                 auto &span_old_rho  = edges.spans_rho_old.get_spans().get(id);
                 auto &span_next_rho = edges.spans_rho_next.get_spans().get(id);
+                auto &dt_over2      = edges.dt_over2.value;
+
+                logger::raw_ln("dt_over_2", dt_over2, "\n");
 
                 sham::kernel_call(
                     q,
@@ -97,7 +102,7 @@ namespace {
                         span_old_rho},
                     sham::MultiRef{span_next_rho},
                     cell_count,
-                    [block_size, dt](
+                    [block_size, dt_over2](
                         i32 i,
                         const Tscal *__restrict cell_size,
                         const Tvec *__restrict aabb_lower,
@@ -163,8 +168,11 @@ namespace {
 
                         graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_xp[link_id] * S_ij;
+                            // logger::raw("Sij = ", S_ij, "\n");
+                            dtrho -= flux_rho_xp[id_b] * S_ij;
                         });
+
+                        // logger::raw("dtrho = ", dtrho, "\n");
                         graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
                             dtrho -= flux_rho_xm[link_id] * S_ij;
@@ -188,14 +196,23 @@ namespace {
 
                         dtrho /= V_i;
 
-                        next_rho[i] = old_rho[i] + dt * dtrho;
+                        auto dt = 2 * dt_over2;
+
+                        // for(int ii = 4990; ii < 5000; ii++){
+
+                        //     logger::raw_ln("[",i,"] : ", dt, dtrho , old_rho[ii],"\n");
+                        // }
+
+                        next_rho[i] = (old_rho[i] + dt * dtrho);
                     });
             });
         }
     };
+
 } // namespace
 
 namespace shammodels::basegodunov::modules {
+
     template<class Tvec, class TgridVec>
     void NodeNextRho<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
@@ -205,8 +222,119 @@ namespace shammodels::basegodunov::modules {
         edges.spans_rho_old.check_sizes(edges.sizes.indexes);
         edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
 
-        KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size, dt);
+        if (false) {
+            for (auto id = 0; id < 1; id++) {
+                auto &buf = edges.spans_rho_next.get_buf(id);
+                auto vec  = buf.copy_to_stdvec();
+                logger::raw_ln(id, "next-rho-sz = ", "--", buf.get_size());
+                for (int i = 0; i < buf.get_size(); i++) {
+                    logger::raw_ln("rho-next-bf", i, vec[i]);
+                }
+            }
+        }
+
+        KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size);
+
+        if (true) {
+            for (auto id = 0; id < 1; id++) {
+                auto &buf_rho_next = edges.spans_rho_next.get_buf(id);
+                auto &buf_rho_old  = edges.spans_rho_old.get_field(id).get_buf();
+                auto vec_old       = buf_rho_old.copy_to_stdvec();
+                auto vec_rho_next  = buf_rho_next.copy_to_stdvec();
+                logger::raw_ln(id, "next-rho-sz = ", "--", buf_rho_old.get_size());
+                for (int i = 0; i < buf_rho_old.get_size(); i++) {
+                    logger::raw_ln("[", i, "] : ", vec_old[i], vec_rho_next[i], "\n");
+                }
+            }
+        }
     }
+
+    // template<class Tvec, class TgridVec>
+    // void NodeNextRho<Tvec, TgridVec>::_impl_evaluate_internal() {
+    //     StackEntry stack_loc{};
+    //     auto edges                                                   = get_edges();
+
+    //     edges.flux_rho_face_xp.check_size(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
+
+    //     //
+    //     flux_rho_face_xm.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xm));
+    //     //
+    //     flux_rho_face_yp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::yp));
+    //     //
+    //     flux_rho_face_ym.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::ym));
+    //     //
+    //     flux_rho_face_zp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::zp));
+    //     //
+    //     flux_rho_face_zm.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::zm));
+    //     auto spans_block_cell_sizes      = edges.spans_block_cell_sizes.get_spans();
+    //     auto spans_cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans();
+    //     edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+    //     edges.spans_rho_next_acc.ensure_sizes(edges.sizes.indexes);
+    //     edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
+    //     auto spans_rho_old = edges.spans_rho_old.get_spans();
+    //     auto spans_rho_next_acc = edges.spans_rho_next_acc.get_spans();
+    //     auto spans_rho_next = edges.spans_rho_next.get_spans();
+
+    //     // using Funct_ = RhoNext<Tvec, TgridVec, AMRBlock>;
+    //     // auto next_rho_funct
+    //     //     = spans_block_cell_sizes.template map<Funct_>([&](u64 id, auto &csize) -> Funct_ {
+    //     //           return {spans_cell0block_aabb_lower.get(id),
+    //     spans_block_cell_sizes.get(id)};
+    //     //       });
+
+    //     auto graphs_xp = edges.cell_neigh_graph.get_refs_dir(Direction::xp);
+    //     // auto graphs_xm = edges.cell_neigh_graph.get_refs_dir(Direction::xm);
+    //     // auto graphs_yp = edges.cell_neigh_graph.get_refs_dir(Direction::yp);
+    //     // auto graphs_ym = edges.cell_neigh_graph.get_refs_dir(Direction::ym);
+    //     // auto graphs_zp = edges.cell_neigh_graph.get_refs_dir(Direction::zp);
+    //     // auto graphs_zm = edges.cell_neigh_graph.get_refs_dir(Direction::zm);
+
+    //     shambase::DistributedData<u32> counts_xp
+    //         = graphs_xp.template map<u32>([&](u64 id, auto &graph) {
+    //               return graph.get().link_count;
+    //           });
+    //     // shambase::DistributedData<u32> counts_xm
+    //     //     = graphs_xm.template map<u32>([&](u64 id, auto &graph) {
+    //     //           return graph.get().obj_cnt;
+    //     //       });
+    //     // shambase::DistributedData<u32> counts_yp
+    //     //     = graphs_yp.template map<u32>([&](u64 id, auto &graph) {
+    //     //           return graph.get().obj_cnt;
+    //     //       });
+    //     // shambase::DistributedData<u32> counts_ym
+    //     //     = graphs_ym.template map<u32>([&](u64 id, auto &graph) {
+    //     //           return graph.get().obj_cnt;
+    //     //       });
+    //     // shambase::DistributedData<u32> counts_zp
+    //     //     = graphs_zp.template map<u32>([&](u64 id, auto &graph) {
+    //     //           return graph.get().obj_cnt;
+    //     //       });
+    //     // shambase::DistributedData<u32> counts_zm
+    //     //     = graphs_zm.template map<u32>([&](u64 id, auto &graph) {
+    //     //           return graph.get().obj_cnt;
+    //     //       });
+
+    //     sham::distributed_data_kernel_call(
+    //         shamsys::instance::get_compute_scheduler_ptr(),
+    //         sham::DDMultiRef{edges.flux_rho_face_xp.link_fields},
+    //         sham::DDMultiRef{spans_rho_next_acc},
+    //         counts_xp,
+    //         [](u32 id_a,
+
+    //            const Tscal* rho_face_xp,
+
+    //            Tscal *__restrict rho_n_acc) {
+    //             logger::raw("dtrho = ", rho_face_xp[id_a],"\n");
+
+    //             // link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+    //             //     logger::raw("dtrho = ", rho_n_acc[id_a], acc_link_field[id_a],"\n");
+    //             //     // rho_n_acc[id_a]
+    //             //     //     = compute.get_link_field_val(id_a, id_b, acc_link_field[id_a]);
+    //             //     // logger::raw("dtrho = ", rho_n_acc[id_a], acc_link_field[link_id],"\n");
+    //             // });
+    //         });
+    // }
+
 } // namespace shammodels::basegodunov::modules
 
 template class shammodels::basegodunov::modules::NodeNextRho<f64_3, i64_3>;

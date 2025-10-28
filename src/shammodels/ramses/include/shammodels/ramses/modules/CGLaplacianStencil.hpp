@@ -66,31 +66,20 @@ namespace shammodels::basegodunov {
             // return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
         };
 
-        T W_i                = field_access(cell_global_id);
-        T W_xp               = get_avg_neigh(graph_iter_xp);
-        T W_xm               = get_avg_neigh(graph_iter_xm);
-        T W_yp               = get_avg_neigh(graph_iter_yp);
-        T W_ym               = get_avg_neigh(graph_iter_ym);
-        T W_zp               = get_avg_neigh(graph_iter_zp);
-        T W_zm               = get_avg_neigh(graph_iter_zm);
+        T W_i  = field_access(cell_global_id);
+        T W_xp = get_avg_neigh(graph_iter_xp);
+        T W_xm = get_avg_neigh(graph_iter_xm);
+        T W_yp = get_avg_neigh(graph_iter_yp);
+        T W_ym = get_avg_neigh(graph_iter_ym);
+        T W_zp = get_avg_neigh(graph_iter_zp);
+        T W_zm = get_avg_neigh(graph_iter_zm);
+
         T inv_delta_cell_sqr = 1.0 / (delta_cell * delta_cell);
-        // logger::raw("global", g_cnt);
-
-        // logger::raw_ln(cell_global_id, W_xm, W_ym, W_zm, W_xp, W_yp, W_zp, "\n");
-
-        //  logger::raw_ln(W_i);
-
-        // logger::raw_ln(inv_delta_cell_sqr);
 
         T laplace_x = inv_delta_cell_sqr * (-W_xm + 2. * W_i - W_xp);
         T laplace_y = inv_delta_cell_sqr * (-W_ym + 2. * W_i - W_yp);
         T laplace_z = inv_delta_cell_sqr * (-W_zm + 2. * W_i - W_zp);
-
-        T res = 0;
-
-        // if(0 <= cell_global_id && cell_global_id <= 63 )
-        res = (laplace_x + laplace_y + laplace_z);
-        // logger::raw_ln(res);
+        T res       = (laplace_x + laplace_y + laplace_z);
 
         return -res;
     }

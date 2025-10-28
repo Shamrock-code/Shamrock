@@ -98,21 +98,26 @@ namespace shammodels::basegodunov {
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
         BICGSTAB  = 3, // bicgstab
-        MULTIGRID = 4  // multigrid
+        MULTIGRID = 4, // multigrid
+        COUPLING  = 5
     };
+
+    enum CouplinGravitygMode { NoCoupling = 0, RAMSES_LIKE = 1 };
 
     template<class Tvec>
     struct GravityConfig {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        GravityMode gravity_mode = NoGravity;
-        Tscal tol                = 1e-8; // convergence tolerance
-        Tscal tol_hp_bk          = 1e-6; // tol to check happy breakdown and restart
-        Tscal G                  = 1.; // for some tests purpose one can want to fix the value of G
-        bool set_G               = false;
-        u32 Niter_max            = 100;
+        using Tscal                               = shambase::VecComponent<Tvec>;
+        GravityMode gravity_mode                  = NoGravity;
+        CouplinGravitygMode coupling_gravity_mode = NoCoupling;
+        Tscal tol                                 = 1e-8; // convergence tolerance
+        Tscal tol_hp_bk = 1e-6; // tol to check happy breakdown and restart
+        Tscal G         = 1.;   // for some tests purpose one can want to fix the value of G
+        bool set_G      = false;
+        u32 Niter_max   = 100;
         inline Tscal get_tolerance() { return tol; }
         inline Tscal get_happy_bk_tolerance() { return tol_hp_bk; }
         inline bool is_gravity_on() { return (gravity_mode != NoGravity); }
+        inline bool is_coupling_gravity_on() { return (coupling_gravity_mode != NoCoupling); }
     };
 
     template<class Tvec>
@@ -226,6 +231,7 @@ struct shammodels::basegodunov::SolverConfig {
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    inline bool is_coupling_gravity_on() { return gravity_config.is_coupling_gravity_on(); }
     inline Tscal get_grav_happy_bk_tol() { return gravity_config.get_happy_bk_tolerance(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

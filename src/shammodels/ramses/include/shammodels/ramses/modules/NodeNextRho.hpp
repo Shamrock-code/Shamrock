@@ -19,13 +19,16 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/solvegraph/NeighGraphLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include <memory>
 #include <string>
 
@@ -39,25 +42,24 @@ namespace shammodels::basegodunov::modules {
         using AMRBlock = typename Config::AMRBlock;
 
         u32 block_size;
-        Tscal dt;
 
         public:
-        NodeNextRho(u32 block_size, Tscal dt) : block_size(block_size), dt(dt) {}
+        NodeNextRho(u32 block_size) : block_size(block_size) {}
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_cell0block_aabb_lower;
+            const shamrock::solvergraph::IFieldRefs<Tscal> &spans_rho_old;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_xp;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_xm;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_yp;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_ym;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zp;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zm;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_old;
-
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_next;
+            const shamrock::solvergraph::ScalarEdge<Tscal> &dt_over2;
+            shamrock::solvergraph::Field<Tscal> &spans_rho_next;
         };
 
         inline void set_edges(
@@ -65,27 +67,28 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_cell0block_aabb_lower,
+            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> spans_rho_old,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xm,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_yp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_ym,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zm,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_old,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_next) {
-            __internal_set_ro_edges({
-                sizes,
-                cell_neigh_graph,
-                spans_block_cell_sizes,
-                spans_cell0block_aabb_lower,
-                flux_rho_face_xp,
-                flux_rho_face_xm,
-                flux_rho_face_yp,
-                flux_rho_face_ym,
-                flux_rho_face_zp,
-                flux_rho_face_zm,
-                spans_rho_old,
-            });
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2,
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_rho_next) {
+            __internal_set_ro_edges(
+                {sizes,
+                 cell_neigh_graph,
+                 spans_block_cell_sizes,
+                 spans_cell0block_aabb_lower,
+                 spans_rho_old,
+                 flux_rho_face_xp,
+                 flux_rho_face_xm,
+                 flux_rho_face_yp,
+                 flux_rho_face_ym,
+                 flux_rho_face_zp,
+                 flux_rho_face_zm,
+                 dt_over2});
             __internal_set_rw_edges({spans_rho_next});
         }
 
@@ -95,14 +98,15 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
-                get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(4),
+                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(4),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(5),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(6),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(7),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(8),
                 get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(9),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(10),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0)};
+                get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(10),
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(11),
+                get_rw_edge<shamrock::solvergraph::Field<Tscal>>(0)};
         }
 
         void _impl_evaluate_internal();

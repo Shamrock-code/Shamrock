@@ -1010,7 +1010,7 @@ namespace shammath {
             return *this;
         }
 
-        inline SymTensorCollection<T, 1, 1> &operator+=(const SymTensorCollection<T, 0, 1> other) {
+        inline SymTensorCollection<T, 1, 1> &operator+=(const SymTensorCollection<T, 1, 1> other) {
 
             t1 += other.t1;
 

@@ -503,6 +503,11 @@ namespace shamtest {
         shambindings::modify_py_sys_path(shamcomm::world_rank() == 0);
         ON_RANK_0(shamcomm::logs::print_faint_row());
 
+        // import shamrock in pybind
+        py::exec(R"(
+            import shamrock
+        )");
+
         std::filesystem::create_directories("tests/figures");
 
         using namespace shamtest::details;

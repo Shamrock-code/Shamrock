@@ -47,6 +47,8 @@
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
+#include "shammodels/ramses/modules/TimeIntegratorDust.hpp"
+#include "shammodels/ramses/modules/TimeIntegratorSelfGravity.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
@@ -748,12 +750,20 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (solver_config.should_compute_rho_mean()) {
         modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};
         node.set_edges(
-            storage.block_counts, storage.block_cell_sizes, storage.refs_rho, storage.cell_mass);
+            storage.block_counts,
+            storage.block_cell_sizes,
+            storage.refs_rho,
+            storage.dt,
+            storage.cell_mass);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
 
         modules::NodeComputeSumOverV<Tscal> node2{AMRBlock::block_size};
         node2.set_edges(
-            storage.block_counts, storage.cell_mass, storage.simulation_volume, storage.rho_mean);
+            storage.block_counts,
+            storage.cell_mass,
+            storage.simulation_volume,
+            storage.dt,
+            storage.rho_mean);
         solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
     }
 
@@ -804,6 +814,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.cell_graph_edge,
                 storage.block_cell_sizes,
                 storage.refs_phi,
+                storage.dt,
                 storage.phi_g_old);
 
             init_self_gravity_sequences.push_back(
@@ -1247,7 +1258,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
-    if (solver_config.is_gravity_on() && (shambase::get_check_ref(storage.dt).value != 0)) {
+    if (solver_config.is_gravity_on()) {
 
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> end_self_gravity_sequences;
 
@@ -1291,6 +1302,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.block_counts,
                 storage.block_cell_sizes,
                 storage.refs_rho_next,
+                storage.dt,
                 storage.cell_mass);
 
             end_self_gravity_sequences.push_back(
@@ -1302,6 +1314,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.block_counts,
                 storage.cell_mass,
                 storage.simulation_volume,
+                storage.dt,
                 storage.rho_mean);
 
             end_self_gravity_sequences.push_back(
@@ -1349,53 +1362,55 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 std::make_shared<decltype(node_cg_next)>(std::move(node_cg_next)));
         }
 
-        //     /** Compute new gravitational acceleration **/
-        //     {
-        //         modules::NodeSelfGravityAcceleration<Tvec, TgridVec>
-        //         node_g_new{AMRBlock::block_size}; node_g_new.set_edges(
-        //             storage.block_counts_with_ghost,
-        //             storage.cell_graph_edge,
-        //             storage.block_cell_sizes,
-        //             storage.refs_phi_new,
-        //             storage.phi_g_new);
+        /** Compute new gravitational acceleration **/
+        {
+            modules::NodeSelfGravityAcceleration<Tvec, TgridVec> node_g_new{AMRBlock::block_size};
+            node_g_new.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.refs_phi_new,
+                storage.dt,
+                storage.phi_g_new);
 
-        //         end_self_gravity_sequences.push_back(
-        //             std::make_shared<decltype(node_g_new)>(std::move(node_g_new)));
-        //     }
+            end_self_gravity_sequences.push_back(
+                std::make_shared<decltype(node_g_new)>(std::move(node_g_new)));
+        }
 
-        //     /** Compute new momemtum and new energy */
-        //     {
-        //         modules::NodeGetNextConsVar<Tvec, TgridVec> node_new_cons_var{
-        //             AMRBlock::block_size, 2 * shambase::get_check_ref(storage.dt_over2).value};
-        //         node_new_cons_var.set_edges(
-        //             storage.block_counts_with_ghost,
-        //             storage.cell_graph_edge,
-        //             storage.block_cell_sizes,
-        //             storage.cell0block_aabb_lower,
-        //             storage.flux_rhov_face_xp,
-        //             storage.flux_rhov_face_xm,
-        //             storage.flux_rhov_face_yp,
-        //             storage.flux_rhov_face_ym,
-        //             storage.flux_rhov_face_zp,
-        //             storage.flux_rhov_face_zm,
-        //             storage.flux_rhoe_face_xp,
-        //             storage.flux_rhoe_face_xm,
-        //             storage.flux_rhoe_face_yp,
-        //             storage.flux_rhoe_face_ym,
-        //             storage.flux_rhoe_face_zp,
-        //             storage.flux_rhoe_face_zm,
-        //             storage.refs_rho,
-        //             storage.refs_rho_next,
-        //             storage.refs_rhov,
-        //             storage.refs_rhoe,
-        //             storage.phi_g_old,
-        //             storage.phi_g_new,
-        //             storage.refs_rhov_next,
-        //             storage.refs_rhoe_next);
+        /** Compute new momemtum and new energy */
+        {
+            modules::NodeGetNextConsVar<Tvec, TgridVec> node_new_cons_var{
+                AMRBlock::block_size, 2 * shambase::get_check_ref(storage.dt_over2).value};
+            node_new_cons_var.set_edges(
+                storage.block_counts_with_ghost,
+                storage.cell_graph_edge,
+                storage.block_cell_sizes,
+                storage.cell0block_aabb_lower,
+                storage.flux_rhov_face_xp,
+                storage.flux_rhov_face_xm,
+                storage.flux_rhov_face_yp,
+                storage.flux_rhov_face_ym,
+                storage.flux_rhov_face_zp,
+                storage.flux_rhov_face_zm,
+                storage.flux_rhoe_face_xp,
+                storage.flux_rhoe_face_xm,
+                storage.flux_rhoe_face_yp,
+                storage.flux_rhoe_face_ym,
+                storage.flux_rhoe_face_zp,
+                storage.flux_rhoe_face_zm,
+                storage.refs_rho,
+                storage.refs_rho_next,
+                storage.refs_rhov,
+                storage.refs_rhoe,
+                storage.phi_g_old,
+                storage.phi_g_new,
+                storage.dt,
+                storage.refs_rhov_next,
+                storage.refs_rhoe_next);
 
-        //         end_self_gravity_sequences.push_back(
-        //             std::make_shared<decltype(node_new_cons_var)>(std::move(node_new_cons_var)));
-        //     }
+            end_self_gravity_sequences.push_back(
+                std::make_shared<decltype(node_new_cons_var)>(std::move(node_new_cons_var)));
+        }
 
         /*****/
         shamrock::solvergraph::OperationSequence seq(
@@ -1523,26 +1538,39 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     // compute dt fields
+
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on()) {
-        dt_compute.compute_dt_dust_fields();
+    if (!solver_config.is_gravity_on()) {
+        dt_compute.compute_dt_fields();
+
+        if (solver_config.is_dust_on()) {
+            dt_compute.compute_dt_dust_fields();
+        }
     }
 
     // RK2 + flux lim
-    if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
-        modules::TimeIntegrator dt_integ(context, solver_config, storage);
-        dt_integ.forward_euler(dt_input);
-    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
-        modules::DragIntegrator drag_integ(context, solver_config, storage);
-        drag_integ.involve_with_no_src(dt_input);
-        drag_integ.enable_irk1_drag_integrator(dt_input);
-    } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::EXPO) {
-        modules::DragIntegrator drag_integ(context, solver_config, storage);
-        drag_integ.involve_with_no_src(dt_input);
-        drag_integ.enable_expo_drag_integrator(dt_input);
-    } else {
-        shambase::throw_unimplemented();
+    if (!solver_config.is_gravity_on()) {
+        if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+            modules::TimeIntegrator dt_integ(context, solver_config, storage);
+            dt_integ.forward_euler(dt_input);
+            modules::TimeIntegratorDust dt_integ_dust(context, solver_config, storage);
+            dt_integ_dust.forward_euler(dt_input);
+        } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+            modules::DragIntegrator drag_integ(context, solver_config, storage);
+            drag_integ.involve_with_no_src(dt_input);
+            drag_integ.enable_irk1_drag_integrator(dt_input);
+        } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::EXPO) {
+            modules::DragIntegrator drag_integ(context, solver_config, storage);
+            drag_integ.involve_with_no_src(dt_input);
+            drag_integ.enable_expo_drag_integrator(dt_input);
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    else if (solver_config.is_gravity_on()) {
+        modules::TimeIntegratorSelfGravity dt_integ_self_gravity(context, solver_config, storage);
+        dt_integ_self_gravity.forward_euler(dt_input);
     }
 
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
@@ -1558,13 +1586,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     solver_config.set_next_dt(new_dt);
     solver_config.set_time(t_current + dt_input);
 
-    storage.dtrho.reset();
-    storage.dtrhov.reset();
-    storage.dtrhoe.reset();
+    if (!solver_config.is_gravity_on()) {
+        storage.dtrho.reset();
+        storage.dtrhov.reset();
+        storage.dtrhoe.reset();
 
-    if (solver_config.is_dust_on()) {
-        storage.dtrho_dust.reset();
-        storage.dtrhov_dust.reset();
+        if (solver_config.is_dust_on()) {
+            storage.dtrho_dust.reset();
+            storage.dtrhov_dust.reset();
+        }
     }
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {

@@ -26,6 +26,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include <memory>
 #include <string>
 
@@ -68,6 +69,7 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe_old;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_phi_g_old;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_phi_g_next;
+            const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
 
             shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov_next;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe_next;
@@ -98,6 +100,7 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g_next,
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
 
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov_next,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe_next) {
@@ -124,7 +127,8 @@ namespace shammodels::basegodunov::modules {
                  spans_rhov_old,
                  spans_rhoe_old,
                  spans_phi_g_old,
-                 spans_phi_g_next});
+                 spans_phi_g_next,
+                 dt});
 
             __internal_set_rw_edges({spans_rhov_next, spans_rhoe_next});
         }
@@ -153,6 +157,7 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(19),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(20),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(21),
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(22),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1)};
         }

@@ -38,15 +38,15 @@ namespace shammodels::basegodunov::modules {
     void NodeCGLoop<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_phi.check_sizes(edges.sizes.indexes);
-        edges.spans_rho.check_sizes(edges.sizes.indexes);
-        edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
-        edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
 
-        logger::raw_ln("dt in NodeCGLoop", edges.dt.value);
+        // logger::raw_ln("dt in NodeCGLoop", edges.dt.value);
 
         if (edges.dt.value != 0) {
+            edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+            edges.spans_phi.check_sizes(edges.sizes.indexes);
+            edges.spans_rho.check_sizes(edges.sizes.indexes);
+            edges.spans_phi_res.ensure_sizes(edges.sizes.indexes);
+            edges.spans_phi_p.ensure_sizes(edges.sizes.indexes);
 
             if (false) {
 

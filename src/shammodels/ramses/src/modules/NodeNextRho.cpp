@@ -78,9 +78,7 @@ namespace {
 
                 auto &span_old_rho  = edges.spans_rho_old.get_spans().get(id);
                 auto &span_next_rho = edges.spans_rho_next.get_spans().get(id);
-                auto &dt_over2      = edges.dt_over2.value;
-
-                logger::raw_ln("dt_over_2", dt_over2, "\n");
+                auto &dt_           = edges.dt.value;
 
                 sham::kernel_call(
                     q,
@@ -102,7 +100,7 @@ namespace {
                         span_old_rho},
                     sham::MultiRef{span_next_rho},
                     cell_count,
-                    [block_size, dt_over2](
+                    [block_size, dt_](
                         i32 i,
                         const Tscal *__restrict cell_size,
                         const Tvec *__restrict aabb_lower,
@@ -196,14 +194,13 @@ namespace {
 
                         dtrho /= V_i;
 
-                        auto dt = 2 * dt_over2;
+                        // for(int ii = 0; ii < 100; ii++){
 
-                        // for(int ii = 4990; ii < 5000; ii++){
-
-                        //     logger::raw_ln("[",i,"] : ", dt, dtrho , old_rho[ii],"\n");
+                        //     logger::raw_ln("[",ii,"] : ", dt_, dt_ * dtrho ,dt_ * dtrho +
+                        //     old_rho[ii], "\n");
                         // }
 
-                        next_rho[i] = (old_rho[i] + dt * dtrho);
+                        next_rho[i] = (old_rho[i] + dt_ * dtrho);
                     });
             });
         }
@@ -217,35 +214,45 @@ namespace shammodels::basegodunov::modules {
     void NodeNextRho<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
-        edges.spans_rho_old.check_sizes(edges.sizes.indexes);
-        edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
 
-        if (false) {
-            for (auto id = 0; id < 1; id++) {
-                auto &buf = edges.spans_rho_next.get_buf(id);
-                auto vec  = buf.copy_to_stdvec();
-                logger::raw_ln(id, "next-rho-sz = ", "--", buf.get_size());
-                for (int i = 0; i < buf.get_size(); i++) {
-                    logger::raw_ln("rho-next-bf", i, vec[i]);
+        logger::raw_ln("dt in NodeRhoNext", edges.dt.value);
+
+        if (edges.dt.value != 0) {
+            edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+            edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
+            edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+            edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
+
+            if (false) {
+                for (auto id = 0; id < 1; id++) {
+                    auto &buf = edges.spans_rho_next.get_buf(id);
+                    auto vec  = buf.copy_to_stdvec();
+                    logger::raw_ln(id, "next-rho-sz = ", "--", buf.get_size());
+                    for (int i = 0; i < buf.get_size(); i++) {
+                        logger::raw_ln("rho-next-bf", i, vec[i]);
+                    }
                 }
             }
+
+            KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size);
+
+            if (false) {
+                for (auto id = 0; id < 1; id++) {
+                    auto &buf_rho_next = edges.spans_rho_next.get_buf(id);
+                    auto &buf_rho_old  = edges.spans_rho_old.get_field(id).get_buf();
+                    auto vec_old       = buf_rho_old.copy_to_stdvec();
+                    auto vec_rho_next  = buf_rho_next.copy_to_stdvec();
+                    logger::raw_ln(id, "next-rho-sz = ", "--", buf_rho_old.get_size());
+                    for (int i = 0; i < buf_rho_old.get_size(); i++) {
+                        logger::raw_ln("[", i, "] : ", vec_old[i], vec_rho_next[i], "\n");
+                    }
+                }
+            }
+
         }
 
-        KernelNextRho<Tvec, TgridVec>::kernel(edges, block_size);
-
-        if (true) {
-            for (auto id = 0; id < 1; id++) {
-                auto &buf_rho_next = edges.spans_rho_next.get_buf(id);
-                auto &buf_rho_old  = edges.spans_rho_old.get_field(id).get_buf();
-                auto vec_old       = buf_rho_old.copy_to_stdvec();
-                auto vec_rho_next  = buf_rho_next.copy_to_stdvec();
-                logger::raw_ln(id, "next-rho-sz = ", "--", buf_rho_old.get_size());
-                for (int i = 0; i < buf_rho_old.get_size(); i++) {
-                    logger::raw_ln("[", i, "] : ", vec_old[i], vec_rho_next[i], "\n");
-                }
-            }
+        else {
+            return;
         }
     }
 

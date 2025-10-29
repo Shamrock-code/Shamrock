@@ -99,7 +99,6 @@ namespace shammodels::basegodunov {
         PCG       = 2, // preconditioned conjuguate gradient
         BICGSTAB  = 3, // bicgstab
         MULTIGRID = 4, // multigrid
-        COUPLING  = 5
     };
 
     enum CouplinGravitygMode { NoCoupling = 0, RAMSES_LIKE = 1 };

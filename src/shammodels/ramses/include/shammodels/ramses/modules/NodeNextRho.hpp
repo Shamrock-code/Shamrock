@@ -58,7 +58,7 @@ namespace shammodels::basegodunov::modules {
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_ym;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zp;
             const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zm;
-            const shamrock::solvergraph::ScalarEdge<Tscal> &dt_over2;
+            const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
             shamrock::solvergraph::Field<Tscal> &spans_rho_next;
         };
 
@@ -74,7 +74,7 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_ym,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zm,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2,
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_rho_next) {
             __internal_set_ro_edges(
                 {sizes,
@@ -88,7 +88,7 @@ namespace shammodels::basegodunov::modules {
                  flux_rho_face_ym,
                  flux_rho_face_zp,
                  flux_rho_face_zm,
-                 dt_over2});
+                 dt});
             __internal_set_rw_edges({spans_rho_next});
         }
 

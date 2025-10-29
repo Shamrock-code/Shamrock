@@ -39,6 +39,7 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const shamrock::solvergraph::IFieldRefs<T> &spans_field;
             const shamrock::solvergraph::ScalarEdge<T> &total_volume;
+            const shamrock::solvergraph::ScalarEdge<T> &dt;
             shamrock::solvergraph::ScalarEdge<T> &mean_val;
         };
 
@@ -46,8 +47,9 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_field,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> total_volume,
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> dt,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<T>> mean_val) {
-            __internal_set_ro_edges({sizes, spans_field, total_volume});
+            __internal_set_ro_edges({sizes, spans_field, total_volume, dt});
             __internal_set_rw_edges({mean_val});
         }
 
@@ -56,6 +58,7 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
                 get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(1),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<T>>(2),
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<T>>(3),
                 get_rw_edge<shamrock::solvergraph::ScalarEdge<T>>(0)};
         }
 

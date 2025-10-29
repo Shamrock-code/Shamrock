@@ -37,7 +37,7 @@ namespace {
         using AMRBlock = typename Config::AMRBlock;
 
         public:
-        inline static void kernel(Edges &edges, u32 block_size, Tscal dt) {
+        inline static void kernel(Edges &edges, u32 block_size) {
 
             edges.cell_neigh_graph.graph.for_each([&](u64 id,
                                                       const OrientedAMRGraph &oriented_cell_graph) {
@@ -95,6 +95,8 @@ namespace {
                 auto &span_next_phi_g = edges.spans_phi_g_next.get_spans().get(id);
                 auto &span_next_rhov  = edges.spans_rhov_next.get_spans().get(id);
                 auto &span_next_rhoe  = edges.spans_rhoe_next.get_spans().get(id);
+
+                auto &dt = edges.dt.value;
 
                 sham::kernel_call(
                     q,
@@ -190,52 +192,58 @@ namespace {
                         graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
                             dtrhov -= flux_rhov_xp[link_id] * S_ij;
-                        });
-                        graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_xm[link_id] * S_ij;
-                        });
-                        graph_iter_yp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_yp[link_id] * S_ij;
-                        });
-                        graph_iter_ym.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_ym[link_id] * S_ij;
-                        });
-                        graph_iter_zp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_zp[link_id] * S_ij;
-                        });
-                        graph_iter_zm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_zm[link_id] * S_ij;
-                        });
-
-                        graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
                             dtrhoe -= flux_rhoe_xp[link_id] * S_ij;
                         });
                         graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
+                            dtrhov -= flux_rhov_xm[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_xm[link_id] * S_ij;
                         });
                         graph_iter_yp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
+                            dtrhov -= flux_rhov_yp[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_yp[link_id] * S_ij;
                         });
                         graph_iter_ym.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
+                            dtrhov -= flux_rhov_ym[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_ym[link_id] * S_ij;
                         });
                         graph_iter_zp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
+                            dtrhov -= flux_rhov_zp[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_zp[link_id] * S_ij;
                         });
                         graph_iter_zm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
+                            dtrhov -= flux_rhov_zm[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_zm[link_id] * S_ij;
                         });
+
+                        // graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_xp[link_id] * S_ij;
+                        // });
+                        // graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_xm[link_id] * S_ij;
+                        // });
+                        // graph_iter_yp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_yp[link_id] * S_ij;
+                        // });
+                        // graph_iter_ym.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_ym[link_id] * S_ij;
+                        // });
+                        // graph_iter_zp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_zp[link_id] * S_ij;
+                        // });
+                        // graph_iter_zm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
+                        //     Tscal S_ij = get_face_surface(i, id_b);
+                        //     dtrhoe -= flux_rhoe_zm[link_id] * S_ij;
+                        // });
 
                         dtrhoe /= V_i;
                         dtrhov /= V_i;
@@ -252,6 +260,12 @@ namespace {
                                            * sham::dot((old_rhov[i] / old_rho[i]), old_phi_g[i])
                                        + next_rho[i]
                                              * sham::dot((tmp / next_rho[i]), next_phi_g[i]));
+
+                        // for(int ii = 0; ii < 100; ii++){
+
+                        //     logger::raw_ln("[",ii,"] : ", old_rhoe[ii], dt * dtrhoe , dt * dtrhoe
+                        //     + old_rhoe[ii], next_rhoe[ii], "\n");
+                        // }
                     });
             });
         }
@@ -264,19 +278,25 @@ namespace shammodels::basegodunov::modules {
     void NodeGetNextConsVar<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
-        edges.spans_rho_old.check_sizes(edges.sizes.indexes);
-        edges.spans_rho_next.check_sizes(edges.sizes.indexes);
-        edges.spans_rhov_old.check_sizes(edges.sizes.indexes);
-        edges.spans_rhoe_old.check_sizes(edges.sizes.indexes);
-        edges.spans_phi_g_old.check_sizes(edges.sizes.indexes);
-        edges.spans_phi_g_next.check_sizes(edges.sizes.indexes);
+        logger::raw_ln("dt in NodeGetNextConsVar", edges.dt.value);
 
-        edges.spans_rhov_next.ensure_sizes(edges.sizes.indexes);
-        edges.spans_rhoe_next.ensure_sizes(edges.sizes.indexes);
+        if (edges.dt.value != 0) {
+            edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+            edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
+            edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+            edges.spans_rho_next.check_sizes(edges.sizes.indexes);
+            edges.spans_rhov_old.check_sizes(edges.sizes.indexes);
+            edges.spans_rhoe_old.check_sizes(edges.sizes.indexes);
+            edges.spans_phi_g_old.check_sizes(edges.sizes.indexes);
+            edges.spans_phi_g_next.check_sizes(edges.sizes.indexes);
 
-        KernelGetNextConsVar<Tvec, TgridVec>::kernel(edges, block_size, dt);
+            edges.spans_rhov_next.ensure_sizes(edges.sizes.indexes);
+            edges.spans_rhoe_next.ensure_sizes(edges.sizes.indexes);
+
+            KernelGetNextConsVar<Tvec, TgridVec>::kernel(edges, block_size);
+        } else {
+            return;
+        }
     }
 } // namespace shammodels::basegodunov::modules
 

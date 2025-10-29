@@ -184,11 +184,18 @@ namespace shammodels::basegodunov::modules {
     void NodeSelfGravityAcceleration<Tvec, TgridVec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
         auto edges = get_edges();
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_phi.check_sizes(edges.sizes.indexes);
-        edges.spans_phi_g.ensure_sizes(edges.sizes.indexes);
 
-        KernelSelfGravAcc<Tvec, TgridVec>::kernel(edges, block_size);
+        logger::raw_ln("dt in compute_grad_acc", edges.dt.value);
+
+        if (edges.dt.value != 0) {
+            edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+            edges.spans_phi.check_sizes(edges.sizes.indexes);
+            edges.spans_phi_g.ensure_sizes(edges.sizes.indexes);
+
+            KernelSelfGravAcc<Tvec, TgridVec>::kernel(edges, block_size);
+        } else {
+            return;
+        }
     }
 
 } // namespace shammodels::basegodunov::modules

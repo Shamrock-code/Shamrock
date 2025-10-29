@@ -22,6 +22,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 
 namespace shammodels::basegodunov::modules {
 
@@ -38,6 +39,7 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::Indexes<u32> &sizes;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhos;
+            const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_mass;
         };
 
@@ -45,8 +47,9 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhos,
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_mass) {
-            __internal_set_ro_edges({sizes, spans_block_cell_sizes, spans_rhos});
+            __internal_set_ro_edges({sizes, spans_block_cell_sizes, spans_rhos, dt});
             __internal_set_rw_edges({spans_mass});
         }
 
@@ -55,6 +58,7 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(3),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
             };
         }

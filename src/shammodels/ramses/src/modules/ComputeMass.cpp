@@ -73,17 +73,23 @@ namespace shammodels::basegodunov::modules {
     void NodeComputeMass<Tvec, TgridVec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
-        edges.spans_rhos.check_sizes(edges.sizes.indexes);
+        logger::raw_ln("dt in NodeComputeMass", edges.dt.value);
+        if (edges.dt.value != 0) {
+            edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
+            edges.spans_rhos.check_sizes(edges.sizes.indexes);
 
-        edges.spans_mass.ensure_sizes(edges.sizes.indexes);
+            edges.spans_mass.ensure_sizes(edges.sizes.indexes);
 
-        KernelComputeMass<Tscal>::kernel(
-            edges.spans_block_cell_sizes.get_spans(),
-            edges.spans_rhos.get_spans(),
-            edges.spans_mass.get_spans(),
-            edges.sizes.indexes,
-            block_size);
+            KernelComputeMass<Tscal>::kernel(
+                edges.spans_block_cell_sizes.get_spans(),
+                edges.spans_rhos.get_spans(),
+                edges.spans_mass.get_spans(),
+                edges.sizes.indexes,
+                block_size);
+
+        } else {
+            return;
+        }
     }
 
     template<class Tvec, class TgridVec>

@@ -70,10 +70,9 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
             np.cos(2 * np.pi * x) * np.cos(2 * np.pi * y) * np.cos(2 * np.pi * z)
             + 0.5 * np.cos(4 * np.pi * x) * np.cos(2 * np.pi * y) * np.cos(2 * np.pi * z)
             + (1 / 3) * np.cos(2 * np.pi * x) * np.cos(4 * np.pi * y) * np.cos(6 * np.pi * z)
-            + x * y * z
         )
 
-        return res + 10
+        return res
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
@@ -136,10 +135,11 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
 
     freq = 50
     dt = 0.0000
+    # dt = 0.01226171192153859
     t = 0
     tend = 0.245
 
-    for k in range(5):
+    for k in range(3):
         # if k % freq == 0:
         #     model.dump_vtk("test" + str(k) + ".vtk")
 
@@ -228,7 +228,7 @@ diff = np.array(phi) - ana
 plt.plot(np.array(X), ana, ".", label="phi-ana")
 plt.plot(np.array(X), phi, "+", label="phi-num")
 # plt.plot(np.array(X), np.array(phi_ana), ".", label="phi-ana-ap")
-plt.plot(np.array(X), diff, "*", label="diff")
+# plt.plot(np.array(X), diff, "*", label="diff")
 plt.legend()
 plt.savefig("Polynomial-sol-test.png", format="png")
 # plt.plot(X, np.array(phi), ".", label="phi-num")

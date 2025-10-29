@@ -88,7 +88,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
         });
 
     // if (solver_config.is_gravity_on() && solver_config.is_coupling_gravity_on()) {
-    //     auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
+    // auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
     //     auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
     //     auto &rhoe_next = shambase::get_check_ref(storage.refs_rhoe_next);
 

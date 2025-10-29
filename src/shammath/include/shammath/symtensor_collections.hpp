@@ -618,7 +618,7 @@ namespace shammath {
                                        A4.v_1111 * A1.v_1, A4.v_1112 * A1.v_1, A4.v_1122 * A1.v_1,
                                        A4.v_1222 * A1.v_1, A4.v_2222 * A1.v_1, A4.v_2222 * A1.v_2};
 
-            return {1, A1, A2, A3, A4, A5};
+            return {A1, A2, A3, A4, A5};
         }
 
         inline static SymTensorCollection zeros() {
@@ -923,7 +923,7 @@ namespace shammath {
                 A1.v_2 * A1.v_2,
             };
 
-            return {1, A1, A2};
+            return {A1, A2};
         }
 
         inline static SymTensorCollection zeros() {
@@ -938,7 +938,7 @@ namespace shammath {
                 0,
             };
 
-            return {0, A1, A2};
+            return {A1, A2};
         }
 
         template<class Tacc>
@@ -984,12 +984,12 @@ namespace shammath {
         inline static SymTensorCollection from_vec(const sycl::vec<T, 3> &v) {
             auto A1 = SymTensor3d_1<T>{v.x(), v.y(), v.z()};
 
-            return {1, A1};
+            return {A1};
         }
         inline static SymTensorCollection zeros() {
             auto A1 = SymTensor3d_1<T>{0, 0, 0};
 
-            return {0, A1};
+            return {A1};
         }
 
         template<class Tacc>
@@ -1003,14 +1003,14 @@ namespace shammath {
             return SymTensorCollection{SymTensor3d_1<T>::load(acc, offset + offset_t1)};
         }
 
-        inline SymTensorCollection<T, 0, 1> &operator*=(const T scal) {
+        inline SymTensorCollection<T, 1, 1> &operator*=(const T scal) {
 
             t1 *= scal;
 
             return *this;
         }
 
-        inline SymTensorCollection<T, 0, 1> &operator+=(const SymTensorCollection<T, 0, 1> other) {
+        inline SymTensorCollection<T, 1, 1> &operator+=(const SymTensorCollection<T, 0, 1> other) {
 
             t1 += other.t1;
 

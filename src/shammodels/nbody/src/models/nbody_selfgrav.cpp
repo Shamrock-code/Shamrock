@@ -315,7 +315,7 @@ void compute_multipoles(
                             multipoles,
                             s_cid * SymTensorCollection<flt, 0, fmm_order>::num_component);
 
-                        auto B_ns_offseted = shamphys::offset_multipole(B_ns, d);
+                        auto B_ns_offseted = shamphys::offset_multipole_delta(B_ns, d);
 
                         B_n += B_ns_offseted;
                     };

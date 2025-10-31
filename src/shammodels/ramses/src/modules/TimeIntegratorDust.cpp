@@ -35,8 +35,6 @@ void shammodels::basegodunov::modules::TimeIntegratorDust<Tvec, TgridVec>::forwa
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 icell_min    = pdl.get_field_idx<TgridVec>("cell_min");
-    const u32 icell_max    = pdl.get_field_idx<TgridVec>("cell_max");
     const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
     const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
 

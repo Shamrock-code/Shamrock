@@ -502,8 +502,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         storage.refs_rho_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "rho-next", "\\rho_{n+1}");
-        storage.rho_next_accumulator = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "rho-next-accumulator", "\\rho_{n+1}-acc");
         storage.refs_rhov_next = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "rhov-next", "\\rho_{n+1}v");
         storage.refs_rhoe_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(

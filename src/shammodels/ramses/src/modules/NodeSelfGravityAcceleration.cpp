@@ -168,8 +168,6 @@ namespace {
                                 });
 
                             out[cell_global_id] = {grad_res[0], grad_res[1], grad_res[2]};
-                            // logger::raw_ln(out[cell_global_id][0], out[cell_global_id][1],
-                            // out[cell_global_id][2], "\n");
                         }
 
                     );
@@ -185,7 +183,7 @@ namespace shammodels::basegodunov::modules {
         StackEntry stack_loc{};
         auto edges = get_edges();
 
-        logger::raw_ln("dt in compute_grad_acc", edges.dt.value);
+        // logger::raw_ln("dt in compute_grad_acc", edges.dt.value);
 
         if (edges.dt.value != 0) {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);

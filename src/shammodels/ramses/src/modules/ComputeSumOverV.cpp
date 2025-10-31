@@ -26,7 +26,7 @@ namespace shammodels::basegodunov::modules {
     template<class T>
     void NodeComputeSumOverV<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
-        logger::raw_ln("dt in NodeComputeSumOverV", edges.dt.value);
+        // logger::raw_ln("dt in NodeComputeSumOverV", edges.dt.value);
         if (edges.dt.value != 0) {
             edges.spans_field.check_sizes(edges.sizes.indexes);
 
@@ -38,9 +38,6 @@ namespace shammodels::basegodunov::modules {
             T global_sum = shamalgs::collective::allreduce_sum(loc_val);
 
             edges.mean_val.value = (global_sum / edges.total_volume.value);
-            logger::raw_ln("Total mass [num] = ", global_sum);
-
-            logger::raw_ln("Total mass [exp] = ", edges.total_volume.value);
         }
 
         else {

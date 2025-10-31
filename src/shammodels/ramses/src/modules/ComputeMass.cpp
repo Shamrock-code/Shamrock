@@ -73,7 +73,7 @@ namespace shammodels::basegodunov::modules {
     void NodeComputeMass<Tvec, TgridVec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        logger::raw_ln("dt in NodeComputeMass", edges.dt.value);
+        // logger::raw_ln("dt in NodeComputeMass", edges.dt.value);
         if (edges.dt.value != 0) {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_rhos.check_sizes(edges.sizes.indexes);

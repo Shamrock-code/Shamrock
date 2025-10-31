@@ -21,7 +21,6 @@
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/SolverStorage.hpp"
-#include "shamrock/scheduler/ComputeField.hpp"
 
 namespace shammodels::basegodunov::modules {
 

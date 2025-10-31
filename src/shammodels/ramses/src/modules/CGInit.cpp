@@ -108,7 +108,6 @@ namespace {
                                 });
 
                             auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
-                            // - Aphi;
                             phi_res[cell_global_id] = res;
                             phi_p[cell_global_id]   = res;
                         });

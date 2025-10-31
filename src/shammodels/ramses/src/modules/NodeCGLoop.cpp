@@ -16,22 +16,13 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "shambase/memory.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/NodeCGLoop.hpp"
-#include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include <shambackends/sycl.hpp>
-#include <memory>
-#include <utility>
 
 namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
@@ -58,11 +49,13 @@ namespace shammodels::basegodunov::modules {
                     auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
                     auto vec_phi  = buf_phi.copy_to_stdvec();
 
-                    logger::raw_ln(id, "buf rho 0 =", "--", buf_rho.get_size());
+                    logger::raw_ln(id, "buf rho size : ", buf_rho.get_size());
                     logger::raw_ln(
-                        " no-gz  : ", edges.sizes_no_gz.indexes.get(id) * block_size, "\n");
+                        " only active zone size  : ",
+                        edges.sizes_no_gz.indexes.get(id) * block_size,
+                        "\n");
 
-                    logger::raw_ln("mean_rho", edges.mean_rho.value);
+                    logger::raw_ln("Rho-mean", edges.mean_rho.value);
                 }
             }
 
@@ -72,9 +65,9 @@ namespace shammodels::basegodunov::modules {
                 for (auto id = 0; id < 1; id++) {
                     auto &buf = edges.spans_phi_res.get_buf(id);
                     auto vec  = buf.copy_to_stdvec();
-                    logger::raw_ln(id, "buf res 0 =", "--", buf.get_size());
+                    logger::raw_ln(id, "buf res size : ", buf.get_size());
                     for (int i = 0; i < buf.get_size(); i++) {
-                        logger::raw_ln(i, vec[i]);
+                        logger::raw_ln(i, vec[i], "\n");
                     }
                 }
             }
@@ -94,7 +87,7 @@ namespace shammodels::basegodunov::modules {
                     auto vec_p    = buf_p.copy_to_stdvec();
                     auto vec_rho  = buf_rho.copy_to_stdvec();
                     auto vec_phi  = buf_phi.copy_to_stdvec();
-                    logger::raw_ln(id, "buf cpy_phi bf=", "--", buf_res.get_size());
+                    logger::raw_ln(id, "buf size : ", buf_res.get_size());
                     for (int i = 0; i < buf_res.get_size(); i++) {
                         logger::raw_ln(
                             "[", i, "] : ", vec_res[i], vec_p[i], vec_rho[i], vec_phi[i], "\n");
@@ -108,7 +101,7 @@ namespace shammodels::basegodunov::modules {
             u32 k = 0;
             if (shamcomm::world_rank() == 0) {
                 logger::raw_ln(" k = ", k);
-                logger::raw_ln(" RES = ", edges.old_values.value);
+                logger::raw_ln("RES (L2-squared) = ", edges.old_values.value);
             }
 
             auto diff_l2   = 1.;
@@ -124,7 +117,7 @@ namespace shammodels::basegodunov::modules {
                 if (shamcomm::world_rank() == 0) {
                     logger::raw_ln(" ================== k = ", k, "=======================\n");
                     logger::raw_ln(
-                        "rho-mean",
+                        "Rho-mean",
                         edges.mean_rho.value,
                         (32.0 * shambase::constants::pi<Tscal> * 0.25 * 0.25 * 0.25) / 105.0);
                 }
@@ -157,7 +150,6 @@ namespace shammodels::basegodunov::modules {
                 node3.evaluate();
 
                 if (false) {
-                    auto gg = 0.;
                     for (auto id = 0; id < 1; id++) {
                         auto &buf = edges.spans_phi_res.get_buf(id);
                         auto vec  = buf.copy_to_stdvec();
@@ -171,12 +163,15 @@ namespace shammodels::basegodunov::modules {
                         auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
                         auto vec_phi  = buf_phi.copy_to_stdvec();
 
-                        logger::raw_ln(id, "buf res 0 =", "--", buf.get_size());
+                        logger::raw_ln(id, "buf res size ", "--", buf.get_size());
                         logger::raw_ln(
-                            " no-gz  : ", edges.sizes_no_gz.indexes.get(id) * block_size, "\n");
+                            "only active zone size  : ",
+                            edges.sizes_no_gz.indexes.get(id) * block_size,
+                            "\n");
+                        logger::raw_ln(
+                            "i ", "res[i] ", "p[i] ", "Ap[i] ", "p[i]*Ap[i] ", "phi[i] ", "\n");
                         for (int i = 0; i < buf.get_size(); i++) {
                             if (i < edges.sizes_no_gz.indexes.get(id) * block_size) {
-                                gg += vec_p[i] * vec_Ap[i];
                                 logger::raw_ln(
                                     i,
                                     vec[i],
@@ -186,7 +181,6 @@ namespace shammodels::basegodunov::modules {
                                     vec_phi[i]);
                             }
                         }
-                        logger::raw_ln("global e-nrm : ", gg);
                     }
                 }
 
@@ -200,13 +194,13 @@ namespace shammodels::basegodunov::modules {
                  * edges.e_norm.value */
                 node4.evaluate();
                 if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" e-norm = ", edges.e_norm.value);
+                    logger::raw_ln("e-norm = ", edges.e_norm.value);
                 }
 
                 /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
                 edges.alpha.value = edges.old_values.value / edges.e_norm.value;
                 if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" alpha  = ", edges.alpha.value);
+                    logger::raw_ln("alpha  = ", edges.alpha.value);
                 }
 
                 /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
@@ -277,21 +271,17 @@ namespace shammodels::basegodunov::modules {
                 /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
                 node7.evaluate();
 
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" new-norm = ", edges.new_values.value);
-                }
-
                 /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
                 edges.beta.value = edges.new_values.value / edges.old_values.value;
 
                 if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" beta = ", edges.beta.value);
+                    logger::raw_ln("beta = ", edges.beta.value);
                 }
 
                 /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
                 edges.old_values.value = edges.new_values.value;
                 if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" RES = ", edges.old_values.value);
+                    logger::raw_ln("New-RES (L2-squared)  = ", edges.old_values.value);
                 }
 
                 /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */

@@ -30,7 +30,7 @@ jobs:
             imagename: Ubuntu 20 LLVM 15
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend generic
@@ -39,7 +39,7 @@ jobs:
             imagename: Ubuntu 20 LLVM 15
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend cuda.explicit-multipass --arch sm_80
@@ -48,7 +48,7 @@ jobs:
             imagename: Ubuntu 20 LLVM 15 CUDA 11
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend cuda.integrated-multipass --arch sm_80
@@ -57,7 +57,7 @@ jobs:
             imagename: Ubuntu 20 LLVM 15 CUDA 11
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend hip --arch gfx906
@@ -66,7 +66,7 @@ jobs:
             imagename: Ubuntu 20 LLVM 15 ROCM 5.4.3
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           ##########################################################################################
           # Arch Linux
@@ -78,7 +78,7 @@ jobs:
             imagename: ArchLinux
             runtest: yes
             runtestpy: yes
-            mpiargs: --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           ##########################################################################################
           # MacOS

@@ -163,6 +163,17 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 5> operator-(
+            const SymTensorCollection<T, 0, 5> other) const {
+            return {
+                t0 - other.t0,
+                t1 - other.t1,
+                t2 - other.t2,
+                t3 - other.t3,
+                t4 - other.t4,
+                t5 - other.t5};
+        }
     };
 
     template<class T>
@@ -286,6 +297,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 4> operator-(
+            const SymTensorCollection<T, 0, 4> other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4};
+        }
     };
 
     template<class T>
@@ -384,6 +400,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 3> operator-(
+            const SymTensorCollection<T, 0, 3> other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2, t3 - other.t3};
+        }
     };
 
     template<class T>
@@ -461,6 +482,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 2> operator-(
+            const SymTensorCollection<T, 0, 2> other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2};
+        }
     };
 
     template<class T>
@@ -511,6 +537,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 1> operator-(
+            const SymTensorCollection<T, 0, 1> other) const {
+            return {t0 - other.t0, t1 - other.t1};
+        }
     };
 
     template<class T>
@@ -544,6 +575,11 @@ namespace shammath {
             t0 += other.t0;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 0> operator-(
+            const SymTensorCollection<T, 0, 0> other) const {
+            return {t0 - other.t0};
         }
     };
 
@@ -684,6 +720,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 1, 5> operator-(
+            const SymTensorCollection<T, 1, 5> other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4, t5 - other.t5};
+        }
     };
 
     template<class T>
@@ -803,6 +844,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 1, 4> operator-(
+            const SymTensorCollection<T, 1, 4> other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4};
+        }
     };
 
     template<class T>
@@ -897,6 +943,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 1, 3> operator-(
+            const SymTensorCollection<T, 1, 3> other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3};
+        }
     };
 
     template<class T>
@@ -970,6 +1021,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 1, 2> operator-(
+            const SymTensorCollection<T, 1, 2> other) const {
+            return {t1 - other.t1, t2 - other.t2};
+        }
     };
 
     template<class T>
@@ -1015,6 +1071,11 @@ namespace shammath {
             t1 += other.t1;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 1, 1> operator-(
+            const SymTensorCollection<T, 1, 1> other) const {
+            return {t1 - other.t1};
         }
     };
 } // namespace shammath

@@ -400,7 +400,7 @@ namespace shamphys {
         using namespace shamphys::details;
 
         if constexpr (low_order == 0 && high_order == 5) {
-            SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
+            SymTensorCollection<T, 1, 3> d = SymTensorCollection<T, 1, 3>::from_vec(offset);
 
             auto Qn1 = offset_multipole_1(Q.t0, Q.t1, d.t1);
 
@@ -415,7 +415,7 @@ namespace shamphys {
             return {Q.t0, Qn1, Qn2, Qn3, Qn4, Qn5};
         } else if constexpr (low_order == 0 && high_order == 4) {
 
-            SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
+            SymTensorCollection<T, 1, 2> d = SymTensorCollection<T, 1, 2>::from_vec(offset);
 
             auto Qn1 = offset_multipole_1(Q.t0, Q.t1, d.t1);
 
@@ -428,7 +428,7 @@ namespace shamphys {
             return {Q.t0, Qn1, Qn2, Qn3, Qn4};
         } else if constexpr (low_order == 0 && high_order == 3) {
 
-            SymTensorCollection<T, 0, 5> d = SymTensorCollection<T, 0, 5>::from_vec(offset);
+            SymTensorCollection<T, 1, 1> d = SymTensorCollection<T, 1, 1>::from_vec(offset);
 
             auto Qn1 = offset_multipole_1(Q.t0, Q.t1, d.t1);
 
@@ -439,7 +439,7 @@ namespace shamphys {
             return {Q.t0, Qn1, Qn2, Qn3};
         } else if constexpr (low_order == 0 && high_order == 2) {
 
-            SymTensorCollection<T, 0, 1> d = SymTensorCollection<T, 0, 1>::from_vec(offset);
+            SymTensorCollection<T, 1, 1> d = SymTensorCollection<T, 1, 1>::from_vec(offset);
 
             auto Qn1 = offset_multipole_1(Q.t0, Q.t1, d.t1);
 

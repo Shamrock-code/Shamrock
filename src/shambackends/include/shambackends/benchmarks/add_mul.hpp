@@ -107,8 +107,7 @@ namespace sham::benchmarks {
         u32 nrotation       = 8;
         double milliseconds = 0;
 
-        for (; milliseconds < time_threshold && nrotation < 256 * 256 * 4; nrotation *= 2) {
-
+        auto run_bench = [&q, &N, &cs, &sn, &x_ptr, &y_ptr, &out_ptr](u32 nrotation) -> f64 {
             sham::EventList empty_list{};
 
             shambase::Timer t;
@@ -121,12 +120,30 @@ namespace sham::benchmarks {
             e.wait();
             t.end();
 
-            milliseconds = t.elasped_sec() * 1e3;
+            return t.elasped_sec() * 1e3;
+        };
+
+        // warmup kernel
+        run_bench(4);
+
+        double ref = run_bench(0);
+
+        for (;;) {
+
+            milliseconds = run_bench(nrotation);
+
+            if (milliseconds >= time_threshold || nrotation >= 256 * 256 * 4) {
+                break;
+            }
+
+            nrotation *= 2;
         }
 
         x.complete_event_state(sycl::event{});
         y.complete_event_state(sycl::event{});
         out.complete_event_state(sycl::event{});
+
+        milliseconds -= ref;
 
         int flop_per_thread = nrotation * 6 * float_count;
         double flop_count   = double(N) * flop_per_thread;

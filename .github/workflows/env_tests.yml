@@ -46,8 +46,6 @@ jobs:
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
             runson: ubuntu-latest
             imagename: Ubuntu 20 LLVM 15 CUDA 11
-            runtest: yes
-            runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
@@ -55,8 +53,6 @@ jobs:
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
             runson: ubuntu-latest
             imagename: Ubuntu 20 LLVM 15 CUDA 11
-            runtest: yes
-            runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
@@ -64,8 +60,6 @@ jobs:
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15rocm543
             runson: ubuntu-latest
             imagename: Ubuntu 20 LLVM 15 ROCM 5.4.3
-            runtest: yes
-            runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           ##########################################################################################

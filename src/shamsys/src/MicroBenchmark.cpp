@@ -268,13 +268,6 @@ void shamsys::microbench::add_mul_rotation_f32() {
 
     using vec4 = sycl::vec<float, 4>;
 
-    u32 nrotation = 10000;
-
-    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
-        == sham::DeviceType::CPU) {
-        nrotation /= 20;
-    }
-
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -282,8 +275,8 @@ void shamsys::microbench::add_mul_rotation_f32() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        nrotation,
-        4);
+        4,
+        500);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
     f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
@@ -294,13 +287,13 @@ void shamsys::microbench::add_mul_rotation_f32() {
         logger::raw_ln(
             shambase::format(
                 " - add_mul (f32_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} "
-                "ms)",
+                "({:.1e} ms, rotations = {})",
                 sum_flop,
                 min_flop,
                 max_flop,
                 avg_flop,
-                result.milliseconds));
+                result.milliseconds,
+                result.nrotations));
     }
 }
 
@@ -309,13 +302,6 @@ void shamsys::microbench::add_mul_rotation_f64() {
 
     using vec4 = sycl::vec<double, 4>;
 
-    u32 nrotation = 10000;
-
-    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
-        == sham::DeviceType::CPU) {
-        nrotation /= 20;
-    }
-
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -323,8 +309,8 @@ void shamsys::microbench::add_mul_rotation_f64() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        nrotation,
-        4);
+        4,
+        500);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
     f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
@@ -335,13 +321,13 @@ void shamsys::microbench::add_mul_rotation_f64() {
         logger::raw_ln(
             shambase::format(
                 " - add_mul (f64_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} "
-                "ms)",
+                "({:.1e} ms, rotations = {})",
                 sum_flop,
                 min_flop,
                 max_flop,
                 avg_flop,
-                result.milliseconds));
+                result.milliseconds,
+                result.nrotations));
     }
 }
 

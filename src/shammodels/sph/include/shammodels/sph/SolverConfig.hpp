@@ -182,6 +182,40 @@ namespace shammodels::sph {
         }
     };
 
+    struct SelfGravConfig {
+        struct SFMM {
+            u32 fmm_order;
+        };
+
+        struct FMM {
+            u32 fmm_order;
+        };
+
+        struct MM {
+            u32 mm_order;
+        };
+
+        struct Direct {bool reference_mode = false;};
+
+        struct None {};
+
+        using mode = std::variant<SFMM, FMM, MM, Direct, None>;
+
+        mode config = None{};
+
+        void set_sfmm(u32 fmm_order) { config = SFMM{fmm_order}; }
+        void set_fmm(u32 fmm_order) { config = FMM{fmm_order}; }
+        void set_mm(u32 mm_order) { config = MM{mm_order}; }
+        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
+        void set_none() { config = None{}; }
+
+        bool is_none() const { return std::holds_alternative<None>(config); }
+        bool is_sfmm() const { return std::holds_alternative<SFMM>(config); }
+        bool is_fmm() const { return std::holds_alternative<FMM>(config); }
+        bool is_mm() const { return std::holds_alternative<MM>(config); }
+        bool is_direct() const { return std::holds_alternative<Direct>(config); }
+    };
+
 } // namespace shammodels::sph
 
 template<class Tvec>
@@ -350,6 +384,16 @@ struct shammodels::sph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    SelfGravConfig self_grav_config = SelfGravConfig{};
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -753,6 +797,13 @@ struct shammodels::sph::SolverConfig {
                 shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
             }
         }
+
+        if (!self_grav_config.is_none()) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Self gravity is experimental, please enable experimental features to use it");
+            }
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
@@ -884,6 +935,52 @@ namespace shammodels::sph {
         }
     }
 
+    /// JSON serialization for SelfGravConfig
+    inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
+        if (const SelfGravConfig::SFMM *conf = std::get_if<SelfGravConfig::SFMM>(&p.config)) {
+            j = {
+                {"type", "sfmm"},
+                {"fmm_order", conf->fmm_order},
+            };
+        } else if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
+            j = {
+                {"type", "fmm"},
+                {"fmm_order", conf->fmm_order},
+            };
+        } else if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+            j = {
+                {"type", "mm"},
+                {"mm_order", conf->mm_order},
+            };
+        } else if (
+            const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
+            j = {
+                {"type", "direct"},
+                {"reference_mode", conf->reference_mode},
+            };
+        } else if (
+            const SelfGravConfig::None *conf = std::get_if<SelfGravConfig::None>(&p.config)) {
+            j = {
+                {"type", "none"},
+            };
+        }
+    }
+
+    /// JSON deserialization for SelfGravConfig
+    inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
+        if (j.at("type").get<std::string>() == "sfmm") {
+            p.config = SelfGravConfig::SFMM{j.at("fmm_order").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "fmm") {
+            p.config = SelfGravConfig::FMM{j.at("fmm_order").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "mm") {
+            p.config = SelfGravConfig::MM{j.at("mm_order").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "direct") {
+            p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
+        } else if (j.at("type").get<std::string>() == "none") {
+            p.config = SelfGravConfig::None{};
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -912,6 +1009,8 @@ namespace shammodels::sph {
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // self gravity config
+            {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -984,6 +1083,16 @@ namespace shammodels::sph {
             logger::warn_ln(
                 "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
             p.mhd_config.set(typename T::MHDConfig::None{});
+        }
+
+        // self gravity config
+        if (j.contains("self_grav_config")) {
+            j.at("self_grav_config").get_to(p.self_grav_config);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "self_grav_config not found when deserializing, defaulting to ",
+                nlohmann::json{p.self_grav_config}.dump(4));
         }
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);

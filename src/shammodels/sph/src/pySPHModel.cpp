@@ -160,6 +160,40 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("sigma_u"))
+        .def(
+            "set_self_gravity_none",
+            [](TConfig &self) {
+                self.self_grav_config.set_none();
+            })
+        .def(
+            "set_self_gravity_direct",
+            [](TConfig &self, bool reference_mode = false) {
+                self.self_grav_config.set_direct(reference_mode);
+            },
+            py::kw_only(),
+            py::arg("reference_mode") = false
+            )
+        .def(
+            "set_self_gravity_mm",
+            [](TConfig &self, u32 mm_order) {
+                self.self_grav_config.set_mm(mm_order);
+            },
+            py::kw_only(),
+            py::arg("order"))
+        .def(
+            "set_self_gravity_fmm",
+            [](TConfig &self, u32 fmm_order) {
+                self.self_grav_config.set_fmm(fmm_order);
+            },
+            py::kw_only(),
+            py::arg("order"))
+        .def(
+            "set_self_gravity_sfmm",
+            [](TConfig &self, u32 sfmm_order) {
+                self.self_grav_config.set_sfmm(sfmm_order);
+            },
+            py::kw_only(),
+            py::arg("order"))
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)

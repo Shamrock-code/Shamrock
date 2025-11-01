@@ -40,6 +40,12 @@ namespace shamphys {
             sycl::vec<T, 3> r);
     };
 
+    template<class T, u32 low_order, u32 high_order>
+    inline shammath::SymTensorCollection<T, low_order, high_order> green_func_grav_cartesian(
+        sycl::vec<T, 3> r) {
+        return GreenFuncGravCartesian<T, low_order, high_order>::get_der_tensors(r);
+    }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Implementations for all cases
 // -----------

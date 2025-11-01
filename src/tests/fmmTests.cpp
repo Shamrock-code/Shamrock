@@ -18,6 +18,7 @@
 #include "shambase/time.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/contract_grav_moment.hpp"
 #include "shamphys/fmm/grav_moments.hpp"
 #include "shamphys/fmm/offset_multipole.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -90,16 +91,16 @@ class FMM_prec_eval {
                 phi_val += M_k.t1 * a_k.t1;
             }
             if constexpr (order >= 2) {
-                phi_val += M_k.t2 * a_k.t2;
+                phi_val += M_k.t2 * a_k.t2 / 2;
             }
             if constexpr (order >= 3) {
-                phi_val += M_k.t3 * a_k.t3;
+                phi_val += M_k.t3 * a_k.t3 / 6;
             }
             if constexpr (order >= 4) {
-                phi_val += M_k.t4 * a_k.t4;
+                phi_val += M_k.t4 * a_k.t4 / 24;
             }
             if constexpr (order >= 5) {
-                phi_val += M_k.t5 * a_k.t5;
+                phi_val += M_k.t5 * a_k.t5 / 120;
             }
 
             // printf("contrib phi : %e %e %e %e %e %e\n",phi_0,phi_1,phi_2,phi_3,phi_4,phi_5);
@@ -116,6 +117,13 @@ class FMM_prec_eval {
     }
     static T eval_prec_fmm_force(
         sycl::vec<T, 3> xi, sycl::vec<T, 3> xj, sycl::vec<T, 3> sa, sycl::vec<T, 3> sb) {
+
+        // logger::raw_ln("--------------------------------");
+        // logger::raw_ln("Order =", order);
+        // logger::raw_ln("xi =", xi);
+        // logger::raw_ln("xj =", xj);
+        // logger::raw_ln("sa =", sa);
+        // logger::raw_ln("sb =", sb);
 
         using namespace shammath;
         f64 m_j = 1;
@@ -142,6 +150,9 @@ class FMM_prec_eval {
 
                 auto B_n = moment_types::from_vec(bj);
 
+                // logger::raw_ln("bj =", bj);
+                // logger::raw_ln("B_n =", py::str(py::cast(B_n)).cast<std::string>());
+
                 B_n *= m_j;
 
                 B_n.store(multipoles, 0);
@@ -157,13 +168,20 @@ class FMM_prec_eval {
 
             f64_3 a_i = xi - sa;
 
-            auto a_k = SymTensorCollection<f64, 0, order>::from_vec(a_i);
+            auto a_k = SymTensorCollection<f64, 0, order - 1>::from_vec(a_i);
 
             auto Q_n = moment_types::load(multipoles, 0);
 
             auto D_n = shamphys::GreenFuncGravCartesian<f64, 1, order>::get_der_tensors(r_fmm);
 
             auto dM_k = shamphys::get_dM_mat(D_n, Q_n);
+
+            // logger::raw_ln("r_fmm =", r_fmm);
+            // logger::raw_ln("a_i =", a_i);
+            // logger::raw_ln("a_k =", py::str(py::cast(a_k)).cast<std::string>());
+            // logger::raw_ln("Q_n =", py::str(py::cast(Q_n)).cast<std::string>());
+            // logger::raw_ln("D_n =", py::str(py::cast(D_n)).cast<std::string>());
+            // logger::raw_ln("dM_k =", py::str(py::cast(dM_k)).cast<std::string>());
 
             auto tensor_to_sycl = [](SymTensor3d_1<T> a) {
                 return sycl::vec<T, 3>{a.v_0, a.v_1, a.v_2};
@@ -183,6 +201,11 @@ class FMM_prec_eval {
                 force_val += tensor_to_sycl(dM_k.t5 * a_k.t4);
             }
 
+            f64_3 force_val_t = shamphys::contract_grav_moment_to_force<f64, order>(a_k, dM_k);
+            force_val         = force_val_t;
+            // logger::raw_ln("force_val_t =", force_val_t);
+            // logger::raw_ln("force_val =", force_val);
+
             // printf("contrib phi : %e %e %e %e %e %e\n",phi_0,phi_1,phi_2,phi_3,phi_4,phi_5);
 
             f64_3 real_r = xi - xj;
@@ -199,13 +222,6 @@ class FMM_prec_eval {
 
 TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
 
-    std::mt19937 eng(0x1111);
-
-    std::uniform_real_distribution<f64> distf64(-1, 1);
-
-    f64 avg_spa = 1e-2;
-    std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
-
     struct Entry {
         f64 angle;
         f64 result_pot_5;
@@ -220,6 +236,14 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
         f64 result_force_2;
         f64 result_force_1;
     };
+
+    std::mt19937 eng(0x1111);
+
+    std::uniform_real_distribution<f64> distf64(-1, 1);
+
+    f64 avg_spa = 1e-2;
+    std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
+
     std::vector<Entry> vec_result;
 
     for (u32 i = 0; i < 1e4; i++) {

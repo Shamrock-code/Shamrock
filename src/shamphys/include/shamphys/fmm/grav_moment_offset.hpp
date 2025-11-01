@@ -30,6 +30,13 @@ namespace shamphys {
 
         using namespace shammath;
 
+        static constexpr T inv_factorial_0 = 1. / 1;
+        static constexpr T inv_factorial_1 = 1. / 1;
+        static constexpr T inv_factorial_2 = 1. / 2;
+        static constexpr T inv_factorial_3 = 1. / 6;
+        static constexpr T inv_factorial_4 = 1. / 24;
+        static constexpr T inv_factorial_5 = 1. / 120;
+
         if constexpr (low_order == 0 && high_order == 5) {
 
             SymTensorCollection<T, 0, 5> h = SymTensorCollection<T, 0, 5>::from_vec(offset);
@@ -56,13 +63,6 @@ namespace shamphys {
             auto &dM_ret_3 = dM_ret.t3;
             auto &dM_ret_4 = dM_ret.t4;
             auto &dM_ret_5 = dM_ret.t5;
-
-            static constexpr T inv_factorial_0 = 1. / 1;
-            static constexpr T inv_factorial_1 = 1. / 1;
-            static constexpr T inv_factorial_2 = 1. / 2;
-            static constexpr T inv_factorial_3 = 1. / 6;
-            static constexpr T inv_factorial_4 = 1. / 24;
-            static constexpr T inv_factorial_5 = 1. / 120;
 
             // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
 
@@ -109,13 +109,6 @@ namespace shamphys {
             auto &dM_ret_4 = dM_ret.t4;
             auto &dM_ret_5 = dM_ret.t5;
 
-            static constexpr T inv_factorial_0 = 1. / 1;
-            static constexpr T inv_factorial_1 = 1. / 1;
-            static constexpr T inv_factorial_2 = 1. / 2;
-            static constexpr T inv_factorial_3 = 1. / 6;
-            static constexpr T inv_factorial_4 = 1. / 24;
-            static constexpr T inv_factorial_5 = 1. / 120;
-
             // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
 
             dM_ret_1 = inv_factorial_0 * h_0 * dM_1 + inv_factorial_1 * h_1 * dM_2
@@ -154,13 +147,6 @@ namespace shamphys {
             auto &dM_ret_3 = dM_ret.t3;
             auto &dM_ret_4 = dM_ret.t4;
 
-            static constexpr T inv_factorial_0 = 1. / 1;
-            static constexpr T inv_factorial_1 = 1. / 1;
-            static constexpr T inv_factorial_2 = 1. / 2;
-            static constexpr T inv_factorial_3 = 1. / 6;
-            static constexpr T inv_factorial_4 = 1. / 24;
-            static constexpr T inv_factorial_5 = 1. / 120;
-
             // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
 
             dM_ret_1 = inv_factorial_0 * h_0 * dM_1 + inv_factorial_1 * h_1 * dM_2
@@ -193,13 +179,6 @@ namespace shamphys {
             auto &dM_ret_2 = dM_ret.t2;
             auto &dM_ret_3 = dM_ret.t3;
 
-            static constexpr T inv_factorial_0 = 1. / 1;
-            static constexpr T inv_factorial_1 = 1. / 1;
-            static constexpr T inv_factorial_2 = 1. / 2;
-            static constexpr T inv_factorial_3 = 1. / 6;
-            static constexpr T inv_factorial_4 = 1. / 24;
-            static constexpr T inv_factorial_5 = 1. / 120;
-
             // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
 
             dM_ret_1 = inv_factorial_0 * h_0 * dM_1 + inv_factorial_1 * h_1 * dM_2
@@ -225,13 +204,6 @@ namespace shamphys {
 
             auto &dM_ret_1 = dM_ret.t1;
             auto &dM_ret_2 = dM_ret.t2;
-
-            static constexpr T inv_factorial_0 = 1. / 1;
-            static constexpr T inv_factorial_1 = 1. / 1;
-            static constexpr T inv_factorial_2 = 1. / 2;
-            static constexpr T inv_factorial_3 = 1. / 6;
-            static constexpr T inv_factorial_4 = 1. / 24;
-            static constexpr T inv_factorial_5 = 1. / 120;
 
             // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
 

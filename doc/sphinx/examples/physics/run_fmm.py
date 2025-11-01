@@ -1,6 +1,6 @@
 """
-FMM math demo in python
-=======================
+FMM math demo
+=============
 
 This example shows how to use the FMM maths to compute the force between two points
 """
@@ -805,6 +805,8 @@ for s_A in s_A_all:
 # Then we will generate two boxes around the positions :math:`s_A` and :math:`s_B` where each is at a distance box_scale_fact from their respective particle.
 # We then perform the FMM expansion to compute the force on :math:`x_i` as well as the exact force.
 # We will then plot the relative error as a function of the angle :math:`\theta = (b_A + b_B) / |\mathbf{s}_A - \mathbf{s}_B|` where :math:`b_A` and :math:`b_B` are the distances from the particle to the box centers.
+
+# sphinx_gallery_thumbnail_number = 14
 
 plt.figure()
 for order in range(1, 6):

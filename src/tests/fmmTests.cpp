@@ -1016,21 +1016,8 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
             walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a) {
                 auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
 
-                auto tensor_to_sycl = [](SymTensor3d_1<flt> a) {
-                    return vec{a.v_0, a.v_1, a.v_2};
-                };
+                vec tmp = shamphys::contract_grav_moment_to_force<flt, fmm_order + 1>(ai, dM_k);
 
-                vec tmp{0, 0, 0};
-
-                tmp += tensor_to_sycl(dM_k.t1 * ai.t0);
-                tmp += tensor_to_sycl(dM_k.t2 * ai.t1);
-                tmp += tensor_to_sycl(dM_k.t3 * ai.t2);
-                if constexpr (fmm_order >= 3) {
-                    tmp += tensor_to_sycl(dM_k.t4 * ai.t3);
-                }
-                if constexpr (fmm_order >= 4) {
-                    tmp += tensor_to_sycl(dM_k.t5 * ai.t4);
-                }
                 fxyz[id_a] += tmp;
 
                 // auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);

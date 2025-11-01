@@ -118,13 +118,6 @@ class FMM_prec_eval {
     static T eval_prec_fmm_force(
         sycl::vec<T, 3> xi, sycl::vec<T, 3> xj, sycl::vec<T, 3> sa, sycl::vec<T, 3> sb) {
 
-        // logger::raw_ln("--------------------------------");
-        // logger::raw_ln("Order =", order);
-        // logger::raw_ln("xi =", xi);
-        // logger::raw_ln("xj =", xj);
-        // logger::raw_ln("sa =", sa);
-        // logger::raw_ln("sb =", sb);
-
         using namespace shammath;
         f64 m_j = 1;
 
@@ -203,8 +196,6 @@ class FMM_prec_eval {
 
             f64_3 force_val_t = shamphys::contract_grav_moment_to_force<f64, order>(a_k, dM_k);
             force_val         = force_val_t;
-            // logger::raw_ln("force_val_t =", force_val_t);
-            // logger::raw_ln("force_val =", force_val);
 
             // printf("contrib phi : %e %e %e %e %e %e\n",phi_0,phi_1,phi_2,phi_3,phi_4,phi_5);
 
@@ -222,6 +213,13 @@ class FMM_prec_eval {
 
 TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
 
+    std::mt19937 eng(0x1111);
+
+    std::uniform_real_distribution<f64> distf64(-1, 1);
+
+    f64 avg_spa = 1e-2;
+    std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
+
     struct Entry {
         f64 angle;
         f64 result_pot_5;
@@ -236,14 +234,6 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
         f64 result_force_2;
         f64 result_force_1;
     };
-
-    std::mt19937 eng(0x1111);
-
-    std::uniform_real_distribution<f64> distf64(-1, 1);
-
-    f64 avg_spa = 1e-2;
-    std::uniform_real_distribution<f64> distf64_red(-avg_spa, avg_spa);
-
     std::vector<Entry> vec_result;
 
     for (u32 i = 0; i < 1e4; i++) {

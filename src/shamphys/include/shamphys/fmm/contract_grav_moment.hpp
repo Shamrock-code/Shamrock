@@ -21,10 +21,16 @@
 
 namespace shamphys {
 
+    /**
+     * @brief Contract the gravitational moment and the displacement to get a force
+     * @param a_k The displacement
+     * @param dM_k The gravitational moment
+     * @return The force
+     */
     template<class T, u32 order>
     inline sycl::vec<T, 3> contract_grav_moment_to_force(
-        shammath::SymTensorCollection<T, 0, order - 1> &a_k,
-        shammath::SymTensorCollection<T, 1, order> &dM_k) {
+        const shammath::SymTensorCollection<T, 0, order - 1> &a_k,
+        const shammath::SymTensorCollection<T, 1, order> &dM_k) {
 
         using vec = sycl::vec<T, 3>;
 

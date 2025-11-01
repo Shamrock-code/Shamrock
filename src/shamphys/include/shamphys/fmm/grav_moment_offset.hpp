@@ -25,7 +25,8 @@ namespace shamphys {
     // Offset the gravitational moment derivatives
     template<class T, u32 low_order, u32 high_order>
     inline shammath::SymTensorCollection<T, low_order, high_order> offset_dM_mat_delta(
-        shammath::SymTensorCollection<T, low_order, high_order> &dM, sycl::vec<T, 3> offset) {
+        const shammath::SymTensorCollection<T, low_order, high_order> &dM,
+        const sycl::vec<T, 3> &offset) {
 
         using namespace shammath;
 
@@ -247,9 +248,9 @@ namespace shamphys {
     // Offset the gravitational moment derivatives (with two vecs)
     template<class T, u32 low_order, u32 high_order>
     inline shammath::SymTensorCollection<T, low_order, high_order> offset_dM_mat(
-        shammath::SymTensorCollection<T, low_order, high_order> &dM,
-        sycl::vec<T, 3> from,
-        sycl::vec<T, 3> to) {
+        const shammath::SymTensorCollection<T, low_order, high_order> &dM,
+        const sycl::vec<T, 3> &from,
+        const sycl::vec<T, 3> &to) {
         return offset_dM_mat_delta(dM, to - from);
     }
 

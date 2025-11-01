@@ -879,22 +879,22 @@ namespace shammath {
     }
 
     template<class T>
-    SymTensor3d_4<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_5<T> &b) {
+    inline SymTensor3d_4<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_5<T> &b) {
         return b * a;
     }
 
     template<class T>
-    SymTensor3d_3<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_5<T> &b) {
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_5<T> &b) {
         return b * a;
     }
 
     template<class T>
-    SymTensor3d_2<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_5<T> &b) {
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_5<T> &b) {
         return b * a;
     }
 
     template<class T>
-    SymTensor3d_1<T> operator*(const SymTensor3d_4<T> &a, const SymTensor3d_5<T> &b) {
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_4<T> &a, const SymTensor3d_5<T> &b) {
         return b * a;
     }
 
@@ -925,17 +925,17 @@ namespace shammath {
     }
 
     template<class T>
-    SymTensor3d_3<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_4<T> &b) {
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_4<T> &b) {
         return b * a;
     }
 
     template<class T>
-    SymTensor3d_2<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_4<T> &b) {
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_4<T> &b) {
         return b * a;
     }
 
     template<class T>
-    SymTensor3d_1<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_4<T> &b) {
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_4<T> &b) {
         return b * a;
     }
 

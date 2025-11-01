@@ -16,6 +16,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/type_traits.hpp"
 #include "shammath/symtensor_collections.hpp"
 
 namespace shamphys {
@@ -135,7 +136,7 @@ namespace shamphys {
 
             return SymTensorCollection<T, 0, 0>{M_0};
         } else {
-            static_assert(false, "Invalid order");
+            static_assert(shambase::always_false_v<T>, "This combination of orders is not valid");
         }
     }
 
@@ -233,7 +234,7 @@ namespace shamphys {
 
             return SymTensorCollection<T, 1, 1>{M_1};
         } else {
-            static_assert(false, "Invalid order");
+            static_assert(shambase::always_false_v<T>, "This combination of orders is not valid");
         }
     }
 } // namespace shamphys

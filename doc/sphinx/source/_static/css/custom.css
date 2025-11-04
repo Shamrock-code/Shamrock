@@ -31,3 +31,9 @@ div.sphx-glr-download a {
 div.sphx-glr-download a:hover {
     background-color: #BCD4DF;
 }
+
+/* force video to be autoscaled by the page */
+video.sphx-glr-single-img {
+    width: 100% !important;
+    height: auto !important;
+}

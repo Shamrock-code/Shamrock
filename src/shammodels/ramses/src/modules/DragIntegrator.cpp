@@ -407,7 +407,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                 5 * mat_size_squared * cell_count, shamsys::instance::get_compute_scheduler_ptr());
             Tscal *exp_scratch_ptr_base = scratch_expo.get_write_access(depend_list);
             auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-                shambase::parralel_for(
+                shambase::parallel_for(
                     cgh, cell_count, "add_drag [expo-global-mem]", [=](u32 id_a) {
                         // sparse jacobian matrix
                         auto get_jacobian =

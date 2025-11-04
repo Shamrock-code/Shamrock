@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -171,8 +171,8 @@ namespace std {
         public:
         // The defaulted __ptr argument is necessary so that the builtin is evaluated
         // in the context of the caller. An explicit value should never be provided.
-        static constexpr source_location
-        current(__bsl_ty __ptr = __builtin_source_location()) noexcept {
+        static constexpr source_location current(
+            __bsl_ty __ptr = __builtin_source_location()) noexcept {
             source_location __sl;
             __sl.__ptr_ = static_cast<const __impl *>(__ptr);
             return __sl;

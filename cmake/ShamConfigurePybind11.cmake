@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -66,7 +66,7 @@ if(SHAMROCK_EXTERNAL_PYBIND11)
 else()
     message(STATUS "Using git submodule pybind11")
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/pybind11 a2e59f0e)
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/pybind11 a2e59f0e7065404b44dfe92a28aca47ba1378dc4)
 
     add_subdirectory(external/pybind11)
 endif()

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file ComputePressure.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -40,11 +40,12 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
 
     ComputeField<Tscal> &pressure_field = storage.pressure.get();
 
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         PatchDataField<Tscal> &press = storage.pressure.get().get_field(p.id_patch);
@@ -63,7 +64,7 @@ void shammodels::zeus::modules::ComputePressure<Tvec, TgridVec>::compute_p() {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             Tscal gamma = solver_config.eos_gamma;
 
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, mpdat.total_elements * Block::block_size, "compute pressure", [=](u64 id_a) {
                     pressure[id_a] = (gamma - 1) /** rho[id_a]*/ * eint[id_a];
                 });

@@ -50,6 +50,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/precommit_util.sh",
     ]
 
     envgen.gen_env_file("env_built_acpp.sh")

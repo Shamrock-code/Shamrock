@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file Model.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -83,7 +83,7 @@ void shammodels::zeus::Model<Tvec, TgridVec>::dump_vtk(std::string filename) {
 
         using Block = typename Solver::AMRBlock;
 
-        shambase::parralel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
+        shambase::parallel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
             Tvec block_min = acc_p1[id_a].template convert<Tscal>();
             Tvec block_max = acc_p2[id_a].template convert<Tscal>();
 

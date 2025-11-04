@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -13,8 +13,6 @@ project(Shamalgs CXX C)
 
 set(Sources
         src/container/BufferEventHandler.cpp
-        src/container/ResizableBuffer.cpp
-        src/container/ResizableUSMBuffer.cpp
         src/details/numeric/streamCompactExclScan.cpp
         src/details/numeric/exclusiveScanGPUGems39.cpp
         src/details/numeric/numeric.cpp
@@ -33,6 +31,15 @@ set(Sources
         src/details/reduction/fallbackReduction_usm.cpp
         src/serialize.cpp
         src/collective/distributedDataComm.cpp
+        src/collective/sparseXchg.cpp
+        src/collective/are_all_rank_true.cpp
+        src/primitives/sort_by_keys.cpp
+        src/primitives/is_all_true.cpp
+        src/primitives/mock_value.cpp
+        src/primitives/reduction.cpp
+        src/primitives/scan_exclusive_sum_in_place.cpp
+        src/primitives/gen_buffer_index.cpp
+        src/primitives/segmented_sort_in_place.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

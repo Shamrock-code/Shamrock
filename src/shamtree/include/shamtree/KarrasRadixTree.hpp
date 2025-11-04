@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file KarrasRadixTree.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -74,6 +74,15 @@ class shamtree::KarrasRadixTree {
             get_internal_cell_count()};
     }
 
+    inline KarrasTreeTraverserHost get_structure_traverser_host() const {
+        return KarrasTreeTraverserHost{
+            buf_lchild_id.copy_to_stdvec(),
+            buf_rchild_id.copy_to_stdvec(),
+            buf_lchild_flag.copy_to_stdvec(),
+            buf_rchild_flag.copy_to_stdvec(),
+            get_internal_cell_count()};
+    }
+
     static inline KarrasRadixTree make_empty(sham::DeviceScheduler_ptr dev_sched) {
         return KarrasRadixTree{
             sham::DeviceBuffer<u32>(0, dev_sched),
@@ -83,6 +92,9 @@ class shamtree::KarrasRadixTree {
             sham::DeviceBuffer<u32>(0, dev_sched),
             0};
     }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return get_internal_cell_count() == 0; }
 };
 
 namespace shamtree {

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file pyShamphys.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -23,6 +23,11 @@
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/contract_grav_moment.hpp"
+#include "shamphys/fmm/grav_moment_offset.hpp"
+#include "shamphys/fmm/grav_moments.hpp"
+#include "shamphys/fmm/offset_multipole.hpp"
 #include "shamphys/orbits.hpp"
 #include <pybind11/complex.h>
 #include <complex>
@@ -285,4 +290,111 @@ Register_pymod(shamphyslibinit) {
             auto ret = self.get_value(x);
             return std::tuple<f64, f64, f64>{ret.rho, ret.vx, ret.P};
         });
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.green_func_grav_cartesian");
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_5", &shamphys::green_func_grav_cartesian<f64, 0, 5>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_4", &shamphys::green_func_grav_cartesian<f64, 0, 4>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_3", &shamphys::green_func_grav_cartesian<f64, 0, 3>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_2", &shamphys::green_func_grav_cartesian<f64, 0, 2>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_1", &shamphys::green_func_grav_cartesian<f64, 0, 1>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_0_0", &shamphys::green_func_grav_cartesian<f64, 0, 0>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_1_5", &shamphys::green_func_grav_cartesian<f64, 1, 5>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_1_4", &shamphys::green_func_grav_cartesian<f64, 1, 4>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_1_3", &shamphys::green_func_grav_cartesian<f64, 1, 3>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_1_2", &shamphys::green_func_grav_cartesian<f64, 1, 2>);
+    shamphys_module.def(
+        "green_func_grav_cartesian_1_1", &shamphys::green_func_grav_cartesian<f64, 1, 1>);
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.grav_moments");
+    shamphys_module.def("get_M_mat_5", &shamphys::get_M_mat<f64, 0, 5>);
+    shamphys_module.def("get_M_mat_4", &shamphys::get_M_mat<f64, 0, 4>);
+    shamphys_module.def("get_M_mat_3", &shamphys::get_M_mat<f64, 0, 3>);
+    shamphys_module.def("get_M_mat_2", &shamphys::get_M_mat<f64, 0, 2>);
+    shamphys_module.def("get_M_mat_1", &shamphys::get_M_mat<f64, 0, 1>);
+    shamphys_module.def("get_M_mat_0", &shamphys::get_M_mat<f64, 0, 0>);
+    shamphys_module.def("get_dM_mat_5", &shamphys::get_dM_mat<f64, 4>);
+    shamphys_module.def("get_dM_mat_4", &shamphys::get_dM_mat<f64, 3>);
+    shamphys_module.def("get_dM_mat_3", &shamphys::get_dM_mat<f64, 2>);
+    shamphys_module.def("get_dM_mat_2", &shamphys::get_dM_mat<f64, 1>);
+    shamphys_module.def("get_dM_mat_1", &shamphys::get_dM_mat<f64, 0>);
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.contract_grav_moment_to_force");
+    shamphys_module.def(
+        "contract_grav_moment_to_force_5", &shamphys::contract_grav_moment_to_force<f64, 5>);
+    shamphys_module.def(
+        "contract_grav_moment_to_force_4", &shamphys::contract_grav_moment_to_force<f64, 4>);
+    shamphys_module.def(
+        "contract_grav_moment_to_force_3", &shamphys::contract_grav_moment_to_force<f64, 3>);
+    shamphys_module.def(
+        "contract_grav_moment_to_force_2", &shamphys::contract_grav_moment_to_force<f64, 2>);
+    shamphys_module.def(
+        "contract_grav_moment_to_force_1", &shamphys::contract_grav_moment_to_force<f64, 1>);
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.offset_multipole");
+    shamphys_module.def(
+        "offset_multipole_5",
+        &shamphys::offset_multipole<f64, 0, 5>,
+        py::arg("Q"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_multipole_4",
+        &shamphys::offset_multipole<f64, 0, 4>,
+        py::arg("Q"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_multipole_3",
+        &shamphys::offset_multipole<f64, 0, 3>,
+        py::arg("Q"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_multipole_2",
+        &shamphys::offset_multipole<f64, 0, 2>,
+        py::arg("Q"),
+        py::arg("from"),
+        py::arg("to"));
+    // shamphys_module.def("offset_multipole_1", &shamphys::offset_multipole<f64, 0, 1>);
+    // shamphys_module.def("offset_multipole_0", &shamphys::offset_multipole<f64, 0, 0>);
+
+    shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.offset_dM_mat");
+    shamphys_module.def(
+        "offset_dM_mat_5",
+        &shamphys::offset_dM_mat<f64, 1, 5>,
+        py::arg("dM"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_dM_mat_4",
+        &shamphys::offset_dM_mat<f64, 1, 4>,
+        py::arg("dM"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_dM_mat_3",
+        &shamphys::offset_dM_mat<f64, 1, 3>,
+        py::arg("dM"),
+        py::arg("from"),
+        py::arg("to"));
+    shamphys_module.def(
+        "offset_dM_mat_2",
+        &shamphys::offset_dM_mat<f64, 1, 2>,
+        py::arg("dM"),
+        py::arg("from"),
+        py::arg("to"));
+    // shamphys_module.def("offset_dM_mat_1", &shamphys::offset_dM_mat<f64, 1, 1>, py::arg("dM"),
+    // py::arg("from"), py::arg("to")); shamphys_module.def("offset_multipole_1",
+    // &shamphys::offset_multipole<f64, 0, 1>); shamphys_module.def("offset_multipole_0",
+    // &shamphys::offset_multipole<f64, 0, 0>);
 }

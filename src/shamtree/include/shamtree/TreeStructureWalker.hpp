@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file TreeStructureWalker.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -45,8 +45,8 @@ namespace shamrock::tree {
     };
 
     template<WalkPolicy policy, class u_morton, class InteractCrit>
-    static TreeStructureWalker<policy, u_morton, InteractCrit>
-    generate_walk(TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit) {
+    static TreeStructureWalker<policy, u_morton, InteractCrit> generate_walk(
+        TreeStructure<u_morton> &str, u32 walker_count, InteractCrit &&crit) {
         TreeStructureWalker<policy, u_morton, InteractCrit> walk(
             str, walker_count, std::forward<InteractCrit>(crit));
         walk.generate();

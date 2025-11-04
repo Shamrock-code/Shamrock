@@ -64,11 +64,22 @@ jobs:
           - worldsize: 2
             testfile: sod_tube_zeus.py
           - worldsize: 1
+            testfile: advection_godunov.py
+          - worldsize: 1
             testfile: reload_old_dump.py
           - worldsize: 1
             testfile: dustybox_godunov.py
           - worldsize: 1
             testfile: dustywave_godunov.py
+          - worldsize: 1
+            testfile: regression_sph_disc.py
+          - worldsize: 1
+            testfile: regression_sph_kh.py
+          - worldsize: 1
+            testfile: regression_godunov_soundwave_3d.py
+          - worldsize: 2
+            testfile: regression_godunov_soundwave_3d.py
+      fail-fast: false
 
 
     timeout-minutes: 60
@@ -99,7 +110,6 @@ jobs:
 
   remove-image:
     name: Remove image
-    if: always()
     runs-on: ubuntu-latest
     needs: [ build_docker , shamrock_phys_test]
     steps:

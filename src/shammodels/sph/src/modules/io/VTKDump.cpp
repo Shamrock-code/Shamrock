@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,8 @@
 
 /**
  * @file VTKDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -51,7 +52,7 @@ void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &wr
         sycl::buffer<u64> idp(num_obj);
 
         u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             using namespace shamalgs::memory;
             using namespace shambase;
 
@@ -83,7 +84,7 @@ void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &w
         sycl::buffer<u32> idp(num_obj);
 
         u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             using namespace shamalgs::memory;
             using namespace shambase;
 
@@ -154,7 +155,8 @@ namespace shammodels::sph::modules {
         using namespace shamrock;
         using namespace shamrock::patch;
         shamrock::SchedulerUtility utility(scheduler());
-        PatchDataLayout &pdl        = scheduler().pdl;
+
+        PatchDataLayerLayout &pdl   = scheduler().pdl();
         const u32 ixyz              = pdl.get_field_idx<Tvec>("xyz");
         const u32 ivxyz             = pdl.get_field_idx<Tvec>("vxyz");
         const u32 iaxyz             = pdl.get_field_idx<Tvec>("axyz");
@@ -163,7 +165,7 @@ namespace shammodels::sph::modules {
         const u32 ihpart            = pdl.get_field_idx<Tscal>("hpart");
         ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
@@ -280,7 +282,7 @@ namespace shammodels::sph::modules {
                 ComputeField<Tscal> tmp_epsilon
                     = utility.make_compute_field<Tscal>("tmp_epsilon", 1);
 
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                     shamlog_debug_ln(
                         "sph::vtk",
                         "compute extract epsilon field with idust =",
@@ -315,7 +317,7 @@ namespace shammodels::sph::modules {
             for (u32 idust = 0; idust < ndust; idust++) {
                 ComputeField<Tvec> tmp_deltav = utility.make_compute_field<Tvec>("tmp_deltav", 1);
 
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                     shamlog_debug_ln(
                         "sph::vtk", "compute extract deltav field with idust =", idust, p.id_patch);
 
@@ -348,3 +350,7 @@ using namespace shammath;
 template class shammodels::sph::modules::VTKDump<f64_3, M4>;
 template class shammodels::sph::modules::VTKDump<f64_3, M6>;
 template class shammodels::sph::modules::VTKDump<f64_3, M8>;
+
+template class shammodels::sph::modules::VTKDump<f64_3, C2>;
+template class shammodels::sph::modules::VTKDump<f64_3, C4>;
+template class shammodels::sph::modules::VTKDump<f64_3, C6>;

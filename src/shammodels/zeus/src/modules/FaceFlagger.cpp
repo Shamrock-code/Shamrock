@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file FaceFlagger.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -34,7 +34,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
 
     shambase::DistributedData<sycl::buffer<u8>> face_normals_dat_lookup;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
         sham::DeviceBuffer<TgridVec> &buf_cell_min = mpdat.pdat.get_field_buf_ref<TgridVec>(0);
@@ -57,7 +57,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::flag_faces() {
             sycl::accessor normals_lookup{
                 face_normals_lookup, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
+            shambase::parallel_for(cgh, mpdat.total_elements, "flag_neigh", [=](u64 id_a) {
                 TgridVec cell2_a = (cell_min[id_a] + cell_max[id_a]);
 
                 cell_looper.for_each_object_with_id(id_a, [&](u32 id_b, u64 id_list) {
@@ -143,7 +143,7 @@ void shammodels::zeus::modules::FaceFlagger<Tvec, TgridVec>::split_face_list() {
 
     shambase::DistributedData<NeighFaceList<Tvec>> neigh_lst;
 
-    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
         shamrock::tree::ObjectCache &cache = storage.neighbors_cache.get().get_cache(p.id_patch);
 
         sycl::buffer<u8> &face_normals_lookup = storage.face_normals_lookup.get().get(p.id_patch);
@@ -243,7 +243,7 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
 
             u8 wanted_lookup = lookup_value;
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+            shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 cnt = 0;
@@ -286,7 +286,7 @@ shamrock::tree::ObjectCache shammodels::zeus::modules::FaceFlagger<Tvec, TgridVe
 
             u8 wanted_lookup = lookup_value;
 
-            shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+            shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                 u32 id_a = (u32) gid;
                 u32 cnt  = scanned_neigh_cnt[id_a];
 

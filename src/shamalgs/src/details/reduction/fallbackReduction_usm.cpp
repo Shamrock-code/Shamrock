@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,29 +9,32 @@
 
 /**
  * @file fallbackReduction_usm.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/vec.hpp"
+#include <stdexcept>
 
 namespace shamalgs::reduction::details {
 
     template<class T, class BinaryOp>
     T reduc_internal(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         BinaryOp &&bop) {
 
-        if (!(end_id > start_id)) {
-            shambase::throw_unimplemented("whaaaat are you doing");
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "Empty range not supported for min/max operations");
         }
 
         auto acc = buf1.copy_to_stdvec();
@@ -45,9 +48,14 @@ namespace shamalgs::reduction::details {
     template<class T>
     T sum_usm_fallback(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
+
+        // Empty range for sum should return 0
+        if (start_id >= end_id) {
+            return T{};
+        }
 
         return reduc_internal<T>(sched, buf1, start_id, end_id, [](T lhs, T rhs) {
             return lhs + rhs;
@@ -57,7 +65,7 @@ namespace shamalgs::reduction::details {
     template<class T>
     T max_usm_fallback(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
 
@@ -69,7 +77,7 @@ namespace shamalgs::reduction::details {
     template<class T>
     T min_usm_fallback(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id) {
 
@@ -106,17 +114,17 @@ namespace shamalgs::reduction::details {
     #define X(_arg_)                                                                               \
         template _arg_ shamalgs::reduction::details::sum_usm_fallback<_arg_>(                      \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ shamalgs::reduction::details::max_usm_fallback<_arg_>(                      \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);                                                                           \
         template _arg_ shamalgs::reduction::details::min_usm_fallback<_arg_>(                      \
             const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
+            const sham::DeviceBuffer<_arg_> &buf1,                                                 \
             u32 start_id,                                                                          \
             u32 end_id);
 

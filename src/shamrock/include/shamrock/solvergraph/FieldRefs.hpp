@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file FieldRefs.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -19,7 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
-#include "shamrock/solvergraph/IDataEdgeNamed.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include <functional>
 
@@ -82,10 +82,15 @@ namespace shamrock::solvergraph {
             return refs;
         }
 
-        inline virtual PatchDataField<T> &get(u64 id_patch) const {
+        inline virtual PatchDataField<T> &get(u64 id_patch) { return field_refs.get(id_patch); }
+        inline virtual const PatchDataField<T> &get(u64 id_patch) const {
             return field_refs.get(id_patch);
         }
 
         inline virtual void free_alloc() { set_refs({}); }
+
+        static std::shared_ptr<FieldRefs<T>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<FieldRefs<T>>(name, texsymbol);
+        }
     };
 } // namespace shamrock::solvergraph

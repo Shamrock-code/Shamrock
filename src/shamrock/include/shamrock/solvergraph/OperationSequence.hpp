@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file OperationSequence.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -25,8 +25,8 @@ namespace shamrock::solvergraph {
         std::string name;
 
         public:
-        OperationSequence(std::string name, std::vector<std::shared_ptr<INode>> nodes)
-            : nodes(nodes), name(name) {
+        OperationSequence(std::string name, std::vector<std::shared_ptr<INode>> &&_nodes)
+            : nodes(std::forward<std::vector<std::shared_ptr<INode>>>(_nodes)), name(name) {
             if (nodes.size() == 0) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "OperationSequence must have at least one node");

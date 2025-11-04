@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file mpiInfo.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Use this header to include MPI properly
  *
  */
@@ -118,7 +118,7 @@ namespace shamcomm {
         auto print_state = [](std::string log, StateMPI_Aware state) {
             switch (mpi_cuda_aware) {
             case Yes: logs::print_ln(" - " + log + " :", col8b_green() + "Yes" + reset()); break;
-            case No: logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;
+            case No : logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;
             case Unknown:
                 logs::print_ln(" - " + log + " :", col8b_yellow() + "Unknown" + reset());
                 break;

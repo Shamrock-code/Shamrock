@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,14 +11,14 @@
 
 /**
  * @file ReattributeDataUtility.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shambase/string.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -58,14 +58,14 @@ namespace shamrock {
          * bound).
          */
         template<class T>
-        shambase::DistributedData<sycl::buffer<u64>>
-        compute_new_pid(SerialPatchTree<T> &sptree, u32 ipos) {
+        shambase::DistributedData<sycl::buffer<u64>> compute_new_pid(
+            SerialPatchTree<T> &sptree, u32 ipos) {
 
             StackEntry stack_loc{};
 
             shambase::DistributedData<sycl::buffer<u64>> newid_buf_map;
 
-            sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchData &pdat) {
+            sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
                 if (!pdat.is_empty()) {
 
                     PatchDataField<T> &pos_field = pdat.get_field<T>(ipos);
@@ -112,9 +112,9 @@ namespace shamrock {
          *
          * @return A shared distributed data object containing the extracted patch data.
          */
-        inline shambase::DistributedDataShared<shamrock::patch::PatchData>
-        extract_elements(shambase::DistributedData<sycl::buffer<u64>> new_pid) {
-            shambase::DistributedDataShared<patch::PatchData> part_exchange;
+        inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> extract_elements(
+            shambase::DistributedData<sycl::buffer<u64>> new_pid) {
+            shambase::DistributedDataShared<patch::PatchDataLayer> part_exchange;
 
             StackEntry stack_loc{};
 
@@ -123,7 +123,7 @@ namespace shamrock {
             std::unordered_map<u64, u64> histogram_extract;
 
             sched.patch_data.for_each_patchdata([&](u64 current_pid,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
                 histogram_extract[current_pid] = 0;
                 if (!pdat.is_empty()) {
 
@@ -139,11 +139,13 @@ namespace shamrock {
 
                                 if (!part_exchange.has_key(current_pid, new_pid)) {
                                     part_exchange.add_obj(
-                                        current_pid, new_pid, PatchData(sched.pdl));
+                                        current_pid,
+                                        new_pid,
+                                        PatchDataLayer(sched.get_layout_ptr()));
                                 }
 
                                 part_exchange.for_each(
-                                    [&](u64 _old_id, u64 _new_id, PatchData &pdat_int) {
+                                    [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
                                         if (_old_id == current_pid && _new_id == new_pid) {
                                             pdat.extract_element(i, pdat_int);
                                             histogram_extract[current_pid]++;
@@ -172,11 +174,12 @@ namespace shamrock {
                             std::vector<u32> &idx_extract = vec;
 
                             if (!part_exchange.has_key(current_pid, new_pid)) {
-                                part_exchange.add_obj(current_pid, new_pid, PatchData(sched.pdl));
+                                part_exchange.add_obj(
+                                    current_pid, new_pid, PatchDataLayer(sched.get_layout_ptr()));
                             }
 
                             part_exchange.for_each(
-                                [&](u64 _old_id, u64 _new_id, PatchData &pdat_int) {
+                                [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
                                     if (_old_id == current_pid && _new_id == new_pid) {
                                         pdat.append_subset_to(idx_extract, pdat_int);
                                     }
@@ -207,33 +210,33 @@ namespace shamrock {
          * @param position_field the name of the main field used to determine the new patch IDs
          */
         template<class T>
-        inline void
-        reatribute_patch_objects(SerialPatchTree<T> &sptree, std::string position_field) {
+        inline void reatribute_patch_objects(
+            SerialPatchTree<T> &sptree, std::string position_field) {
             StackEntry stack_loc{};
 
             using namespace shambase;
             using namespace shamrock::patch;
 
-            u32 ipos = sched.pdl.get_field_idx<T>(position_field);
+            u32 ipos = sched.pdl().get_field_idx<T>(position_field);
 
             DistributedData<sycl::buffer<u64>> new_pid = compute_new_pid(sptree, ipos);
 
-            DistributedDataShared<patch::PatchData> part_exchange = extract_elements(new_pid);
+            DistributedDataShared<patch::PatchDataLayer> part_exchange = extract_elements(new_pid);
 
-            part_exchange.for_each([](u64 sender, u64 receiver, PatchData &pdat) {
+            part_exchange.for_each([](u64 sender, u64 receiver, PatchDataLayer &pdat) {
                 shamlog_debug_ln("ReattributeDataUtility", sender, receiver, pdat.get_obj_cnt());
             });
 
-            DistributedDataShared<patch::PatchData> recv_dat;
+            DistributedDataShared<patch::PatchDataLayer> recv_dat;
 
-            shamalgs::collective::serialize_sparse_comm<PatchData>(
+            shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::move(part_exchange),
                 recv_dat,
                 [&](u64 id) {
                     return sched.get_patch_rank_owner(id);
                 },
-                [](PatchData &pdat) {
+                [](PatchDataLayer &pdat) {
                     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
                     ser.allocate(pdat.serialize_buf_byte_size());
                     pdat.serialize_buf(ser);
@@ -244,10 +247,10 @@ namespace shamrock {
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
                         std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return PatchData::deserialize_buf(ser, sched.pdl);
+                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
                 });
 
-            recv_dat.for_each([&](u64 sender, u64 receiver, PatchData &pdat) {
+            recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
                 shamlog_debug_ln("Part Exchanges", format("send = {} recv = {}", sender, receiver));
                 sched.patch_data.get_pdat(receiver).insert_elements(pdat);
             });

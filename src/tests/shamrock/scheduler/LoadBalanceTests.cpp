@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -108,10 +108,11 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
         std::mt19937 eng{0x111};
 
         for (u32 i = 0; i < count; i++) {
-            res.push_back(LBTile{
-                shamalgs::random::mock_value(eng, 0_u64, u64_max),
-                shamalgs::random::mock_value(eng, min_load, max_load),
-            });
+            res.push_back(
+                LBTile{
+                    shamalgs::primitives::mock_value(eng, 0_u64, u64_max),
+                    shamalgs::primitives::mock_value(eng, min_load, max_load),
+                });
         }
 
         return res;
@@ -119,11 +120,11 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
 
     std::vector<LBTile> vec_test = make_tile_list(64 * 4, 1000000, 1200000);
 
-    std::vector<i32> result1     = details::lb_startegy_parralel_sweep(vec_test, fake_world_size);
+    std::vector<i32> result1     = details::lb_startegy_parallel_sweep(vec_test, fake_world_size);
     std::vector<i32> result2     = details::lb_startegy_roundrobin(vec_test, fake_world_size);
     std::vector<i32> result_best = load_balance(std::vector(vec_test), fake_world_size);
 
-    add_strategy_plot("parralel sweep", "psweep", vec_test, result1, fake_world_size);
+    add_strategy_plot("parallel sweep", "psweep", vec_test, result1, fake_world_size);
     add_strategy_plot("round robin", "rrobin", vec_test, result2, fake_world_size);
     add_strategy_plot("best", "rrobin", vec_test, result_best, fake_world_size);
 }

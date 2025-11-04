@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,12 +9,13 @@
 
 /**
  * @file MortonCodeSortedSet.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shamtree/MortonCodeSortedSet.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
+#include "shamalgs/primitives/gen_buffer_index.hpp"
 #include <utility>
 
 namespace shamtree {
@@ -33,8 +34,8 @@ namespace shamtree {
         auto map_morton_id_to_obj_id
             = std::forward<sham::DeviceBuffer<u32>>(cached_map_morton_id_to_obj_id);
 
-        shamalgs::algorithm::fill_buffer_index_usm(
-            dev_sched, morton_count, map_morton_id_to_obj_id);
+        map_morton_id_to_obj_id.resize(morton_count);
+        shamalgs::primitives::fill_buffer_index(map_morton_id_to_obj_id, morton_count);
 
         shamalgs::algorithm::sort_by_key(
             dev_sched, morton_codes_to_sort, map_morton_id_to_obj_id, morton_count);

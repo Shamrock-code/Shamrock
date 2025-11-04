@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,11 +11,12 @@
 
 /**
  * @file DataInserterUtility.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
-#include "shamrock/patch/PatchData.hpp"
+#include "shamcomm/worldInfo.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -44,6 +45,32 @@ namespace shamrock {
          */
         DataInserterUtility(PatchScheduler &sched) : sched(sched) {}
 
+        inline void balance_load(std::function<void(void)> load_balance_update) {
+            // it seems that we need multiple runs to converge the load balance
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility", "---------------------------------------------"));
+            for (int i = 0; i < 3; i++) {
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln("DataInserterUtility", "Compute load ...");
+                }
+
+                load_balance_update();
+
+                shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
+                if (shamcomm::world_rank() == 0) {
+                    logger::info_ln("DataInserterUtility", "run scheduler step ...");
+                }
+
+                sched.scheduler_step(false, false);
+                sched.scheduler_step(true, true);
+            }
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility", "---------------------------------------------"));
+        }
+
         /**
          * @brief Pushes data into the scheduler.
          *
@@ -61,7 +88,7 @@ namespace shamrock {
          */
         template<class Tvec>
         u64 push_patch_data(
-            shamrock::patch::PatchData &pdat_ins,
+            shamrock::patch::PatchDataLayer &pdat_ins,
             std::string main_field_name,
             u32 split_threshold,
             std::function<void(void)> load_balance_update) {
@@ -76,15 +103,16 @@ namespace shamrock {
 
             if (pdat_ob_cnt < split_threshold) {
                 bool should_insert = true;
-                sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
                     if (should_insert) {
                         pdat.insert_elements(pdat_ins);
                         should_insert = false; // We insert only in first patch (no duplicates)
                     }
                 });
             } else {
-                shambase::throw_unimplemented("Not implemented yet please keep the obj count to be "
-                                              "inserted below the split_threshold, sorrrrrry ...");
+                shambase::throw_unimplemented(
+                    "Not implemented yet please keep the obj count to be "
+                    "inserted below the split_threshold, sorrrrrry ...");
             }
 
             if (shamcomm::world_rank() == 0) {
@@ -107,20 +135,7 @@ namespace shamrock {
             }
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
 
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "Compute load ...");
-            }
-
-            load_balance_update();
-
-            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln("DataInserterUtility", "run scheduler step ...");
-            }
-
-            sched.scheduler_step(false, false);
-            sched.scheduler_step(true, true);
+            balance_load(load_balance_update);
 
             return sum_push;
         }

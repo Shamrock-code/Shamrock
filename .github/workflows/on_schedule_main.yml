@@ -25,10 +25,10 @@ jobs:
     name: Doc
     uses: ./.github/workflows/make_documentation.yml
 
-  shamrock_linux_acpp:
+  env_tests:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang.yml
+    uses: ./.github/workflows/env_tests.yml
 
   shamrock_linux_acpp_conda:
     needs: [src_check]
@@ -39,11 +39,6 @@ jobs:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_macos:
-    name: Shamrock Test
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-macos.yml
 
   shamrock_linux_acpp_asan:
     needs: [src_check]
@@ -72,6 +67,6 @@ jobs:
 
 
   shamrock_linux_acpp_phystests:
-    needs: [shamrock_linux_acpp]
+    needs: [src_check]
     name: Tests (Phys)
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml

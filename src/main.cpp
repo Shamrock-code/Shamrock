@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file main.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  * @version 0.1
  * @date 2022-05-24
@@ -18,12 +18,13 @@
  *
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/logs/loglevel.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/time.hpp"
+#include "shambase/term_colors.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/fpe_except.hpp"
-#include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -35,22 +36,11 @@
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SignalCatch.hpp"
-#include "shamsys/legacy/log.hpp"
-#include "shamsys/legacy/sycl_handler.hpp"
-#include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamsys/shamrock_smi.hpp"
 #include <pybind11/embed.h>
-#include <type_traits>
-#include <unordered_map>
-#include <array>
 #include <cstdlib>
-#include <filesystem>
-#include <iterator>
-#include <memory>
-#include <ostream>
 #include <stdexcept>
 #include <string>
-#include <vector>
 
 //%Impl status : Should rewrite
 
@@ -59,7 +49,7 @@ PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
 
     opts::register_opt(
         "--smi", {}, "print information about available SYCL devices in the cluster");
@@ -193,7 +183,7 @@ int main(int argc, char *argv[]) {
         {
 
             if (opts::has_option("--ipython")) {
-                StackEntry stack_loc{};
+                __shamrock_stack_entry();
 
                 if (shamcomm::world_size() > 1) {
                     throw shambase::make_except_with_loc<std::runtime_error>(
@@ -203,7 +193,7 @@ int main(int argc, char *argv[]) {
                 shambindings::start_ipython(true);
 
             } else if (opts::has_option("--rscript")) {
-                StackEntry stack_loc{};
+                __shamrock_stack_entry();
                 std::string fname = std::string(opts::get_option("--rscript"));
 
                 shambindings::run_py_file(fname, shamcomm::world_rank() == 0);

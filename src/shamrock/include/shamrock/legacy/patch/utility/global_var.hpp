@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file global_var.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -35,7 +35,7 @@ class GlobalVariable {
 
         // sched.for_each_patch_buf([&](u64 id_patch, Patch cur_p, PatchDataBuffer &pdat_buf) {
         sched.for_each_patch_data(
-            [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat) {
+            [&](u64 id_patch, shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat) {
                 static_assert(
                     std::is_same<decltype(compute_fct(id_patch, pdat)), T>::value,
                     "lambda funct should return the Global variable type");

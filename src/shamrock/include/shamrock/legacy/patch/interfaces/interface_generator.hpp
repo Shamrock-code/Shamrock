@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file interface_generator.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -40,9 +40,9 @@
 class InterfaceVolumeGenerator {
     public:
     template<class vectype>
-    static std::vector<std::unique_ptr<shamrock::patch::PatchData>> append_interface(
+    static std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> append_interface(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat_buf,
+        shamrock::patch::PatchDataLayer &pdat_buf,
         std::vector<vectype> boxs_min,
         std::vector<vectype> boxs_max,
         vectype add_offset);
@@ -50,7 +50,7 @@ class InterfaceVolumeGenerator {
     template<class T, class vectype>
     inline static std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat_buf,
+        shamrock::patch::PatchDataLayer &pdat_buf,
         PatchDataField<T> &pdat_cfield,
         std::vector<vectype> boxs_min,
         std::vector<vectype> boxs_max) {
@@ -307,14 +307,15 @@ class Interface_Generator {
 
                             InterfaceComInternal tmp = interface_list[{i, j}];
 
-                            comm_vec.push_back(InterfaceComm<vectype>{
-                                sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
-                                tmp.global_patch_idx_recv,
-                                tmp.sender_patch_id,
-                                tmp.receiver_patch_id,
-                                tmp.interf_box_min,
-                                tmp.interf_box_max,
-                                tmp.interf_offset});
+                            comm_vec.push_back(
+                                InterfaceComm<vectype>{
+                                    sched.patch_list.id_patch_to_global_idx[tmp.sender_patch_id],
+                                    tmp.global_patch_idx_recv,
+                                    tmp.sender_patch_id,
+                                    tmp.receiver_patch_id,
+                                    tmp.interf_box_min,
+                                    tmp.interf_box_max,
+                                    tmp.interf_offset});
 
                             write_out << interface_list[{i, j}].local_patch_idx_send << "|"
                                       << interface_list[{i, j}].global_patch_idx_recv << "|"
@@ -384,14 +385,15 @@ class Interface_Generator {
 
         using namespace shamrock::patch;
 
-        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>>
+        std::unordered_map<u64, std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>>
             Interface_map;
 
         for (const Patch &p : sched.patch_list.global) {
-            Interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>();
+            Interface_map[p.id_patch]
+                = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
         }
 
-        std::vector<std::unique_ptr<PatchData>> comm_pdat;
+        std::vector<std::unique_ptr<PatchDataLayer>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if (interface_comm_list.size() > 0) {
 
@@ -399,7 +401,7 @@ class Interface_Generator {
 
                 if (sched.patch_list.global[interface_comm_list[i].global_patch_idx_send].data_count
                     > 0) {
-                    std::vector<std::unique_ptr<PatchData>> pret
+                    std::vector<std::unique_ptr<PatchDataLayer>> pret
                         = InterfaceVolumeGenerator::append_interface<vectype>(
                             shamsys::instance::get_alt_queue(),
                             sched.patch_data.owned_data[interface_comm_list[i].sender_patch_id],
@@ -409,11 +411,12 @@ class Interface_Generator {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchData>());
+                    comm_pdat.push_back(std::make_unique<PatchDataLayer>());
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             std::cout << "\n split \n";
@@ -499,9 +502,10 @@ class Interface_Generator {
                             global_comm_tag[i]);
                         Interface_map[precv.id_patch].push_back(
                             {psend.id_patch,
-                             std::make_unique<
-                                 PatchData>()}); // patchdata_irecv(recv_rq, psend.node_owner_id,
-                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
+                             std::make_unique<PatchDataLayer>()}); // patchdata_irecv(recv_rq,
+                                                                   // psend.node_owner_id,
+                                                                   // global_comm_tag[i],
+                                                                   // MPI_COMM_WORLD)}
                         patchdata_irecv_probe(
                             *std::get<1>(Interface_map[precv.id_patch]
                                                       [Interface_map[precv.id_patch].size() - 1]),

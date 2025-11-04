@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,11 +11,12 @@
 
 /**
  * @file algorithm.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief main include file for the shamalgs algorithms
  *
  */
 
+#include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"
@@ -26,9 +27,6 @@
  *
  */
 namespace shamalgs::algorithm {
-
-    // template<class T>
-    // void sort(sycl::queue &q, sycl::buffer<T> &buf1, u32 len);
 
     /**
      * @brief Sort the buffer according to the key order
@@ -41,14 +39,18 @@ namespace shamalgs::algorithm {
      */
     template<class Tkey, class Tval>
     void sort_by_key(
-        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len);
+        sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+        shamalgs::primitives::sort_by_key(q, buf_key, buf_values, len);
+    }
 
     template<class Tkey, class Tval>
     void sort_by_key(
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
-        u32 len);
+        u32 len) {
+        shamalgs::primitives::sort_by_key(sched, buf_key, buf_values, len);
+    }
 
     /**
      * @brief generate a buffer from a lambda expression based on the indexes
@@ -60,8 +62,8 @@ namespace shamalgs::algorithm {
      * @return sycl::buffer<typename std::invoke_result_t<Fct,u32>>
      */
     template<class Fct>
-    inline sycl::buffer<typename std::invoke_result_t<Fct, u32>>
-    gen_buffer_device(sycl::queue &q, u32 len, Fct &&func) {
+    inline sycl::buffer<typename std::invoke_result_t<Fct, u32>> gen_buffer_device(
+        sycl::queue &q, u32 len, Fct &&func) {
 
         using ret_t = typename std::invoke_result_t<Fct, u32>;
 
@@ -91,8 +93,8 @@ namespace shamalgs::algorithm {
      * @param len length of the index map
      */
     template<class T>
-    sycl::buffer<T>
-    index_remap(sycl::queue &q, sycl::buffer<T> &source_buf, sycl::buffer<u32> &index_map, u32 len);
+    sycl::buffer<T> index_remap(
+        sycl::queue &q, sycl::buffer<T> &source_buf, sycl::buffer<u32> &index_map, u32 len);
 
     /**
      * @brief remap a buffer (with multiple variable per index) according to a given index map
@@ -165,24 +167,5 @@ namespace shamalgs::algorithm {
      * @return sycl::buffer<u32> the returned buffer
      */
     sycl::buffer<u32> gen_buffer_index(sycl::queue &q, u32 len);
-
-    /**
-     * @brief generate a buffer such that for i in [0,len[, buf[i] = i
-     *
-     * @param sched the scheduler to run on
-     * @param len length of the buffer to generate
-     * @return sham::DeviceBuffer<u32> the returned buffer
-     */
-    sham::DeviceBuffer<u32> gen_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len);
-
-    /**
-     * @brief Fill a given buffer such that for i in [0,len[, buf[i] = i
-     *
-     * @param sched the scheduler to run on
-     * @param len length of the buffer to fill
-     * @param buf the buffer to fill
-     */
-    void
-    fill_buffer_index_usm(sham::DeviceScheduler_ptr sched, u32 len, sham::DeviceBuffer<u32> &buf);
 
 } // namespace shamalgs::algorithm

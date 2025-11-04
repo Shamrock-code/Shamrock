@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file PhantomDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  * \todo clean classes name to make it more readable
@@ -56,8 +56,8 @@ void shammodels::sph::PhantomDumpBlockArray<T>::print_state() {
 }
 
 template<class T>
-shammodels::sph::PhantomDumpTableHeader<T>
-shammodels::sph::PhantomDumpTableHeader<T>::from_file(shambase::FortranIOFile &phfile) {
+shammodels::sph::PhantomDumpTableHeader<T> shammodels::sph::PhantomDumpTableHeader<T>::from_file(
+    shambase::FortranIOFile &phfile) {
     StackEntry stack_loc{};
 
     shammodels::sph::PhantomDumpTableHeader<T> tmp;
@@ -312,8 +312,8 @@ shambase::FortranIOFile shammodels::sph::PhantomDump::gen_file() {
     return phfile;
 }
 
-shammodels::sph::PhantomDump
-shammodels::sph::PhantomDump::from_file(shambase::FortranIOFile &phfile) {
+shammodels::sph::PhantomDump shammodels::sph::PhantomDump::from_file(
+    shambase::FortranIOFile &phfile) {
     PhantomDump phdump;
 
     // first line

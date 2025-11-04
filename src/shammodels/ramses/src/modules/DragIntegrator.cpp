@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file DragIntegrator.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -55,7 +56,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     shamrock::ComputeField<Tvec> &cfield_dtrhov_d = storage.dtrhov_dust.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -67,7 +68,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln(
             "[AMR evolve time step before drag ]", "evolve field with no drag patch", p.id_patch);
 
@@ -108,7 +109,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhoe = rhoe_patch.get_write_access(depend_list);
 
         auto e1 = q.submit(depend_list, [&, dt](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, cell_count, "evolve field with no drag", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "evolve field with no drag", [=](u32 id_a) {
                 acc_rho[id_a]  = rho[id_a] + dt * acc_dt_rho_patch[id_a];
                 acc_rhov[id_a] = rhov[id_a] + dt * acc_dt_rhov_patch[id_a];
                 acc_rhoe[id_a] = rhoe[id_a] + dt * acc_dt_rhoe_patch[id_a];
@@ -138,7 +139,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         auto acc_rhov_d = rhov_d_patch.get_write_access(depend_list1);
 
         auto e2 = q.submit(depend_list1, [&, dt, ndust](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, ndust * cell_count, "dust  evolve field no drag", [=](u32 id_a) {
                     acc_rho_d[id_a]  = rho_d[id_a] + dt * acc_dt_rho_d_patch[id_a];
                     acc_rhov_d[id_a] = rhov_d[id_a] + dt * acc_dt_rhov_d_patch[id_a];
@@ -178,7 +179,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -197,7 +198,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR enable drag ]", "irk1 drag patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -236,7 +237,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         auto acc_alphas = alphas_buf.get_read_access(depend_list);
 
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
                 f64_3 tmp_mom_1 = acc_rhov_new_patch[id_a];
                 f64 tmp_rho     = acc_rho_old[id_a];
 
@@ -335,7 +336,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
     shamrock::ComputeField<Tvec> &cfield_rhov_d_new = storage.rhov_d_next_no_drag.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -355,7 +356,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
     scheduler().for_each_patchdata_nonempty([&, dt, ndust, friction_control](
                                                 const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[Ramses]", "expo drag on patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -565,9 +566,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
             alphas_buf.complete_event_state(e);
             scratch_expo.complete_event_state(e);
 
-        }
-
-        else {
+        } else {
 
             if (loc_mem_size > q.get_device_prop().local_mem_size) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(
@@ -634,11 +633,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         mu *= (-dt / (ndust + 1));
 
                         // get ptr to datas
-                        f64 *ptr_loc_A  = local_A.get_pointer() + mat_size_squared * loc_id;
-                        f64 *ptr_loc_B  = local_B.get_pointer() + mat_size_squared * loc_id;
-                        f64 *ptr_loc_F  = local_F.get_pointer() + mat_size_squared * loc_id;
-                        f64 *ptr_loc_I  = local_I.get_pointer() + mat_size_squared * loc_id;
-                        f64 *ptr_loc_Id = local_Id.get_pointer() + mat_size_squared * loc_id;
+                        f64 *ptr_loc_A  = &(local_A[0]) + mat_size_squared * loc_id;
+                        f64 *ptr_loc_B  = &(local_B[0]) + mat_size_squared * loc_id;
+                        f64 *ptr_loc_F  = &(local_F[0]) + mat_size_squared * loc_id;
+                        f64 *ptr_loc_I  = &(local_I[0]) + mat_size_squared * loc_id;
+                        f64 *ptr_loc_Id = &(local_Id[0]) + mat_size_squared * loc_id;
 
                         // create mdspan(s)
                         std::mdspan<

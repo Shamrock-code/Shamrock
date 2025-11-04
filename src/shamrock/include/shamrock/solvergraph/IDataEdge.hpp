@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,29 +11,33 @@
 
 /**
  * @file IDataEdge.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shambase/WithUUID.hpp"
-#include "shambase/aliases_int.hpp"
-#include "shamrock/solvergraph/IFreeable.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include <memory>
 #include <string>
+#include <utility>
 
 namespace shamrock::solvergraph {
 
-    class INode;
+    template<class T>
+    class IDataEdge : public IEdgeNamed {
 
-    class IDataEdge : public shambase::WithUUID<IDataEdge, u64>, public IFreeable {
         public:
-        inline std::string get_label() const { return _impl_get_dot_label(); }
-        inline std::string get_tex_symbol() const { return _impl_get_tex_symbol(); }
+        T data;
 
-        virtual std::string _impl_get_dot_label() const  = 0;
-        virtual std::string _impl_get_tex_symbol() const = 0;
+        using IEdgeNamed::IEdgeNamed;
+
+        inline virtual void free_alloc() { data = {}; }
 
         virtual ~IDataEdge() {}
+
+        static std::shared_ptr<IDataEdge<T>> make_shared(std::string name, std::string texsymbol) {
+            return std::make_shared<IDataEdge<T>>(name, texsymbol);
+        }
     };
 
 } // namespace shamrock::solvergraph

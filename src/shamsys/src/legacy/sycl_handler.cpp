@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file sycl_handler.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -76,11 +76,11 @@ auto exception_handler = [](sycl::exception_list exceptions) {
 std::string getDeviceTypeName(const sycl::device &Device) {
     auto DeviceType = Device.get_info<sycl::info::device::device_type>();
     switch (DeviceType) {
-    case sycl::info::device_type::cpu: return "CPU";
-    case sycl::info::device_type::gpu: return "GPU";
-    case sycl::info::device_type::host: return "HOST";
+    case sycl::info::device_type::cpu        : return "CPU";
+    case sycl::info::device_type::gpu        : return "GPU";
+    case sycl::info::device_type::host       : return "HOST";
     case sycl::info::device_type::accelerator: return "ACCELERATOR";
-    default: return "UNKNOWN";
+    default                                  : return "UNKNOWN";
     }
 }
 
@@ -198,13 +198,14 @@ namespace sycl_handler {
                     std::string platname = shambase::trunc_str(PlatformName, 24);
                     std::string devtype  = shambase::trunc_str(getDeviceTypeName(Device), 6);
 
-                    logger::raw_ln(shambase::format_printf(
-                        "| %-3s | %02d | %-29s | %-24s | %-6s |",
-                        selected.c_str(),
-                        key_global,
-                        devname.c_str(),
-                        platname.c_str(),
-                        devtype.c_str()));
+                    logger::raw_ln(
+                        shambase::format_printf(
+                            "| %-3s | %02d | %-29s | %-24s | %-6s |",
+                            selected.c_str(),
+                            key_global,
+                            devname.c_str(),
+                            platname.c_str(),
+                            devtype.c_str()));
 
                     if (key_global == ialt) {
                         alt_queue = std::make_unique<sycl::queue>(Device, exception_handler);

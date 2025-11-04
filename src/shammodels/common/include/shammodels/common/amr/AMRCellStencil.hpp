@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file AMRCellStencil.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief utility to manipulate AMR blocks
  */
 
@@ -92,10 +92,10 @@ namespace shammodels::amr::cell {
         template<class Visitor1, class Visitor2, class Visitor3, class Visitor4>
         inline void visitor(Visitor1 &&f1, Visitor2 &&f2, Visitor3 &&f3, Visitor4 &&f4) {
             switch (tag) {
-            case SAME: f1(level_d0); break;
+            case SAME   : f1(level_d0); break;
             case LEVELM1: f2(level_dm1); break;
             case LEVELP1: f3(level_dp1); break;
-            case NONE: f4(none); break;
+            case NONE   : f4(none); break;
             }
         }
     };

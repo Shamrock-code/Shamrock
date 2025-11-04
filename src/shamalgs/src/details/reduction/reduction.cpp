@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file reduction.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -26,45 +26,6 @@
 #include "shambackends/vec.hpp"
 
 namespace shamalgs::reduction {
-
-    template<class T>
-    T sum(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id) {
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return details::sum_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return details::sum_usm_fallback(sched, buf1, start_id, end_id);
-#endif
-    }
-
-    template<class T>
-    T min(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id) {
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return details::min_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return details::min_usm_fallback(sched, buf1, start_id, end_id);
-#endif
-    }
-
-    template<class T>
-    T max(
-        const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
-        u32 start_id,
-        u32 end_id) {
-#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-        return details::max_usm_group(sched, buf1, start_id, end_id, 128);
-#else
-        return details::max_usm_fallback(sched, buf1, start_id, end_id);
-#endif
-    }
 
     template<class T>
     T sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
@@ -94,8 +55,8 @@ namespace shamalgs::reduction {
     }
 
     template<class T>
-    shambase::VecComponent<T>
-    dot_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
+    shambase::VecComponent<T> dot_sum(
+        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
         sycl::buffer<shambase::VecComponent<T>> ret_data_base(end_id - start_id);
 
         q.submit([&](sycl::handler &cgh) {
@@ -214,21 +175,6 @@ namespace shamalgs::reduction {
         X(i32_3)
 
     #define X(_arg_)                                                                               \
-        template _arg_ sum<_arg_>(                                                                 \
-            const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
-            u32 start_id,                                                                          \
-            u32 end_id);                                                                           \
-        template _arg_ min<_arg_>(                                                                 \
-            const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
-            u32 start_id,                                                                          \
-            u32 end_id);                                                                           \
-        template _arg_ max<_arg_>(                                                                 \
-            const sham::DeviceScheduler_ptr &sched,                                                \
-            sham::DeviceBuffer<_arg_> &buf1,                                                       \
-            u32 start_id,                                                                          \
-            u32 end_id);                                                                           \
         template _arg_ sum(sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);   \
         template shambase::VecComponent<_arg_> dot_sum(                                            \
             sycl::queue &q, sycl::buffer<_arg_> &buf1, u32 start_id, u32 end_id);                  \

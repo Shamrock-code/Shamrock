@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -22,7 +22,7 @@ if(SHAMROCK_EXTERNAL_JSON)
 else()
     set(JSON_BuildTests OFF CACHE INTERNAL "")
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann_json 9cca280a)
+    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/nlohmann_json 55f93686c01528224f448c19128836e7df245f72)
 
     add_subdirectory(external/nlohmann_json)
 endif()

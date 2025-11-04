@@ -1,6 +1,6 @@
 # Everything before this line will be provided by the new-env script
 
-export INTEL_LLVM_VERSION=v6.0.0
+export INTEL_LLVM_VERSION=v6.2.0
 export INTEL_LLVM_GIT_DIR=$BUILD_DIR/.env/intelllvm-git
 export INTEL_LLVM_INSTALL_DIR=$BUILD_DIR/.env/intelllvm-install
 

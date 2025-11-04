@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file PhantomDumpEOSUtils.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -80,13 +80,15 @@ namespace {
                     logger::raw_ln(shambase::format("adiabatic eos: gamma = {}", eos.gamma));
                 }
             } else {
-                logger::raw_ln(shambase::format(
-                    "setting isothermal sound speed^2 (polyk) = {}, gamma = {}",
-                    eos.polyk,
-                    eos.gamma));
+                logger::raw_ln(
+                    shambase::format(
+                        "setting isothermal sound speed^2 (polyk) = {}, gamma = {}",
+                        eos.polyk,
+                        eos.gamma));
                 if (eos.polyk <= std::numeric_limits<f64>::epsilon()) {
-                    logger::raw_ln(shambase::format(
-                        "WARNING! sound speed zero in dump!, polyk = {}", eos.polyk));
+                    logger::raw_ln(
+                        shambase::format(
+                            "WARNING! sound speed zero in dump!, polyk = {}", eos.polyk));
                 }
             }
         }
@@ -97,9 +99,10 @@ namespace {
         eos.isink     = hdr.read_header_int<int>("isink");
 
         if (std::abs(eos.gamma - 1.0) > std::numeric_limits<f64>::epsilon() && maxvxyzu < 4) {
-            logger::raw_ln(shambase::format(
-                "WARNING! compiled for isothermal equation of state but gamma /= 1, gamma={}",
-                eos.gamma));
+            logger::raw_ln(
+                shambase::format(
+                    "WARNING! compiled for isothermal equation of state but gamma /= 1, gamma={}",
+                    eos.gamma));
         }
 
         int ierr = 0;

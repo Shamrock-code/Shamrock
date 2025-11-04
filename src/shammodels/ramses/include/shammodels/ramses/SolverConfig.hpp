@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,10 @@
 
 /**
  * @file SolverConfig.hpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
+ * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -92,7 +96,7 @@ namespace shammodels::basegodunov {
         NoGravity = 0,
         CG        = 1, // conjuguate gradient
         PCG       = 2, // preconditioned conjuguate gradient
-        BIGSTAB   = 3, // bigstab
+        BICGSTAB  = 3, // bicgstab
         MULTIGRID = 4  // multigrid
     };
 
@@ -201,7 +205,7 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     inline Tscal get_constant_G() {
         if (!unit_sys) {
-            logger::warn_ln("amr::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("amr::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
         } else {
@@ -211,8 +215,8 @@ struct shammodels::basegodunov::SolverConfig {
     inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
-        gravity_config.G_value = get_constant_G();
-        return gravity_config.get_fourPiG();
+        auto scal_G = get_constant_G();
+        return 4 * M_PI * scal_G;
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
@@ -266,11 +270,11 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_dust_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Dust is experimental"));
         }
 
         if (is_gravity_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 
             if (!shamrock::are_experimental_features_allowed()) {
@@ -288,7 +292,7 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_gas_passive_scalar_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file TimeIntegrator.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -29,7 +29,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     shamrock::ComputeField<Tscal> &cfield_dtrhoe = storage.dtrhoe.get();
 
     // load layout info
-    PatchDataLayout &pdl = scheduler().pdl;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -38,7 +38,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
 
     scheduler().for_each_patchdata_nonempty(
-        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -64,7 +64,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhoe = buf_rhoe.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
+                shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
 
                     rho[id_a] += dt * acc_dt_rho_patch[id_a];
@@ -92,7 +92,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
 
         scheduler().for_each_patchdata_nonempty([&, dt](
                                                     const shamrock::patch::Patch p,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
             shamlog_debug_ln(
                 "[AMR Flux]", "forward euler integration patch for dust fields", p.id_patch);
 
@@ -116,7 +116,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                shambase::parallel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
                     rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
                     rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
                 });

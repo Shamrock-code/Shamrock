@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,8 +22,8 @@
 namespace shammath {
 
     template<class T>
-    void
-    throw_ill_formed(T lower, T upper, SourceLocation call, SourceLocation loc = SourceLocation{}) {
+    void throw_ill_formed(
+        T lower, T upper, SourceLocation call, SourceLocation loc = SourceLocation{}) {
         throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
             "this range is ill formed normally upper > lower\n     lower = {}, upper = {}\n     "
             "call to check_throw = {}",

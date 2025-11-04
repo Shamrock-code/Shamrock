@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -26,7 +26,7 @@ function(_check_git_submodule_cloned directory expect_hash)
 
     if(SHAMROCK_FOLDER_IS_GIT AND SHAMROCK_CHECK_SUBMODULES_COMMIT_HASH)
         execute_process(
-            COMMAND git log -1 --format=%h
+            COMMAND git log -1 --format=%H
             WORKING_DIRECTORY "${directory}"
             OUTPUT_VARIABLE submodule_commit_hash
             RESULT_VARIABLE GIT_HASH_RETURN_CODE

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file AMRSetup.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -103,7 +103,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     sched.set_coord_domain_bound(bmin, bmax);
 
     if ((cell_size.x() != cell_size.y()) || (cell_size.y() != cell_size.z())) {
-        logger::warn_ln("AMR Grid", "your cells aren't cube");
+        ON_RANK_0(logger::warn_ln("AMR Grid", "your cells aren't cube"));
     }
 
     static_assert(dim == 3, "this is not implemented for dim != 3");
@@ -139,7 +139,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     auto has_pdat = [&]() {
         using namespace shamrock::patch;
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -179,7 +179,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
         }
 
         // Make a patchdata from pos_data
-        shamrock::patch::PatchData tmp(sched.pdl);
+        shamrock::patch::PatchDataLayer tmp(sched.get_layout_ptr());
         if (!tmp_out.empty()) {
             tmp.resize(tmp_out.size());
             tmp.fields_raz();
@@ -195,7 +195,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
     u32 nmax = scheduler().crit_patch_split;
     while (!cell_gen_iter.is_done()) {
 
-        shamrock::patch::PatchData pdat = next_n_patch();
+        shamrock::patch::PatchDataLayer pdat = next_n_patch();
 
         inserter.push_patch_data<TgridVec>(pdat, "cell_min", sched.crit_patch_split * 8, [&]() {
             scheduler().update_local_load_value([&](shamrock::patch::Patch p) {

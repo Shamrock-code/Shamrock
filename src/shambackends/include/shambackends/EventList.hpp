@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file EventList.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -145,6 +145,15 @@ namespace sham {
          * a runtime exception after waiting for all events.
          */
         ~EventList();
+
+        /// Get the list of events
+        inline std::vector<sycl::event> &get_events() { return events; }
+
+        /// Get the list of events (const)
+        inline const std::vector<sycl::event> &get_events() const { return events; }
+
+        /// Set the consumed state of the EventList (to be used with interop)
+        inline void set_consumed(bool consumed) { this->consumed = consumed; }
 
         private:
         std::vector<sycl::event> events = {};    ///< The list of SYCL events

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,12 +11,13 @@
 
 /**
  * @file IFieldRefs.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
 #include "shambase/DistributedData.hpp"
+#include "shambackends/math.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 
@@ -52,5 +53,23 @@ namespace shamrock::solvergraph {
         /// Get the underlying PatchDataField at the given id
         inline PatchDataField<T> &get_field(u64 id) const { return get_refs().get(id).get(); }
     };
+
+    template<class T>
+    T get_rank_max(const IFieldRefs<T> &field_refs) {
+        T ret = shambase::VectorProperties<T>::get_min();
+        field_refs.get_refs().for_each([&](u64 id, const PatchDataFieldRef<T> &field_ref) {
+            ret = sham::max(ret, field_ref.get().compute_max());
+        });
+        return ret;
+    }
+
+    template<class T>
+    T get_rank_min(const IFieldRefs<T> &field_refs) {
+        T ret = shambase::VectorProperties<T>::get_max();
+        field_refs.get_refs().for_each([&](u64 id, const PatchDataFieldRef<T> &field_ref) {
+            ret = sham::min(ret, field_ref.get().compute_min());
+        });
+        return ret;
+    }
 
 } // namespace shamrock::solvergraph

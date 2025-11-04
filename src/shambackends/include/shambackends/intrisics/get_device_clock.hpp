@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file get_device_clock.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
@@ -39,6 +39,46 @@ namespace sham {
         asm("mov.u64 %0, %%globaltimer;" : "=l"(clock));
         return clock;
     #endif
+    }
+} // namespace sham
+
+#elif defined(_IS_ACPP_SSCP)
+    #define SHAMROCK_INTRISICS_GET_DEVICE_CLOCK_AVAILABLE
+
+namespace sham {
+    inline u64 get_device_clock() {
+        u64 ret_val = -1;
+
+        namespace jit = sycl::AdaptiveCpp_jit;
+
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::compiler_backend>()
+                    == jit::compiler_backend::host,
+                [&]() {
+                    ret_val = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+                }););
+
+    #if __has_builtin(__nvvm_read_ptx_sreg_globaltimer)
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    ret_val = __nvvm_read_ptx_sreg_globaltimer();
+                }););
+
+    #else
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    u64 clock;
+                    asm("mov.u64 %0, %%globaltimer;" : "=l"(clock));
+                    ret_val = clock;
+                }););
+    #endif
+
+        return ret_val;
     }
 } // namespace sham
 

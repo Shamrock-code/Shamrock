@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,6 +9,7 @@
 
 /**
  * @file ModifierApplyDiscWarp.cpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -23,14 +24,14 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchData
-shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nmax) {
+shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::
+    next_n(u32 nmax) {
 
     using Config = SolverConfig<Tvec, SPHKernel>;
     Config solver_config;
-    ShamrockCtx &ctx               = context;
-    PatchScheduler &sched          = shambase::get_check_ref(ctx.sched);
-    shamrock::patch::PatchData tmp = parent->next_n(nmax);
+    ShamrockCtx &ctx                    = context;
+    PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);
+    shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);
 
     ////////////////////////// constants //////////////////////////
     constexpr Tscal _2pi = 2 * shambase::constants::pi<Tscal>;
@@ -40,10 +41,10 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
     Tscal posangle       = posangle_;
 
     ////////////////////////// load data //////////////////////////
-    sham::DeviceBuffer<Tvec> &buf_xyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("xyz"));
+    auto &pdl                         = sched.pdl();
+    sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl.get_field_idx<Tvec>("vxyz"));
+        = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("vxyz"));
 
     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
     sham::EventList depends_list;
@@ -52,7 +53,7 @@ shammodels::sph::modules::ModifierApplyDiscWarp<Tvec, SPHKernel>::next_n(u32 nma
     auto acc_vxyz = buf_vxyz.get_write_access(depends_list);
 
     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        shambase::parralel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
+        shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [=](i32 id_a) {
             Tvec &xyz_a  = acc_xyz[id_a];
             Tvec &vxyz_a = acc_vxyz[id_a];
 
@@ -99,3 +100,7 @@ using namespace shammath;
 template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, M4>;
 template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, M6>;
 template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, M8>;
+
+template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, C2>;
+template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, C4>;
+template class shammodels::sph::modules::ModifierApplyDiscWarp<f64_3, C6>;

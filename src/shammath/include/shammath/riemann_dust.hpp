@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file riemann_dust.hpp
- * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file contain states and Riemann solvers for dust
  */
@@ -54,8 +54,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator+(const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator+(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(lhs) += rhs;
     }
 
@@ -67,28 +67,28 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator-(const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator-(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(lhs) -= rhs;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec> &
-    DustConsState<Tvec>::operator*=(const typename DustConsState<Tvec>::Tscal factor) {
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator*=(
+        const typename DustConsState<Tvec>::Tscal factor) {
         rho *= factor;
         rhovel *= factor;
         return *this;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator*(const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
+    const DustConsState<Tvec> operator*(
+        const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
         return DustConsState<Tvec>(lhs) *= factor;
     }
 
     template<class Tvec>
-    const DustConsState<Tvec>
-    operator*(const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
+    const DustConsState<Tvec> operator*(
+        const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
         return DustConsState<Tvec>(rhs) *= factor;
     }
 

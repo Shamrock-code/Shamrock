@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file SimBox.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -21,7 +21,7 @@
 #include "shammath/CoordRange.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchCoordTransform.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include <type_traits>
 #include <stdexcept>
 #include <tuple>
@@ -38,13 +38,14 @@ namespace shamrock::patch {
 
         using var_t = FieldVariant<shammath::CoordRange>;
 
-        PatchDataLayout &pdl;
+        PatchDataLayerLayout &pdl;
 
         var_t bounding_box;
         PatchCoord<> patch_coord_bounding_box;
 
         public:
-        inline SimulationBoxInfo(PatchDataLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
+        inline SimulationBoxInfo(
+            PatchDataLayerLayout &pdl, PatchCoord<dim> patch_coord_bounding_box)
             : pdl(pdl), patch_coord_bounding_box(std::move(patch_coord_bounding_box)),
               bounding_box(shammath::CoordRange<f32>{}) {
 
@@ -152,7 +153,7 @@ namespace shamrock::patch {
          * @details
          * This function resets the bounding box of the simulation domain to the
          * maximum extents of the main field. The bounding box is defined by the
-         * PatchDataLayout object used to initialize the SimulationBoxInfo object.
+         * PatchDataLayerLayout object used to initialize the SimulationBoxInfo object.
          * The bounding box is a shammath::CoordRange object that contains the
          * coordinate range of the simulation domain.
          *

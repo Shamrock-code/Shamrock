@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,11 +11,12 @@
 
 /**
  * @file serialize.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/assert.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
@@ -37,9 +38,9 @@ namespace shamalgs {
         u64 head_size    = 0;
         u64 content_size = 0;
 
-        SerializeSize &
-        operator+=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
-        {                                    // but often is, to modify the private members)
+        SerializeSize &operator+=(
+            const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                             // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size += rhs.head_size;
             content_size += rhs.content_size;
@@ -54,9 +55,9 @@ namespace shamalgs {
             lhs += rhs; // reuse compound assignment
             return lhs; // return the result by value (uses move constructor)
         }
-        SerializeSize &
-        operator*=(const SerializeSize &rhs) // compound assignment (does not need to be a member,
-        {                                    // but often is, to modify the private members)
+        SerializeSize &operator*=(
+            const SerializeSize &rhs) // compound assignment (does not need to be a member,
+        {                             // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs.head_size;
             content_size *= rhs.content_size;
@@ -72,9 +73,9 @@ namespace shamalgs {
             return lhs; // return the result by value (uses move constructor)
         }
 
-        SerializeSize &
-        operator*=(const int &rhs) // compound assignment (does not need to be a member,
-        {                          // but often is, to modify the private members)
+        SerializeSize &operator*=(
+            const int &rhs) // compound assignment (does not need to be a member,
+        {                   // but often is, to modify the private members)
             /* addition of rhs to *this takes place here */
             head_size *= rhs;
             content_size *= rhs;
@@ -137,22 +138,51 @@ namespace shamalgs {
 
         static constexpr u64 alignment = 8;
 
-        inline void check_head_move_device(u64 off) {
+        template<class T>
+        inline void check_head_move_device(u64 off, u64 len) {
+            using Helper = details::SerializeHelperMember<T>;
+
+            SHAM_ASSERT(off == align_repr(len * Helper::szrepr));
+
             if (head_device + off > storage.get_size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "the buffer is not allocated, the head_device cannot be moved\n "
-                    "storage size : {}, requested head_device : {}",
+                    "Serializer device buffer overflow: cannot move device head.\n"
+                    "    storage size : {}\n"
+                    "    current head_device : {}\n"
+                    "    requested head_device : {}\n"
+                    "    offset : {}\n"
+                    "    len : {}\n"
+                    "    Helper::szrepr : {}",
                     storage.get_size(),
-                    head_device + off));
+                    head_device,
+                    head_device + off,
+                    off,
+                    len,
+                    Helper::szrepr));
             }
         }
-        inline void check_head_move_host(u64 off) {
+
+        template<class T>
+        inline void check_head_move_host(u64 off, u64 len) {
+            using Helper = details::SerializeHelperMember<T>;
+
+            SHAM_ASSERT(off == align_repr(len * Helper::szrepr));
+
             if (head_host + off > storage_header.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "the buffer is not allocated, the head_host cannot be moved\n "
-                    "storage_header size : {}, requested head_host : {}",
+                    "Serializer host buffer overflow: cannot move host head.\n"
+                    "    storage_header size : {}\n"
+                    "    current head_host : {}\n"
+                    "    requested head_host : {}\n"
+                    "    offset : {}\n"
+                    "    len : {}\n"
+                    "    Helper::szrepr : {}",
                     storage_header.size(),
-                    head_host + off));
+                    head_host,
+                    head_host + off,
+                    off,
+                    len,
+                    Helper::szrepr));
             }
         }
 
@@ -197,7 +227,7 @@ namespace shamalgs {
             u64 current_head = head_host;
 
             u64 offset = align_repr(Helper::szrepr);
-            check_head_move_host(offset);
+            check_head_move_host<T>(offset, 1);
 
             Helper::store(&(storage_header)[current_head], val);
 
@@ -212,7 +242,7 @@ namespace shamalgs {
 
             u64 current_head = head_host;
             u64 offset       = align_repr(Helper::szrepr);
-            check_head_move_host(offset);
+            check_head_move_host<T>(offset, 1);
 
             { // using host_acc rather than anything else since other options causes addition
               // latency
@@ -261,7 +291,7 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+            check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
 
@@ -290,7 +320,7 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+            check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
 
@@ -319,7 +349,7 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+            check_head_move_device<T>(offset, len);
 
             sham::EventList depends_list;
             const T *accbuf = buf.get_read_access(depends_list);
@@ -347,7 +377,7 @@ namespace shamalgs {
             u64 current_head = head_device;
 
             u64 offset = align_repr(len * Helper::szrepr);
-            check_head_move_device(offset);
+            check_head_move_device<T>(offset, len);
 
             if (buf.get_size() < len) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(

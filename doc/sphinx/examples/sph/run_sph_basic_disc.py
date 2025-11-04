@@ -182,7 +182,7 @@ model.change_htolerance(1.1)
 
 # %%
 # Manipulating the simulation
-# ------------------------
+# ---------------------------
 # Dump files (path relative to where you have started shamrock)
 
 dump_folder = "_to_trash"

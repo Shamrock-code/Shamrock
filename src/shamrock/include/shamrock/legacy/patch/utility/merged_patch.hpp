@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file merged_patch.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -19,7 +19,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 // #include "shamrock/legacy/patch/patchdata_buffer.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 
@@ -29,16 +29,17 @@ class MergedPatchData {
     using vec = sycl::vec<flt, 3>;
 
     u32 or_element_cnt = 0;
-    shamrock::patch::PatchData data;
+    shamrock::patch::PatchDataLayer data;
     std::tuple<vec, vec> box;
 
-    MergedPatchData(shamrock::patch::PatchDataLayout &pdl) : data(pdl) {};
+    MergedPatchData(const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl)
+        : data(pdl) {};
 
     [[nodiscard]]
-    static std::unordered_map<u64, MergedPatchData<flt>>
-    merge_patches(PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
+    static std::unordered_map<u64, MergedPatchData<flt>> merge_patches(
+        PatchScheduler &sched, LegacyInterfacehandler<vec, flt> &interface_hndl);
 
-    inline void write_back(shamrock::patch::PatchData &pdat) {
+    inline void write_back(shamrock::patch::PatchDataLayer &pdat) {
         pdat.overwrite(data, or_element_cnt);
     }
 };
@@ -50,7 +51,7 @@ inline void write_back_merge_patches(
     using namespace shamrock::patch;
     shamlog_debug_sycl_ln("Merged Patch", "write back merged buffers");
 
-    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+    sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
         if (merge_pdat.at(id_patch).or_element_cnt == 0)
             std::cout << " empty => skipping" << std::endl;
 
@@ -229,7 +230,7 @@ inline void make_merge_patches(
                 *merged_buf->fields_##arg[idx],                                                    \
                 *pdat_buf.fields_##arg[idx],                                                       \
                 0,                                                                                 \
-                pdat_buf.element_count *nvar);                                                     \
+                pdat_buf.element_count * nvar);                                                    \
             fields_##arg##_offset[idx] += pdat_buf.element_count * nvar;                           \
         }
         XMAC_LIST_ENABLED_FIELD
@@ -261,7 +262,7 @@ inline void make_merge_patches(
                 *merged_buf->fields_##arg[idx],                                                    \
                 *interfpdat.fields_##arg[idx],                                                     \
                 fields_##arg##_offset[idx],                                                        \
-                interfpdat.element_count *nvar);                                                   \
+                interfpdat.element_count * nvar);                                                  \
             fields_##arg##_offset[idx] += interfpdat.element_count * nvar;                         \
         }
                 XMAC_LIST_ENABLED_FIELD
@@ -311,7 +312,7 @@ inline void write_back_merge_patches(
                 *pdat_buf.fields_##arg[idx],                                                       \
                 *merge_pdat_buf.at(id_patch).data->fields_##arg[idx],                              \
                 0,                                                                                 \
-                pdat_buf.element_count *nvar);                                                     \
+                pdat_buf.element_count * nvar);                                                    \
         }
         XMAC_LIST_ENABLED_FIELD
     #undef X

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file exclusiveScanGPUGems39.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -230,13 +230,13 @@ namespace shamalgs::numeric::details {
         return std::move(get_in_buf_ref(step));
     }
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_1(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_1(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_2(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_2(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
-    template sycl::buffer<u32>
-    exclusive_sum_gpugems39_3(sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
+    template sycl::buffer<u32> exclusive_sum_gpugems39_3(
+        sycl::queue &q, sycl::buffer<u32> &buf1, u32 len);
 
 } // namespace shamalgs::numeric::details

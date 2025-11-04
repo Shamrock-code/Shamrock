@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file symtensors.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -878,6 +878,26 @@ namespace shammath {
         return b * a;
     }
 
+    template<class T>
+    inline SymTensor3d_4<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_4<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
     // rank 4 ops
     template<class T>
     T operator*(const SymTensor3d_4<T> &a, const SymTensor3d_4<T> &b) {
@@ -901,6 +921,21 @@ namespace shammath {
 
     template<class T>
     SymTensor3d_4<T> operator*(const T &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_4<T> &b) {
         return b * a;
     }
 

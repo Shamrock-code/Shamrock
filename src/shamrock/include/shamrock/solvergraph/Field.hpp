@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file Field.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -114,6 +114,9 @@ namespace shamrock::solvergraph {
             return field.field_data.get(id_patch).get_buf();
         }
 
-        inline PatchDataField<T> &get_field(u64 id_patch) { return field.field_data.get(id_patch); }
+        inline PatchDataField<T> &get(u64 id_patch) { return field.field_data.get(id_patch); }
+        inline const PatchDataField<T> &get(u64 id_patch) const {
+            return field.field_data.get(id_patch);
+        }
     };
 } // namespace shamrock::solvergraph

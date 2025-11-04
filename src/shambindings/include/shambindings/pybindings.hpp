@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file pybindings.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -32,8 +32,9 @@ namespace shambindings {
      * @brief Init python bindings and register them to Python API
      *
      * @param m the python module to bind definitions on
+     * @param hook_stdout if true, sys.stdout and sys.stderr will be hooked
      */
-    void init_embed(py::module &m);
+    void init_embed(py::module &m, bool hook_stdout = true);
 
     /**
      * @brief Expect python bindings to be initialized as lib mode, throws if not

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file AMRTree.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -26,7 +26,8 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_trees() {
 
     MergedPDat &mpdat = storage.merged_patchdata_ghost.get();
 
-    shamrock::patch::PatchDataLayout &mpdl = storage.ghost_layout.get();
+    shamrock::patch::PatchDataLayerLayout &mpdl
+        = shambase::get_check_ref(storage.ghost_layout.get());
 
     u32 reduc_level = 0;
 
@@ -114,7 +115,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             TgridVec imin = shambase::VectorProperties<TgridVec>::get_max();
             TgridVec imax = shambase::VectorProperties<TgridVec>::get_min();
 
-            shambase::parralel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
+            shambase::parallel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
                 TgridVec min = imin;
                 TgridVec max = imax;
 
@@ -149,7 +150,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             sycl::accessor lchild_flag{
                 shambase::get_check_ref(tree.tree_struct.buf_lchild_flag), cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
+            shambase::parallel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
                 u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
                 u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
@@ -186,7 +187,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::correct_bounding_box() 
             sycl::accessor tree_buf_min{tree_bmin, cgh, sycl::read_write};
             sycl::accessor tree_buf_max{tree_bmax, cgh, sycl::read_write};
 
-            shambase::parralel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
+            shambase::parallel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
                 TgridVec load_min = comp_bmin[nid];
                 TgridVec load_max = comp_bmax[nid];
 
@@ -263,7 +264,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
 
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 1", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
@@ -315,7 +316,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
                 tree::ObjectIterator cell_looper(tree, cgh);
 
                 // tree::LeafCacheObjectIterator particle_looper(tree,*xyz_cell_id,leaf_cache,cgh);
-                shambase::parralel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
+                shambase::parallel_for(cgh, obj_cnt, "compute neigh cache 2", [=](u64 gid) {
                     u32 id_a = (u32) gid;
 
                     shammath::AABB<TgridVec> cell_aabb{cell_min[id_a], cell_max[id_a]};
@@ -352,7 +353,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
     }));
 
     using namespace shamrock::patch;
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         storage.neighbors_cache.get().preload(cur_p.id_patch);
     });
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,11 +11,13 @@
 
 /**
  * @file groupReduction_usm_impl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shamalgs/details/reduction/group_reduc_utils.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/fmt_bindings/fmt_defs.hpp"
@@ -73,7 +75,7 @@ namespace shamalgs::reduction::details {
     template<class T, class GroupCombiner, class BinaryOp, class IdentityGetter>
     inline T reduc_internal(
         const sham::DeviceScheduler_ptr &sched,
-        sham::DeviceBuffer<T> &buf1,
+        const sham::DeviceBuffer<T> &buf1,
         u32 start_id,
         u32 end_id,
         u32 work_group_size,
@@ -81,13 +83,18 @@ namespace shamalgs::reduction::details {
         BinaryOp &&binary_op,
         IdentityGetter &&identity_getter) {
 
-        sham::DeviceQueue &q = sched->get_queue();
+        sham::DeviceQueue &q = shambase::get_check_ref(sched).get_queue();
+
+        if (start_id >= end_id) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "Empty (or invalid) range not supported for reduction operation");
+        }
 
         u32 len = end_id - start_id;
 
         sham::DeviceBuffer<T> buf_int(len, sched);
 
-        shamalgs::memory::write_with_offset_into(sched->get_queue(), buf_int, buf1, start_id, len);
+        buf1.copy_range(start_id, end_id, buf_int);
 
         sham::EventList depends_list;
         T *compute_buf = buf_int.get_write_access(depends_list);

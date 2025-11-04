@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file Device.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -74,7 +74,7 @@ namespace sham {
         switch (DeviceType) {
         case sycl::info::device_type::cpu: return DeviceType::CPU;
         case sycl::info::device_type::gpu: return DeviceType::GPU;
-        default: return DeviceType::UNKNOWN;
+        default                          : return DeviceType::UNKNOWN;
         }
     }
 
@@ -369,16 +369,16 @@ namespace sham {
     void Device::print_info() {
         shamcomm::logs::raw_ln("  Device info :");
         switch (prop.backend) {
-        case sham::Backend::OPENMP: shamcomm::logs::raw_ln("   - Backend : OpenMP"); break;
-        case sham::Backend::CUDA: shamcomm::logs::raw_ln("   - Backend : CUDA"); break;
-        case sham::Backend::ROCM: shamcomm::logs::raw_ln("   - Backend : ROCM"); break;
+        case sham::Backend::OPENMP : shamcomm::logs::raw_ln("   - Backend : OpenMP"); break;
+        case sham::Backend::CUDA   : shamcomm::logs::raw_ln("   - Backend : CUDA"); break;
+        case sham::Backend::ROCM   : shamcomm::logs::raw_ln("   - Backend : ROCM"); break;
         case sham::Backend::UNKNOWN: shamcomm::logs::raw_ln("   - Backend : Unknown"); break;
         }
         switch (prop.vendor) {
-        case sham::Vendor::AMD: shamcomm::logs::raw_ln("   - Vendor : AMD"); break;
-        case sham::Vendor::APPLE: shamcomm::logs::raw_ln("   - Vendor : Apple"); break;
-        case sham::Vendor::INTEL: shamcomm::logs::raw_ln("   - Vendor : Intel"); break;
-        case sham::Vendor::NVIDIA: shamcomm::logs::raw_ln("   - Vendor : Nvidia"); break;
+        case sham::Vendor::AMD    : shamcomm::logs::raw_ln("   - Vendor : AMD"); break;
+        case sham::Vendor::APPLE  : shamcomm::logs::raw_ln("   - Vendor : Apple"); break;
+        case sham::Vendor::INTEL  : shamcomm::logs::raw_ln("   - Vendor : Intel"); break;
+        case sham::Vendor::NVIDIA : shamcomm::logs::raw_ln("   - Vendor : Nvidia"); break;
         case sham::Vendor::UNKNOWN: shamcomm::logs::raw_ln("   - Vendor : Unknown"); break;
         }
         logger::raw_ln("   - Global mem size :", shambase::readable_sizeof(prop.global_mem_size));

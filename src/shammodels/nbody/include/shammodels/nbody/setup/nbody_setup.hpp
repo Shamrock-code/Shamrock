@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file nbody_setup.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -49,13 +49,13 @@ namespace models::nbody {
         }
 
         template<class T>
-        inline void
-        set_value_in_box(PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
+        inline void set_value_in_box(
+            PatchScheduler &sched, T val, std::string name, std::tuple<vec, vec> box) {
             generic::setup::modifiers::set_value_in_box(sched, val, name, box);
         }
 
-        inline void
-        pertub_eigenmode_wave(PatchScheduler &sched, std::tuple<flt, flt> ampls, vec k, flt phase) {
+        inline void pertub_eigenmode_wave(
+            PatchScheduler &sched, std::tuple<flt, flt> ampls, vec k, flt phase) {
             generic::setup::modifiers::pertub_eigenmode_wave(sched, ampls, k, phase);
         }
 

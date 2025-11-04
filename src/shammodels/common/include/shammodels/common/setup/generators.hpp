@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -13,7 +13,7 @@
 
 /**
  * @file generators.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -51,8 +51,8 @@ namespace generic::setup::generators {
     }
 
     template<class flt>
-    inline std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>>
-    get_ideal_fcc_box(flt r_particle, std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> box) {
+    inline std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> get_ideal_fcc_box(
+        flt r_particle, std::tuple<sycl::vec<flt, 3>, sycl::vec<flt, 3>> box) {
 
         using vec3 = sycl::vec<flt, 3>;
 
@@ -169,8 +169,8 @@ namespace generic::setup::generators {
 
         auto find_r = [&]() {
             while (true) {
-                flt u2 = shamalgs::random::mock_value<flt>(eng, 0, fmax);
-                flt r  = shamalgs::random::mock_value<flt>(eng, r_in, r_out);
+                flt u2 = shamalgs::primitives::mock_value<flt>(eng, 0, fmax);
+                flt r  = shamalgs::primitives::mock_value<flt>(eng, r_in, r_out);
                 if (u2 < f_func(r)) {
                     return r;
                 }
@@ -181,7 +181,7 @@ namespace generic::setup::generators {
 
         for (u32 i = 0; i < Npart; i++) {
 
-            flt theta = shamalgs::random::mock_value<flt>(eng, 0, _2pi);
+            flt theta = shamalgs::primitives::mock_value<flt>(eng, 0, _2pi);
             flt Gauss = shamalgs::random::mock_gaussian<flt>(eng);
 
             flt r = find_r();
@@ -245,11 +245,11 @@ namespace generic::setup::generators {
 
         for (u32 i = 0; i < Npart; i++) {
 
-            flt r_1 = shamalgs::random::mock_value<flt>(eng, 0, y);
+            flt r_1 = shamalgs::primitives::mock_value<flt>(eng, 0, y);
 
             flt r = sycl::pow(sycl::pow(r_in, c) + c * r_1 / K, 1 / c);
 
-            flt theta = shamalgs::random::mock_value<flt>(eng, 0, _2pi);
+            flt theta = shamalgs::primitives::mock_value<flt>(eng, 0, _2pi);
 
             flt u = shamalgs::random::mock_gaussian<flt>(eng);
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -17,6 +17,7 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambase/assert.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 #include <limits>
@@ -34,7 +35,10 @@ namespace shammath {
 
         inline Ray(T origin, T direction)
             : origin(origin), direction(direction), inv_direction(1 / direction) {
+
             Tscal f = sycl::length(direction);
+            SHAM_ASSERT(f > 0);
+
             this->direction /= f;
             this->inv_direction *= f;
         }
@@ -188,6 +192,12 @@ namespace shammath {
             return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
         }
 
+        inline bool contains(AABB other) const noexcept {
+            // return lower <= other.lower && upper >= other.upper;
+            return sham::vec_compare_leq(lower, other.lower)
+                   && sham::vec_compare_geq(upper, other.upper);
+        }
+
         /**
          * @brief Checks if the AABB is non-empty.
          *
@@ -262,6 +272,14 @@ namespace shammath {
          * @return true if the ray intersect the AABB
          */
         [[nodiscard]] inline bool intersect_ray(Ray<T> ray) const noexcept;
+
+        /// equal operator
+        inline bool operator==(const AABB<T> &other) const noexcept {
+            return sham::equals(lower, other.lower) && sham::equals(upper, other.upper);
+        }
+
+        /// not equal operator
+        inline bool operator!=(const AABB<T> &other) const noexcept { return !(*this == other); }
     };
 
     template<class T>

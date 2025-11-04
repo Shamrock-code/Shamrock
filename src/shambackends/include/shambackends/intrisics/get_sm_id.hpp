@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,8 @@
 
 /**
  * @file get_sm_id.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Antoine Richermoz (antoine.richermoz@inria.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This file implement the GPU core timeline tool from  A. Richermoz, F. Neyret 2024
  */
 
@@ -55,6 +56,34 @@ namespace sham {
         uint cu_id;
         asm volatile("s_getreg_b32 %0, hwreg(HW_REG_HW_ID1, 10, 4)" : "=s"(cu_id));
         return cu_id;
+    }
+
+#elif defined(_IS_ACPP_SSCP)
+    #define SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
+
+    inline u32 get_sm_id() {
+        u32 ret = -1;
+
+        namespace jit = sycl::AdaptiveCpp_jit;
+
+    #if __has_builtin(__nvvm_read_ptx_sreg_smid)
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    ret = __nvvm_read_ptx_sreg_smid();
+                }););
+
+    #else
+        __acpp_if_target_sscp(
+            jit::compile_if(
+                jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
+                [&]() {
+                    asm("mov.u32 %0, %%smid;" : "=r"(ret));
+                }););
+    #endif
+
+        return ret;
     }
 
 #elif defined(__ACPP__) && ACPP_LIBKERNEL_IS_DEVICE_PASS_HOST && defined(linux)

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file Phantom2Shamrock.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -57,8 +57,8 @@ namespace shammodels::sph {
     }
 
     template<class Tvec>
-    void
-    write_shamrock_eos_in_phantom_dump(EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error) {
+    void write_shamrock_eos_in_phantom_dump(
+        EOSConfig<Tvec> &cfg, PhantomDump &dump, bool bypass_error) {
 
         using EOS_Isothermal              = typename EOSConfig<Tvec>::Isothermal;
         using EOS_Adiabatic               = typename EOSConfig<Tvec>::Adiabatic;

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file KarrasRadixTreeAABB.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -91,7 +91,7 @@ namespace shamtree {
     template<class Tvec>
     KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_positions(
         const KarrasRadixTree &tree,
-        const CellIterator &cell_it,
+        const LeafCellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions) {
 
@@ -105,10 +105,23 @@ namespace shamtree {
                 tree.get_leaf_count(),
                 [leaf_offset](
                     u32 i, const Tvec *pos, auto cell_iter, Tvec *comp_min, Tvec *comp_max) {
+                    // how to lose a f****ing afternoon :
+                    // 1 - code a nice algorithm that should optimize the code
+                    // 2 - pass all the tests
+                    // 3 - benchmark it and discover big loss in perf for no reasons
+                    // 4 - change a parameter and discover a segfault (on GPU to have more fun ....)
+                    // 5 - find that actually the core algorithm of the code create a bug in the new
+                    // thing 6 - discover that every value in everything is wrong 7 - spent the
+                    // whole night on it 8 - start putting prints everywhere 9 - isolate a bugged id
+                    // 10 - try to understand why a f***ing leaf is as big as the root of the tree
+                    // 11 - **** a few hours latter 12 - the goddam c++ standard define
+                    // std::numeric_limits<float>::min() to be epsilon instead of -max 13 - road
+                    // rage 14
+                    // - open a bier alt f4 the ide
                     Tvec min = shambase::VectorProperties<Tvec>::get_max();
                     Tvec max = -shambase::VectorProperties<Tvec>::get_max();
 
-                    cell_iter.for_each_in_cell(i, [&](u32 obj_id) {
+                    cell_iter.for_each_in_leaf_cell(i, [&](u32 obj_id) {
                         Tvec r = pos[obj_id];
 
                         min = sham::min(min, r);
@@ -140,7 +153,7 @@ template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb<f64_3>
 
 template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb_from_positions<f64_3>(
     const KarrasRadixTree &tree,
-    const CellIterator &cell_it,
+    const LeafCellIterator &cell_it,
     shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb,
     sham::DeviceBuffer<f64_3> &positions);
 #endif

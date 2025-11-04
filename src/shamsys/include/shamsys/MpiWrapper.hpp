@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file MpiWrapper.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This header does the MPI include and wrap MPI calls
  *
  */
@@ -84,68 +84,8 @@ namespace mpi {
     inline int add_error_string(int errorcode, const char *string) {
         CALL_LOG_RETURN(MPI_Add_error_string, (errorcode, string));
     }
-    inline int allgather(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        int recvcount,
-        MPI_Datatype recvtype,
-        MPI_Comm comm) {
-        CALL_LOG_RETURN(
-            MPI_Allgather, (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm));
-    }
-    inline int iallgather(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        int recvcount,
-        MPI_Datatype recvtype,
-        MPI_Comm comm,
-        MPI_Request *request) {
-        CALL_LOG_RETURN(
-            MPI_Iallgather,
-            (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm, request));
-    }
-    inline int allgatherv(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        const int recvcounts[],
-        const int displs[],
-        MPI_Datatype recvtype,
-        MPI_Comm comm) {
-        CALL_LOG_RETURN(
-            MPI_Allgatherv,
-            (sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm));
-    }
-    inline int iallgatherv(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        const int recvcounts[],
-        const int displs[],
-        MPI_Datatype recvtype,
-        MPI_Comm comm,
-        MPI_Request *request) {
-        CALL_LOG_RETURN(
-            MPI_Iallgatherv,
-            (sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, comm, request));
-    }
     inline int alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr) {
         CALL_LOG_RETURN(MPI_Alloc_mem, (size, info, baseptr));
-    }
-    inline int allreduce(
-        const void *sendbuf,
-        void *recvbuf,
-        int count,
-        MPI_Datatype datatype,
-        MPI_Op op,
-        MPI_Comm comm) {
-        CALL_LOG_RETURN(MPI_Allreduce, (sendbuf, recvbuf, count, datatype, op, comm));
     }
     inline int iallreduce(
         const void *sendbuf,
@@ -272,8 +212,8 @@ namespace mpi {
     inline int bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) {
         CALL_LOG_RETURN(MPI_Bcast, (buffer, count, datatype, root, comm));
     }
-    inline int
-    bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    inline int bsend(
+        const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
         CALL_LOG_RETURN(MPI_Bsend, (buf, count, datatype, dest, tag, comm));
     }
     inline int ibcast(
@@ -317,15 +257,15 @@ namespace mpi {
     inline int cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[], int coords[]) {
         CALL_LOG_RETURN(MPI_Cart_get, (comm, maxdims, dims, periods, coords));
     }
-    inline int
-    cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[], int *newrank) {
+    inline int cart_map(
+        MPI_Comm comm, int ndims, const int dims[], const int periods[], int *newrank) {
         CALL_LOG_RETURN(MPI_Cart_map, (comm, ndims, dims, periods, newrank));
     }
     inline int cart_rank(MPI_Comm comm, const int coords[], int *rank) {
         CALL_LOG_RETURN(MPI_Cart_rank, (comm, coords, rank));
     }
-    inline int
-    cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source, int *rank_dest) {
+    inline int cart_shift(
+        MPI_Comm comm, int direction, int disp, int *rank_source, int *rank_dest) {
         CALL_LOG_RETURN(MPI_Cart_shift, (comm, direction, disp, rank_source, rank_dest));
     }
     inline int cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm *new_comm) {
@@ -335,8 +275,8 @@ namespace mpi {
         CALL_LOG_RETURN(MPI_Cartdim_get, (comm, ndims));
     }
     inline int close_port(const char *port_name) { CALL_LOG_RETURN(MPI_Close_port, (port_name)); }
-    inline int
-    comm_accept(const char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm) {
+    inline int comm_accept(
+        const char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm) {
         CALL_LOG_RETURN(MPI_Comm_accept, (port_name, info, root, comm, newcomm));
     }
     inline MPI_Fint comm_c2f(MPI_Comm comm) { CALL_LOG_RETURN(MPI_Comm_c2f, (comm)); }
@@ -346,12 +286,12 @@ namespace mpi {
     inline int comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result) {
         CALL_LOG_RETURN(MPI_Comm_compare, (comm1, comm2, result));
     }
-    inline int
-    comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm) {
+    inline int comm_connect(
+        const char *port_name, MPI_Info info, int root, MPI_Comm comm, MPI_Comm *newcomm) {
         CALL_LOG_RETURN(MPI_Comm_connect, (port_name, info, root, comm, newcomm));
     }
-    inline int
-    comm_create_errhandler(MPI_Comm_errhandler_function *function, MPI_Errhandler *errhandler) {
+    inline int comm_create_errhandler(
+        MPI_Comm_errhandler_function *function, MPI_Errhandler *errhandler) {
         CALL_LOG_RETURN(MPI_Comm_create_errhandler, (function, errhandler));
     }
     inline int comm_create_keyval(
@@ -440,8 +380,8 @@ namespace mpi {
             MPI_Dist_graph_neighbors,
             (comm, maxindegree, sources, sourceweights, maxoutdegree, destinations, destweights));
     }
-    inline int
-    dist_graph_neighbors_count(MPI_Comm comm, int *inneighbors, int *outneighbors, int *weighted) {
+    inline int dist_graph_neighbors_count(
+        MPI_Comm comm, int *inneighbors, int *outneighbors, int *weighted) {
         CALL_LOG_RETURN(
             MPI_Dist_graph_neighbors_count, (comm, inneighbors, outneighbors, weighted));
     }
@@ -519,8 +459,8 @@ namespace mpi {
     inline int comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm) {
         CALL_LOG_RETURN(MPI_Comm_split, (comm, color, key, newcomm));
     }
-    inline int
-    comm_split_type(MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) {
+    inline int comm_split_type(
+        MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) {
         CALL_LOG_RETURN(MPI_Comm_split_type, (comm, split_type, key, info, newcomm));
     }
     inline int comm_test_inter(MPI_Comm comm, int *flag) {
@@ -592,8 +532,8 @@ namespace mpi {
     inline int file_call_errhandler(MPI_File fh, int errorcode) {
         CALL_LOG_RETURN(MPI_File_call_errhandler, (fh, errorcode));
     }
-    inline int
-    file_create_errhandler(MPI_File_errhandler_function *function, MPI_Errhandler *errhandler) {
+    inline int file_create_errhandler(
+        MPI_File_errhandler_function *function, MPI_Errhandler *errhandler) {
         CALL_LOG_RETURN(MPI_File_create_errhandler, (function, errhandler));
     }
     inline int file_set_errhandler(MPI_File file, MPI_Errhandler errhandler) {
@@ -602,11 +542,6 @@ namespace mpi {
     inline int file_get_errhandler(MPI_File file, MPI_Errhandler *errhandler) {
         CALL_LOG_RETURN(MPI_File_get_errhandler, (file, errhandler));
     }
-    inline int
-    file_open(MPI_Comm comm, const char *filename, int amode, MPI_Info info, MPI_File *fh) {
-        CALL_LOG_RETURN(MPI_File_open, (comm, filename, amode, info, fh));
-    }
-    inline int file_close(MPI_File *fh) { CALL_LOG_RETURN(MPI_File_close, (fh)); }
     inline int file_delete(const char *filename, MPI_Info info) {
         CALL_LOG_RETURN(MPI_File_delete, (filename, info));
     }
@@ -631,27 +566,9 @@ namespace mpi {
     inline int file_get_info(MPI_File fh, MPI_Info *info_used) {
         CALL_LOG_RETURN(MPI_File_get_info, (fh, info_used));
     }
-    inline int file_set_view(
-        MPI_File fh,
-        MPI_Offset disp,
-        MPI_Datatype etype,
-        MPI_Datatype filetype,
-        const char *datarep,
-        MPI_Info info) {
-        CALL_LOG_RETURN(MPI_File_set_view, (fh, disp, etype, filetype, datarep, info));
-    }
     inline int file_get_view(
         MPI_File fh, MPI_Offset *disp, MPI_Datatype *etype, MPI_Datatype *filetype, char *datarep) {
         CALL_LOG_RETURN(MPI_File_get_view, (fh, disp, etype, filetype, datarep));
-    }
-    inline int file_read_at(
-        MPI_File fh,
-        MPI_Offset offset,
-        void *buf,
-        int count,
-        MPI_Datatype datatype,
-        MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_File_read_at, (fh, offset, buf, count, datatype, status));
     }
     inline int file_read_at_all(
         MPI_File fh,
@@ -661,15 +578,6 @@ namespace mpi {
         MPI_Datatype datatype,
         MPI_Status *status) {
         CALL_LOG_RETURN(MPI_File_read_at_all, (fh, offset, buf, count, datatype, status));
-    }
-    inline int file_write_at(
-        MPI_File fh,
-        MPI_Offset offset,
-        const void *buf,
-        int count,
-        MPI_Datatype datatype,
-        MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_File_write_at, (fh, offset, buf, count, datatype, status));
     }
     inline int file_write_at_all(
         MPI_File fh,
@@ -716,32 +624,20 @@ namespace mpi {
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_File_iwrite_at_all, (fh, offset, buf, count, datatype, request));
     }
-    inline int
-    file_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_File_read, (fh, buf, count, datatype, status));
-    }
-    inline int
-    file_read_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
+    inline int file_read_all(
+        MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_File_read_all, (fh, buf, count, datatype, status));
     }
-    inline int
-    file_write(MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_File_write, (fh, buf, count, datatype, status));
-    }
-    inline int file_write_all(
-        MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_File_write_all, (fh, buf, count, datatype, status));
-    }
-    inline int
-    file_iread(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) {
+    inline int file_iread(
+        MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) {
         CALL_LOG_RETURN(MPI_File_iread, (fh, buf, count, datatype, request));
     }
     inline int file_iwrite(
         MPI_File fh, const void *buf, int count, MPI_Datatype datatype, MPI_Request *request) {
         CALL_LOG_RETURN(MPI_File_iwrite, (fh, buf, count, datatype, request));
     }
-    inline int
-    file_iread_all(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) {
+    inline int file_iread_all(
+        MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Request *request) {
         CALL_LOG_RETURN(MPI_File_iread_all, (fh, buf, count, datatype, request));
     }
     inline int file_iwrite_all(
@@ -757,8 +653,8 @@ namespace mpi {
     inline int file_get_byte_offset(MPI_File fh, MPI_Offset offset, MPI_Offset *disp) {
         CALL_LOG_RETURN(MPI_File_get_byte_offset, (fh, offset, disp));
     }
-    inline int
-    file_read_shared(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
+    inline int file_read_shared(
+        MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_File_read_shared, (fh, buf, count, datatype, status));
     }
     inline int file_write_shared(
@@ -807,8 +703,8 @@ namespace mpi {
     inline int file_read_all_end(MPI_File fh, void *buf, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_File_read_all_end, (fh, buf, status));
     }
-    inline int
-    file_write_all_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype) {
+    inline int file_write_all_begin(
+        MPI_File fh, const void *buf, int count, MPI_Datatype datatype) {
         CALL_LOG_RETURN(MPI_File_write_all_begin, (fh, buf, count, datatype));
     }
     inline int file_write_all_end(MPI_File fh, const void *buf, MPI_Status *status) {
@@ -820,8 +716,8 @@ namespace mpi {
     inline int file_read_ordered_end(MPI_File fh, void *buf, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_File_read_ordered_end, (fh, buf, status));
     }
-    inline int
-    file_write_ordered_begin(MPI_File fh, const void *buf, int count, MPI_Datatype datatype) {
+    inline int file_write_ordered_begin(
+        MPI_File fh, const void *buf, int count, MPI_Datatype datatype) {
         CALL_LOG_RETURN(MPI_File_write_ordered_begin, (fh, buf, count, datatype));
     }
     inline int file_write_ordered_end(MPI_File fh, const void *buf, MPI_Status *status) {
@@ -840,18 +736,6 @@ namespace mpi {
     inline int finalize(void) { CALL_LOG_RETURN(MPI_Finalize, ()); }
     inline int finalized(int *flag) { CALL_LOG_RETURN(MPI_Finalized, (flag)); }
     inline int free_mem(void *base) { CALL_LOG_RETURN(MPI_Free_mem, (base)); }
-    inline int gather(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        int recvcount,
-        MPI_Datatype recvtype,
-        int root,
-        MPI_Comm comm) {
-        CALL_LOG_RETURN(
-            MPI_Gather, (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm));
-    }
     inline int igather(
         const void *sendbuf,
         int sendcount,
@@ -865,20 +749,6 @@ namespace mpi {
         CALL_LOG_RETURN(
             MPI_Igather,
             (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm, request));
-    }
-    inline int gatherv(
-        const void *sendbuf,
-        int sendcount,
-        MPI_Datatype sendtype,
-        void *recvbuf,
-        const int recvcounts[],
-        const int displs[],
-        MPI_Datatype recvtype,
-        int root,
-        MPI_Comm comm) {
-        CALL_LOG_RETURN(
-            MPI_Gatherv,
-            (sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm));
     }
     inline int igatherv(
         const void *sendbuf,
@@ -907,17 +777,14 @@ namespace mpi {
     inline int get_address(const void *location, MPI_Aint *address) {
         CALL_LOG_RETURN(MPI_Get_address, (location, address));
     }
-    inline int get_count(const MPI_Status *status, MPI_Datatype datatype, int *count) {
-        CALL_LOG_RETURN(MPI_Get_count, (status, datatype, count));
-    }
     inline int get_elements(const MPI_Status *status, MPI_Datatype datatype, int *count) {
         CALL_LOG_RETURN(MPI_Get_elements, (status, datatype, count));
     }
     inline int get_elements_x(const MPI_Status *status, MPI_Datatype datatype, MPI_Count *count) {
         CALL_LOG_RETURN(MPI_Get_elements_x, (status, datatype, count));
     }
-    inline int
-    get(void *origin_addr,
+    inline int get(
+        void *origin_addr,
         int origin_count,
         MPI_Datatype origin_datatype,
         int target_rank,
@@ -985,8 +852,8 @@ namespace mpi {
     inline int graph_get(MPI_Comm comm, int maxindex, int maxedges, int index[], int edges[]) {
         CALL_LOG_RETURN(MPI_Graph_get, (comm, maxindex, maxedges, index, edges));
     }
-    inline int
-    graph_map(MPI_Comm comm, int nnodes, const int index[], const int edges[], int *newrank) {
+    inline int graph_map(
+        MPI_Comm comm, int nnodes, const int index[], const int edges[], int *newrank) {
         CALL_LOG_RETURN(MPI_Graph_map, (comm, nnodes, index, edges, newrank));
     }
     inline int graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors) {
@@ -1060,8 +927,8 @@ namespace mpi {
         int source, int tag, MPI_Comm comm, int *flag, MPI_Message *message, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Improbe, (source, tag, comm, flag, message, status));
     }
-    inline int
-    imrecv(void *buf, int count, MPI_Datatype type, MPI_Message *message, MPI_Request *request) {
+    inline int imrecv(
+        void *buf, int count, MPI_Datatype type, MPI_Message *message, MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Imrecv, (buf, count, type, message, request));
     }
     inline MPI_Fint info_c2f(MPI_Info info) { CALL_LOG_RETURN(MPI_Info_c2f, (info)); }
@@ -1111,16 +978,6 @@ namespace mpi {
     inline int iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Iprobe, (source, tag, comm, flag, status));
     }
-    inline int irecv(
-        void *buf,
-        int count,
-        MPI_Datatype datatype,
-        int source,
-        int tag,
-        MPI_Comm comm,
-        MPI_Request *request) {
-        CALL_LOG_RETURN(MPI_Irecv, (buf, count, datatype, source, tag, comm, request));
-    }
     inline int irsend(
         const void *buf,
         int count,
@@ -1130,16 +987,6 @@ namespace mpi {
         MPI_Comm comm,
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Irsend, (buf, count, datatype, dest, tag, comm, request));
-    }
-    inline int isend(
-        const void *buf,
-        int count,
-        MPI_Datatype datatype,
-        int dest,
-        int tag,
-        MPI_Comm comm,
-        MPI_Request *request) {
-        CALL_LOG_RETURN(MPI_Isend, (buf, count, datatype, dest, tag, comm, request));
     }
     inline int issend(
         const void *buf,
@@ -1161,12 +1008,12 @@ namespace mpi {
     inline MPI_Message message_f2c(MPI_Fint message) {
         CALL_LOG_RETURN(MPI_Message_f2c, (message));
     }
-    inline int
-    mprobe(int source, int tag, MPI_Comm comm, MPI_Message *message, MPI_Status *status) {
+    inline int mprobe(
+        int source, int tag, MPI_Comm comm, MPI_Message *message, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Mprobe, (source, tag, comm, message, status));
     }
-    inline int
-    mrecv(void *buf, int count, MPI_Datatype type, MPI_Message *message, MPI_Status *status) {
+    inline int mrecv(
+        void *buf, int count, MPI_Datatype type, MPI_Message *message, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Mrecv, (buf, count, type, message, status));
     }
     inline int neighbor_allgather(
@@ -1353,8 +1200,8 @@ namespace mpi {
         CALL_LOG_RETURN(
             MPI_Pack_external, (datarep, inbuf, incount, datatype, outbuf, outsize, position));
     }
-    inline int
-    pack_external_size(const char datarep[], int incount, MPI_Datatype datatype, MPI_Aint *size) {
+    inline int pack_external_size(
+        const char datarep[], int incount, MPI_Datatype datatype, MPI_Aint *size) {
         CALL_LOG_RETURN(MPI_Pack_external_size, (datarep, incount, datatype, size));
     }
     inline int pack(
@@ -1374,14 +1221,11 @@ namespace mpi {
     inline int pcontrol(const int level, ...){
         CALL_LOG_RETURN(MPI_Pcontrol,(level,...));
     }*/
-    inline int probe(int source, int tag, MPI_Comm comm, MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_Probe, (source, tag, comm, status));
-    }
     inline int publish_name(const char *service_name, MPI_Info info, const char *port_name) {
         CALL_LOG_RETURN(MPI_Publish_name, (service_name, info, port_name));
     }
-    inline int
-    put(const void *origin_addr,
+    inline int put(
+        const void *origin_addr,
         int origin_count,
         MPI_Datatype origin_datatype,
         int target_rank,
@@ -1435,16 +1279,6 @@ namespace mpi {
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Recv_init, (buf, count, datatype, source, tag, comm, request));
     }
-    inline int recv(
-        void *buf,
-        int count,
-        MPI_Datatype datatype,
-        int source,
-        int tag,
-        MPI_Comm comm,
-        MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_Recv, (buf, count, datatype, source, tag, comm, status));
-    }
     inline int reduce(
         const void *sendbuf,
         void *recvbuf,
@@ -1466,8 +1300,8 @@ namespace mpi {
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Ireduce, (sendbuf, recvbuf, count, datatype, op, root, comm, request));
     }
-    inline int
-    reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op) {
+    inline int reduce_local(
+        const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op) {
         CALL_LOG_RETURN(MPI_Reduce_local, (inbuf, inoutbuf, count, datatype, op));
     }
     inline int reduce_scatter(
@@ -1605,8 +1439,8 @@ namespace mpi {
              win,
              request));
     }
-    inline int
-    rsend(const void *ibuf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    inline int rsend(
+        const void *ibuf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
         CALL_LOG_RETURN(MPI_Rsend, (ibuf, count, datatype, dest, tag, comm));
     }
     inline int rsend_init(
@@ -1712,10 +1546,6 @@ namespace mpi {
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Send_init, (buf, count, datatype, dest, tag, comm, request));
     }
-    inline int
-    send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
-        CALL_LOG_RETURN(MPI_Send, (buf, count, datatype, dest, tag, comm));
-    }
     inline int sendrecv(
         const void *sendbuf,
         int sendcount,
@@ -1768,8 +1598,8 @@ namespace mpi {
         MPI_Request *request) {
         CALL_LOG_RETURN(MPI_Ssend_init, (buf, count, datatype, dest, tag, comm, request));
     }
-    inline int
-    ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+    inline int ssend(
+        const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
         CALL_LOG_RETURN(MPI_Ssend, (buf, count, datatype, dest, tag, comm));
     }
     inline int start(MPI_Request *request) { CALL_LOG_RETURN(MPI_Start, (request)); }
@@ -1791,12 +1621,12 @@ namespace mpi {
     inline int status_set_elements_x(MPI_Status *status, MPI_Datatype datatype, MPI_Count count) {
         CALL_LOG_RETURN(MPI_Status_set_elements_x, (status, datatype, count));
     }
-    inline int
-    testall(int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[]) {
+    inline int testall(
+        int count, MPI_Request array_of_requests[], int *flag, MPI_Status array_of_statuses[]) {
         CALL_LOG_RETURN(MPI_Testall, (count, array_of_requests, flag, array_of_statuses));
     }
-    inline int
-    testany(int count, MPI_Request array_of_requests[], int *index, int *flag, MPI_Status *status) {
+    inline int testany(
+        int count, MPI_Request array_of_requests[], int *index, int *flag, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Testany, (count, array_of_requests, index, flag, status));
     }
     inline int test(MPI_Request *request, int *flag, MPI_Status *status) {
@@ -1921,8 +1751,8 @@ namespace mpi {
             MPI_Type_create_subarray,
             (ndims, size_array, subsize_array, start_array, order, oldtype, newtype));
     }
-    inline int
-    type_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, MPI_Datatype *newtype) {
+    inline int type_create_resized(
+        MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint extent, MPI_Datatype *newtype) {
         CALL_LOG_RETURN(MPI_Type_create_resized, (oldtype, lb, extent, newtype));
     }
     inline int type_delete_attr(MPI_Datatype type, int type_keyval) {
@@ -1966,21 +1796,18 @@ namespace mpi {
         CALL_LOG_RETURN(
             MPI_Type_get_envelope, (type, num_integers, num_addresses, num_datatypes, combiner));
     }
-    inline int type_get_extent(MPI_Datatype type, MPI_Aint *lb, MPI_Aint *extent) {
-        CALL_LOG_RETURN(MPI_Type_get_extent, (type, lb, extent));
-    }
     inline int type_get_extent_x(MPI_Datatype type, MPI_Count *lb, MPI_Count *extent) {
         CALL_LOG_RETURN(MPI_Type_get_extent_x, (type, lb, extent));
     }
     inline int type_get_name(MPI_Datatype type, char *type_name, int *resultlen) {
         CALL_LOG_RETURN(MPI_Type_get_name, (type, type_name, resultlen));
     }
-    inline int
-    type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent) {
+    inline int type_get_true_extent(
+        MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent) {
         CALL_LOG_RETURN(MPI_Type_get_true_extent, (datatype, true_lb, true_extent));
     }
-    inline int
-    type_get_true_extent_x(MPI_Datatype datatype, MPI_Count *true_lb, MPI_Count *true_extent) {
+    inline int type_get_true_extent_x(
+        MPI_Datatype datatype, MPI_Count *true_lb, MPI_Count *true_extent) {
         CALL_LOG_RETURN(MPI_Type_get_true_extent_x, (datatype, true_lb, true_extent));
     }
     inline int type_indexed(
@@ -2036,15 +1863,10 @@ namespace mpi {
         CALL_LOG_RETURN(
             MPI_Unpack_external, (datarep, inbuf, insize, position, outbuf, outcount, datatype));
     }
-    inline int waitall(int count, MPI_Request array_of_requests[], MPI_Status *array_of_statuses) {
-        CALL_LOG_RETURN(MPI_Waitall, (count, array_of_requests, array_of_statuses));
-    }
     inline int waitany(int count, MPI_Request array_of_requests[], int *index, MPI_Status *status) {
         CALL_LOG_RETURN(MPI_Waitany, (count, array_of_requests, index, status));
     }
-    inline int wait(MPI_Request *request, MPI_Status *status) {
-        CALL_LOG_RETURN(MPI_Wait, (request, status));
-    }
+
     inline int waitsome(
         int incount,
         MPI_Request array_of_requests[],
@@ -2078,8 +1900,8 @@ namespace mpi {
     inline int win_create_dynamic(MPI_Info info, MPI_Comm comm, MPI_Win *win) {
         CALL_LOG_RETURN(MPI_Win_create_dynamic, (info, comm, win));
     }
-    inline int
-    win_create_errhandler(MPI_Win_errhandler_function *function, MPI_Errhandler *errhandler) {
+    inline int win_create_errhandler(
+        MPI_Win_errhandler_function *function, MPI_Errhandler *errhandler) {
         CALL_LOG_RETURN(MPI_Win_create_errhandler, (function, errhandler));
     }
     inline int win_create_keyval(
@@ -2144,8 +1966,8 @@ namespace mpi {
     inline int win_set_name(MPI_Win win, const char *win_name) {
         CALL_LOG_RETURN(MPI_Win_set_name, (win, win_name));
     }
-    inline int
-    win_shared_query(MPI_Win win, int rank, MPI_Aint *size, int *disp_unit, void *baseptr) {
+    inline int win_shared_query(
+        MPI_Win win, int rank, MPI_Aint *size, int *disp_unit, void *baseptr) {
         CALL_LOG_RETURN(MPI_Win_shared_query, (win, rank, size, disp_unit, baseptr));
     }
     inline int win_start(MPI_Group group, int assert, MPI_Win win) {

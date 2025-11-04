@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file ComputeTimeDerivative.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -74,7 +74,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         = shambase::get_check_ref(storage.flux_rhoe_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -220,7 +220,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
                 return delta_face.x() * delta_face.y() * delta_face.z();
             };
 
-            shambase::parralel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
+            shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                 const u32 cell_global_id = (u32) id_a;
 
                 const u32 block_id    = cell_global_id / AMRBlock::block_size;
@@ -365,7 +365,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         = shambase::get_check_ref(storage.flux_rhov_dust_face_zm).link_fields;
 
     scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
-                                                shamrock::patch::PatchData &pdat) {
+                                                shamrock::patch::PatchDataLayer &pdat) {
         shamlog_debug_ln("[AMR Flux]", "accumulate fluxes patch", p.id_patch);
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -505,7 +505,7 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
                 return delta_face.x() * delta_face.y() * delta_face.z();
             };
 
-            shambase::parralel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 ivar_a) {
+            shambase::parallel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 ivar_a) {
                 // cell id in the global space of index
                 const u32 icell_a = ivar_a / ndust;
                 // variable id in the cell of icell_a id

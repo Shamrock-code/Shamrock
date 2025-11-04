@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file NodeBuildTrees.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -54,7 +54,7 @@ namespace {
             TgridVec imin = shambase::VectorProperties<TgridVec>::get_max();
             TgridVec imax = shambase::VectorProperties<TgridVec>::get_min();
 
-            shambase::parralel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
+            shambase::parallel_for(cgh, leaf_count, "compute leaf boxes", [=](u64 leaf_id) {
                 TgridVec min = imin;
                 TgridVec max = imax;
 
@@ -89,7 +89,7 @@ namespace {
             sycl::accessor lchild_flag{
                 shambase::get_check_ref(tree.tree_struct.buf_lchild_flag), cgh, sycl::read_only};
 
-            shambase::parralel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
+            shambase::parallel_for(cgh, internal_cell_count, "propagate up", [=](u64 gid) {
                 u32 lid = lchild_id[gid] + offset_leaf * lchild_flag[gid];
                 u32 rid = rchild_id[gid] + offset_leaf * rchild_flag[gid];
 
@@ -126,7 +126,7 @@ namespace {
             sycl::accessor tree_buf_min{tree_bmin, cgh, sycl::read_write};
             sycl::accessor tree_buf_max{tree_bmax, cgh, sycl::read_write};
 
-            shambase::parralel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
+            shambase::parallel_for(cgh, tot_count, "write in tree range", [=](u64 nid) {
                 TgridVec load_min = comp_bmin[nid];
                 TgridVec load_max = comp_bmax[nid];
 

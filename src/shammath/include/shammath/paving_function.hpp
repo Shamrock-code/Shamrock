@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,8 +18,43 @@
 
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shammath/AABB.hpp"
 
 namespace shammath {
+
+    template<typename Tvec, class paving_func>
+    inline AABB<Tvec> f_aabb(
+        const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
+
+        Tvec min = paving.f(aabb.lower, i, j, k);
+        Tvec max = paving.f(aabb.upper, i, j, k);
+
+        // if the min is greater than the max, swap them
+        for (size_t d = 0; d < shambase::VectorProperties<Tvec>::dimension; ++d) {
+            if (min[d] > max[d]) {
+                std::swap(min[d], max[d]);
+            }
+        }
+
+        return AABB<Tvec>{min, max};
+    }
+
+    template<typename Tvec, class paving_func>
+    inline AABB<Tvec> f_aabb_inv(
+        const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
+
+        Tvec min = paving.f_inv(aabb.lower, i, j, k);
+        Tvec max = paving.f_inv(aabb.upper, i, j, k);
+
+        // if the min is greater than the max, swap them
+        for (size_t d = 0; d < shambase::VectorProperties<Tvec>::dimension; ++d) {
+            if (min[d] > max[d]) {
+                std::swap(min[d], max[d]);
+            }
+        }
+
+        return AABB<Tvec>{min, max};
+    }
 
     /**
      * @brief A structure for 3D paving functions with periodic boundary conditions.
@@ -40,7 +75,7 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The transformed vector.
          */
-        Tvec f(Tvec x, int i, int j, int k) { return x + box_size * Tvec{i, j, k}; }
+        Tvec f(Tvec x, int i, int j, int k) const { return x + box_size * Tvec{i, j, k}; }
 
         /**
          * @brief Applies the inverse of the paving function.
@@ -51,7 +86,15 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The inverse transformed vector.
          */
-        Tvec f_inv(Tvec x, int i, int j, int k) { return x - box_size * Tvec{i, j, k}; }
+        Tvec f_inv(Tvec x, int i, int j, int k) const { return x - box_size * Tvec{i, j, k}; }
+
+        inline AABB<Tvec> f_aabb(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb(*this, aabb, i, j, k);
+        }
+
+        inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb_inv(*this, aabb, i, j, k);
+        }
     };
 
     /**
@@ -94,7 +137,7 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The transformed vector.
          */
-        Tvec f(Tvec x, int i, int j, int k) {
+        Tvec f(Tvec x, int i, int j, int k) const {
             Tvec off{
                 (is_x_periodic) ? 0 : (x[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
                 (is_y_periodic) ? 0 : (x[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
@@ -111,13 +154,21 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The inverse transformed vector.
          */
-        Tvec f_inv(Tvec x, int i, int j, int k) {
+        Tvec f_inv(Tvec x, int i, int j, int k) const {
             Tvec tmp = x - box_size * Tvec{i, j, k};
             Tvec off{
                 (is_x_periodic) ? 0 : (tmp[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
                 (is_y_periodic) ? 0 : (tmp[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
                 (is_z_periodic) ? 0 : (tmp[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
             return tmp + off;
+        }
+
+        inline AABB<Tvec> f_aabb(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb(*this, aabb, i, j, k);
+        }
+
+        inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb_inv(*this, aabb, i, j, k);
         }
     };
 
@@ -156,7 +207,7 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The transformed vector.
          */
-        Tvec f(Tvec x, int i, int j, int k) {
+        Tvec f(Tvec x, int i, int j, int k) const {
             Tvec off{
                 (is_x_periodic) ? 0 : (x[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
                 (is_y_periodic) ? 0 : (x[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
@@ -173,13 +224,21 @@ namespace shammath {
          * @param k The periodic index along the z-axis.
          * @return The inverse transformed vector.
          */
-        Tvec f_inv(Tvec x, int i, int j, int k) {
+        Tvec f_inv(Tvec x, int i, int j, int k) const {
             Tvec tmp = x - box_size * Tvec{i, j, k} - shear_x * Tvec{j, 0, 0};
             Tvec off{
                 (is_x_periodic) ? 0 : (tmp[0] - box_center[0]) * (sham::m1pown<Tscal>(i) - 1),
                 (is_y_periodic) ? 0 : (tmp[1] - box_center[1]) * (sham::m1pown<Tscal>(j) - 1),
                 (is_z_periodic) ? 0 : (tmp[2] - box_center[2]) * (sham::m1pown<Tscal>(k) - 1)};
             return tmp + off;
+        }
+
+        inline AABB<Tvec> f_aabb(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb(*this, aabb, i, j, k);
+        }
+
+        inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
+            return shammath::f_aabb_inv(*this, aabb, i, j, k);
         }
     };
 

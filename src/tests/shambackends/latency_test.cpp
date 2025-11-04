@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -119,10 +119,11 @@ f64 test_buffer_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_
 
     std::vector<std::unique_ptr<sycl::queue>> queues{};
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        queues.push_back(std::make_unique<sycl::queue>(sycl::queue{
-            shamsys::instance::get_compute_scheduler().ctx->ctx,
-            shamsys::instance::get_compute_scheduler().ctx->device->dev,
-            sycl::property::queue::in_order{}}));
+        queues.push_back(
+            std::make_unique<sycl::queue>(sycl::queue{
+                shamsys::instance::get_compute_scheduler().ctx->ctx,
+                shamsys::instance::get_compute_scheduler().ctx->device->dev,
+                sycl::property::queue::in_order{}}));
     }
 
     std::vector<std::unique_ptr<sycl::buffer<f64>>> bufs{};
@@ -228,10 +229,11 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
 
     std::vector<std::unique_ptr<sycl::queue>> queues{};
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
-        queues.push_back(std::make_unique<sycl::queue>(sycl::queue{
-            shamsys::instance::get_compute_scheduler().ctx->ctx,
-            shamsys::instance::get_compute_scheduler().ctx->device->dev,
-            sycl::property::queue::in_order{}}));
+        queues.push_back(
+            std::make_unique<sycl::queue>(sycl::queue{
+                shamsys::instance::get_compute_scheduler().ctx->ctx,
+                shamsys::instance::get_compute_scheduler().ctx->device->dev,
+                sycl::property::queue::in_order{}}));
     }
 
     std::vector<f64 *> bufs{};

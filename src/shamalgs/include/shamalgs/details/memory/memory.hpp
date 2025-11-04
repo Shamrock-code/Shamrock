@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file memory.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -57,8 +57,8 @@ namespace shamalgs::memory {
     }
 
     template<class T>
-    void
-    set_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
+    void set_element(
+        sycl::queue &q, sycl::buffer<T> &buf, u32 idx, T val, bool discard_write = false) {
 
         if (discard_write) {
             q.submit([&, idx, val](sycl::handler &cgh) {
@@ -131,7 +131,7 @@ namespace shamalgs::memory {
         StackEntry stack_loc{};
         q.submit([&, value](sycl::handler &cgh) {
             sycl::accessor acc{buf, cgh, sycl::write_only};
-            shambase::parralel_for(cgh, buf.size(), "buf_fill", [=](u64 id_a) {
+            shambase::parallel_for(cgh, buf.size(), "buf_fill", [=](u64 id_a) {
                 acc[id_a] = value;
             });
         });
@@ -151,7 +151,7 @@ namespace shamalgs::memory {
         q.submit([&, value](sycl::handler &cgh) {
             sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, buf.size(), "buff_fill_discard", [=](u64 id_a) {
+            shambase::parallel_for(cgh, buf.size(), "buff_fill_discard", [=](u64 id_a) {
                 acc[id_a] = value;
             });
         });
@@ -168,8 +168,8 @@ namespace shamalgs::memory {
      * @param fmt
      */
     template<class T, typename... Tformat>
-    inline void
-    print_buf(sycl::buffer<T> &buf, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
+    inline void print_buf(
+        sycl::buffer<T> &buf, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
 
         sycl::host_accessor acc{buf, sycl::read_only};
 
@@ -197,7 +197,7 @@ namespace shamalgs::memory {
             sycl::accessor src{source, cgh, sycl::read_only};
             sycl::accessor dst{dest, cgh, sycl::write_only, sycl::no_init};
 
-            shambase::parralel_for(cgh, cnt, "copybuf_discard", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "copybuf_discard", [=](u64 i) {
                 dst[i] = src[i];
             });
         });
@@ -209,7 +209,7 @@ namespace shamalgs::memory {
             sycl::accessor src{source, cgh, sycl::read_only};
             sycl::accessor dst{dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, cnt, "copybuf", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "copybuf", [=](u64 i) {
                 dst[i] = src[i];
             });
         });
@@ -224,7 +224,7 @@ namespace shamalgs::memory {
 
             T fac = factor;
 
-            shambase::parralel_for(cgh, cnt, "add_with_factor_to", [=](u64 i) {
+            shambase::parallel_for(cgh, cnt, "add_with_factor_to", [=](u64 i) {
                 acc[i] += fac * dd[i];
             });
         });
@@ -305,8 +305,8 @@ namespace shamalgs::memory {
     }
 
     template<class T>
-    std::unique_ptr<sycl::buffer<T>>
-    duplicate(sycl::queue &q, const std::unique_ptr<sycl::buffer<T>> &buf_in) {
+    std::unique_ptr<sycl::buffer<T>> duplicate(
+        sycl::queue &q, const std::unique_ptr<sycl::buffer<T>> &buf_in) {
         if (buf_in) {
             auto buf = std::make_unique<sycl::buffer<T>>(buf_in->size());
             copybuf_discard(q, *buf_in, *buf, buf_in->size());

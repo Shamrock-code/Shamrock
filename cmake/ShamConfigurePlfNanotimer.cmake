@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -13,6 +13,6 @@ message("   ---- plf_nanotimer section ----")
 ### plf_nanotimer
 ###############################################################################
 
-_check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/plf_nanotimer 55e0fcb)
+_check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/plf_nanotimer 55e0fcb135ec8db874a0656f94d1f1780d7c75a7)
 
 include_directories(external/plf_nanotimer)

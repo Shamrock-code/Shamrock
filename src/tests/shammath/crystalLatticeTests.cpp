@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -111,12 +111,12 @@ TestStart(
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
-        i32 xmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 ymin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 zmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 xmax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 xmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
 
         REQUIRE_NAMED(
             shambase::format(
@@ -144,12 +144,12 @@ TestStart(
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
-        i32 xmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 ymin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 zmin = shamalgs::random::mock_value(eng, -7, 0);
-        i32 xmax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 ymax = shamalgs::random::mock_value(eng, 0, 7);
-        i32 zmax = shamalgs::random::mock_value(eng, 0, 7);
+        i32 xmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 ymin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 zmin = shamalgs::primitives::mock_value(eng, -7, 0);
+        i32 xmax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 ymax = shamalgs::primitives::mock_value(eng, 0, 7);
+        i32 zmax = shamalgs::primitives::mock_value(eng, 0, 7);
 
         if (xmin == xmax || ymin == ymax || zmin == zmax)
             continue;

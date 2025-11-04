@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file streamCompactExclScan.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -27,15 +27,15 @@ class StreamCompactionAlg;
 
 namespace shamalgs::numeric::details {
 
-    std::tuple<std::optional<sycl::buffer<u32>>, u32>
-    stream_compact_excl_scan(sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
+    std::tuple<std::optional<sycl::buffer<u32>>, u32> stream_compact_excl_scan(
+        sycl::queue &q, sycl::buffer<u32> &buf_flags, u32 len) {
 
         if (len < 2) {
             return stream_compact_fallback(q, buf_flags, len);
         }
 
         // perform the exclusive sum of the buf flag
-        sycl::buffer<u32> excl_sum = exclusive_sum(q, buf_flags, len);
+        sycl::buffer<u32> excl_sum = scan_exclusive(q, buf_flags, len);
 
         // recover the end value of the sum to know the new size
         u32 new_len = memory::extract_element(q, excl_sum, len - 1);
@@ -101,7 +101,7 @@ namespace shamalgs::numeric::details {
         }
 
         // perform the exclusive sum of the buf flag
-        sham::DeviceBuffer<u32> excl_sum = exclusive_sum(sched, buf_flags, len);
+        sham::DeviceBuffer<u32> excl_sum = scan_exclusive(sched, buf_flags, len);
 
         // recover the end value of the sum to know the new size
         u32 new_len = excl_sum.get_val_at_idx(len - 1);

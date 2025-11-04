@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file bitonicSort_updated_usm.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -38,8 +38,8 @@ namespace shamalgs::algorithm::details {
             vb          = (swap) ? auxida : auxidb;
         }
 
-        inline static void
-        _orderV(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, u32 b, bool reverse) {
+        inline static void _orderV(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, u32 b, bool reverse) {
             bool swap   = reverse ^ (x[a] < x[b]);
             auto auxa   = x[a];
             auto auxb   = x[b];
@@ -55,14 +55,14 @@ namespace shamalgs::algorithm::details {
         static void order_stencil(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse);
 
         template<>
-        inline void
-        order_stencil<2>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+        inline void order_stencil<2>(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
             _orderV(x, vx, a, a + 1, reverse);
         }
 
         template<>
-        inline void
-        order_stencil<4>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+        inline void order_stencil<4>(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
 #pragma unroll
             for (int i4 = 0; i4 < 2; i4++) {
                 _orderV(x, vx, a + i4, a + i4 + 2, reverse);
@@ -72,8 +72,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_stencil<8>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+        inline void order_stencil<8>(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
 #pragma unroll
             for (int i8 = 0; i8 < 4; i8++) {
                 _orderV(x, vx, a + i8, a + i8 + 4, reverse);
@@ -83,8 +83,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_stencil<16>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+        inline void order_stencil<16>(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
 #pragma unroll
             for (int i16 = 0; i16 < 8; i16++) {
                 _orderV(x, vx, a + i16, a + i16 + 8, reverse);
@@ -94,8 +94,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_stencil<32>(Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
+        inline void order_stencil<32>(
+            Tkey *__restrict__ x, Tval *__restrict__ vx, u32 a, bool reverse) {
 #pragma unroll
             for (int i32 = 0; i32 < 16; i32++) {
                 _orderV(x, vx, a + i32, a + i32 + 16, reverse);
@@ -105,12 +105,12 @@ namespace shamalgs::algorithm::details {
         }
 
         template<u32 stencil_size>
-        static void
-        order_kernel(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t);
+        static void order_kernel(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t);
 
         template<>
-        inline void
-        order_kernel<32>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
+        inline void order_kernel<32>(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1U;
 
@@ -125,7 +125,7 @@ namespace shamalgs::algorithm::details {
             for (int k = 0; k < 32; k++)
                 x[k] = m[k * _inc + i];
 
-            uint idx[32];
+            Tval idx[32];
 #pragma unroll
             for (int k = 0; k < 32; k++)
                 idx[k] = id[k * _inc + i];
@@ -143,8 +143,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_kernel<16>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
+        inline void order_kernel<16>(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
 
             u32 _inc = inc;
             u32 _dir = length << 1;
@@ -178,8 +178,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_kernel<8>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
+        inline void order_kernel<8>(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -212,8 +212,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_kernel<4>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
+        inline void order_kernel<4>(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -252,8 +252,8 @@ namespace shamalgs::algorithm::details {
         }
 
         template<>
-        inline void
-        order_kernel<2>(Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
+        inline void order_kernel<2>(
+            Tkey *__restrict__ m, Tval *__restrict__ id, u32 inc, u32 length, i32 t) {
             u32 _inc = inc;
             u32 _dir = length << 1;
 
@@ -289,7 +289,7 @@ namespace shamalgs::algorithm::details {
         u32 len) {
 
         if (!shambase::is_pow_of_two(len)) {
-            throw std::invalid_argument(
+            shambase::throw_with_loc<std::invalid_argument>(
                 "this algorithm can only be used with length that are powers of two");
         }
 
@@ -431,6 +431,30 @@ namespace shamalgs::algorithm::details {
         const sham::DeviceScheduler_ptr &sched,
         sham::DeviceBuffer<u64> &buf_key,
         sham::DeviceBuffer<u32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f32, f32, 32>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f64, f64, 32>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f32, f32, 16>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f32> &buf_key,
+        sham::DeviceBuffer<f32> &buf_values,
+        u32 len);
+
+    template void sort_by_key_bitonic_updated_usm<f64, f64, 16>(
+        const sham::DeviceScheduler_ptr &sched,
+        sham::DeviceBuffer<f64> &buf_key,
+        sham::DeviceBuffer<f64> &buf_values,
         u32 len);
 
 } // namespace shamalgs::algorithm::details

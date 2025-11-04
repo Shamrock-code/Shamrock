@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file AnalysisSodTube.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -20,6 +20,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shamphys/eos.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/legacy/log.hpp"
 
@@ -46,10 +47,13 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
 
     auto &sched = scheduler();
 
-    const u32 ixyz   = sched.pdl.template get_field_idx<Tvec>("xyz");
-    const u32 ihpart = sched.pdl.template get_field_idx<Tscal>("hpart");
-    const u32 ivxyz  = sched.pdl.template get_field_idx<Tvec>("vxyz");
-    const u32 iuint  = sched.pdl.template get_field_idx<Tscal>("uint");
+    using namespace shamrock::patch;
+    PatchDataLayerLayout &pdl = sched.pdl();
+
+    const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
 
     Tscal sum_L2_rho = 0;
     Tvec sum_L2_v    = {0, 0, 0};
@@ -57,7 +61,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
     Tscal N          = 0;
 
     scheduler().for_each_patchdata_nonempty(
-        [&](const shamrock::patch::Patch p, shamrock::patch::PatchData &pdat) {
+        [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
             auto &xyz_buf   = pdat.get_field_buf_ref<Tvec>(ixyz);
             auto &hpart_buf = pdat.get_field_buf_ref<Tscal>(ihpart);
             auto &vxyz_buf  = pdat.get_field_buf_ref<Tvec>(ivxyz);
@@ -117,3 +121,7 @@ using namespace shammath;
 template class shammodels::sph::modules::AnalysisSodTube<f64_3, M4>;
 template class shammodels::sph::modules::AnalysisSodTube<f64_3, M6>;
 template class shammodels::sph::modules::AnalysisSodTube<f64_3, M8>;
+
+template class shammodels::sph::modules::AnalysisSodTube<f64_3, C2>;
+template class shammodels::sph::modules::AnalysisSodTube<f64_3, C4>;
+template class shammodels::sph::modules::AnalysisSodTube<f64_3, C6>;

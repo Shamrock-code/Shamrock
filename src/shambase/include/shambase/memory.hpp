@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -146,8 +146,8 @@ namespace shambase {
      * @return T&
      */
     template<class T>
-    inline const T &
-    get_check_ref(const std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
+    inline const T &get_check_ref(
+        const std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
         if (!bool(ptr)) {
             throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
         }

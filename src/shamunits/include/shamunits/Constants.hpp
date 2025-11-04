@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,8 @@
 
 /**
  * @file Constants.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -49,6 +50,8 @@
     X(Na /***********/, Uget(mole, -1))                                                            \
     X(Kcd /**********/, Uget(lm, 1) * Uget(Watt, -1))                                              \
     /* times */                                                                                    \
+    X(second /**/, Uget(s, 1))                                                                     \
+    X(minute /**/, Uget(s, 1))                                                                     \
     X(hour /**/, Uget(s, 1))                                                                       \
     X(day /***/, Uget(s, 1))                                                                       \
     X(year /**/, Uget(s, 1))                                                                       \
@@ -131,9 +134,11 @@ namespace shamunits {
             /// Stephan Boltzmann constant (W.m-2.K-4)
             static constexpr T sigma = 5.670374419e-8;
 
-            static constexpr T hour = Conv::hr_to_s; //(s)
-            static constexpr T day  = Conv::dy_to_s; //(s)
-            static constexpr T year = Conv::yr_to_s; //(s)
+            static constexpr T second = 1;             //(s)
+            static constexpr T minute = Conv::mn_to_s; //(s)
+            static constexpr T hour   = Conv::hr_to_s; //(s)
+            static constexpr T day    = Conv::dy_to_s; //(s)
+            static constexpr T year   = Conv::yr_to_s; //(s)
 
             static constexpr T astronomical_unit = Conv::au_to_m;     //(m)
             static constexpr T au                = astronomical_unit; //(m)

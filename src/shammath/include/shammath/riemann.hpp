@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,9 +11,9 @@
 
 /**
  * @file riemann.hpp
- * @author Leodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  * @brief
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */
@@ -76,8 +76,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const ConsState<Tvec> &
-    ConsState<Tvec>::operator*=(const typename ConsState<Tvec>::Tscal factor) {
+    const ConsState<Tvec> &ConsState<Tvec>::operator*=(
+        const typename ConsState<Tvec>::Tscal factor) {
         rho *= factor;
         rhoe *= factor;
         rhovel *= factor;
@@ -85,14 +85,14 @@ namespace shammath {
     }
 
     template<class Tvec>
-    const ConsState<Tvec>
-    operator*(const typename ConsState<Tvec>::Tscal factor, const ConsState<Tvec> &rhs) {
+    const ConsState<Tvec> operator*(
+        const typename ConsState<Tvec>::Tscal factor, const ConsState<Tvec> &rhs) {
         return ConsState<Tvec>(rhs) *= factor;
     }
 
     template<class Tvec>
-    const ConsState<Tvec>
-    operator*(const ConsState<Tvec> &lhs, const typename ConsState<Tvec>::Tscal factor) {
+    const ConsState<Tvec> operator*(
+        const ConsState<Tvec> &lhs, const typename ConsState<Tvec>::Tscal factor) {
         return ConsState<Tvec>(lhs) *= factor;
     }
 
@@ -105,16 +105,16 @@ namespace shammath {
     };
 
     template<class Tvec>
-    inline constexpr shambase::VecComponent<Tvec>
-    rhoekin(shambase::VecComponent<Tvec> rho, Tvec v) {
+    inline constexpr shambase::VecComponent<Tvec> rhoekin(
+        shambase::VecComponent<Tvec> rho, Tvec v) {
         using Tscal    = shambase::VecComponent<Tvec>;
         const Tscal v2 = v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
         return 0.5 * rho * v2;
     }
 
     template<class Tvec>
-    inline constexpr ConsState<Tvec>
-    prim_to_cons(const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
+    inline constexpr ConsState<Tvec> prim_to_cons(
+        const PrimState<Tvec> prim, typename PrimState<Tvec>::Tscal gamma) {
         ConsState<Tvec> cons;
 
         cons.rho = prim.rho;
@@ -130,8 +130,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr PrimState<Tvec>
-    cons_to_prim(const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+    inline constexpr PrimState<Tvec> cons_to_prim(
+        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
         PrimState<Tvec> prim;
 
         prim.rho = cons.rho;
@@ -147,8 +147,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr ConsState<Tvec>
-    hydro_flux_x(const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+    inline constexpr ConsState<Tvec> hydro_flux_x(
+        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
         ConsState<Tvec> flux;
 
         const PrimState<Tvec> prim = cons_to_prim(cons, gamma);
@@ -165,8 +165,8 @@ namespace shammath {
     }
 
     template<class Tvec>
-    inline constexpr shambase::VecComponent<Tvec>
-    sound_speed(PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
+    inline constexpr shambase::VecComponent<Tvec> sound_speed(
+        PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
         return sycl::sqrt(gamma * prim.press / prim.rho);
     }
 
@@ -291,8 +291,8 @@ namespace shammath {
     }
 
     template<class Tcons>
-    inline constexpr auto
-    hll_flux_x(const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {
+    inline constexpr auto hll_flux_x(
+        const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {
         const auto primL = cons_to_prim(consL, gamma);
         const auto primR = cons_to_prim(consR, gamma);
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file SchedulerPatchData.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief PatchData handling
 
  *
@@ -19,8 +19,8 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchData.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/patch/SimBox.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/scheduler_patch_list.hpp"
@@ -30,10 +30,10 @@
 
 namespace shamrock::scheduler {
 
-    using Patch             = shamrock::patch::Patch;
-    using PatchData         = shamrock::patch::PatchData;
-    using PatchDataLayout   = shamrock::patch::PatchDataLayout;
-    using SimulationBoxInfo = shamrock::patch::SimulationBoxInfo;
+    using Patch                = shamrock::patch::Patch;
+    using PatchData            = shamrock::patch::PatchDataLayer;
+    using PatchDataLayerLayout = shamrock::patch::PatchDataLayerLayout;
+    using SimulationBoxInfo    = shamrock::patch::SimulationBoxInfo;
 
     /**
      * @brief Class to handle PatchData owned by the node
@@ -41,7 +41,15 @@ namespace shamrock::scheduler {
      */
     class SchedulerPatchData {
         public:
-        PatchDataLayout &pdl;
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr;
+
+        inline shamrock::patch::PatchDataLayerLayout &pdl() {
+            return shambase::get_check_ref(pdl_ptr);
+        }
+
+        inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr() const {
+            return pdl_ptr;
+        }
 
         /**
          * @brief map container for patchdata owned by the current node (layout : id_patch,data)
@@ -90,8 +98,9 @@ namespace shamrock::scheduler {
         void merge_patchdata(u64 new_key, const std::array<u64, 8> old_keys);
 
         inline SchedulerPatchData(
-            shamrock::patch::PatchDataLayout &pdl, shamrock::patch::PatchCoord<3> patch_coord_range)
-            : pdl(pdl), sim_box(pdl, patch_coord_range) {}
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+            shamrock::patch::PatchCoord<3> patch_coord_range)
+            : pdl_ptr(pdl_ptr), sim_box(pdl(), patch_coord_range) {}
     };
 
 } // namespace shamrock::scheduler

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,9 @@
 
 /**
  * @file matrix.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
  * @brief
  *
  */
@@ -41,13 +43,21 @@ namespace shammath {
             return std::mdspan<T, std::extents<size_t, m, n>>(data.data());
         }
 
+        /// const overload
+        inline constexpr auto get_mdspan() const {
+            return std::mdspan<const T, std::extents<size_t, m, n>>(data.data());
+        }
+
         /// Access the matrix entry at position (i, j)
         inline constexpr T &operator()(int i, int j) { return get_mdspan()(i, j); }
 
-        /// Check if this matrix is equal to another one
-        bool operator==(const mat<T, m, n> &other) { return data == other.data; }
+        /// const overload
+        inline constexpr const T &operator()(int i, int j) const { return get_mdspan()(i, j); }
 
-        inline mat &operator+=(const mat other) {
+        /// Check if this matrix is equal to another one
+        bool operator==(const mat<T, m, n> &other) const { return data == other.data; }
+
+        inline mat &operator+=(const mat &other) {
 #pragma unroll
             for (size_t i = 0; i < m * n; i++) {
                 data[i] += other.data[i];
@@ -56,7 +66,7 @@ namespace shammath {
         }
 
         /// check if this matrix is equal to another one at a given precison
-        bool equal_at_precision(const mat<T, m, n> &other, const T precision) {
+        bool equal_at_precision(const mat<T, m, n> &other, const T precision) const {
             bool res = true;
             for (auto i = 0; i < m; i++) {
                 for (auto j = 0; j < n; j++) {

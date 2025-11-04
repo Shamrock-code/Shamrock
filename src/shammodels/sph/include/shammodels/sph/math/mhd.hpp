@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 /**
  * @file mhd.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief file containing formulas for sphmhd forces, evolution of magnetic and divergence cleaning
  * fields.
@@ -261,8 +262,8 @@ namespace shamrock::sph::mhd {
 
     // sigma_mhd = psidecayfactor
     template<class Tscal, MHDType MHD_mode = Ideal>
-    inline Tscal
-    dpsi_on_ch_conservation(Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
+    inline Tscal dpsi_on_ch_conservation(
+        Tscal h_a, Tscal psi_a, Tscal ch_a, Tscal sigma_mhd, Tscal vclean) {
         Tscal dtau = vclean / (h_a * ch_a);
         return psi_a * dtau;
         // return psi_a * 1.0 / h_a;

@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -36,7 +36,7 @@ include(AreSubmoduleClones)
 ################################
 
 set(SHAMROCK_VERSION_MAJOR 2025)
-set(SHAMROCK_VERSION_MINOR 05)
+set(SHAMROCK_VERSION_MINOR 10)
 set(SHAMROCK_VERSION_PATCH 0)
 
 project(Shamrock VERSION ${SHAMROCK_VERSION_MAJOR}.${SHAMROCK_VERSION_MINOR}.${SHAMROCK_VERSION_PATCH})

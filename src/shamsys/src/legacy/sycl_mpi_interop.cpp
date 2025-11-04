@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file sycl_mpi_interop.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -43,7 +43,7 @@ namespace impl::copy_to_host {
                 {
                     sycl::host_accessor acc{shambase::get_check_ref(buf), sycl::read_only};
 
-                    const T *src = acc.get_pointer();
+                    const T *src = &(acc[0]);
                     T *dest      = comm_ptr;
 
                     std::memcpy(dest, src, sizeof(T) * comm_sz);
@@ -104,7 +104,7 @@ namespace impl::copy_to_host {
                         shambase::get_check_ref(buf), sycl::write_only, sycl::no_init};
 
                     const T *src = comm_ptr;
-                    T *dest      = acc.get_pointer();
+                    T *dest      = &(acc[0]);
 
                     std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }

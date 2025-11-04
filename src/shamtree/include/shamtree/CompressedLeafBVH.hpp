@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file CompressedLeafBVH.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -45,6 +45,18 @@ namespace shamtree {
 template<class Tmorton, class Tvec, u32 dim>
 class shamtree::CompressedLeafBVH {
     public:
+    /// Get internal cell count
+    inline u32 get_total_cell_count() { return structure.get_total_cell_count(); }
+
+    /// Get internal cell count
+    inline u32 get_internal_cell_count() { return structure.get_internal_cell_count(); }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return structure.is_root_leaf(); }
+
+    /// Get leaf cell count
+    inline u32 get_leaf_cell_count() { return structure.get_leaf_count(); }
+
     /// The reduced set of Morton codes
     MortonReducedSet<Tmorton, Tvec, dim> reduced_morton_set;
 
@@ -74,6 +86,9 @@ class shamtree::CompressedLeafBVH {
     /// make an empty BVH
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 
+    /// is the BVH empty ?
+    inline bool is_empty() const { return reduced_morton_set.is_empty(); }
+
     /**
      * @brief rebuild the BVH from the given positions
      *
@@ -83,7 +98,21 @@ class shamtree::CompressedLeafBVH {
      */
     void rebuild_from_positions(
         sham::DeviceBuffer<Tvec> &positions,
-        shammath::AABB<Tvec> &bounding_box,
+        const shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
+    /**
+     * @brief rebuild the BVH from the given positions
+     *
+     * @param[in] positions the positions of the particles
+     * @param[in] obj_cnt the number of particles
+     * @param[in] bounding_box the bounding box of the particles
+     * @param[in] compression_level the compression level of the BVH
+     */
+    void rebuild_from_positions(
+        sham::DeviceBuffer<Tvec> &positions,
+        u32 obj_cnt,
+        const shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 
 #if false
@@ -93,6 +122,17 @@ class shamtree::CompressedLeafBVH {
         shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 #endif
+
+    inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() const {
+        return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};
+    }
+
+    inline shamtree::CLBVHTraverserHost<Tmorton, Tvec, dim> get_traverser_host() const {
+        return {
+            structure.get_structure_traverser_host(),
+            aabbs.buf_aabb_min.copy_to_stdvec(),
+            aabbs.buf_aabb_max.copy_to_stdvec()};
+    }
 
     /**
      * @brief Retrieves an iterator for traversing objects in the BVH.
@@ -105,11 +145,21 @@ class shamtree::CompressedLeafBVH {
      *
      * @return A CLBVHObjectIterator for object traversal.
      */
-    inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() {
-        return {
-            reduced_morton_set.get_cell_iterator(),
-            structure.get_structure_traverser(),
-            aabbs.buf_aabb_min,
-            aabbs.buf_aabb_max};
+    inline shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim> get_object_iterator() const {
+        return {reduced_morton_set.get_leaf_cell_iterator(), get_traverser()};
+    }
+
+    inline shamtree::CLBVHObjectIteratorHost<Tmorton, Tvec, dim> get_object_iterator_host() const {
+        return {reduced_morton_set.get_leaf_cell_iterator_host(), get_traverser_host()};
+    }
+
+    inline CellIterator get_cell_iterator() const {
+        return {reduced_morton_set.get_cell_iterator(
+            structure.buf_endrange, structure.get_internal_cell_count())};
+    }
+
+    inline CellIteratorHost get_cell_iterator_host() const {
+        return {reduced_morton_set.get_cell_iterator_host(
+            structure.buf_endrange, structure.get_internal_cell_count())};
     }
 };

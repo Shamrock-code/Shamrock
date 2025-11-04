@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,8 @@
 
 /**
  * @file Model.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -22,7 +23,7 @@
 #include "shammodels/ramses/Solver.hpp"
 #include "shamrock/amr/AMRGrid.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
-#include "shamrock/patch/PatchData.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
@@ -63,12 +64,12 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata([&](u64 patch_id,
-                                                    shamrock::patch::PatchData &pdat) {
+                                                    shamrock::patch::PatchDataLayer &pdat) {
                 sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
                 sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
                 PatchDataField<T> &f
-                    = pdat.template get_field<T>(sched.pdl.get_field_idx<T>(field_name));
+                    = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
 
                 auto acc = f.get_buf().copy_to_stdvec();
 
@@ -94,8 +95,8 @@ namespace shammodels::basegodunov {
             });
         }
 
-        inline std::pair<Tvec, Tvec>
-        get_cell_coords(std::pair<TgridVec, TgridVec> block_coords, u32 lid) {
+        inline std::pair<Tvec, Tvec> get_cell_coords(
+            std::pair<TgridVec, TgridVec> block_coords, u32 lid) {
             using Block = typename Solver::Config::AMRBlock;
             auto tmp    = Block::utils_get_cell_coords(block_coords, lid);
             tmp.first *= solver.solver_config.grid_coord_to_pos_fact;

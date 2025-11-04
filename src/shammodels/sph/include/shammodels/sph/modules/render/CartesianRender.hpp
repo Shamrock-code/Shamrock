@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file CartesianRender.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -43,7 +43,20 @@ namespace shammodels::sph::modules {
             : context(context), solver_config(solver_config), storage(storage) {}
 
         using field_getter_t = const sham::DeviceBuffer<Tfield> &(
-            const shamrock::patch::Patch cur_p, shamrock::patch::PatchData &pdat);
+            const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
+            std::function<field_getter_t> field_getter, const sham::DeviceBuffer<Tvec> &positions);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::function<field_getter_t> field_getter,
+            const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
+
+        sham::DeviceBuffer<Tfield> compute_slice(
+            std::string field_name, const sham::DeviceBuffer<Tvec> &positions);
+
+        sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::string field_name, const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
 
         sham::DeviceBuffer<Tfield> compute_slice(
             std::function<field_getter_t> field_getter,
@@ -66,6 +79,22 @@ namespace shammodels::sph::modules {
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
             std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
+
+        inline sham::DeviceBuffer<Tfield> compute_slice(
+            std::string field_name, const std::vector<Tvec> &positions) {
+            sham::DeviceBuffer<Tvec> positions_buf{
+                positions.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            positions_buf.copy_from_stdvec(positions);
+            return compute_slice(field_name, positions_buf);
+        }
+
+        inline sham::DeviceBuffer<Tfield> compute_column_integ(
+            std::string field_name, const std::vector<shammath::Ray<Tvec>> &rays) {
+            sham::DeviceBuffer<shammath::Ray<Tvec>> rays_buf{
+                rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
+            rays_buf.copy_from_stdvec(rays);
+            return compute_column_integ(field_name, rays_buf);
+        }
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

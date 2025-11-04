@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -251,8 +251,8 @@ namespace shambase {
      * @param pow_exp The power of the exponent to increase the input value.
      * @return BenchmarkResult A structure containing the counts and times of the benchmark.
      */
-    inline BenchmarkResult
-    benchmark_pow_len(std::function<f64(u32)> func, u32 start, u32 end, f64 pow_exp) {
+    inline BenchmarkResult benchmark_pow_len(
+        std::function<f64(u32)> func, u32 start, u32 end, f64 pow_exp) {
         BenchmarkResult res;
         for (f64 i = start; i < end; i *= pow_exp) {
             res.counts.push_back(i);

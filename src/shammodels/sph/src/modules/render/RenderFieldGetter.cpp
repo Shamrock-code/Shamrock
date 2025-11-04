@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,8 @@
 
 /**
  * @file RenderFieldGetter.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -30,11 +31,11 @@ namespace shammodels::sph::modules {
                 shamrock::SchedulerUtility utility(scheduler());
                 shamrock::ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchData &pdat) {
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                     shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
 
                     auto &buf_h
-                        = pdat.get_field<Tscal>(pdat.pdl.get_field_idx<Tscal>("hpart")).get_buf();
+                        = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
                     auto &buf_rho = density.get_buf(p.id_patch);
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -61,8 +62,8 @@ namespace shammodels::sph::modules {
                 });
 
                 auto field_source_getter
-                    = [&](const shamrock::patch::Patch cur_p,
-                          shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
                     return density.get_buf(cur_p.id_patch);
                 };
 
@@ -72,8 +73,8 @@ namespace shammodels::sph::modules {
 
         auto field_source_getter
             = [&](const shamrock::patch::Patch cur_p,
-                  shamrock::patch::PatchData &pdat) -> const sham::DeviceBuffer<Tfield> & {
-            return pdat.get_field<Tfield>(pdat.pdl.get_field_idx<Tfield>(field_name)).get_buf();
+                  shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+            return pdat.get_field<Tfield>(pdat.pdl().get_field_idx<Tfield>(field_name)).get_buf();
         };
 
         return lambda(field_source_getter);
@@ -85,6 +86,14 @@ template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M4>;
 template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M6>;
 template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M8>;
 
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C2>;
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C4>;
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C6>;
+
 template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M4>;
 template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M6>;
 template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M8>;
+
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C2>;
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C4>;
+template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C6>;

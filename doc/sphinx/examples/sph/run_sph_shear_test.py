@@ -15,10 +15,6 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-from math import exp
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 # %%
 # Initialize context & attach a SPH model to it
@@ -49,6 +45,17 @@ q = 3.0 / 2.0
 
 shear_speed = -q * Omega_0 * (xM - xm)
 
+
+render_gif = True
+
+dump_folder = "_to_trash"
+sim_name = "sph_shear_test"
+
+import os
+
+# Create the dump directory if it does not exist
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
 
 # %%
 # Generate the config & init the scheduler
@@ -120,15 +127,15 @@ model.set_cfl_cour(0.3)
 model.set_cfl_force(0.25)
 
 # %%
-dump_folder = "_to_trash"
-import os
-
-os.system("mkdir -p " + dump_folder)
-
-
-# %%
 # Perform the plot
-def plot():
+
+from math import exp
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+def plot(iplot):
     dic = ctx.collect_data()
     fig, axs = plt.subplots(2, 1, figsize=(5, 8), sharex=True)
     fig.suptitle("t = {:.2f}".format(model.get_time()))
@@ -139,16 +146,23 @@ def plot():
     axs[1].set_ylabel("vy")
     axs[1].set_xlabel("x")
 
+    axs[0].set_xlim(xm - 0.1, xM + 0.1)
+    axs[0].set_ylim(ym - 0.1, yM + 0.1)
+
+    axs[1].set_xlim(xm - 0.1, xM + 0.1)
+    axs[1].set_ylim(shear_speed * 0.7, -shear_speed * 0.7)
+
     plt.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))
+    plt.close(fig)
 
 
 # %%
 # Performing the timestep loop
 model.timestep()
 
-dt_stop = 0.1
-for i in range(2):
+dt_stop = 0.02
+for i in range(20):
 
     t_target = i * dt_stop
     # skip if the model is already past the target
@@ -158,5 +172,73 @@ for i in range(2):
     model.evolve_until(i * dt_stop)
 
     # Dump name is "dump_xxxx.sham" where xxxx is the timestep
-    model.do_vtk_dump(dump_folder + "/dump_{:04}.vtk".format(i), True)
-    plot()
+    model.do_vtk_dump(os.path.join(dump_folder, f"{sim_name}_{i:04}.vtk"), True)
+    plot(i)
+
+####################################################
+# Convert PNG sequence to Image sequence in mpl
+####################################################
+import matplotlib.animation as animation
+
+
+def show_image_sequence(glob_str):
+
+    if render_gif and shamrock.sys.world_rank() == 0:
+
+        import glob
+
+        files = sorted(glob.glob(glob_str))
+
+        from PIL import Image
+
+        image_array = []
+        for my_file in files:
+            image = Image.open(my_file)
+            image_array.append(image)
+
+        if not image_array:
+            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
+
+        pixel_x, pixel_y = image_array[0].size
+
+        # Create the figure and axes objects
+        # Remove axes, ticks, and frame & set aspect ratio
+        dpi = 200
+        fig = plt.figure(dpi=dpi)
+        plt.gca().set_position((0, 0, 1, 1))
+        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
+        plt.axis("off")
+
+        # Set the initial image with correct aspect ratio
+        im = plt.imshow(image_array[0], animated=True, aspect="auto")
+
+        def update(i):
+            im.set_array(image_array[i])
+            return (im,)
+
+        # Create the animation object
+        ani = animation.FuncAnimation(
+            fig,
+            update,
+            frames=len(image_array),
+            interval=50,
+            blit=True,
+            repeat_delay=10,
+        )
+
+        return ani
+
+
+# If the animation is not returned only a static image will be shown in the doc
+glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
+ani = show_image_sequence(glob_str)
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    # To save the animation using Pillow as a gif
+    # writer = animation.PillowWriter(fps=15,
+    #                                 metadata=dict(artist='Me'),
+    #                                 bitrate=1800)
+    # ani.save('scatter.gif', writer=writer)
+
+    # Show the animation
+    plt.show()

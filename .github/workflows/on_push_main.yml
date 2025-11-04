@@ -19,31 +19,8 @@ env:
 jobs:
 
   make_code_archive:
-    runs-on: ubuntu-latest
-    steps:
-      - name : Reconfigure git
-        run:  |
-          git config --global --add safe.directory '*'
-          git config --global --list
-
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name : Download git-archive-all.sh
-        run: |
-          wget https://raw.githubusercontent.com/fabacab/git-archive-all.sh/refs/heads/master/git-archive-all.sh
-          chmod +x git-archive-all.sh
-
-      - name : Archive Shamrock with submodules
-        run: |
-          ./git-archive-all.sh
-
-      - name: Upload artifcat
-        uses: actions/upload-artifact@v4
-        with:
-          name: Shamrock_Release.tar
-          path: Shamrock.tar
+    name: Make Code Archive
+    uses: ./.github/workflows/make_code_archive.yml
 
   src_check:
     name: Linting
@@ -56,10 +33,10 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
-  shamrock_linux_acpp:
+  env_tests:
     needs: [src_check]
     name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang.yml
+    uses: ./.github/workflows/env_tests.yml
 
   shamrock_linux_acpp_conda:
     needs: [src_check]
@@ -70,12 +47,6 @@ jobs:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-
-  shamrock_linux_acpp_macos:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-macos.yml
 
   shamrock_linux_acpp_asan:
     needs: [src_check]
@@ -103,7 +74,7 @@ jobs:
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
   shamrock_linux_acpp_phystests:
-    needs: [shamrock_linux_acpp]
+    needs: [src_check]
     name: Tests (Phys)
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
 

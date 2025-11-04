@@ -41,7 +41,10 @@ git clone --recurse-submodules https://github.com/Shamrock-code/Shamrock.git
 
 ## Getting in touch
 
-Join us on [Discord](https://discord.gg/Q69s5buyr5), or [Slack](https://shamrock-code.slack.com)! Alternatively, open a discussion or issue in this repository.
+Join us on any of the networks below or just by opening a discussion or issue in this repository.
+
+ - [Discord](https://discord.gg/Q69s5buyr5)
+ - [Slack](https://join.slack.com/t/shamrock-code/shared_invite/zt-3geto97g3-QXfTOcg1BUmgIcoJ5PS2EQ)
 
 ## Contributing
 
@@ -67,6 +70,6 @@ AdaptiveCPP SSCP | ![badge2](https://badgen.net/static/ACPP%2FSSCP/yes/green)
 
 Shamrock is licensed under the `CeCILL Free Software License Agreement v2.1`. See [License (french version)](./LICENSE) or [License (english version)](./LICENSE.en) for more details.
 
-Copyright 2021-2024 Timothée David--Cléris
+Copyright 2021-2025 Timothée David--Cléris
 
 SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1

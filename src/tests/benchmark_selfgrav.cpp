@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -17,9 +17,10 @@
 #include "shambase/time.hpp"
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammodels/nbody/setup/nbody_setup.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
+#include <string>
 
 template<class flt>
 std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
@@ -30,7 +31,9 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
-    shamrock::patch::PatchDataLayout pdl;
+    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr
+        = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+    auto &pdl = *pdl_ptr;
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);
@@ -41,7 +44,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
     auto id_v = pdl.get_field_idx<f32_3>("vxyz");
     auto id_a = pdl.get_field_idx<f32_3>("axyz");
 
-    PatchScheduler sched = PatchScheduler(pdl, Nesti / npatch, 1);
+    PatchScheduler sched = PatchScheduler(pdl_ptr, Nesti / npatch, 1);
     sched.init_mpi_required_types();
 
     auto setup = [&]() -> std::tuple<flt, f64> {
@@ -65,7 +68,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
         setup.add_particules_fcc(sched, dr, box);
         setup.set_total_mass(8.);
 
-        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
+        sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             pdat.get_field<f32_3>(id_v).override(f32_3{0, 0, 0});
             pdat.get_field<f32_3>(id_a).override(f32_3{0, 0, 0});
         });

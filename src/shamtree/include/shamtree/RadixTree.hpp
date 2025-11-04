@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,13 +11,15 @@
 
 /**
  * @file RadixTree.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shammath/sfc/morton.hpp"
+#include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtree/RadixTreeField.hpp"
@@ -107,8 +109,8 @@ class RadixTree {
     void compute_cell_ibounding_box(sycl::queue &queue);
     void convert_bounding_box(sycl::queue &queue);
 
-    inline std::unique_ptr<sycl::buffer<Umorton>>
-    build_new_morton_buf(sycl::buffer<Tvec> &pos_buf, u32 obj_cnt) {
+    inline std::unique_ptr<sycl::buffer<Umorton>> build_new_morton_buf(
+        sycl::buffer<Tvec> &pos_buf, u32 obj_cnt) {
 
         return tree_morton_codes.build_raw(
             shamsys::instance::get_compute_queue(),
@@ -254,13 +256,13 @@ class RadixTree {
 
 template<class u_morton, class vec3>
 template<class T, class LambdaComputeLeaf, class LambdaCombinator>
-inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T>
-RadixTree<u_morton, vec3>::compute_field(
-    sycl::queue &queue,
-    u32 nvar,
+inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T> RadixTree<u_morton, vec3>::
+    compute_field(
+        sycl::queue &queue,
+        u32 nvar,
 
-    LambdaComputeLeaf &&compute_leaf,
-    LambdaCombinator &&combine) const {
+        LambdaComputeLeaf &&compute_leaf,
+        LambdaCombinator &&combine) const {
 
     RadixTreeField<T> ret;
     ret.nvar = nvar;
@@ -344,8 +346,8 @@ RadixTree<u_morton, vec3>::compute_field(
 
 template<class u_morton, class vec3>
 template<class LambdaForEachCell>
-inline std::pair<std::set<u32>, std::set<u32>>
-RadixTree<u_morton, vec3>::get_walk_res_set(LambdaForEachCell &&interact_cd) const {
+inline std::pair<std::set<u32>, std::set<u32>> RadixTree<u_morton, vec3>::get_walk_res_set(
+    LambdaForEachCell &&interact_cd) const {
 
     std::set<u32> leaf_list;
     std::set<u32> rejected_list;
@@ -496,8 +498,8 @@ inline void RadixTree<u_morton, vec3>::for_each_leaf(
 }
 
 template<class u_morton, class vec3>
-inline auto
-RadixTree<u_morton, vec3>::get_min_max_cell_side_length() -> std::tuple<coord_t, coord_t> {
+inline auto RadixTree<u_morton, vec3>::get_min_max_cell_side_length()
+    -> std::tuple<coord_t, coord_t> {
 
     u32 len = tree_reduced_morton_codes.tree_leaf_count;
 
@@ -537,8 +539,16 @@ RadixTree<u_morton, vec3>::get_min_max_cell_side_length() -> std::tuple<coord_t,
         });
     });
 
-    coord_t min = shamalgs::reduction::min(q, min_side_length, 0, len);
-    coord_t max = shamalgs::reduction::max(q, max_side_length, 0, len);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<coord_t> tmp_min_side_length(len, dev_sched);
+    sham::DeviceBuffer<coord_t> tmp_max_side_length(len, dev_sched);
+
+    tmp_min_side_length.copy_from_sycl_buffer(min_side_length);
+    tmp_max_side_length.copy_from_sycl_buffer(max_side_length);
+
+    coord_t min = shamalgs::primitives::min(dev_sched, tmp_min_side_length, 0, len);
+    coord_t max = shamalgs::primitives::max(dev_sched, tmp_max_side_length, 0, len);
 
     return {min, max};
 }

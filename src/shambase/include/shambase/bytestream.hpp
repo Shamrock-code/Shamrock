@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -143,8 +143,8 @@ namespace shambase {
     }
 
     template<class T>
-    inline void
-    stream_write_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void stream_write_vector_trivial(
+        std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag = details::VALIDATION_FLAGS::VECTOR;
         stream_write(stream, flag);
@@ -164,8 +164,8 @@ namespace shambase {
      * @param vec
      */
     template<class T>
-    inline void
-    stream_read_vector_trivial(std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
+    inline void stream_read_vector_trivial(
+        std::basic_stringstream<byte> &stream, std::vector<T> &vec) {
 
         u32 flag;
         stream_read(stream, flag);

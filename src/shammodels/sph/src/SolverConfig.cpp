@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file SolverConfig.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
@@ -21,7 +21,7 @@
 namespace shammodels::sph {
 
     template<class Tvec, template<class> class SPHKernel>
-    void SolverConfig<Tvec, SPHKernel>::set_layout(shamrock::patch::PatchDataLayout &pdl) {
+    void SolverConfig<Tvec, SPHKernel>::set_layout(shamrock::patch::PatchDataLayerLayout &pdl) {
         pdl.add_field<Tvec>("xyz", 1);
         pdl.add_field<Tvec>("vxyz", 1);
         pdl.add_field<Tvec>("axyz", 1);
@@ -105,7 +105,7 @@ namespace shammodels::sph {
 
     template<class Tvec, template<class> class SPHKernel>
     void SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
-        shamrock::patch::PatchDataLayout &ghost_layout) {
+        shamrock::patch::PatchDataLayerLayout &ghost_layout) {
 
         ghost_layout.add_field<Tscal>("hpart", 1);
         ghost_layout.add_field<Tscal>("uint", 1);
@@ -150,3 +150,7 @@ using namespace shammath;
 template class shammodels::sph::SolverConfig<f64_3, M4>;
 template class shammodels::sph::SolverConfig<f64_3, M6>;
 template class shammodels::sph::SolverConfig<f64_3, M8>;
+
+template class shammodels::sph::SolverConfig<f64_3, C2>;
+template class shammodels::sph::SolverConfig<f64_3, C4>;
+template class shammodels::sph::SolverConfig<f64_3, C6>;

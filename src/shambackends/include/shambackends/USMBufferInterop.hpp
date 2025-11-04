@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file USMBufferInterop.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -33,8 +33,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy(sycl::queue &queue, sycl::buffer<T> &src, T *dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy(
+        sycl::queue &queue, sycl::buffer<T> &src, T *dest, u64 count) {
 
         u64 offset                  = 0;
         u64 remains                 = count;
@@ -47,7 +47,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{src, cgh, sycl::read_only};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     dest[gid + offset] = acc[gid + offset];
                 });
             }));
@@ -70,8 +70,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy(sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy(
+        sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
 
         u64 offset                  = 0;
         u64 remains                 = count;
@@ -84,7 +84,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{dest, cgh, sycl::write_only};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     acc[gid + offset] = src[gid + offset];
                 });
             }));
@@ -108,8 +108,8 @@ namespace sham {
      * @return std::vector<sycl::event>
      */
     template<class T>
-    inline std::vector<sycl::event>
-    usmbuffer_memcpy_discard(sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
+    inline std::vector<sycl::event> usmbuffer_memcpy_discard(
+        sycl::queue &queue, const T *src, sycl::buffer<T> &dest, u64 count) {
         u64 offset                  = 0;
         u64 remains                 = count;
         constexpr u64 max_step_size = i32_max / 2;
@@ -121,7 +121,7 @@ namespace sham {
 
             ev_list.push_back(queue.submit([&, offset](sycl::handler &cgh) {
                 sycl::accessor acc{dest, cgh, sycl::write_only, sycl::no_init};
-                shambase::parralel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
+                shambase::parallel_for(cgh, stepsize, "memcpy kernel", [=](u32 gid) {
                     acc[gid + offset] = src[gid + offset];
                 });
             }));

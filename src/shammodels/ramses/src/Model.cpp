@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file Model.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -118,7 +118,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
 
                 using Block = typename Solver::AMRBlock;
 
-                shambase::parralel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
+                shambase::parallel_for(cgh, num_obj, "rescale cells", [=](u64 id_a) {
                     Tvec block_min = acc_p1[id_a].template convert<Tscal>();
                     Tvec block_max = acc_p2[id_a].template convert<Tscal>();
 
@@ -164,9 +164,9 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         if (solver.solver_config.is_dust_on()) {
             u32 ndust = solver.solver_config.dust_config.ndust;
 
-            shamrock::patch::PatchDataLayout &pdl = solver.scheduler().pdl;
-            const u32 irho_dust                   = pdl.get_field_idx<Tscal>("rho_dust");
-            const u32 irhovel_dust                = pdl.get_field_idx<Tvec>("rhovel_dust");
+            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl();
+            const u32 irho_dust                        = pdl.get_field_idx<Tscal>("rho_dust");
+            const u32 irhovel_dust                     = pdl.get_field_idx<Tvec>("rhovel_dust");
 
             std::unique_ptr<sycl::buffer<Tscal>> fields_rho_dust
                 = sched.rankgather_field<Tscal>(irho_dust);
@@ -185,7 +185,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
                             sycl::accessor out{partition, cgh, sycl::write_only, sycl::no_init};
                             sycl::accessor in{*fields_rho_dust, cgh, sycl::read_only};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nobj / nsplit, "split field for dump", [=](u64 i) {
                                     out[i] = in[i * nsplit + off];
                                 });
@@ -214,7 +214,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
                             sycl::accessor out{partition, cgh, sycl::write_only, sycl::no_init};
                             sycl::accessor in{*fields_vel_dust, cgh, sycl::read_only};
 
-                            shambase::parralel_for(
+                            shambase::parallel_for(
                                 cgh, nobj / nsplit, "split field for dump", [=](u64 i) {
                                     out[i] = in[i * nsplit + off];
                                 });

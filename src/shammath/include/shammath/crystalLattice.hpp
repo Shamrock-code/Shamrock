@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -87,8 +87,8 @@ namespace shammath {
          * @return true
          * @return false
          */
-        constexpr static bool
-        can_make_periodic_box(std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
+        constexpr static bool can_make_periodic_box(
+            std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
             if (coord_max[0] - coord_min[0] < 2) {
                 return false;
             }
@@ -113,8 +113,8 @@ namespace shammath {
          * @param coord_max integer triplet for the maximal coordinates on the lattice
          * @return constexpr CoordRange<Tvec> the periodic box bounds
          */
-        static inline constexpr CoordRange<Tvec>
-        get_periodic_box(Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
+        static inline constexpr CoordRange<Tvec> get_periodic_box(
+            Tscal dr, std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
             Tscal xmin, xmax, ymin, ymax, zmin, zmax;
 
             xmin = 2 * coord_min[0];
@@ -127,9 +127,10 @@ namespace shammath {
             zmax = 2 * sycl::sqrt(6.) * coord_max[2] / 3;
 
             if (!can_make_periodic_box(coord_min, coord_max)) {
-                throw LatticeError("x axis count should be greater than 1\n"
-                                   "y axis count should be even\n"
-                                   "z axis count should be even");
+                throw LatticeError(
+                    "x axis count should be greater than 1\n"
+                    "y axis count should be even\n"
+                    "z axis count should be even");
             }
 
             return {Tvec{xmin, ymin, zmin} * dr, Tvec{xmax, ymax, zmax} * dr};

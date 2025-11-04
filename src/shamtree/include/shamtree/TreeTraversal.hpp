@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file TreeTraversal.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -425,7 +425,7 @@ namespace shamrock::tree {
             u32 *index_neigh_map;
         };
 
-        ptrs_read get_read_access(sham::EventList &depends_list) {
+        ptrs_read get_read_access(sham::EventList &depends_list) const {
             return ptrs_read{
                 cnt_neigh.get_read_access(depends_list),
                 scanned_cnt.get_read_access(depends_list),
@@ -440,8 +440,13 @@ namespace shamrock::tree {
                 index_neigh_map.get_write_access(depends_list),
             };
         }
+        void complete_event_state(sycl::event &e) const {
+            cnt_neigh.complete_event_state(e);
+            scanned_cnt.complete_event_state(e);
+            index_neigh_map.complete_event_state(e);
+        }
 
-        void complete_event_state(sham::EventList &resulting_events) {
+        void complete_event_state(sham::EventList &resulting_events) const {
             cnt_neigh.complete_event_state(resulting_events);
             scanned_cnt.complete_event_state(resulting_events);
             index_neigh_map.complete_event_state(resulting_events);
@@ -456,7 +461,7 @@ namespace shamrock::tree {
 
         shamlog_debug_sycl_ln("Cache", " last value =", neigh_last_val);
 
-        sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::exclusive_sum(
+        sham::DeviceBuffer<u32> neigh_scanned_vals = shamalgs::numeric::scan_exclusive(
             shamsys::instance::get_compute_scheduler_ptr(), counts, obj_cnt);
 
         u32 neigh_sum = neigh_last_val
@@ -487,7 +492,7 @@ namespace shamrock::tree {
 
         public:
         // clang-format off
-        ObjectCacheIterator(ObjectCache::ptrs_read & cache):
+        ObjectCacheIterator(const ObjectCache::ptrs_read & cache):
             neigh_cnt          {cache.cnt_neigh       },
             table_neigh_offset {cache.scanned_cnt     },
             table_neigh        {cache.index_neigh_map }

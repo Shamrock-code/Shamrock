@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,11 +11,12 @@
 
 /**
  * @file DeviceBuffer.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
@@ -81,7 +82,10 @@ namespace sham {
             auto align = get_alignment(dev_sched);
             if (align) {
                 ret = upgrade_multiple(ret, *align);
+                SHAM_ASSERT(ret % *align == 0);
             }
+
+            SHAM_ASSERT((sz == 0) ? (ret == 0) : (ret >= sz * sizeof(T)));
 
             return ret;
         }
@@ -274,8 +278,8 @@ namespace sham {
          *        accessing the buffer.
          * @return A pointer to the buffer's data.
          */
-        [[nodiscard]] inline T *
-        get_write_access(sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
+        [[nodiscard]] inline T *get_write_access(
+            sham::EventList &depends_list, SourceLocation src_loc = SourceLocation{}) {
             shambase::get_check_ref(events_hndl).write_access(depends_list, src_loc);
             return hold.template ptr_cast<T>();
         }
@@ -285,6 +289,11 @@ namespace sham {
          *
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
+         *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
          *
          * @param e The SYCL event resulting of the queried access.
          */
@@ -298,6 +307,11 @@ namespace sham {
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
          *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
+         *
          * @param e The SYCL event resulting of the queried access.
          */
         void complete_event_state(const std::vector<sycl::event> &e) const {
@@ -309,6 +323,11 @@ namespace sham {
          *
          * This function complete the event state of the buffer by registering the
          * event resulting of the last queried access
+         *
+         * @note This function is const compatible.
+         *
+         * @warning This function must be called on ALL accessed buffers after a kernel
+         * to ensure that the state of the event handlers are up to date.
          *
          * @param e The SYCL event resulting of the queried access.
          */
@@ -451,8 +470,8 @@ namespace sham {
          * @throws std::invalid_argument if the end index is greater than the buffer size
          *         or if the begin index is greater than or equal to the end index.
          */
-        [[nodiscard]] inline std::vector<T>
-        copy_to_stdvec_idx_range(size_t begin, size_t end) const {
+        [[nodiscard]] inline std::vector<T> copy_to_stdvec_idx_range(
+            size_t begin, size_t end) const {
 
             if (end > size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
@@ -482,6 +501,51 @@ namespace sham {
             }
 
             return ret;
+        }
+
+        /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+
+            if (begin > end) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+            }
+
+            if (end - begin > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "dest.get_size() = {}",
+                    end - begin,
+                    dest.get_size()));
+            }
+
+            if (begin == end) {
+                return;
+            }
+
+            size_t len = end - begin;
+
+            sham::EventList depends_list;
+            const T *ptr_src = get_read_access(depends_list) + begin;
+            T *ptr_dest      = dest.get_write_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, len);
+            });
+
+            complete_event_state(e);
+            dest.complete_event_state(e);
         }
 
         /**
@@ -635,7 +699,7 @@ namespace sham {
                 sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc(buf, cgh, sycl::read_only);
 
-                    shambase::parralel_for(cgh, sz, "copy field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, sz, "copy field", [=](u32 gid) {
                         ptr[gid] = acc[gid];
                     });
                 });
@@ -795,7 +859,7 @@ namespace sham {
 
             sycl::event e1 = get_queue().submit(
                 depends_list, [&, ptr, value, start_index, idx_count](sycl::handler &cgh) {
-                    shambase::parralel_for(cgh, idx_count, "fill field", [=](u32 gid) {
+                    shambase::parallel_for(cgh, idx_count, "fill field", [=](u32 gid) {
                         ptr[start_index + gid] = value;
                     });
                 });
@@ -849,7 +913,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "get_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;
@@ -869,7 +933,7 @@ namespace sham {
 
             if (idx >= size) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "set_val_at_idx: idx > size\n  idx = {},\n  size = {}", idx, size));
+                    "set_val_at_idx: idx >= size\n  idx = {},\n  size = {}", idx, size));
             }
 
             sham::EventList depends_list;
@@ -934,12 +998,17 @@ namespace sham {
 
                 // override old buffer
                 std::swap(new_buf, *this);
-                // *this = std::move(new_buf);
+
             } else {
                 size = new_size;
                 // no need to resize
             }
         }
+
+        /**
+         * @brief Alias for resize(0).
+         */
+        inline void free_alloc() { resize(0); }
 
         /**
          * @brief Expand the buffer by `add_sz` elements.
@@ -967,6 +1036,41 @@ namespace sham {
                     get_size()));
             }
             resize(get_size() - sub_sz);
+        }
+
+        /**
+         * @brief Append the content of another buffer to this one.
+         *
+         * This function appends the content of another buffer to this one. The content of the other
+         * buffer is copied into this buffer, and the size of this buffer is increased by the size
+         * of the other buffer.
+         *
+         * @param other The buffer from which to copy the data.
+         */
+        inline void append(const DeviceBuffer &other) {
+            if (this == &other) {
+                shambase::throw_with_loc<std::invalid_argument>("cannot append a buffer to itself");
+            }
+
+            u32 other_size = other.get_size();
+            if (other_size == 0) {
+                return; // early exit if the other buffer is empty
+            }
+            u32 old_size = get_size();
+
+            // allocate space
+            expand(other_size);
+
+            sham::EventList depends_list;
+            T *ptr             = get_write_access(depends_list);
+            const T *other_ptr = other.get_read_access(depends_list);
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(other_ptr, ptr + old_size, other_size);
+            });
+
+            complete_event_state(e);
+            other.complete_event_state(e);
         }
 
         ///////////////////////////////////////////////////////////////////////

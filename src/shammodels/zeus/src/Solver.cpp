@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file Solver.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -90,11 +90,11 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     bool do_debug_dump = false;
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             debug_dump.create_id(p.id_patch);
         });
 
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
             debug_dump.get_file(p.id_patch).change_table_name("Nobj_original", "u32");
@@ -103,11 +103,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             debug_dump.get_file(p.id_patch).write_val(mpdat.total_elements);
         });
 
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+            shamrock::patch::PatchDataLayerLayout &ghost_layout
+                = shambase::get_check_ref(storage.ghost_layout.get());
             u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
@@ -144,10 +145,11 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     }
 
     // save velocity field
-    shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
-    u32 irho_interf                                = ghost_layout.get_field_idx<Tscal>("rho");
-    u32 ieint_interf                               = ghost_layout.get_field_idx<Tscal>("eint");
-    u32 ivel_interf                                = ghost_layout.get_field_idx<Tvec>("vel");
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
+    u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
+    u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
 
     shamrock::SchedulerUtility utility(scheduler());
     storage.vel_n.set(
@@ -180,7 +182,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     src_step.compute_forces();
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -204,11 +206,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     src_step.apply_AV(dt_input);
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+            shamrock::patch::PatchDataLayerLayout &ghost_layout
+                = shambase::get_check_ref(storage.ghost_layout.get());
             u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
@@ -237,7 +240,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     src_step.update_eint_eos(dt_input);
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -279,11 +282,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     gz.exchange_ghost();
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+            shamrock::patch::PatchDataLayerLayout &ghost_layout
+                = shambase::get_check_ref(storage.ghost_layout.get());
             u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
@@ -314,7 +318,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     storage.vel_n_zp.set(val_load_vec_v2.load_value_with_gz("vel", {0, 0, 1}, "vel_n_zp"));
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -363,7 +367,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
             sycl::accessor acc_eint_dest{eint_dest, cgh, sycl::write_only};
             sycl::accessor acc_vel_dest{vel_dest, cgh, sycl::write_only};
 
-            shambase::parralel_for(cgh, mpdat.original_elements*Block::block_size, "tmp copy_ack",
+            shambase::parallel_for(cgh, mpdat.original_elements*Block::block_size, "tmp copy_ack",
     [=](u32 id){
                 //acc_rho_dest[id] = acc_rho_src[id];
                 acc_eint_dest[id] = acc_vel_src_xp[id].x();
@@ -386,7 +390,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     if (do_debug_dump) {
         using Tscal8 = sycl::vec<Tscal, 8>;
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -406,7 +410,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     if (do_debug_dump) {
         using Tscal8 = sycl::vec<Tscal, 8>;
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -439,7 +443,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     if (do_debug_dump) {
         using Tscal8 = sycl::vec<Tscal, 8>;
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -469,7 +473,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
 
     if (do_debug_dump) {
         using Tscal8 = sycl::vec<Tscal, 8>;
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
@@ -499,11 +503,12 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     transport.compute_new_qte();
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             using MergedPDat  = shamrock::MergedPatchData;
             MergedPDat &mpdat = storage.merged_patchdata_ghost.get().get(p.id_patch);
 
-            shamrock::patch::PatchDataLayout &ghost_layout = storage.ghost_layout.get();
+            shamrock::patch::PatchDataLayerLayout &ghost_layout
+                = shambase::get_check_ref(storage.ghost_layout.get());
             u32 irho_interf  = ghost_layout.get_field_idx<Tscal>("rho");
             u32 ieint_interf = ghost_layout.get_field_idx<Tscal>("eint");
             u32 ivel_interf  = ghost_layout.get_field_idx<Tvec>("vel");
@@ -546,7 +551,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     storage.serial_patch_tree.reset();
 
     if (do_debug_dump) {
-        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
             debug_dump.get_file(p.id_patch).close();
         });
     }

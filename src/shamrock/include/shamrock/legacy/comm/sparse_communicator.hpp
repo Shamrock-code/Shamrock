@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file sparse_communicator.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -32,8 +32,8 @@ template<class T>
 struct SparseCommExchanger {
 
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    static SparseCommResult<T>
-    sp_xchg(SparsePatchCommunicator &communicator, const SparseCommSource<T> &send_comm_pdat);
+    static SparseCommResult<T> sp_xchg(
+        SparsePatchCommunicator &communicator, const SparseCommSource<T> &send_comm_pdat);
 };
 
 class [[deprecated("Please shamalgs sparse comm instead")]] SparsePatchCommunicator {
@@ -92,19 +92,19 @@ class [[deprecated("Please shamalgs sparse comm instead")]] SparsePatchCommunica
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 
 template<>
-struct SparseCommExchanger<shamrock::patch::PatchData> {
+struct SparseCommExchanger<shamrock::patch::PatchDataLayer> {
     [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
-    static SparseCommResult<shamrock::patch::PatchData> sp_xchg(
+    static SparseCommResult<shamrock::patch::PatchDataLayer> sp_xchg(
         SparsePatchCommunicator &communicator,
-        const SparseCommSource<shamrock::patch::PatchData> &send_comm_pdat) {
+        const SparseCommSource<shamrock::patch::PatchDataLayer> &send_comm_pdat) {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
 
-        SparseCommResult<PatchData> recv_obj;
+        SparseCommResult<PatchDataLayer> recv_obj;
 
         if (!send_comm_pdat.empty()) {
 
-            PatchDataLayout &pdl = send_comm_pdat[0]->pdl;
+            auto pdl_ptr = send_comm_pdat[0]->get_layout_ptr();
 
             std::vector<PatchDataMpiRequest> rq_lst;
 
@@ -146,7 +146,7 @@ struct SparseCommExchanger<shamrock::patch::PatchData> {
 
                         if (psend.node_owner_id != precv.node_owner_id) {
                             recv_obj[precv.id_patch].push_back(
-                                {psend.id_patch, std::make_unique<PatchData>(pdl)});
+                                {psend.id_patch, std::make_unique<PatchDataLayer>(pdl_ptr)});
                             patchdata_irecv_probe(
                                 *std::get<1>(
                                     recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -20,6 +20,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <stack>
 
 namespace shambase::details {
@@ -204,3 +205,12 @@ using StackEntry = shambase::details::BasicStackEntry;
  * This alias is used to simplify the use of the NamedBasicStackEntry class.
  */
 using NamedStackEntry = shambase::details::NamedBasicStackEntry;
+
+/**
+ * @brief Macro to create a stack entry.
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry()                                                                   \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}

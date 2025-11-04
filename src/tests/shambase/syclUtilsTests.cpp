@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -13,13 +13,13 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase::parralel_for", test_par_for_1d, 1) {
+TestStart(Unittest, "shambase::parallel_for", test_par_for_1d, 1) {
     u32 len = 10000;
     sycl::buffer<u64> buf(len);
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
-        shambase::parralel_for(cgh, len, "test 1d par for", [=](u64 id) {
+        shambase::parallel_for(cgh, len, "test 1d par for", [=](u64 id) {
             acc[id] = id;
         });
     });
@@ -36,14 +36,14 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_1d, 1) {
     REQUIRE(correct);
 }
 
-TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1) {
+TestStart(Unittest, "shambase::parallel_for", test_par_for_2d, 1) {
     u64 len_x = 1000;
     u64 len_y = 1000;
     sycl::buffer<u64, 2> buf(sycl::range<2>{len_x, len_y});
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
-        shambase::parralel_for_2d(cgh, len_x, len_y, "test 2d par for", [=](u64 id_x, u64 id_y) {
+        shambase::parallel_for_2d(cgh, len_x, len_y, "test 2d par for", [=](u64 id_x, u64 id_y) {
             acc[{id_x, id_y}] = id_x + len_x * id_y;
         });
     });
@@ -64,7 +64,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_2d, 1) {
     REQUIRE(correct);
 }
 
-TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1) {
+TestStart(Unittest, "shambase::parallel_for", test_par_for_3d, 1) {
     u64 len_x = 100;
     u64 len_y = 100;
     u64 len_z = 100;
@@ -72,7 +72,7 @@ TestStart(Unittest, "shambase::parralel_for", test_par_for_3d, 1) {
 
     shamsys::instance::get_compute_queue().submit([&](sycl::handler &cgh) {
         sycl::accessor acc{buf, cgh, sycl::write_only, sycl::no_init};
-        shambase::parralel_for_3d(
+        shambase::parallel_for_3d(
             cgh, len_x, len_y, len_z, "test 2d par for", [=](u64 id_x, u64 id_y, u64 id_z) {
                 acc[{id_x, id_y, id_z}] = id_x + len_x * id_y + len_x * len_y * id_z;
             });

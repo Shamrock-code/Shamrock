@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file GhostZones.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -41,19 +41,19 @@ namespace shammodels::zeus::modules {
 
         void build_ghost_cache();
 
-        shambase::DistributedDataShared<shamrock::patch::PatchData> communicate_pdat(
-            shamrock::patch::PatchDataLayout &pdl,
-            shambase::DistributedDataShared<shamrock::patch::PatchData> &&interf);
+        shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf);
 
         template<class T>
-        shambase::DistributedDataShared<PatchDataField<T>>
-        communicate_pdat_field(shambase::DistributedDataShared<PatchDataField<T>> &&interf);
+        shambase::DistributedDataShared<PatchDataField<T>> communicate_pdat_field(
+            shambase::DistributedDataShared<PatchDataField<T>> &&interf);
 
         template<class T, class Tmerged>
         shambase::DistributedData<Tmerged> merge_native(
             shambase::DistributedDataShared<T> &&interfs,
-            std::function<Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchData &pdat)>
-                init,
+            std::function<
+                Tmerged(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> init,
             std::function<void(Tmerged &, T &)> appender);
 
         void exchange_ghost();

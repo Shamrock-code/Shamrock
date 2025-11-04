@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -43,6 +43,8 @@ else()
         RESULT_VARIABLE GIT_BRANCH_RETURN_CODE
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    # Replace slashes with underscores in branch name to avoid file path issues
+    string(REPLACE "/" "_" SHAMROCK_GIT_BRANCH "${SHAMROCK_GIT_BRANCH}")
     # check whether there are local changes
     execute_process(COMMAND git diff-index --name-only HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

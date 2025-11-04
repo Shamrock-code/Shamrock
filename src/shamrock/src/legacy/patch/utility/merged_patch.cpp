@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file merged_patch.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -26,8 +26,8 @@ auto MergedPatchData<flt>::merge_patches(
 
     std::unordered_map<u64, MergedPatchData<flt>> merged_data;
 
-    sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchData &pdat) {
-        merged_data.emplace(id_patch, sched.pdl);
+    sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchDataLayer &pdat) {
+        merged_data.emplace(id_patch, sched.get_layout_ptr());
 
         auto pbox            = sched.patch_data.sim_box.get_box<flt>(p);
         u32 original_element = pdat.get_obj_cnt();
@@ -40,7 +40,7 @@ auto MergedPatchData<flt>::merge_patches(
             id_patch,
             [&](u64 patch_id,
                 u64 interf_patch_id,
-                PatchData &interfpdat,
+                PatchDataLayer &interfpdat,
                 std::tuple<vec, vec> box) {
                 std::get<0>(pbox) = sycl::min(std::get<0>(box), std::get<0>(pbox));
                 std::get<1>(pbox) = sycl::max(std::get<1>(box), std::get<1>(pbox));

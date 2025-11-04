@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file NeighGraphLinkField.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -122,7 +122,7 @@ namespace shammodels::basegodunov::modules {
         LinkFieldCompute compute(std::forward<Args>(args)...);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
+            shambase::parallel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
                 link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
                 });
@@ -154,7 +154,7 @@ namespace shammodels::basegodunov::modules {
         LinkFieldCompute compute(nvar, std::forward<Args>(args)...);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, graph.obj_cnt * nvar, "compute link field indep nvar", [=](u32 idvar_a) {
                     const u32 id_cell_a = idvar_a / nvar;
                     const u32 nvar_loc  = idvar_a % nvar;
@@ -188,7 +188,7 @@ namespace shammodels::basegodunov::modules {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             LinkFieldCompute compute(cgh, std::forward<Args>(args)...);
 
-            shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
+            shambase::parallel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
                 link_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);
                 });
@@ -221,7 +221,7 @@ namespace shammodels::basegodunov::modules {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             LinkFieldCompute compute(cgh, nvar, std::forward<Args>(args)...);
 
-            shambase::parralel_for(
+            shambase::parallel_for(
                 cgh, graph.obj_cnt * nvar, "compute link field indep nvar", [=](u32 idvar_a) {
                     const u32 id_cell_a = idvar_a / nvar;
                     const u32 nvar_loc  = idvar_a % nvar;
@@ -268,7 +268,7 @@ namespace shammodels::basegodunov::modules {
             sycl::accessor acc_link_field {result.template link_graph_field, cgh, sycl::write_only,
     sycl::no_init};
 
-            shambase::parralel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
+            shambase::parallel_for(cgh, graph.obj_cnt, "compute link field", [=](u32 id_a) {
 
                 link_iter.for_each_object_link(id_a, [&](u32 id_b, u32 link_id){
                     acc_link_field[link_id] = compute.get_link_field_val(id_a, id_b);

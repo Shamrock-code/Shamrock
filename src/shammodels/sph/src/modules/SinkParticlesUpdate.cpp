@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,8 @@
 
 /**
  * @file SinkParticlesUpdate.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -33,11 +34,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
@@ -49,7 +51,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         Tscal s_acc_mass = 0;
         Tvec s_acc_pxyz  = {0, 0, 0};
 
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 Nobj = pdat.get_obj_cnt();
 
             sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
@@ -68,7 +70,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
                 Tvec r_sink    = s.pos;
                 Tscal acc_rad2 = s.accretion_radius * s.accretion_radius;
 
-                shambase::parralel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
+                shambase::parallel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
                     Tvec r            = xyz[id_a] - r_sink;
                     bool not_accreted = sycl::dot(r, r) > acc_rad2;
                     not_acc[id_a]     = (not_accreted) ? 1 : 0;
@@ -92,25 +94,25 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
 
                 Tscal acc_mass = gpart_mass * Naccrete;
 
-                sycl::buffer<Tvec> pxyz_acc(Naccrete);
+                sham::DeviceBuffer<Tvec> pxyz_acc(Naccrete, dev_sched);
 
                 sham::EventList depends_list2;
-                auto vxyz = buf_vxyz.get_read_access(depends_list2);
+                auto vxyz        = buf_vxyz.get_read_access(depends_list2);
+                auto accretion_p = pxyz_acc.get_write_access(depends_list2);
 
                 auto e = q.submit(depends_list2, [&, gpart_mass](sycl::handler &cgh) {
                     sycl::accessor id_acc{*std::get<0>(id_list_accrete), cgh, sycl::read_only};
 
-                    sycl::accessor accretion_p{pxyz_acc, cgh, sycl::write_only};
-
-                    shambase::parralel_for(
+                    shambase::parallel_for(
                         cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
                             accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
                         });
                 });
 
                 buf_vxyz.complete_event_state(e);
+                pxyz_acc.complete_event_state(e);
 
-                Tvec acc_pxyz = shamalgs::reduction::sum(q.q, pxyz_acc, 0, Naccrete);
+                Tvec acc_pxyz = shamalgs::primitives::sum(dev_sched, pxyz_acc, 0, Naccrete);
 
                 s_acc_mass += acc_mass;
                 s_acc_pxyz += acc_pxyz;
@@ -202,11 +204,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayout &pdl = scheduler().pdl;
-    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
-    const u32 iaxyz_ext  = pdl.get_field_idx<Tvec>("axyz_ext");
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 iaxyz_ext       = pdl.get_field_idx<Tvec>("axyz_ext");
 
-    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
     std::vector<Tvec> result_acc_sinks{};
 
@@ -214,54 +217,53 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 
         Tvec sph_acc_sink = {};
 
-        scheduler().for_each_patchdata_nonempty([&, G, epsilon_grav, gpart_mass](
-                                                    Patch cur_p, PatchData &pdat) {
-            sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(ixyz);
-            sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
+        scheduler().for_each_patchdata_nonempty(
+            [&, G, epsilon_grav, gpart_mass](Patch cur_p, PatchDataLayer &pdat) {
+                sham::DeviceBuffer<Tvec> &buf_xyz      = pdat.get_field_buf_ref<Tvec>(ixyz);
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field_buf_ref<Tvec>(iaxyz_ext);
 
-            sycl::buffer<Tvec> buf_sync_axyz(pdat.get_obj_cnt());
+                sham::DeviceBuffer<Tvec> buf_sync_axyz(pdat.get_obj_cnt(), dev_sched);
 
-            Tscal sink_mass = s.mass;
-            Tscal sink_racc = s.accretion_radius;
-            Tvec sink_pos   = s.pos;
+                Tscal sink_mass = s.mass;
+                Tscal sink_racc = s.accretion_radius;
+                Tvec sink_pos   = s.pos;
 
-            sham::EventList depends_list;
-            auto xyz      = buf_xyz.get_read_access(depends_list);
-            auto axyz_ext = buf_axyz_ext.get_write_access(depends_list);
+                sham::EventList depends_list;
+                auto xyz       = buf_xyz.get_read_access(depends_list);
+                auto axyz_ext  = buf_axyz_ext.get_write_access(depends_list);
+                auto axyz_sync = buf_sync_axyz.get_write_access(depends_list);
 
-            auto e = q.submit(
-                depends_list,
-                [&, G, epsilon_grav, sink_mass, sink_pos, sink_racc](sycl::handler &cgh) {
-                    sycl::accessor axyz_sync{buf_sync_axyz, cgh, sycl::write_only, sycl::no_init};
+                auto e = q.submit(
+                    depends_list,
+                    [&, G, epsilon_grav, sink_mass, sink_pos, sink_racc](sycl::handler &cgh) {
+                        shambase::parallel_for(
+                            cgh, pdat.get_obj_cnt(), "sink-sph forces", [=](i32 id_a) {
+                                Tvec r_a = xyz[id_a];
 
-                    shambase::parralel_for(
-                        cgh, pdat.get_obj_cnt(), "sink-sph forces", [=](i32 id_a) {
-                            Tvec r_a = xyz[id_a];
+                                Tvec delta = r_a - sink_pos;
+                                Tscal d    = sycl::length(delta);
 
-                            Tvec delta = r_a - sink_pos;
-                            Tscal d    = sycl::length(delta);
+                                Tvec force = G * delta / (d * d * d);
 
-                            Tvec force = G * delta / (d * d * d);
+                                // This is a hack to avoid the sink kaboom effect
+                                // when the particle is being advected close to the sink before
+                                // being accreted
+                                if (d < sink_racc) {
+                                    force = {0, 0, 0};
+                                }
 
-                            // This is a hack to avoid the sink kaboom effect
-                            // when the particle is being advected close to the sink before being
-                            // accreted
-                            if (d < sink_racc) {
-                                force = {0, 0, 0};
-                            }
+                                axyz_sync[id_a] = force * gpart_mass;
+                                axyz_ext[id_a] += -force * sink_mass;
+                            });
+                    });
 
-                            axyz_sync[id_a] = force * gpart_mass;
-                            axyz_ext[id_a] += -force * sink_mass;
-                        });
-                });
+                buf_xyz.complete_event_state(e);
+                buf_axyz_ext.complete_event_state(e);
+                buf_sync_axyz.complete_event_state(e);
 
-            buf_xyz.complete_event_state(e);
-            buf_axyz_ext.complete_event_state(e);
-
-            // result_acc_sinks.push_back(
-            //     shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt()));
-            sph_acc_sink += shamalgs::reduction::sum(q.q, buf_sync_axyz, 0, pdat.get_obj_cnt());
-        });
+                sph_acc_sink
+                    += shamalgs::primitives::sum(dev_sched, buf_sync_axyz, 0, pdat.get_obj_cnt());
+            });
 
         result_acc_sinks.push_back(sph_acc_sink);
     }
@@ -316,3 +318,7 @@ using namespace shammath;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M4>;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M6>;
 template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, M8>;
+
+template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, C2>;
+template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, C4>;
+template class shammodels::sph::modules::SinkParticlesUpdate<f64_3, C6>;

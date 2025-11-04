@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file patchdata_exchanger_impl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -20,7 +20,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/Patch.hpp"
-#include "shamrock/patch/PatchDataLayout.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <vector>
@@ -109,13 +109,13 @@ namespace patchdata_exchanger {
 
         [[deprecated("Please use CommunicationBuffer & SerializeHelper instead")]]
         inline void patch_data_exchange_object(
-            shamrock::patch::PatchDataLayout &pdl,
+            const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
             std::vector<shamrock::patch::Patch> &global_patch_list,
-            std::vector<std::unique_ptr<shamrock::patch::PatchData>> &send_comm_pdat,
+            std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> &send_comm_pdat,
             std::vector<u64_2> &send_comm_vec,
             std::unordered_map<
                 u64,
-                std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+                std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
                 &recv_obj) {
             StackEntry stack_loc{};
 
@@ -200,9 +200,9 @@ namespace patchdata_exchanger {
                             //                      global_comm_tag[i]);
                             recv_obj[precv.id_patch].push_back(
                                 {psend.id_patch,
-                                 std::make_unique<PatchData>(
-                                     pdl)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
-                                             // global_comm_tag[i], MPI_COMM_WORLD)}
+                                 std::make_unique<PatchDataLayer>(
+                                     pdl_ptr)}); // patchdata_irecv(recv_rq, psend.node_owner_id,
+                                                 // global_comm_tag[i], MPI_COMM_WORLD)}
                             dtcnt += patchdata_irecv_probe(
                                 *std::get<1>(
                                     recv_obj[precv.id_patch][recv_obj[precv.id_patch].size() - 1]),

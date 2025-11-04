@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file InterpolateToFace.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -113,8 +113,8 @@ namespace {
                   acc_grad_rho_cell{grad_rho_cell}, dt_interp(dt_interp), acc_vel_cell{vel_cell},
                   acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell} {}
 
-            Tscal
-            get_dt_rho(Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
+            Tscal get_dt_rho(
+                Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
                 return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
             }
 
@@ -658,12 +658,12 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
 
     auto dt_interp = edges.dt_interp.value;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xp = edges.rho_face_xp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xm = edges.rho_face_xm;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_yp = edges.rho_face_yp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_ym = edges.rho_face_ym;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zp = edges.rho_face_zp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zm = edges.rho_face_zm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xp = edges.rho_face_xp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_xm = edges.rho_face_xm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_yp = edges.rho_face_yp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_ym = edges.rho_face_ym;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zp = edges.rho_face_zp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_face_zm = edges.rho_face_zm;
 
     rho_face_xp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
     rho_face_xm.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xm));
@@ -791,8 +791,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -814,12 +814,12 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 
     auto dt_interp = edges.dt_interp.value;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xp = edges.vel_face_xp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xm = edges.vel_face_xm;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_yp = edges.vel_face_yp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_ym = edges.vel_face_ym;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_zp = edges.vel_face_zp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_face_zm = edges.vel_face_zm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xp = edges.vel_face_xp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xm = edges.vel_face_xm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_yp = edges.vel_face_yp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_ym = edges.vel_face_ym;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_zp = edges.vel_face_zp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_zm = edges.vel_face_zm;
 
     vel_face_xp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
     vel_face_xm.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xm));
@@ -947,8 +947,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -970,12 +970,12 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
 
     auto dt_interp = edges.dt_interp.value;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_xp = edges.press_face_xp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_xm = edges.press_face_xm;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_yp = edges.press_face_yp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_ym = edges.press_face_ym;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_zp = edges.press_face_zp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &press_face_zm = edges.press_face_zm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_xp = edges.press_face_xp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_xm = edges.press_face_xm;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_yp = edges.press_face_yp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_ym = edges.press_face_ym;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_zp = edges.press_face_zp;
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &press_face_zm = edges.press_face_zm;
 
     press_face_xp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
     press_face_xm.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xm));
@@ -1104,8 +1104,8 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -1128,17 +1128,17 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
     auto dt_interp = edges.dt_interp.value;
     auto ndust     = this->ndust;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_xp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_xp
         = edges.rho_dust_face_xp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_xm
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_xm
         = edges.rho_dust_face_xm;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_yp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_yp
         = edges.rho_dust_face_yp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_ym
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_ym
         = edges.rho_dust_face_ym;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_zp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_zp
         = edges.rho_dust_face_zp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_zm
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>> &rho_dust_face_zm
         = edges.rho_dust_face_zm;
 
     rho_dust_face_xp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
@@ -1286,8 +1286,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 
@@ -1310,17 +1310,17 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
     auto dt_interp = edges.dt_interp.value;
     auto ndust     = this->ndust;
 
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_xp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_xp
         = edges.vel_dust_face_xp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_xm
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_xm
         = edges.vel_dust_face_xm;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_yp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_yp
         = edges.vel_dust_face_yp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_ym
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_ym
         = edges.vel_dust_face_ym;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_zp
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_zp
         = edges.vel_dust_face_zp;
-    solvergraph::NeighGrapkLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_zm
+    solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_dust_face_zm
         = edges.vel_dust_face_zm;
 
     vel_dust_face_xp.resize_according_to(edges.cell_neigh_graph.get_refs_dir(Direction::xp));
@@ -1466,8 +1466,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
-std::string
-shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::
+    _impl_get_tex() {
     return "TODO";
 }
 

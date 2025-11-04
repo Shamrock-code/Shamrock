@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -21,6 +21,7 @@
 
 #include "shambase/SourceLocation.hpp"
 #include <stdexcept>
+#include <string>
 
 namespace shambase {
 
@@ -71,8 +72,8 @@ namespace shambase {
      * the source location.
      */
     template<class ExcptTypes>
-    inline ExcptTypes
-    make_except_with_loc(std::string message, SourceLocation loc = SourceLocation{}) {
+    inline ExcptTypes make_except_with_loc(
+        std::string message, SourceLocation loc = SourceLocation{}) {
         std::string msg = message + exception_format(loc);
         exception_gen_callback(msg);
         return ExcptTypes(msg);
@@ -86,9 +87,9 @@ namespace shambase {
      * where the exception was thrown.
      *
      * Usage :
-     * ~~~~~{.cpp}
+     * @code{.cpp}
      * shambase::throw_with_loc<MyException>("message");
-     * ~~~~~
+     * @endcode
      *
      * @tparam ExcptTypes The type of the exception to throw
      * @param message The message of the exception
@@ -110,9 +111,9 @@ namespace shambase {
      * It also includes the source location where the exception was thrown.
      *
      * Usage :
-     * ~~~~~{.cpp}
+     * @code{.cpp}
      * shambase::throw_unimplemented();
-     * ~~~~~
+     * @endcode
      *
      * @param loc The location from where the exception was thrown
      *
@@ -131,9 +132,9 @@ namespace shambase {
      * source location where the exception was thrown.
      *
      * Usage :
-     * ~~~~~{.cpp}
+     * @code{.cpp}
      * shambase::throw_unimplemented("my function");
-     * ~~~~~
+     * @endcode
      *
      * @param message The message to add to the exception message
      * @param loc The location from where the exception was thrown

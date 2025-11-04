@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file collectives.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -94,8 +94,8 @@ void shamcomm::gather_basic_str(
     _internal_gather_str(send_vec, recv_vec);
 }
 
-std::unordered_map<std::string, int>
-shamcomm::string_histogram(const std::vector<std::string> &inputs, std::string delimiter) {
+std::unordered_map<std::string, int> shamcomm::string_histogram(
+    const std::vector<std::string> &inputs, std::string delimiter) {
     std::string accum_loc = "";
     for (auto &s : inputs) {
         accum_loc += s + delimiter;

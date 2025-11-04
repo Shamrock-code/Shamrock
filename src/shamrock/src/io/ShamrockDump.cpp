@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,18 +9,22 @@
 
 /**
  * @file ShamrockDump.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shamrock/io/ShamrockDump.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamrock/io/ShamrockDump.hpp"
 
 namespace shamrock {
 
     void write_shamrock_dump(std::string fname, std::string metadata_user, PatchScheduler &sched) {
+
+        StackEntry stack_loc{};
+
         std::string metadata_patch = sched.serialize_patch_metadata().dump(4);
 
         using namespace shamrock::patch;
@@ -30,7 +34,7 @@ namespace shamrock {
         std::vector<sham::DeviceBuffer<u8>> datas;
 
         // serialize patchdatas and push them into dat
-        sched.patch_data.for_each_patchdata([&](u64 pid, PatchData &pdat) {
+        sched.patch_data.for_each_patchdata([&](u64 pid, PatchDataLayer &pdat) {
             auto ser_sz = pdat.serialize_buf_byte_size();
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(ser_sz);
@@ -157,6 +161,8 @@ namespace shamrock {
 
     void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
 
+        StackEntry stack_loc{};
+
         u64 head_ptr = 0;
         MPI_File mfile{};
 
@@ -184,7 +190,7 @@ namespace shamrock {
         json jpdat_info  = json::parse(patchdata_infos);
 
         ctx.pdata_layout_new();
-        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayout>();
+        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
         ctx.init_sched(
             jmeta_patch.at("crit_patch_split").get<u64>(),
             jmeta_patch.at("crit_patch_merge").get<u64>());
@@ -240,8 +246,7 @@ namespace shamrock {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
 
-            patch::PatchData pdat
-                = patch::PatchData::deserialize_buf(ser, shambase::get_check_ref(ctx.pdl));
+            patch::PatchDataLayer pdat = patch::PatchDataLayer::deserialize_buf(ser, ctx.pdl);
 
             sched.patch_data.owned_data.add_obj(pid, std::move(pdat));
         }

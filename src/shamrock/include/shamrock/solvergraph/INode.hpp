@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,89 +11,144 @@
 
 /**
  * @file INode.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/IEdge.hpp"
 #include <memory>
 #include <vector>
 
 namespace shamrock::solvergraph {
 
-    // Inode is node between data edges, takes multiple inputs, multiple outputs
+    /// Inode is node between data edges, takes multiple inputs, multiple outputs
     class INode : public std::enable_shared_from_this<INode>,
                   public shambase::WithUUID<INode, u64> {
 
-        std::vector<std::shared_ptr<IDataEdge>> ro_edges;
-        std::vector<std::shared_ptr<IDataEdge>> rw_edges;
+        /// Read only edges
+        std::vector<std::shared_ptr<IEdge>> ro_edges;
+        /// Read write edges
+        std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
+        /// Get a shared pointer to this node
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
+        /// Get a weak pointer to this node
         inline std::weak_ptr<INode> getptr_weak() { return weak_from_this(); }
 
-        inline std::vector<std::shared_ptr<IDataEdge>> &get_ro_edges() { return ro_edges; }
-        inline std::vector<std::shared_ptr<IDataEdge>> &get_rw_edges() { return rw_edges; }
+        /// Get the read only edges
+        inline std::vector<std::shared_ptr<IEdge>> &get_ro_edges() { return ro_edges; }
+        /// Get the read write edges
+        inline std::vector<std::shared_ptr<IEdge>> &get_rw_edges() { return rw_edges; }
 
-        inline void __internal_set_ro_edges(std::vector<std::shared_ptr<IDataEdge>> new_ro_edges);
-        inline void __internal_set_rw_edges(std::vector<std::shared_ptr<IDataEdge>> new_rw_edges);
+        /// Set the read only edges
+        inline void __internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges);
+        /// Set the read write edges
+        inline void __internal_set_rw_edges(std::vector<std::shared_ptr<IEdge>> new_rw_edges);
 
+        /// Apply a function to the read only edges
         template<class Func>
         void on_edge_ro_edges(Func &&f);
 
+        /// Apply a function to the read write edges
         template<class Func>
         void on_edge_rw_edges(Func &&f);
 
+        /// Destructor (virtual) & reset the edges
         virtual ~INode() {
             __internal_set_ro_edges({});
             __internal_set_rw_edges({});
         }
 
+        /// Get a read only edge and cast it to the type T
         template<class T>
         inline const T &get_ro_edge(int slot) {
             return shambase::get_check_ref(std::dynamic_pointer_cast<T>(ro_edges.at(slot)));
         }
 
+        /// Get a read write edge and cast it to the type T
         template<class T>
         inline T &get_rw_edge(int slot) {
             return shambase::get_check_ref(std::dynamic_pointer_cast<T>(rw_edges.at(slot)));
         }
 
-        inline const IDataEdge &get_ro_edge_base(int slot) {
+        /// Get a reference to a read only edge
+        inline const IEdge &get_ro_edge_base(int slot) {
             return shambase::get_check_ref(ro_edges.at(slot));
         }
 
-        inline IDataEdge &get_rw_edge_base(int slot) {
+        /// Get a reference to a read write edge and cast it to the type IEdge
+        inline IEdge &get_rw_edge_base(int slot) {
             return shambase::get_check_ref(rw_edges.at(slot));
         }
 
+        /// Evaluate the node
         inline void evaluate() { _impl_evaluate_internal(); }
 
+        /// Get the dot graph of the node (Currently only an alias to get_dot_graph_partial)
         inline std::string get_dot_graph() { return get_dot_graph_partial(); };
+
+        /// Get the dot graph of the subgraph corresponding to the node
         inline std::string get_dot_graph_partial() { return _impl_get_dot_graph_partial(); };
+
+        /// Get the id of the node start in the dot graph
         inline std::string get_dot_graph_node_start() { return _impl_get_dot_graph_node_start(); };
+        /// Get the id of the node end in the dot graph
         inline std::string get_dot_graph_node_end() { return _impl_get_dot_graph_node_end(); };
 
+        /// Get the TeX of the node
         inline std::string get_tex() { return _impl_get_tex(); };
+        /// Get the TeX of the node partial
         inline std::string get_tex_partial() { return _impl_get_tex(); };
 
+        /// print the node info
+        inline virtual std::string print_node_info() {
+            std::string node_info = shambase::format("Node info :\n");
+            node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
+            node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
+            node_info += shambase::format(" - Node label : {}\n", _impl_get_label());
+
+            auto append_edges_info = [&](const char *title, const auto &edges) {
+                node_info += shambase::format(" - {}: {}\n", title, edges.size());
+                for (const auto &edge : edges) {
+                    const auto &e = *edge; // necessary to avoid -Wpotentially-evaluated-expression
+                    node_info += shambase::format(
+                        "     - Edge ptr = {}, uuid = {}, label = {},\n          type = {} \n",
+                        static_cast<void *>(edge.get()),
+                        edge->get_uuid(),
+                        edge->get_label(),
+                        typeid(e).name());
+                }
+            };
+
+            append_edges_info("Node Read Only edges", ro_edges);
+            append_edges_info("Node Read Write edges", rw_edges);
+
+            return node_info;
+        };
+
         protected:
+        /// evaluate the node
         virtual void _impl_evaluate_internal() = 0;
 
+        /// get the label of the node
         virtual std::string _impl_get_label() = 0;
 
+        /// get the dot graph of the node partial
         virtual std::string _impl_get_dot_graph_partial();
+        /// get the dot graph of the node start
         virtual std::string _impl_get_dot_graph_node_start();
+        /// get the dot graph of the node end
         virtual std::string _impl_get_dot_graph_node_end();
 
+        /// get the tex of the node
         virtual std::string _impl_get_tex() = 0;
     };
 
-    inline void
-    INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IDataEdge>> new_ro_edges) {
+    inline void INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges) {
         for (auto e : ro_edges) {
             // shambase::get_check_ref(e).parent = {};
         }
@@ -103,8 +158,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    inline void
-    INode::__internal_set_rw_edges(std::vector<std::shared_ptr<IDataEdge>> new_rw_edges) {
+    inline void INode::__internal_set_rw_edges(std::vector<std::shared_ptr<IEdge>> new_rw_edges) {
         for (auto e : rw_edges) {
             // shambase::get_check_ref(e).child = {};
         }

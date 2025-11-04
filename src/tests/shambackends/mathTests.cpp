@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -102,4 +102,22 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_sa
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(0), 0._f64);
 
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(nan_val), 0._f64);
+}
+
+template<typename T>
+T __attribute__((noinline)) bitshift_noinline(T x, T amount) {
+    return x << amount;
+}
+
+TestStart(Unittest, "shambackends/math.hpp:log2_pow2_num", shambackendsmathlog2_pow2_num, 1) {
+
+    // we have to prevent inline otherwise optimisation will optimize clz(1 << i) to bitsize - i-1
+
+    for (u32 i = 0; i < 32; i++) {
+        REQUIRE_EQUAL(sham::log2_pow2_num<u32>(bitshift_noinline(1_u32, i)), i);
+    }
+
+    for (u64 i = 0; i < 64; i++) {
+        REQUIRE_EQUAL(sham::log2_pow2_num<u64>(bitshift_noinline(1_u64, i)), i);
+    }
 }

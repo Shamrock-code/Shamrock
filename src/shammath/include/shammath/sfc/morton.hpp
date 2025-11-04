@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file morton.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Morton curve implementation
  *
  */
@@ -269,8 +269,8 @@ namespace morton_3d {
     [[deprecated]] morton_prec coord_to_morton(fp_prec x, fp_prec y, fp_prec z);
 
     template<class morton_prec>
-    [[deprecated]] typename morton_types<morton_prec>::int_vec_repr
-    morton_to_ipos(morton_prec morton);
+    [[deprecated]] typename morton_types<morton_prec>::int_vec_repr morton_to_ipos(
+        morton_prec morton);
 
     template<class morton_prec>
     [[deprecated]] typename morton_types<morton_prec>::int_vec_repr get_offset(u32 clz_);

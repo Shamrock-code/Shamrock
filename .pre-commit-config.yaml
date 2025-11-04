@@ -70,7 +70,7 @@ repos:
 
 # Clang format the codebase automatically
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v19.1.7
+  rev: v21.1.0
   hooks:
   - id: clang-format
     types_or: [c++, c, cuda]
@@ -136,3 +136,9 @@ repos:
       entry: python buildbot/check_no_ssh_in_submodules.py
       language: python
       pass_filenames: false
+
+    # - id: update_authors
+    #   name: "Update authors"
+    #   entry: python buildbot/update_authors.py
+    #   language: python
+    #   pass_filenames: true

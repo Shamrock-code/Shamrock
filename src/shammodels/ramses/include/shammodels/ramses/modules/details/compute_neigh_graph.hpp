@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file compute_neigh_graph.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -54,7 +54,7 @@ namespace shammodels::basegodunov::modules::details {
 
         // fill buffer with number of link in the block graph
         auto e = q.submit(deps, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
                 u32 id_a              = (u32) gid;
                 u32 block_found_count = 0;
 
@@ -73,7 +73,7 @@ namespace shammodels::basegodunov::modules::details {
         link_counts.set_val_at_idx(graph_nodes, 0);
 
         sham::DeviceBuffer<u32> link_cnt_offsets
-            = shamalgs::numeric::exclusive_sum(dev_sched, link_counts, graph_nodes + 1);
+            = shamalgs::numeric::scan_exclusive(dev_sched, link_counts, graph_nodes + 1);
 
         u32 link_cnt = link_cnt_offsets.get_val_at_idx(graph_nodes);
 
@@ -86,7 +86,7 @@ namespace shammodels::basegodunov::modules::details {
 
         // find the neigh ids
         auto e2 = q.submit(deps2, [&](sycl::handler &cgh) {
-            shambase::parralel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 next_link_idx = cnt_offsets[id_a];
@@ -135,7 +135,7 @@ namespace shammodels::basegodunov::modules::details {
         // fill buffer with number of link in the block graph
         auto e = q.submit(deps, [&](sycl::handler &cgh) {
             NeighFindKernel ker(cgh, std::forward<Args>(args)...);
-            shambase::parralel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "count block graph link", [=](u64 gid) {
                 u32 id_a              = (u32) gid;
                 u32 block_found_count = 0;
 
@@ -153,7 +153,7 @@ namespace shammodels::basegodunov::modules::details {
         link_counts.set_val_at_idx(graph_nodes, 0);
 
         sham::DeviceBuffer<u32> link_cnt_offsets
-            = shamalgs::numeric::exclusive_sum(dev_sched, link_counts, graph_nodes + 1);
+            = shamalgs::numeric::scan_exclusive(dev_sched, link_counts, graph_nodes + 1);
 
         u32 link_cnt = link_cnt_offsets.get_val_at_idx(graph_nodes);
 
@@ -166,7 +166,7 @@ namespace shammodels::basegodunov::modules::details {
         // find the neigh ids
         auto e2 = q.submit(deps2, [&](sycl::handler &cgh) {
             NeighFindKernel ker(cgh, std::forward<Args>(args)...);
-            shambase::parralel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
+            shambase::parallel_for(cgh, graph_nodes, "get ids block graph link", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 u32 next_link_idx = cnt_offsets[id_a];

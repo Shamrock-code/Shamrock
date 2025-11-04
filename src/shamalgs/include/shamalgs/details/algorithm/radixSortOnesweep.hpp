@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file radixSortOnesweep.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -108,13 +108,12 @@ namespace shamalgs::algorithm::details {
 
             sycl::host_accessor acc{digit_histogram, sycl::read_write};
 
+            auto ptr = &(acc[0]);
+
             for (u32 digit_place = 0; digit_place < Binner::digit_bit_places; digit_place++) {
                 u32 offset_ptr = Binner::digit_count * digit_place;
                 std::exclusive_scan(
-                    acc.get_pointer() + offset_ptr,
-                    acc.get_pointer() + offset_ptr + Binner::digit_count,
-                    acc.get_pointer() + offset_ptr,
-                    0);
+                    ptr + offset_ptr, ptr + offset_ptr + Binner::digit_count, ptr + offset_ptr, 0);
             }
         }
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file interface_generator_impl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -28,14 +28,14 @@ namespace impl {
     template<class vectype>
     std::vector<u8> get_flag_choice(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat,
+        shamrock::patch::PatchDataLayer &pdat,
         std::vector<vectype> boxs_min,
         std::vector<vectype> boxs_max);
 
     template<>
     inline std::vector<u8> get_flag_choice<f32_3>(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat,
+        shamrock::patch::PatchDataLayer &pdat,
         std::vector<f32_3> boxs_min,
         std::vector<f32_3> boxs_max) {
 
@@ -58,7 +58,7 @@ namespace impl {
 
             sycl::range<1> range{pdat.get_obj_cnt()};
 
-            u32 field_ipos = pdat.pdl.get_field_idx<f32_3>("xyz");
+            u32 field_ipos = pdat.pdl().get_field_idx<f32_3>("xyz");
 
             PatchDataField<f32_3> &pos_field = pdat.get_field<f32_3>(field_ipos);
 
@@ -101,7 +101,7 @@ namespace impl {
     template<>
     inline std::vector<u8> get_flag_choice<f64_3>(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat,
+        shamrock::patch::PatchDataLayer &pdat,
         std::vector<f64_3> boxs_min,
         std::vector<f64_3> boxs_max) {
 
@@ -122,7 +122,7 @@ namespace impl {
 
             sycl::range<1> range{pdat.get_obj_cnt()};
 
-            u32 field_ipos = pdat.pdl.get_field_idx<f64_3>("xyz");
+            u32 field_ipos = pdat.pdl().get_field_idx<f64_3>("xyz");
 
             PatchDataField<f64_3> &pos_field = pdat.get_field<f64_3>(field_ipos);
 
@@ -164,7 +164,7 @@ namespace impl {
     template<class T, class vectype>
     inline std::vector<std::unique_ptr<PatchDataField<T>>> append_interface_field(
         sycl::queue &queue,
-        shamrock::patch::PatchData &pdat,
+        shamrock::patch::PatchDataLayer &pdat,
         PatchDataField<T> &pdat_cfield,
         std::vector<vectype> boxs_min,
         std::vector<vectype> boxs_max) {

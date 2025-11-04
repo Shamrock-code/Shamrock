@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,8 @@
 
 /**
  * @file SPHUtilities.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -43,10 +44,10 @@ namespace shammodels::sph {
         sham::EventList depends_list;
 
         auto r          = merged_r.get_read_access(depends_list);
-        auto eps        = eps_h.get_write_access(depends_list);
-        auto h_new      = hnew.get_write_access(depends_list);
         auto h_old      = hold.get_read_access(depends_list);
         auto ploop_ptrs = neigh_cache.get_read_access(depends_list);
+        auto eps        = eps_h.get_write_access(depends_list);
+        auto h_new      = hnew.get_write_access(depends_list);
 
         auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
             // tree::ObjectIterator particle_looper(tree,cgh);
@@ -60,7 +61,7 @@ namespace shammodels::sph {
             const flt h_max_evol_p       = h_evol_iter_max;
             const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-            shambase::parralel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
+            shambase::parallel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
                 if (eps[id_a] > 1e-6) {
 
                     vec xyz_a = r[id_a]; // could be recovered from lambda
@@ -154,7 +155,7 @@ namespace shammodels::sph {
                 const flt h_max_evol_p       = h_evol_iter_max;
                 const flt h_max_evol_m       = 1 / h_evol_iter_max;
 
-                shambase::parralel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
+                shambase::parallel_for(cgh, update_range.size(), "iter h", [=](u32 id_a) {
                     if (eps[id_a] > 1e-6) {
 
                         vec xyz_a = r[id_a]; // could be recovered from lambda
@@ -239,7 +240,7 @@ namespace shammodels::sph {
 
             const flt part_mass = gpart_mass;
 
-            shambase::parralel_for(cgh, part_range.size(), "compute omega", [=](u32 id_a) {
+            shambase::parallel_for(cgh, part_range.size(), "compute omega", [=](u32 id_a) {
                 vec xyz_a = r[id_a]; // could be recovered from lambda
 
                 flt h_a  = hpart[id_a];
@@ -293,8 +294,16 @@ namespace shammodels::sph {
     template class SPHUtilities<f64_3, shammath::M6<f64>>;
     template class SPHUtilities<f64_3, shammath::M8<f64>>;
 
+    template class SPHUtilities<f64_3, shammath::C2<f64>>;
+    template class SPHUtilities<f64_3, shammath::C4<f64>>;
+    template class SPHUtilities<f64_3, shammath::C6<f64>>;
+
     template class SPHTreeUtilities<f64_3, shammath::M4<f64>, u32>;
     template class SPHTreeUtilities<f64_3, shammath::M6<f64>, u64>;
     template class SPHTreeUtilities<f64_3, shammath::M8<f64>, u64>;
+
+    template class SPHTreeUtilities<f64_3, shammath::C2<f64>, u32>;
+    template class SPHTreeUtilities<f64_3, shammath::C4<f64>, u64>;
+    template class SPHTreeUtilities<f64_3, shammath::C6<f64>, u64>;
 
 } // namespace shammodels::sph

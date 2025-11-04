@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file interface_handler_impl.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -31,7 +31,7 @@ namespace impl {
         std::vector<InterfaceComm<vectype>> &interface_comm_list,
         std::unordered_map<
             u64,
-            std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchData>>>>
+            std::vector<std::tuple<u64, std::unique_ptr<shamrock::patch::PatchDataLayer>>>>
             &interface_map,
         bool periodic) {
         StackEntry stack_loc{};
@@ -39,10 +39,11 @@ namespace impl {
 
         interface_map.clear();
         for (const Patch &p : sched.patch_list.global) {
-            interface_map[p.id_patch] = std::vector<std::tuple<u64, std::unique_ptr<PatchData>>>();
+            interface_map[p.id_patch]
+                = std::vector<std::tuple<u64, std::unique_ptr<PatchDataLayer>>>();
         }
 
-        std::vector<std::unique_ptr<PatchData>> comm_pdat;
+        std::vector<std::unique_ptr<PatchDataLayer>> comm_pdat;
         std::vector<u64_2> comm_vec;
         if (interface_comm_list.size() > 0) {
 
@@ -54,7 +55,7 @@ namespace impl {
                     auto patch_in
                         = sched.patch_data.get_pdat(interface_comm_list[i].sender_patch_id);
 
-                    std::vector<std::unique_ptr<PatchData>> pret
+                    std::vector<std::unique_ptr<PatchDataLayer>> pret
                         = InterfaceVolumeGenerator::append_interface<vectype>(
                             shamsys::instance::get_alt_queue(),
                             patch_in,
@@ -65,18 +66,19 @@ namespace impl {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchData>(sched.pdl));
+                    comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             // std::cout << "\n split \n";
         }
 
         patch_data_exchange_object(
-            sched.pdl, sched.patch_list.global, comm_pdat, comm_vec, interface_map);
+            sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, interface_map);
     }
 
     template<class T, class vectype>
@@ -122,9 +124,10 @@ namespace impl {
                 } else {
                     comm_pdat.push_back(std::make_unique<PCField>("comp_field", 1));
                 }
-                comm_vec.push_back(u64_2{
-                    interface_comm_list[i].global_patch_idx_send,
-                    interface_comm_list[i].global_patch_idx_recv});
+                comm_vec.push_back(
+                    u64_2{
+                        interface_comm_list[i].global_patch_idx_send,
+                        interface_comm_list[i].global_patch_idx_recv});
             }
 
             // std::cout << "\n split \n";

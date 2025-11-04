@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,7 +9,7 @@
 
 /**
  * @file MicroBenchmark.cpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -127,12 +127,13 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
     } while (shamalgs::collective::allreduce_min(t) < 1);
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - p2p bandwidth    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
-            (f64(length * loops) / t),
-            wr_sender,
-            wr_receiv,
-            loops));
+        logger::raw_ln(
+            shambase::format(
+                " - p2p bandwidth    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
+                (f64(length * loops) / t),
+                wr_sender,
+                wr_receiv,
+                loops));
     }
 }
 
@@ -182,12 +183,13 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
     } while (shamalgs::collective::allreduce_min(t) < 1);
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
-            t / f64(loops),
-            wr1,
-            wr2,
-            loops));
+        logger::raw_ln(
+            shambase::format(
+                " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
+                t / f64(loops),
+                wr1,
+                wr2,
+                loops));
     }
 }
 
@@ -248,14 +250,16 @@ void shamsys::microbench::saxpy() {
     f64 avg_bw = sum_bw / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - saxpy (f32_4)   : {:.3e} B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
-            "ms)",
-            sum_bw,
-            min_bw,
-            max_bw,
-            avg_bw,
-            result.milliseconds));
+        logger::raw_ln(
+            shambase::format(
+                " - saxpy (f32_4)   : {:.3e} B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} "
+                "ms)",
+                sum_bw,
+                min_bw,
+                max_bw,
+                avg_bw,
+                result.milliseconds));
     }
 }
 
@@ -264,13 +268,6 @@ void shamsys::microbench::add_mul_rotation_f32() {
 
     using vec4 = sycl::vec<float, 4>;
 
-    u32 nrotation = 10000;
-
-    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
-        == sham::DeviceType::CPU) {
-        nrotation /= 20;
-    }
-
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -278,8 +275,8 @@ void shamsys::microbench::add_mul_rotation_f32() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        nrotation,
-        4);
+        4,
+        500);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
     f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
@@ -287,14 +284,16 @@ void shamsys::microbench::add_mul_rotation_f32() {
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - add_mul (f32_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
-            "ms)",
-            sum_flop,
-            min_flop,
-            max_flop,
-            avg_flop,
-            result.milliseconds));
+        logger::raw_ln(
+            shambase::format(
+                " - add_mul (f32_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} ms, rotations = {})",
+                sum_flop,
+                min_flop,
+                max_flop,
+                avg_flop,
+                result.milliseconds,
+                result.nrotations));
     }
 }
 
@@ -303,13 +302,6 @@ void shamsys::microbench::add_mul_rotation_f64() {
 
     using vec4 = sycl::vec<double, 4>;
 
-    u32 nrotation = 10000;
-
-    if (shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().type
-        == sham::DeviceType::CPU) {
-        nrotation /= 20;
-    }
-
     auto result = sham::benchmarks::add_mul_bench<vec4>(
         instance::get_compute_scheduler_ptr(),
         N,
@@ -317,8 +309,8 @@ void shamsys::microbench::add_mul_rotation_f64() {
         {2.0f, 2.0f, 2.0f, 2.0f},
         {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
         {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        nrotation,
-        4);
+        4,
+        500);
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
     f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
@@ -326,14 +318,16 @@ void shamsys::microbench::add_mul_rotation_f64() {
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - add_mul (f64_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) ({:.1e} "
-            "ms)",
-            sum_flop,
-            min_flop,
-            max_flop,
-            avg_flop,
-            result.milliseconds));
+        logger::raw_ln(
+            shambase::format(
+                " - add_mul (f64_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} ms, rotations = {})",
+                sum_flop,
+                min_flop,
+                max_flop,
+                avg_flop,
+                result.milliseconds,
+                result.nrotations));
     }
 }
 
@@ -368,12 +362,14 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
     f64 avg_t = sum_t / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(shambase::format(
-            " - vector_allgather (u64, n={:4}) : {:.3e} s (min = {:.2e}, max = {:.2e}, loops = {})",
-            el_per_rank,
-            avg_t,
-            min_t,
-            max_t,
-            loops));
+        logger::raw_ln(
+            shambase::format(
+                " - vector_allgather (u64, n={:4}) : {:.3e} s (min = {:.2e}, max = {:.2e}, loops = "
+                "{})",
+                el_per_rank,
+                avg_t,
+                min_t,
+                max_t,
+                loops));
     }
 }

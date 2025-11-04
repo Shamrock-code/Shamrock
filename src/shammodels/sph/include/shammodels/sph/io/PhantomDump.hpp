@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2024 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,7 +11,7 @@
 
 /**
  * @file PhantomDump.hpp
- * @author Timothée David--Cléris (timothee.david--cleris@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -285,8 +285,8 @@ namespace shammodels::sph {
          * @param numarray the number of values of each type
          * @return the block that was read
          */
-        static PhantomDumpBlock
-        from_file(shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
+        static PhantomDumpBlock from_file(
+            shambase::FortranIOFile &phfile, i64 tot_count, std::array<i32, 8> numarray);
 
         /**
          * @brief Writes a block to a file

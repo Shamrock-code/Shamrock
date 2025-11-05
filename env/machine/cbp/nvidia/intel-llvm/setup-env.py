@@ -9,8 +9,8 @@ import utils.sysinfo
 from utils.oscmd import *
 from utils.setuparg import *
 
-NAME = "CBP Nvidia DGX A100 Intel LLVM CUDA"
-PATH = "machine/debian-generic/intel-llvm"
+NAME = "CBP NVIDIA Machines - Intel LLVM"
+PATH = "machine/cbp/nvidia/intel-llvm/"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

@@ -1,6 +1,6 @@
 # Everything before this line will be provided by the new-env script
-
-export ACPP_TARGETS="cuda:sm_80"
+gpu_comp_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
+export ACPP_TARGETS="cuda:sm_${gpu_comp_cap}"
 export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=$BUILD_DIR/.env/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
@@ -30,7 +30,7 @@ function llvm_setup {
         -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
-        -DLLVM_TARGETS_TO_BUILD="AMDGPU;NVPTX;X86" \
+        -DLLVM_TARGETS_TO_BUILD="NVPTX;X86" \
         -DLLVM_BUILD_LLVM_DYLIB=ON \
         -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
         -DLLVM_ENABLE_ASSERTIONS=OFF \
@@ -60,11 +60,11 @@ function setupcompiler {
     clone_acpp || return
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
+        -DCUDAToolkit_LIBRARY_ROOT=/usr/lib/cuda \
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/ \
-        -DCUDAToolkit_LIBRARY_ROOT=/usr/lib/cuda \
-        -DWITH_CUDA_BACKEND=ON \
+        -DWITH_CUDA_BACKEND=On \
         -DWITH_ROCM_BACKEND=Off \
         -DWITH_LEVEL_ZERO_BACKEND=Off \
         -DWITH_SSCP_COMPILER=Off || return

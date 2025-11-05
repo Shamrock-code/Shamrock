@@ -8,7 +8,7 @@ import utils.envscript
 import utils.sysinfo
 from utils.setuparg import *
 
-NAME = "CBP Nvidia DGX A100 AdaptiveCpp (CUDA Backend)"
+NAME = "CBP NVIDIA Machines - AdaptiveCpp"
 PATH = "machine/dgx-cbp/acpp-cuda"
 
 

@@ -366,7 +366,7 @@ def test_kernel(ret, tolerance=1e-12):
     print(f"Shamrock df(q) = {shamrock_df}")
     # print(f"Shamrock ddf(q) = {shamrock_ddf}")
 
-    q_arr = np.linspace(0, 1.1 * Rkern, 1000)
+    q_arr = np.linspace(0, 1.1 * float(Rkern), 1000)
     shamrock_f = [shamrock_f(x) for x in q_arr]
     shamrock_df = [shamrock_df(x) for x in q_arr]
     # shamrock_ddf = [shamrock_ddf(x) for x in q_arr]

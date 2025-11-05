@@ -79,6 +79,22 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            if (q < 1) {
+                return (1.0 / 30.0) * shambase::constants::pi<Tscal>
+                       * (t1 * (3 * t2 - 9 * t1 + 20) - 42);
+            } else if (q < 2) {
+                return (1.0 / 30.0) * shambase::constants::pi<Tscal>
+                       * (-t5 + 9 * t4 - 30 * t3 + 40 * t2 - 48 * q + 2) / q;
+            } else
+                return -shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -172,6 +188,29 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            Tscal t6 = sham::pow_constexpr<7>(q);
+            if (q < 1.0 / 2.0) {
+                return (1.0 / 336.0) * shambase::constants::pi<Tscal>
+                       * (192 * t5 - 1008 * t3 + 3220 * t1 - 8393);
+            } else if (q < 3.0 / 2.0) {
+                return (1.0 / 336.0) * shambase::constants::pi<Tscal>
+                       * (-128 * t6 + 896 * t5 - 2016 * t4 + 560 * t3 + 3080 * t2 - 8386 * q - 1)
+                       / q;
+            } else if (q < 5.0 / 2.0) {
+                return (1.0 / 672.0) * shambase::constants::pi<Tscal>
+                       * (64 * t6 - 896 * t5 + 5040 * t4 - 14000 * t3 + 17500 * t2 - 21875 * q
+                          + 2185)
+                       / q;
+            } else
+                return -20 * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -256,6 +295,31 @@ namespace shammath::details {
                 return 20 * t3;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            Tscal t6 = sham::pow_constexpr<7>(q);
+            Tscal t7 = sham::pow_constexpr<8>(q);
+            if (q < 1) {
+                return (1.0 / 7.0) * shambase::constants::pi<Tscal>
+                       * (-5 * t6 + 20 * t5 - 84 * t3 + 308 * t1 - 956);
+            } else if (q < 2) {
+                return (1.0 / 14.0) * shambase::constants::pi<Tscal>
+                       * (5 * t7 - 60 * t6 + 280 * t5 - 588 * t4 + 350 * t3 + 476 * t2 - 1892 * q
+                          - 5)
+                       / q;
+            } else if (q < 3) {
+                return (1.0 / 14.0) * shambase::constants::pi<Tscal>
+                       * (-t7 + 20 * t6 - 168 * t5 + 756 * t4 - 1890 * t3 + 2268 * t2 - 2916 * q
+                          + 507)
+                       / q;
+            } else
+                return -120 * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -359,6 +423,37 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            Tscal t6 = sham::pow_constexpr<7>(q);
+            Tscal t7 = sham::pow_constexpr<8>(q);
+            Tscal t8 = sham::pow_constexpr<9>(q);
+            if (q < 1.0 / 2.0) {
+                return (1.0 / 1152.0) * shambase::constants::pi<Tscal>
+                       * (-1280 * t7 + 11520 * t5 - 66528 * t3 + 282576 * t1 - 1018341);
+            } else if (q < 3.0 / 2.0) {
+                return (1.0 / 4608.0) * shambase::constants::pi<Tscal>
+                       * (3840 * t8 - 34560 * t7 + 103680 * t6 - 53760 * t5 - 235872 * t4
+                          - 10080 * t3 + 1131984 * t2 - 4073409 * q + 5)
+                       / q;
+            } else if (q < 5.0 / 2.0) {
+                return (1.0 / 2304.0) * shambase::constants::pi<Tscal>
+                       * (-768 * t8 + 13824 * t7 - 103680 * t6 + 408576 * t5 - 852768 * t4
+                          + 729792 * t3 + 198576 * t2 - 1948131 * q - 29522)
+                       / q;
+            } else if (q < 7.0 / 2.0) {
+                return (1.0 / 4608.0) * shambase::constants::pi<Tscal>
+                       * (256 * t8 - 6912 * t7 + 80640 * t6 - 526848 * t5 + 2074464 * t4
+                          - 4840416 * t3 + 5647152 * t2 - 7411887 * q + 1894081)
+                       / q;
+            } else
+                return -840 * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -448,6 +543,38 @@ namespace shammath::details {
                 return 42 * t4;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<10>(q);
+            Tscal t2 = sham::pow_constexpr<2>(q);
+            Tscal t3 = sham::pow_constexpr<3>(q);
+            Tscal t4 = sham::pow_constexpr<4>(q);
+            Tscal t5 = sham::pow_constexpr<5>(q);
+            Tscal t6 = sham::pow_constexpr<6>(q);
+            Tscal t7 = sham::pow_constexpr<7>(q);
+            Tscal t8 = sham::pow_constexpr<8>(q);
+            Tscal t9 = sham::pow_constexpr<9>(q);
+            if (q < 1) {
+                return (2.0 / 9.0) * shambase::constants::pi<Tscal>
+                       * (t2 * (7 * t7 - 35 * t6 + 240 * t4 - 1512 * t2 + 7248) - 29740);
+            } else if (q < 2) {
+                return (2.0 / 45.0) * shambase::constants::pi<Tscal>
+                       * (-21 * t1 + 315 * t9 - 1890 * t8 + 5400 * t7 - 5880 * t6 - 2268 * t5
+                          - 2940 * t4 + 37080 * t3 - 148770 * q + 14)
+                       / q;
+            } else if (q < 3) {
+                return (2.0 / 45.0) * shambase::constants::pi<Tscal>
+                       * (7 * t1 - 175 * t9 + 1890 * t8 - 11400 * t7 + 41160 * t6 - 86940 * t5
+                          + 91140 * t4 - 16680 * t3 - 130850 * q - 7154)
+                       / q;
+            } else if (q < 4) {
+                return (2.0 / 45.0) * shambase::constants::pi<Tscal>
+                       * (-t1 + 35 * t9 - 540 * t8 + 4800 * t7 - 26880 * t6 + 96768 * t5
+                          - 215040 * t4 + 245760 * t3 - 327680 * q + 110944)
+                       / q;
+            } else
+                return -6720 * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -564,6 +691,49 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1  = sham::pow_constexpr<10>(q);
+            Tscal t2  = sham::pow_constexpr<11>(q);
+            Tscal t3  = sham::pow_constexpr<2>(q);
+            Tscal t4  = sham::pow_constexpr<3>(q);
+            Tscal t5  = sham::pow_constexpr<4>(q);
+            Tscal t6  = sham::pow_constexpr<5>(q);
+            Tscal t7  = sham::pow_constexpr<6>(q);
+            Tscal t8  = sham::pow_constexpr<7>(q);
+            Tscal t9  = sham::pow_constexpr<8>(q);
+            Tscal t10 = sham::pow_constexpr<9>(q);
+            if (q < 1.0 / 2.0) {
+                return (1.0 / 2816.0) * shambase::constants::pi<Tscal>
+                       * (7168 * t1 - 98560 * t9 + 908160 * t7 - 6408864 * t5 + 34283436 * t3
+                          - 157802293);
+            } else if (q < 3.0 / 2.0) {
+                return (1.0 / 14080.0) * shambase::constants::pi<Tscal>
+                       * (-28672 * t2 + 315392 * t1 - 1182720 * t10 + 887040 * t9 + 3801600 * t8
+                          + 413952 * t7 - 32199552 * t6 + 36960 * t5 + 171412560 * t4
+                          - 789011388 * q - 7)
+                       / q;
+            } else if (q < 5.0 / 2.0) {
+                return (1.0 / 14080.0) * shambase::constants::pi<Tscal>
+                       * (14336 * t2 - 315392 * t1 + 2956800 * t10 - 15079680 * t9 + 43718400 * t8
+                          - 66646272 * t7 + 43243200 * t6 - 53850720 * t5 + 191620440 * t4
+                          - 792042570 * q + 826679)
+                       / q;
+            } else if (q < 7.0 / 2.0) {
+                return (1.0 / 14080.0) * shambase::constants::pi<Tscal>
+                       * (-4096 * t2 + 135168 * t1 - 1971200 * t10 + 16600320 * t9 - 88281600 * t8
+                          + 302953728 * t7 - 649756800 * t6 + 771149280 * t5 - 324004560 * t4
+                          - 577198820 * q - 96829571)
+                       / q;
+            } else if (q < 9.0 / 2.0) {
+                return (1.0 / 28160.0) * shambase::constants::pi<Tscal>
+                       * (1024 * t2 - 45056 * t1 + 887040 * t10 - 10264320 * t9 + 76982400 * t8
+                          - 387991296 * t7 + 1309470624 * t6 - 2806008480 * t5 + 3156759540 * t4
+                          - 4261625379 * q + 1783667601)
+                       / q;
+            } else
+                return -60480 * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -667,6 +837,49 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1  = sham::pow_constexpr<10>(q);
+            Tscal t2  = sham::pow_constexpr<11>(q);
+            Tscal t3  = sham::pow_constexpr<12>(q);
+            Tscal t4  = sham::pow_constexpr<2>(q);
+            Tscal t5  = sham::pow_constexpr<3>(q);
+            Tscal t6  = sham::pow_constexpr<4>(q);
+            Tscal t7  = sham::pow_constexpr<5>(q);
+            Tscal t8  = sham::pow_constexpr<6>(q);
+            Tscal t9  = sham::pow_constexpr<7>(q);
+            Tscal t10 = sham::pow_constexpr<8>(q);
+            Tscal t11 = sham::pow_constexpr<9>(q);
+            if (q < 1) {
+                return (2.0 / 33.0) * shambase::constants::pi<Tscal>
+                       * (-63 * t2 + 378 * t1 - 3850 * t10 + 37620 * t8 - 291060 * t6 + 1718090 * t4
+                          - 8766690);
+            } else if (q < 2) {
+                return (2.0 / 33.0) * shambase::constants::pi<Tscal>
+                       * (42 * t3 - 756 * t2 + 5544 * t1 - 20020 * t11 + 31185 * t10 - 3960 * t9
+                          + 38808 * t8 - 316008 * t7 + 10395 * t6 + 1715780 * t5 - 8766564 * q - 21)
+                       / q;
+            } else if (q < 3) {
+                return (2.0 / 33.0) * shambase::constants::pi<Tscal>
+                       * (-18 * t3 + 540 * t2 - 7128 * t1 + 53900 * t11 - 253935 * t10 + 756360 * t9
+                          - 1380456 * t8 + 1508760 * t7 - 1510245 * t6 + 2391620 * t5 - 8914020 * q
+                          + 49131)
+                       / q;
+            } else if (q < 4) {
+                return (1.0 / 33.0) * shambase::constants::pi<Tscal>
+                       * (9 * t3 - 378 * t2 + 7128 * t1 - 79310 * t11 + 574695 * t10 - 2817540 * t9
+                          + 9363816 * t8 - 20365884 * t7 + 26208765 * t6 - 14702930 * t5
+                          - 8262102 * q - 4684707)
+                       / q;
+            } else if (q < 5) {
+                return (1.0 / 33.0) * shambase::constants::pi<Tscal>
+                       * (-t3 + 54 * t2 - 1320 * t1 + 19250 * t11 - 185625 * t10 + 1237500 * t9
+                          - 5775000 * t8 + 18562500 * t7 - 38671875 * t6 + 42968750 * t5
+                          - 58593750 * q + 28869725)
+                       / q;
+            } else
+                return -604800 * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -723,6 +936,18 @@ namespace shammath::details {
                 return -8 * t2 + 3 * t1 * (2 * q + 1);
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            if (q < 2) {
+                return (1.0 / 336.0) * shambase::constants::pi<Tscal>
+                       * (t1 * (3 * t4 - 30 * t3 + 112 * t2 - 168 * t1 + 224) - 384);
+            } else
+                return -(16.0 / 21.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -783,6 +1008,23 @@ namespace shammath::details {
                        + (15.0 / 2.0) * t2 * ((35.0 / 12.0) * t1 + 3 * q + 1);
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<4>(q);
+            Tscal t3 = sham::pow_constexpr<5>(q);
+            Tscal t4 = sham::pow_constexpr<6>(q);
+            Tscal t5 = sham::pow_constexpr<7>(q);
+            Tscal t6 = sham::pow_constexpr<8>(q);
+            if (q < 2) {
+                return (1.0 / 63360.0) * shambase::constants::pi<Tscal>
+                       * (t1
+                              * (105 * t6 - 1408 * t5 + 7700 * t4 - 21120 * t3 + 26400 * t2
+                                 - 29568 * t1 + 42240)
+                          - 56320);
+            } else
+                return -(256.0 / 495.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -847,6 +1089,25 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<10>(q);
+            Tscal t2 = sham::pow_constexpr<11>(q);
+            Tscal t3 = sham::pow_constexpr<2>(q);
+            Tscal t4 = sham::pow_constexpr<4>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            Tscal t6 = sham::pow_constexpr<7>(q);
+            Tscal t7 = sham::pow_constexpr<8>(q);
+            Tscal t8 = sham::pow_constexpr<9>(q);
+            if (q < 2) {
+                return (1.0 / 1397760.0) * shambase::constants::pi<Tscal>
+                       * (t3
+                              * (480 * t2 - 8085 * t1 + 58240 * t8 - 229320 * t7 + 512512 * t6
+                                 - 560560 * t5 + 549120 * t4 - 768768 * t3 + 931840)
+                          - 1003520);
+            } else
+                return -(512.0 / 1365.0) * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -883,6 +1144,24 @@ namespace shammath::details {
                 return -(3.0 / 4.0) * t3 * (2 * q - 4) - 3 * q * t2 + (1.0 / 2.0) * t5;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            Tscal t6 = sham::pow_constexpr<7>(q);
+            Tscal t7 = sham::pow_constexpr<8>(q);
+            if (q < 1) {
+                return (1.0 / 280.0) * shambase::constants::pi<Tscal>
+                       * (t3 * (15 * t2 - 40 * t1 + 56) - 248);
+            } else if (q < 2) {
+                return (1.0 / 280.0) * shambase::constants::pi<Tscal>
+                       * (-5 * t7 + 40 * t6 - 112 * t5 + 112 * t4 - 256 * q + 4) / q;
+            } else
+                return -(9.0 / 10.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -922,6 +1201,24 @@ namespace shammath::details {
                        + (3.0 / 2.0) * q * t5;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<5>(q);
+            Tscal t4 = sham::pow_constexpr<6>(q);
+            Tscal t5 = sham::pow_constexpr<7>(q);
+            Tscal t6 = sham::pow_constexpr<8>(q);
+            Tscal t7 = sham::pow_constexpr<9>(q);
+            if (q < 1) {
+                return (1.0 / 840.0) * shambase::constants::pi<Tscal>
+                       * (t3 * (35 * t2 - 90 * t1 + 112) - 756);
+            } else if (q < 2) {
+                return (1.0 / 2520.0) * shambase::constants::pi<Tscal>
+                       * (-35 * t7 + 270 * t6 - 720 * t5 + 672 * t4 - 2304 * q + 20) / q;
+            } else
+                return -(127.0 / 126.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -963,6 +1260,24 @@ namespace shammath::details {
                 return -(3.0 / 4.0) * t7 * (2 * q - 4) - (15.0 / 2.0) * t6 * t2 + 5 * t5 * t4;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<10>(q);
+            Tscal t2 = sham::pow_constexpr<11>(q);
+            Tscal t3 = sham::pow_constexpr<2>(q);
+            Tscal t4 = sham::pow_constexpr<3>(q);
+            Tscal t5 = sham::pow_constexpr<7>(q);
+            Tscal t6 = sham::pow_constexpr<8>(q);
+            Tscal t7 = sham::pow_constexpr<9>(q);
+            if (q < 1) {
+                return (1.0 / 2310.0) * shambase::constants::pi<Tscal>
+                       * (t5 * (63 * t4 - 154 * t3 + 165) - 2805);
+            } else if (q < 2) {
+                return (1.0 / 2310.0) * shambase::constants::pi<Tscal>
+                       * (-21 * t2 + 154 * t1 - 385 * t7 + 330 * t6 - 2816 * q + 7) / q;
+            } else
+                return -(511.0 / 330.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -1006,6 +1321,24 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<10>(q);
+            Tscal t2 = sham::pow_constexpr<11>(q);
+            Tscal t3 = sham::pow_constexpr<12>(q);
+            Tscal t4 = sham::pow_constexpr<13>(q);
+            Tscal t5 = sham::pow_constexpr<2>(q);
+            Tscal t6 = sham::pow_constexpr<3>(q);
+            Tscal t7 = sham::pow_constexpr<9>(q);
+            if (q < 1) {
+                return (1.0 / 25740.0) * shambase::constants::pi<Tscal>
+                       * (t7 * (495 * t6 - 1170 * t5 + 1144) - 53196);
+            } else if (q < 2) {
+                return (1.0 / 25740.0) * shambase::constants::pi<Tscal>
+                       * (-165 * t4 + 1170 * t3 - 2808 * t2 + 2288 * t1 - 53248 * q + 36) / q;
+            } else
+                return -(2047.0 / 715.0) * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -1044,6 +1377,24 @@ namespace shammath::details {
             } else {
                 return 4 * KernelDefM4<Tscal>::ddf((q - 1) * 2);
             }
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            if (q < 1) {
+                return (1.0 / 60.0) * shambase::constants::pi<Tscal> * (40 * t1 - 231);
+            } else if (q < 3.0 / 2.0) {
+                return (1.0 / 60.0) * shambase::constants::pi<Tscal>
+                       * (48 * t5 - 288 * t4 + 600 * t3 - 440 * t2 - 39 * q - 72) / q;
+            } else if (q < 2) {
+                return (1.0 / 120.0) * shambase::constants::pi<Tscal>
+                       * (-32 * t5 + 288 * t4 - 960 * t3 + 1280 * t2 - 1536 * q + 585) / q;
+            } else
+                return -(439.0 / 120.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 
@@ -1084,6 +1435,25 @@ namespace shammath::details {
                 return 16 * KernelDefM4<Tscal>::ddf((q - 1.5) * 4);
             }
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            if (q < 3.0 / 2.0) {
+                return (1.0 / 240.0) * shambase::constants::pi<Tscal> * (160 * t1 - 1371);
+            } else if (q < 7.0 / 4.0) {
+                return (1.0 / 240.0) * shambase::constants::pi<Tscal>
+                       * (1536 * t5 - 11520 * t4 + 31680 * t3 - 34400 * t2 + 25845 * q - 14580) / q;
+            } else if (q < 2) {
+                return (1.0 / 960.0) * shambase::constants::pi<Tscal>
+                       * (-2048 * t5 + 18432 * t4 - 61440 * t3 + 81920 * t2 - 98304 * q + 59329)
+                       / q;
+            } else
+                return -(2069.0 / 320.0) * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -1123,6 +1493,28 @@ namespace shammath::details {
                 return 64 * KernelDefM4<Tscal>::ddf((q - 1.75) * 8);
             }
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            if (q < 7.0 / 4.0) {
+                return (1.0 / 960.0) * shambase::constants::pi<Tscal> * (640 * t1 - 6531);
+            } else if (q < 15.0 / 8.0) {
+                return (1.0 / 960.0) * shambase::constants::pi<Tscal>
+                       * (49152 * t5 - 405504 * t4 + 1236480 * t3 - 1504640 * t2 + 1491693 * q
+                          - 907578)
+                       / q;
+            } else if (q < 2) {
+                return (1.0 / 7680.0) * shambase::constants::pi<Tscal>
+                       * (-131072 * t5 + 1179648 * t4 - 3932160 * t3 + 5242880 * t2 - 6291456 * q
+                          + 4130001)
+                       / q;
+            } else
+                return -(64303.0 / 7680.0) * shambase::constants::pi<Tscal> / q;
+        }
     };
 
     template<class Tscal>
@@ -1161,6 +1553,28 @@ namespace shammath::details {
             } else {
                 return 256 * KernelDefM4<Tscal>::ddf((q - 1.875) * 16);
             }
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            Tscal t2 = sham::pow_constexpr<3>(q);
+            Tscal t3 = sham::pow_constexpr<4>(q);
+            Tscal t4 = sham::pow_constexpr<5>(q);
+            Tscal t5 = sham::pow_constexpr<6>(q);
+            if (q < 15.0 / 8.0) {
+                return (1.0 / 3840.0) * shambase::constants::pi<Tscal> * (2560 * t1 - 28371);
+            } else if (q < 31.0 / 16.0) {
+                return (1.0 / 3840.0) * shambase::constants::pi<Tscal>
+                       * (1572864 * t5 - 13565952 * t4 + 43315200 * t3 - 55293440 * t2
+                          + 60721629 * q - 38728125)
+                       / q;
+            } else if (q < 2) {
+                return (1.0 / 61440.0) * shambase::constants::pi<Tscal>
+                       * (-8388608 * t5 + 75497472 * t4 - 251658240 * t3 + 335544320 * t2
+                          - 402653184 * q + 267853681)
+                       / q;
+            } else
+                return -(38785.0 / 4096.0) * shambase::constants::pi<Tscal> / q;
         }
     };
 } // namespace shammath::details

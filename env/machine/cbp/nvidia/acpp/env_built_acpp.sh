@@ -1,6 +1,13 @@
 # Everything before this line will be provided by the new-env script
-gpu_comp_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
-export ACPP_TARGETS="omp;cuda:sm_${gpu_comp_cap}"
+
+if [ "${ACPP_BACKEND}" = "cuda" ]; then
+    gpu_comp_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
+    export ACPP_TARGETS="omp;cuda:sm_${gpu_comp_cap}"
+    WITH_SSCP_COMPILER=Off
+elif [ "${ACPP_BACKEND}" = "sscp" ]; then
+    export ACPP_TARGETS="generic"
+    WITH_SSCP_COMPILER=On
+fi
 export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=$BUILD_DIR/.env/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
@@ -67,7 +74,7 @@ function setupcompiler {
         -DWITH_CUDA_BACKEND=On \
         -DWITH_ROCM_BACKEND=Off \
         -DWITH_LEVEL_ZERO_BACKEND=Off \
-        -DWITH_SSCP_COMPILER=Off || return
+        -DWITH_SSCP_COMPILER=${WITH_SSCP_COMPILER} || return
 
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }

@@ -9,7 +9,7 @@ import utils.sysinfo
 from utils.setuparg import *
 
 NAME = "CBP NVIDIA Machines - AdaptiveCpp"
-PATH = "machine/dgx-cbp/acpp-cuda"
+PATH = "machine/cbp/nvidia/acpp"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):
@@ -22,6 +22,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
+    parser.add_argument("--backend", type=str, action="store", help="backend to build ACPP with (cuda or sscp)", default="cuda")
 
     args = parser.parse_args(argv)
 
@@ -37,6 +38,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
         "MAKE_OPT": f"({gen_opt})",
         "CMAKE_OPT": f"({cmake_extra_args})",
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "ACPP_BACKEND": f"{args.backend}",
     }
 
     envgen.ext_script_list = [

@@ -1641,6 +1641,10 @@ namespace shammath {
             return BaseKernel::norm_3d * df(r / h) / (h * h * h * h);
         }
 
+        inline static Tscal ddW_3d(Tscal r, Tscal h) {
+            return BaseKernel::norm_3d * ddf(r / h) / (h * h * h * h * h);
+        }
+
         inline static Tscal dhW_3d(Tscal r, Tscal h) {
             return -(BaseKernel::norm_3d) * (3 * f(r / h) + (r / h) * df(r / h)) / (h * h * h * h);
         }
@@ -1655,11 +1659,11 @@ namespace shammath {
             return BaseKernel::norm_3d * f3d_integ_z(r / h, np) / (h * h);
         }
 
-        static constexpr bool has_3d_softening
+        static constexpr bool has_3d_phi_soft
             = ::shammath::has_phi_tilde_3d<BaseKernel, Tscal>::value;
 
         inline static Tscal phi_tilde_3d(Tscal q) {
-            if constexpr (has_3d_softening) {
+            if constexpr (has_3d_phi_soft) {
                 return BaseKernel::phi_tilde_3d(q);
             } else {
                 return std::numeric_limits<Tscal>::quiet_NaN();

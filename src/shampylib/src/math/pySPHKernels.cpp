@@ -46,6 +46,7 @@ namespace {
         });
         m.def(get_name("_f"), &Kernel::f);
         m.def(get_name("_df"), &Kernel::df);
+        m.def(get_name("_ddf"), &Kernel::ddf);
         m.def(get_name("_phi_tilde_3d"), &Kernel::phi_tilde_3d);
         m.def(get_name("_W1d"), &Kernel::W_1d);
         m.def(get_name("_W2d"), &Kernel::W_2d);

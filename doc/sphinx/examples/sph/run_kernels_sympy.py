@@ -173,7 +173,7 @@ def generate_function_body(pieces, cpp_exprs, indent=8):
         else:
             if_keyword = "if" if i == 0 else "else if"
             # Convert condition to string
-            cond_str = str(cond)
+            cond_str = ccode(cond)
 
             body += f"{spaces}    {if_keyword} ({cond_str}) {{\n"
             body += f"{spaces}        return {cpp_expr};\n"
@@ -340,9 +340,15 @@ def test_kernel(ret, tolerance=1e-12):
     shamrock_norm_2d = getattr(shamrock.math.sphkernel, f"{name}_norm_2d")()
     shamrock_norm_3d = getattr(shamrock.math.sphkernel, f"{name}_norm_3d")()
 
-    print(f"Shamrock norm_1d = {shamrock_norm_1d}, delta={abs(shamrock_norm_1d - norm_1d)}")
-    print(f"Shamrock norm_2d = {shamrock_norm_2d}, delta={abs(shamrock_norm_2d - norm_2d)}")
-    print(f"Shamrock norm_3d = {shamrock_norm_3d}, delta={abs(shamrock_norm_3d - norm_3d)}")
+    print(
+        f"Shamrock norm_1d = {shamrock_norm_1d}, expected={norm_1d}, delta={abs(shamrock_norm_1d - norm_1d)}"
+    )
+    print(
+        f"Shamrock norm_2d = {shamrock_norm_2d}, expected={norm_2d}, delta={abs(shamrock_norm_2d - norm_2d)}"
+    )
+    print(
+        f"Shamrock norm_3d = {shamrock_norm_3d}, expected={norm_3d}, delta={abs(shamrock_norm_3d - norm_3d)}"
+    )
 
     # test the norm constants down to 1e-12
     assert abs(shamrock_norm_1d - norm_1d) < tolerance
@@ -360,16 +366,16 @@ def test_kernel(ret, tolerance=1e-12):
     print("Testing kernel functions:")
     shamrock_f = getattr(shamrock.math.sphkernel, f"{name}_f")
     shamrock_df = getattr(shamrock.math.sphkernel, f"{name}_df")
-    #shamrock_ddf = getattr(shamrock.math.sphkernel, f"{name}_ddf")
+    shamrock_ddf = getattr(shamrock.math.sphkernel, f"{name}_ddf")
 
     print(f"Shamrock f(q) = {shamrock_f}")
     print(f"Shamrock df(q) = {shamrock_df}")
-    #print(f"Shamrock ddf(q) = {shamrock_ddf}")
+    print(f"Shamrock ddf(q) = {shamrock_ddf}")
 
     q_arr = np.linspace(0, 1.1 * float(Rkern), 1000)
     shamrock_f = [shamrock_f(x) for x in q_arr]
     shamrock_df = [shamrock_df(x) for x in q_arr]
-    #shamrock_ddf = [shamrock_ddf(x) for x in q_arr]
+    shamrock_ddf = [shamrock_ddf(x) for x in q_arr]
 
     sympy_f = [f(x) for x in q_arr]
     sympy_df = [df(x) for x in q_arr]
@@ -378,15 +384,15 @@ def test_kernel(ret, tolerance=1e-12):
     # compute the absolute error
     abs_err_f = np.max(np.abs(np.array(shamrock_f) - np.array(sympy_f)))
     abs_err_df = np.max(np.abs(np.array(shamrock_df) - np.array(sympy_df)))
-    #abs_err_ddf = np.max(np.abs(np.array(shamrock_ddf) - np.array(sympy_ddf)))
+    abs_err_ddf = np.max(np.abs(np.array(shamrock_ddf) - np.array(sympy_ddf)))
 
     print(f"Absolute error f(q) = {abs_err_f}")
     print(f"Absolute error df(q) = {abs_err_df}")
-    #print(f"Absolute error ddf(q) = {abs_err_ddf}")
+    print(f"Absolute error ddf(q) = {abs_err_ddf}")
 
     assert abs_err_f < tolerance
-    assert abs_err_df < tolerance*10
-    #assert abs_err_ddf < tolerance*100
+    assert abs_err_df < tolerance * 10
+    assert abs_err_ddf < tolerance * 100
 
     print("------------------------------------------")
     print("")
@@ -395,6 +401,7 @@ def test_kernel(ret, tolerance=1e-12):
         "q_arr": q_arr,
         "shamrock_Cf": np.array(shamrock_f) * norm_3d,
         "shamrock_Cdf": np.array(shamrock_df) * norm_3d,
+        "shamrock_Cddf": np.array(shamrock_ddf) * norm_3d,
     }
 
 
@@ -562,17 +569,94 @@ def c6():
     )
     return (R, f, "C6")
 
+
 # %%
-# Double hump
-def m4dh():
-    Rkern = 2
-    R = sympify(Rkern)
-    f = q*q*Piecewise(
-        (sympify(1) / 4 * (R - q) ** 3 - (R / 2 - q) ** 3, q < R / 2),
-        (sympify(1) / 4 * (R - q) ** 3, q < R),
-        (0, True),
+# Helper function to multiply into piecewise without expanding
+def multiply_piecewise(piecewise_expr, factor):
+    """Multiply a factor into each piece of a Piecewise expression without expanding"""
+    new_args = []
+    for arg in piecewise_expr.args:
+        if hasattr(arg, "expr") and hasattr(arg, "cond"):
+            # Multiply the expression part, keep condition unchanged
+            new_expr = factor * arg.expr
+            new_args.append((new_expr, arg.cond))
+        elif isinstance(arg, tuple) and len(arg) == 2:
+            new_expr = factor * arg[0]
+            new_args.append((new_expr, arg[1]))
+
+    return Piecewise(*new_args)
+
+
+# %%
+# Helper function to shift and scale a kernel
+def shift_scale_kernel(piecewise_expr, shift_val, scale_val):
+    return piecewise_fold(
+        Piecewise(
+            (1, q < shift_val),
+            (piecewise_expr.subs({q: (q - shift_val) * scale_val}), q >= shift_val),
+        )
     )
+
+
+# %%
+# Double hump
+def m4dh():
+    R, f, _ = m4()
+    f = multiply_piecewise(f, q * q)
     return (R, f, "M4DH")
+
+
+def m4dh3():
+    R, f, _ = m4()
+    f = multiply_piecewise(f, q * q * q)
+    return (R, f, "M4DH3")
+
+
+def m4dh5():
+    R, f, _ = m4()
+    f = multiply_piecewise(f, q * q * q * q * q)
+    return (R, f, "M4DH5")
+
+
+def m4dh7():
+    R, f, _ = m4()
+    f = multiply_piecewise(f, q * q * q * q * q * q * q)
+    return (R, f, "M4DH7")
+
+
+# %%
+# M4Shift kernels
+def m4shift2():
+    R, f, _ = m4()
+    # For q < 1: return 1
+    # For q >= 1: return M4((q - 1) * 2)
+    f_shifted = shift_scale_kernel(f, shift_val=1, scale_val=2)
+    return (R, f_shifted, "M4Shift2")
+
+
+def m4shift4():
+    R, f, _ = m4()
+    # For q < 1.5: return 1
+    # For q >= 1.5: return M4((q - 1.5) * 4)
+    f_shifted = shift_scale_kernel(f, shift_val=sympify(3) / 2, scale_val=4)
+    return (R, f_shifted, "M4Shift4")
+
+
+def m4shift8():
+    R, f, _ = m4()
+    # For q < 1.75: return 1
+    # For q >= 1.75: return M4((q - 1.75) * 8)
+    f_shifted = shift_scale_kernel(f, shift_val=sympify(7) / 4, scale_val=8)
+    return (R, f_shifted, "M4Shift8")
+
+
+def m4shift16():
+    R, f, _ = m4()
+    # For q < 1.875: return 1
+    # For q >= 1.875: return M4((q - 1.875) * 16)
+    f_shifted = shift_scale_kernel(f, shift_val=sympify(15) / 8, scale_val=16)
+    return (R, f_shifted, "M4Shift16")
+
 
 # %%
 # M4 Kernel
@@ -786,70 +870,343 @@ print_kernel_cpp_code(ret)
 # Test the kernel
 test_result_m4dh = test_kernel(ret)
 
+
+# %%
+# M4DH3 Kernel
+# ^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4dh3)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4dh3 = test_kernel(ret)
+
+
+# %%
+# M4DH5 Kernel
+# ^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4dh5)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4dh5 = test_kernel(ret)
+
+
+# %%
+# M4DH7 Kernel
+# ^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4dh7)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4dh7 = test_kernel(ret)
+
+
+# %%
+# M4Shift2 Kernel
+# ^^^^^^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4shift2)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4shift2 = test_kernel(ret)
+
+
+# %%
+# M4Shift4 Kernel
+# ^^^^^^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4shift4)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4shift4 = test_kernel(ret)
+
+
+# %%
+# M4Shift8 Kernel
+# ^^^^^^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4shift8)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4shift8 = test_kernel(ret)
+
+
+# %%
+# M4Shift16 Kernel
+# ^^^^^^^^^^^^^^^^
+
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(m4shift16)
+
+# %%
+print_kernel_info(ret)
+
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_m4shift16 = test_kernel(ret)
+
+
 # %%
 # Plot the kernels
 # ^^^^^^^^^^^^^^^^
 
+fig_sz = (6.4, 10)
+
 # %%
 # Cubic splines kernels (M-series)
 
-plt.figure()
-ax_f = plt.subplot(2, 1, 1)
-ax_df = plt.subplot(2, 1, 2)
+plt.figure(figsize=fig_sz)
+ax_f = plt.subplot(3, 1, 1)
+ax_df = plt.subplot(3, 1, 2)
+ax_ddf = plt.subplot(3, 1, 3)
 
-ax_f.plot(test_result_m4["q_arr"], test_result_m4["shamrock_Cf"], label="Shamrock C_3d f_m4(q)")
-ax_df.plot(test_result_m4["q_arr"], test_result_m4["shamrock_Cdf"], label="Shamrock C_3d df_m4(q)")
+ax_f.plot(test_result_m4["q_arr"], test_result_m4["shamrock_Cf"], label="C_3d f_m4(q)")
+ax_df.plot(test_result_m4["q_arr"], test_result_m4["shamrock_Cdf"], label="C_3d df_m4(q)")
+ax_ddf.plot(test_result_m4["q_arr"], test_result_m4["shamrock_Cddf"], label="C_3d ddf_m4(q)")
 
-ax_f.plot(test_result_m5["q_arr"], test_result_m5["shamrock_Cf"], label="Shamrock C_3d f_m5(q)")
-ax_df.plot(test_result_m5["q_arr"], test_result_m5["shamrock_Cdf"], label="Shamrock C_3d df_m5(q)")
+ax_f.plot(test_result_m5["q_arr"], test_result_m5["shamrock_Cf"], label="C_3d f_m5(q)")
+ax_df.plot(test_result_m5["q_arr"], test_result_m5["shamrock_Cdf"], label="C_3d df_m5(q)")
+ax_ddf.plot(test_result_m5["q_arr"], test_result_m5["shamrock_Cddf"], label="C_3d ddf_m5(q)")
 
-ax_f.plot(test_result_m6["q_arr"], test_result_m6["shamrock_Cf"], label="Shamrock C_3d f_m6(q)")
-ax_df.plot(test_result_m6["q_arr"], test_result_m6["shamrock_Cdf"], label="Shamrock C_3d df_m6(q)")
+ax_f.plot(test_result_m6["q_arr"], test_result_m6["shamrock_Cf"], label="C_3d f_m6(q)")
+ax_df.plot(test_result_m6["q_arr"], test_result_m6["shamrock_Cdf"], label="C_3d df_m6(q)")
+ax_ddf.plot(test_result_m6["q_arr"], test_result_m6["shamrock_Cddf"], label="C_3d ddf_m6(q)")
 
-ax_f.plot(test_result_m7["q_arr"], test_result_m7["shamrock_Cf"], label="Shamrock C_3d f_m7(q)")
-ax_df.plot(test_result_m7["q_arr"], test_result_m7["shamrock_Cdf"], label="Shamrock C_3d df_m7(q)")
+ax_f.plot(test_result_m7["q_arr"], test_result_m7["shamrock_Cf"], label="C_3d f_m7(q)")
+ax_df.plot(test_result_m7["q_arr"], test_result_m7["shamrock_Cdf"], label="C_3d df_m7(q)")
+ax_ddf.plot(test_result_m7["q_arr"], test_result_m7["shamrock_Cddf"], label="C_3d ddf_m7(q)")
 
-ax_f.plot(test_result_m8["q_arr"], test_result_m8["shamrock_Cf"], label="Shamrock C_3d f_m8(q)")
-ax_df.plot(test_result_m8["q_arr"], test_result_m8["shamrock_Cdf"], label="Shamrock C_3d df_m8(q)")
+ax_f.plot(test_result_m8["q_arr"], test_result_m8["shamrock_Cf"], label="C_3d f_m8(q)")
+ax_df.plot(test_result_m8["q_arr"], test_result_m8["shamrock_Cdf"], label="C_3d df_m8(q)")
+ax_ddf.plot(test_result_m8["q_arr"], test_result_m8["shamrock_Cddf"], label="C_3d ddf_m8(q)")
 
-ax_f.plot(test_result_m9["q_arr"], test_result_m9["shamrock_Cf"], label="Shamrock C_3d f_m9(q)")
-ax_df.plot(test_result_m9["q_arr"], test_result_m9["shamrock_Cdf"], label="Shamrock C_3d df_m9(q)")
+ax_f.plot(test_result_m9["q_arr"], test_result_m9["shamrock_Cf"], label="C_3d f_m9(q)")
+ax_df.plot(test_result_m9["q_arr"], test_result_m9["shamrock_Cdf"], label="C_3d df_m9(q)")
+ax_ddf.plot(test_result_m9["q_arr"], test_result_m9["shamrock_Cddf"], label="C_3d ddf_m9(q)")
 
-ax_f.plot(test_result_m10["q_arr"], test_result_m10["shamrock_Cf"], label="Shamrock C_3d f_m10(q)")
-ax_df.plot(
-    test_result_m10["q_arr"], test_result_m10["shamrock_Cdf"], label="Shamrock C_3d df_m10(q)"
-)
+ax_f.plot(test_result_m10["q_arr"], test_result_m10["shamrock_Cf"], label="C_3d f_m10(q)")
+ax_df.plot(test_result_m10["q_arr"], test_result_m10["shamrock_Cdf"], label="C_3d df_m10(q)")
+ax_ddf.plot(test_result_m10["q_arr"], test_result_m10["shamrock_Cddf"], label="C_3d ddf_m10(q)")
 
 ax_f.set_title("C_3d f(q)")
 ax_df.set_title("C_3d df(q)")
+ax_ddf.set_title("C_3d ddf(q)")
 ax_f.set_xlabel("q")
 ax_df.set_xlabel("q")
+ax_ddf.set_xlabel("q")
 ax_f.legend()
 ax_df.legend()
+ax_ddf.legend()
 plt.tight_layout()
 plt.show()
 
 # %%
 # Wendland kernels (C-series)
 
-plt.figure()
-ax_f = plt.subplot(2, 1, 1)
-ax_df = plt.subplot(2, 1, 2)
+plt.figure(figsize=fig_sz)
+ax_f = plt.subplot(3, 1, 1)
+ax_df = plt.subplot(3, 1, 2)
+ax_ddf = plt.subplot(3, 1, 3)
 
-ax_f.plot(test_result_c2["q_arr"], test_result_c2["shamrock_Cf"], label="Shamrock C_3d f_c2(q)")
-ax_df.plot(test_result_c2["q_arr"], test_result_c2["shamrock_Cdf"], label="Shamrock C_3d df_c2(q)")
+ax_f.plot(test_result_c2["q_arr"], test_result_c2["shamrock_Cf"], label="C_3d f_c2(q)")
+ax_df.plot(test_result_c2["q_arr"], test_result_c2["shamrock_Cdf"], label="C_3d df_c2(q)")
+ax_ddf.plot(test_result_c2["q_arr"], test_result_c2["shamrock_Cddf"], label="C_3d ddf_c2(q)")
 
-ax_f.plot(test_result_c4["q_arr"], test_result_c4["shamrock_Cf"], label="Shamrock C_3d f_c4(q)")
-ax_df.plot(test_result_c4["q_arr"], test_result_c4["shamrock_Cdf"], label="Shamrock C_3d df_c4(q)")
+ax_f.plot(test_result_c4["q_arr"], test_result_c4["shamrock_Cf"], label="C_3d f_c4(q)")
+ax_df.plot(test_result_c4["q_arr"], test_result_c4["shamrock_Cdf"], label="C_3d df_c4(q)")
+ax_ddf.plot(test_result_c4["q_arr"], test_result_c4["shamrock_Cddf"], label="C_3d ddf_c4(q)")
 
-ax_f.plot(test_result_c6["q_arr"], test_result_c6["shamrock_Cf"], label="Shamrock C_3d f_c6(q)")
-ax_df.plot(test_result_c6["q_arr"], test_result_c6["shamrock_Cdf"], label="Shamrock C_3d df_c6(q)")
+ax_f.plot(test_result_c6["q_arr"], test_result_c6["shamrock_Cf"], label="C_3d f_c6(q)")
+ax_df.plot(test_result_c6["q_arr"], test_result_c6["shamrock_Cdf"], label="C_3d df_c6(q)")
+ax_ddf.plot(test_result_c6["q_arr"], test_result_c6["shamrock_Cddf"], label="C_3d ddf_c6(q)")
 
 ax_f.set_title("C_3d f(q)")
 ax_df.set_title("C_3d df(q)")
+ax_ddf.set_title("C_3d ddf(q)")
 ax_f.set_xlabel("q")
 ax_df.set_xlabel("q")
+ax_ddf.set_xlabel("q")
 ax_f.legend()
 ax_df.legend()
+ax_ddf.legend()
+plt.tight_layout()
+plt.show()
+
+# %%
+# Double hump kernels
+
+plt.figure(figsize=fig_sz)
+ax_f = plt.subplot(3, 1, 1)
+ax_df = plt.subplot(3, 1, 2)
+ax_ddf = plt.subplot(3, 1, 3)
+
+ax_f.plot(test_result_m4dh["q_arr"], test_result_m4dh["shamrock_Cf"], label="C_3d f_m4dh(q)")
+ax_df.plot(test_result_m4dh["q_arr"], test_result_m4dh["shamrock_Cdf"], label="C_3d df_m4dh(q)")
+ax_ddf.plot(test_result_m4dh["q_arr"], test_result_m4dh["shamrock_Cddf"], label="C_3d ddf_m4dh(q)")
+
+ax_f.plot(test_result_m4dh3["q_arr"], test_result_m4dh3["shamrock_Cf"], label="C_3d f_m4dh3(q)")
+ax_df.plot(test_result_m4dh3["q_arr"], test_result_m4dh3["shamrock_Cdf"], label="C_3d df_m4dh3(q)")
+ax_ddf.plot(
+    test_result_m4dh3["q_arr"], test_result_m4dh3["shamrock_Cddf"], label="C_3d ddf_m4dh3(q)"
+)
+
+ax_f.plot(test_result_m4dh5["q_arr"], test_result_m4dh5["shamrock_Cf"], label="C_3d f_m4dh5(q)")
+ax_df.plot(test_result_m4dh5["q_arr"], test_result_m4dh5["shamrock_Cdf"], label="C_3d df_m4dh5(q)")
+ax_ddf.plot(
+    test_result_m4dh5["q_arr"], test_result_m4dh5["shamrock_Cddf"], label="C_3d ddf_m4dh5(q)"
+)
+
+ax_f.plot(test_result_m4dh7["q_arr"], test_result_m4dh7["shamrock_Cf"], label="C_3d f_m4dh7(q)")
+ax_df.plot(test_result_m4dh7["q_arr"], test_result_m4dh7["shamrock_Cdf"], label="C_3d df_m4dh7(q)")
+ax_ddf.plot(
+    test_result_m4dh7["q_arr"], test_result_m4dh7["shamrock_Cddf"], label="C_3d ddf_m4dh7(q)"
+)
+
+ax_f.set_title("C_3d f(q)")
+ax_df.set_title("C_3d df(q)")
+ax_ddf.set_title("C_3d ddf(q)")
+ax_f.set_xlabel("q")
+ax_df.set_xlabel("q")
+ax_ddf.set_xlabel("q")
+ax_f.legend()
+ax_df.legend()
+ax_ddf.legend()
+plt.tight_layout()
+plt.show()
+
+# %%
+# M4Shift kernels
+
+plt.figure(figsize=fig_sz)
+ax_f = plt.subplot(3, 1, 1)
+ax_df = plt.subplot(3, 1, 2)
+ax_ddf = plt.subplot(3, 1, 3)
+
+ax_f.plot(
+    test_result_m4shift2["q_arr"], test_result_m4shift2["shamrock_Cf"], label="C_3d f_m4shift2(q)"
+)
+ax_df.plot(
+    test_result_m4shift2["q_arr"], test_result_m4shift2["shamrock_Cdf"], label="C_3d df_m4shift2(q)"
+)
+ax_ddf.plot(
+    test_result_m4shift2["q_arr"],
+    test_result_m4shift2["shamrock_Cddf"],
+    label="C_3d ddf_m4shift2(q)",
+)
+
+ax_f.plot(
+    test_result_m4shift4["q_arr"], test_result_m4shift4["shamrock_Cf"], label="C_3d f_m4shift4(q)"
+)
+ax_df.plot(
+    test_result_m4shift4["q_arr"], test_result_m4shift4["shamrock_Cdf"], label="C_3d df_m4shift4(q)"
+)
+ax_ddf.plot(
+    test_result_m4shift4["q_arr"],
+    test_result_m4shift4["shamrock_Cddf"],
+    label="C_3d ddf_m4shift4(q)",
+)
+
+ax_f.plot(
+    test_result_m4shift8["q_arr"], test_result_m4shift8["shamrock_Cf"], label="C_3d f_m4shift8(q)"
+)
+ax_df.plot(
+    test_result_m4shift8["q_arr"], test_result_m4shift8["shamrock_Cdf"], label="C_3d df_m4shift8(q)"
+)
+ax_ddf.plot(
+    test_result_m4shift8["q_arr"],
+    test_result_m4shift8["shamrock_Cddf"],
+    label="C_3d ddf_m4shift8(q)",
+)
+
+ax_f.plot(
+    test_result_m4shift16["q_arr"],
+    test_result_m4shift16["shamrock_Cf"],
+    label="C_3d f_m4shift16(q)",
+)
+ax_df.plot(
+    test_result_m4shift16["q_arr"],
+    test_result_m4shift16["shamrock_Cdf"],
+    label="C_3d df_m4shift16(q)",
+)
+ax_ddf.plot(
+    test_result_m4shift16["q_arr"],
+    test_result_m4shift16["shamrock_Cddf"],
+    label="C_3d ddf_m4shift16(q)",
+)
+
+ax_f.set_title("C_3d f(q)")
+ax_df.set_title("C_3d df(q)")
+ax_ddf.set_title("C_3d ddf(q)")
+ax_f.set_xlabel("q")
+ax_df.set_xlabel("q")
+ax_ddf.set_xlabel("q")
+ax_f.legend()
+ax_df.legend()
+ax_ddf.legend()
 plt.tight_layout()
 plt.show()

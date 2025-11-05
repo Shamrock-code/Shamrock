@@ -163,11 +163,11 @@ namespace shammath::details {
             Tscal t1 = sham::pow_constexpr<2>(1.0 / 2.0 - q);
             Tscal t2 = sham::pow_constexpr<2>(3.0 / 2.0 - q);
             Tscal t3 = sham::pow_constexpr<2>(5.0 / 2.0 - q);
-            if (q < 1 / 2) {
+            if (q < 1.0 / 2.0) {
                 return 120 * t1 - 60 * t2 + 12 * t3;
-            } else if (q < 3 / 2) {
+            } else if (q < 3.0 / 2.0) {
                 return -60 * t2 + 12 * t3;
-            } else if (q < 5 / 2) {
+            } else if (q < 5.0 / 2.0) {
                 return 12 * t3;
             } else
                 return 0;
@@ -348,13 +348,13 @@ namespace shammath::details {
             Tscal t2 = sham::pow_constexpr<4>(3.0 / 2.0 - q);
             Tscal t3 = sham::pow_constexpr<4>(5.0 / 2.0 - q);
             Tscal t4 = sham::pow_constexpr<4>(7.0 / 2.0 - q);
-            if (q < 1 / 2) {
+            if (q < 1.0 / 2.0) {
                 return -1050 * t1 + 630 * t2 - 210 * t3 + 30 * t4;
-            } else if (q < 3 / 2) {
+            } else if (q < 3.0 / 2.0) {
                 return 630 * t2 - 210 * t3 + 30 * t4;
-            } else if (q < 5 / 2) {
+            } else if (q < 5.0 / 2.0) {
                 return -210 * t3 + 30 * t4;
-            } else if (q < 7 / 2) {
+            } else if (q < 7.0 / 2.0) {
                 return 30 * t4;
             } else
                 return 0;
@@ -551,15 +551,15 @@ namespace shammath::details {
             Tscal t3 = sham::pow_constexpr<6>(5.0 / 2.0 - q);
             Tscal t4 = sham::pow_constexpr<6>(7.0 / 2.0 - q);
             Tscal t5 = sham::pow_constexpr<6>(9.0 / 2.0 - q);
-            if (q < 1 / 2) {
+            if (q < 1.0 / 2.0) {
                 return 7056 * t1 - 4704 * t2 + 2016 * t3 - 504 * t4 + 56 * t5;
-            } else if (q < 3 / 2) {
+            } else if (q < 3.0 / 2.0) {
                 return -4704 * t2 + 2016 * t3 - 504 * t4 + 56 * t5;
-            } else if (q < 5 / 2) {
+            } else if (q < 5.0 / 2.0) {
                 return 2016 * t3 - 504 * t4 + 56 * t5;
-            } else if (q < 7 / 2) {
+            } else if (q < 7.0 / 2.0) {
                 return -504 * t4 + 56 * t5;
-            } else if (q < 9 / 2) {
+            } else if (q < 9.0 / 2.0) {
                 return 56 * t5;
             } else
                 return 0;
@@ -869,6 +869,21 @@ namespace shammath::details {
         inline static Tscal df(Tscal q) {
             return KernelDefM4<Tscal>::df(q) * q * q + 2 * KernelDefM4<Tscal>::f(q) * q;
         }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(1 - q);
+            Tscal t2 = sham::pow_constexpr<2>(2 - q);
+            Tscal t3 = sham::pow_constexpr<2>(q);
+            Tscal t4 = sham::pow_constexpr<3>(1 - q);
+            Tscal t5 = sham::pow_constexpr<3>(2 - q);
+            if (q < 1) {
+                return t3 * ((9.0 / 2.0) * q - 3) + 4 * q * (3 * t1 - (3.0 / 4.0) * t2) - 2 * t4
+                       + (1.0 / 2.0) * t5;
+            } else if (q < 2) {
+                return -(3.0 / 4.0) * t3 * (2 * q - 4) - 3 * q * t2 + (1.0 / 2.0) * t5;
+            } else
+                return 0;
+        }
     };
 
     template<class Tscal>
@@ -891,6 +906,23 @@ namespace shammath::details {
         inline static Tscal df(Tscal q) {
             return KernelDefM4<Tscal>::df(q) * q * q * q + 3 * KernelDefM4<Tscal>::f(q) * q * q;
         }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(1 - q);
+            Tscal t2 = sham::pow_constexpr<2>(2 - q);
+            Tscal t3 = sham::pow_constexpr<2>(q);
+            Tscal t4 = sham::pow_constexpr<3>(1 - q);
+            Tscal t5 = sham::pow_constexpr<3>(2 - q);
+            Tscal t6 = sham::pow_constexpr<3>(q);
+            if (q < 1) {
+                return t6 * ((9.0 / 2.0) * q - 3) + 6 * t3 * (3 * t1 - (3.0 / 4.0) * t2)
+                       + 6 * q * (-t4 + (1.0 / 4.0) * t5);
+            } else if (q < 2) {
+                return -(3.0 / 4.0) * t6 * (2 * q - 4) - (9.0 / 2.0) * t3 * t2
+                       + (3.0 / 2.0) * q * t5;
+            } else
+                return 0;
+        }
     };
 
     template<class Tscal>
@@ -901,11 +933,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 0.5039682539663191;
+        inline static constexpr Tscal norm_1d = 252.0 / 127.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 1.9073955396705662;
+        inline static constexpr Tscal norm_2d = (28.0 / 17.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 4.864708624169304;
+        inline static constexpr Tscal norm_3d = (330.0 / 511.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             return KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<5>(q);
@@ -914,6 +946,23 @@ namespace shammath::details {
         inline static Tscal df(Tscal q) {
             return KernelDefM4<Tscal>::df(q) * sham::pow_constexpr<5>(q)
                    + 5 * KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<4>(q);
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(1 - q);
+            Tscal t2 = sham::pow_constexpr<2>(2 - q);
+            Tscal t3 = sham::pow_constexpr<3>(1 - q);
+            Tscal t4 = sham::pow_constexpr<3>(2 - q);
+            Tscal t5 = sham::pow_constexpr<3>(q);
+            Tscal t6 = sham::pow_constexpr<4>(q);
+            Tscal t7 = sham::pow_constexpr<5>(q);
+            if (q < 1) {
+                return t7 * ((9.0 / 2.0) * q - 3) + 10 * t6 * (3 * t1 - (3.0 / 4.0) * t2)
+                       + 20 * t5 * (-t3 + (1.0 / 4.0) * t4);
+            } else if (q < 2) {
+                return -(3.0 / 4.0) * t7 * (2 * q - 4) - (15.0 / 2.0) * t6 * t2 + 5 * t5 * t4;
+            } else
+                return 0;
         }
     };
 
@@ -925,11 +974,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 0.7742424242383008;
+        inline static constexpr Tscal norm_1d = 660.0 / 511.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 3.246312408690764;
+        inline static constexpr Tscal norm_2d = (30.0 / 31.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 8.99418204455883;
+        inline static constexpr Tscal norm_3d = (715.0 / 2047.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             return KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<7>(q);
@@ -938,6 +987,24 @@ namespace shammath::details {
         inline static Tscal df(Tscal q) {
             return KernelDefM4<Tscal>::df(q) * sham::pow_constexpr<7>(q)
                    + 7 * KernelDefM4<Tscal>::f(q) * sham::pow_constexpr<6>(q);
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(1 - q);
+            Tscal t2 = sham::pow_constexpr<2>(2 - q);
+            Tscal t3 = sham::pow_constexpr<3>(1 - q);
+            Tscal t4 = sham::pow_constexpr<3>(2 - q);
+            Tscal t5 = sham::pow_constexpr<5>(q);
+            Tscal t6 = sham::pow_constexpr<6>(q);
+            Tscal t7 = sham::pow_constexpr<7>(q);
+            if (q < 1) {
+                return t7 * ((9.0 / 2.0) * q - 3) + 14 * t6 * (3 * t1 - (3.0 / 4.0) * t2)
+                       + 42 * t5 * (-t3 + (1.0 / 4.0) * t4);
+            } else if (q < 2) {
+                return -(3.0 / 4.0) * t7 * (2 * q - 4) - (21.0 / 2.0) * t6 * t2
+                       + (21.0 / 2.0) * t5 * t4;
+            } else
+                return 0;
         }
     };
 
@@ -949,11 +1016,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 2.750009999995089;
+        inline static constexpr Tscal norm_1d = 4.0 / 11.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 6.047565858099014;
+        inline static constexpr Tscal norm_2d = (40.0 / 77.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 11.49299312435096;
+        inline static constexpr Tscal norm_3d = (120.0 / 439.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             if (q < 1.) {
@@ -970,6 +1037,14 @@ namespace shammath::details {
                 return 2 * KernelDefM4<Tscal>::df((q - 1) * 2);
             }
         }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < 1.) {
+                return 0.;
+            } else {
+                return 4 * KernelDefM4<Tscal>::ddf((q - 1) * 2);
+            }
+        }
     };
 
     template<class Tscal>
@@ -980,11 +1055,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 3.3750099999975305;
+        inline static constexpr Tscal norm_1d = 8.0 / 27.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 8.973174016735282;
+        inline static constexpr Tscal norm_2d = (160.0 / 457.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 20.312360000777;
+        inline static constexpr Tscal norm_3d = (320.0 / 2069.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             if (q < 1.5) {
@@ -1001,6 +1076,14 @@ namespace shammath::details {
                 return 4 * KernelDefM4<Tscal>::df((q - 1.5) * 4);
             }
         }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < 1.5) {
+                return 0.;
+            } else {
+                return 16 * KernelDefM4<Tscal>::ddf((q - 1.5) * 4);
+            }
+        }
     };
 
     template<class Tscal>
@@ -1011,11 +1094,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 3.687509999998779;
+        inline static constexpr Tscal norm_1d = 16.0 / 59.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 10.686323760634679;
+        inline static constexpr Tscal norm_2d = (640.0 / 2177.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 26.303884427447596;
+        inline static constexpr Tscal norm_3d = (7680.0 / 64303.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             if (q < 1.75) {
@@ -1032,6 +1115,14 @@ namespace shammath::details {
                 return 8 * KernelDefM4<Tscal>::df((q - 1.75) * 8);
             }
         }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < 1.75) {
+                return 0.;
+            } else {
+                return 64 * KernelDefM4<Tscal>::ddf((q - 1.75) * 8);
+            }
+        }
     };
 
     template<class Tscal>
@@ -1042,11 +1133,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 3.8437599999993775;
+        inline static constexpr Tscal norm_1d = 32.0 / 123.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 1. / 11.60548504872985;
+        inline static constexpr Tscal norm_2d = (2560.0 / 9457.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 1. / 29.747722428921268;
+        inline static constexpr Tscal norm_3d = (4096.0 / 38785.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
             if (q < 1.875) {
@@ -1061,6 +1152,14 @@ namespace shammath::details {
                 return 0.;
             } else {
                 return 16 * KernelDefM4<Tscal>::df((q - 1.875) * 16);
+            }
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < 1.875) {
+                return 0.;
+            } else {
+                return 256 * KernelDefM4<Tscal>::ddf((q - 1.875) * 16);
             }
         }
     };

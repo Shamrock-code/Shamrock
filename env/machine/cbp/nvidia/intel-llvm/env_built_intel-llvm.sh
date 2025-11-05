@@ -27,6 +27,8 @@ if [ ! -f "${INTEL_LLVM_INSTALL_DIR}/bin/clang++" ]; then
     echo " ----- intel llvm configured ! -----"
 fi
 
+gpu_comp_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
+
 function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
@@ -35,7 +37,7 @@ function shamconfigure {
         -DSYCL_IMPLEMENTATION=IntelLLVM \
         -DINTEL_LLVM_PATH="${INTEL_LLVM_INSTALL_DIR}" \
         -DCMAKE_CXX_COMPILER="${INTEL_LLVM_INSTALL_DIR}/bin/clang++" \
-        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=nvidia_gpu_sm_80" \
+        -DCMAKE_CXX_FLAGS="-fsycl -fsycl-targets=nvidia_gpu_sm_${gpu_comp_cap}" \
         -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DBUILD_TEST=Yes \
         "${CMAKE_OPT[@]}" || return

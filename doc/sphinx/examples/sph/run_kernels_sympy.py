@@ -6,8 +6,6 @@ Symbolic SPH kernels & c++ tests
 
 from __future__ import division
 
-import re
-
 import matplotlib.pyplot as plt
 import mpmath
 import numpy as np
@@ -41,6 +39,9 @@ def replace_pi_constants(cpp_code):
 
 def sympy_to_cpp(expr):
     """Convert a sympy expression to C++ code with proper formatting"""
+
+    import re
+
     # Expand the expression first
     # expr = expand(expr)
     cpp_code = ccode(expr)

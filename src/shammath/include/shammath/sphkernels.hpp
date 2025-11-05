@@ -70,6 +70,21 @@ namespace shammath::details {
             } else
                 return 0;
         }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal q2 = q * q;
+            Tscal q4 = q2 * q2;
+            Tscal q6 = q4 * q2;
+            if (q < 1.) {
+                return shambase::constants::pi<Tscal>
+                       * (q4 * q / 10. - 3. * q4 / 10. + 2. * q2 / 3. - 7. / 5.);
+            } else if (q < 2.) {
+                return shambase::constants::pi<Tscal>
+                       * ((q * (-q4 * q + 9. * q4 - 30. * q2 * q + 40. * q2 - 48.) + 2.)
+                          / (30. * q));
+            } else
+                return shambase::constants::pi<Tscal> * (-1. / q);
+        }
     };
 
     template<class Tscal>
@@ -148,6 +163,30 @@ namespace shammath::details {
                 return t1;
             } else
                 return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            Tscal q2 = q * q;
+            Tscal q4 = q2 * q2;
+            Tscal q6 = q4 * q2;
+
+            if (q < 0.5) {
+                return q6 / 35. - 3. * q4 / 20. + 23. * q2 / 48. - 1199. / 960.;
+            } else if (q < 1.5) {
+                return (2. * q
+                            * (-64. * q6 + 448. * q4 * q - 1008. * q4 + 280. * q2 * q + 1540. * q2
+                               - 4193.)
+                        - 1.)
+                       / (6720. * q);
+            } else if (q < 2.5) {
+                return (q
+                            * (64. * q6 - 896. * q4 * q + 5040. * q4 - 14000. * q2 * q + 17500. * q2
+                               - 21875.)
+                        + 2185.)
+                       / (13440. * q);
+            } else {
+                return -1. / q;
+            }
         }
     };
 
@@ -315,11 +354,11 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.0;
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 1. / 5040;
+        inline static constexpr Tscal norm_1d = 1.0 / 5040.0;
         /// 2D norm of the kernel
-        inline static constexpr Tscal norm_2d = 9. / (29749. * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_2d = (9.0 / 29740.0) / shambase::constants::pi<Tscal>;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 6. / (40320. * shambase::constants::pi<Tscal>);
+        inline static constexpr Tscal norm_3d = (1.0 / 6720.0) / shambase::constants::pi<Tscal>;
 
         inline static Tscal f(Tscal q) {
 
@@ -923,6 +962,14 @@ namespace shammath::details {
 
 namespace shammath {
 
+    // Type trait to detect if BaseKernel has phi_tilde_3d method
+    template<typename T, typename Tscal, typename = void>
+    struct has_phi_tilde_3d : std::false_type {};
+
+    template<typename T, typename Tscal>
+    struct has_phi_tilde_3d<T, Tscal, std::void_t<decltype(T::phi_tilde_3d(std::declval<Tscal>()))>>
+        : std::true_type {};
+
     template<class Tscal_, class BaseKernel>
     class SPHKernelGen {
         public:
@@ -985,6 +1032,21 @@ namespace shammath {
 
         inline static Tscal Y_3d(Tscal r, Tscal h, int np = 32) {
             return BaseKernel::norm_3d * f3d_integ_z(r / h, np) / (h * h);
+        }
+
+        static constexpr bool has_3d_softening
+            = ::shammath::has_phi_tilde_3d<BaseKernel, Tscal>::value;
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            if constexpr (has_3d_softening) {
+                return BaseKernel::phi_tilde_3d(q);
+            } else {
+                return std::numeric_limits<Tscal>::quiet_NaN();
+            }
+        }
+
+        inline static Tscal phi_3D(Tscal r, Tscal h) {
+            return BaseKernel::norm_3d * phi_tilde_3d(r / h) / h;
         }
     };
 

@@ -1,6 +1,6 @@
 # Everything before this line will be provided by the new-env script
 gpu_comp_cap=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
-export ACPP_TARGETS="cuda:sm_${gpu_comp_cap}"
+export ACPP_TARGETS="omp;cuda:sm_${gpu_comp_cap}"
 export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=$BUILD_DIR/.env/acpp-appdb # otherwise it would we in the $HOME/.acpp
 

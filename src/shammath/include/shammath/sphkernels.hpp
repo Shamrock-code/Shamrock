@@ -2129,7 +2129,7 @@ namespace shammath {
     struct has_phi_tilde_3d<T, Tscal, std::void_t<decltype(T::phi_tilde_3d(std::declval<Tscal>()))>>
         : std::true_type {};
 
-    // Type trait to detect if BaseKernel has phi_tilde_3d method
+    // Type trait to detect if BaseKernel has phi_tilde_3d_prime method
     template<typename T, typename Tscal, typename = void>
     struct has_phi_tilde_3d_prime : std::false_type {};
 

@@ -48,6 +48,7 @@ namespace {
         m.def(get_name("_df"), &Kernel::df);
         m.def(get_name("_ddf"), &Kernel::ddf);
         m.def(get_name("_phi_tilde_3d"), &Kernel::phi_tilde_3d);
+        m.def(get_name("_phi_tilde_3d_prime"), &Kernel::phi_tilde_3d_prime);
         m.def(get_name("_W1d"), &Kernel::W_1d);
         m.def(get_name("_W2d"), &Kernel::W_2d);
         m.def(get_name("_W3d"), &Kernel::W_3d);

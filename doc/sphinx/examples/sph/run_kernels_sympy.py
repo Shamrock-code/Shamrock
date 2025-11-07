@@ -303,6 +303,11 @@ def kernel_to_shamrock(kernel_gen):
 
     text(generate_piecewise_function(phi_tilde_3d_expr, "phi_tilde_3d", indent=4))
 
+    # phi_tilde_3d_prime
+    phi_tilde_3d_prime_expr = diff(phi_tilde_3d_expr, q)
+
+    text(generate_piecewise_function(phi_tilde_3d_prime_expr, "phi_tilde_3d_prime", indent=4))
+
     text("};")
     text()
 
@@ -317,6 +322,7 @@ def kernel_to_shamrock(kernel_gen):
         "df": df_expr,
         "ddf": ddf_expr,
         "phi_tilde_3d": phi_tilde_3d_expr,
+        "phi_tilde_3d_prime": phi_tilde_3d_prime_expr,
         "text": text.text,
     }
 
@@ -338,6 +344,7 @@ def test_kernel(ret, tolerance=1e-12):
     df_expr = ret["df"]
     ddf_expr = ret["ddf"]
     phi_tilde_3d_expr = ret["phi_tilde_3d"]
+    phi_tilde_3d_prime_expr = ret["phi_tilde_3d_prime"]
     text = ret["text"]
 
     print("------------------------------------------")
@@ -348,6 +355,7 @@ def test_kernel(ret, tolerance=1e-12):
     df = lambdify((q), df_expr, modules=["mpmath"])
     ddf = lambdify((q), ddf_expr, modules=["mpmath"])
     phi_tilde_3d = lambdify((q), phi_tilde_3d_expr, modules=["mpmath"])
+    phi_tilde_3d_prime = lambdify((q), phi_tilde_3d_prime_expr, modules=["mpmath"])
 
     print("Testing norms:")
     shamrock_norm_1d = getattr(shamrock.math.sphkernel, f"{name}_norm_1d")()
@@ -382,22 +390,26 @@ def test_kernel(ret, tolerance=1e-12):
     shamrock_df = getattr(shamrock.math.sphkernel, f"{name}_df")
     shamrock_ddf = getattr(shamrock.math.sphkernel, f"{name}_ddf")
     shamrock_phi_tilde_3d = getattr(shamrock.math.sphkernel, f"{name}_phi_tilde_3d")
+    shamrock_phi_tilde_3d_prime = getattr(shamrock.math.sphkernel, f"{name}_phi_tilde_3d_prime")
 
     print(f"Shamrock f(q) = {shamrock_f}")
     print(f"Shamrock df(q) = {shamrock_df}")
     print(f"Shamrock ddf(q) = {shamrock_ddf}")
     print(f"Shamrock phi_tilde_3d(q) = {shamrock_phi_tilde_3d}")
+    print(f"Shamrock phi_tilde_3d_prime(q) = {shamrock_phi_tilde_3d_prime}")
 
     q_arr = np.linspace(0, max(1.1 * float(Rkern), 5.0), 1000)
     shamrock_f = [shamrock_f(x) for x in q_arr]
     shamrock_df = [shamrock_df(x) for x in q_arr]
     shamrock_ddf = [shamrock_ddf(x) for x in q_arr]
     shamrock_phi_tilde_3d = [shamrock_phi_tilde_3d(x) for x in q_arr]
+    shamrock_phi_tilde_3d_prime = [shamrock_phi_tilde_3d_prime(x) for x in q_arr]
 
     sympy_f = [f(x) for x in q_arr]
     sympy_df = [df(x) for x in q_arr]
     sympy_ddf = [ddf(x) for x in q_arr]
     sympy_phi_tilde_3d = [phi_tilde_3d(x) for x in q_arr]
+    sympy_phi_tilde_3d_prime = [phi_tilde_3d_prime(x) for x in q_arr]
 
     # compute the absolute error
     abs_err_f = np.max(np.abs(np.array(shamrock_f) - np.array(sympy_f)))
@@ -406,16 +418,21 @@ def test_kernel(ret, tolerance=1e-12):
     abs_err_phi_tilde_3d = np.max(
         np.abs(np.array(shamrock_phi_tilde_3d) - np.array(sympy_phi_tilde_3d))
     )
+    abs_err_phi_tilde_3d_prime = np.max(
+        np.abs(np.array(shamrock_phi_tilde_3d_prime) - np.array(sympy_phi_tilde_3d_prime))
+    )
 
     print(f"Absolute error f(q) = {abs_err_f}")
     print(f"Absolute error df(q) = {abs_err_df}")
     print(f"Absolute error ddf(q) = {abs_err_ddf}")
     print(f"Absolute error phi_tilde_3d(q) = {abs_err_phi_tilde_3d}")
+    print(f"Absolute error phi_tilde_3d_prime(q) = {abs_err_phi_tilde_3d_prime}")
 
     assert abs_err_f < tolerance
     assert abs_err_df < tolerance * 10
     assert abs_err_ddf < tolerance * 100
     assert abs_err_phi_tilde_3d < tolerance * 100
+    assert abs_err_phi_tilde_3d_prime < tolerance * 1000
 
     print("------------------------------------------")
     print("")
@@ -426,6 +443,7 @@ def test_kernel(ret, tolerance=1e-12):
         "shamrock_Cdf": np.array(shamrock_df) * norm_3d,
         "shamrock_Cddf": np.array(shamrock_ddf) * norm_3d,
         "shamrock_Cphi_tilde_3d": np.array(shamrock_phi_tilde_3d) * norm_3d,
+        "shamrock_Cphi_tilde_3d_prime": np.array(shamrock_phi_tilde_3d_prime) * norm_3d,
     }
 
 
@@ -437,6 +455,7 @@ def print_kernel_info(ret):
     print(f"df(q)  = {ret['df']}")
     print(f"ddf(q) = {ret['ddf']}")
     print(f"phi_tilde_3d(q) = {ret['phi_tilde_3d']}")
+    print(f"phi_tilde_3d_prime(q) = {ret['phi_tilde_3d_prime']}")
     print("------------------------------------------")
     print("")
 
@@ -1040,24 +1059,25 @@ test_result_m4shift16 = test_kernel(ret)
 # Plot the kernels
 # ^^^^^^^^^^^^^^^^
 
-fig_sz = (6.4, 10)
+fig_sz = (6.4, 12)
 
 
 # %%
 # Plotting helper functions
 def create_kernel_plot_figure(fig_sz):
-    """Create a figure with 4 subplots for kernel plotting"""
+    """Create a figure with 5 subplots for kernel plotting"""
     plt.figure(figsize=fig_sz)
-    ax_f = plt.subplot(4, 1, 1)
-    ax_df = plt.subplot(4, 1, 2)
-    ax_ddf = plt.subplot(4, 1, 3)
-    ax_phi_tilde_3d = plt.subplot(4, 1, 4)
-    return ax_f, ax_df, ax_ddf, ax_phi_tilde_3d
+    ax_f = plt.subplot(5, 1, 1)
+    ax_df = plt.subplot(5, 1, 2)
+    ax_ddf = plt.subplot(5, 1, 3)
+    ax_phi_tilde_3d = plt.subplot(5, 1, 4)
+    ax_phi_tilde_3d_prime = plt.subplot(5, 1, 5)
+    return ax_f, ax_df, ax_ddf, ax_phi_tilde_3d, ax_phi_tilde_3d_prime
 
 
 def plot_kernel_result(axes, test_result, kernel_label):
     """Plot a single kernel result on the given axes"""
-    ax_f, ax_df, ax_ddf, ax_phi_tilde_3d = axes
+    ax_f, ax_df, ax_ddf, ax_phi_tilde_3d, ax_phi_tilde_3d_prime = axes
     q_arr = test_result["q_arr"]
 
     ax_f.plot(q_arr, test_result["shamrock_Cf"], label=f"C_3d f_{kernel_label}(q)")
@@ -1066,15 +1086,22 @@ def plot_kernel_result(axes, test_result, kernel_label):
     ax_phi_tilde_3d.plot(
         q_arr, test_result["shamrock_Cphi_tilde_3d"], label=f"C_3d phi_tilde_3d_{kernel_label}(q)"
     )
+    ax_phi_tilde_3d_prime.plot(
+        q_arr,
+        test_result["shamrock_Cphi_tilde_3d_prime"],
+        label=f"C_3d phi_tilde_3d_prime_{kernel_label}(q)",
+    )
 
 
 def finalize_kernel_plot(axes):
     """Add titles, labels, and legends to the kernel plot"""
-    ax_f, ax_df, ax_ddf, ax_phi_tilde_3d = axes
+    ax_f, ax_df, ax_ddf, ax_phi_tilde_3d, ax_phi_tilde_3d_prime = axes
 
     # Get current axis limits before adding reference line
     xlim = ax_phi_tilde_3d.get_xlim()
     ylim = ax_phi_tilde_3d.get_ylim()
+
+    ylim = (1.2 * ylim[0], ylim[1])
 
     # Add -1/r reference line (only within current x range)
     q = np.linspace(max(1e-6, xlim[0]), xlim[1], 1000)
@@ -1085,20 +1112,37 @@ def finalize_kernel_plot(axes):
     ax_phi_tilde_3d.set_xlim(xlim)
     ax_phi_tilde_3d.set_ylim(ylim)
 
-    ax_f.set_title("C_3d f(q)")
-    ax_df.set_title("C_3d df(q)")
-    ax_ddf.set_title("C_3d ddf(q)")
-    ax_phi_tilde_3d.set_title("C_3d phi_tilde_3d(q)")
+    # Get current axis limits before adding reference line
+    xlim = ax_phi_tilde_3d_prime.get_xlim()
+    ylim = ax_phi_tilde_3d_prime.get_ylim()
+
+    ylim = (ylim[0], 1.5 * ylim[1])
+
+    # Add 1/r^2 reference line (only within current x range)
+    one_over_r_squared = 1 / q**2
+    ax_phi_tilde_3d_prime.plot(q, one_over_r_squared, "--", color="grey", label="1/r^2")
+
+    # Restore original limits (ignore reference line for autoscaling)
+    ax_phi_tilde_3d_prime.set_xlim(xlim)
+    ax_phi_tilde_3d_prime.set_ylim(ylim)
+
+    ax_f.set_title("C_3d f(q)", fontsize=10)
+    ax_df.set_title("C_3d df(q)", fontsize=10)
+    ax_ddf.set_title("C_3d ddf(q)", fontsize=10)
+    ax_phi_tilde_3d.set_title("C_3d phi_tilde_3d(q)", fontsize=10)
+    ax_phi_tilde_3d_prime.set_title("C_3d phi_tilde_3d_prime(q)", fontsize=10)
 
     ax_f.set_xlabel("q")
     ax_df.set_xlabel("q")
     ax_ddf.set_xlabel("q")
     ax_phi_tilde_3d.set_xlabel("q")
+    ax_phi_tilde_3d_prime.set_xlabel("q")
 
-    ax_f.legend()
-    ax_df.legend()
-    ax_ddf.legend()
-    ax_phi_tilde_3d.legend()
+    ax_f.legend(loc="right", fontsize=8)
+    ax_df.legend(loc="right", fontsize=8)
+    ax_ddf.legend(loc="right", fontsize=8)
+    ax_phi_tilde_3d.legend(loc="right", fontsize=8)
+    ax_phi_tilde_3d_prime.legend(loc="right", fontsize=8)
 
     plt.tight_layout()
     plt.show()

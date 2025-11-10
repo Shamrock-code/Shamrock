@@ -456,7 +456,7 @@ namespace shamphys {
         } else if constexpr (low_order == 0 && high_order == 0) {
             return {Q.t0};
         } else {
-            static_assert(shambase::always_false_v<T>, "This combinaition of orders is not valid");
+            static_assert(shambase::always_false_v<T>, "This combination of orders is not valid");
         }
     }
 

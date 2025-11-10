@@ -527,6 +527,64 @@ namespace sham {
     }
 
     template<class T>
+    inline shambase::VecComponent<T> max_component(T a) {
+
+        using Tscal = shambase::VecComponent<T>;
+
+        if constexpr (std::is_same_v<T, sycl::vec<Tscal, 2>>) {
+            return sycl::max(a.x(), a.y());
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 3>>) {
+            return sycl::max(a.x(), sycl::max(a.y(), a.z()));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 4>>) {
+            return sycl::max(a.x(), sycl::max(a.y(), sycl::max(a.z(), a.w())));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 8>>) {
+            return sycl::max(
+                a.s0(),
+                sycl::max(
+                    a.s1(),
+                    sycl::max(
+                        a.s2(),
+                        sycl::max(
+                            a.s3(),
+                            sycl::max(a.s4(), sycl::max(a.s5(), sycl::max(a.s6(), a.s7())))))));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 16>>) {
+            return sycl::max(
+                a.s0(),
+                sycl::max(
+                    a.s1(),
+                    sycl::max(
+                        a.s2(),
+                        sycl::max(
+                            a.s3(),
+                            sycl::max(
+                                a.s4(),
+                                sycl::max(
+                                    a.s5(),
+                                    sycl::max(
+                                        a.s6(),
+                                        sycl::max(
+                                            a.s7(),
+                                            sycl::max(
+                                                a.s8(),
+                                                sycl::max(
+                                                    a.s9(),
+                                                    sycl::max(
+                                                        a.sA(),
+                                                        sycl::max(
+                                                            a.sB(),
+                                                            sycl::max(
+                                                                a.sC(),
+                                                                sycl::max(
+                                                                    a.sD(),
+                                                                    sycl::max(
+                                                                        a.sE(),
+                                                                        a.sF())))))))))))))));
+        } else {
+            return a;
+        }
+    }
+
+    template<class T>
     inline shambase::VecComponent<T> dot(T a, T b) {
         return sham::details::g_sycl_dot(a, b);
     }

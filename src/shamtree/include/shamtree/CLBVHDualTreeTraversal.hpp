@@ -26,13 +26,13 @@ namespace shamtree {
 
     /// Result structure for dual tree traversal operations.
     struct DTTResult {
-        /// Pairs of nodes that interact using M2M interactions
-        sham::DeviceBuffer<u32_2> node_interactions_m2m;
+        /// Pairs of nodes that interact using M2L interactions
+        sham::DeviceBuffer<u32_2> node_interactions_m2l;
         /// Pairs of nodes that interact using P2P interactions
         sham::DeviceBuffer<u32_2> node_interactions_p2p;
 
         struct OrderedResult {
-            sham::DeviceBuffer<u32> offset_m2m;
+            sham::DeviceBuffer<u32> offset_m2l;
             sham::DeviceBuffer<u32> offset_p2p;
         };
 

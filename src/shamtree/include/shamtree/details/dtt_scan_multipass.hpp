@@ -63,28 +63,28 @@ namespace shamtree::details {
 
             auto q = shambase::get_check_ref(dev_sched).get_queue();
 
-            sham::DeviceBuffer<u32_2> node_interactions_m2m(0, dev_sched);
+            sham::DeviceBuffer<u32_2> node_interactions_m2l(0, dev_sched);
             sham::DeviceBuffer<u32_2> node_interactions_p2p(0, dev_sched);
 
             shamtree::DTTResult result{
-                std::move(node_interactions_m2m), std::move(node_interactions_p2p)};
+                std::move(node_interactions_m2l), std::move(node_interactions_p2p)};
 
             auto add_ordering = [&]() {
                 if (ordered_result) {
-                    auto offset_m2m = sham::DeviceBuffer<u32>(0, dev_sched);
+                    auto offset_m2l = sham::DeviceBuffer<u32>(0, dev_sched);
                     auto offset_p2p = sham::DeviceBuffer<u32>(0, dev_sched);
 
                     shamtree::details::reorder_scan_dtt_result(
                         bvh.structure.get_total_cell_count(),
-                        result.node_interactions_m2m,
-                        offset_m2m);
+                        result.node_interactions_m2l,
+                        offset_m2l);
 
                     shamtree::details::reorder_scan_dtt_result(
                         bvh.structure.get_total_cell_count(),
                         result.node_interactions_p2p,
                         offset_p2p);
 
-                    DTTResult::OrderedResult ordering{std::move(offset_m2m), std::move(offset_p2p)};
+                    DTTResult::OrderedResult ordering{std::move(offset_m2l), std::move(offset_p2p)};
 
                     result.ordered_result = std::move(ordering);
                 }
@@ -107,8 +107,8 @@ namespace shamtree::details {
             sham::DeviceBuffer<u32> has_pushed_task(start_size, dev_sched);
             sham::DeviceBuffer<u32_2> task_next(start_size, dev_sched);
 
-            sham::DeviceBuffer<u32> has_pushed_m2m(start_size, dev_sched);
-            sham::DeviceBuffer<u32_2> pushed_m2m(start_size, dev_sched);
+            sham::DeviceBuffer<u32> has_pushed_m2l(start_size, dev_sched);
+            sham::DeviceBuffer<u32_2> pushed_m2l(start_size, dev_sched);
 
             sham::DeviceBuffer<u32> has_pushed_p2p(start_size, dev_sched);
             sham::DeviceBuffer<u32_2> pushed_p2p(start_size, dev_sched);
@@ -126,20 +126,20 @@ namespace shamtree::details {
                 // resizing BS
                 u32 has_pushed_task_sz = task_count + 1;
                 u32 task_next_sz       = 4 * task_count;
-                u32 has_pushed_m2m_sz  = task_count + 1;
-                u32 pushed_m2m_sz      = task_count;
+                u32 has_pushed_m2l_sz  = task_count + 1;
+                u32 pushed_m2l_sz      = task_count;
                 u32 has_pushed_p2p_sz  = task_count + 1;
                 u32 pushed_p2p_sz      = task_count;
 
                 resize_max(has_pushed_task, has_pushed_task_sz);
                 resize_max(task_next, task_next_sz);
-                resize_max(has_pushed_m2m, has_pushed_m2m_sz);
-                resize_max(pushed_m2m, pushed_m2m_sz);
+                resize_max(has_pushed_m2l, has_pushed_m2l_sz);
+                resize_max(pushed_m2l, pushed_m2l_sz);
                 resize_max(has_pushed_p2p, has_pushed_p2p_sz);
                 resize_max(pushed_p2p, pushed_p2p_sz);
 
                 has_pushed_task.fill(0, has_pushed_task_sz);
-                has_pushed_m2m.fill(0, has_pushed_m2m_sz);
+                has_pushed_m2l.fill(0, has_pushed_m2l_sz);
                 has_pushed_p2p.fill(0, has_pushed_p2p_sz);
 
                 using ObjectIterator  = shamtree::CLBVHObjectIterator<Tmorton, Tvec, dim>;
@@ -154,8 +154,8 @@ namespace shamtree::details {
                     sham::MultiRef{
                         has_pushed_task,
                         task_next,
-                        has_pushed_m2m,
-                        pushed_m2m,
+                        has_pushed_m2l,
+                        pushed_m2l,
                         has_pushed_p2p,
                         pushed_p2p},
                     task_count,
@@ -165,8 +165,8 @@ namespace shamtree::details {
                         ObjItAcc obj_it,
                         u32 *__restrict__ has_pushed_task,
                         u32_2 *__restrict__ task_next,
-                        u32 *__restrict__ has_pushed_m2m,
-                        u32_2 *__restrict__ pushed_m2m,
+                        u32 *__restrict__ has_pushed_m2l,
+                        u32_2 *__restrict__ pushed_m2l,
                         u32 *__restrict__ has_pushed_p2p,
                         u32_2 *__restrict__ pushed_p2p) {
                         u32_2 t = task_current[i];
@@ -206,8 +206,8 @@ namespace shamtree::details {
                             }
 
                         } else {
-                            pushed_m2m[i]     = {a, b};
-                            has_pushed_m2m[i] = 1;
+                            pushed_m2l[i]     = {a, b};
+                            has_pushed_m2l[i] = 1;
                         }
                     });
 
@@ -216,33 +216,33 @@ namespace shamtree::details {
                 shamalgs::primitives::scan_exclusive_sum_in_place(
                     has_pushed_task, has_pushed_task_sz);
                 shamalgs::primitives::scan_exclusive_sum_in_place(
-                    has_pushed_m2m, has_pushed_m2m_sz);
+                    has_pushed_m2l, has_pushed_m2l_sz);
                 shamalgs::primitives::scan_exclusive_sum_in_place(
                     has_pushed_p2p, has_pushed_p2p_sz);
 
 #else
                 has_pushed_task = shamalgs::numeric::scan_exclusive(
                     dev_sched, has_pushed_task, has_pushed_task_sz);
-                has_pushed_m2m = shamalgs::numeric::scan_exclusive(
-                    dev_sched, has_pushed_m2m, has_pushed_m2m_sz);
+                has_pushed_m2l = shamalgs::numeric::scan_exclusive(
+                    dev_sched, has_pushed_m2l, has_pushed_m2l_sz);
                 has_pushed_p2p = shamalgs::numeric::scan_exclusive(
                     dev_sched, has_pushed_p2p, has_pushed_p2p_sz);
 #endif
                 sham::DeviceBuffer<u32> &scan_task = (has_pushed_task);
-                sham::DeviceBuffer<u32> &scan_m2m  = (has_pushed_m2m);
+                sham::DeviceBuffer<u32> &scan_m2l  = (has_pushed_m2l);
                 sham::DeviceBuffer<u32> &scan_p2p  = (has_pushed_p2p);
 
                 // get the sizes of the result buffers before resizing
-                u32 res_sz_node_node = result.node_interactions_m2m.get_size();
+                u32 res_sz_node_node = result.node_interactions_m2l.get_size();
                 u32 res_sz_leaf_leaf = result.node_interactions_p2p.get_size();
 
                 // get the resulting count from the main kernel
                 u32 count_task = scan_task.get_val_at_idx(has_pushed_task_sz - 1);
-                u32 count_m2m  = scan_m2m.get_val_at_idx(has_pushed_m2m_sz - 1);
+                u32 count_m2l  = scan_m2l.get_val_at_idx(has_pushed_m2l_sz - 1);
                 u32 count_p2p  = scan_p2p.get_val_at_idx(has_pushed_p2p_sz - 1);
 
                 // expand the result buffers
-                result.node_interactions_m2m.expand(count_m2m);
+                result.node_interactions_m2l.expand(count_m2l);
                 result.node_interactions_p2p.expand(count_p2p);
 
                 // allocate space for the next pass
@@ -273,18 +273,18 @@ namespace shamtree::details {
                 // stream compaction
                 sham::kernel_call(
                     q,
-                    sham::MultiRef{pushed_m2m, scan_m2m},
-                    sham::MultiRef{result.node_interactions_m2m},
+                    sham::MultiRef{pushed_m2l, scan_m2l},
+                    sham::MultiRef{result.node_interactions_m2l},
                     task_count,
                     [res_sz_node_node](
                         u32 i,
-                        const u32_2 *__restrict__ pushed_m2m,
-                        const u32 *__restrict__ scan_m2m,
-                        u32_2 *__restrict__ interacts_m2m) {
-                        u32 scan_m2m_i   = scan_m2m[i];
-                        u32 scan_m2m_ip1 = scan_m2m[i + 1];
-                        if (scan_m2m_ip1 - scan_m2m_i == 1) {
-                            interacts_m2m[res_sz_node_node + scan_m2m_i] = pushed_m2m[i];
+                        const u32_2 *__restrict__ pushed_m2l,
+                        const u32 *__restrict__ scan_m2l,
+                        u32_2 *__restrict__ interacts_m2l) {
+                        u32 scan_m2l_i   = scan_m2l[i];
+                        u32 scan_m2l_ip1 = scan_m2l[i + 1];
+                        if (scan_m2l_ip1 - scan_m2l_i == 1) {
+                            interacts_m2l[res_sz_node_node + scan_m2l_i] = pushed_m2l[i];
                         }
                     });
 

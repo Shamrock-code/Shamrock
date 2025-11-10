@@ -163,6 +163,14 @@ namespace shambase {
         return *ptr;
     }
 
+    template<class T>
+    inline T &get_check_ref(T *ptr, SourceLocation loc = SourceLocation()) {
+        if (!bool(ptr)) {
+            throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+        }
+        return *ptr;
+    }
+
     /**
      * @brief Extracts the content out of an optional
      *

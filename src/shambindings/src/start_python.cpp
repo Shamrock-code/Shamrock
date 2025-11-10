@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/popen.hpp"
 #include "shambase/print.hpp"
 #include "shambindings/pybindaliases.hpp"

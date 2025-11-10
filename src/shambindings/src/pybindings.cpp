@@ -115,6 +115,23 @@ void register_py_to_sham_print(py::module &m) {
     });
 }
 
+void register_extra_lib(py::module &m) {
+
+    m.def("register_extra_lib", [&]() {
+        try {
+            auto sys = py::module::import("sys");
+
+            sys.attr("path").attr("insert")(
+                0, "/Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/pylib");
+
+            m.attr("utils") = py::module_::import("utils");
+
+        } catch (std::exception &e) {
+            shambase::throw_with_loc<std::runtime_error>(e.what());
+        }
+    });
+}
+
 namespace shambindings {
 
     enum { None = 0, Lib = 1, Embed = 2 } init_state = None;
@@ -149,6 +166,8 @@ namespace shambindings {
         if (hook_stdout) {
             register_py_to_sham_print(m);
             m.attr("hook_stdout")();
+            register_extra_lib(m);
+            m.attr("register_extra_lib")();
         }
     }
 

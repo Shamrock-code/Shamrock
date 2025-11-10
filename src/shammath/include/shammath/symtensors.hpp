@@ -71,7 +71,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &acc, u32 offset) const {
             acc[offset + 0] = v_0;
             acc[offset + 1] = v_1;
             acc[offset + 2] = v_2;
@@ -166,7 +166,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &acc, u32 offset) const {
             acc[offset + 0] = v_00;
             acc[offset + 1] = v_01;
             acc[offset + 2] = v_02;
@@ -320,7 +320,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &acc, u32 offset) const {
             acc[offset + 0] = v_000;
             acc[offset + 1] = v_001;
             acc[offset + 2] = v_002;
@@ -545,7 +545,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &acc, u32 offset) const {
             acc[offset + 0]  = v_0000;
             acc[offset + 1]  = v_0001;
             acc[offset + 2]  = v_0002;
@@ -811,7 +811,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &acc, u32 offset) const {
             acc[offset + 0]  = v_00000;
             acc[offset + 1]  = v_00001;
             acc[offset + 2]  = v_00002;

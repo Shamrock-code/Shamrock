@@ -191,11 +191,10 @@ namespace shamphys {
             return dM_ret;
         } else if constexpr (low_order == 1 && high_order == 2) {
 
-            SymTensorCollection<T, 0, 2> h = SymTensorCollection<T, 0, 2>::from_vec(offset);
+            SymTensorCollection<T, 0, 1> h = SymTensorCollection<T, 0, 1>::from_vec(offset);
 
             auto &h_0 = h.t0;
             auto &h_1 = h.t1;
-            auto &h_2 = h.t2;
 
             auto &dM_1 = dM.t1;
             auto &dM_2 = dM.t2;
@@ -210,6 +209,20 @@ namespace shamphys {
             dM_ret_1 = inv_factorial_0 * h_0 * dM_1 + inv_factorial_1 * h_1 * dM_2;
 
             dM_ret_2 = inv_factorial_0 * h_0 * dM_2;
+
+            return dM_ret;
+        } else if constexpr (low_order == 1 && high_order == 1) {
+            T h_0 = 1;
+
+            auto &dM_1 = dM.t1;
+
+            shammath::SymTensorCollection<T, 1, 1> dM_ret;
+
+            auto &dM_ret_1 = dM_ret.t1;
+
+            // dM_k = sum_{l=k}^p \frac{1}{(l-k)!} h^(l-k).dM_l
+
+            dM_ret_1 = inv_factorial_0 * h_0 * dM_1;
 
             return dM_ret;
         } else {

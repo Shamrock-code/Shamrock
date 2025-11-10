@@ -446,6 +446,15 @@ namespace shamphys {
             auto Qn2 = offset_multipole_2(Qn1, Q.t1, Q.t2, d.t1);
 
             return {Q.t0, Qn1, Qn2};
+        } else if constexpr (low_order == 0 && high_order == 1) {
+
+            SymTensorCollection<T, 1, 1> d = SymTensorCollection<T, 1, 1>::from_vec(offset);
+
+            auto Qn1 = offset_multipole_1(Q.t0, Q.t1, d.t1);
+
+            return {Q.t0, Qn1};
+        } else if constexpr (low_order == 0 && high_order == 0) {
+            return {Q.t0};
         } else {
             static_assert(shambase::always_false_v<T>, "This combinaition of orders is not valid");
         }

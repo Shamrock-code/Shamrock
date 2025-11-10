@@ -536,51 +536,22 @@ namespace sham {
         } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 3>>) {
             return sycl::max(a.x(), sycl::max(a.y(), a.z()));
         } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 4>>) {
-            return sycl::max(a.x(), sycl::max(a.y(), sycl::max(a.z(), a.w())));
+            return sycl::max(sycl::max(a.x(), a.y()), sycl::max(a.z(), a.w()));
         } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 8>>) {
             return sycl::max(
-                a.s0(),
-                sycl::max(
-                    a.s1(),
-                    sycl::max(
-                        a.s2(),
-                        sycl::max(
-                            a.s3(),
-                            sycl::max(a.s4(), sycl::max(a.s5(), sycl::max(a.s6(), a.s7())))))));
+                sycl::max(sycl::max(a.s0(), a.s1()), sycl::max(a.s2(), a.s3())),
+                sycl::max(sycl::max(a.s4(), a.s5()), sycl::max(a.s6(), a.s7())));
         } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 16>>) {
             return sycl::max(
-                a.s0(),
                 sycl::max(
-                    a.s1(),
-                    sycl::max(
-                        a.s2(),
-                        sycl::max(
-                            a.s3(),
-                            sycl::max(
-                                a.s4(),
-                                sycl::max(
-                                    a.s5(),
-                                    sycl::max(
-                                        a.s6(),
-                                        sycl::max(
-                                            a.s7(),
-                                            sycl::max(
-                                                a.s8(),
-                                                sycl::max(
-                                                    a.s9(),
-                                                    sycl::max(
-                                                        a.sA(),
-                                                        sycl::max(
-                                                            a.sB(),
-                                                            sycl::max(
-                                                                a.sC(),
-                                                                sycl::max(
-                                                                    a.sD(),
-                                                                    sycl::max(
-                                                                        a.sE(),
-                                                                        a.sF())))))))))))))));
+                    sycl::max(sycl::max(a.s0(), a.s1()), sycl::max(a.s2(), a.s3())),
+                    sycl::max(sycl::max(a.s4(), a.s5()), sycl::max(a.s6(), a.s7()))),
+                sycl::max(
+                    sycl::max(sycl::max(a.s8(), a.s9()), sycl::max(a.sA(), a.sB())),
+                    sycl::max(sycl::max(a.sC(), a.sD()), sycl::max(a.sE(), a.sF()))));
         } else {
-            return a;
+            static_assert(
+                shambase::always_false_v<T>, "max_component is not implemented for this type");
         }
     }
 

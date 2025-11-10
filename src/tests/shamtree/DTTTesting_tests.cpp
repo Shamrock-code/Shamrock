@@ -7,7 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/StlContainerConversion.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -21,15 +20,34 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
-#include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
 #include <vector>
 
 using Tmorton = u64;
 using Tvec    = f64_3;
 using Tscal   = shambase::VecComponent<Tvec>;
+
+inline void test_is_symmetric(const std::vector<u32_2> &interactions) {
+    std::set<std::pair<u32, u32>> unique_pairs;
+
+    for (const auto &interaction : interactions) {
+        unique_pairs.insert({interaction.x(), interaction.y()});
+    }
+
+    REQUIRE_EQUAL(unique_pairs.size(), interactions.size());
+
+    u32 offenses = 0;
+    for (const auto &interaction : interactions) {
+        const auto reversed = std::pair<u32, u32>{interaction.y(), interaction.x()};
+        if (!unique_pairs.count(reversed)) {
+            offenses++;
+        }
+    }
+
+    // here we check only on the number of offences to avoid having giant logs
+    REQUIRE_EQUAL(offenses, 0);
+}
 
 inline void validate_dtt_results(
     const sham::DeviceBuffer<Tvec> &positions,
@@ -187,6 +205,9 @@ inline void validate_dtt_results(
 
     REQUIRE_EQUAL(missing_pairs, 0);
     REQUIRE_EQUAL(part_interact.size(), Npart_sq);
+
+    test_is_symmetric(internal_node_interactions);
+    test_is_symmetric(unrolled_interact);
 }
 
 void dtt_test(u32 Npart, u32 reduction_level, Tscal theta_crit, bool ordered_result) {

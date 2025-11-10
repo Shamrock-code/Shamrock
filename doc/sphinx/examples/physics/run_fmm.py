@@ -1133,7 +1133,7 @@ print("rel error =", tensor_collect_norm(delta) / tensor_collect_norm(Q_n_Bp))
 
 plt.figure()
 
-for order in range(2, 6):
+for order in range(0, 6):
     # set seed
     rng = np.random.default_rng(111)
 
@@ -1207,6 +1207,22 @@ for order in range(2, 6):
             Q_n_Bp *= m_j
 
             Q_n_B_offset = shamrock.phys.offset_multipole_2(Q_n_B, s_B, s_Bp)
+        elif order == 1:
+            Q_n_B = shamrock.math.SymTensorCollection_f64_0_1.from_vec(b_j)
+            Q_n_B *= m_j
+
+            Q_n_Bp = shamrock.math.SymTensorCollection_f64_0_1.from_vec(b_jp)
+            Q_n_Bp *= m_j
+
+            Q_n_B_offset = shamrock.phys.offset_multipole_1(Q_n_B, s_B, s_Bp)
+        elif order == 0:
+            Q_n_B = shamrock.math.SymTensorCollection_f64_0_0.from_vec(b_j)
+            Q_n_B *= m_j
+
+            Q_n_Bp = shamrock.math.SymTensorCollection_f64_0_0.from_vec(b_jp)
+            Q_n_Bp *= m_j
+
+            Q_n_B_offset = shamrock.phys.offset_multipole_0(Q_n_B, s_B, s_Bp)
         else:
             raise ValueError(f"Unsupported offset order: {order}")
 
@@ -1494,6 +1510,8 @@ def test_grav_moment_offset(x_i, x_j, s_A, s_Ap, s_B, m_j, order, do_print):
         dM_k_offset = shamrock.phys.offset_dM_mat_3(dM_k, s_A, s_Ap)
     elif order == 2:
         dM_k_offset = shamrock.phys.offset_dM_mat_2(dM_k, s_A, s_Ap)
+    elif order == 1:
+        dM_k_offset = shamrock.phys.offset_dM_mat_1(dM_k, s_A, s_Ap)
     else:
         raise ValueError("Invalid order")
 
@@ -1589,7 +1607,7 @@ def test_grav_moment_offset(x_i, x_j, s_A, s_Ap, s_B, m_j, order, do_print):
 # For clarification a perfect result here is that the translated dMk contracted with the new displacment ak_p give the same result as the original expansion (which it does ;) ).
 
 plt.figure()
-for order in range(2, 6):
+for order in range(1, 6):
     print("--------------------------------")
     print(f"Running FMM order = {order}")
     print("--------------------------------")

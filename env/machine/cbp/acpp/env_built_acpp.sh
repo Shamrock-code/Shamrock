@@ -1,9 +1,32 @@
-# Everything before this line will be provided by the new-env script
+#!/usr/bin/bash
 
-amd_target=$(rocminfo | \grep --color=never -oE 'gfx[0-9]+[a-zA-Z0-9]*' | uniq)
-export ACPP_TARGETS="omp;hip:${amd_target}"
+# Everything before this line will be provided by the new-env script
+ACPP_TARGETS="omp"
+WITH_CUDA_BACKEND=Off
+WITH_ROCM_BACKEND=Off
 WITH_SSCP_COMPILER=Off
 
+if [ "${ACPP_BACKEND}" = "cuda" ]; then
+    GPU_TARGET=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
+    ACPP_TARGETS+="cuda:sm_${GPU_TARGET}"
+    LLVM_TARGET="NVPTX"
+    GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=/usr/local/cuda"
+    WITH_CUDA_BACKEND=On
+
+elif [ "${ACPP_BACKEND}" = "sscp" ]; then
+    ACPP_TARGETS="generic"
+    LLVM_TARGET="NVPTX"
+    GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=/usr/local/cuda"
+    WITH_CUDA_BACKEND=On
+    WITH_SSCP_COMPILER=On
+
+elif [ "${ACPP_BACKEND}" = "rocm" ]; then
+    GPU_TARGET=$(rocminfo | \grep --color=never -oE 'gfx[0-9]+[a-zA-Z0-9]*' | uniq)
+    ACPP_TARGETS+=";hip:${GPU_TARGET}"
+    LLVM_TARGET="AMDGPU"
+    GPU_LIBRARY_FLAG="-DROCM_PATH=/opt/rocm-6.4.1"
+    WITH_ROCM_BACKEND=On
+fi
 
 export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=$BUILD_DIR/.env/acpp-appdb # otherwise it would we in the $HOME/.acpp
@@ -36,7 +59,7 @@ function llvm_setup {
         -DCMAKE_INSTALL_RPATH=$LLVM_INSTALL_DIR/lib \
         -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld;openmp" \
-        -DLLVM_TARGETS_TO_BUILD="AMDGPU;X86" \
+        -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGET};X86" \
         -DLLVM_BUILD_LLVM_DYLIB=ON \
         -DOPENMP_ENABLE_LIBOMPTARGET=OFF \
         -DLLVM_ENABLE_ASSERTIONS=OFF \
@@ -66,12 +89,12 @@ function setupcompiler {
     clone_acpp || return
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
-        -DROCM_PATH=/opt/rocm-6.4.1/ \
+        ${GPU_LIBRARY_FLAG} \
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/ \
-        -DWITH_CUDA_BACKEND=Off \
-        -DWITH_ROCM_BACKEND=On \
+        -DWITH_CUDA_BACKEND=${WITH_CUDA_BACKEND} \
+        -DWITH_ROCM_BACKEND=${WITH_ROCM_BACKEND} \
         -DWITH_LEVEL_ZERO_BACKEND=Off \
         -DWITH_SSCP_COMPILER=${WITH_SSCP_COMPILER} || return
 

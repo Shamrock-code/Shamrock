@@ -7,7 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#include "shambase/StlContainerConversion.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -21,9 +20,7 @@
 #include "shamtree/CLBVHDualTreeTraversal.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
-#include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
-#include "shamtree/details/dtt_scan_multipass.hpp"
 #include <set>
 #include <vector>
 
@@ -33,7 +30,6 @@ using Tscal   = shambase::VecComponent<Tvec>;
 
 inline void test_is_symmetric(const std::vector<u32_2> &interactions) {
     std::set<std::pair<u32, u32>> unique_pairs;
-    unique_pairs.clear();
 
     for (const auto &interaction : interactions) {
         unique_pairs.insert({interaction.x(), interaction.y()});
@@ -49,6 +45,7 @@ inline void test_is_symmetric(const std::vector<u32_2> &interactions) {
         }
     }
 
+    // here we check only on the number of offences to avoid having giant logs
     REQUIRE_EQUAL(offenses, 0);
 }
 

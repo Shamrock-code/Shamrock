@@ -54,6 +54,7 @@ namespace shamtree::details {
         }
 
         /// We make the assumption that the root is not a leaf
+        template<bool allow_leaf_lowering>
         inline static void dtt_recursive_internal(
             u32 cell_a,
             u32 cell_b,
@@ -63,7 +64,8 @@ namespace shamtree::details {
             std::vector<u32_2> &interact_p2p) {
 
             auto dtt_child_call = [&](u32 cell_a, u32 cell_b) {
-                dtt_recursive_internal(cell_a, cell_b, acc, theta_crit, interact_m2l, interact_p2p);
+                dtt_recursive_internal<allow_leaf_lowering>(
+                    cell_a, cell_b, acc, theta_crit, interact_m2l, interact_p2p);
             };
 
             auto &ttrav = acc.tree_traverser.tree_traverser;
@@ -81,25 +83,57 @@ namespace shamtree::details {
 
             if (crit) {
 
-                u32 child_a_1 = ttrav.get_left_child(cell_a);
-                u32 child_a_2 = ttrav.get_right_child(cell_a);
-                u32 child_b_1 = ttrav.get_left_child(cell_b);
-                u32 child_b_2 = ttrav.get_right_child(cell_b);
+                if constexpr (allow_leaf_lowering) {
 
-                bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
-                bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
-                bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
-                bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+                    bool is_a_leaf = ttrav.is_id_leaf(cell_a);
+                    bool is_b_leaf = ttrav.is_id_leaf(cell_b);
 
-                if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf || child_b_2_leaf) {
-                    interact_p2p.push_back({cell_a, cell_b});
-                    return;
+                    if (is_a_leaf && is_b_leaf) {
+                        interact_p2p.push_back({cell_a, cell_b});
+                        return;
+                    }
+
+                    u32 child_a_1 = (is_a_leaf) ? cell_a : ttrav.get_left_child(cell_a);
+                    u32 child_a_2 = (is_a_leaf) ? cell_a : ttrav.get_right_child(cell_a);
+                    u32 child_b_1 = (is_b_leaf) ? cell_b : ttrav.get_left_child(cell_b);
+                    u32 child_b_2 = (is_b_leaf) ? cell_b : ttrav.get_right_child(cell_b);
+
+                    bool run_a_1 = true;
+                    bool run_a_2 = !is_a_leaf;
+                    bool run_b_1 = true;
+                    bool run_b_2 = !is_b_leaf;
+
+                    if (run_a_1 && run_b_1)
+                        dtt_child_call(child_a_1, child_b_1);
+                    if (run_a_2 && run_b_1)
+                        dtt_child_call(child_a_2, child_b_1);
+                    if (run_a_1 && run_b_2)
+                        dtt_child_call(child_a_1, child_b_2);
+                    if (run_a_2 && run_b_2)
+                        dtt_child_call(child_a_2, child_b_2);
+
+                } else {
+
+                    u32 child_a_1 = ttrav.get_left_child(cell_a);
+                    u32 child_a_2 = ttrav.get_right_child(cell_a);
+                    u32 child_b_1 = ttrav.get_left_child(cell_b);
+                    u32 child_b_2 = ttrav.get_right_child(cell_b);
+
+                    bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
+                    bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
+                    bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
+                    bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+
+                    if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf || child_b_2_leaf) {
+                        interact_p2p.push_back({cell_a, cell_b});
+                        return;
+                    }
+
+                    dtt_child_call(child_a_1, child_b_1);
+                    dtt_child_call(child_a_2, child_b_1);
+                    dtt_child_call(child_a_1, child_b_2);
+                    dtt_child_call(child_a_2, child_b_2);
                 }
-
-                dtt_child_call(child_a_1, child_b_1);
-                dtt_child_call(child_a_2, child_b_1);
-                dtt_child_call(child_a_1, child_b_2);
-                dtt_child_call(child_a_2, child_b_2);
 
             } else {
                 interact_m2l.push_back({cell_a, cell_b});
@@ -110,7 +144,8 @@ namespace shamtree::details {
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             Tscal theta_crit,
             std::vector<u32_2> &interact_m2l,
-            std::vector<u32_2> &interact_p2p) {
+            std::vector<u32_2> &interact_p2p,
+            bool allow_leaf_lowering) {
 
             __shamrock_stack_entry();
 
@@ -126,20 +161,25 @@ namespace shamtree::details {
             }
 
             /// We make the assumption that the root is not a leaf in this function
-            dtt_recursive_internal(0, 0, acc, theta_crit, interact_m2l, interact_p2p);
+            if (allow_leaf_lowering) {
+                dtt_recursive_internal<true>(0, 0, acc, theta_crit, interact_m2l, interact_p2p);
+            } else {
+                dtt_recursive_internal<false>(0, 0, acc, theta_crit, interact_m2l, interact_p2p);
+            }
         }
 
         inline static shamtree::DTTResult dtt(
             sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit,
-            bool ordered_result) {
+            bool ordered_result,
+            bool allow_leaf_lowering) {
             StackEntry stack_loc{};
 
             std::vector<u32_2> interact_m2l{};
             std::vector<u32_2> interact_p2p{};
 
-            dtt_recursive_ref(bvh, theta_crit, interact_m2l, interact_p2p);
+            dtt_recursive_ref(bvh, theta_crit, interact_m2l, interact_p2p, allow_leaf_lowering);
 
             sham::DeviceBuffer<u32_2> interact_m2l_buf(interact_m2l.size(), dev_sched);
             sham::DeviceBuffer<u32_2> interact_p2p_buf(interact_p2p.size(), dev_sched);

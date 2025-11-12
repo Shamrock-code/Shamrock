@@ -53,7 +53,8 @@ namespace shamtree::details {
             return theta_sq < theta_crit * theta_crit;
         }
 
-        inline static shamtree::DTTResult dtt(
+        template<bool allow_leaf_lowering>
+        inline static shamtree::DTTResult dtt_internal(
             sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit,
@@ -129,39 +130,86 @@ namespace shamtree::details {
 
                         if (crit) {
 
-                            u32 child_a_1 = ttrav.get_left_child(a);
-                            u32 child_a_2 = ttrav.get_right_child(a);
-                            u32 child_b_1 = ttrav.get_left_child(b);
-                            u32 child_b_2 = ttrav.get_right_child(b);
+                            if constexpr (allow_leaf_lowering) {
 
-                            bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
-                            bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
-                            bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
-                            bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+                                bool is_a_leaf = ttrav.is_id_leaf(a);
+                                bool is_b_leaf = ttrav.is_id_leaf(b);
 
-                            if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
-                                 || child_b_2_leaf)) {
-                                if (is_a_i_same) {
-                                    count_p2p_i++; // found leaf-leaf interaction so skip child
-                                                   // enqueue
+                                if (is_a_leaf && is_b_leaf) {
+                                    if (is_a_i_same) {
+                                        count_p2p_i++;
+                                    }
+                                    continue;
                                 }
-                                continue;
-                            }
 
-                            bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
-                            bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+                                u32 child_a_1 = (is_a_leaf) ? a : ttrav.get_left_child(a);
+                                u32 child_a_2 = (is_a_leaf) ? a : ttrav.get_right_child(a);
+                                u32 child_b_1 = (is_b_leaf) ? b : ttrav.get_left_child(b);
+                                u32 child_b_2 = (is_b_leaf) ? b : ttrav.get_right_child(b);
 
-                            if (is_a_i_same) {
-                                continue;
-                            }
+                                bool run_a_1 = true;
+                                bool run_a_2 = !is_a_leaf;
+                                bool run_b_1 = true;
+                                bool run_b_2 = !is_b_leaf;
 
-                            if (is_node_i_in_left_a) {
-                                stack.push({child_a_1, child_b_1});
-                                stack.push({child_a_1, child_b_2});
-                            }
-                            if (is_node_i_in_right_a) {
-                                stack.push({child_a_2, child_b_1});
-                                stack.push({child_a_2, child_b_2});
+                                // now since we can re-enqueue the same node we need to escape only
+                                // if the child is enqueued so we replace the is_a_i_same condition
+                                // from the case without lowering by is_a_i_same && (child_a_1 != a)
+                                if (is_a_i_same && (child_a_1 != a)) {
+                                    continue;
+                                }
+
+                                bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                                bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+
+                                run_a_1 = run_a_1 && is_node_i_in_left_a;
+                                run_a_2 = run_a_2 && is_node_i_in_right_a;
+
+                                if (run_a_1 && run_b_1)
+                                    stack.push({child_a_1, child_b_1});
+                                if (run_a_2 && run_b_1)
+                                    stack.push({child_a_2, child_b_1});
+                                if (run_a_1 && run_b_2)
+                                    stack.push({child_a_1, child_b_2});
+                                if (run_a_2 && run_b_2)
+                                    stack.push({child_a_2, child_b_2});
+
+                            } else {
+
+                                u32 child_a_1 = ttrav.get_left_child(a);
+                                u32 child_a_2 = ttrav.get_right_child(a);
+                                u32 child_b_1 = ttrav.get_left_child(b);
+                                u32 child_b_2 = ttrav.get_right_child(b);
+
+                                bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
+                                bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
+                                bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
+                                bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+
+                                if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
+                                     || child_b_2_leaf)) {
+                                    if (is_a_i_same) {
+                                        count_p2p_i++; // found leaf-leaf interaction so skip child
+                                                       // enqueue
+                                    }
+                                    continue;
+                                }
+
+                                bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                                bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+
+                                if (is_a_i_same) {
+                                    continue;
+                                }
+
+                                if (is_node_i_in_left_a) {
+                                    stack.push({child_a_1, child_b_1});
+                                    stack.push({child_a_1, child_b_2});
+                                }
+                                if (is_node_i_in_right_a) {
+                                    stack.push({child_a_2, child_b_1});
+                                    stack.push({child_a_2, child_b_2});
+                                }
                             }
 
                         } else {
@@ -248,39 +296,86 @@ namespace shamtree::details {
 
                         if (crit) {
 
-                            u32 child_a_1 = ttrav.get_left_child(a);
-                            u32 child_a_2 = ttrav.get_right_child(a);
-                            u32 child_b_1 = ttrav.get_left_child(b);
-                            u32 child_b_2 = ttrav.get_right_child(b);
+                            if constexpr (allow_leaf_lowering) {
 
-                            bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
-                            bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
-                            bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
-                            bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+                                bool is_a_leaf = ttrav.is_id_leaf(a);
+                                bool is_b_leaf = ttrav.is_id_leaf(b);
 
-                            if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
-                                 || child_b_2_leaf)) {
-                                if (is_a_i_same) {
-                                    idx_p2p[offset_p2p] = {a, b};
-                                    offset_p2p++;
+                                if (is_a_leaf && is_b_leaf) {
+                                    if (is_a_i_same) {
+                                        idx_p2p[offset_p2p] = {a, b};
+                                        offset_p2p++;
+                                    }
+                                    continue;
                                 }
-                                continue;
-                            }
 
-                            bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
-                            bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+                                u32 child_a_1 = (is_a_leaf) ? a : ttrav.get_left_child(a);
+                                u32 child_a_2 = (is_a_leaf) ? a : ttrav.get_right_child(a);
+                                u32 child_b_1 = (is_b_leaf) ? b : ttrav.get_left_child(b);
+                                u32 child_b_2 = (is_b_leaf) ? b : ttrav.get_right_child(b);
 
-                            if (is_a_i_same) {
-                                continue;
-                            }
+                                bool run_a_1 = true;
+                                bool run_a_2 = !is_a_leaf;
+                                bool run_b_1 = true;
+                                bool run_b_2 = !is_b_leaf;
 
-                            if (is_node_i_in_left_a) {
-                                stack.push({child_a_1, child_b_1});
-                                stack.push({child_a_1, child_b_2});
-                            }
-                            if (is_node_i_in_right_a) {
-                                stack.push({child_a_2, child_b_1});
-                                stack.push({child_a_2, child_b_2});
+                                // now since we can re-enqueue the same node we need to escape only
+                                // if the child is enqueued so we replace the is_a_i_same condition
+                                // from the case without lowering by is_a_i_same && (child_a_1 != a)
+                                if (is_a_i_same && (child_a_1 != a)) {
+                                    continue;
+                                }
+
+                                bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                                bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+
+                                run_a_1 = run_a_1 && is_node_i_in_left_a;
+                                run_a_2 = run_a_2 && is_node_i_in_right_a;
+
+                                if (run_a_1 && run_b_1)
+                                    stack.push({child_a_1, child_b_1});
+                                if (run_a_2 && run_b_1)
+                                    stack.push({child_a_2, child_b_1});
+                                if (run_a_1 && run_b_2)
+                                    stack.push({child_a_1, child_b_2});
+                                if (run_a_2 && run_b_2)
+                                    stack.push({child_a_2, child_b_2});
+
+                            } else {
+                                u32 child_a_1 = ttrav.get_left_child(a);
+                                u32 child_a_2 = ttrav.get_right_child(a);
+                                u32 child_b_1 = ttrav.get_left_child(b);
+                                u32 child_b_2 = ttrav.get_right_child(b);
+
+                                bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
+                                bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
+                                bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
+                                bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+
+                                if ((child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
+                                     || child_b_2_leaf)) {
+                                    if (is_a_i_same) {
+                                        idx_p2p[offset_p2p] = {a, b};
+                                        offset_p2p++;
+                                    }
+                                    continue;
+                                }
+
+                                bool is_node_i_in_left_a  = is_kdnode_within_node(child_a_1);
+                                bool is_node_i_in_right_a = is_kdnode_within_node(child_a_2);
+
+                                if (is_a_i_same) {
+                                    continue;
+                                }
+
+                                if (is_node_i_in_left_a) {
+                                    stack.push({child_a_1, child_b_1});
+                                    stack.push({child_a_1, child_b_2});
+                                }
+                                if (is_node_i_in_right_a) {
+                                    stack.push({child_a_2, child_b_1});
+                                    stack.push({child_a_2, child_b_2});
+                                }
                             }
 
                         } else {
@@ -300,6 +395,19 @@ namespace shamtree::details {
             }
 
             return ret;
+        }
+
+        inline static shamtree::DTTResult dtt(
+            sham::DeviceScheduler_ptr dev_sched,
+            const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
+            shambase::VecComponent<Tvec> theta_crit,
+            bool ordered_result,
+            bool allow_leaf_lowering) {
+            if (allow_leaf_lowering) {
+                return dtt_internal<true>(dev_sched, bvh, theta_crit, ordered_result);
+            } else {
+                return dtt_internal<false>(dev_sched, bvh, theta_crit, ordered_result);
+            }
         }
     };
 

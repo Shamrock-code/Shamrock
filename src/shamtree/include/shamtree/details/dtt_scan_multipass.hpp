@@ -54,7 +54,8 @@ namespace shamtree::details {
             return theta_sq < theta_crit * theta_crit;
         }
 
-        inline static shamtree::DTTResult dtt(
+        template<bool allow_leaf_lowering>
+        inline static shamtree::DTTResult dtt_internal(
             sham::DeviceScheduler_ptr dev_sched,
             const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
             shambase::VecComponent<Tvec> theta_crit,
@@ -89,6 +90,8 @@ namespace shamtree::details {
                     result.ordered_result = std::move(ordering);
                 }
             };
+
+            u32 max_cell_idx = bvh.structure.get_total_cell_count();
 
             if (bvh.is_root_leaf()) {
                 result.node_interactions_p2p.resize(1);
@@ -183,26 +186,68 @@ namespace shamtree::details {
                         if (crit) {
                             auto &ttrav = obj_it.tree_traverser.tree_traverser;
 
-                            u32 child_a_1 = ttrav.get_left_child(a);
-                            u32 child_a_2 = ttrav.get_right_child(a);
-                            u32 child_b_1 = ttrav.get_left_child(b);
-                            u32 child_b_2 = ttrav.get_right_child(b);
+                            if constexpr (allow_leaf_lowering) {
+                                bool is_a_leaf = ttrav.is_id_leaf(a);
+                                bool is_b_leaf = ttrav.is_id_leaf(b);
 
-                            bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
-                            bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
-                            bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
-                            bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+                                if (is_a_leaf && is_b_leaf) {
+                                    pushed_p2p[i]     = {a, b};
+                                    has_pushed_p2p[i] = 1;
+                                } else {
 
-                            if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
-                                || child_b_2_leaf) {
-                                pushed_p2p[i]     = {a, b};
-                                has_pushed_p2p[i] = 1;
+                                    u32 child_a_1 = (is_a_leaf) ? a : ttrav.get_left_child(a);
+                                    u32 child_a_2 = (is_a_leaf) ? a : ttrav.get_right_child(a);
+                                    u32 child_b_1 = (is_b_leaf) ? b : ttrav.get_left_child(b);
+                                    u32 child_b_2 = (is_b_leaf) ? b : ttrav.get_right_child(b);
+
+                                    bool run_a_1 = true;
+                                    bool run_a_2 = !is_a_leaf;
+                                    bool run_b_1 = true;
+                                    bool run_b_2 = !is_b_leaf;
+
+                                    u32 push_count = 0;
+
+                                    if (run_a_1 && run_b_1) {
+                                        task_next[i * 4 + push_count] = {child_a_1, child_b_1};
+                                        push_count++;
+                                    }
+                                    if (run_a_2 && run_b_1) {
+                                        task_next[i * 4 + push_count] = {child_a_2, child_b_1};
+                                        push_count++;
+                                    }
+                                    if (run_a_1 && run_b_2) {
+                                        task_next[i * 4 + push_count] = {child_a_1, child_b_2};
+                                        push_count++;
+                                    }
+                                    if (run_a_2 && run_b_2) {
+                                        task_next[i * 4 + push_count] = {child_a_2, child_b_2};
+                                        push_count++;
+                                    }
+                                    has_pushed_task[i] += push_count;
+                                }
+
                             } else {
-                                task_next[i * 4 + 0] = {child_a_1, child_b_1};
-                                task_next[i * 4 + 1] = {child_a_1, child_b_2};
-                                task_next[i * 4 + 2] = {child_a_2, child_b_1};
-                                task_next[i * 4 + 3] = {child_a_2, child_b_2};
-                                has_pushed_task[i]   = 1;
+                                u32 child_a_1 = ttrav.get_left_child(a);
+                                u32 child_a_2 = ttrav.get_right_child(a);
+                                u32 child_b_1 = ttrav.get_left_child(b);
+                                u32 child_b_2 = ttrav.get_right_child(b);
+
+                                bool child_a_1_leaf = ttrav.is_id_leaf(child_a_1);
+                                bool child_a_2_leaf = ttrav.is_id_leaf(child_a_2);
+                                bool child_b_1_leaf = ttrav.is_id_leaf(child_b_1);
+                                bool child_b_2_leaf = ttrav.is_id_leaf(child_b_2);
+
+                                if (child_a_1_leaf || child_a_2_leaf || child_b_1_leaf
+                                    || child_b_2_leaf) {
+                                    pushed_p2p[i]     = {a, b};
+                                    has_pushed_p2p[i] = 1;
+                                } else {
+                                    task_next[i * 4 + 0] = {child_a_1, child_b_1};
+                                    task_next[i * 4 + 1] = {child_a_1, child_b_2};
+                                    task_next[i * 4 + 2] = {child_a_2, child_b_1};
+                                    task_next[i * 4 + 3] = {child_a_2, child_b_2};
+                                    has_pushed_task[i] += 4;
+                                }
                             }
 
                         } else {
@@ -246,7 +291,7 @@ namespace shamtree::details {
                 result.node_interactions_p2p.expand(count_p2p);
 
                 // allocate space for the next pass
-                task_current.resize(count_task * 4);
+                task_current.resize(count_task);
 
                 // 4 wide stream compaction
                 sham::kernel_call(
@@ -254,19 +299,29 @@ namespace shamtree::details {
                     sham::MultiRef{task_next, scan_task},
                     sham::MultiRef{task_current},
                     task_count,
-                    [](u32 i,
-                       const u32_2 *__restrict__ task_next,
-                       const u32 *__restrict__ scan_task,
-                       u32_2 *__restrict__ task_current) {
+                    [max_cell_idx](
+                        u32 i,
+                        const u32_2 *__restrict__ task_next,
+                        const u32 *__restrict__ scan_task,
+                        u32_2 *__restrict__ task_current) {
                         u32 scan_task_i   = scan_task[i];
                         u32 scan_task_ip1 = scan_task[i + 1];
-                        if (scan_task_ip1 - scan_task_i == 1) {
-                            u32 idx = scan_task_i * 4;
+                        u32 delta         = scan_task_ip1 - scan_task_i;
+                        if (delta > 0) {
+                            u32 idx = scan_task_i;
 
-                            task_current[idx + 0] = task_next[i * 4 + 0];
-                            task_current[idx + 1] = task_next[i * 4 + 1];
-                            task_current[idx + 2] = task_next[i * 4 + 2];
-                            task_current[idx + 3] = task_next[i * 4 + 3];
+                            if constexpr (allow_leaf_lowering) {
+                                for (u32 l = 0; l < delta; l++) {
+                                    SHAM_ASSERT(task_next[i * 4 + l].x() < max_cell_idx);
+                                    SHAM_ASSERT(task_next[i * 4 + l].y() < max_cell_idx);
+                                    task_current[idx + l] = task_next[i * 4 + l];
+                                }
+                            } else {
+                                task_current[idx + 0] = task_next[i * 4 + 0];
+                                task_current[idx + 1] = task_next[i * 4 + 1];
+                                task_current[idx + 2] = task_next[i * 4 + 2];
+                                task_current[idx + 3] = task_next[i * 4 + 3];
+                            }
                         }
                     });
 
@@ -310,6 +365,19 @@ namespace shamtree::details {
             add_ordering();
 
             return result;
+        }
+
+        inline static shamtree::DTTResult dtt(
+            sham::DeviceScheduler_ptr dev_sched,
+            const shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
+            shambase::VecComponent<Tvec> theta_crit,
+            bool ordered_result,
+            bool allow_leaf_lowering) {
+            if (allow_leaf_lowering) {
+                return dtt_internal<true>(dev_sched, bvh, theta_crit, ordered_result);
+            } else {
+                return dtt_internal<false>(dev_sched, bvh, theta_crit, ordered_result);
+            }
         }
     };
 } // namespace shamtree::details

@@ -150,4 +150,5 @@ TestStart(Unittest, "shambackends/math.hpp:max_component", shambackendsmathmax_c
     REQUIRE_EQUAL(sham::max_component(b), 3._f32);
     REQUIRE_EQUAL(sham::max_component(c), 4._f32);
     REQUIRE_EQUAL(sham::max_component(d), 8._f32);
+    REQUIRE_EQUAL(sham::max_component(e), 16._f32);
 }

@@ -8,7 +8,7 @@ WITH_SSCP_COMPILER=Off
 
 if [ "${ACPP_BACKEND}" = "cuda" ]; then
     GPU_TARGET=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
-    ACPP_TARGETS+="cuda:sm_${GPU_TARGET}"
+    ACPP_TARGETS+=";cuda:sm_${GPU_TARGET}"
     LLVM_TARGET="NVPTX"
     GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=/usr/local/cuda"
     WITH_CUDA_BACKEND=On

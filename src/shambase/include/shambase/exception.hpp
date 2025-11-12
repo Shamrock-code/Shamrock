@@ -38,6 +38,9 @@ namespace shambase {
      */
     std::string exception_format(SourceLocation loc);
 
+    /// type of the exception generator callback
+    using exception_gen_callback_t = void (*)(std::string msg);
+
     /**
      * @brief Set the exception generator callback
      *
@@ -47,7 +50,16 @@ namespace shambase {
      *
      * @param callback The callback to set
      */
-    void set_exception_gen_callback(void (*callback)(std::string msg));
+    void set_exception_gen_callback(exception_gen_callback_t callback);
+
+    /**
+     * @brief Get the current exception generator callback
+     *
+     * This function returns the current exception generator callback.
+     *
+     * @return exception_gen_callback_t The current exception generator callback
+     */
+    exception_gen_callback_t get_exception_gen_callback();
 
     /**
      * @brief The callback called when an exception is thrown

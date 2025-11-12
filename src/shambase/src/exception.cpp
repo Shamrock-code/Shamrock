@@ -34,8 +34,10 @@ namespace shambase {
         }
     }
 
-    void set_exception_gen_callback(void (*callback)(std::string msg)) {
+    void set_exception_gen_callback(exception_gen_callback_t callback) {
         exception_print_callback = callback;
     }
+
+    exception_gen_callback_t get_exception_gen_callback() { return exception_print_callback; }
 
 } // namespace shambase

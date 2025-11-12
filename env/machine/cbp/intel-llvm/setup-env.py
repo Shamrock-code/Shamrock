@@ -9,7 +9,7 @@ import utils.sysinfo
 from utils.oscmd import *
 from utils.setuparg import *
 
-NAME = "CBP NVIDIA Machines - Intel LLVM"
+NAME = "CBP Machines - Intel LLVM"
 PATH = "machine/cbp/nvidia/intel-llvm/"
 
 

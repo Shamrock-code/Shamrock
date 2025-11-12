@@ -1,5 +1,25 @@
 # Running on clusters
 
+# CBP
+On CBP machines, whether equipped with AMD or Nvidia GPUs, or without GPUs, Shamrock can be installed using your compiler of choice: either `intel-llvm` or `llvm+acpp`.
+
+To set up the environment, use one of the following commands:
+
+```bash
+# For intel-llvm compiler
+./env/new-env --machine cbp.intel-llvm
+
+# For acpp compiler
+./env/new-env --machine cbp.acpp
+```
+You can specify the build directory with the option `--builddir <build directory>`. By default, a subdirectory named after the selected machine will be created in the current directory.
+
+For the acpp compiler, a generic installation (without architecture targeting) with `sscp` support is possible using the `--backend sscp` flag:
+
+```
+env/new-env --machine cbp.acpp -- --backend sscp
+```
+
 # CBP (AMD GPU)
 
 `git clone https://github.com/intel/llvm.git`

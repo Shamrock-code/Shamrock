@@ -36,8 +36,9 @@ class EnvGen:
                 wrapper_program_args = cmd[1:]
                 underlying_tool_args = []
 
-        builddir = wrapper_program_args.index("--builddir") + 1
-        wrapper_program_args[builddir] = "$BUILD_DIR"
+        if "--builddir" in wrapper_program_args:
+            builddir = wrapper_program_args.index("--builddir") + 1
+            wrapper_program_args[builddir] = "$BUILD_DIR"
 
         cmd = ["$SHAMROCK_DIR/env/new-env"] + wrapper_program_args + ["--"] + underlying_tool_args
         return cmd

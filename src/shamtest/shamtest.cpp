@@ -522,6 +522,8 @@ namespace shamtest {
 
             _start_test_print(test, test_loc_cnt, selected_tests.size());
 
+            [[maybe_unused]] shambase::scoped_exception_gen_callback scoped_callback(nullptr);
+
             mpi::barrier(MPI_COMM_WORLD);
             shambase::Timer timer;
             timer.start();

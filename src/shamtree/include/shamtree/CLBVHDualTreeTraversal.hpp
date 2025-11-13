@@ -41,12 +41,24 @@ namespace shamtree {
         bool is_ordered() const { return ordered_result.has_value(); }
     };
 
+    /**
+     * @brief Perform dual tree traversal on a compressed leaf bounding volume hierarchy
+     * @param dev_sched The device scheduler to use
+     * @param bvh The compressed leaf bounding volume hierarchy to traverse
+     * @param theta_crit The critical theta value for the dual tree traversal
+     * @param ordered_result If true the list of M2L and P2P will be ordered and the offsets will be
+     * provided
+     * @param allow_leaf_lowering If true leaves can be lowered to the next interaction to reduce
+     * the number of P2P interactions
+     * @return The result of the dual tree traversal
+     */
     template<class Tmorton, class Tvec, u32 dim>
     DTTResult clbvh_dual_tree_traversal(
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit,
-        bool ordered_result = false);
+        bool ordered_result      = false,
+        bool allow_leaf_lowering = false);
 
     /// namespace to control implementation behavior
     namespace impl {

@@ -522,8 +522,7 @@ namespace shamtest {
 
             _start_test_print(test, test_loc_cnt, selected_tests.size());
 
-            auto old_callback = shambase::get_exception_gen_callback();
-            shambase::set_exception_gen_callback(nullptr);
+            shambase::scoped_exception_gen_callback scoped_callback(nullptr);
 
             mpi::barrier(MPI_COMM_WORLD);
             shambase::Timer timer;
@@ -531,8 +530,6 @@ namespace shamtest {
             TestResult res = test.run();
             timer.end();
             mpi::barrier(MPI_COMM_WORLD);
-
-            shambase::set_exception_gen_callback(old_callback);
 
             usize gather_bytecount           = 0;
             std::vector<TestResult> gathered = gather_tests({res}, gather_bytecount);

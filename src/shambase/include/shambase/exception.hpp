@@ -72,6 +72,11 @@ namespace shambase {
             set_exception_gen_callback(callback);
         }
         ~scoped_exception_gen_callback() { set_exception_gen_callback(old_callback); }
+
+        scoped_exception_gen_callback(const scoped_exception_gen_callback &)            = delete;
+        scoped_exception_gen_callback &operator=(const scoped_exception_gen_callback &) = delete;
+        scoped_exception_gen_callback(scoped_exception_gen_callback &&)                 = delete;
+        scoped_exception_gen_callback &operator=(scoped_exception_gen_callback &&)      = delete;
     };
 
     /**

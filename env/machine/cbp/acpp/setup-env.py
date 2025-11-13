@@ -1,5 +1,6 @@
 import argparse
 import os
+import subprocess
 
 import utils.acpp
 import utils.amd_arch
@@ -8,8 +9,8 @@ import utils.envscript
 import utils.sysinfo
 from utils.setuparg import *
 
-NAME = "CBP Nvidia DGX A100 AdaptiveCpp (CUDA Backend)"
-PATH = "machine/dgx-cbp/acpp-cuda"
+NAME = "CBP Machines - AdaptiveCpp"
+PATH = "machine/cbp/acpp"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):
@@ -22,6 +23,15 @@ def setup(arg: SetupArg, envgen: EnvGen):
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
+
+    has_cmd = lambda cmd: subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True).returncode == 0
+    if has_cmd("nvidia-smi"):
+        default_backend = "cuda"
+    elif has_cmd("rocm-smi"):
+        default_backend = "rocm"
+    else:
+        default_backend = "x86"
+    parser.add_argument("--backend", type=str, action="store", help="backend to build ACPP with (cuda, sscp, rocm or x86)", default=default_backend)
 
     args = parser.parse_args(argv)
 
@@ -37,6 +47,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
         "MAKE_OPT": f"({gen_opt})",
         "CMAKE_OPT": f"({cmake_extra_args})",
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "ACPP_BACKEND": f"{args.backend}",
     }
 
     envgen.ext_script_list = [

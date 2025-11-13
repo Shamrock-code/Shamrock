@@ -10,7 +10,7 @@ from utils.oscmd import *
 from utils.setuparg import *
 
 NAME = "CBP Machines - Intel LLVM"
-PATH = "machine/cbp/intel-llvm/"
+PATH = "machine/cbp/intel-llvm"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

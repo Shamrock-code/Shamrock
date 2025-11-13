@@ -16,7 +16,7 @@ You can specify the build directory with the option `--builddir <build directory
 
 For the acpp compiler, a generic installation (without architecture targeting) with `sscp` support is possible using the `--backend sscp` flag:
 
-```
+```bash
 env/new-env --machine cbp.acpp -- --backend sscp
 ```
 

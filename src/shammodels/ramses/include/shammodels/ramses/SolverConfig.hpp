@@ -25,6 +25,7 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
@@ -135,6 +136,22 @@ namespace shammodels::basegodunov {
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
     };
 
+    struct BCConfig {
+        using GhostType = shammodels::basegodunov::modules::GhostType;
+
+        GhostType ghost_type_x = GhostType::Periodic;
+        GhostType ghost_type_y = GhostType::Periodic;
+        GhostType ghost_type_z = GhostType::Periodic;
+
+        GhostType get_geometry_x() { return ghost_type_x; }
+        GhostType get_geometry_y() { return ghost_type_y; }
+        GhostType get_geometry_z() { return ghost_type_z; }
+
+        void set_geometry_x(GhostType ghost_type) { ghost_type_x = ghost_type; }
+        void set_geometry_y(GhostType ghost_type) { ghost_type_y = ghost_type; }
+        void set_geometry_z(GhostType ghost_type) { ghost_type_z = ghost_type; }
+    };
+
     template<class Tvec, class TgridVec>
     struct SolverConfig;
 
@@ -188,6 +205,8 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
+
+    BCConfig bc_config{};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gas passive scalars config

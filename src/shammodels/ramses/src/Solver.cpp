@@ -461,9 +461,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         modules::FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
             modules::GhostLayerGenMode{
-                modules::GhostType::Periodic,
-                modules::GhostType::Periodic,
-                modules::GhostType::Periodic});
+                solver_config.bc_config.get_geometry_x(),
+                solver_config.bc_config.get_geometry_y(),
+                solver_config.bc_config.get_geometry_z()});
         find_ghost_layer_candidates.set_edges(
             storage.local_patch_ids,
             storage.sim_box_edge,
@@ -476,9 +476,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         modules::FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
             modules::GhostLayerGenMode{
-                modules::GhostType::Periodic,
-                modules::GhostType::Periodic,
-                modules::GhostType::Periodic});
+                solver_config.bc_config.get_geometry_x(),
+                solver_config.bc_config.get_geometry_y(),
+                solver_config.bc_config.get_geometry_z()});
         find_ghost_layer_indices.set_edges(
             storage.sim_box_edge,
             storage.source_patches,
@@ -516,9 +516,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             auto transform_gz_node = std::make_shared<
                 shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>(
                 modules::GhostLayerGenMode{
-                    modules::GhostType::Periodic,
-                    modules::GhostType::Periodic,
-                    modules::GhostType::Periodic},
+                    solver_config.bc_config.get_geometry_x(),
+                    solver_config.bc_config.get_geometry_y(),
+                    solver_config.bc_config.get_geometry_z()},
                 ghost_layout_ptr);
 
             transform_gz_node->set_edges(

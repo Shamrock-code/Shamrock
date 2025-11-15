@@ -100,7 +100,36 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, bool face_time_interpolate) {
                     self.face_half_time_interpolation = face_time_interpolate;
                 })
-
+            .def(
+                "set_bc_geometry_x_periodic",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_x(modules::GhostType::Periodic);
+                })
+            .def(
+                "set_bc_geometry_y_periodic",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_y(modules::GhostType::Periodic);
+                })
+            .def(
+                "set_bc_geometry_z_periodic",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_z(modules::GhostType::Periodic);
+                })
+            .def(
+                "set_bc_geometry_x_reflective",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_x(modules::GhostType::Reflective);
+                })
+            .def(
+                "set_bc_geometry_y_reflective",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_y(modules::GhostType::Reflective);
+                })
+            .def(
+                "set_bc_geometry_z_reflective",
+                [](TConfig &self) {
+                    self.bc_config.set_geometry_z(modules::GhostType::Reflective);
+                })
             .def(
                 "set_dust_mode_dhll",
                 [](TConfig &self, u32 ndust) {

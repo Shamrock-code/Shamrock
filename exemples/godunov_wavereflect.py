@@ -69,7 +69,7 @@ def rhovel_map(rmin, rmax):
     x, y, z = rmin
     rsq = (x - 0.2) ** 2 + (y - 0.5) ** 2 + (z - 0.5) ** 2
     return (0 + delta_v * np.exp(-rsq / 0.01) * rho, 0, 0)
-    #return (0, 0, 0)  # eturn (0 + delta_v * np.cos(kx * x + ky * y + kz * z) * rho, 0, 0)
+    # return (0, 0, 0)  # eturn (0 + delta_v * np.cos(kx * x + ky * y + kz * z) * rho, 0, 0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
@@ -78,9 +78,9 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 # model.evolve_once(0,0.1)
 tmax = 0.127 * 10
-all_t = np.linspace(0,tmax,100)
+all_t = np.linspace(0, tmax, 100)
 
-for i,t in enumerate(all_t):
+for i, t in enumerate(all_t):
     model.dump_vtk(name + "_" + str(i) + ".vtk")
     model.evolve_until(t)
 

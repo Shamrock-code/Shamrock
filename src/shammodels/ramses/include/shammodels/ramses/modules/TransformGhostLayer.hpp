@@ -40,7 +40,8 @@ namespace shammodels::basegodunov::modules {
             bool transform_vec_y,
             bool transform_vec_z,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layer_layout)
-            : mode(mode), transform_vec_x(transform_vec_x), transform_vec_y(transform_vec_y), transform_vec_z(transform_vec_z), ghost_layer_layout(ghost_layer_layout) {}
+            : mode(mode), transform_vec_x(transform_vec_x), transform_vec_y(transform_vec_y),
+              transform_vec_z(transform_vec_z), ghost_layer_layout(ghost_layer_layout) {}
 
         struct Edges {
             // inputs

@@ -526,7 +526,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         {
             auto transform_gz_node = std::make_shared<
                 shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>(
-                ghost_layer_gen_mode, transform_vec_x, transform_vec_y, transform_vec_z, ghost_layout_ptr);
+                ghost_layer_gen_mode,
+                transform_vec_x,
+                transform_vec_y,
+                transform_vec_z,
+                ghost_layout_ptr);
 
             transform_gz_node->set_edges(
                 storage.sim_box_edge,

@@ -137,11 +137,7 @@ namespace shammodels::basegodunov {
     };
 
     struct BCConfig {
-        enum class GhostType {
-            Periodic = 0,
-            Reflective = 1,
-            Outflow = 2
-        };
+        enum class GhostType { Periodic = 0, Reflective = 1, Outflow = 2 };
 
         GhostType ghost_type_x = GhostType::Periodic;
         GhostType ghost_type_y = GhostType::Periodic;

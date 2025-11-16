@@ -666,6 +666,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         case BCConfig::GhostType::Periodic  : return modules::GhostType::Periodic;
         case BCConfig::GhostType::Reflective: return modules::GhostType::Reflective;
         case BCConfig::GhostType::Outflow   : return modules::GhostType::Reflective;
+        default:
+            shambase::throw_with_loc<std::runtime_error>(
+                "Unsupported ghost type: " + std::to_string(static_cast<int>(ghost_type)));
         }
     };
 

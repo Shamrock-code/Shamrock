@@ -210,8 +210,7 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
                     sham::MultiRef{buf},
                     field.get_obj_cnt() * field.get_nvar(),
                     [mul_compo_vec](u32 i, Tvec *__restrict vec) {
-                        using pteztet = sycl::vec<f64, dim>;
-                        vec[i]        = vec[i] * mul_compo_vec;
+                        vec[i] = vec[i] * mul_compo_vec;
                     });
             } else if constexpr (std::is_same_v<T, TgridVec>) {
             } else if constexpr (std::is_same_v<T, Tscal>) {

@@ -457,13 +457,28 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     solver_sequence.push_back(graph.get_node_ptr_base("set_sptree"));
 
+    auto cfg_bc_to_geom = [](BCConfig::GhostType ghost_type) {
+        switch (ghost_type) {
+        case BCConfig::GhostType::Periodic  : return modules::GhostType::Periodic;
+        case BCConfig::GhostType::Reflective: return modules::GhostType::Reflective;
+        case BCConfig::GhostType::Outflow   : return modules::GhostType::Reflective;
+        }
+    };
+
+    modules::GhostLayerGenMode ghost_layer_gen_mode{
+        cfg_bc_to_geom(solver_config.bc_config.get_x()),
+        cfg_bc_to_geom(solver_config.bc_config.get_y()),
+        cfg_bc_to_geom(solver_config.bc_config.get_z())};
+
+    // if outflow we want zero gradient so we skip the vector transformation in TransformGhostLayer
+    bool transform_vec_x = solver_config.bc_config.get_x() != BCConfig::GhostType::Outflow;
+    bool transform_vec_y = solver_config.bc_config.get_y() != BCConfig::GhostType::Outflow;
+    bool transform_vec_z = solver_config.bc_config.get_z() != BCConfig::GhostType::Outflow;
+
     { // Ghost zone finder
 
         modules::FindGhostLayerCandidates<TgridVec> find_ghost_layer_candidates(
-            modules::GhostLayerGenMode{
-                solver_config.bc_config.get_geometry_x(),
-                solver_config.bc_config.get_geometry_y(),
-                solver_config.bc_config.get_geometry_z()});
+            ghost_layer_gen_mode);
         find_ghost_layer_candidates.set_edges(
             storage.local_patch_ids,
             storage.sim_box_edge,
@@ -474,11 +489,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             std::make_shared<decltype(find_ghost_layer_candidates)>(
                 std::move(find_ghost_layer_candidates)));
 
-        modules::FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(
-            modules::GhostLayerGenMode{
-                solver_config.bc_config.get_geometry_x(),
-                solver_config.bc_config.get_geometry_y(),
-                solver_config.bc_config.get_geometry_z()});
+        modules::FindGhostLayerIndices<TgridVec> find_ghost_layer_indices(ghost_layer_gen_mode);
         find_ghost_layer_indices.set_edges(
             storage.sim_box_edge,
             storage.source_patches,
@@ -515,11 +526,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         {
             auto transform_gz_node = std::make_shared<
                 shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>>(
-                modules::GhostLayerGenMode{
-                    solver_config.bc_config.get_geometry_x(),
-                    solver_config.bc_config.get_geometry_y(),
-                    solver_config.bc_config.get_geometry_z()},
-                ghost_layout_ptr);
+                ghost_layer_gen_mode, transform_vec_x, transform_vec_y, transform_vec_z, ghost_layout_ptr);
 
             transform_gz_node->set_edges(
                 storage.sim_box_edge,

@@ -101,35 +101,32 @@ namespace shammodels::basegodunov {
                     self.face_half_time_interpolation = face_time_interpolate;
                 })
             .def(
-                "set_bc_geometry_x_periodic",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_x(modules::GhostType::Periodic);
-                })
-            .def(
-                "set_bc_geometry_y_periodic",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_y(modules::GhostType::Periodic);
-                })
-            .def(
-                "set_bc_geometry_z_periodic",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_z(modules::GhostType::Periodic);
-                })
-            .def(
-                "set_bc_geometry_x_reflective",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_x(modules::GhostType::Reflective);
-                })
-            .def(
-                "set_bc_geometry_y_reflective",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_y(modules::GhostType::Reflective);
-                })
-            .def(
-                "set_bc_geometry_z_reflective",
-                [](TConfig &self) {
-                    self.bc_config.set_geometry_z(modules::GhostType::Reflective);
-                })
+                "set_boundary_condition",
+                [](TConfig &self, const std::string &axis, const std::string &bc_type) {
+                    BCConfig::GhostType ghost_type;
+                    if (bc_type == "periodic") {
+                        ghost_type = BCConfig::GhostType::Periodic;
+                    } else if (bc_type == "reflective") {
+                        ghost_type = BCConfig::GhostType::Reflective;
+                    } else if (bc_type == "outflow") {
+                        ghost_type = BCConfig::GhostType::Outflow;
+                    } else {
+                        throw std::invalid_argument(
+                            "Unsupported boundary condition type: " + bc_type);
+                    }
+
+                    if (axis == "x") {
+                        self.bc_config.set_x(ghost_type);
+                    } else if (axis == "y") {
+                        self.bc_config.set_y(ghost_type);
+                    } else if (axis == "z") {
+                        self.bc_config.set_z(ghost_type);
+                    } else {
+                        throw std::invalid_argument("Unsupported axis: " + axis);
+                    }
+                },
+                py::arg("axis"),
+                py::arg("bc_type"))
             .def(
                 "set_dust_mode_dhll",
                 [](TConfig &self, u32 ndust) {

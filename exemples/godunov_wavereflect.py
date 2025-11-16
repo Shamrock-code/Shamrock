@@ -21,11 +21,13 @@ base = 32
 cfg = model.gen_default_config()
 scale_fact = 1 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
-cfg.set_bc_geometry_x_reflective()
-cfg.set_bc_geometry_y_reflective()
-cfg.set_bc_geometry_z_periodic()
+cfg.set_boundary_condition("x", "reflective")
+cfg.set_boundary_condition("y", "reflective")
+cfg.set_boundary_condition("z", "reflective")
 cfg.set_eos_gamma(5.0 / 3.0)
 model.set_solver_config(cfg)
+
+name = "test_reflective"
 
 
 model.init_scheduler(int(1e7), 1)
@@ -56,7 +58,8 @@ def rhoetot_map(rmin, rmax):
     rsq = (x - 0.5) ** 2 + (y - 0.5) ** 2 + (z - 0.5) ** 2
     # return x
     # return (u_cs1 + u_cs1 * delta_rho * np.cos(kx * x + ky * y + kz * z)) * rho
-    return u_cs1 + 0.001 * np.exp(-rsq / 0.01)
+    # return u_cs1 + 0.001 * np.exp(-rsq / 0.01)
+    return u_cs1
 
 
 def rhovel_map(rmin, rmax):
@@ -64,7 +67,9 @@ def rhovel_map(rmin, rmax):
     rho = rho_map(rmin, rmax)
 
     x, y, z = rmin
-    return (0, 0, 0)  # eturn (0 + delta_v * np.cos(kx * x + ky * y + kz * z) * rho, 0, 0)
+    rsq = (x - 0.2) ** 2 + (y - 0.5) ** 2 + (z - 0.5) ** 2
+    return (0 + delta_v * np.exp(-rsq / 0.01) * rho, 0, 0)
+    #return (0, 0, 0)  # eturn (0 + delta_v * np.cos(kx * x + ky * y + kz * z) * rho, 0, 0)
 
 
 model.set_field_value_lambda_f64("rho", rho_map)
@@ -73,22 +78,11 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 # model.evolve_once(0,0.1)
 tmax = 0.127 * 10
-dt = 1 / 1024
-t = 0
+all_t = np.linspace(0,tmax,100)
 
-freq = 16
-
-
-for i in range(10000):
-
-    if i % freq == 0:
-        model.dump_vtk("test" + str(i // freq) + ".vtk")
-
-    model.evolve_once_override_time(t, dt)
-    t += dt
-
-    if t >= tmax:
-        break
+for i,t in enumerate(all_t):
+    model.dump_vtk(name + "_" + str(i) + ".vtk")
+    model.evolve_until(t)
 
 
 def convert_to_cell_coords(dic):

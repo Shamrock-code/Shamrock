@@ -137,20 +137,23 @@ namespace shammodels::basegodunov {
     };
 
     struct BCConfig {
-        using GhostType = shammodels::basegodunov::modules::GhostType;
+        enum class GhostType {
+            Periodic = 0,
+            Reflective = 1,
+            Outflow = 2
+        };
 
         GhostType ghost_type_x = GhostType::Periodic;
         GhostType ghost_type_y = GhostType::Periodic;
         GhostType ghost_type_z = GhostType::Periodic;
 
-        GhostType get_geometry_x() const { return ghost_type_x; }
-        GhostType get_geometry_y() const { return ghost_type_y; }
-        GhostType get_geometry_z() const { return ghost_type_z; }
+        GhostType get_x() const { return ghost_type_x; }
+        GhostType get_y() const { return ghost_type_y; }
+        GhostType get_z() const { return ghost_type_z; }
 
-
-        void set_geometry_x(GhostType ghost_type) { ghost_type_x = ghost_type; }
-        void set_geometry_y(GhostType ghost_type) { ghost_type_y = ghost_type; }
-        void set_geometry_z(GhostType ghost_type) { ghost_type_z = ghost_type; }
+        void set_x(GhostType ghost_type) { ghost_type_x = ghost_type; }
+        void set_y(GhostType ghost_type) { ghost_type_y = ghost_type; }
+        void set_z(GhostType ghost_type) { ghost_type_z = ghost_type; }
     };
 
     template<class Tvec, class TgridVec>

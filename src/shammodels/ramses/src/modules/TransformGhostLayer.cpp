@@ -200,14 +200,6 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
 
         auto mul_compo_vec = get_termwise_mul_vec().template convert<Tscal>();
 
-        logger::raw_ln("tranform_x: ", transform_vec_x);
-        logger::raw_ln("tranform_y: ", transform_vec_y);
-        logger::raw_ln("tranform_z: ", transform_vec_z);
-        logger::raw_ln("xoff: ", xoff);
-        logger::raw_ln("yoff: ", yoff);
-        logger::raw_ln("zoff: ", zoff);
-        logger::raw_ln("mul_compo_vec: ", mul_compo_vec);
-
         auto transform_vecs = [&](auto &field) {
             using T = typename std::decay_t<decltype(field)>::Field_type;
             if constexpr (std::is_same_v<T, Tvec>) {
@@ -216,7 +208,7 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
                     q,
                     sham::MultiRef{},
                     sham::MultiRef{buf},
-                    field.get_obj_cnt(),
+                    field.get_obj_cnt() * field.get_nvar(),
                     [mul_compo_vec](u32 i, Tvec *__restrict vec) {
                         using pteztet = sycl::vec<f64, dim>;
                         vec[i]        = vec[i] * mul_compo_vec;

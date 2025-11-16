@@ -60,6 +60,210 @@
 #include <memory>
 
 template<class Tvec, class TgridVec>
+class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
+    bool write_id_patch;
+    bool write_world_rank;
+    using Tscal = shambase::VecComponent<Tvec>;
+    u32 block_size;
+
+    public:
+    PatchDataLayerToVtk(bool write_id_patch, bool write_world_rank, u32 block_size)
+        : write_id_patch(write_id_patch), write_world_rank(write_world_rank),
+          block_size(block_size) {}
+
+    struct Edges {
+        // inputs
+        const shamrock::solvergraph::IDataEdge<std::string> &filename;
+        const shamrock::solvergraph::IPatchDataLayerRefs &patch_data_layers;
+    };
+
+    inline void set_edges(
+        std::shared_ptr<shamrock::solvergraph::IDataEdge<std::string>> filename,
+        std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> patch_data_layers) {
+        __internal_set_ro_edges({filename, patch_data_layers});
+        __internal_set_rw_edges({});
+    }
+
+    inline Edges get_edges() {
+        return Edges{
+            get_ro_edge<shamrock::solvergraph::IDataEdge<std::string>>(0),
+            get_ro_edge<shamrock::solvergraph::IPatchDataLayerRefs>(1),
+        };
+    }
+
+    void _impl_evaluate_internal() {
+        __shamrock_stack_entry();
+
+        auto edges = get_edges();
+
+        auto &filename          = edges.filename;
+        auto &patch_data_layers = edges.patch_data_layers;
+
+        // Compute the number of fields to generate
+        auto get_field_count = [&]() {
+            u32 field_count = 0;
+
+            {
+                u64 id_patch = patch_data_layers.get_const_refs().get_ids().front();
+                auto &pdat   = patch_data_layers.get(id_patch);
+
+                pdat.for_each_field_any([&](auto &field) {
+                    field_count++;
+                });
+            }
+
+            if (write_id_patch) {
+                field_count++;
+            }
+            if (write_world_rank) {
+                field_count++;
+            }
+
+            return field_count - 2; // to remove the block infos
+        };
+
+        auto get_layout = [&]() -> const shamrock::patch::PatchDataLayerLayout & {
+            u64 id_patch = patch_data_layers.get_const_refs().get_ids().front();
+            const shamrock::patch::PatchDataLayer &pdat = patch_data_layers.get(id_patch);
+            return pdat.pdl();
+        };
+
+        shamrock::LegacyVtkWritter writer(filename.data, true, shamrock::UnstructuredGrid);
+
+        u32 field_count = get_field_count();
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q        = shambase::get_check_ref(dev_sched).get_queue();
+
+        sham::DeviceBuffer<TgridVec> pos_min_block(0, dev_sched);
+        sham::DeviceBuffer<TgridVec> pos_max_block(0, dev_sched);
+
+        patch_data_layers.get_const_refs().for_each(
+            [&](u64 id_patch, const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
+                auto &pdat_ref    = pdat.get();
+                auto &buf_pos_min = pdat_ref.get_field_buf_ref<TgridVec>(0);
+                auto &buf_pos_max = pdat_ref.get_field_buf_ref<TgridVec>(1);
+                pos_min_block.append(buf_pos_min);
+                pos_max_block.append(buf_pos_max);
+            });
+
+        u64 num_obj = pos_min_block.get_size();
+
+        sham::DeviceBuffer<Tvec> pos_max_cell(num_obj * block_size, dev_sched);
+        sham::DeviceBuffer<Tvec> pos_min_cell(num_obj * block_size, dev_sched);
+
+        if (num_obj > 0) {
+
+            using Block = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
+
+            if (Block::block_size != block_size) {
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    "block_size mismatch, got {} expected {}", Block::block_size, block_size));
+            }
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{pos_min_block, pos_max_block},
+                sham::MultiRef{pos_min_cell, pos_max_cell},
+                num_obj,
+                [](u32 id_a,
+                   const TgridVec *__restrict ptr_block_min,
+                   const TgridVec *__restrict ptr_block_max,
+                   Tvec *cell_min,
+                   Tvec *cell_max) {
+                    Tvec block_min = ptr_block_min[id_a].template convert<Tscal>();
+                    Tvec block_max = ptr_block_max[id_a].template convert<Tscal>();
+
+                    Tvec delta_cell = (block_max - block_min) / Block::side_size;
+                    for (u32 ix = 0; ix < Block::side_size; ix++) {
+                        for (u32 iy = 0; iy < Block::side_size; iy++) {
+                            for (u32 iz = 0; iz < Block::side_size; iz++) {
+                                u32 i          = Block::get_index({ix, iy, iz});
+                                Tvec delta_val = delta_cell * Tvec{ix, iy, iz};
+                                cell_min[id_a * Block::block_size + i] = block_min + delta_val;
+                                cell_max[id_a * Block::block_size + i]
+                                    = block_min + (delta_cell) + delta_val;
+                            }
+                        }
+                    }
+                });
+        }
+
+        auto pos_min_cell_buf = pos_min_cell.copy_to_sycl_buffer();
+        auto pos_max_cell_buf = pos_max_cell.copy_to_sycl_buffer();
+        writer.write_voxel_cells(pos_min_cell_buf, pos_max_cell_buf, num_obj * block_size);
+
+        writer.add_cell_data_section();
+        writer.add_field_data_section(field_count);
+
+        const shamrock::patch::PatchDataLayerLayout &layout = get_layout();
+
+        layout.for_each_field_any([&](auto &field_desc) {
+            using f_t = typename std::remove_reference<decltype(field_desc)>::type::field_T;
+            u32 nvar  = field_desc.nvar;
+            std::string field_name = field_desc.name;
+
+            u32 idx = layout.get_field_idx<f_t>(field_name);
+
+            if (nvar == 1) {
+                // this the block info and i'll skip it for now
+            } else if (nvar != block_size) {
+                shambase::throw_unimplemented();
+            } else {
+                sham::DeviceBuffer<f_t> data(0, dev_sched);
+
+                patch_data_layers.get_const_refs().for_each(
+                    [&](u64 id_patch,
+                        const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
+                        auto &pdat_ref  = pdat.get();
+                        auto &buf_field = pdat_ref.get_field_buf_ref<f_t>(idx);
+                        data.append(buf_field);
+                    });
+
+                auto tmp_buf = data.copy_to_sycl_buffer();
+                writer.write_field(field_name, tmp_buf, num_obj * block_size);
+            }
+        });
+
+        if (write_id_patch) {
+            using f_t = u32;
+            sham::DeviceBuffer<f_t> data(0, dev_sched);
+
+            patch_data_layers.get_const_refs().for_each(
+                [&](u64 id_patch,
+                    const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
+                    auto buf_field
+                        = sham::DeviceBuffer<f_t>(pdat.get().get_obj_cnt() * block_size, dev_sched);
+                    buf_field.fill(id_patch);
+                    data.append(buf_field);
+                });
+
+            auto tmp_buf = data.copy_to_sycl_buffer();
+            writer.write_field("id_patch", tmp_buf, num_obj * block_size);
+        }
+        if (write_world_rank) {
+            using f_t = u32;
+            sham::DeviceBuffer<f_t> data(0, dev_sched);
+
+            patch_data_layers.get_const_refs().for_each(
+                [&](u64 id_patch,
+                    const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
+                    auto buf_field
+                        = sham::DeviceBuffer<f_t>(pdat.get().get_obj_cnt() * block_size, dev_sched);
+                    buf_field.fill(shamcomm::world_rank());
+                    data.append(buf_field);
+                });
+            auto tmp_buf = data.copy_to_sycl_buffer();
+            writer.write_field("world_rank", tmp_buf, num_obj * block_size);
+        }
+    }
+
+    std::string _impl_get_label() { return "PatchDataLayerToVtk"; }
+
+    std::string _impl_get_tex() { return "TODO"; }
+};
+
+template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     bool enable_mem_free = false;
@@ -551,6 +755,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 = std::make_shared<shammodels::basegodunov::modules::FuseGhostLayer>();
             fuse_gz_node->set_edges(storage.exchange_gz_edge, storage.merged_patchdata_ghost);
             gz_xchg_sequence.push_back(std::move(fuse_gz_node));
+        }
+
+        {
+            auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
+                "debug_fuse.vtk", "debug_fuse.vtk");
+            filename_edge->data = "debug_fuse.vtk";
+
+            auto patch_data_layer_to_vtk_node
+                = std::make_shared<PatchDataLayerToVtk<Tvec, TgridVec>>(true, true, 8);
+            patch_data_layer_to_vtk_node->set_edges(filename_edge, storage.merged_patchdata_ghost);
+            gz_xchg_sequence.push_back(std::move(patch_data_layer_to_vtk_node));
         }
 
         shamrock::solvergraph::OperationSequence seq(

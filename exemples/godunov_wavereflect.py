@@ -21,13 +21,13 @@ base = 32
 cfg = model.gen_default_config()
 scale_fact = 1 / (sz * base * multx)
 cfg.set_scale_factor(scale_fact)
-cfg.set_boundary_condition("x", "reflective")
-cfg.set_boundary_condition("y", "reflective")
-cfg.set_boundary_condition("z", "reflective")
+cfg.set_boundary_condition("x", "periodic")
+cfg.set_boundary_condition("y", "periodic")
+cfg.set_boundary_condition("z", "periodic")
 cfg.set_eos_gamma(5.0 / 3.0)
 model.set_solver_config(cfg)
 
-name = "test_reflective"
+name = "test_periodic"
 
 
 model.init_scheduler(int(1e7), 1)

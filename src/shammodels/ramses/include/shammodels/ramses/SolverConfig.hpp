@@ -25,10 +25,8 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
-#include "shammodels/ramses/modules/FindGhostLayerCandidates.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
-#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <stdexcept>

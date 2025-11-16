@@ -757,16 +757,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             gz_xchg_sequence.push_back(std::move(fuse_gz_node));
         }
 
-        {
-            auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
-                "debug_fuse.vtk", "debug_fuse.vtk");
-            filename_edge->data = "debug_fuse.vtk";
-
-            auto patch_data_layer_to_vtk_node
-                = std::make_shared<PatchDataLayerToVtk<Tvec, TgridVec>>(true, true, 8);
-            patch_data_layer_to_vtk_node->set_edges(filename_edge, storage.merged_patchdata_ghost);
-            gz_xchg_sequence.push_back(std::move(patch_data_layer_to_vtk_node));
-        }
+        // enable this to debug GZ
+        //{
+        //    auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
+        //        "debug_fuse.vtk", "debug_fuse.vtk");
+        //    filename_edge->data = "debug_fuse.vtk";
+        //
+        //    auto patch_data_layer_to_vtk_node
+        //        = std::make_shared<PatchDataLayerToVtk<Tvec, TgridVec>>(true, true, 8);
+        //    patch_data_layer_to_vtk_node->set_edges(filename_edge,
+        //    storage.merged_patchdata_ghost);
+        //    gz_xchg_sequence.push_back(std::move(patch_data_layer_to_vtk_node));
+        //}
 
         shamrock::solvergraph::OperationSequence seq(
             "Ghost zone exchange", std::move(gz_xchg_sequence));

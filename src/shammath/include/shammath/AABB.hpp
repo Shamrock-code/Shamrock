@@ -198,6 +198,10 @@ namespace shammath {
                    && sham::vec_compare_geq(upper, other.upper);
         }
 
+        inline bool contains_asymmetric(T point) const noexcept {
+            return sham::vec_compare_leq(lower, point) && sham::vec_compare_g(upper, point);
+        }
+
         /**
          * @brief Checks if the AABB is non-empty.
          *

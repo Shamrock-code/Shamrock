@@ -316,7 +316,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
-               Tscal disc_mass,
+               Tscal tot_mass,
                Tscal r_in,
                Tscal r_out,
                std::function<Tscal(Tscal)> sigma_profile,
@@ -327,7 +327,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal init_h_factor) {
                 return self.make_generator_disc_mc(
                     part_mass,
-                    disc_mass,
+                    tot_mass,
                     r_in,
                     r_out,
                     sigma_profile,
@@ -348,6 +348,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cs_profile"),
             py::arg("random_seed"),
             py::arg("init_h_factor") = 0.8)
+        // .def(
+        //     "stretchmap",
+        //     [](TSPHSetup &self,
+        //        Tscal part_mass,
+        //        Tscal disc_mass,
+        //        Tscal r_in,
+        //        Tscal r_out,
+        //        std::function<Tscal(Tscal)> rho_profile,
+        //        Tscal init_h_factor) {
+        //         return self.stretchmap(
+        //             part_mass, disc_mass, r_in, r_out, rho_profile, init_h_factor);
+        //     },
+        //     py::kw_only(),
+        //     py::arg("part_mass"),
+        //     py::arg("disc_mass"),
+        //     py::arg("r_in"),
+        //     py::arg("r_out"),
+        //     py::arg("rho_profile"),
+        //     py::arg("init_h_factor") = 0.8)
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,

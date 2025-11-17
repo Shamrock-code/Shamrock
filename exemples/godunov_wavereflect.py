@@ -77,12 +77,79 @@ model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 # model.evolve_once(0,0.1)
-tmax = 0.127 * 10
-all_t = np.linspace(0, tmax, 100)
+tmax = 0.127 * 1
+all_t = np.linspace(0, tmax, 10)
 
 for i, t in enumerate(all_t):
     model.dump_vtk(name + "_" + str(i) + ".vtk")
     model.evolve_until(t)
+
+
+def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
+    """
+    Generate a list of positions in cylindrical coordinates (r, theta)
+    spanning [0, ext*2] x [-pi, pi] for use with the rendering module.
+
+    Returns:
+        list: List of [x, y, z] coordinate lists
+    """
+
+    # Create the cylindrical coordinate grid
+    x_vals = np.linspace(min_x, max_x, nx)
+    y_vals = np.linspace(min_y, max_y, ny)
+
+    # Create meshgrid
+    x_grid, y_grid = np.meshgrid(x_vals, y_vals)
+
+    # Convert to Cartesian coordinates (z = 0 for a disc in the xy-plane)
+    z_grid = z_val * np.ones_like(x_grid)
+
+    # Flatten and stack to create list of positions
+    positions = np.column_stack([x_grid.ravel(), y_grid.ravel(), z_grid.ravel()])
+
+    return [tuple(pos) for pos in positions]
+
+
+nx, ny = 512, 512
+positions = make_cartesian_coords(nx, ny, 0.5, 0, 1 - 1e-6, 0, 1 - 1e-6)
+arr_rho_pos = model.render_slice("rho", "f64", positions)
+
+import matplotlib
+
+
+def plot_rho_slice_cylindrical(metadata, arr_rho_pos):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_rho_pos = np.array(arr_rho_pos).reshape(nx, ny)
+
+    ampl = 3e-5
+
+    res = plt.imshow(
+        arr_rho_pos,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        vmin=1 - ampl,
+        vmax=1 + ampl,
+        aspect="auto",
+    )
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\rho$ [code unit]")
+
+
+dpi = 200
+metadata = {"extent": [0, 1, 0, 1], "time": tmax}
+
+plt.figure(dpi=dpi)
+plot_rho_slice_cylindrical(metadata, arr_rho_pos)
+
+plt.show()
 
 
 def convert_to_cell_coords(dic):

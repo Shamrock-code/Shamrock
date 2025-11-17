@@ -22,7 +22,9 @@
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
+#include "shammodels/ramses/modules/render/GridRender.hpp"
 #include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 #include <memory>
 
 namespace shammodels::basegodunov {
@@ -302,9 +304,30 @@ namespace shammodels::basegodunov {
                 [](T &self) {
                     return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
                 })
-            .def("get_solver_dot_graph", [](T &self) {
-                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
-            });
+            .def(
+                "get_solver_dot_graph",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence)
+                        .get_dot_graph();
+                })
+            .def(
+                "render_slice",
+                [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+                    -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                    if (field_type == "f64") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    if (field_type == "f64_3") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64_3> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+                });
     }
 } // namespace shammodels::basegodunov
 

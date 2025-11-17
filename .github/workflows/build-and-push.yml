@@ -35,7 +35,7 @@ jobs:
 
   build-and-push:
     name: ${{ inputs.imagename }}:${{ inputs.imagetag }}
-    runs-on: ${{ inputs.runson }}
+    runs-on: ${{ fromJSON(inputs.runson) }}
     permissions:
       contents: read
       packages: write

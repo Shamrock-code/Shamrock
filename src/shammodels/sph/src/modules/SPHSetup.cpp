@@ -69,6 +69,19 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         init_h_factor));
 }
 
+// template<class Tvec, template<class> class SPHKernel>
+// inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+//     SPHSetup<Tvec, SPHKernel>::stretchmap(
+//         Tscal part_mass,
+//         Tscal tot_mass,
+//         Tscal r_in,
+//         Tscal r_out,
+//         std::function<Tscal(Tscal)> rho_profile,
+//         Tscal init_h_factor) {
+//     return std::shared_ptr<ISPHSetupNode>(new GeneratorStrechMap<Tvec, SPHKernel>(
+//         context, solver_config, part_mass, tot_mass, r_in, r_out, rho_profile, init_h_factor));
+// }
+
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
     SPHSetup<Tvec, SPHKernel>::make_combiner_add(SetupNodePtr parent1, SetupNodePtr parent2) {

@@ -64,6 +64,14 @@ namespace shammodels::sph::modules {
             std::mt19937 eng,
             Tscal init_h_factor);
 
+        // std::shared_ptr<ISPHSetupNode> stretchmap(
+        //     Tscal part_mass,
+        //     Tscal tot_mass,
+        //     Tscal r_in,
+        //     Tscal r_out,
+        //     std::function<Tscal(Tscal)> rho_profile,
+        //     Tscal init_h_factor);
+
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);
 

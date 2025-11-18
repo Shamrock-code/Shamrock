@@ -1,6 +1,6 @@
 """
-Boundary conditions for linear wave propagation
-=======================================================
+Kelvin-Helmholtz instability in RAMSES solver
+=============================================
 
 """
 
@@ -27,11 +27,10 @@ if not shamrock.sys.is_initialized():
 # plot
 nx, ny = 512, 512
 
-
+# Physical parameters
 vslip = 1  # slip speed between the two layers
 
 rho_1 = 1
-
 fact = 2 / 3
 rho_2 = rho_1 / (fact**3)
 
@@ -41,6 +40,8 @@ xs = 1
 P_1 = 3.5
 P_2 = 3.5
 
+gamma = 5.0 / 3.0
+
 # resolution
 multx = 1
 multy = 1
@@ -49,14 +50,13 @@ multz = 1
 sz = 1 << 1
 base = 32
 
+sim_folder = "_to_trash/ramses_kh/"
 
-gamma = 5.0 / 3.0
+# %%
+# Deduced quantities
 
 # grid int coords to [0,1]^3
 scale_fact = 1 / (sz * base * multx)
-
-sim_folder = "_to_trash/ramses_kh/"
-
 
 u_1 = P_1 / ((gamma - 1) * rho_1)
 u_2 = P_2 / ((gamma - 1) * rho_2)
@@ -192,7 +192,7 @@ def run_case(set_bc_func, case_name):
     set_bc_func(cfg)
 
     # cfg.set_riemann_solver_rusanov()
-    cfg.set_riemann_solver_hll()
+    # cfg.set_riemann_solver_hll()
     cfg.set_riemann_solver_hllc()
 
     # cfg.set_slope_lim_none()
@@ -200,8 +200,8 @@ def run_case(set_bc_func, case_name):
     # cfg.set_slope_lim_vanleer_std()
     # cfg.set_slope_lim_vanleer_sym()
 
-    mass_crit = 0.00010299682617187501 / 2
-    cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+    # mass_crit = 0.00010299682617187501 / 2
+    # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
     cfg.set_slope_lim_minmod()
     cfg.set_face_time_interpolation(True)
     cfg.set_eos_gamma(gamma)
@@ -305,8 +305,7 @@ def run_case(set_bc_func, case_name):
 
 
 # %%
-# Periodic boundary conditions
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# Run the actual simulation with periodic boundary conditions
 
 
 def run_case_periodic():

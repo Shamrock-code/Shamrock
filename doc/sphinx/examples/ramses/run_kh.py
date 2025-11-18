@@ -78,13 +78,6 @@ if shamrock.sys.world_rank() == 0:
 
 
 def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
-    """
-    Generate a list of positions in cylindrical coordinates (r, theta)
-    spanning [0, ext*2] x [-pi, pi] for use with the rendering module.
-
-    Returns:
-        list: List of [x, y, z] coordinate lists
-    """
 
     # Create the cylindrical coordinate grid
     x_vals = np.linspace(min_x, max_x, nx)

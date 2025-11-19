@@ -12,6 +12,7 @@
 /**
  * @file GeneratorLatticeHCP.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author David Fang (david.fang@ikmail.com)
  * @brief
  *
  */

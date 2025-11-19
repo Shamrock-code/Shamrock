@@ -13,6 +13,7 @@
  * @file SPHSetup.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author David Fang (david.fang@ikmail.com)
  * @brief
  *
  */
@@ -64,13 +65,8 @@ namespace shammodels::sph::modules {
             std::mt19937 eng,
             Tscal init_h_factor);
 
-        // std::shared_ptr<ISPHSetupNode> stretchmap(
-        //     Tscal part_mass,
-        //     Tscal tot_mass,
-        //     Tscal r_in,
-        //     Tscal r_out,
-        //     std::function<Tscal(Tscal)> rho_profile,
-        //     Tscal init_h_factor);
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp_stretched(
+            Tscal dr, std::pair<Tvec, Tvec> box, std::function<Tscal(Tscal)> rho_profile);
 
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);

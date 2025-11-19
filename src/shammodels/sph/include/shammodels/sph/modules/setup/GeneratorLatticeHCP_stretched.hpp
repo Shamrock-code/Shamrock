@@ -10,8 +10,9 @@
 #pragma once
 
 /**
- * @file GeneratorLatticeHCP.hpp
+ * @file GeneratorLatticeHCP_stretched.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author David Fang (david.fang@ikmail.com)
  * @brief
  *
  */
@@ -19,35 +20,63 @@
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammath/AABB.hpp"
-#include "shammath/crystalLattice.hpp"
+#include "shammath/crystalLattice_stretched.hpp"
+#include "shammath/integrator.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::sph::modules {
 
     template<class Tvec>
-    class GeneratorLatticeHCP : public ISPHSetupNode {
+    class GeneratorLatticeHCP_stretched : public ISPHSetupNode {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using Lattice            = shammath::LatticeHCP<Tvec>;
-        using LatticeIter        = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
+        using Lattice_stretched  = shammath::LatticeHCP_stretched<Tvec>;
+        using LatticeIter_stretched =
+            typename shammath::LatticeHCP_stretched<Tvec>::IteratorDiscontinuous;
+
+        static constexpr Tscal pi = shambase::constants::pi<Tscal>;
 
         ShamrockCtx &context;
         Tscal dr;
         shammath::AABB<Tvec> box;
 
-        LatticeIter generator;
+        std::function<Tscal(Tscal)> rhoprofile;
+        Tscal integral_profile;
 
-        static auto init_gen(Tscal dr, std::pair<Tvec, Tvec> box) {
+        LatticeIter_stretched generator;
 
-            auto [idxs_min, idxs_max] = Lattice::get_box_index_bounds(dr, box.first, box.second);
-            u32 idx_gen               = 0;
-            return LatticeIter(dr, idxs_min, idxs_max);
+        static auto init_gen(
+            Tscal dr,
+            std::pair<Tvec, Tvec> box,
+            std::function<Tscal(Tscal)> rhoprofile,
+            Tscal integral_profile) {
+
+            auto [idxs_min, idxs_max]
+                = Lattice_stretched::get_box_index_bounds(dr, box.first, box.second);
+            u32 idx_gen = 0;
+            Tscal rmin  = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
+            Tscal rmax  = sycl::length(box.second);
+            return LatticeIter_stretched(
+                dr, idxs_min, idxs_max, rhoprofile, integral_profile, rmin, rmax);
         };
 
         public:
-        GeneratorLatticeHCP(ShamrockCtx &context, Tscal dr, std::pair<Tvec, Tvec> box)
-            : context(context), dr(dr), box(box), generator(init_gen(dr, box)) {}
+        GeneratorLatticeHCP_stretched(
+            ShamrockCtx &context,
+            Tscal dr,
+            std::pair<Tvec, Tvec> box,
+            std::function<Tscal(Tscal)> rhoprofile)
+            : context(context), dr(dr), box(box), rhoprofile(rhoprofile),
+              integral_profile(
+                  shammath::integ_riemann_sum(
+                      dr,
+                      sycl::length(box.second),
+                      (sycl::length(box.second) - dr) / 5000,
+                      [&rhoprofile](Tscal r) {
+                          return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
+                      })),
+              generator(init_gen(dr, box, rhoprofile, integral_profile)) {};
 
         bool is_done() { return generator.is_done(); }
 
@@ -78,7 +107,7 @@ namespace shammodels::sph::modules {
                 u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
 
                 shamlog_debug_ln(
-                    "GeneratorLatticeHCP",
+                    "GeneratorLatticeHCP_stretched",
                     "generate : ",
                     skip_start,
                     gen_cnt,
@@ -120,7 +149,7 @@ namespace shammodels::sph::modules {
             return tmp;
         }
 
-        std::string get_name() { return "GeneratorLatticeHCP"; }
+        std::string get_name() { return "GeneratorLatticeHCP_stretched"; }
         ISPHSetupNode_Dot get_dot_subgraph() { return ISPHSetupNode_Dot{get_name(), 0, {}}; }
     };
 

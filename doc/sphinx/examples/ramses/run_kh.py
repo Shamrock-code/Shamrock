@@ -266,7 +266,7 @@ def run_case(set_bc_func, case_name):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
     # model.evolve_once(0,0.1)
-    fact = 40
+    fact = 25
     tmax = 0.127 * fact
     all_t = np.linspace(0, tmax, fact)
 

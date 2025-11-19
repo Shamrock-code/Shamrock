@@ -313,6 +313,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_generator_lattice_hcp_stretched",
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec box_min,
+               Tvec box_max,
+               std::function<Tscal(Tscal)> rhoprofile) {
+                return self.make_generator_lattice_hcp_stretched(
+                    dr, {box_min, box_max}, rhoprofile);
+            })
+        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
@@ -348,25 +358,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cs_profile"),
             py::arg("random_seed"),
             py::arg("init_h_factor") = 0.8)
-        // .def(
-        //     "stretchmap",
-        //     [](TSPHSetup &self,
-        //        Tscal part_mass,
-        //        Tscal disc_mass,
-        //        Tscal r_in,
-        //        Tscal r_out,
-        //        std::function<Tscal(Tscal)> rho_profile,
-        //        Tscal init_h_factor) {
-        //         return self.stretchmap(
-        //             part_mass, disc_mass, r_in, r_out, rho_profile, init_h_factor);
-        //     },
-        //     py::kw_only(),
-        //     py::arg("part_mass"),
-        //     py::arg("disc_mass"),
-        //     py::arg("r_in"),
-        //     py::arg("r_out"),
-        //     py::arg("rho_profile"),
-        //     py::arg("init_h_factor") = 0.8)
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,

@@ -27,6 +27,7 @@
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeHCP_stretched.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
@@ -69,18 +70,13 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         init_h_factor));
 }
 
-// template<class Tvec, template<class> class SPHKernel>
-// inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
-//     SPHSetup<Tvec, SPHKernel>::stretchmap(
-//         Tscal part_mass,
-//         Tscal tot_mass,
-//         Tscal r_in,
-//         Tscal r_out,
-//         std::function<Tscal(Tscal)> rho_profile,
-//         Tscal init_h_factor) {
-//     return std::shared_ptr<ISPHSetupNode>(new GeneratorStrechMap<Tvec, SPHKernel>(
-//         context, solver_config, part_mass, tot_mass, r_in, r_out, rho_profile, init_h_factor));
-// }
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp_stretched(
+        Tscal dr, std::pair<Tvec, Tvec> box, std::function<Tscal(Tscal)> rhoprofile) {
+    return std::shared_ptr<ISPHSetupNode>(
+        new GeneratorLatticeHCP_stretched<Tvec>(context, dr, box, rhoprofile));
+}
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::

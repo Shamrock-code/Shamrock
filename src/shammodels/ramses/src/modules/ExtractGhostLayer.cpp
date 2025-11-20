@@ -43,4 +43,6 @@ void shammodels::basegodunov::modules::ExtractGhostLayer::_impl_evaluate_interna
     }
 }
 
-std::string shammodels::basegodunov::modules::ExtractGhostLayer::_impl_get_tex() { return "TODO"; }
+std::string shammodels::basegodunov::modules::ExtractGhostLayer::_impl_get_tex() const {
+    return "TODO";
+}

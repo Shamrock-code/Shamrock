@@ -128,9 +128,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "InterpolateRhoToFaceRho"; };
+        inline virtual std::string _impl_get_label() const { return "InterpolateRhoToFaceRho"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec>
@@ -230,9 +230,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "InterpolateVelToFaceVel"; };
+        inline virtual std::string _impl_get_label() const { return "InterpolateVelToFaceVel"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec>
@@ -339,9 +339,11 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "InterpolatePressToFacePress"; };
+        inline virtual std::string _impl_get_label() const {
+            return "InterpolatePressToFacePress";
+        };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec>
@@ -447,9 +449,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "InterpolateRhoToFaceRho"; };
+        inline virtual std::string _impl_get_label() const { return "InterpolateRhoToFaceRho"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec>
@@ -552,9 +554,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "InterpolateVelToFaceVel"; };
+        inline virtual std::string _impl_get_label() const { return "InterpolateVelToFaceVel"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules

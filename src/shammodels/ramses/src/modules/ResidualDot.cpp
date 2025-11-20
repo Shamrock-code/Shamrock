@@ -34,7 +34,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class T>
-    std::string ResidualDot<T>::_impl_get_tex() {
+    std::string ResidualDot<T>::_impl_get_tex() const {
         auto field        = get_ro_edge_base(0).get_tex_symbol();
         auto residual_dot = get_rw_edge_base(0).get_tex_symbol();
 

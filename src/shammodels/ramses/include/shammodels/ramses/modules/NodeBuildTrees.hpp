@@ -62,9 +62,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_reset_internal() {};
 
-        inline virtual std::string _impl_get_label() { return "BuildTrees"; };
+        inline virtual std::string _impl_get_label() const { return "BuildTrees"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules

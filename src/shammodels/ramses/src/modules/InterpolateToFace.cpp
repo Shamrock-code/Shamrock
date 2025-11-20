@@ -791,8 +791,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
-    _impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 
@@ -947,8 +947,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
-    _impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 
@@ -1105,7 +1105,7 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -1287,7 +1287,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -1467,7 +1467,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 

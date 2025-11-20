@@ -61,10 +61,10 @@ namespace shamrock::solvergraph {
         inline void _impl_evaluate_internal() { get_edges().to_free.free_alloc(); }
 
         /// Get the label of the node
-        inline virtual std::string _impl_get_label() { return "FreeAlloc"; };
+        inline virtual std::string _impl_get_label() const { return "FreeAlloc"; };
 
         /// Get the TeX representation of the node
-        inline virtual std::string _impl_get_tex() {
+        inline virtual std::string _impl_get_tex() const {
 
             auto to_free = get_rw_edge_base(0).get_tex_symbol();
 

@@ -80,7 +80,7 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec>
-    std::string LoopSmoothingLengthIter<Tvec>::_impl_get_tex() {
+    std::string LoopSmoothingLengthIter<Tvec>::_impl_get_tex() const {
         return "TODO";
     }
 

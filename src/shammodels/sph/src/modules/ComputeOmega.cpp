@@ -74,7 +74,7 @@ void shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_evaluate
 }
 
 template<class Tvec, template<class> class SPHKernel>
-std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_get_tex() {
+std::string shammodels::sph::modules::NodeComputeOmega<Tvec, SPHKernel>::_impl_get_tex() const {
     return "TODO";
 }
 
@@ -102,7 +102,7 @@ void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
 }
 
 template<class T>
-std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() {
+std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() const {
     return "TODO";
 }
 

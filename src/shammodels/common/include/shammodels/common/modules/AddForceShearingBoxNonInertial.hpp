@@ -97,8 +97,10 @@ namespace shammodels::common::modules {
                 });
         }
 
-        inline virtual std::string _impl_get_label() { return "AddForceShearingBoxNonInertial"; };
+        inline virtual std::string _impl_get_label() const {
+            return "AddForceShearingBoxNonInertial";
+        };
 
-        virtual std::string _impl_get_tex() { return "TODO"; }
+        virtual std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shammodels::common::modules

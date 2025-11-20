@@ -61,9 +61,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "NodeComputeSumOverV"; };
+        inline virtual std::string _impl_get_label() const { return "NodeComputeSumOverV"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules

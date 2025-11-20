@@ -18,14 +18,48 @@
 
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
+#include "shamrock/solvergraph/HypergraphLog.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include <memory>
 #include <vector>
 
 namespace shamrock::solvergraph {
 
+    inline bool log_enabled = true;
+
+    /// class to check if the object was moved to somewhere else to avoid double deletion
+    class MoveAware {
+        public:
+        bool is_valid() const noexcept {
+            return sentinel_; // false was moved somewhere else
+        }
+
+        protected:
+        MoveAware() : sentinel_(true) {} // intact by default
+
+        MoveAware(const MoveAware &)            = default;
+        MoveAware &operator=(const MoveAware &) = default;
+
+        /// Move constructor - marks the source as moved-from
+        MoveAware(MoveAware &&other) noexcept : sentinel_(std::exchange(other.sentinel_, false)) {}
+
+        /// Move assignment - marks the source as moved-from
+        MoveAware &operator=(MoveAware &&other) noexcept {
+            if (this != &other) {
+                sentinel_ = std::exchange(other.sentinel_, false);
+            }
+            return *this;
+        }
+
+        virtual ~MoveAware() = default;
+
+        private:
+        bool sentinel_; // true = intact, false = moved-from
+    };
+
     /// Inode is node between data edges, takes multiple inputs, multiple outputs
     class INode : public std::enable_shared_from_this<INode>,
+                  public MoveAware,
                   public shambase::WithUUID<INode, u64> {
 
         /// Read only edges
@@ -34,6 +68,22 @@ namespace shamrock::solvergraph {
         std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
+        inline INode() {
+            if (log_enabled) {
+                // Can't use shared_from_this() in constructor - object not in shared_ptr yet
+                shamrock::solvergraph::log_new_inode(get_uuid());
+            }
+        }
+
+        /// Move constructor - automatically delegates to base classes and members
+        /// MoveAware's move constructor will be called automatically, handling sentinel
+        /// invalidation
+        INode(INode &&) noexcept = default;
+
+        /// Move assignment - automatically delegates to base classes and members
+        /// MoveAware's move assignment will be called automatically, handling sentinel invalidation
+        INode &operator=(INode &&) noexcept = default;
+
         /// Get a shared pointer to this node
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
         /// Get a weak pointer to this node
@@ -59,6 +109,10 @@ namespace shamrock::solvergraph {
 
         /// Destructor (virtual) & reset the edges
         virtual ~INode() {
+            if (log_enabled && is_valid()) {
+                // Use UUID directly - shared_from_this() may not be safe in destructor
+                shamrock::solvergraph::log_del_inode(get_uuid());
+            }
             __internal_set_ro_edges({});
             __internal_set_rw_edges({});
         }
@@ -80,8 +134,16 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(ro_edges.at(slot));
         }
 
+        inline const IEdge &get_ro_edge_base(int slot) const {
+            return shambase::get_check_ref(ro_edges.at(slot));
+        }
+
         /// Get a reference to a read write edge and cast it to the type IEdge
         inline IEdge &get_rw_edge_base(int slot) {
+            return shambase::get_check_ref(rw_edges.at(slot));
+        }
+
+        inline const IEdge &get_rw_edge_base(int slot) const {
             return shambase::get_check_ref(rw_edges.at(slot));
         }
 
@@ -105,7 +167,7 @@ namespace shamrock::solvergraph {
         inline std::string get_tex_partial() { return _impl_get_tex(); };
 
         /// print the node info
-        inline virtual std::string print_node_info() {
+        inline virtual std::string print_node_info() const {
             std::string node_info = shambase::format("Node info :\n");
             node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
             node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
@@ -135,17 +197,17 @@ namespace shamrock::solvergraph {
         virtual void _impl_evaluate_internal() = 0;
 
         /// get the label of the node
-        virtual std::string _impl_get_label() = 0;
+        virtual std::string _impl_get_label() const = 0;
 
         /// get the dot graph of the node partial
-        virtual std::string _impl_get_dot_graph_partial();
+        virtual std::string _impl_get_dot_graph_partial() const;
         /// get the dot graph of the node start
-        virtual std::string _impl_get_dot_graph_node_start();
+        virtual std::string _impl_get_dot_graph_node_start() const;
         /// get the dot graph of the node end
-        virtual std::string _impl_get_dot_graph_node_end();
+        virtual std::string _impl_get_dot_graph_node_end() const;
 
         /// get the tex of the node
-        virtual std::string _impl_get_tex() = 0;
+        virtual std::string _impl_get_tex() const = 0;
     };
 
     inline void INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges) {
@@ -182,7 +244,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    inline std::string INode::_impl_get_dot_graph_partial() {
+    inline std::string INode::_impl_get_dot_graph_partial() const {
         std::string node_str
             = shambase::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
 
@@ -207,10 +269,10 @@ namespace shamrock::solvergraph {
         return shambase::format("{}{}", node_str, edge_str);
     };
 
-    inline std::string INode::_impl_get_dot_graph_node_start() {
+    inline std::string INode::_impl_get_dot_graph_node_start() const {
         return shambase::format("n_{}", this->get_uuid());
     }
-    inline std::string INode::_impl_get_dot_graph_node_end() {
+    inline std::string INode::_impl_get_dot_graph_node_end() const {
         return shambase::format("n_{}", this->get_uuid());
     }
 

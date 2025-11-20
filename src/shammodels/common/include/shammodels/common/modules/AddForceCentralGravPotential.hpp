@@ -65,9 +65,11 @@ namespace shammodels::common::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "AddForceCentralGravPotential"; };
+        inline virtual std::string _impl_get_label() const {
+            return "AddForceCentralGravPotential";
+        };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::common::modules

@@ -129,12 +129,12 @@ namespace shamrock::solvergraph {
          * @brief Returns the display label for this node
          * @return String label "ExchangeGhostLayer" for graph visualization
          */
-        inline virtual std::string _impl_get_label() { return "ExchangeGhostLayer"; };
+        inline virtual std::string _impl_get_label() const { return "ExchangeGhostLayer"; };
 
         /**
          * @brief Returns the TeX representation for this node
          * @return TeX string for mathematical/graphical representation of the node
          */
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph

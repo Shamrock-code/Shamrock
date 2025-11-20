@@ -49,7 +49,7 @@ namespace shammodels::common::modules {
     }
 
     template<class Tvec>
-    inline std::string AddForceCentralGravPotential<Tvec>::_impl_get_tex() {
+    inline std::string AddForceCentralGravPotential<Tvec>::_impl_get_tex() const {
 
         auto constant_G   = get_ro_edge_base(0).get_tex_symbol();
         auto central_mass = get_ro_edge_base(1).get_tex_symbol();

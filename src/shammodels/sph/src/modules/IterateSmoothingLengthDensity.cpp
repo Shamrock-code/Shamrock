@@ -119,7 +119,7 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
 }
 
 template<class Tvec, class SPHKernel>
-std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() {
+std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() const {
     auto sizes       = get_ro_edge_base(0).get_tex_symbol();
     auto neigh_cache = get_ro_edge_base(1).get_tex_symbol();
     auto positions   = get_ro_edge_base(2).get_tex_symbol();

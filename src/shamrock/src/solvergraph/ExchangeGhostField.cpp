@@ -56,7 +56,7 @@ void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
 }
 
 template<class T>
-std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() {
+std::string shamrock::solvergraph::ExchangeGhostField<T>::_impl_get_tex() const {
     auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
     auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
 

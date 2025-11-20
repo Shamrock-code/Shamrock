@@ -65,9 +65,9 @@ namespace shammodels::sph::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "ComputeOmega"; };
+        inline virtual std::string _impl_get_label() const { return "ComputeOmega"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class T>
@@ -102,9 +102,9 @@ namespace shammodels::sph::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "SetWhenMask"; };
+        inline virtual std::string _impl_get_label() const { return "SetWhenMask"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::sph::modules

@@ -109,7 +109,8 @@ void shammodels::basegodunov::modules::FindGhostLayerIndices<TgridVec>::_impl_ev
 }
 
 template<class TgridVec>
-std::string shammodels::basegodunov::modules::FindGhostLayerIndices<TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::FindGhostLayerIndices<TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 

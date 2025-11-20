@@ -13,6 +13,7 @@
  * @file SPHSetup.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author David Fang (david.fang@ikmail.com)
  * @brief
  *
  */
@@ -63,6 +64,9 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> cs_profile,
             std::mt19937 eng,
             Tscal init_h_factor);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp_smap_sphere(
+            Tscal dr, Tvec center, Tscal xmax, std::function<Tscal(Tscal)> rho_profile);
 
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);

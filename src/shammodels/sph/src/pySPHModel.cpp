@@ -9,9 +9,9 @@
 
 /**
  * @file pySPHModel.cpp
- * @author David Fang (fang.david03@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author David Fang (david.fang@ikmail.com)
  * @brief
  */
 
@@ -280,10 +280,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_generator_lattice_hcp_smap_sphere",
+            [](TSPHSetup &self,
+               Tscal dr,
+               Tvec center,
+               Tscal xmax,
+               std::function<Tscal(Tscal)> rhoprofile) {
+                return self.make_generator_lattice_hcp_smap_sphere(dr, center, xmax, rhoprofile);
+            })
+        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
-               Tscal disc_mass,
+               Tscal tot_mass,
                Tscal r_in,
                Tscal r_out,
                std::function<Tscal(Tscal)> sigma_profile,
@@ -294,7 +303,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal init_h_factor) {
                 return self.make_generator_disc_mc(
                     part_mass,
-                    disc_mass,
+                    tot_mass,
                     r_in,
                     r_out,
                     sigma_profile,

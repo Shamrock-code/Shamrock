@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file crystalLattice_stretched.hpp
+ * @file crystalLattice_smap_sphere.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author David Fang (david.fang@ikmail.com)
  * @brief
@@ -26,6 +26,7 @@
 #include "shammath/DiscontinuousIterator.hpp"
 #include "shammath/LatticeError.hpp"
 #include "shammath/integrator.hpp"
+#include <hipSYCL/sycl/libkernel/builtins.hpp>
 #include <array>
 #include <functional>
 #include <utility>
@@ -34,12 +35,13 @@
 namespace shammath {
 
     /**
-     * @brief utility for generating stretched HCP crystal lattices given a density profile
+     * @brief utility for generating stretched spherical HCP crystal lattices given a density
+     * profile
      *
      * @tparam Tvec position vector type
      */
     template<class Tvec>
-    class LatticeHCP_stretched {
+    class LatticeHCP_smap_sphere {
 
         public:
         static constexpr u32 dim = 3;
@@ -55,7 +57,8 @@ namespace shammath {
             std::function<Tscal(Tscal)> rhoprofile,
             Tscal integral_profile,
             Tscal rmin,
-            Tscal rmax) {
+            Tscal rmax,
+            Tvec center) {
             constexpr Tscal tol     = 1e-9;
             constexpr u32 maxits    = 200;
             constexpr u32 maxits_nr = 20;
@@ -116,7 +119,7 @@ namespace shammath {
         }
 
         /**
-         * @brief generate a stretched HCP lattice centered on (0,0,0)
+         * @brief generate a smap_sphere HCP lattice centered on (0,0,0)
          *
          * @param dr
          * @param coord
@@ -131,7 +134,8 @@ namespace shammath {
             std::function<Tscal(Tscal)> rhoprofile,
             Tscal integral_profile,
             Tscal rmin,
-            Tscal rmax) noexcept {
+            Tscal rmax,
+            Tvec center) noexcept {
 
             i32 i = coord[0];
             i32 j = coord[1];
@@ -145,15 +149,18 @@ namespace shammath {
             Tvec pos_a   = dr * r_a;
             Tscal r_norm = sycl::length(pos_a);
 
-            Tscal newr_norm = stretchindiv(r_norm, rhoprofile, integral_profile, rmin, rmax);
-            // Tscal newr_norm = rmin
-            //                   + (sycl::pow(r_norm, 3) - sycl::pow(rmin, 3)) * (rmax - rmin)
-            //                         / (sycl::pow(rmax, 3) - sycl::pow(rmin, 3));
+            if (r_norm >= rmax) { // kick the particle
+                return (r_a * 10 * rmax / r_norm) - center;
+            }
+
+            Tscal newr_norm
+                = stretchindiv(r_norm, rhoprofile, integral_profile, rmin, rmax, center);
+
             if (i == 0 && j == 0 && k == 0) {
                 r_norm = 1;
             }
 
-            return pos_a * (newr_norm / r_norm);
+            return pos_a * (newr_norm / r_norm) - center;
         };
 
         /**
@@ -293,6 +300,7 @@ namespace shammath {
             Tscal integral_profile;
             Tscal rmin;
             Tscal rmax;
+            Tvec center;
 
             public:
             Iterator(
@@ -302,14 +310,15 @@ namespace shammath {
                 std::function<Tscal(Tscal)> rhoprofile,
                 Tscal integral_profile,
                 Tscal rmin,
-                Tscal rmax)
+                Tscal rmax,
+                Tvec center)
                 : dr(dr), current_idx(0), coord_delta({
                                               size_t(coord_max[0] - coord_min[0]),
                                               size_t(coord_max[1] - coord_min[1]),
                                               size_t(coord_max[2] - coord_min[2]),
                                           }),
                   rhoprofile(rhoprofile), integral_profile(integral_profile), rmin(rmin),
-                  rmax(rmax) {
+                  rmax(rmax), center(center) {
 
                 // must check for all axis otherwise we loop forever
                 for (int ax = 0; ax < dim; ax++) {
@@ -339,7 +348,7 @@ namespace shammath {
 
                 // logger::raw_ln(current, current_idx, max_coord);
 
-                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax);
+                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax, center);
 
                 if (!done) {
                     current_idx++;
@@ -393,6 +402,7 @@ namespace shammath {
             Tscal integral_profile;
             Tscal rmin;
             Tscal rmax;
+            Tvec center;
 
             public:
             size_t current_idx;
@@ -403,14 +413,15 @@ namespace shammath {
                 std::function<Tscal(Tscal)> rhoprofile,
                 Tscal integral_profile,
                 Tscal rmin,
-                Tscal rmax)
+                Tscal rmax,
+                Tvec center)
                 : dr(dr), current_idx(0), coord_delta({
                                               size_t(coord_max[0] - coord_min[0]),
                                               size_t(coord_max[1] - coord_min[1]),
                                               size_t(coord_max[2] - coord_min[2]),
                                           }),
                   rhoprofile(rhoprofile), integral_profile(integral_profile), rmin(rmin),
-                  rmax(rmax) {
+                  rmax(rmax), center(center) {
 
                 // must check for all axis otherwise we loop forever
                 for (int ax = 0; ax < dim; ax++) {
@@ -451,7 +462,7 @@ namespace shammath {
 
                 // logger::raw_ln(current, current_idx, max_coord);
 
-                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax);
+                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax, center);
 
                 if (!done) {
                     current_idx++;

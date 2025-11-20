@@ -65,8 +65,8 @@ namespace shammodels::sph::modules {
             std::mt19937 eng,
             Tscal init_h_factor);
 
-        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp_stretched(
-            Tscal dr, std::pair<Tvec, Tvec> box, std::function<Tscal(Tscal)> rho_profile);
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp_smap_sphere(
+            Tscal dr, Tvec center, Tscal xmax, std::function<Tscal(Tscal)> rho_profile);
 
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);

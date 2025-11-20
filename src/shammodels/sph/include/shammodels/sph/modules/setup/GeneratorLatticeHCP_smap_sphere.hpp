@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file GeneratorLatticeHCP_stretched.hpp
+ * @file GeneratorLatticeHCP_smap_sphere.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author David Fang (david.fang@ikmail.com)
  * @brief
@@ -20,7 +20,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammath/AABB.hpp"
-#include "shammath/crystalLattice_stretched.hpp"
+#include "shammath/crystalLattice_smap_sphere.hpp"
 #include "shammath/integrator.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
@@ -30,12 +30,12 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class GeneratorLatticeHCP_stretched : public ISPHSetupNode {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using Lattice_stretched  = shammath::LatticeHCP_stretched<Tvec>;
-        using LatticeIter_stretched =
-            typename shammath::LatticeHCP_stretched<Tvec>::IteratorDiscontinuous;
+    class GeneratorLatticeHCP_smap_sphere : public ISPHSetupNode {
+        using Tscal               = shambase::VecComponent<Tvec>;
+        static constexpr u32 dim  = shambase::VectorProperties<Tvec>::dimension;
+        using Lattice_smap_sphere = shammath::LatticeHCP_smap_sphere<Tvec>;
+        using LatticeIter_smap_sphere =
+            typename shammath::LatticeHCP_smap_sphere<Tvec>::IteratorDiscontinuous;
         using Config = SolverConfig<Tvec, SPHKernel>;
         using Kernel = SPHKernel<Tscal>;
 
@@ -52,7 +52,7 @@ namespace shammodels::sph::modules {
 
         Tscal integral_profile;
 
-        LatticeIter_stretched generator;
+        LatticeIter_smap_sphere generator;
 
         static auto init_gen(
             Tscal dr,
@@ -63,14 +63,15 @@ namespace shammodels::sph::modules {
             Tscal rmax) {
 
             auto [idxs_min, idxs_max]
-                = Lattice_stretched::get_box_index_bounds(dr, box.first, box.second);
+                = Lattice_smap_sphere::get_box_index_bounds(dr, box.first, box.second);
             u32 idx_gen = 0;
-            return LatticeIter_stretched(
-                dr, idxs_min, idxs_max, rhoprofile, integral_profile, rmin, rmax);
+            Tvec center = (box.first + box.second) / 2;
+            return LatticeIter_smap_sphere(
+                dr, idxs_min, idxs_max, rhoprofile, integral_profile, rmin, rmax, center);
         };
 
         public:
-        GeneratorLatticeHCP_stretched(
+        GeneratorLatticeHCP_smap_sphere(
             ShamrockCtx &context,
             Config &solver_config,
             Tscal dr,
@@ -81,7 +82,8 @@ namespace shammodels::sph::modules {
                   return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
               }),
               rmin(0), // There's a particle at r=0 because the HCP is centered on (0,0,0)
-              rmax(sycl::length(box.second)),
+              //   rmax(sycl::length(box.second)),
+              rmax(sycl::fabs((box.second - box.first).x()) / 2.), // if it's cubic box
               integral_profile(
                   shammath::integ_riemann_sum(rmin, rmax, (rmax - rmin) / 2000, rhodS)),
               generator(init_gen(dr, box, rhoprofile, integral_profile, rmin, rmax)) {};
@@ -116,7 +118,7 @@ namespace shammodels::sph::modules {
                 u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
 
                 shamlog_debug_ln(
-                    "GeneratorLatticeHCP_stretched",
+                    "GeneratorLatticeHCP_smap_sphere",
                     "generate : ",
                     skip_start,
                     gen_cnt,
@@ -128,23 +130,24 @@ namespace shammodels::sph::modules {
                 auto tmp = generator.next_n(gen_cnt);
                 generator.skip(skip_end);
 
-                // PatchScheduler &sched = shambase::get_check_ref(context.sched);
-                Tscal mpart = solver_config.gpart_mass;
-
                 for (Tvec r : tmp) {
                     if (Patch::is_in_patch_converted(r, box.lower, box.upper)) {
                         pos_data.push_back(r);
-                        // * sycl::pow(mpart / rhoa, 1./3);
                     }
+                    // if (Patch::is_in_patch_converted_sphere(r, box.upper)) {
+                    //     pos_data.push_back(r);
+                    // }
                 }
-                u64 npart     = pos_data.size();
-                Tscal totmass = npart * mpart;
-                Tscal hfact   = Kernel::hfactd;
-                for (Tvec &r : pos_data) {
-                    Tscal rhoa = rhoprofile(length(r)) * totmass / integral_profile;
-                    Tscal h    = hfact * pow(mpart / rhoa, 1. / 3);
-                    h_data.push_back(h);
-                }
+            }
+
+            Tscal mpart   = solver_config.gpart_mass;
+            u64 npart     = pos_data.size();
+            Tscal totmass = mpart * npart;
+            Tscal hfact   = Kernel::hfactd;
+            for (Tvec &r : pos_data) {
+                Tscal rhoa = rhoprofile(sycl::length(r)) * totmass / integral_profile;
+                Tscal h    = hfact * sycl::pow(mpart / rhoa, 1. / 3);
+                h_data.push_back(h);
             }
 
             // Make a patchdata from pos_data
@@ -173,7 +176,7 @@ namespace shammodels::sph::modules {
             return tmp;
         }
 
-        std::string get_name() { return "GeneratorLatticeHCP_stretched"; }
+        std::string get_name() { return "GeneratorLatticeHCP_smap_sphere"; }
         ISPHSetupNode_Dot get_dot_subgraph() { return ISPHSetupNode_Dot{get_name(), 0, {}}; }
     };
 

@@ -13,7 +13,7 @@
  * @file ExtractGhostField.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
- * @brief
+ * @brief  This module allows to extract ghosts for a generic field such as density, velocity, etc
  *
  */
 
@@ -29,16 +29,12 @@ namespace shamrock::solvergraph {
     template<class T>
     class ExtractGhostField : public INode {
 
-        u32 block_size;
-
         public:
-        ExtractGhostField(u32 block_size) : block_size(block_size) {}
-
-        shamrock::solvergraph::CopyPatchDataField<T> node_cpy_field{};
+        ExtractGhostField() {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<T> &original_fields;
-            const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghots;
+            const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghosts;
             shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
         };
 

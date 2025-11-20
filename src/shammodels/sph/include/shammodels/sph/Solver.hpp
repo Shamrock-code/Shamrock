@@ -135,7 +135,7 @@ namespace shammodels::sph {
         void compute_presteps_rint();
         void reset_presteps_rint();
 
-        void start_neighbors_cache();
+        void start_neighbors_cache(f64 t);
         void reset_neighbors_cache();
 
         void sph_prestep(Tscal time_val, Tscal dt);

@@ -27,7 +27,7 @@
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
-#include "shammodels/sph/modules/setup/GeneratorLatticeHCP_stretched.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeHCP_smap_sphere.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
@@ -44,9 +44,11 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
-    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp_stretched(
-        Tscal dr, std::pair<Tvec, Tvec> box, std::function<Tscal(Tscal)> rhoprofile) {
-    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP_stretched<Tvec, SPHKernel>(
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp_smap_sphere(
+        Tscal dr, Tvec center, Tscal xmax, std::function<Tscal(Tscal)> rhoprofile) {
+    std::pair<Tvec, Tvec> box
+        = {center + Tvec(-xmax, -xmax, -xmax), center + Tvec(xmax, xmax, xmax)};
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP_smap_sphere<Tvec, SPHKernel>(
         context, solver_config, dr, box, rhoprofile));
 }
 

@@ -139,4 +139,13 @@ namespace shamtree {
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions);
 
+    /// same but for position ranges
+    template<class Tvec>
+    KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_position_ranges(
+        const KarrasRadixTree &tree,
+        const LeafCellIterator &cell_it,
+        KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
+        sham::DeviceBuffer<Tvec> &min,
+        sham::DeviceBuffer<Tvec> &max);
+
 } // namespace shamtree

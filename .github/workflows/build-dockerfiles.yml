@@ -25,5 +25,5 @@ jobs:
       imagename: shamrock
       imagetag: oneapi
       imagepath: .github/dockerfiles/intel_oneapi
-      runson: ubuntu-latest
+      runson: '["self-hosted", "docker-runner"]'
       usetagonlatest: false

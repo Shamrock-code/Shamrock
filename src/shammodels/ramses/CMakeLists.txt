@@ -43,6 +43,7 @@ set(Sources
     src/modules/ExtractGhostLayer.cpp
     src/modules/TransformGhostLayer.cpp
     src/modules/FuseGhostLayer.cpp
+    src/modules/render/GridRender.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

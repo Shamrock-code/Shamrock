@@ -99,6 +99,15 @@ namespace shamrock::patch {
             }
         }
 
+        template<class Functor>
+        inline void for_each_field_any(Functor &&func) const {
+            for (auto &f : fields) {
+                f.visit([&](const auto &arg) {
+                    func(arg);
+                });
+            }
+        }
+
         template<class Func>
         inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl, Func &&fct_init)
             : pdl_ptr(pdl) {

@@ -65,6 +65,7 @@ namespace shammodels::sph {
 
             pdl.add_field<Tvec>("B/rho", 1);
             pdl.add_field<Tvec>("dB/rho", 1);
+            pdl.add_field<Tscal>("drho/dt", 1);
         }
 
         if (has_field_psi_on_ch()) {

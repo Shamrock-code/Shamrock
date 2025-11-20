@@ -453,6 +453,9 @@ class PatchDataField {
      */
     void index_remap(sham::DeviceBuffer<u32> &index_map, u32 len);
 
+    /// permut the variables of the field according to the permut
+    void permut_vars(const std::vector<u32> &permut);
+
     /**
      * @brief this function remaps the patchdatafield like so
      *   val[id] = val[index_map[id]]

@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamtree/KarrasRadixTreeAABB.hpp"
 
 namespace shamtree {
@@ -94,6 +95,7 @@ namespace shamtree {
         const LeafCellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions) {
+        __shamrock_stack_entry();
 
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -137,6 +139,49 @@ namespace shamtree {
             tree, std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb), fill_leafs);
     }
 
+    template<class Tvec>
+    KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_position_ranges(
+        const KarrasRadixTree &tree,
+        const LeafCellIterator &cell_it,
+        KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
+        sham::DeviceBuffer<Tvec> &min,
+        sham::DeviceBuffer<Tvec> &max) {
+        __shamrock_stack_entry();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+        auto fill_leafs = [&](KarrasRadixTreeAABB<Tvec> &tree_aabb, u32 leaf_offset) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{min, max, cell_it},
+                sham::MultiRef{tree_aabb.buf_aabb_min, tree_aabb.buf_aabb_max},
+                tree.get_leaf_count(),
+                [leaf_offset](
+                    u32 i,
+                    const Tvec *min_pos,
+                    const Tvec *max_pos,
+                    auto cell_iter,
+                    Tvec *comp_min,
+                    Tvec *comp_max) {
+                    Tvec min = shambase::VectorProperties<Tvec>::get_max();
+                    Tvec max = -shambase::VectorProperties<Tvec>::get_max();
+
+                    cell_iter.for_each_in_leaf_cell(i, [&](u32 obj_id) {
+                        Tvec r_min = min_pos[obj_id];
+                        Tvec r_max = max_pos[obj_id];
+
+                        min = sham::min(min, r_min);
+                        max = sham::max(max, r_max);
+                    });
+
+                    comp_min[leaf_offset + i] = min;
+                    comp_max[leaf_offset + i] = max;
+                });
+        };
+
+        return compute_tree_aabb<Tvec>(
+            tree, std::forward<KarrasRadixTreeAABB<Tvec>>(recycled_tree_aabb), fill_leafs);
+    }
+
 } // namespace shamtree
 
 #ifndef DOXYGEN
@@ -156,4 +201,12 @@ template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb_from_p
     const LeafCellIterator &cell_it,
     shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb,
     sham::DeviceBuffer<f64_3> &positions);
+
+template shamtree::KarrasRadixTreeAABB<f64_3> shamtree::compute_tree_aabb_from_position_ranges<
+    f64_3>(
+    const KarrasRadixTree &tree,
+    const LeafCellIterator &cell_it,
+    shamtree::KarrasRadixTreeAABB<f64_3> &&recycled_tree_aabb,
+    sham::DeviceBuffer<f64_3> &min,
+    sham::DeviceBuffer<f64_3> &max);
 #endif

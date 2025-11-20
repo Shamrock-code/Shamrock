@@ -57,9 +57,9 @@ namespace shammath {
             Tscal rmin,
             Tscal rmax) {
             constexpr Tscal tol     = 1e-9;
-            constexpr u32 maxits    = 150;
+            constexpr u32 maxits    = 200;
             constexpr u32 maxits_nr = 20;
-            constexpr u32 ngrid     = 8152;
+            constexpr u32 ngrid     = 2000;
             Tscal step              = (rmax - rmin) / ngrid;
 
             u32 its       = 0;
@@ -144,10 +144,14 @@ namespace shammath {
 
             Tvec pos_a   = dr * r_a;
             Tscal r_norm = sycl::length(pos_a);
-            // Tscal newr_norm = stretchindiv(r_norm, rhoprofile, integral_profile, rmin, rmax);
-            Tscal newr_norm = rmin
-                              + (sycl::pow(r_norm, 3) - sycl::pow(rmin, 3)) * (rmax - rmin)
-                                    / (sycl::pow(rmax, 3) - sycl::pow(rmin, 3));
+
+            Tscal newr_norm = stretchindiv(r_norm, rhoprofile, integral_profile, rmin, rmax);
+            // Tscal newr_norm = rmin
+            //                   + (sycl::pow(r_norm, 3) - sycl::pow(rmin, 3)) * (rmax - rmin)
+            //                         / (sycl::pow(rmax, 3) - sycl::pow(rmin, 3));
+            if (i == 0 && j == 0 && k == 0) {
+                r_norm = 1;
+            }
 
             return pos_a * (newr_norm / r_norm);
         };

@@ -22,26 +22,34 @@
 #include "shammath/AABB.hpp"
 #include "shammath/crystalLattice_stretched.hpp"
 #include "shammath/integrator.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <hipSYCL/sycl/libkernel/builtins.hpp>
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec>
+    template<class Tvec, template<class> class SPHKernel>
     class GeneratorLatticeHCP_stretched : public ISPHSetupNode {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Lattice_stretched  = shammath::LatticeHCP_stretched<Tvec>;
         using LatticeIter_stretched =
             typename shammath::LatticeHCP_stretched<Tvec>::IteratorDiscontinuous;
+        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Kernel = SPHKernel<Tscal>;
 
         static constexpr Tscal pi = shambase::constants::pi<Tscal>;
 
         ShamrockCtx &context;
+        Config &solver_config;
         Tscal dr;
         shammath::AABB<Tvec> box;
-
+        Tscal rmin;
+        Tscal rmax;
         std::function<Tscal(Tscal)> rhoprofile;
+        std::function<Tscal(Tscal)> rhodS;
+
         Tscal integral_profile;
 
         LatticeIter_stretched generator;
@@ -50,13 +58,13 @@ namespace shammodels::sph::modules {
             Tscal dr,
             std::pair<Tvec, Tvec> box,
             std::function<Tscal(Tscal)> rhoprofile,
-            Tscal integral_profile) {
+            Tscal integral_profile,
+            Tscal rmin,
+            Tscal rmax) {
 
             auto [idxs_min, idxs_max]
                 = Lattice_stretched::get_box_index_bounds(dr, box.first, box.second);
             u32 idx_gen = 0;
-            Tscal rmin  = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
-            Tscal rmax  = sycl::length(box.second);
             return LatticeIter_stretched(
                 dr, idxs_min, idxs_max, rhoprofile, integral_profile, rmin, rmax);
         };
@@ -64,19 +72,19 @@ namespace shammodels::sph::modules {
         public:
         GeneratorLatticeHCP_stretched(
             ShamrockCtx &context,
+            Config &solver_config,
             Tscal dr,
             std::pair<Tvec, Tvec> box,
             std::function<Tscal(Tscal)> rhoprofile)
-            : context(context), dr(dr), box(box), rhoprofile(rhoprofile),
+            : context(context), solver_config(solver_config), dr(dr), box(box),
+              rhoprofile(rhoprofile), rhodS([&rhoprofile](Tscal r) {
+                  return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
+              }),
+              rmin(0), // There's a particle at r=0 because the HCP is centered on (0,0,0)
+              rmax(sycl::length(box.second)),
               integral_profile(
-                  shammath::integ_riemann_sum(
-                      dr,
-                      sycl::length(box.second),
-                      (sycl::length(box.second) - dr) / 5000,
-                      [&rhoprofile](Tscal r) {
-                          return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
-                      })),
-              generator(init_gen(dr, box, rhoprofile, integral_profile)) {};
+                  shammath::integ_riemann_sum(rmin, rmax, (rmax - rmin) / 2000, rhodS)),
+              generator(init_gen(dr, box, rhoprofile, integral_profile, rmin, rmax)) {};
 
         bool is_done() { return generator.is_done(); }
 
@@ -95,8 +103,9 @@ namespace shammodels::sph::modules {
             };
 
             std::vector<Tvec> pos_data;
+            std::vector<Tscal> h_data;
 
-            // Fill pos_data if the scheduler has some patchdata in this rank
+            // Fill pos_data and h_data if the scheduler has some patchdata in this rank
             if (!is_done()) {
                 u64 loc_gen_count = (has_pdat()) ? nmax : 0;
 
@@ -119,10 +128,22 @@ namespace shammodels::sph::modules {
                 auto tmp = generator.next_n(gen_cnt);
                 generator.skip(skip_end);
 
+                // PatchScheduler &sched = shambase::get_check_ref(context.sched);
+                Tscal mpart = solver_config.gpart_mass;
+
                 for (Tvec r : tmp) {
                     if (Patch::is_in_patch_converted(r, box.lower, box.upper)) {
                         pos_data.push_back(r);
+                        // * sycl::pow(mpart / rhoa, 1./3);
                     }
+                }
+                u64 npart     = pos_data.size();
+                Tscal totmass = npart * mpart;
+                Tscal hfact   = Kernel::hfactd;
+                for (Tvec &r : pos_data) {
+                    Tscal rhoa = rhoprofile(length(r)) * totmass / integral_profile;
+                    Tscal h    = hfact * pow(mpart / rhoa, 1. / 3);
+                    h_data.push_back(h);
                 }
             }
 
@@ -141,9 +162,12 @@ namespace shammodels::sph::modules {
                 }
 
                 {
+                    u32 len = pos_data.size();
                     PatchDataField<Tscal> &f
                         = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
-                    f.override(dr);
+                    f.override(h_data, len);
+                    // sycl::buffer<Tscal> buf(h_data.data(), len);
+                    // f.override(buf, len);
                 }
             }
             return tmp;

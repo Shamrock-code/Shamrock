@@ -11,7 +11,7 @@
  * @file ReplaceGhostField.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
- * @brief
+ * @brief  replace old fields by news in ghost zones
  *
  */
 
@@ -33,11 +33,12 @@ namespace shamrock::solvergraph {
             gz_map[r] += pdat_field.get_obj_cnt();
         });
 
+        // remove old fields
         fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
-            PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
             field.shrink(gz_map.at(id_patch));
         });
 
+        // replace new fields
         ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
             fields.get_field(r).insert(pdat_field);
         });

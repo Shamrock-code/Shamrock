@@ -13,7 +13,7 @@
  * @file ReplaceGhostField.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
- * @brief
+ * @brief replace old fields by news in ghost zones
  *
  */
 

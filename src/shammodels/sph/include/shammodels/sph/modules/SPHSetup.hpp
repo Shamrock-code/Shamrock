@@ -49,6 +49,11 @@ namespace shammodels::sph::modules {
             bool part_reordering,
             std::optional<u32> insert_step = std::nullopt);
 
+        void apply_setup_new(
+            SetupNodePtr setup,
+            bool part_reordering,
+            std::optional<u32> insert_step = std::nullopt);
+
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
             Tscal dr, std::pair<Tvec, Tvec> box);
 

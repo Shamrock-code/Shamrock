@@ -380,7 +380,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                shammodels::sph::modules::SetupNodePtr setup,
                bool part_reordering,
                std::optional<u32> insert_step) {
-                return self.apply_setup(setup, part_reordering, insert_step);
+                return self.apply_setup_new(setup, part_reordering, insert_step);
             },
             py::arg("setup"),
             py::kw_only(),

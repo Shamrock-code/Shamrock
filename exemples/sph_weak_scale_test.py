@@ -12,7 +12,7 @@ bmax = (0.6, 0.6, 0.6)
 N_target_base = 32e6
 compute_multiplier = shamrock.sys.world_size()
 # compute_multiplier = 12
-scheduler_split_val = int(2e7)
+scheduler_split_val = int(1e7)
 scheduler_merge_val = int(1)
 
 
@@ -67,7 +67,7 @@ setup = model.get_setup()
 gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 
 # On aurora /2 was correct to avoid out of memory
-setup.apply_setup(gen, insert_step=int(scheduler_split_val / 2))
+setup.apply_setup(gen, insert_step=int(scheduler_split_val / 4))
 
 
 xc, yc, zc = model.get_closest_part_to((0, 0, 0))

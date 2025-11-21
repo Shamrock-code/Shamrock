@@ -91,6 +91,14 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 }
 
 template<class T>
+void PatchDataField<T>::extract_elements(
+    const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to) {
+    StackEntry stack_loc{};
+    append_subset_to(idxs, idxs.get_size(), to);
+    remove_ids(idxs, idxs.get_size());
+}
+
+template<class T>
 bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     bool match = true;
 

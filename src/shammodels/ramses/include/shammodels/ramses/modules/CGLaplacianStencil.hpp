@@ -61,7 +61,6 @@ namespace shammodels::basegodunov {
 
             T err_val = std::numeric_limits<T>::quiet_NaN();
             return (cnt > 0) ? acc / cnt : err_val;
-            
         };
 
         T W_i  = field_access(cell_global_id);

@@ -11,7 +11,7 @@
  * @file ReplaceGhostField.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
- * @brief  replace old fields by news in ghost zones
+ * @brief   This module allows replacing ghost values for a generic field with updated values.
  *
  */
 

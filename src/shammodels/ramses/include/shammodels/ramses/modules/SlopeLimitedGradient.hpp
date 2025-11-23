@@ -69,9 +69,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "SlopeLimitedScalarGradient"; };
+        inline virtual std::string _impl_get_label() const { return "SlopeLimitedScalarGradient"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec>
@@ -124,8 +124,8 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "SlopeLimitedVectorGradient"; };
+        inline virtual std::string _impl_get_label() const { return "SlopeLimitedVectorGradient"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules

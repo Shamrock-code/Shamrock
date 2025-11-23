@@ -227,7 +227,8 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 

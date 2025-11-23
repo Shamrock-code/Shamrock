@@ -43,7 +43,7 @@ namespace shammodels::sph::modules {
     }
 
     template<typename Tvec>
-    std::string GetParticlesOutsideSphere<Tvec>::_impl_get_tex() {
+    std::string GetParticlesOutsideSphere<Tvec>::_impl_get_tex() const {
         auto pos                     = get_ro_edge_base(0).get_tex_symbol();
         auto part_ids_outside_sphere = get_rw_edge_base(0).get_tex_symbol();
 

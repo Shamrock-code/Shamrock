@@ -11,10 +11,28 @@
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/solvergraph/CopyPatchDataFieldFromLayer.hpp"
 #include "shamrock/solvergraph/Field.hpp"
-#include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
+
+template<typename T>
+void verify_copy(
+    shamrock::solvergraph::Field<T> &target_field,
+    const shamrock::patch::PatchDataLayer &source_patchdata,
+    u32 field_idx,
+    u32 obj_count,
+    u32 expected_nvar) {
+
+    REQUIRE_EQUAL(target_field.get_refs().get_element_count(), 1);
+    auto &out_field = target_field.get_refs().get(1).get();
+    REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
+    REQUIRE_EQUAL(out_field.get_nvar(), expected_nvar);
+
+    auto &source_field = source_patchdata.get_field<T>(field_idx);
+    auto source_data   = source_field.get_buf().copy_to_stdvec();
+    auto target_data   = out_field.get_buf().copy_to_stdvec();
+    REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
+}
 
 TestStart(
     Unittest,
@@ -59,17 +77,8 @@ TestStart(
         // Execute the copy operation
         copy_node->evaluate();
 
-        // Verify the target field has correct structure
-        REQUIRE_EQUAL(target_field->get_refs().get_element_count(), 1);
-        auto &out_field = target_field->get_refs().get(1).get();
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_nvar(), expected_nvar);
-
-        // Verify the values match
-        auto &source_field = source_patchdata.get_field<f32_3>(field_idx);
-        auto source_data   = source_field.get_buf().copy_to_stdvec();
-        auto target_data   = out_field.get_buf().copy_to_stdvec();
-        REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
+        // Verify the copy
+        verify_copy<f32_3>(*target_field, source_patchdata, field_idx, obj_count, expected_nvar);
     }
 
     // Test copying velocity_field (nvar = 2)
@@ -90,17 +99,8 @@ TestStart(
         // Execute the copy operation
         copy_node->evaluate();
 
-        // Verify the target field has correct structure
-        REQUIRE_EQUAL(target_field->get_refs().get_element_count(), 1);
-        auto &out_field = target_field->get_refs().get(1).get();
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_nvar(), expected_nvar);
-
-        // Verify the values match
-        auto &source_field = source_patchdata.get_field<f32_3>(field_idx);
-        auto source_data   = source_field.get_buf().copy_to_stdvec();
-        auto target_data   = out_field.get_buf().copy_to_stdvec();
-        REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
+        // Verify the copy
+        verify_copy<f32_3>(*target_field, source_patchdata, field_idx, obj_count, expected_nvar);
     }
 
     // Test copying scalar_field (nvar = 1)
@@ -121,16 +121,7 @@ TestStart(
         // Execute the copy operation
         copy_node->evaluate();
 
-        // Verify the target field has correct structure
-        REQUIRE_EQUAL(target_field->get_refs().get_element_count(), 1);
-        auto &out_field = target_field->get_refs().get(1).get();
-        REQUIRE_EQUAL(out_field.get_obj_cnt(), obj_count);
-        REQUIRE_EQUAL(out_field.get_nvar(), expected_nvar);
-
-        // Verify the values match
-        auto &source_field = source_patchdata.get_field<f32>(field_idx);
-        auto source_data   = source_field.get_buf().copy_to_stdvec();
-        auto target_data   = out_field.get_buf().copy_to_stdvec();
-        REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
+        // Verify the copy
+        verify_copy<f32>(*target_field, source_patchdata, field_idx, obj_count, expected_nvar);
     }
 }

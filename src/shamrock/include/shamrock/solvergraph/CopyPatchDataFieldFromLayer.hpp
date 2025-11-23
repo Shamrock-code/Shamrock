@@ -66,21 +66,23 @@ namespace shamrock::solvergraph {
 
             auto edges = get_edges();
 
+            auto source_refs = edges.original.get_const_refs();
+
+            // Collect the sizes & resize the target field if it support resizing
             shambase::DistributedData<u32> sizes{};
 
-            edges.original.get_const_refs().for_each(
-                [&](u64 id_patch, const patch::PatchDataLayer &pdat) {
-                    sizes.add_obj(id_patch, pdat.get_obj_cnt());
-                });
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &pdat) {
+                sizes.add_obj(id_patch, pdat.get_obj_cnt());
+            });
 
             edges.target.ensure_sizes(sizes);
 
+            // perform the actual copy
             auto target_refs = edges.target.get_refs();
 
-            sizes.for_each([&](u64 id_patch, u32 obj_count) {
-                const patch::PatchDataLayer &source = edges.original.get(id_patch);
-                PatchDataField<T> &dest             = target_refs.get(id_patch).get();
-                dest.overwrite(source.get_field<T>(field_idx), obj_count);
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &source) {
+                PatchDataField<T> &dest = target_refs.get(id_patch).get();
+                dest.overwrite(source.get_field<T>(field_idx), source.get_obj_cnt());
             });
         }
 

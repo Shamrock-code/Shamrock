@@ -11,8 +11,8 @@
 
 /**
  * @file crystalLattice_smap_sphere.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author David Fang (david.fang@ikmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
@@ -42,37 +42,70 @@ namespace shammath {
      */
     template<class Tvec>
     class LatticeHCP_smap_sphere {
+        using Tscal = shambase::VecComponent<Tvec>;
 
         public:
-        static constexpr u32 dim = 3;
+        static constexpr u32 dim       = 3;
+        static constexpr Tscal pi      = shambase::constants::pi<Tscal>;
+        static constexpr Tscal tol     = 1e-9;
+        static constexpr u32 maxits    = 200;
+        static constexpr u32 maxits_nr = 20;
+
+        Tscal dr;
+        std::array<i32, dim> coord_min;
+        std::array<i32, dim> coord_max;
+        Tscal rmin;
+        Tscal rmax;
+        Tvec center;
+        Tscal integral_profile;
+        std::function<Tscal(Tscal)> rhoprofile;
+        std::function<Tscal(Tscal)> S;
+        std::function<Tscal(Tscal)> rhodS;
+        std::function<Tscal(Tvec)> a_from_pos;
+        std::function<Tvec(Tscal, Tvec)> a_to_pos;
+        Tscal step;
 
         static_assert(
-            dim == shambase::VectorProperties<Tvec>::dimension, "this lattice exist only in dim 3");
+            dim == shambase::VectorProperties<Tvec>::dimension,
+            "this lattice exists only in dim 3");
 
-        using Tscal               = shambase::VecComponent<Tvec>;
-        static constexpr Tscal pi = shambase::constants::pi<Tscal>;
-
-        static Tscal stretchindiv(
-            Tscal r,
+        LatticeHCP_smap_sphere(
+            Tscal dr,
+            std::array<i32, dim> coord_min,
+            std::array<i32, dim> coord_max,
             std::function<Tscal(Tscal)> rhoprofile,
+            std::function<Tscal(Tscal)> S,
+            std::function<Tscal(Tvec)> a_from_pos,
+            std::function<Tvec(Tscal, Tvec)> a_to_pos,
             Tscal integral_profile,
             Tscal rmin,
             Tscal rmax,
-            Tvec center) {
-            constexpr Tscal tol     = 1e-9;
-            constexpr u32 maxits    = 200;
-            constexpr u32 maxits_nr = 20;
-            constexpr u32 ngrid     = 2000;
-            Tscal step              = (rmax - rmin) / ngrid;
+            Tvec center,
+            Tscal step)
+            : dr(dr), coord_min(coord_min), coord_max(coord_max), rhoprofile(rhoprofile), S(S),
+              rhodS([&S, &rhoprofile](Tscal r) {
+                  return rhoprofile(r) * S(r);
+              }),
+              a_from_pos(a_from_pos), a_to_pos(a_to_pos), integral_profile(integral_profile),
+              rmin(rmin), rmax(rmax), center(center), step(step) {}
 
-            u32 its       = 0;
-            Tscal initpos = r;
-            Tscal newr    = r;
-            Tscal prevr   = r;
+        static Tscal stretchindiv(
+            Tscal a,
+            std::function<Tscal(Tscal)> rhoprofile,
+            std::function<Tscal(Tscal)> S,
+            Tscal integral_profile,
+            Tscal rmin,
+            Tscal rmax,
+            Tvec center,
+            Tscal step) {
 
-            auto rhodS = [&rhoprofile](Tscal r) -> Tscal {
-                return 4 * pi * sycl::pown(r, 2) * rhoprofile(r);
+            auto rhodS = [&rhoprofile, &S](Tscal a) -> Tscal {
+                return S(a) * rhoprofile(a);
             };
+            u32 its       = 0;
+            Tscal initpos = a;
+            Tscal newr    = a;
+            Tscal prevr   = a;
 
             Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(rmin, 3))
                                  / (sycl::pown(rmax, 3) - sycl::pown(rmin, 3));
@@ -132,35 +165,51 @@ namespace shammath {
             Tscal dr,
             std::array<i32, dim> coord,
             std::function<Tscal(Tscal)> rhoprofile,
+            std::function<Tscal(Tscal)> S,
+            std::function<Tscal(Tvec)> a_from_pos,
+            std::function<Tvec(Tscal, Tvec)> a_to_pos,
             Tscal integral_profile,
             Tscal rmin,
             Tscal rmax,
-            Tvec center) noexcept {
+            Tvec center,
+            Tscal step) noexcept {
 
             i32 i = coord[0];
             i32 j = coord[1];
             i32 k = coord[2];
 
-            Tvec r_a
+            Tvec r
                 = {2 * i + (sycl::abs(j + k) % 2),
                    sycl::sqrt(3.) * (j + (1. / 3.) * (sycl::abs(k) % 2)),
                    2 * sycl::sqrt(6.) * k / 3};
 
-            Tvec pos_a   = dr * r_a;
-            Tscal r_norm = sycl::length(pos_a);
+            Tvec pos     = dr * r;
+            Tscal r_norm = sycl::length(pos);
 
-            if (r_norm >= rmax) { // kick the particle
-                return (r_a * 10 * rmax / r_norm) - center;
+            if (r_norm >= rmax) { // kick the particle (only when coord="r")!
+                return (r * 10 * rmax / r_norm) - center;
             }
-
-            Tscal newr_norm
-                = stretchindiv(r_norm, rhoprofile, integral_profile, rmin, rmax, center);
-
             if (i == 0 && j == 0 && k == 0) {
-                r_norm = 1;
+                return center * (-1.);
             }
 
-            return pos_a * (newr_norm / r_norm) - center;
+            Tscal a = a_from_pos(pos);
+            // a_from_pos =  sycl::length e.g
+            // or a_from_pos = pos_a.get("x")
+            Tscal new_a
+                = stretchindiv(a, rhoprofile, S, integral_profile, rmin, rmax, center, step);
+            Tvec new_pos = a_to_pos(new_a, pos);
+            // pos_a * (new_a / a_from_pos(pos_a)) dans le cas sphérique
+            // {new_a, pos_a.get("y"), pos_a.get("z")} dans le cas x
+            // j'imagine :
+            // def  a_to_pos(new_a, pos_a):
+            //      new_pos_a[0] = a_to_x(new_a, pos_a)
+            //      new_pos_a[1] = a_to_y(new_a, pos_a)
+            //      new_pos_a[2] = a_to_z(new_a, pos_a)
+            // avec a_to_x(pos_a) = pos_a[0]
+            //   ou a_to_x(pos_a) = pos_a[0]*newanew_a,
+
+            return new_pos - center;
         };
 
         /**
@@ -171,6 +220,7 @@ namespace shammath {
          * @return true
          * @return false
          */
+
         constexpr static bool can_make_periodic_box(
             std::array<i32, dim> coord_min, std::array<i32, dim> coord_max) {
             if (coord_max[0] - coord_min[0] < 2) {
@@ -286,43 +336,28 @@ namespace shammath {
          * @brief Iterator utility to generate the lattice
          *
          */
-        class Iterator {
-            Tscal dr;
-            std::array<i32, dim> coord_min;
 
+        class Iterator {
+
+            LatticeHCP_smap_sphere &parent;
+            std::array<i32, dim> coord_min;
             std::array<size_t, dim> coord_delta;
             size_t current_idx;
             size_t max_coord;
 
             bool done = false;
 
-            std::function<Tscal(Tscal)> rhoprofile;
-            Tscal integral_profile;
-            Tscal rmin;
-            Tscal rmax;
-            Tvec center;
-
             public:
-            Iterator(
-                Tscal dr,
-                std::array<i32, dim> coord_min,
-                std::array<i32, dim> coord_max,
-                std::function<Tscal(Tscal)> rhoprofile,
-                Tscal integral_profile,
-                Tscal rmin,
-                Tscal rmax,
-                Tvec center)
-                : dr(dr), current_idx(0), coord_delta({
-                                              size_t(coord_max[0] - coord_min[0]),
-                                              size_t(coord_max[1] - coord_min[1]),
-                                              size_t(coord_max[2] - coord_min[2]),
-                                          }),
-                  rhoprofile(rhoprofile), integral_profile(integral_profile), rmin(rmin),
-                  rmax(rmax), center(center) {
+            Iterator(LatticeHCP_smap_sphere &p)
+                : parent(p), current_idx(0), coord_delta({
+                                                 size_t(p.coord_max[0] - p.coord_min[0]),
+                                                 size_t(p.coord_max[1] - p.coord_min[1]),
+                                                 size_t(p.coord_max[2] - p.coord_min[2]),
+                                             }) {
 
                 // must check for all axis otherwise we loop forever
                 for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
+                    if (parent.coord_min[ax] == parent.coord_max[ax]) {
                         done = true;
                     }
                 }
@@ -334,21 +369,24 @@ namespace shammath {
 
             inline Tvec next() {
 
-                // std::array<i32, 3> current = {
-                //     coord_min[0] + i32(current_idx / (coord_delta[1] * coord_delta[2])),
-                //     coord_min[1] + i32((current_idx / coord_delta[2]) % coord_delta[1]),
-                //     coord_min[2] + i32(current_idx % coord_delta[2]),
-                // };
-
                 std::array<i32, 3> current = {
                     coord_min[0] + i32(current_idx % coord_delta[0]),
                     coord_min[1] + i32((current_idx / coord_delta[0]) % coord_delta[1]),
                     coord_min[2] + i32((current_idx / (coord_delta[0] * coord_delta[1]))),
                 };
 
-                // logger::raw_ln(current, current_idx, max_coord);
-
-                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax, center);
+                Tvec ret = generator(
+                    parent.dr,
+                    current,
+                    parent.rhoprofile,
+                    parent.S,
+                    parent.a_from_pos,
+                    parent.a_to_pos,
+                    parent.integral_profile,
+                    parent.rmin,
+                    parent.rmax,
+                    parent.center,
+                    parent.step);
 
                 if (!done) {
                     current_idx++;
@@ -389,7 +427,8 @@ namespace shammath {
          *
          */
         class IteratorDiscontinuous {
-            Tscal dr;
+
+            LatticeHCP_smap_sphere &parent;
 
             std::array<std::vector<size_t>, dim> remapped_indices;
 
@@ -398,34 +437,18 @@ namespace shammath {
 
             bool done = false;
 
-            std::function<Tscal(Tscal)> rhoprofile;
-            Tscal integral_profile;
-            Tscal rmin;
-            Tscal rmax;
-            Tvec center;
-
             public:
             size_t current_idx;
-            IteratorDiscontinuous(
-                Tscal dr,
-                std::array<i32, dim> coord_min,
-                std::array<i32, dim> coord_max,
-                std::function<Tscal(Tscal)> rhoprofile,
-                Tscal integral_profile,
-                Tscal rmin,
-                Tscal rmax,
-                Tvec center)
-                : dr(dr), current_idx(0), coord_delta({
-                                              size_t(coord_max[0] - coord_min[0]),
-                                              size_t(coord_max[1] - coord_min[1]),
-                                              size_t(coord_max[2] - coord_min[2]),
-                                          }),
-                  rhoprofile(rhoprofile), integral_profile(integral_profile), rmin(rmin),
-                  rmax(rmax), center(center) {
+            IteratorDiscontinuous(LatticeHCP_smap_sphere &p)
+                : parent(p), current_idx(0), coord_delta({
+                                                 size_t(p.coord_max[0] - p.coord_min[0]),
+                                                 size_t(p.coord_max[1] - p.coord_min[1]),
+                                                 size_t(p.coord_max[2] - p.coord_min[2]),
+                                             }) {
 
                 // must check for all axis otherwise we loop forever
                 for (int ax = 0; ax < dim; ax++) {
-                    if (coord_min[ax] == coord_max[ax]) {
+                    if (parent.coord_min[ax] == parent.coord_max[ax]) {
                         done = true;
                     }
                 }
@@ -433,7 +456,7 @@ namespace shammath {
                 max_coord = coord_delta[0] * coord_delta[1] * coord_delta[2];
 
                 for (int ax = 0; ax < dim; ax++) {
-                    DiscontinuousIterator<i32> it(coord_min[ax], coord_max[ax]);
+                    DiscontinuousIterator<i32> it(parent.coord_min[ax], parent.coord_max[ax]);
                     while (!it.is_done()) {
                         remapped_indices[ax].push_back(it.next());
                     }
@@ -462,7 +485,18 @@ namespace shammath {
 
                 // logger::raw_ln(current, current_idx, max_coord);
 
-                Tvec ret = generator(dr, current, rhoprofile, integral_profile, rmin, rmax, center);
+                Tvec ret = generator(
+                    parent.dr,
+                    current,
+                    parent.rhoprofile,
+                    parent.S,
+                    parent.a_from_pos,
+                    parent.a_to_pos,
+                    parent.integral_profile,
+                    parent.rmin,
+                    parent.rmax,
+                    parent.center,
+                    parent.step);
 
                 if (!done) {
                     current_idx++;
@@ -497,6 +531,9 @@ namespace shammath {
                 shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
+
+        IteratorDiscontinuous get_IteratorDiscontinuous() { return IteratorDiscontinuous(*this); }
+        Iterator get_Iterator() { return Iterator(*this); }
     };
 
 } // namespace shammath

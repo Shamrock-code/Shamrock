@@ -11,8 +11,8 @@
 
 /**
  * @file GeneratorLatticeHCP_smap_sphere.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author David Fang (david.fang@ikmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
@@ -20,6 +20,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammath/AABB.hpp"
+#include "shammath/DiscontinuousIterator.hpp"
 #include "shammath/crystalLattice_smap_sphere.hpp"
 #include "shammath/integrator.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
@@ -35,7 +36,7 @@ namespace shammodels::sph::modules {
         using Tscal               = shambase::VecComponent<Tvec>;
         static constexpr u32 dim  = shambase::VectorProperties<Tvec>::dimension;
         using Lattice_smap_sphere = shammath::LatticeHCP_smap_sphere<Tvec>;
-        using LatticeIter_smap_sphere =
+        using LatticeIterDiscont_smap_sphere =
             typename shammath::LatticeHCP_smap_sphere<Tvec>::IteratorDiscontinuous;
         using Config = SolverConfig<Tvec, SPHKernel>;
         using Kernel = SPHKernel<Tscal>;
@@ -44,32 +45,53 @@ namespace shammodels::sph::modules {
 
         ShamrockCtx &context;
         Config &solver_config;
-        Tscal dr;
         shammath::AABB<Tvec> box;
-        Tscal rmin;
-        Tscal rmax;
-        std::function<Tscal(Tscal)> rhoprofile;
-        std::function<Tscal(Tscal)> rhodS;
 
-        Tscal integral_profile;
+        Lattice_smap_sphere lattice;
+        LatticeIterDiscont_smap_sphere discont_iterator;
 
-        LatticeIter_smap_sphere generator;
+        static auto init_lattice(
+            Tscal dr, std::pair<Tvec, Tvec> box, std::function<Tscal(Tscal)> rhoprofile) {
+            static constexpr u32 ngrid = 2000;
 
-        static auto init_gen(
-            Tscal dr,
-            std::pair<Tvec, Tvec> box,
-            std::function<Tscal(Tscal)> rhoprofile,
-            Tscal integral_profile,
-            Tscal rmin,
-            Tscal rmax) {
-
+            Tscal rmin = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
+            Tscal rmax = sham::abs((box.second - box.first).x()) / 2.;
             auto [idxs_min, idxs_max]
                 = Lattice_smap_sphere::get_box_index_bounds(dr, box.first, box.second);
-            u32 idx_gen = 0;
             Tvec center = (box.first + box.second) / 2;
-            return LatticeIter_smap_sphere(
-                dr, idxs_min, idxs_max, rhoprofile, integral_profile, rmin, rmax, center);
-        };
+
+            // geometry dependant
+            auto S = [](Tscal r) {
+                return 4 * pi * sycl::pown(r, 2);
+            };
+            auto rhodS = [&rhoprofile, &S](Tscal r) {
+                return rhoprofile(r) * S(r);
+            };
+            auto a_from_pos = [](Tvec pos) {
+                return sycl::length(pos);
+            };
+            auto a_to_pos = [&a_from_pos](Tscal new_a, Tvec pos) {
+                return pos * (new_a / a_from_pos(pos));
+            };
+
+            Tscal step = (rmax - rmin) / ngrid;
+
+            Tscal integral_profile = shammath::integ_riemann_sum(rmin, rmax, step, rhodS);
+
+            return Lattice_smap_sphere(
+                dr,
+                idxs_min,
+                idxs_max,
+                rhoprofile,
+                S,
+                a_from_pos,
+                a_to_pos,
+                integral_profile,
+                rmin,
+                rmax,
+                center,
+                step);
+        }
 
         public:
         GeneratorLatticeHCP_smap_sphere(
@@ -78,18 +100,11 @@ namespace shammodels::sph::modules {
             Tscal dr,
             std::pair<Tvec, Tvec> box,
             std::function<Tscal(Tscal)> rhoprofile)
-            : context(context), solver_config(solver_config), dr(dr), box(box),
-              rhoprofile(rhoprofile), rhodS([&rhoprofile](Tscal r) {
-                  return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
-              }),
-              rmin(0), // There's a particle at r=0 because the HCP is centered on (0,0,0)
-              //   rmax(sycl::length(box.second)),
-              rmax(sycl::fabs((box.second - box.first).x()) / 2.), // if it's cubic box
-              integral_profile(
-                  shammath::integ_riemann_sum(rmin, rmax, (rmax - rmin) / 2000, rhodS)),
-              generator(init_gen(dr, box, rhoprofile, integral_profile, rmin, rmax)) {};
+            : context(context), solver_config(solver_config), box(box),
+              lattice(init_lattice(dr, box, rhoprofile)),
+              discont_iterator(lattice.get_IteratorDiscontinuous()) {};
 
-        bool is_done() { return generator.is_done(); }
+        bool is_done() { return discont_iterator.is_done(); }
 
         shamrock::patch::PatchDataLayer next_n(u32 nmax) {
             StackEntry stack_loc{};
@@ -127,9 +142,9 @@ namespace shammodels::sph::modules {
                     "total",
                     skip_start + gen_cnt + skip_end);
 
-                generator.skip(skip_start);
-                auto tmp = generator.next_n(gen_cnt);
-                generator.skip(skip_end);
+                discont_iterator.skip(skip_start);
+                auto tmp = discont_iterator.next_n(gen_cnt);
+                discont_iterator.skip(skip_end);
 
                 for (Tvec r : tmp) {
                     if (Patch::is_in_patch_converted(r, box.lower, box.upper)) {
@@ -146,8 +161,9 @@ namespace shammodels::sph::modules {
             Tscal totmass = mpart * npart;
             Tscal hfact   = Kernel::hfactd;
             for (Tvec &r : pos_data) {
-                Tscal rhoa = rhoprofile(sycl::length(r)) * totmass / integral_profile;
-                Tscal h    = shamrock::sph::h_rho(mpart, rhoa, hfact);
+                Tscal rhoa
+                    = lattice.rhoprofile(sycl::length(r)) * totmass / lattice.integral_profile;
+                Tscal h = shamrock::sph::h_rho(mpart, rhoa, hfact);
                 h_data.push_back(h);
             }
 

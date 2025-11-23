@@ -9,9 +9,10 @@
 
 /**
  * @file pySPHModel.cpp
+ * @author David Fang (david.fang@ikmail.com)
+ * @author David Fang (fang.david03@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @author David Fang (david.fang@ikmail.com)
  * @brief
  */
 

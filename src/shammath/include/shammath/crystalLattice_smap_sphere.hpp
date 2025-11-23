@@ -26,7 +26,7 @@
 #include "shammath/DiscontinuousIterator.hpp"
 #include "shammath/LatticeError.hpp"
 #include "shammath/integrator.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
+#include <shambackends/sycl.hpp>
 #include <array>
 #include <functional>
 #include <utility>
@@ -70,12 +70,12 @@ namespace shammath {
             Tscal newr    = r;
             Tscal prevr   = r;
 
-            std::function<Tscal(Tscal)> rhodS = [&rhoprofile](Tscal r) -> Tscal {
-                return 4 * pi * sycl::pow(r, 2) * rhoprofile(r);
+            auto rhodS = [&rhoprofile](Tscal r) -> Tscal {
+                return 4 * pi * sycl::pown(r, 2) * rhoprofile(r);
             };
 
-            Tscal initrelatpos = (sycl::pow(initpos, 3) - sycl::pow(rmin, 3))
-                                 / (sycl::pow(rmax, 3) - sycl::pow(rmin, 3));
+            Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(rmin, 3))
+                                 / (sycl::pown(rmax, 3) - sycl::pown(rmin, 3));
             Tscal newrelatpos
                 = shammath::integ_riemann_sum(rmin, newr, step, rhodS) / integral_profile;
             Tscal func       = newrelatpos - initrelatpos;
@@ -84,7 +84,7 @@ namespace shammath {
             Tscal dfunc      = 0;
             Tscal dx         = 0;
             bool bisect      = false;
-            while ((sycl::fabs(func) > tol) && (its < maxits)) {
+            while ((sham::abs(func) > tol) && (its < maxits)) {
                 its++;
                 if (bisect) {
                     if (func > 0.) {
@@ -99,9 +99,9 @@ namespace shammath {
                     newr  = newr - dx;
                 }
 
-                if (sycl::fabs(newr) < 0.8 * sycl::fabs(prevr)) {
+                if (sham::abs(newr) < 0.8 * sham::abs(prevr)) {
                     newr = 0.8 * prevr;
-                } else if (sycl::fabs(newr) > 1.2 * sycl::fabs(prevr)) {
+                } else if (sham::abs(newr) > 1.2 * sham::abs(prevr)) {
                     newr = 1.2 * prevr;
                 }
 

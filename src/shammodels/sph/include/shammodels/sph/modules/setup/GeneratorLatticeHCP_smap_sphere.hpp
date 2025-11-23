@@ -23,9 +23,10 @@
 #include "shammath/crystalLattice_smap_sphere.hpp"
 #include "shammath/integrator.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include <hipSYCL/sycl/libkernel/builtins.hpp>
+#include <shambackends/sycl.hpp>
 
 namespace shammodels::sph::modules {
 
@@ -146,7 +147,7 @@ namespace shammodels::sph::modules {
             Tscal hfact   = Kernel::hfactd;
             for (Tvec &r : pos_data) {
                 Tscal rhoa = rhoprofile(sycl::length(r)) * totmass / integral_profile;
-                Tscal h    = hfact * sycl::pow(mpart / rhoa, 1. / 3);
+                Tscal h    = shamrock::sph::h_rho(mpart, rhoa, hfact);
                 h_data.push_back(h);
             }
 

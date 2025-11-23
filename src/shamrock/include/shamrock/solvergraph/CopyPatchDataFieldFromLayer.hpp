@@ -53,8 +53,7 @@ namespace shamrock::solvergraph {
         };
 
         void set_edges(
-            std::shared_ptr<IPatchDataLayerRefs> original,
-            std::shared_ptr<IFieldRefs<T>> target) {
+            std::shared_ptr<IPatchDataLayerRefs> original, std::shared_ptr<IFieldRefs<T>> target) {
             __internal_set_ro_edges({original});
             __internal_set_rw_edges({target});
         }
@@ -63,24 +62,28 @@ namespace shamrock::solvergraph {
             return Edges{get_ro_edge<IPatchDataLayerRefs>(0), get_rw_edge<IFieldRefs<T>>(0)};
         }
 
-        inline void _impl_evaluate_internal(){
+        inline void _impl_evaluate_internal() {
 
             auto edges = get_edges();
 
-            shambase::DistributedData<u32> sizes {};
+            auto source_refs = edges.original.get_const_refs();
 
-            edges.original.get_const_refs().for_each(
-                [&](u64 id_patch, const patch::PatchDataLayer &pdat) {
-                    sizes.add_obj(id_patch, pdat.get_obj_cnt());
-                });
+            // Collect the sizes & resize the target field if it support resizing
+            shambase::DistributedData<u32> sizes{};
+
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &pdat) {
+                sizes.add_obj(id_patch, pdat.get_obj_cnt());
+            });
 
             edges.target.ensure_sizes(sizes);
 
-            edges.original.get_const_refs().for_each(
-                [&](u64 id_patch, const patch::PatchDataLayer &source) {
-                    PatchDataField<T> & dest = edges.target.get_refs().get(id_patch).get();
-                    dest.overwrite(source.get_field<T>(field_idx), source.get_obj_cnt());
-                });
+            // perform the actual copy
+            auto target_refs = edges.target.get_refs();
+
+            source_refs.for_each([&](u64 id_patch, const patch::PatchDataLayer &source) {
+                PatchDataField<T> &dest = target_refs.get(id_patch).get();
+                dest.overwrite(source.get_field<T>(field_idx), source.get_obj_cnt());
+            });
         }
 
         std::string _impl_get_label() { return "CopyPatchDataFieldFromLayer"; }
@@ -88,5 +91,4 @@ namespace shamrock::solvergraph {
         std::string _impl_get_tex() { return "TODO"; }
     };
 
-    template class CopyPatchDataFieldFromLayer<float>;
 } // namespace shamrock::solvergraph

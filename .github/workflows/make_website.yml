@@ -9,10 +9,16 @@ on:
 
 jobs:
 
+
+  extract_version:
+    name: Extract Version
+    uses: ./.github/workflows/extract_version.yml
+
+
   make_GitHubPage:
     name: "Build & upload"
     runs-on: ubuntu-latest
-
+    needs: extract_version
     steps:
       - name: 'Download Doc'
         uses: actions/download-artifact@v4
@@ -47,12 +53,15 @@ jobs:
           name: sphinx_doc
           path: sphinx
 
+      - name: Create documentation archive
+        run: tar -cf shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar .
+
       - name: Archive generated page
         uses: actions/upload-artifact@v4
         id: artifact-upload-step
         with:
-          name: shamrock_github_page
-          path: ./
+          name: shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar
+          path: shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar
 
       # See https://github.com/actions/upload-artifact/issues/50#issuecomment-1856471599
       - name: Report GH page artifact url

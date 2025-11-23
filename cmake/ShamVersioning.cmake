@@ -43,6 +43,8 @@ else()
         RESULT_VARIABLE GIT_BRANCH_RETURN_CODE
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    # Replace slashes with underscores in branch name to avoid file path issues
+    string(REPLACE "/" "_" SHAMROCK_GIT_BRANCH "${SHAMROCK_GIT_BRANCH}")
     # check whether there are local changes
     execute_process(COMMAND git diff-index --name-only HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}

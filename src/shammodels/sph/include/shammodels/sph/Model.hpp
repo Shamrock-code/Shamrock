@@ -86,6 +86,9 @@ namespace shammodels::sph {
         inline void set_cfl_force(Tscal cfl_force) {
             solver.solver_config.cfl_config.cfl_force = cfl_force;
         }
+        inline void set_eta_sink(Tscal eta_sink) {
+            solver.solver_config.cfl_config.eta_sink = eta_sink;
+        }
         inline void set_particle_mass(Tscal gpart_mass) {
             solver.solver_config.gpart_mass = gpart_mass;
         }
@@ -714,6 +717,69 @@ namespace shammodels::sph {
 
         Tvec get_closest_part_to(Tvec pos);
 
+        inline void apply_momentum_offset(Tvec offset) {
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            u32 ivxyz = sched.pdl().get_field_idx<Tvec>("vxyz");
+
+            // compute the total mass
+            Tscal tot_mass = 0;
+
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    tot_mass += solver.solver_config.gpart_mass * pdat.get_obj_cnt();
+                });
+
+            tot_mass = shamalgs::collective::allreduce_sum(tot_mass);
+
+            // add the mass of the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    tot_mass += s.mass;
+                }
+            }
+
+            // compute the offset velocity
+            Tvec offset_vel = (tot_mass > 0) ? (offset / tot_mass)
+                                             : shambase::VectorProperties<Tvec>::get_zero();
+
+            // apply the offset velocity to the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    s.velocity += offset_vel;
+                }
+            }
+
+            // apply the offset velocity to the particles
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    PatchDataField<Tvec> &vxyz = pdat.get_field<Tvec>(ivxyz);
+                    vxyz.apply_offset(offset_vel);
+                });
+        }
+
+        inline void apply_position_offset(Tvec offset) {
+
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            u32 ixyz = sched.pdl().get_field_idx<Tvec>("xyz");
+
+            // apply the position offset to the sinks
+            if (!solver.storage.sinks.is_empty()) {
+                for (auto &s : solver.storage.sinks.get()) {
+                    s.pos += offset;
+                }
+            }
+
+            // apply the position offset to the particles
+            sched.for_each_patchdata_nonempty(
+                [&](shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                    PatchDataField<Tvec> &xyz = pdat.get_field<Tvec>(ixyz);
+                    xyz.apply_offset(offset);
+                });
+        }
+
         // inline void enable_barotropic_mode(){
         //     sconfig.enable_barotropic();
         // }
@@ -733,6 +799,14 @@ namespace shammodels::sph {
 
         inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
         inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline f64 solver_logs_cumulated_step_time() {
+            return solver.solve_logs.get_cumulated_step_time();
+        }
+        inline void solver_logs_reset_cumulated_step_time() {
+            solver.solve_logs.reset_cumulated_step_time();
+        }
+        inline u64 solver_logs_step_count() { return solver.solve_logs.get_step_count(); }
+        inline void solver_logs_reset_step_count() { solver.solve_logs.reset_step_count(); }
 
         inline void change_htolerances(Tscal in_coarse, Tscal in_fine) {
             if (in_coarse < in_fine) {

@@ -364,6 +364,39 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 }
 
 template<class T>
+void PatchDataField<T>::permut_vars(const std::vector<u32> &permut) {
+    if (permut.size() != get_nvar()) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the number of permut is not equal to the patchdatafield nvar: {} != {}",
+            permut.size(),
+            get_nvar()));
+    }
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    sham::DeviceBuffer<u32> permut_buf(
+        permut.size(), shamsys::instance::get_compute_scheduler_ptr());
+    permut_buf.copy_from_stdvec(permut);
+
+    sham::DeviceBuffer<T> copy = buf.copy();
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{copy, permut_buf},
+        sham::MultiRef{buf},
+        get_val_cnt(),
+        [nvar = nvar](u32 i, const T *src, const u32 *permut, T *dst) {
+            u32 obj_id = i / nvar;
+            u32 var_id = i % nvar;
+
+            u32 new_var_id = permut[var_id];
+
+            dst[obj_id * nvar + new_var_id] = src[i];
+        });
+}
+
+template<class T>
 void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();

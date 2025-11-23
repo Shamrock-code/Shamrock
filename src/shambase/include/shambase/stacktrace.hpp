@@ -20,6 +20,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <stack>
 
 namespace shambase::details {
@@ -205,23 +206,11 @@ using StackEntry = shambase::details::BasicStackEntry;
  */
 using NamedStackEntry = shambase::details::NamedBasicStackEntry;
 
-/// Utility to concatenate two tokens
-#define internal_macro_shamrock_CONCAT2(a, b) a##b
-/// Utility to expand a macro with two tokens
-#define internal_macro_shamrock_EXPAND2(a, b) internal_macro_shamrock_CONCAT2(a, b)
-
 /**
- * @fn __shamrock_stack_entry
  * @brief Macro to create a stack entry.
  *
- * This macro defines a `StackEntry` variable with a unique name, either using
- * `__COUNTER__` or `__LINE__` to ensure uniqueness.
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
  */
-
-#ifdef __COUNTER__
-    #define __shamrock_stack_entry()                                                               \
-        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __COUNTER__) {}
-#else
-    #define __shamrock_stack_entry()                                                               \
-        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __LINE__) {}
-#endif
+#define __shamrock_stack_entry()                                                                   \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}

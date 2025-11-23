@@ -164,6 +164,35 @@ namespace shambase {
     }
 
     /**
+     * @brief Takes a raw pointer and returns a reference to the object it points to.
+     * It throws a std::runtime_error if the pointer is null.
+     *
+     * @tparam T The type of the object pointed to by the raw pointer.
+     * @param ptr The raw pointer.
+     * @param loc The source location where this function is called.
+     * @return A reference to the object pointed to by the raw pointer.
+     * @throws std::runtime_error If the raw pointer is null.
+     */
+    template<class T>
+    inline T &get_check_ref(T *ptr, SourceLocation loc = SourceLocation()) {
+        if (!ptr) {
+            throw make_except_with_loc<std::runtime_error>(
+                "Can not get reference to null pointer", loc);
+        }
+        return *ptr;
+    }
+
+    /// same overload but for const pointer
+    template<class T>
+    inline const T &get_check_ref(const T *ptr, SourceLocation loc = SourceLocation()) {
+        if (!ptr) {
+            throw make_except_with_loc<std::runtime_error>(
+                "Can not get reference to null pointer", loc);
+        }
+        return *ptr;
+    }
+
+    /**
      * @brief Extracts the content out of an optional
      *
      * This function that takes an std::optional object and extracts the value from it.

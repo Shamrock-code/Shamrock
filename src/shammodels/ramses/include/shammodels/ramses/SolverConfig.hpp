@@ -27,7 +27,6 @@
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
-#include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <stdexcept>
@@ -135,6 +134,22 @@ namespace shammodels::basegodunov {
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
     };
 
+    struct BCConfig {
+        enum class GhostType { Periodic = 0, Reflective = 1, Outflow = 2 };
+
+        GhostType ghost_type_x = GhostType::Periodic;
+        GhostType ghost_type_y = GhostType::Periodic;
+        GhostType ghost_type_z = GhostType::Periodic;
+
+        GhostType get_x() const { return ghost_type_x; }
+        GhostType get_y() const { return ghost_type_y; }
+        GhostType get_z() const { return ghost_type_z; }
+
+        void set_x(GhostType ghost_type) { ghost_type_x = ghost_type; }
+        void set_y(GhostType ghost_type) { ghost_type_y = ghost_type; }
+        void set_z(GhostType ghost_type) { ghost_type_z = ghost_type; }
+    };
+
     template<class Tvec, class TgridVec>
     struct SolverConfig;
 
@@ -189,6 +204,8 @@ struct shammodels::basegodunov::SolverConfig {
     // Dust config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
+    BCConfig bc_config{};
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gas passive scalars config
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,7 +222,7 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     inline Tscal get_constant_G() {
         if (!unit_sys) {
-            logger::warn_ln("amr::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("amr::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
         } else {
@@ -270,11 +287,11 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_dust_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Dust is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Dust is experimental"));
         }
 
         if (is_gravity_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 
             if (!shamrock::are_experimental_features_allowed()) {
@@ -292,7 +309,7 @@ struct shammodels::basegodunov::SolverConfig {
         }
 
         if (is_gas_passive_scalar_on()) {
-            logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental");
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>(shambase::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "

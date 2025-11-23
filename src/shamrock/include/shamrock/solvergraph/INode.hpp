@@ -34,8 +34,10 @@ namespace shamrock::solvergraph {
         std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
-
         INode() = default;
+
+        INode(const INode &)            = delete; /// would violate shared_from_this() & unique UUID
+        INode &operator=(const INode &) = delete; /// would violate shared_from_this() & unique UUID
 
         /// Move constructor - automatically delegates to base classes and members
         INode(INode &&) noexcept = default;

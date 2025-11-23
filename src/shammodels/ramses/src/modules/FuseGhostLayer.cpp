@@ -29,4 +29,6 @@ void shammodels::basegodunov::modules::FuseGhostLayer::_impl_evaluate_internal()
         });
 }
 
-std::string shammodels::basegodunov::modules::FuseGhostLayer::_impl_get_tex() { return "TODO"; }
+std::string shammodels::basegodunov::modules::FuseGhostLayer::_impl_get_tex() const {
+    return "TODO";
+}

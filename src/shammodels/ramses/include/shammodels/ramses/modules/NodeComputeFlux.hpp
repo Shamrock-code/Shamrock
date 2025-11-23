@@ -78,9 +78,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "NodeComputeFluxGasDirMode"; };
+        inline virtual std::string _impl_get_label() const { return "NodeComputeFluxGasDirMode"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec, DustRiemannSolverMode mode, Direction dir>
@@ -121,9 +121,9 @@ namespace shammodels::basegodunov::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "NodeComputeFluxDustDirMode"; };
+        inline virtual std::string _impl_get_label() const { return "NodeComputeFluxDustDirMode"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 
     template<class Tvec, class TgridVec, RiemannSolverMode mode>

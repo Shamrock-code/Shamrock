@@ -74,7 +74,8 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
 }
 
 template<class TgridVec>
-std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>::_impl_get_tex()
+    const {
     auto sim_box                 = get_ro_edge_base(0).get_tex_symbol();
     auto patch_tree              = get_ro_edge_base(1).get_tex_symbol();
     auto patch_boxes             = get_ro_edge_base(2).get_tex_symbol();

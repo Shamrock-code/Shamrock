@@ -12,7 +12,7 @@
 /**
  * @file ExtractGhostField.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief  This module allows to extract ghosts for a generic field such as density, velocity, etc
  *
  */

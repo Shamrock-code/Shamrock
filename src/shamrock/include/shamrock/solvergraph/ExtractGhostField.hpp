@@ -55,8 +55,8 @@ namespace shamrock::solvergraph {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "ExtractGhostField"; };
+        inline virtual std::string _impl_get_label() const { return "ExtractGhostField"; };
 
-        virtual std::string _impl_get_tex() { return "TODO"; };
+        virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shamrock::solvergraph

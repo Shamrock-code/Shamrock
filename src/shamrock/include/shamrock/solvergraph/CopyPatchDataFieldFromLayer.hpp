@@ -75,11 +75,13 @@ namespace shamrock::solvergraph {
 
             edges.target.ensure_sizes(sizes);
 
-            edges.original.get_const_refs().for_each(
-                [&](u64 id_patch, const patch::PatchDataLayer &source) {
-                    PatchDataField<T> &dest = edges.target.get_refs().get(id_patch).get();
-                    dest.overwrite(source.get_field<T>(field_idx), source.get_obj_cnt());
-                });
+            auto target_refs = edges.target.get_refs();
+
+            sizes.for_each([&](u64 id_patch, u32 obj_count) {
+                const patch::PatchDataLayer &source = edges.original.get(id_patch);
+                PatchDataField<T> &dest             = target_refs.get(id_patch).get();
+                dest.overwrite(source.get_field<T>(field_idx), obj_count);
+            });
         }
 
         std::string _impl_get_label() { return "CopyPatchDataFieldFromLayer"; }
@@ -87,5 +89,4 @@ namespace shamrock::solvergraph {
         std::string _impl_get_tex() { return "TODO"; }
     };
 
-    template class CopyPatchDataFieldFromLayer<float>;
 } // namespace shamrock::solvergraph

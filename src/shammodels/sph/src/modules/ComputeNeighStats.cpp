@@ -118,7 +118,7 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec>
-    std::string ComputeNeighStats<Tvec>::_impl_get_tex() {
+    std::string ComputeNeighStats<Tvec>::_impl_get_tex() const {
         return "TODO";
     }
 

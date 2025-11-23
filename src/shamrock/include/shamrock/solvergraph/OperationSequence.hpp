@@ -34,18 +34,18 @@ namespace shamrock::solvergraph {
         }
         void _impl_evaluate_internal();
 
-        inline std::string _impl_get_label() { return name; }
+        inline std::string _impl_get_label() const { return name; }
 
-        std::string _impl_get_dot_graph_partial();
+        std::string _impl_get_dot_graph_partial() const;
 
-        inline virtual std::string _impl_get_dot_graph_node_start() {
+        inline virtual std::string _impl_get_dot_graph_node_start() const {
             return nodes[0]->get_dot_graph_node_start();
         }
-        inline virtual std::string _impl_get_dot_graph_node_end() {
+        inline virtual std::string _impl_get_dot_graph_node_end() const {
             return nodes[nodes.size() - 1]->get_dot_graph_node_end();
         }
 
-        std::string _impl_get_tex();
+        std::string _impl_get_tex() const;
     };
 
 } // namespace shamrock::solvergraph

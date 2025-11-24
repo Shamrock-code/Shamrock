@@ -80,14 +80,14 @@ namespace shamrock::solvergraph {
          *
          * @return std::string The node label "SetEdge"
          */
-        inline virtual std::string _impl_get_label() { return "SetEdge"; };
+        inline virtual std::string _impl_get_label() const { return "SetEdge"; };
 
         /**
          * @brief Get the TeX representation of the node
          *
          * @return std::string A TeX string describing the node operation
          */
-        inline virtual std::string _impl_get_tex() {
+        inline virtual std::string _impl_get_tex() const {
 
             auto to_set = get_rw_edge_base(0).get_tex_symbol();
 

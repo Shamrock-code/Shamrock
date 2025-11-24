@@ -25,9 +25,12 @@ def setup(arg: SetupArg, envgen: EnvGen):
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 
     def has_cmd(cmd: str) -> bool:
-        return subprocess.run(
-            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True
-        ).returncode == 0
+        return (
+            subprocess.run(
+                cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True
+            ).returncode
+            == 0
+        )
 
     if has_cmd("nvidia-smi"):
         default_backend = "cuda"

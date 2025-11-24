@@ -1,4 +1,3 @@
-#!/usr/bin/bash
 
 # Everything before this line will be provided by the new-env script
 

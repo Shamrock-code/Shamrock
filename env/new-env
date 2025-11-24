@@ -78,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--machine", action="store", required=True, help="machine assumed for the environment"
     )
-    parser.add_argument("--builddir", action="store", default=None, help="build directory to use")
+    parser.add_argument("--builddir", action="store", required=True, help="build directory to use")
     parser.add_argument("--type", action="store", default="release", help="build type to use")
 
     parser.add_argument(
@@ -98,8 +98,8 @@ if __name__ == "__main__":
     machine_folder = os.path.join(abs_env_dir, "machine", args.machine.replace(".", "/"))
 
     # print(f"-- Loading {machine_folder}/setup.py")
-    _builddir = f"build_{args.machine}" if args.builddir is None else args.builddir
-    builddir = os.path.abspath(os.path.expanduser(_builddir))
+
+    builddir = os.path.abspath(os.path.expanduser(args.builddir))
 
     # Load the machine file
     # TODO add check that the file exist

@@ -6,26 +6,37 @@ WITH_CUDA_BACKEND=Off
 WITH_ROCM_BACKEND=Off
 WITH_SSCP_COMPILER=Off
 
+CBP_CUDA_DIR=/usr/local/cuda
+CBP_ROCM_DIR=/opt/rocm-6.4.1
+
 if [ "${ACPP_BACKEND}" = "cuda" ]; then
     GPU_TARGET=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)
     ACPP_TARGETS+=";cuda:sm_${GPU_TARGET}"
     LLVM_TARGET="NVPTX"
-    GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=/usr/local/cuda"
+    GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=${CBP_CUDA_DIR}"
     WITH_CUDA_BACKEND=On
-
-elif [ "${ACPP_BACKEND}" = "sscp" ]; then
-    ACPP_TARGETS="generic"
-    LLVM_TARGET="NVPTX"
-    GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=/usr/local/cuda"
-    WITH_CUDA_BACKEND=On
-    WITH_SSCP_COMPILER=On
 
 elif [ "${ACPP_BACKEND}" = "rocm" ]; then
     GPU_TARGET=$(rocminfo | \grep --color=never -oE 'gfx[0-9]+[a-zA-Z0-9]*' | uniq)
     ACPP_TARGETS+=";hip:${GPU_TARGET}"
     LLVM_TARGET="AMDGPU"
-    GPU_LIBRARY_FLAG="-DROCM_PATH=/opt/rocm-6.4.1"
+    GPU_LIBRARY_FLAG="-DROCM_PATH=${CBP_ROCM_DIR}"
     WITH_ROCM_BACKEND=On
+
+elif [ "${ACPP_BACKEND}" = "sscp" ]; then
+    ACPP_TARGETS="generic"
+    WITH_SSCP_COMPILER=On
+
+    if nvidia-smi &> /dev/null; then
+        LLVM_TARGET="NVPTX"
+        GPU_LIBRARY_FLAG="-DCUDAToolkit_LIBRARY_ROOT=${CBP_CUDA_DIR}"
+        WITH_CUDA_BACKEND=On
+
+    elif rocm-smi &> /dev/null; then
+        LLVM_TARGET="AMDGPU"
+        GPU_LIBRARY_FLAG="-DROCM_PATH=${CBP_ROCM_DIR}"
+        WITH_ROCM_BACKEND=On
+    fi
 fi
 
 export ACPP_VERSION=develop

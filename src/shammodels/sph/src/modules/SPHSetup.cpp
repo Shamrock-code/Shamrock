@@ -32,6 +32,7 @@
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyStretchMapping.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
@@ -213,6 +214,18 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierOffset<Tvec>(context, parent, offset_postion, offset_velocity));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_apply_stretch_mapping(
+        SetupNodePtr parent,
+        std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+        std::string system,
+        std::vector<std::string> axes) {
+
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyStretchMapping<Tvec, SPHKernel>(
+        context, solver_config, parent, rhoprofiles, system, axes));
 }
 
 template<class Tvec, template<class> class SPHKernel>

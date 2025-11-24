@@ -10,81 +10,82 @@
 #pragma once
 
 /**
- * @file GeneratorLatticeHCP_smap.hpp
+ * @file ModifierApplyStretchMapping.hpp
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
+ *
  */
 
-#include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/indexing.hpp"
-#include "shammath/AABB.hpp"
-#include "shammath/DiscontinuousIterator.hpp"
-#include "shammath/crystalLattice_smap.hpp"
-#include "shammath/integrator.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/setup/CoordinateTransformation.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include <shambackends/sycl.hpp>
-#include <cstddef>
 
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class GeneratorLatticeHCP_smap : public ISPHSetupNode {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-        using LatticeHCP_smap    = shammath::LatticeHCP_smap<Tvec>;
-        using LatticeIterDiscont_smap =
-            typename shammath::LatticeHCP_smap<Tvec>::IteratorDiscontinuous;
+    class ModifierApplyStretchMapping : public ISPHSetupNode {
+        using Tscal               = shambase::VecComponent<Tvec>;
+        static constexpr u32 dim  = shambase::VectorProperties<Tvec>::dimension;
+        static constexpr Tscal pi = shambase::constants::pi<Tscal>;
+
         using Config = SolverConfig<Tvec, SPHKernel>;
         using Kernel = SPHKernel<Tscal>;
 
-        static constexpr Tscal pi = shambase::constants::pi<Tscal>;
+        static constexpr Tscal tol     = 1e-9;
+        static constexpr u32 maxits    = 200;
+        static constexpr u32 maxits_nr = 20;
 
         ShamrockCtx &context;
         Config &solver_config;
-        shammath::AABB<Tvec> box;
 
-        LatticeHCP_smap lattice;
-        LatticeIterDiscont_smap discont_iterator;
+        SetupNodePtr parent;
 
-        static auto init_lattice(
-            Tscal dr,
-            std::pair<Tvec, Tvec> box,
+        public:
+        std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
+        std::string system;
+        std::vector<std::string> axes;
+
+        Tvec center;
+        std::vector<std::function<Tscal(Tscal)>> rhodSs;
+        std::vector<std::function<Tscal(Tvec)>> a_from_poss;
+        std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
+        std::vector<Tscal> integral_profiles;
+        std::vector<Tscal> steps;
+        Tvec boxmin = {-1, -1, -1}; // Il va falloir recover ça
+        Tvec boxmax = {1, 1, 1};    // Il va falloir recover ça
+        std::vector<Tscal> ximins;  // will be sent to lattce
+        std::vector<Tscal> ximaxs;  // will be sent to lattce
+        static constexpr u32 ngrid = 2048;
+
+        Tscal mpart = solver_config.gpart_mass;
+        Tscal hfact = Kernel::hfactd;
+
+        public:
+        ModifierApplyStretchMapping(
+            ShamrockCtx &context,
+            Config &solver_config,
+            SetupNodePtr parent,
             std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
             std::string system,
-            std::vector<std::string> axes) {
-            static constexpr u32 ngrid = 2048;
-
-            auto [idxs_min, idxs_max]
-                = LatticeHCP_smap ::get_box_index_bounds(dr, box.first, box.second);
-
-            Tvec center = (box.first + box.second) / 2;
-
-            std::vector<std::function<Tscal(Tscal)>> rhodSs;
-            std::vector<std::function<Tscal(Tvec)>> a_from_poss;
-            std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
-            std::vector<Tscal> integral_profiles;
-            std::vector<Tscal> steps;
-
+            std::vector<std::string> axes)
+            : context(context), solver_config(solver_config), parent(parent),
+              rhoprofiles(rhoprofiles), system(system), axes(axes) {
             Tscal x0min;
             Tscal x0max;
             Tscal x1min;
             Tscal x1max;
             Tscal x2min;
             Tscal x2max;
-
-            std::vector<Tscal> ximins; // will be sent to lattce
-            std::vector<Tscal> ximaxs; // will be sent to lattce
-
             CartToCart<Tvec> tocart;
             CartToSpherical<Tvec> tospherical;
             CartToCylindrical<Tvec> tocylindrical;
             std::array<std::array<std::function<Tscal(Tscal)>, 3>, 3> transfo;
+            center = (boxmin + boxmax) / 2;
 
             for (size_t k = 0; k < rhoprofiles.size(); ++k) {
                 auto rhoprofile = rhoprofiles[k];
@@ -100,13 +101,13 @@ namespace shammodels::sph::modules {
                               // cartesian position
                 Tscal integral_profile;
 
-                Tscal lx = sham::abs(box.first.x() - box.second.x());
-                Tscal ly = sham::abs(box.first.y() - box.second.y());
-                Tscal lz = sham::abs(box.first.z() - box.second.z());
+                Tscal lx = sham::abs(boxmin.x() - boxmax.x());
+                Tscal ly = sham::abs(boxmin.y() - boxmax.y());
+                Tscal lz = sham::abs(boxmin.z() - boxmax.z());
 
                 if (system == "spherical") {
                     x0min   = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
-                    x0max   = sham::abs((box.second - box.first).x()) / 2.;
+                    x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
                     x1min   = 0;
                     x1max   = pi;
                     x2min   = 0;
@@ -141,7 +142,7 @@ namespace shammodels::sph::modules {
                     }
                 } else if (system == "cylindrical") {
                     x0min   = 0;
-                    x0max   = sham::abs((box.second - box.first).x()) / 2.;
+                    x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
                     x1min   = 0;
                     x1max   = 2. * pi;
                     x2min   = -lz / 2.;
@@ -208,7 +209,7 @@ namespace shammodels::sph::modules {
                         break;
                     }
                 } else {
-                    shamlog_error("GeneratorLatticeHCP_smap", "Ah non hein");
+                    shamlog_error("ModifierApplyStretchMapping", "Ah non hein");
                 }
 
                 a_to_pos = [a_from_pos, transfo, axisnb](Tscal new_yk, Tvec pos) -> Tvec {
@@ -245,152 +246,136 @@ namespace shammodels::sph::modules {
                 ximins.push_back(thisxmin);
                 ximaxs.push_back(thisxmax);
             }
-
-            return LatticeHCP_smap(
-                dr,
-                idxs_min,
-                idxs_max,
-                rhoprofiles,
-                rhodSs,
-                a_from_poss,
-                a_to_poss,
-                integral_profiles,
-                ximins,
-                ximaxs,
-                center,
-                steps);
         }
+        /**
+         * @brief stretch a single coordinate of a particle position
+         *
+         * @tparam Tscal a,
+         * @tparam std::function<Tscal(Tscal)> const &rhoprofile,
+         * @tparam std::function<Tscal(Tscal)> const &rhodS,
+         * @tparam Tscal integral_profile,
+         * @tparam Tscal rmin,
+         * @tparam Tscal rmax,
+         * @tparam Tvec center,
+         * @tparam Tscal step
+         */
+        static Tscal stretchcoord(
+            Tscal a,
+            std::function<Tscal(Tscal)> const &rhoprofile,
+            std::function<Tscal(Tscal)> const &rhodS,
+            Tscal integral_profile,
+            Tscal rmin,
+            Tscal rmax,
+            Tvec center,
+            Tscal step) {
 
-        public:
-        GeneratorLatticeHCP_smap(
-            ShamrockCtx &context,
-            Config &solver_config,
-            Tscal dr,
-            std::pair<Tvec, Tvec> box,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
-            std::string system,
-            std::vector<std::string> axes)
-            : context(context), solver_config(solver_config), box(box),
-              lattice(init_lattice(dr, box, rhoprofiles, system, axes)),
-              discont_iterator(lattice.get_IteratorDiscontinuous()) {};
+            u32 its       = 0;
+            Tscal initpos = a;
+            Tscal newr    = a;
+            Tscal prevr   = a;
 
-        bool is_done() { return discont_iterator.is_done(); }
-
-        shamrock::patch::PatchDataLayer next_n(u32 nmax) {
-            StackEntry stack_loc{};
-
-            using namespace shamrock::patch;
-            PatchScheduler &sched = shambase::get_check_ref(context.sched);
-
-            auto has_pdat = [&]() {
-                bool ret = false;
-                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-                    ret = true;
-                });
-                return ret;
-            };
-
-            std::vector<Tvec> pos_data;
-            std::vector<Tscal> h_data;
-            int nbdebug = 0;
-
-            // Fill pos_data and h_data if the scheduler has some patchdata in this rank
-            if (!is_done()) {
-                u64 loc_gen_count = (has_pdat()) ? nmax : 0;
-
-                auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
-
-                u64 skip_start = gen_info.head_offset;
-                u64 gen_cnt    = loc_gen_count;
-                u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
-
-                shamlog_debug_ln(
-                    "GeneratorLatticeHCP_smap ",
-                    "generate : ",
-                    skip_start,
-                    gen_cnt,
-                    skip_end,
-                    "total",
-                    skip_start + gen_cnt + skip_end);
-
-                discont_iterator.skip(skip_start);
-                auto tmp = discont_iterator.next_n(gen_cnt);
-                discont_iterator.skip(skip_end);
-
-                for (Tvec r : tmp) {
-                    nbdebug++;
-                    if (Patch::is_in_patch_converted(r, box.lower, box.upper)) {
-                        pos_data.push_back(r);
+            Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(rmin, 3))
+                                 / (sycl::pown(rmax, 3) - sycl::pown(rmin, 3));
+            Tscal newrelatpos
+                = shammath::integ_riemann_sum(rmin, newr, step, rhodS) / integral_profile;
+            Tscal func       = newrelatpos - initrelatpos;
+            Tscal xminbisect = rmin;
+            Tscal xmaxbisect = rmax;
+            Tscal dfunc      = 0;
+            Tscal dx         = 0;
+            bool bisect      = false;
+            while ((sham::abs(func) > tol) && (its < maxits)) {
+                its++;
+                if (bisect) {
+                    if (func > 0.) {
+                        xmaxbisect = newr;
+                    } else {
+                        xminbisect = newr;
                     }
-                    // if (Patch::is_in_patch_converted (r, box.upper)) {
-                    //     pos_data.push_back(r);
-                    // }
+                    newr = 0.5 * (xminbisect + xmaxbisect);
+                } else {
+                    dfunc = rhodS(newr) / integral_profile;
+                    dx    = func / dfunc;
+                    newr  = newr - dx;
                 }
-                shamlog_debug_ln(
-                    "GeneratorLatticeHCP_smap",
-                    "from:",
-                    pos_data.size(),
-                    "to",
-                    nbdebug,
-                    "particles");
+
+                if (sham::abs(newr) < 0.8 * sham::abs(prevr)) {
+                    newr = 0.8 * prevr;
+                } else if (sham::abs(newr) > 1.2 * sham::abs(prevr)) {
+                    newr = 1.2 * prevr;
+                }
+
+                // NR iteration
+                if ((newr > rmax) || (newr < rmin) || (its > maxits_nr)) {
+                    bisect = true;
+                    newr   = 0.5 * (xminbisect + xmaxbisect);
+                }
+                newrelatpos
+                    = shammath::integ_riemann_sum(rmin, newr, step, rhodS) / integral_profile;
+                func  = newrelatpos - initrelatpos;
+                prevr = newr;
             }
-
-            Tscal mpart = solver_config.gpart_mass;
-            u64 npart   = pos_data.size();
-            shamlog_debug_ln(
-                "GeneratorLatticeHCP_smap",
-                "pos_data.size:",
-                pos_data.size(),
-                "box:",
-                box.lower,
-                box.upper);
-
-            Tscal totmass = mpart * npart;
-            Tscal hfact   = Kernel::hfactd;
-
-            for (Tvec &pos : pos_data) {
-
-                Tscal rhoa = totmass;
-                for (size_t i = 0; i < lattice.integral_profiles.size(); i++) {
-                    Tscal integral_profile = lattice.integral_profiles[i];
-                    auto &a_from_pos       = lattice.a_from_poss[i];
-                    auto &rhoprofile       = lattice.rhoprofiles[i];
-
-                    rhoa *= rhoprofile(a_from_pos(pos)) / integral_profile;
-                }
-
-                Tscal h = shamrock::sph::h_rho(mpart, rhoa, hfact);
-                h_data.push_back(h);
-            }
-
-            // Make a patchdata from pos_data
-            PatchDataLayer tmp(sched.get_layout_ptr());
-            if (!pos_data.empty()) {
-                tmp.resize(pos_data.size());
-                tmp.fields_raz();
-
-                {
-                    u32 len = pos_data.size();
-                    PatchDataField<Tvec> &f
-                        = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
-                    // sycl::buffer<Tvec> buf(pos_data.data(), len);
-                    f.override(pos_data, len);
-                }
-
-                {
-                    u32 len = pos_data.size();
-                    PatchDataField<Tscal> &f
-                        = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
-                    f.override(h_data, len);
-                    // sycl::buffer<Tscal> buf(h_data.data(), len);
-                    // f.override(buf, len);
-                }
-            }
-            return tmp;
+            return newr;
         }
 
-        std::string get_name() { return "GeneratorLatticeHCP_smap "; }
-        ISPHSetupNode_Dot get_dot_subgraph() { return ISPHSetupNode_Dot{get_name(), 0, {}}; }
-    };
+        static Tvec stretchpart(
+            Tvec pos,
+            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+            std::vector<std::function<Tscal(Tscal)>> rhodSs,
+            std::vector<std::function<Tscal(Tvec)>> a_from_poss,
+            std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss,
+            std::vector<Tscal> integral_profiles,
+            std::vector<Tscal> ximins,
+            std::vector<Tscal> ximaxs,
+            Tvec center,
+            std::vector<Tscal> steps) {
+            for (size_t i = 0; i < rhoprofiles.size(); ++i) {
+                auto &rhoprofile       = rhoprofiles[i];
+                auto &rhodS            = rhodSs[i];
+                auto &ximax            = ximaxs[i];
+                auto &ximin            = ximins[i];
+                auto &a_from_pos       = a_from_poss[i];
+                auto &a_to_pos         = a_to_poss[i];
+                auto &integral_profile = integral_profiles[i];
+                auto &step             = steps[i];
+                Tscal a                = a_from_pos(pos);
+                // a_from_pos =  sycl::length e.g
+                // or a_from_pos = pos_a.get("x")
+                Tscal new_a = stretchcoord(
+                    a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
+                pos = a_to_pos(new_a, pos);
+            }
+            return pos - center;
+        }
 
+        static Tscal h_rho_stretched(
+            Tvec pos,
+            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+            std::vector<std::function<Tscal(Tvec)>> a_from_poss,
+            std::vector<Tscal> integral_profiles,
+            Tscal mpart,
+            Tscal hfact) {
+            Tscal rhoa = 1.;
+            for (size_t i = 0; i < integral_profiles.size(); i++) {
+                Tscal integral_profile = integral_profiles[i];
+                auto &a_from_pos       = a_from_poss[i];
+                auto &rhoprofile       = rhoprofiles[i];
+
+                rhoa *= rhoprofile(a_from_pos(pos)) / integral_profile;
+            }
+
+            Tscal h = shamrock::sph::h_rho(
+                mpart, rhoa, hfact); // to be multiplied by number of particles
+            return h;
+        }
+
+        bool is_done() { return parent->is_done(); }
+
+        shamrock::patch::PatchDataLayer next_n(u32 nmax);
+
+        std::string get_name() { return "ModifierApplyStretchMapping"; }
+        ISPHSetupNode_Dot get_dot_subgraph() {
+            return ISPHSetupNode_Dot{get_name(), 2, {parent->get_dot_subgraph()}};
+        }
+    };
 } // namespace shammodels::sph::modules

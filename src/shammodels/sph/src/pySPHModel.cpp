@@ -412,6 +412,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("offset_position"),
             py::arg("offset_velocity"))
         .def(
+            "make_modifier_stretch_mapping",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+               std::string system,
+               std::vector<std::string> axes) {
+                return self.make_modifier_apply_stretch_mapping(parent, rhoprofiles, system, axes);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("rhoprofiles"),
+            py::arg("system"),
+            py::arg("axes"))
+        .def(
             "make_modifier_filter",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent,

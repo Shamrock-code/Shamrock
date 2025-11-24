@@ -89,6 +89,12 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode> make_modifier_add_offset(
             SetupNodePtr parent, Tvec offset_postion, Tvec offset_velocity);
 
+        std::shared_ptr<ISPHSetupNode> make_modifier_apply_stretch_mapping(
+            SetupNodePtr parent,
+            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+            std::string system,
+            std::vector<std::string> axes);
+
         std::shared_ptr<ISPHSetupNode> make_modifier_filter(
             SetupNodePtr parent, std::function<bool(Tvec)> filter);
 

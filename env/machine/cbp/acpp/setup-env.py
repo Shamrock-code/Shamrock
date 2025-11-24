@@ -24,14 +24,25 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 
-    has_cmd = lambda cmd: subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True).returncode == 0
+    has_cmd = (
+        lambda cmd: subprocess.run(
+            cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True
+        ).returncode
+        == 0
+    )
     if has_cmd("nvidia-smi"):
         default_backend = "cuda"
     elif has_cmd("rocm-smi"):
         default_backend = "rocm"
     else:
         default_backend = "x86"
-    parser.add_argument("--backend", type=str, action="store", help="backend to build ACPP with (cuda, sscp, rocm or x86)", default=default_backend)
+    parser.add_argument(
+        "--backend",
+        type=str,
+        action="store",
+        help="backend to build ACPP with (cuda, sscp, rocm or x86)",
+        default=default_backend,
+    )
 
     args = parser.parse_args(argv)
 

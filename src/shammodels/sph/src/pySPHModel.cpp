@@ -314,13 +314,17 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
-            "make_generator_lattice_hcp_smap_sphere",
+            "make_generator_lattice_hcp_smap",
             [](TSPHSetup &self,
                Tscal dr,
-               Tvec center,
-               Tscal xmax,
-               std::function<Tscal(Tscal)> rhoprofile) {
-                return self.make_generator_lattice_hcp_smap_sphere(dr, center, xmax, rhoprofile);
+               //    Tvec center,
+               Tvec box_min,
+               Tvec box_max,
+               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+               std::string system,
+               std::vector<std::string> axes) {
+                return self.make_generator_lattice_hcp_smap(
+                    dr, {box_min, box_max}, rhoprofiles, system, axes);
             })
         .def(
             "make_generator_disc_mc",

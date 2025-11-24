@@ -7,17 +7,16 @@ To set up the environment, use one of the following commands:
 
 ```bash
 # For intel-llvm compiler
-./env/new-env --machine cbp.intel-llvm
+./env/new-env --machine cbp.intel-llvm --builddir build_cbp.intel-llvm
 
 # For acpp compiler
-./env/new-env --machine cbp.acpp
+./env/new-env --machine cbp.acpp --builddir build_cbp.acpp
 ```
-You can specify the build directory with the option `--builddir <build directory>`. By default, a subdirectory named after the selected machine will be created in the current directory.
 
 For the acpp compiler, a generic installation (without architecture targeting) with `sscp` support is possible using the `--backend sscp` flag:
 
 ```bash
-env/new-env --machine cbp.acpp -- --backend sscp
+env/new-env --machine cbp.acpp --builddir build_cbp.acpp-sscp -- --backend sscp
 ```
 
 # CBP (AMD GPU)

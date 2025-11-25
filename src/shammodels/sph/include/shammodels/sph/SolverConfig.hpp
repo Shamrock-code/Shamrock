@@ -966,6 +966,9 @@ namespace shammodels::sph {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {
             p.config = SelfGravConfig::None{};
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "Invalid self gravity type: " + j.at("type").get<std::string>());
         }
 
         if (j.contains("softening_mode")) {

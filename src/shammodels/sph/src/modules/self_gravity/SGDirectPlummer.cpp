@@ -35,7 +35,7 @@ namespace shammodels::sph::modules {
         const Tscal G          = edges.constant_G.data;
         const Tscal gpart_mass = edges.gpart_mass.data;
 
-        const Tscal gravitational_softening = epsilon;
+        const Tscal gravitational_softening = epsilon * epsilon;
 
         edges.sizes.indexes.for_each([&](u64 id, const u64 &n) {
             PatchDataField &xyz      = edges.field_xyz.get_field(id);

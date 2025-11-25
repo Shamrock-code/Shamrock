@@ -12,7 +12,8 @@
 /**
  * @file CopyPatchDataFieldFromLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Defines the CopyPatchDataFieldFromLayer class for copying fields between patch data layers.
+ * @brief Defines the CopyPatchDataFieldFromLayer class for copying fields between patch data
+ * layers.
  *
  */
 

@@ -12,7 +12,8 @@
 /**
  * @file CopyPatchDataFieldFromLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Defines the CopyPatchDataLayerFields class for copying fields between patch data layers.
+ * @brief Defines the CopyPatchDataFieldFromLayer class for copying fields between patch data
+ * layers.
  *
  */
 
@@ -63,6 +64,8 @@ namespace shamrock::solvergraph {
         }
 
         inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
 
             auto edges = get_edges();
 

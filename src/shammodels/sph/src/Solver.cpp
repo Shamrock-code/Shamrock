@@ -74,6 +74,7 @@
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/solvergraph/CopyPatchDataFieldFromLayer.hpp"
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
@@ -114,6 +115,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
 
     storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
+
+    if (solver_config.has_field_alphaAV()) {
+        storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            1, "alpha_av_updated", "\\alpha_{\\rm AV}");
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1427,9 +1433,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (solver_config.has_field_alphaAV()) {
 
-            shamrock::SchedulerUtility utility(scheduler());
-            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-            storage.alpha_av_updated.set(utility.save_field<Tscal>(ialpha_AV, "alpha_AV_new"));
+            std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
+                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
+                    "patchdata_layer_ref", "patchdata_layer_ref");
+
+            auto node_set_edge = scheduler().get_node_set_edge_patchdata_layer_refs();
+            node_set_edge->set_edges(patchdatas);
+            node_set_edge->evaluate();
+
+            shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tscal> node_copy(
+                scheduler().get_layout_ptr(), "alpha_AV");
+            node_copy.set_edges(patchdatas, storage.alpha_av_updated);
+            node_copy.evaluate();
         }
 
         if (solver_config.has_field_dtdivv()) {
@@ -1482,7 +1497,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (solver_config.has_field_alphaAV()) {
 
-            shamrock::ComputeField<Tscal> &comp_field_send = storage.alpha_av_updated.get();
+            shamrock::solvergraph::Field<Tscal> &comp_field_send
+                = shambase::get_check_ref(storage.alpha_av_updated);
 
             using InterfaceBuildInfos =
                 typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
@@ -1675,13 +1691,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             if (solver_config.has_field_alphaAV()) {
 
                 const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-                shamrock::ComputeField<Tscal> &alpha_av_updated = storage.alpha_av_updated.get();
+                shamrock::solvergraph::Field<Tscal> &alpha_av_updated
+                    = shambase::get_check_ref(storage.alpha_av_updated);
 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tscal> &buf_alpha_av
                         = pdat.get_field<Tscal>(ialpha_AV).get_buf();
                     sham::DeviceBuffer<Tscal> &buf_alpha_av_updated
-                        = alpha_av_updated.get_buf_check(cur_p.id_patch);
+                        = alpha_av_updated.get_field(cur_p.id_patch).get_buf();
 
                     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                     sham::EventList depends_list;
@@ -2052,7 +2069,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (solver_config.has_field_alphaAV()) {
             storage.alpha_av_ghost.reset();
-            storage.alpha_av_updated.reset();
         }
 
     } while (need_rerun_corrector);

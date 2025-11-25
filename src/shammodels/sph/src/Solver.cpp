@@ -1317,7 +1317,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             [&](shamrock::solvergraph::FieldRefs<Tvec> &field_xyz_edge) {
                 shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
                 scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                    auto &field = pdat.get_field<Tvec>(0);
+                    auto &field = pdat.get_field<Tvec>(ixyz);
                     field_xyz_refs.add_obj(p.id_patch, std::ref(field));
                 });
                 field_xyz_edge.set_refs(field_xyz_refs);

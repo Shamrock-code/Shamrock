@@ -70,8 +70,8 @@ namespace shammodels::sph::modules {
                 get_rw_edge<shamrock::solvergraph::FieldRefs<Tvec>>(0)};
         }
 
-        inline std::string _impl_get_label()const override { return "SGDirectPlummer"; }
-        std::string _impl_get_tex()const override { return "TODO"; }
+        inline std::string _impl_get_label() const override { return "SGDirectPlummer"; }
+        std::string _impl_get_tex() const override { return "TODO"; }
 
         protected:
         void _impl_evaluate_internal() override;

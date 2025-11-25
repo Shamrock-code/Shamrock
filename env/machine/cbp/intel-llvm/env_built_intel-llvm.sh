@@ -8,7 +8,7 @@ if nvidia-smi &> /dev/null; then
     SYCL_TARGET+=",nvidia_gpu_sm_${GPU_TARGET}"
 
 elif rocm-smi &> /dev/null; then
-    GPU_LLVM_FLAG=(--hip --cmake-opt="-DUR_HIP_ROCM_DIR=/opt/rocm-6.4.1")
+    GPU_LLVM_FLAG=(--hip --cmake-opt="-DUR_HIP_ROCM_DIR=/opt/rocm")
     GPU_TARGET=$(rocminfo | \grep --color=never -oE "gfx[0-9]+[a-zA-Z0-9]*" | uniq)
     SYCL_TARGET="amd_gpu_${GPU_TARGET} -Wno-deprecated-pragma"
 fi

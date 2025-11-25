@@ -6,7 +6,7 @@ WITH_ROCM_BACKEND=Off
 WITH_SSCP_COMPILER=Off
 
 CBP_CUDA_DIR=/usr/local/cuda
-CBP_ROCM_DIR=/opt/rocm-6.4.1
+CBP_ROCM_DIR=/opt/rocm
 
 if [ "${ACPP_BACKEND}" = "cuda" ]; then
     GPU_TARGET=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | tr -d "." | sort -n | tail -1)

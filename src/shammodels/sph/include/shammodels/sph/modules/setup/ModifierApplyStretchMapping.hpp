@@ -369,9 +369,17 @@ namespace shammodels::sph::modules {
             return h;
         }
 
+        static Tscal test(Tscal x) { return x + 1; }
+        // static Tvec testvec(Tvec x) { return x * 2.; }
+        // static auto testvec = [](Tvec x) -> Tvec {
+        //     return x * 2.;
+        // };
+        static Tscal test2(Tscal x, Tscal y) { return x + y; }
+
         bool is_done() { return parent->is_done(); }
 
         shamrock::patch::PatchDataLayer next_n(u32 nmax);
+        static Tvec testvec(Tvec x);
 
         std::string get_name() { return "ModifierApplyStretchMapping"; }
         ISPHSetupNode_Dot get_dot_subgraph() {

@@ -17,12 +17,22 @@
  */
 
 #include "shammodels/sph/modules/setup/ModifierApplyStretchMapping.hpp"
+#include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
+// template<class Tvec>
+
 template<class Tvec, template<class> class SPHKernel>
-shamrock::patch::PatchDataLayer shammodels::sph::modules::
-    ModifierApplyStretchMapping<Tvec, SPHKernel>::next_n(u32 nmax) {
+Tvec shammodels::sph::modules::ModifierApplyStretchMapping<Tvec, SPHKernel>::
+    ModifierApplyStretchMapping<Tvec, SPHKernel>::testvec(Tvec x) {
+    return x * 2.;
+}
+
+template<class Tvec, template<class> class SPHKernel>
+shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMapping<
+    Tvec,
+    SPHKernel>::ModifierApplyStretchMapping<Tvec, SPHKernel>::next_n(u32 nmax) {
 
     ShamrockCtx &ctx                    = context;
     PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);
@@ -33,29 +43,29 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::
         return tmp;
     }
 
-    sham::DeviceBuffer<Tvec> &buf_xyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
-    sham::DeviceBuffer<Tscal> &buf_hpart
-        = tmp.get_field_buf_ref<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
+    auto &rhoprofiles       = this->rhoprofiles;
+    auto &axes              = this->axes;
+    auto &rhodSs            = this->rhodSs;
+    auto &a_from_poss       = this->a_from_poss;
+    auto &a_to_poss         = this->a_to_poss;
+    auto &integral_profiles = this->integral_profiles;
+    auto &ximins            = this->ximins;
+    auto &ximaxs            = this->ximaxs;
+    auto &center            = this->center;
+    auto &steps             = this->steps;
 
-    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-    std::vector<std::function<Tscal(Tscal)>> &rhoprofiles    = this->rhoprofiles;
-    std::vector<std::string> &axes                           = this->axes;
-    std::vector<std::function<Tscal(Tscal)>> &rhodSs         = this->rhodSs;
-    std::vector<std::function<Tscal(Tvec)>> &a_from_poss     = this->a_from_poss;
-    std::vector<std::function<Tvec(Tscal, Tvec)>> &a_to_poss = this->a_to_poss;
-    std::vector<Tscal> &integral_profiles                    = this->integral_profiles;
-    std::vector<Tscal> &ximins                               = this->ximins;
-    std::vector<Tscal> &ximaxs                               = this->ximaxs;
-    Tvec &center                                             = this->center;
-    std::vector<Tscal> &steps                                = this->steps;
-
-    Tscal mpart = this->mpart;
-    Tscal hfact = this->hfact;
+    auto &mpart = this->mpart;
+    auto &hfact = this->hfact;
 
     auto &stretchpart     = this->stretchpart;
     auto &h_rho_stretched = this->h_rho_stretched;
+    auto &test            = this->test;
+    auto testvec          = this->testvec;
+    // auto testvec = [](Tvec x) -> Tvec {
+    //     return x * 2.;
+    // };
+
+    auto &test2 = this->test2;
 
     Tvec xyz_a_dbebug = stretchpart(
         {1., 1., 1.},
@@ -71,38 +81,25 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::
     Tscal hpart_debug
         = h_rho_stretched({1., 1., 1.}, rhoprofiles, a_from_poss, integral_profiles, mpart, hfact);
     shamlog_debug_ln("kernel_call", xyz_a_dbebug, hpart_debug);
+    shamlog_debug_ln("kernel_call", test(2), testvec({1, 2, 1}));
 
-    sham::kernel_call(
-        q,
-        sham::MultiRef{},
-        sham::MultiRef{buf_xyz, buf_hpart},
-        tmp.get_obj_cnt(),
-        [=](u32 i, Tvec *__restrict__ xyz_a, Tscal *__restrict__ hpart) {
-            // xyz_a[i] = xyz_a[i] + 1;
-            // hpart[i] = hpart[i] + 1;
-            xyz_a[i] = stretchpart(
-                xyz_a[i],
-                rhoprofiles,
-                rhodSs,
-                a_from_poss,
-                a_to_poss,
-                integral_profiles,
-                ximins,
-                ximaxs,
-                center,
-                steps);
-            hpart[i] = h_rho_stretched(
-                xyz_a[i], rhoprofiles, a_from_poss, integral_profiles, mpart, hfact);
-        });
+    sham::DeviceBuffer<Tvec> &buf_xyz
+        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+    sham::DeviceBuffer<Tscal> &buf_hpart
+        = tmp.get_field_buf_ref<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
 
-    // sham::EventList depends_list;
-    // auto acc_xyz   = buf_xyz.get_write_access(depends_list);
-    // auto acc_hpart = buf_hpart.get_write_access(depends_list);
+    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-    // auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-    //     shambase::parallel_for(cgh, tmp.get_obj_cnt(), "Warp", [&](i32 id_a) {
-    //         acc_xyz[id_a] = stretchpart(
-    //             acc_xyz[id_a],
+    // sham::kernel_call(
+    //     q,
+    //     sham::MultiRef{},
+    //     sham::MultiRef{buf_xyz, buf_hpart},
+    //     tmp.get_obj_cnt(),
+    //     [&](u32 i, Tvec *__restrict__ xyz_a, Tscal *__restrict__ hpart) {
+    //         // xyz_a[i] = xyz_a[i] + 1;
+    //         // hpart[i] = hpart[i] + 1;
+    //         xyz_a[i] = stretchpart(
+    //             xyz_a[i],
     //             rhoprofiles,
     //             rhodSs,
     //             a_from_poss,
@@ -112,15 +109,20 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::
     //             ximaxs,
     //             center,
     //             steps);
-    //         ;
-    //         acc_hpart[id_a] = h_rho_stretched(
-    //             acc_xyz[id_a], rhoprofiles, a_from_poss, integral_profiles, mpart, hfact);
-    //         ;
+    //         hpart[i] = h_rho_stretched(
+    //             xyz_a[i], rhoprofiles, a_from_poss, integral_profiles, mpart, hfact);
     //     });
-    // });
 
-    // buf_xyz.complete_event_state(e);
-    // buf_hpart.complete_event_state(e);
+    // using testvec = testvec<Tvec>;
+    // using testvec_fn = ::testvec<Tvec>;
+    sham::kernel_call(
+        q,
+        sham::MultiRef{},
+        sham::MultiRef{buf_xyz},
+        tmp.get_obj_cnt(),
+        [testvec](u32 i, Tvec *__restrict__ xyz_a) {
+            xyz_a[i] = testvec(xyz_a[i]);
+        });
 
     return tmp;
 }

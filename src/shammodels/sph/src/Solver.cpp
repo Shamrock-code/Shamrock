@@ -79,6 +79,7 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -112,6 +113,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
 
     storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
+
+    if (solver_config.has_field_alphaAV()) {
+        storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            1, "alpha_av_updated", "\\alpha_{\\rm AV}");
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1334,14 +1340,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         if (solver_config.has_field_alphaAV()) {
 
             std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
-                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>("", "");
+                = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
+                    "patchdata_layer_ref", "patchdata_layer_ref");
 
-            {
-                patchdatas->free_alloc();
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                    patchdatas->patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
-                });
-            }
+            auto node_set_edge = scheduler().get_node_set_edge_patchdata_layer_refs();
+            node_set_edge->set_edges(patchdatas);
+            node_set_edge->evaluate();
 
             shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tscal> node_copy(
                 scheduler().get_layout_ptr(), "alpha_AV");
@@ -1971,7 +1975,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         if (solver_config.has_field_alphaAV()) {
             storage.alpha_av_ghost.reset();
-            storage.alpha_av_updated.reset();
         }
 
     } while (need_rerun_corrector);

@@ -65,6 +65,8 @@ namespace shamrock::solvergraph {
 
         inline void _impl_evaluate_internal() {
 
+            __shamrock_stack_entry();
+
             auto edges = get_edges();
 
             auto source_refs = edges.original.get_const_refs();

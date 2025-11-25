@@ -16,6 +16,7 @@
  * @date 2023-07-31
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include <functional>
@@ -73,7 +74,10 @@ namespace shamrock::solvergraph {
          * Applies the custom function to the connected read-write edge.
          * This is where the actual modification of the edge takes place.
          */
-        inline void _impl_evaluate_internal() { set_edge(get_rw_edge<Tedge>(0)); }
+        inline void _impl_evaluate_internal() {
+            __shamrock_stack_entry();
+            set_edge(get_rw_edge<Tedge>(0));
+        }
 
         /**
          * @brief Get the label of the node

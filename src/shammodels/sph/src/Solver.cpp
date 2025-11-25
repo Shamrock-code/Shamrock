@@ -62,6 +62,7 @@
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
+#include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -76,8 +77,10 @@
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -1294,6 +1297,98 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sph_prestep(t_current, dt);
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
+
+    // Here we will add self grav to the external forces indep of vel (this will be moved into a
+    // sperate module later)
+    {
+
+        auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_constant_G(
+            [&](shamrock::solvergraph::IDataEdge<Tscal> &constant_G) {
+                constant_G.data = solver_config.get_constant_G();
+            });
+
+        set_constant_G.set_edges(constant_G);
+
+        auto field_xyz = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>> set_field_xyz(
+            [&](shamrock::solvergraph::FieldRefs<Tvec> &field_xyz_edge) {
+                shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_xyz_refs = {};
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    auto &field = pdat.get_field<Tvec>(0);
+                    field_xyz_refs.add_obj(p.id_patch, std::ref(field));
+                });
+                field_xyz_edge.set_refs(field_xyz_refs);
+            });
+        set_field_xyz.set_edges(field_xyz);
+
+        const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
+
+        auto field_axyz_ext = shamrock::solvergraph::FieldRefs<Tvec>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tvec>>
+            set_field_axyz_ext([&](shamrock::solvergraph::FieldRefs<Tvec> &field_axyz_ext_edge) {
+                shamrock::solvergraph::DDPatchDataFieldRef<Tvec> field_axyz_ext_refs = {};
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    auto &field = pdat.get_field<Tvec>(iaxyz_ext);
+                    field_axyz_ext_refs.add_obj(p.id_patch, std::ref(field));
+                });
+                field_axyz_ext_edge.set_refs(field_axyz_ext_refs);
+            });
+        set_field_axyz_ext.set_edges(field_axyz_ext);
+
+        auto sizes = shamrock::solvergraph::Indexes<u32>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::Indexes<u32>> set_sizes(
+            [&](shamrock::solvergraph::Indexes<u32> &sizes) {
+                sizes.indexes = {};
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    sizes.indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+                });
+            });
+        set_sizes.set_edges(sizes);
+
+        auto gpart_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<Tscal>> set_gpart_mass(
+            [&](shamrock::solvergraph::IDataEdge<Tscal> &gpart_mass) {
+                gpart_mass.data = solver_config.gpart_mass;
+            });
+
+        set_gpart_mass.set_edges(gpart_mass);
+
+        set_gpart_mass.evaluate();
+        set_constant_G.evaluate();
+        set_field_xyz.evaluate();
+        set_field_axyz_ext.evaluate();
+        set_sizes.evaluate();
+
+        Tscal eps_grav = shambase::get_check_ref(
+                             std::get_if<SelfGravConfig::SofteningPlummer>(
+                                 &solver_config.self_grav_config.softening_mode))
+                             .epsilon;
+
+        if (solver_config.self_grav_config.is_none()) {
+            // do nothing
+        } else if (solver_config.self_grav_config.is_direct()) {
+
+            SelfGravConfig::Direct &direct_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::Direct>(&solver_config.self_grav_config.config));
+
+            modules::SGDirectPlummer<Tvec> self_gravity_direct_node(
+                eps_grav, direct_config.reference_mode);
+            self_gravity_direct_node.set_edges(
+                sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+            self_gravity_direct_node.evaluate();
+
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "Self gravity config not supported, current state is : \n"
+                + nlohmann::json{solver_config.self_grav_config}.dump(4));
+        }
+    }
 
     sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
     auto &merged_xyzh                             = storage.merged_xyzh.get();

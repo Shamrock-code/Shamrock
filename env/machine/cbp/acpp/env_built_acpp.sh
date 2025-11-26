@@ -5,7 +5,7 @@ WITH_CUDA_BACKEND=Off
 WITH_ROCM_BACKEND=Off
 WITH_SSCP_COMPILER=Off
 
-CBP_CUDA_DIR=/usr/local/cuda
+CBP_CUDA_DIR=/usr/lib/cuda
 CBP_ROCM_DIR=/opt/rocm
 
 if [ "${ACPP_BACKEND}" = "cuda" ]; then

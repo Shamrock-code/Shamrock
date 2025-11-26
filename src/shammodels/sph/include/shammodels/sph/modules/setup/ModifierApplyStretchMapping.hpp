@@ -48,7 +48,6 @@ namespace shammodels::sph::modules {
 
         public:
         std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
-        std::function<Tscal(Tscal)> rhoprofiletest;
         std::string system;
         std::vector<std::string> axes;
 
@@ -76,7 +75,7 @@ namespace shammodels::sph::modules {
             std::string system,
             std::vector<std::string> axes)
             : context(context), solver_config(solver_config), parent(parent),
-              rhoprofiles(rhoprofiles), rhoprofiletest(rhoprofiles[0]), system(system), axes(axes) {
+              rhoprofiles(rhoprofiles), system(system), axes(axes) {
             Tscal x0min;
             Tscal x0max;
             Tscal x1min;
@@ -270,9 +269,9 @@ namespace shammodels::sph::modules {
             Tscal amax,
             Tvec center,
             Tscal step) {
-            if (a > amax) {
-                return 2 * amax; // TODO Current way of kicking the particle out.
-            }
+            // if (a > amax) {
+            //     return 2 * amax; // TODO Current way of kicking the particle out.
+            // }
 
             u32 its       = 0;
             Tscal initpos = a;
@@ -281,7 +280,7 @@ namespace shammodels::sph::modules {
 
             Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(amin, 3))
                                  / (sycl::pown(amax, 3)
-                                    - sycl::pown(amin, 3)); // TODO Only work in spherical case!!
+                                    - sycl::pown(amin, 3)); // TODO Only works in spherical case!!
             Tscal newrelatpos
                 = shammath::integ_riemann_sum(amin, newr, step, rhodS) / integral_profile;
             Tscal func       = newrelatpos - initrelatpos;
@@ -351,9 +350,10 @@ namespace shammodels::sph::modules {
 
                 Tscal new_a = stretchcoord(
                     a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
-                if (new_a >= ximax) {
-                    return 999 * ximax * pos; // TODO Hoping this will get the particle kicked....
-                }
+                // if (new_a >= ximax) {
+                //     return 999 * ximax * pos; // TODO Hoping this will get the particle
+                //     kicked....
+                // }
                 pos = a_to_pos(new_a, pos);
             }
             return pos - center;
@@ -379,13 +379,6 @@ namespace shammodels::sph::modules {
                 mpart, rhoa, hfact); // to be multiplied by number of particles
             return h;
         }
-
-        static Tscal test(Tscal x) { return x + 1; }
-        // static Tvec testvec(Tvec x) { return x * 2.; }
-        // static auto testvec = [](Tvec x) -> Tvec {
-        //     return x * 2.;
-        // };
-        static Tscal test2(Tscal x, Tscal y) { return x + y; }
 
         bool is_done() { return parent->is_done(); }
 

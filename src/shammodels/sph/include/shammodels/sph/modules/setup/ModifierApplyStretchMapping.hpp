@@ -41,30 +41,34 @@ namespace shammodels::sph::modules {
         static constexpr u32 maxits    = 200;
         static constexpr u32 maxits_nr = 20;
 
+        struct Smap_inputdata {
+            Tvec center;
+            std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
+            std::string system;
+            std::vector<std::string> axes;
+
+            std::vector<std::function<Tscal(Tscal)>> rhodSs;
+            std::vector<std::function<Tscal(Tvec)>> a_from_poss;
+            std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
+            std::vector<Tscal> integral_profiles;
+            std::vector<Tscal> steps;
+            Tvec boxmin;
+            Tvec boxmax;
+            std::vector<Tscal> ximins;
+            std::vector<Tscal> ximaxs;
+        };
+
         ShamrockCtx &context;
         Config &solver_config;
 
         SetupNodePtr parent;
 
         public:
-        std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
-        std::string system;
-        std::vector<std::string> axes;
-
-        Tvec center;
-        std::vector<std::function<Tscal(Tscal)>> rhodSs;
-        std::vector<std::function<Tscal(Tvec)>> a_from_poss;
-        std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
-        std::vector<Tscal> integral_profiles;
-        std::vector<Tscal> steps;
-        Tvec boxmin = {-1, -1, -1}; // TODO Il va falloir recover ça
-        Tvec boxmax = {1, 1, 1};    // TODO Il va falloir recover ça
-        std::vector<Tscal> ximins;  // will be sent to lattce
-        std::vector<Tscal> ximaxs;  // will be sent to lattce
         static constexpr u32 ngrid = 2048;
+        Tscal mpart                = solver_config.gpart_mass;
+        Tscal hfact                = Kernel::hfactd;
 
-        Tscal mpart = solver_config.gpart_mass;
-        Tscal hfact = Kernel::hfactd;
+        Smap_inputdata smap_inputdata;
 
         public:
         ModifierApplyStretchMapping(
@@ -74,8 +78,10 @@ namespace shammodels::sph::modules {
             std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
             std::string system,
             std::vector<std::string> axes)
-            : context(context), solver_config(solver_config), parent(parent),
-              rhoprofiles(rhoprofiles), system(system), axes(axes) {
+            : context(context), solver_config(solver_config), parent(parent) {
+
+            // TODO: assert that rhoprofiles and axes have same length.
+            // TODO: Optimisations avec std:make ?
             Tscal x0min;
             Tscal x0max;
             Tscal x1min;
@@ -86,7 +92,10 @@ namespace shammodels::sph::modules {
             CartToSpherical<Tvec> tospherical;
             CartToCylindrical<Tvec> tocylindrical;
             std::array<std::array<std::function<Tscal(Tscal)>, 3>, 3> transfo;
-            center = (boxmin + boxmax) / 2;
+
+            Tvec boxmin = {-1, -1, -1}; // TODO Il va falloir recover ça
+            Tvec boxmax = {1, 1, 1};    // TODO Il va falloir recover ça
+            Tvec center = (boxmin + boxmax) / 2;
 
             for (size_t k = 0; k < rhoprofiles.size(); ++k) {
                 auto rhoprofile = rhoprofiles[k];
@@ -95,8 +104,8 @@ namespace shammodels::sph::modules {
 
                 std::function<Tscal(Tscal)> S;
                 std::function<Tscal(Tvec)>
-                    a_from_pos; // from a cartesian position get the coordinate to stretch in the
-                                // appropriate system
+                    a_from_pos; // from a cartesian position get the coordinate
+                                // to stretch in the appropriate system
                 std::function<Tvec(Tscal, Tvec)>
                     a_to_pos; // from the appropriate system, convert stretched coordinate into
                               // cartesian position
@@ -137,7 +146,7 @@ namespace shammodels::sph::modules {
                             return 2 * pi * sycl::pown(x0max, 3) / 3;
                         };
                         a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::atan(pos.y() / pos.x()); // phi
+                            return sycl::atan2(pos.y(), pos.x()); // phi
                         };
                         break;
                     }
@@ -163,7 +172,7 @@ namespace shammodels::sph::modules {
                             return sycl::pown(x0max, 2) * lz / 2;
                         };
                         a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::atan(pos.y() / pos.x());
+                            return sycl::atan2(pos.y(), pos.x());
                         };
                         break;
                     case 2:
@@ -239,14 +248,20 @@ namespace shammodels::sph::modules {
 
                 integral_profile = shammath::integ_riemann_sum(thisxmin, thisxmax, step, rhodS);
 
-                rhodSs.push_back(rhodS);
-                a_from_poss.push_back(a_from_pos);
-                a_to_poss.push_back(a_to_pos);
-                integral_profiles.push_back(integral_profile);
-                steps.push_back(step);
-                ximins.push_back(thisxmin);
-                ximaxs.push_back(thisxmax);
+                smap_inputdata.rhoprofiles.push_back(rhoprofile);
+                smap_inputdata.rhodSs.push_back(rhodS);
+                smap_inputdata.a_from_poss.push_back(a_from_pos);
+                smap_inputdata.a_to_poss.push_back(a_to_pos);
+                smap_inputdata.integral_profiles.push_back(integral_profile);
+                smap_inputdata.steps.push_back(step);
+                smap_inputdata.ximins.push_back(thisxmin);
+                smap_inputdata.ximaxs.push_back(thisxmax);
             }
+            smap_inputdata.center = center;
+            smap_inputdata.system = system;
+            smap_inputdata.axes   = axes;
+            smap_inputdata.boxmin = boxmin;
+            smap_inputdata.boxmax = boxmax;
         }
         /**
          * @brief stretch a single coordinate of a particle position
@@ -323,29 +338,20 @@ namespace shammodels::sph::modules {
             return newr;
         }
 
-        static Tvec stretchpart(
-            Tvec pos,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
-            std::vector<std::function<Tscal(Tscal)>> rhodSs,
-            std::vector<std::function<Tscal(Tvec)>> a_from_poss,
-            std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss,
-            std::vector<Tscal> integral_profiles,
-            std::vector<Tscal> ximins,
-            std::vector<Tscal> ximaxs,
-            Tvec center,
-            std::vector<Tscal> steps) {
+        static Tvec stretchpart(Tvec pos, Smap_inputdata smap_inputdata) {
+            Tvec center = smap_inputdata.center;
             if (sycl::length(pos) < 1e-12) {
                 return -1. * center;
             }
-            for (size_t i = 0; i < rhoprofiles.size(); ++i) {
-                auto &rhoprofile       = rhoprofiles[i];
-                auto &rhodS            = rhodSs[i];
-                auto &ximax            = ximaxs[i];
-                auto &ximin            = ximins[i];
-                auto &a_from_pos       = a_from_poss[i];
-                auto &a_to_pos         = a_to_poss[i];
-                auto &integral_profile = integral_profiles[i];
-                auto &step             = steps[i];
+            for (size_t i = 0; i < smap_inputdata.rhoprofiles.size(); ++i) {
+                auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
+                auto &rhodS            = smap_inputdata.rhodSs[i];
+                auto &ximax            = smap_inputdata.ximaxs[i];
+                auto &ximin            = smap_inputdata.ximins[i];
+                auto &a_from_pos       = smap_inputdata.a_from_poss[i];
+                auto &a_to_pos         = smap_inputdata.a_to_poss[i];
+                auto &integral_profile = smap_inputdata.integral_profiles[i];
+                auto &step             = smap_inputdata.steps[i];
                 Tscal a                = a_from_pos(pos);
 
                 Tscal new_a = stretchcoord(
@@ -360,23 +366,18 @@ namespace shammodels::sph::modules {
         }
 
         static Tscal h_rho_stretched(
-            Tvec pos,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
-            std::vector<std::function<Tscal(Tvec)>> a_from_poss,
-            std::vector<Tscal> integral_profiles,
-            Tscal mpart,
-            Tscal hfact) {
+            Tvec pos, const Smap_inputdata &smap_inputdata, Tscal mpart, Tscal hfact) {
             Tscal rhoa = 1.;
-            for (size_t i = 0; i < integral_profiles.size(); i++) {
-                Tscal integral_profile = integral_profiles[i];
-                auto &a_from_pos       = a_from_poss[i];
-                auto &rhoprofile       = rhoprofiles[i];
+            for (size_t i = 0; i < smap_inputdata.integral_profiles.size(); i++) {
+                Tscal integral_profile = smap_inputdata.integral_profiles[i];
+                auto &a_from_pos       = smap_inputdata.a_from_poss[i];
+                auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
 
                 rhoa *= rhoprofile(a_from_pos(pos)) / integral_profile;
             }
 
             Tscal h = shamrock::sph::h_rho(
-                mpart, rhoa, hfact); // to be multiplied by number of particles
+                mpart, rhoa, hfact); // to be divided by number of particles ^(1/3)
             return h;
         }
 
@@ -392,5 +393,5 @@ namespace shammodels::sph::modules {
         ISPHSetupNode_Dot get_dot_subgraph() {
             return ISPHSetupNode_Dot{get_name(), 2, {parent->get_dot_subgraph()}};
         }
-    };
+    }; // namespace shammodels::sph::modules
 } // namespace shammodels::sph::modules

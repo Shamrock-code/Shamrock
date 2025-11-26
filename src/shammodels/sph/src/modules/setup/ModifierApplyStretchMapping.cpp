@@ -59,18 +59,8 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         Tvec &xyz_a    = acc_xyz[id_a];
         Tscal &hpart_a = acc_hpart[id_a];
 
-        xyz_a = stretchpart(
-            xyz_a,
-            rhoprofiles,
-            rhodSs,
-            a_from_poss,
-            a_to_poss,
-            integral_profiles,
-            ximins,
-            ximaxs,
-            center,
-            steps);
-        hpart_a = h_rho_stretched(xyz_a, rhoprofiles, a_from_poss, integral_profiles, mpart, hfact);
+        xyz_a   = stretchpart(xyz_a, smap_inputdata);
+        hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
 
         npart += 1;
     };

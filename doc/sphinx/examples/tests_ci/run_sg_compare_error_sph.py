@@ -20,6 +20,17 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 
+# tolerances for the test for each quantity [min, max] outside = fail
+TOL_HPC_CUBE = {
+    "direct": {
+        "max_rel_delta": [0.0, 1e-20],
+        "avg_rel_delta": [0.0, 1e-20],
+        "min_rel_delta": [0.0, 1e-20],
+        "std_rel_delta": [0.0, 1e-20],
+    }
+}
+
+
 def run_case(setup_func, setup_name, sg_setup_func):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -49,6 +60,7 @@ def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relati
 
     return delta_sg, rel_delta_norm, data_to_comp["xyz"]
 
+
 def check_print_errors(rel_delta, setup_name, method_name, tols):
     max_rel_delta = np.max(np.abs(rel_delta))
     if shamrock.sys.world_rank() == 0:
@@ -64,17 +76,22 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
         print(f"std relative error {method_name}: {std_rel_delta} for {setup_name}")
 
     if max_rel_delta > tols["max_rel_delta"][1] or max_rel_delta < tols["max_rel_delta"][0]:
-        raise ValueError(f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}]")
+        raise ValueError(
+            f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}]"
+        )
     if avg_rel_delta > tols["avg_rel_delta"][1] or avg_rel_delta < tols["avg_rel_delta"][0]:
-        raise ValueError(f"avg relative error {method_name} is out of tolerance for {setup_name}: {avg_rel_delta} not in [{tols['avg_rel_delta'][0]}, {tols['avg_rel_delta'][1]}]")
+        raise ValueError(
+            f"avg relative error {method_name} is out of tolerance for {setup_name}: {avg_rel_delta} not in [{tols['avg_rel_delta'][0]}, {tols['avg_rel_delta'][1]}]"
+        )
     if min_rel_delta > tols["min_rel_delta"][1] or min_rel_delta < tols["min_rel_delta"][0]:
-        raise ValueError(f"min relative error {method_name} is out of tolerance for {setup_name}: {min_rel_delta} not in [{tols['min_rel_delta'][0]}, {tols['min_rel_delta'][1]}]")
+        raise ValueError(
+            f"min relative error {method_name} is out of tolerance for {setup_name}: {min_rel_delta} not in [{tols['min_rel_delta'][0]}, {tols['min_rel_delta'][1]}]"
+        )
     if std_rel_delta > tols["std_rel_delta"][1] or std_rel_delta < tols["std_rel_delta"][0]:
-        raise ValueError(f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}]")
+        raise ValueError(
+            f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}]"
+        )
 
-    
-
-    
 
 def compare_sg_methods(setup_func, setup_name, tols):
 
@@ -195,16 +212,10 @@ def setup_cube_hcp(model, cfg):
     model.set_cfl_cour(0.1)
     model.set_cfl_force(0.1)
 
-tol_hcp_cube = {
-    "direct": {
-        "max_rel_delta": [0., 1e-20],
-        "avg_rel_delta": [0., 1e-20],
-        "min_rel_delta": [0., 1e-20],
-        "std_rel_delta": [0., 1e-20]
-    }
-}
 
-delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods(setup_cube_hcp, "cube_hcp", tol_hcp_cube)
+delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods(
+    setup_cube_hcp, "cube_hcp", TOL_HPC_CUBE
+)
 
 fig = plot3d_delta_sg(rel_delta_direct, xyz_direct, "cube_hcp")
 plt.show()

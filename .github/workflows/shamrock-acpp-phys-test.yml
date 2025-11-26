@@ -79,6 +79,8 @@ jobs:
             testfile: regression_godunov_soundwave_3d.py
           - worldsize: 2
             testfile: regression_godunov_soundwave_3d.py
+          - worldsize: 1
+            testfile: run_sg_compare_error_sph.py
       fail-fast: false
 
 

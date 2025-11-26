@@ -10,7 +10,10 @@ import numpy as np
 
 import shamrock
 
-# Particle tracking is an experimental feature
+# %%
+# Shamrock init
+
+# Self-gravity is still an experimental feature
 shamrock.enable_experimental_features()
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -19,6 +22,8 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# %%
+# Parameters of the test
 
 # tolerances for the test for each quantity [min, max] outside = fail
 TOL_HPC_CUBE = {
@@ -30,7 +35,11 @@ TOL_HPC_CUBE = {
     }
 }
 
+# %%
+# Helper functions for this test
 
+
+# helper to run one case (SG config & setup)
 def run_case(setup_func, setup_name, sg_setup_func):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -50,6 +59,7 @@ def run_case(setup_func, setup_name, sg_setup_func):
     return data
 
 
+# Compare the SG method to the reference and the one without SG and return error metrics
 def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relative_error=1e-10):
     a_sg = data_to_comp["axyz"] - no_sg_data["axyz"]
     a_sg_ref = reference_data["axyz"] - no_sg_data["axyz"]
@@ -61,6 +71,7 @@ def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relati
     return delta_sg, rel_delta_norm, data_to_comp["xyz"]
 
 
+# Compute error related quantities and check if they are within the tolerances
 def check_print_errors(rel_delta, setup_name, method_name, tols):
     max_rel_delta = np.max(np.abs(rel_delta))
     if shamrock.sys.world_rank() == 0:
@@ -93,6 +104,7 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
         )
 
 
+# Compare the SG method to the reference and the one without SG and return error metrics
 def compare_sg_methods(setup_func, setup_name, tols):
 
     def sg_case_none(cfg):
@@ -120,6 +132,7 @@ def compare_sg_methods(setup_func, setup_name, tols):
     return delta_sg_direct, rel_delta_direct, xyz_direct
 
 
+# Plot the 3D delta of the SG method
 def plot3d_delta_sg(delta_sg_norm, xyz, case_name):
 
     fig = plt.figure()
@@ -133,6 +146,10 @@ def plot3d_delta_sg(delta_sg_norm, xyz, case_name):
     fig.colorbar(dat)
 
     return fig
+
+
+# %%
+# Setup for the test
 
 
 def setup_cube_hcp(model, cfg):
@@ -213,6 +230,8 @@ def setup_cube_hcp(model, cfg):
     model.set_cfl_force(0.1)
 
 
+# %%
+# Run the tests
 delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods(
     setup_cube_hcp, "cube_hcp", TOL_HPC_CUBE
 )

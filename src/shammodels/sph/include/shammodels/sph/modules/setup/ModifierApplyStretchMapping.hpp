@@ -24,6 +24,7 @@
 #include "shammodels/sph/modules/setup/CoordinateTransformation.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <shambackends/sycl.hpp>
 
 namespace shammodels::sph::modules {
 
@@ -47,6 +48,7 @@ namespace shammodels::sph::modules {
 
         public:
         std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
+        std::function<Tscal(Tscal)> rhoprofiletest;
         std::string system;
         std::vector<std::string> axes;
 
@@ -74,7 +76,7 @@ namespace shammodels::sph::modules {
             std::string system,
             std::vector<std::string> axes)
             : context(context), solver_config(solver_config), parent(parent),
-              rhoprofiles(rhoprofiles), system(system), axes(axes) {
+              rhoprofiles(rhoprofiles), rhoprofiletest(rhoprofiles[0]), system(system), axes(axes) {
             Tscal x0min;
             Tscal x0max;
             Tscal x1min;
@@ -329,6 +331,9 @@ namespace shammodels::sph::modules {
             std::vector<Tscal> ximaxs,
             Tvec center,
             std::vector<Tscal> steps) {
+            if (sycl::length(pos) < 1e-12) {
+                return -1. * center;
+            }
             for (size_t i = 0; i < rhoprofiles.size(); ++i) {
                 auto &rhoprofile       = rhoprofiles[i];
                 auto &rhodS            = rhodSs[i];
@@ -379,7 +384,10 @@ namespace shammodels::sph::modules {
         bool is_done() { return parent->is_done(); }
 
         shamrock::patch::PatchDataLayer next_n(u32 nmax);
-        static Tvec testvec(Tvec x);
+        static Tvec testvec(Tvec x) { return x; };
+        static Tvec testfunc(Tvec x, std::vector<std::function<Tscal(Tscal)>> rhoprofiles) {
+            return x;
+        };
 
         std::string get_name() { return "ModifierApplyStretchMapping"; }
         ISPHSetupNode_Dot get_dot_subgraph() {

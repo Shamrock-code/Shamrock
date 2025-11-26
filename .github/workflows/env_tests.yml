@@ -124,6 +124,19 @@ jobs:
           brew install cmake libomp boost open-mpi adaptivecpp
           set -e
 
+      # if ubuntu container
+      - name : Install ubuntu dependencies
+        if: matrix.machine == 'debian-generic.acpp'
+        run: |
+          sudo apt remove -y texlive-full
+          sudo apt-get install -y \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            dvipng \
+            ghostscript
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name : Reconfigure git

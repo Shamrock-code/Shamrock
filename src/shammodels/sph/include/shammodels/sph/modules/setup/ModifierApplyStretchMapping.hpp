@@ -58,8 +58,8 @@ namespace shammodels::sph::modules {
         std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
         std::vector<Tscal> integral_profiles;
         std::vector<Tscal> steps;
-        Tvec boxmin = {-1, -1, -1}; // Il va falloir recover ça
-        Tvec boxmax = {1, 1, 1};    // Il va falloir recover ça
+        Tvec boxmin = {-1, -1, -1}; // TODO Il va falloir recover ça
+        Tvec boxmax = {1, 1, 1};    // TODO Il va falloir recover ça
         std::vector<Tscal> ximins;  // will be sent to lattce
         std::vector<Tscal> ximaxs;  // will be sent to lattce
         static constexpr u32 ngrid = 2048;
@@ -256,8 +256,8 @@ namespace shammodels::sph::modules {
          * @tparam std::function<Tscal(Tscal)> const &rhoprofile,
          * @tparam std::function<Tscal(Tscal)> const &rhodS,
          * @tparam Tscal integral_profile,
-         * @tparam Tscal rmin,
-         * @tparam Tscal rmax,
+         * @tparam Tscal amin,
+         * @tparam Tscal amax,
          * @tparam Tvec center,
          * @tparam Tscal step
          */
@@ -266,23 +266,27 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> const &rhoprofile,
             std::function<Tscal(Tscal)> const &rhodS,
             Tscal integral_profile,
-            Tscal rmin,
-            Tscal rmax,
+            Tscal amin,
+            Tscal amax,
             Tvec center,
             Tscal step) {
+            if (a > amax) {
+                return 2 * amax; // TODO Current way of kicking the particle out.
+            }
 
             u32 its       = 0;
             Tscal initpos = a;
             Tscal newr    = a;
             Tscal prevr   = a;
 
-            Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(rmin, 3))
-                                 / (sycl::pown(rmax, 3) - sycl::pown(rmin, 3));
+            Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(amin, 3))
+                                 / (sycl::pown(amax, 3)
+                                    - sycl::pown(amin, 3)); // TODO Only work in spherical case!!
             Tscal newrelatpos
-                = shammath::integ_riemann_sum(rmin, newr, step, rhodS) / integral_profile;
+                = shammath::integ_riemann_sum(amin, newr, step, rhodS) / integral_profile;
             Tscal func       = newrelatpos - initrelatpos;
-            Tscal xminbisect = rmin;
-            Tscal xmaxbisect = rmax;
+            Tscal xminbisect = amin;
+            Tscal xmaxbisect = amax;
             Tscal dfunc      = 0;
             Tscal dx         = 0;
             bool bisect      = false;
@@ -308,12 +312,12 @@ namespace shammodels::sph::modules {
                 }
 
                 // NR iteration
-                if ((newr > rmax) || (newr < rmin) || (its > maxits_nr)) {
+                if ((newr > amax) || (newr < amin) || (its > maxits_nr)) {
                     bisect = true;
                     newr   = 0.5 * (xminbisect + xmaxbisect);
                 }
                 newrelatpos
-                    = shammath::integ_riemann_sum(rmin, newr, step, rhodS) / integral_profile;
+                    = shammath::integ_riemann_sum(amin, newr, step, rhodS) / integral_profile;
                 func  = newrelatpos - initrelatpos;
                 prevr = newr;
             }
@@ -344,10 +348,12 @@ namespace shammodels::sph::modules {
                 auto &integral_profile = integral_profiles[i];
                 auto &step             = steps[i];
                 Tscal a                = a_from_pos(pos);
-                // a_from_pos =  sycl::length e.g
-                // or a_from_pos = pos_a.get("x")
+
                 Tscal new_a = stretchcoord(
                     a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
+                if (new_a >= ximax) {
+                    return 999 * ximax * pos; // TODO Hoping this will get the particle kicked....
+                }
                 pos = a_to_pos(new_a, pos);
             }
             return pos - center;

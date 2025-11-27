@@ -12,8 +12,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          path: repo
           submodules: recursive
           fetch-depth: 0
+
+      - name: Create repository archive
+        run: |
+          tar --exclude='.git' \
+              --exclude='build*' \
+              --exclude='*.pyc' \
+              --exclude='__pycache__' \
+              --exclude='.github' \
+              --exclude='*.log' \
+              -czf repo.tar.gz repo/
+          cp repo/.github/dockerfiles/phys_test_image_acpp_omp/Dockerfile .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -22,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           tags: ci-phys-test-image
-          file: .github/dockerfiles/phys_test_image_acpp_omp/Dockerfile
+          file: Dockerfile
           context: .
           push: false
           outputs: type=docker,dest=/tmp/ci-phys-test-image.tar

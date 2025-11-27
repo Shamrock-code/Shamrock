@@ -18,7 +18,7 @@ jobs:
 
       - name: Create repository archive
         run: |
-          tar -czf repo.tar.gz repo/
+          tar -czf repo.tar.gz -C repo .
           cp repo/.github/dockerfiles/phys_test_image_acpp_omp/Dockerfile .
 
       - name: Set up Docker Buildx

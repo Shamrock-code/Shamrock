@@ -53,7 +53,7 @@ jobs:
 
       - name: Create repository archive
         run: |
-          tar -czf repo.tar.gz repo/
+          tar -czf repo.tar.gz -C repo .
           cp repo/${{ inputs.imagepath }}/Dockerfile .
 
       # Install the cosign tool except on PR

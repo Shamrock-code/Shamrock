@@ -18,13 +18,7 @@ jobs:
 
       - name: Create repository archive
         run: |
-          tar --exclude='.git' \
-              --exclude='build*' \
-              --exclude='*.pyc' \
-              --exclude='__pycache__' \
-              --exclude='.github' \
-              --exclude='*.log' \
-              -czf repo.tar.gz repo/
+          tar -czf repo.tar.gz repo/
           cp repo/.github/dockerfiles/phys_test_image_acpp_omp/Dockerfile .
 
       - name: Set up Docker Buildx

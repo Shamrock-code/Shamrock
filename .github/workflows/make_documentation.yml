@@ -62,14 +62,11 @@ jobs:
 
       - name : Modify texlive packages
         run: |
-          sudo apt remove -y texlive-full
           sudo apt-get install -y \
-            texlive-latex-base \
-            texlive-latex-recommended \
-            texlive-latex-extra \
-            texlive-fonts-recommended \
+            texlive-texlive-full \
             dvipng \
-            ghostscript
+            ghostscript \
+            latexmk
 
       - name: Gen doc
         shell: bash

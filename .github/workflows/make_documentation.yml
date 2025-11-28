@@ -63,7 +63,7 @@ jobs:
       - name : Modify texlive packages
         run: |
           sudo apt-get install -y \
-            texlive-texlive-full \
+            texlive-full \
             dvipng \
             ghostscript \
             latexmk

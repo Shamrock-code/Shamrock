@@ -32,8 +32,39 @@ TOL_HPC_CUBE = {
         "avg_rel_delta": [0.0, 1e-20],
         "min_rel_delta": [0.0, 1e-20],
         "std_rel_delta": [0.0, 1e-20],
-    }
+    },
+    "mm1": {
+        "max_rel_delta": [0.10237644408204995 - 1e-20, 0.10237644408204995 + 1e-20],
+        "avg_rel_delta": [0.02854797753451957 - 1e-20, 0.02854797753451957 + 1e-20],
+        "min_rel_delta": [0.0011855528704246662 - 1e-20, 0.0011855528704246662 + 1e-20],
+        "std_rel_delta": [0.012057071282465973 - 1e-20, 0.012057071282465973 + 1e-20],
+    },
+    "mm2": {
+        "max_rel_delta": [0.09870604133669476 - 1e-20, 0.09870604133669476 + 1e-20],
+        "avg_rel_delta": [0.02809153086497972 - 1e-20, 0.02809153086497972 + 1e-20],
+        "min_rel_delta": [0.0007660948531784951 - 1e-20, 0.0007660948531784951 + 1e-20],
+        "std_rel_delta": [0.011728053659573516 - 1e-20, 0.011728053659573516 + 1e-20],
+    },
+    "mm3": {
+        "max_rel_delta": [0.053440736724222254 - 1e-20, 0.053440736724222254 + 1e-20],
+        "avg_rel_delta": [0.016082633182446748 - 1e-20, 0.016082633182446748 + 1e-20],
+        "min_rel_delta": [0.0006196291223064161 - 1e-20, 0.0006196291223064161 + 1e-20],
+        "std_rel_delta": [0.007676767861132326 - 1e-20, 0.007676767861132326 + 1e-20],
+    },
+    "mm4": {
+        "max_rel_delta": [0.05833850788436308 - 1e-20, 0.05833850788436308 + 1e-20],
+        "avg_rel_delta": [0.014909667170457708 - 1e-20, 0.014909667170457708 + 1e-20],
+        "min_rel_delta": [0.000900026203337091 - 1e-20, 0.000900026203337091 + 1e-20],
+        "std_rel_delta": [0.007051020680900702 - 1e-20, 0.007051020680900702 + 1e-20],
+    },
+    "mm5": {
+        "max_rel_delta": [0.03130228236510434 - 1e-20, 0.03130228236510434 + 1e-20],
+        "avg_rel_delta": [0.005541631318650798 - 1e-20, 0.005541631318650798 + 1e-20],
+        "min_rel_delta": [0.00011105937841131173 - 1e-20, 0.00011105937841131173 + 1e-20],
+        "std_rel_delta": [0.003575474772831352 - 1e-20, 0.003575474772831352 + 1e-20],
+    },
 }
+
 
 # %%
 # Helper functions for this test
@@ -60,13 +91,14 @@ def run_case(setup_func, setup_name, sg_setup_func):
 
 
 # Compare the SG method to the reference and the one without SG and return error metrics
-def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relative_error=1e-10):
+def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relative_error=1):
     a_sg = data_to_comp["axyz"] - no_sg_data["axyz"]
+
     a_sg_ref = reference_data["axyz"] - no_sg_data["axyz"]
     delta_sg = a_sg - a_sg_ref
 
     delta_sg_norm = np.linalg.norm(delta_sg, axis=1)
-    rel_delta_norm = delta_sg_norm / (np.linalg.norm(a_sg_ref, axis=1) + sat_relative_error)
+    rel_delta_norm = delta_sg_norm / (np.max(np.linalg.norm(a_sg_ref, axis=1)))
 
     return delta_sg, rel_delta_norm, data_to_comp["xyz"]
 
@@ -118,22 +150,93 @@ def compare_sg_methods(setup_func, setup_name, tols):
         cfg.set_self_gravity_direct(reference_mode=False)
         cfg.set_softening_plummer(epsilon=1e-9)
 
+    def sg_case_mm1(cfg):
+        cfg.set_self_gravity_mm(order=1, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_mm2(cfg):
+        cfg.set_self_gravity_mm(order=2, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_mm3(cfg):
+        cfg.set_self_gravity_mm(order=3, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_mm4(cfg):
+        cfg.set_self_gravity_mm(order=4, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_mm5(cfg):
+        cfg.set_self_gravity_mm(order=5, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
     no_sg_data = run_case(setup_func, setup_name, sg_case_none)
     reference_data = run_case(setup_func, setup_name, sg_case_reference)
 
     direct_data = run_case(setup_func, setup_name, sg_case_direct)
+    mm1_data = run_case(setup_func, setup_name, sg_case_mm1)
+    mm2_data = run_case(setup_func, setup_name, sg_case_mm2)
+    mm3_data = run_case(setup_func, setup_name, sg_case_mm3)
+    mm4_data = run_case(setup_func, setup_name, sg_case_mm4)
+    mm5_data = run_case(setup_func, setup_name, sg_case_mm5)
 
     delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods_data(
         no_sg_data, reference_data, direct_data
     )
 
-    check_print_errors(rel_delta_direct, setup_name, "direct", tols["direct"])
+    delta_sg_mm1, rel_delta_mm1, xyz_mm1 = compare_sg_methods_data(
+        no_sg_data, reference_data, mm1_data
+    )
+    delta_sg_mm2, rel_delta_mm2, xyz_mm2 = compare_sg_methods_data(
+        no_sg_data, reference_data, mm2_data
+    )
+    delta_sg_mm3, rel_delta_mm3, xyz_mm3 = compare_sg_methods_data(
+        no_sg_data, reference_data, mm3_data
+    )
+    delta_sg_mm4, rel_delta_mm4, xyz_mm4 = compare_sg_methods_data(
+        no_sg_data, reference_data, mm4_data
+    )
+    delta_sg_mm5, rel_delta_mm5, xyz_mm5 = compare_sg_methods_data(
+        no_sg_data, reference_data, mm5_data
+    )
 
-    return delta_sg_direct, rel_delta_direct, xyz_direct
+    check_print_errors(rel_delta_direct, setup_name, "direct", tols["direct"])
+    check_print_errors(rel_delta_mm1, setup_name, "mm1", tols["mm1"])
+    check_print_errors(rel_delta_mm2, setup_name, "mm2", tols["mm2"])
+    check_print_errors(rel_delta_mm3, setup_name, "mm3", tols["mm3"])
+    check_print_errors(rel_delta_mm4, setup_name, "mm4", tols["mm4"])
+    check_print_errors(rel_delta_mm5, setup_name, "mm5", tols["mm5"])
+
+    return (
+        {
+            "direct": delta_sg_direct,
+            "mm1": delta_sg_mm1,
+            "mm2": delta_sg_mm2,
+            "mm3": delta_sg_mm3,
+            "mm4": delta_sg_mm4,
+            "mm5": delta_sg_mm5,
+        },
+        {
+            "direct": rel_delta_direct,
+            "mm1": rel_delta_mm1,
+            "mm2": rel_delta_mm2,
+            "mm3": rel_delta_mm3,
+            "mm4": rel_delta_mm4,
+            "mm5": rel_delta_mm5,
+        },
+        {
+            "direct": xyz_direct,
+            "mm1": xyz_mm1,
+            "mm2": xyz_mm2,
+            "mm3": xyz_mm3,
+            "mm4": xyz_mm4,
+            "mm5": xyz_mm5,
+        },
+    )
 
 
 # Plot the 3D delta of the SG method
-def plot3d_delta_sg(delta_sg_norm, xyz, case_name):
+def plot3d_delta_sg(delta_sg_norm, xyz, case_name, method_name):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -141,7 +244,7 @@ def plot3d_delta_sg(delta_sg_norm, xyz, case_name):
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    ax.set_title(f"reference - {case_name} relative error")
+    ax.set_title(f"{method_name} - {case_name} relative error")
     ax.set_aspect("equal")
     fig.colorbar(dat)
 
@@ -232,9 +335,32 @@ def setup_cube_hcp(model, cfg):
 
 # %%
 # Run the tests
-delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods(
+# ^^^^^^^^^^^^^
+
+delta_sg_dict, rel_delta_dict, xyz_dict = compare_sg_methods(
     setup_cube_hcp, "cube_hcp", TOL_HPC_CUBE
 )
 
-fig = plot3d_delta_sg(rel_delta_direct, xyz_direct, "cube_hcp")
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["direct"], xyz_dict["direct"], "cube_hcp", "direct")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["mm1"], xyz_dict["mm1"], "cube_hcp", "mm1")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["mm2"], xyz_dict["mm2"], "cube_hcp", "mm2")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["mm3"], xyz_dict["mm3"], "cube_hcp", "mm3")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["mm4"], xyz_dict["mm4"], "cube_hcp", "mm4")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["mm5"], xyz_dict["mm5"], "cube_hcp", "mm5")
 plt.show()

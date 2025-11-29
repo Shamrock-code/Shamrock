@@ -63,6 +63,7 @@
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -1388,6 +1389,45 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             self_gravity_direct_node.set_edges(
                 sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
             self_gravity_direct_node.evaluate();
+
+        } else if (solver_config.self_grav_config.is_mm()) {
+
+            SelfGravConfig::MM &mm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::MM>(&solver_config.self_grav_config.config));
+
+            if (mm_config.order == 5) {
+                modules::SGMMPlummer<Tvec, 5> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            } else if (mm_config.order == 4) {
+                modules::SGMMPlummer<Tvec, 4> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            } else if (mm_config.order == 3) {
+                modules::SGMMPlummer<Tvec, 3> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            } else if (mm_config.order == 2) {
+                modules::SGMMPlummer<Tvec, 2> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            } else if (mm_config.order == 1) {
+                modules::SGMMPlummer<Tvec, 1> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            } else {
+                shambase::throw_unimplemented();
+            }
 
         } else {
             throw shambase::make_except_with_loc<std::runtime_error>(

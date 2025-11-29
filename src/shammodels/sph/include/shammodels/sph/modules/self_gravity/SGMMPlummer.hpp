@@ -71,7 +71,7 @@ namespace shammodels::sph::modules {
         }
 
         inline std::string _impl_get_label() const override { return "SGMMPlummer"; }
-        std::string _impl_get_tex() const override { return "TODO"; }
+        std::string _impl_get_tex() const override { return "SG_{\\rm MM, Plummer}"; }
 
         protected:
         void _impl_evaluate_internal() override;

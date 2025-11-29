@@ -122,7 +122,7 @@ namespace shammodels::sph::modules {
                     MassMoments Q_n_B_right = MassMoments::load(ptr_right, 0);
 
                     // offset the moments and add them
-                    MassMoments Q_n_B_combined = MassMoments::zeros(); // TODO
+                    MassMoments Q_n_B_combined = MassMoments::zeros();
                     Q_n_B_combined
                         += shamphys::offset_multipole(Q_n_B_left, left_center, new_center);
                     Q_n_B_combined

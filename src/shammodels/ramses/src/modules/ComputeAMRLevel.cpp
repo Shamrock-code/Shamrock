@@ -73,7 +73,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class TgridVec>
-    std::string ComputeAMRLevel<TgridVec>::_impl_get_tex() {
+    std::string ComputeAMRLevel<TgridVec>::_impl_get_tex() const {
         return "TODO";
     }
 

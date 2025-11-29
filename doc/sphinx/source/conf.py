@@ -76,7 +76,10 @@ sphinx_gallery_conf = {
     "write_computation_times": True,  # write sg_execution_times
     "show_memory": True,
     # Capture matplotlib anim in examples
-    "matplotlib_animations": True,
+    # "matplotlib_animations": True,
+    # By default it is js/html5 where you can toggle and do frame by frame
+    # However, this is huge in the resulting do so i opt to using mp4 instead for the compression
+    "matplotlib_animations": (True, "mp4"),
 }
 
 # -- Options for HTML output -------------------------------------------------

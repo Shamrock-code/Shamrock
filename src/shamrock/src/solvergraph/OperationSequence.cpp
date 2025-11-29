@@ -25,7 +25,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    std::string OperationSequence::_impl_get_dot_graph_partial() {
+    std::string OperationSequence::_impl_get_dot_graph_partial() const {
 
         std::stringstream ss;
 
@@ -45,7 +45,7 @@ namespace shamrock::solvergraph {
         return ss.str();
     }
 
-    std::string OperationSequence::_impl_get_tex() {
+    std::string OperationSequence::_impl_get_tex() const {
         std::stringstream ss;
         ss << "Start : " << _impl_get_label() << "\n";
         for (auto &node : nodes) {

@@ -60,6 +60,14 @@ jobs:
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
           sudo apt-get install -y -qq doxygen graphviz
 
+      - name : Modify texlive packages
+        run: |
+          sudo apt-get install -y \
+            texlive-full \
+            dvipng \
+            ghostscript \
+            latexmk
+
       - name: Gen doc
         shell: bash
         run: |

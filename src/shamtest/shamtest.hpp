@@ -207,10 +207,10 @@ namespace shamtest::details {
  */
 #define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, _a, _b, comp)                                        \
     do {                                                                                           \
-        auto a = _a;                                                                               \
-        auto b = _b;                                                                               \
+        auto _______a = _a;                                                                        \
+        auto _______b = _b;                                                                        \
         using namespace shamtest::details;                                                         \
-        bool eval               = comp(a, b);                                                      \
+        bool eval               = comp(_______a, _______b);                                        \
         std::string assert_name = format_assert_name(name) + #_a " == " #_b;                       \
         if (eval) {                                                                                \
             shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
@@ -218,8 +218,9 @@ namespace shamtest::details {
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
-                    + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
+                assert_name + " evaluated to false\n\n"                                            \
+                    + shambase::format(" -> " #_a " = {}", _______a) + "\n"                        \
+                    + shambase::format(" -> " #_b " = {}", _______b) + "\n"                        \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)

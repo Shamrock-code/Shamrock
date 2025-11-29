@@ -16,7 +16,9 @@
 
 #include "shammodels/nbody/models/nbody_selfgrav.hpp"
 #include "shammath/symtensor_collections.hpp"
-#include "shamphys/fmm.hpp"
+#include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/grav_moments.hpp"
+#include "shamphys/fmm/offset_multipole.hpp"
 #include "shamrock/legacy/patch/comm/patch_object_mover.hpp"
 #include "shamrock/legacy/patch/interfaces/interface_handler.hpp"
 #include "shamrock/legacy/patch/utility/full_tree_field.hpp"
@@ -313,7 +315,7 @@ void compute_multipoles(
                             multipoles,
                             s_cid * SymTensorCollection<flt, 0, fmm_order>::num_component);
 
-                        auto B_ns_offseted = offset_multipole(B_ns, d);
+                        auto B_ns_offseted = shamphys::offset_multipole_delta(B_ns, d);
 
                         B_n += B_ns_offseted;
                     };
@@ -875,11 +877,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                             auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(
                                 multipoles,
                                 node_b * SymTensorCollection<flt, 0, fmm_order>::num_component);
-                            auto D_n
-                                = GreenFuncGravCartesian<flt, 1, fmm_order + 1>::get_der_tensors(
-                                    r_fmm);
+                            auto D_n = shamphys::GreenFuncGravCartesian<flt, 1, fmm_order + 1>::
+                                get_der_tensors(r_fmm);
 
-                            dM_k += get_dM_mat(D_n, Q_n);
+                            dM_k += shamphys::get_dM_mat(D_n, Q_n);
                         });
 
                     // #endif
@@ -1090,10 +1091,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                                 auto Q_n = SymTensorCollection<flt, 0, fmm_order>::load(
                                     multipoles,
                                     node_b * SymTensorCollection<flt, 0, fmm_order>::num_component);
-                                auto D_n = GreenFuncGravCartesian<flt, 1, fmm_order + 1>::
+                                auto D_n = shamphys::GreenFuncGravCartesian<flt, 1, fmm_order + 1>::
                                     get_der_tensors(r_fmm);
 
-                                dM_k += get_dM_mat(D_n, Q_n);
+                                dM_k += shamphys::get_dM_mat(D_n, Q_n);
                             });
 
                         walker::iter_object_in_cell(tree_acc_curr, id_cell_a, [&](u32 id_a) {

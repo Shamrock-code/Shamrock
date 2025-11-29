@@ -28,7 +28,7 @@ if not shamrock.sys.is_initialized():
 bounding_box = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (1.0, 1.0, 1.0))
 
 
-def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
+def benchmark_dtt_core(N, theta_crit, compression_level, ordered_result, nb_repeat=10):
     times = []
     random.seed(111)
     max_mem_delta = 0
@@ -40,7 +40,10 @@ def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
         tree.rebuild_from_positions(positions, bounding_box, compression_level)
         shamrock.backends.reset_mem_info_max()
         mem_info_before = shamrock.backends.get_mem_perf_info()
-        times.append(shamrock.tree.benchmark_clbvh_dual_tree_traversal(tree, theta_crit) * 1000)
+        times.append(
+            shamrock.tree.benchmark_clbvh_dual_tree_traversal(tree, theta_crit, ordered_result)
+            * 1000
+        )
         mem_info_after = shamrock.backends.get_mem_perf_info()
 
         mem_delta = (
@@ -50,14 +53,16 @@ def benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat=10):
     return times, max_mem_delta
 
 
-def benchmark_dtt(N, theta_crit, compression_level, nb_repeat=10):
-    times, max_mem_delta = benchmark_dtt_core(N, theta_crit, compression_level, nb_repeat)
+def benchmark_dtt(N, theta_crit, compression_level, ordered_result, nb_repeat=10):
+    times, max_mem_delta = benchmark_dtt_core(
+        N, theta_crit, compression_level, ordered_result, nb_repeat
+    )
     return min(times), max(times), sum(times) / nb_repeat, max_mem_delta
 
 
 # %%
 # Run the performance test for all parameters
-def run_performance_sweep(compression_level, threshold_run):
+def run_performance_sweep(compression_level, threshold_run, ordered_result):
 
     # Define parameter ranges
     # logspace as array
@@ -98,7 +103,7 @@ def run_performance_sweep(compression_level, threshold_run):
 
             start_time = time.time()
             min_time, max_time, mean_time, max_mem_delta = benchmark_dtt(
-                N, theta_crit, compression_level
+                N, theta_crit, compression_level, ordered_result
             )
             elapsed = time.time() - start_time
 
@@ -234,28 +239,39 @@ print(all_default_impls)
 # Run the performance benchmarks for all implementations
 results = {}
 
-for default_impl in all_default_impls:
-    shamrock.tree.set_impl_clbvh_dual_tree_traversal(default_impl.impl_name, default_impl.params)
 
-    print(f"Running DTT performance benchmarks for {default_impl.impl_name}...")
+for ordered_result in [True, False]:
+    for default_impl in all_default_impls:
+        shamrock.tree.set_impl_clbvh_dual_tree_traversal(
+            default_impl.impl_name, default_impl.params
+        )
 
-    compression_level = 4
+        n = default_impl.impl_name + " " + default_impl.params + "ordered=" + str(ordered_result)
 
-    threshold_run = 5e6
-    # Run the performance sweep
-    particle_counts, theta_crits, results_mean, results_min, results_max, results_max_mem_delta = (
-        run_performance_sweep(compression_level, threshold_run)
-    )
+        print(f"Running DTT performance benchmarks for {n}...")
 
-    results[default_impl.impl_name + " " + default_impl.params] = {
-        "particle_counts": particle_counts,
-        "theta_crits": theta_crits,
-        "results_mean": results_mean,
-        "results_min": results_min,
-        "results_max": results_max,
-        "results_max_mem_delta": results_max_mem_delta,
-        "name": default_impl.impl_name + " " + default_impl.params,
-    }
+        compression_level = 4
+
+        threshold_run = 5e6
+        # Run the performance sweep
+        (
+            particle_counts,
+            theta_crits,
+            results_mean,
+            results_min,
+            results_max,
+            results_max_mem_delta,
+        ) = run_performance_sweep(compression_level, threshold_run, ordered_result)
+
+        results[n] = {
+            "particle_counts": particle_counts,
+            "theta_crits": theta_crits,
+            "results_mean": results_mean,
+            "results_min": results_min,
+            "results_max": results_max,
+            "results_max_mem_delta": results_max_mem_delta,
+            "name": n,
+        }
 
 # %%
 # Plot the performance benchmarks for all implementations
@@ -267,7 +283,7 @@ import os
 if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
 
-ref_key = "reference "
+ref_key = "reference ordered=False"
 largest_refalg_value = np.nanmax(results[ref_key]["results_min"])
 
 i = 0

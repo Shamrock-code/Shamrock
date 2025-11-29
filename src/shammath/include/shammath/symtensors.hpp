@@ -71,14 +71,14 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0] = v_0;
             acc[offset + 1] = v_1;
             acc[offset + 2] = v_2;
         }
 
         template<class Tacc>
-        inline static SymTensor3d_1 load(Tacc &acc, u32 offset) {
+        inline static SymTensor3d_1 load(Tacc &&acc, u32 offset) {
             return SymTensor3d_1{
                 acc[offset + 0],
                 acc[offset + 1],
@@ -166,7 +166,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0] = v_00;
             acc[offset + 1] = v_01;
             acc[offset + 2] = v_02;
@@ -176,7 +176,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensor3d_2 load(Tacc &acc, u32 offset) {
+        inline static SymTensor3d_2 load(Tacc &&acc, u32 offset) {
             return SymTensor3d_2{
                 acc[offset + 0],
                 acc[offset + 1],
@@ -320,7 +320,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0] = v_000;
             acc[offset + 1] = v_001;
             acc[offset + 2] = v_002;
@@ -334,7 +334,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensor3d_3 load(Tacc &acc, u32 offset) {
+        inline static SymTensor3d_3 load(Tacc &&acc, u32 offset) {
             return SymTensor3d_3{
                 acc[offset + 0],
                 acc[offset + 1],
@@ -545,7 +545,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0]  = v_0000;
             acc[offset + 1]  = v_0001;
             acc[offset + 2]  = v_0002;
@@ -564,7 +564,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensor3d_4 load(Tacc &acc, u32 offset) {
+        inline static SymTensor3d_4 load(Tacc &&acc, u32 offset) {
             return SymTensor3d_4<T>{
                 acc[offset + 0],
                 acc[offset + 1],
@@ -811,7 +811,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0]  = v_00000;
             acc[offset + 1]  = v_00001;
             acc[offset + 2]  = v_00002;
@@ -836,7 +836,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensor3d_5 load(Tacc &acc, u32 offset) {
+        inline static SymTensor3d_5 load(Tacc &&acc, u32 offset) {
             return SymTensor3d_5<T>{acc[offset + 0],  acc[offset + 1],  acc[offset + 2],
                                     acc[offset + 3],  acc[offset + 4],  acc[offset + 5],
                                     acc[offset + 6],  acc[offset + 7],  acc[offset + 8],
@@ -878,6 +878,26 @@ namespace shammath {
         return b * a;
     }
 
+    template<class T>
+    inline SymTensor3d_4<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_4<T> &a, const SymTensor3d_5<T> &b) {
+        return b * a;
+    }
+
     // rank 4 ops
     template<class T>
     T operator*(const SymTensor3d_4<T> &a, const SymTensor3d_4<T> &b) {
@@ -901,6 +921,21 @@ namespace shammath {
 
     template<class T>
     SymTensor3d_4<T> operator*(const T &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_3<T> operator*(const SymTensor3d_1<T> &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_2<T> operator*(const SymTensor3d_2<T> &a, const SymTensor3d_4<T> &b) {
+        return b * a;
+    }
+
+    template<class T>
+    inline SymTensor3d_1<T> operator*(const SymTensor3d_3<T> &a, const SymTensor3d_4<T> &b) {
         return b * a;
     }
 

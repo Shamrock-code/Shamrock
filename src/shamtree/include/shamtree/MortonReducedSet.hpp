@@ -59,6 +59,8 @@ namespace shamtree {
               buf_reduc_index_map(std::move(buf_reduc_index_map)),
               reduced_morton_codes(std::move(reduced_morton_codes)) {}
 
+        inline bool is_empty() const { return reduce_code_count == 0; }
+
         inline LeafCellIterator get_leaf_cell_iterator() const {
             return LeafCellIterator{morton_codes_set.map_morton_id_to_obj_id, buf_reduc_index_map};
         }

@@ -313,8 +313,8 @@ namespace shamalgs::algorithm::details {
                                 cgh, nThreads, "bitonic sort pass B32", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                    Tkey *m  = accm.get_pointer();
-                                    Tval *id = accid.get_pointer();
+                                    Tkey *m  = &(accm[0]);
+                                    Tval *id = &(accid[0]);
                                     B::template order_kernel<32>(m, id, inc, length, gid);
                                 });
                         });
@@ -335,8 +335,8 @@ namespace shamalgs::algorithm::details {
                                 cgh, nThreads, "bitonic sort pass B16", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                    Tkey *m  = accm.get_pointer();
-                                    Tval *id = accid.get_pointer();
+                                    Tkey *m  = &(accm[0]);
+                                    Tval *id = &(accid[0]);
                                     B::template order_kernel<16>(m, id, inc, length, gid);
                                 });
                         });
@@ -361,8 +361,8 @@ namespace shamalgs::algorithm::details {
                                 cgh, nThreads, "bitonic sort pass B8", [=](u64 gid) {
                                     //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                                    Tkey *m  = accm.get_pointer();
-                                    Tval *id = accid.get_pointer();
+                                    Tkey *m  = &(accm[0]);
+                                    Tval *id = &(accid[0]);
                                     B::template order_kernel<8>(m, id, inc, length, gid);
                                 });
                         });
@@ -387,8 +387,8 @@ namespace shamalgs::algorithm::details {
 
                             shambase::parallel_for(
                                 cgh, nThreads, "bitonic sort pass B4", [=](u64 gid) {
-                                    Tkey *m  = accm.get_pointer();
-                                    Tval *id = accid.get_pointer();
+                                    Tkey *m  = &(accm[0]);
+                                    Tval *id = &(accid[0]);
                                     B::template order_kernel<4>(m, id, inc, length, gid);
                                 });
                         });
@@ -410,8 +410,8 @@ namespace shamalgs::algorithm::details {
                         shambase::parallel_for(cgh, nThreads, "bitonic sort pass B2", [=](u64 gid) {
                             //(__global data_t * data,__global uint * ids,int inc,int dir)
 
-                            Tkey *m  = accm.get_pointer();
-                            Tval *id = accid.get_pointer();
+                            Tkey *m  = &(accm[0]);
+                            Tval *id = &(accid[0]);
 
                             B::template order_kernel<2>(m, id, inc, length, gid);
                         });

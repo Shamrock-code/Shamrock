@@ -23,6 +23,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtree/CellIterator.hpp"
 #include "shamtree/KarrasRadixTree.hpp"
+#include "shamtree/LeafCellIterator.hpp"
 #include <functional>
 #include <utility>
 
@@ -38,6 +39,18 @@ namespace shamtree {
      */
     template<class T>
     class KarrasRadixTreeField;
+
+    /**
+     * @class KarrasRadixTreeFieldMultiVar
+     * @brief A data structure representing a field with multiple variables per cell for a Karras
+     * Radix Tree.
+     *
+     * This class encapsulates a data field associated with a Karras Radix Tree, where each
+     * cell can have multiple variables of type T. It manages a single device buffer for the field
+     * data.
+     */
+    template<class T>
+    class KarrasRadixTreeFieldMultiVar;
 } // namespace shamtree
 
 template<class T>
@@ -57,6 +70,30 @@ class shamtree::KarrasRadixTreeField {
     }
 };
 
+template<class T>
+class shamtree::KarrasRadixTreeFieldMultiVar {
+
+    public:
+    /// Get total cell count
+    inline u32 get_total_cell_count() { return buf_field.get_size() / nvar; }
+
+    sham::DeviceBuffer<T> buf_field; ///< field data (size = total_cell_count * nvar)
+    u32 nvar;                        ///< number of variables per cells
+
+    /// CTOR
+    KarrasRadixTreeFieldMultiVar(sham::DeviceBuffer<T> &&buf_field, u32 nvar)
+        : buf_field(std::move(buf_field)), nvar(nvar) {
+        if (nvar == 0) {
+            shambase::throw_with_loc<std::runtime_error>("nvar must be greater than 0");
+        }
+    }
+
+    static inline KarrasRadixTreeFieldMultiVar make_empty(
+        sham::DeviceScheduler_ptr dev_sched, u32 nvar) {
+        return KarrasRadixTreeFieldMultiVar{sham::DeviceBuffer<T>(0, dev_sched), nvar};
+    }
+};
+
 namespace shamtree {
 
     template<class T>
@@ -66,12 +103,29 @@ namespace shamtree {
     }
 
     template<class T>
+    KarrasRadixTreeFieldMultiVar<T> new_empty_karras_radix_tree_field_multi_var(u32 nvar) {
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        return KarrasRadixTreeFieldMultiVar<T>::make_empty(dev_sched, nvar);
+    }
+
+    template<class T>
     KarrasRadixTreeField<T> prepare_karras_radix_tree_field(
         const KarrasRadixTree &tree, KarrasRadixTreeField<T> &&recycled_tree_field) {
 
         KarrasRadixTreeField<T> ret = std::forward<KarrasRadixTreeField<T>>(recycled_tree_field);
 
         ret.buf_field.resize(tree.get_total_cell_count());
+
+        return ret;
+    }
+
+    template<class T>
+    KarrasRadixTreeFieldMultiVar<T> prepare_karras_radix_tree_field_multi_var(
+        const KarrasRadixTree &tree, KarrasRadixTreeFieldMultiVar<T> &&recycled_tree_field) {
+
+        KarrasRadixTreeFieldMultiVar<T> ret = std::move(recycled_tree_field);
+
+        ret.buf_field.resize(tree.get_total_cell_count() * ret.nvar);
 
         return ret;
     }

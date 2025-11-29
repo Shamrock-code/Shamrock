@@ -12,6 +12,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/gen_buffer_index.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -143,7 +144,7 @@ struct TestSortByKeyUSM {
             = shamalgs::random::mock_buffer_usm<u32>(sched, 0x111, len, 0, 1U << 12U);
         std::vector<u32> key_before_sort = buf_key.copy_to_stdvec();
 
-        sham::DeviceBuffer<u32> buf_vals = shamalgs::algorithm::gen_buffer_index_usm(sched, len);
+        sham::DeviceBuffer<u32> buf_vals = shamalgs::primitives::gen_buffer_index(sched, len);
 
         fct(sched, buf_key, buf_vals, len);
 
@@ -268,8 +269,7 @@ struct TestIndexRemapUSM {
         sham::DeviceBuffer<u32> buf_key_dup(len, sched);
         buf_key_dup.copy_from_stdvec(vec_key_dup);
 
-        sham::DeviceBuffer<u32> buf_index_map
-            = shamalgs::algorithm::gen_buffer_index_usm(sched, len);
+        sham::DeviceBuffer<u32> buf_index_map = shamalgs::primitives::gen_buffer_index(sched, len);
 
         shamalgs::algorithm::sort_by_key(sched, buf_key, buf_index_map, len);
 

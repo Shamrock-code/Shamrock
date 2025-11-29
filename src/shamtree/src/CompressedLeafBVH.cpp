@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/integer.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -28,12 +29,17 @@ shamtree::CompressedLeafBVH<Tmorton, Tvec, dim> shamtree::CompressedLeafBVH<Tmor
 }
 
 template<class Tmorton, class Tvec, u32 dim>
-void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
+void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::internal_rebuild_from_positions_no_aabb(
     sham::DeviceBuffer<Tvec> &positions,
     u32 obj_cnt,
     const shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
-    StackEntry stack_loc{};
+    __shamrock_stack_entry();
+
+    if (obj_cnt == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "obj_cnt is 0, cannot build a CompressedLeafBVH");
+    }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -65,12 +71,47 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
         reduced_set.reduced_morton_codes,
         std::move(structure));
 
-    auto tree_aabbs = shamtree::compute_tree_aabb_from_positions(
-        tree, reduced_set.get_leaf_cell_iterator(), std::move(aabbs), positions);
-
     this->reduced_morton_set = std::move(reduced_set);
     this->structure          = std::move(tree);
-    this->aabbs              = std::move(tree_aabbs);
+}
+
+template<class Tmorton, class Tvec, u32 dim>
+void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
+    sham::DeviceBuffer<Tvec> &positions,
+    u32 obj_cnt,
+    const shammath::AABB<Tvec> &bounding_box,
+    u32 compression_level) {
+
+    this->internal_rebuild_from_positions_no_aabb(
+        positions, obj_cnt, bounding_box, compression_level);
+
+    auto tree_aabbs = shamtree::compute_tree_aabb_from_positions(
+        this->structure,
+        this->reduced_morton_set.get_leaf_cell_iterator(),
+        std::move(this->aabbs),
+        positions);
+
+    this->aabbs = std::move(tree_aabbs);
+}
+
+template<class Tmorton, class Tvec, u32 dim>
+void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_position_range(
+    sham::DeviceBuffer<Tvec> &min,
+    sham::DeviceBuffer<Tvec> &max,
+    u32 obj_cnt,
+    shammath::AABB<Tvec> &bounding_box,
+    u32 compression_level) {
+
+    this->internal_rebuild_from_positions_no_aabb(min, obj_cnt, bounding_box, compression_level);
+
+    auto tree_aabbs = shamtree::compute_tree_aabb_from_position_ranges(
+        this->structure,
+        this->reduced_morton_set.get_leaf_cell_iterator(),
+        std::move(this->aabbs),
+        min,
+        max);
+
+    this->aabbs = std::move(tree_aabbs);
 }
 
 template<class Tmorton, class Tvec, u32 dim>
@@ -79,6 +120,19 @@ void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_positions(
     const shammath::AABB<Tvec> &bounding_box,
     u32 compression_level) {
     this->rebuild_from_positions(positions, positions.get_size(), bounding_box, compression_level);
+}
+
+template<class Tmorton, class Tvec, u32 dim>
+void shamtree::CompressedLeafBVH<Tmorton, Tvec, dim>::rebuild_from_position_range(
+    sham::DeviceBuffer<Tvec> &min,
+    sham::DeviceBuffer<Tvec> &max,
+    shammath::AABB<Tvec> &bounding_box,
+    u32 compression_level) {
+    if (min.get_size() != max.get_size()) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "min and max must have the same size");
+    }
+    this->rebuild_from_position_range(min, max, min.get_size(), bounding_box, compression_level);
 }
 
 template class shamtree::CompressedLeafBVH<u32, f64_3, 3>;

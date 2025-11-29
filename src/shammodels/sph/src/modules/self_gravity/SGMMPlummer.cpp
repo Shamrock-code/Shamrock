@@ -42,7 +42,7 @@ namespace shammodels::sph::modules {
 
         if (edges.sizes.indexes.get_ids().size() != 1) {
             throw shambase::make_except_with_loc<std::runtime_error>(
-                "Self gravity direct mode only supports one patch so far, current number "
+                "Self gravity MM mode only supports one patch so far, current number "
                 "of patches is : "
                 + std::to_string(edges.sizes.indexes.get_ids().size()));
         }

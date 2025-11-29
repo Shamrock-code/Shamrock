@@ -28,13 +28,21 @@
 namespace shammodels {
 
     inline std::string report_perf_timestep(
-        f64 rate, u64 nobj, f64 tcompute, f64 mpi_timer, f64 alloc_time, size_t max_mem) {
+        f64 rate,
+        u64 nobj,
+        u64 npatch,
+        f64 tcompute,
+        f64 mpi_timer,
+        f64 alloc_time,
+        size_t max_mem) {
 
         std::string log_rank_rate = shambase::format(
-            "\n| {:<4} |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:>10s} |",
+            "\n| {:<4} |    {:.4e}    | {:11} | {:6} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | "
+            "{:>10s} |",
             shamcomm::world_rank(),
             rate,
             nobj,
+            npatch,
             tcompute,
             100 * (mpi_timer / tcompute),
             100 * (alloc_time / tcompute),
@@ -44,6 +52,7 @@ namespace shammodels {
         shamcomm::gather_str(log_rank_rate, gathered);
 
         u64 obj_total        = shamalgs::collective::allreduce_sum(nobj);
+        u64 npatch_total     = shamalgs::collective::allreduce_sum(npatch);
         f64 max_t            = shamalgs::collective::allreduce_max(tcompute);
         f64 sum_t            = shamalgs::collective::allreduce_sum(tcompute);
         f64 sum_mpi          = shamalgs::collective::allreduce_sum(mpi_timer);
@@ -51,9 +60,11 @@ namespace shammodels {
         size_t sum_mem_total = shamalgs::collective::allreduce_sum(max_mem);
 
         std::string log_all_rate = shambase::format(
-            "\n|  all |    {:.4e}    | {:11} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | {:>10s} |",
+            "\n|  all |    {:.4e}    | {:11} | {:6} |   {:.3e}   |  {:3.0f} % | {:3.0f} % | "
+            "{:>10s} |",
             f64(obj_total) / max_t,
             obj_total,
+            npatch_total,
             max_t,
             100 * (sum_mpi / sum_t),
             100 * (sum_alloc / sum_t),
@@ -64,19 +75,18 @@ namespace shammodels {
         // clang-format off
         if (shamcomm::world_rank() == 0) {
             print = "processing rate infos : \n";
-            print += ("---------------------------------------------------------------------------------------\n");
-            print += ("| rank |  rate  (N.s^-1)  |     Nobj    | t compute (s) |  MPI   | alloc |  mem (max) |\n");
+            print += ("-----------------------------------------------------------------------------------------------\n");
+            print += ("| rank |  rate  (N.s^-1)  |     Nobj    | Npatch | t compute (s) |  MPI   | alloc |  mem (max) |\n");
             if (shamcomm::world_size() > 1) {
-                print += ("------------------------------------- Per ranks ---------------------------------------");
+                print += ("----------------------------------------- Per ranks --------------------------------------------");
                 print += (gathered) + "\n";
-              //print += ("| rank |  rate  (N.s^-1)  |     Nobj    | t compute (s) | interf | alloc | mem (max) |\n");
-                print += ("---------<sum N>/<max t> ----- <sum> ------- <max> ------ <avg> -- <avg> --- <sum> ----");
+                print += ("---------<sum N>/<max t> ----- <sum> ------- <sum> -- <max> ------ <avg> -- <avg> --- <sum> ----");
                 print += (log_all_rate) + "\n";
             }else{
-                print += ("---------------------------------------------------------------------------------------");
+                print += ("------------------------------------------------------------------------------------------------");
                 print += (gathered) + "\n";
             }
-            print += ("---------------------------------------------------------------------------------------");
+            print += ("------------------------------------------------------------------------------------------------");
         }
         // clang-format on
 

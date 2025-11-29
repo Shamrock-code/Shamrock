@@ -1547,9 +1547,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
 
+    u64 npatch = scheduler().patch_list.local.size();
+
     std::string log_step = report_perf_timestep(
         rate,
         rank_count,
+        npatch,
         tstep.elasped_sec(),
         delta_mpi_timer,
         t_dev_alloc,

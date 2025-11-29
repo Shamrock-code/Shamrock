@@ -173,12 +173,50 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("reference_mode") = false)
         .def(
+            "set_self_gravity_mm",
+            [](TConfig &self, u32 mm_order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_mm(mm_order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_self_gravity_fmm",
+            [](TConfig &self, u32 fmm_order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_fmm(fmm_order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_self_gravity_sfmm",
+            [](TConfig &self,
+               u32 sfmm_order,
+               f64 opening_angle,
+               bool leaf_lowering,
+               u32 reduction_level) {
+                self.self_grav_config.set_sfmm(
+                    sfmm_order, opening_angle, leaf_lowering, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("leaf_lowering")   = true,
+            py::arg("reduction_level") = 3)
+        .def(
             "set_softening_plummer",
             [](TConfig &self, f64 epsilon) {
                 self.self_grav_config.set_softening_plummer(epsilon);
             },
             py::kw_only(),
             py::arg("epsilon"))
+        .def(
+            "set_softening_SPH",
+            [](TConfig &self) {
+                self.self_grav_config.set_softening_SPH();
+            })
         .def(
             "set_softening_none",
             [](TConfig &self) {

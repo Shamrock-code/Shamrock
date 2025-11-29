@@ -116,6 +116,9 @@ namespace shammodels::sph {
             ghost_layout.add_field<Tvec>("axyz", 1);
         }
         ghost_layout.add_field<Tscal>("omega", 1);
+        if (self_grav_config.has_xi_field()) {
+            ghost_layout.add_field<Tscal>("xi", 1);
+        }
 
         if (ghost_has_soundspeed()) {
             ghost_layout.add_field<Tscal>("soundspeed", 1);

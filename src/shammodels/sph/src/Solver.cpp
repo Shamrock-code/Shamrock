@@ -2090,11 +2090,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     u64 rank_count = scheduler().get_rank_count();
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
 
+    u64 npatch = scheduler().patch_list.local.size();
+
     // logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
 
     std::string log_step = report_perf_timestep(
         rate,
         rank_count,
+        npatch,
         tstep.elasped_sec(),
         delta_mpi_timer,
         t_dev_alloc,

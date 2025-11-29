@@ -184,21 +184,32 @@ namespace shammodels::sph {
 
     struct SelfGravConfig {
 
+        struct MM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
         struct Direct {
             bool reference_mode = false;
         };
 
         struct None {};
 
-        using mode = std::variant<Direct, None>;
+        using mode = std::variant<MM, Direct, None>;
 
         mode config = None{};
 
-        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
         void set_none() { config = None{}; }
+        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
+        void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
+            config = MM{mm_order, opening_angle, reduction_level};
+        }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
         bool is_direct() const { return std::holds_alternative<Direct>(config); }
+
+        bool is_mm() const { return std::holds_alternative<MM>(config); }
 
         bool is_sg_on() const { return !is_none(); }
         bool is_sg_off() const { return is_none(); }
@@ -939,7 +950,15 @@ namespace shammodels::sph {
 
     /// JSON serialization for SelfGravConfig
     inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
-        if (const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
+        if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+            j = {
+                {"type", "mm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (
+            const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
             j = {
                 {"type", "direct"},
                 {"reference_mode", conf->reference_mode},
@@ -962,7 +981,12 @@ namespace shammodels::sph {
 
     /// JSON deserialization for SelfGravConfig
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
-        if (j.at("type").get<std::string>() == "direct") {
+        if (j.at("type").get<std::string>() == "mm") {
+            p.config = SelfGravConfig::MM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "direct") {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {
             p.config = SelfGravConfig::None{};

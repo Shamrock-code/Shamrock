@@ -10,32 +10,27 @@
 #pragma once
 
 /**
- * @file reduction.hpp
+ * @file dot_sum.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
- *
  */
 
-#include "shambase/aliases_int.hpp"
-#include "shambase/exception.hpp"
-#include "shambase/memory.hpp"
-#include "shamalgs/primitives/is_all_true.hpp"
 #include "shambackends/DeviceBuffer.hpp"
-#include "shambackends/DeviceQueue.hpp"
-#include "shambackends/DeviceScheduler.hpp"
-#include "shambackends/math.hpp"
-#include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
 
-namespace shamalgs::reduction {
+namespace shamalgs::primitives {
 
     template<class T>
-    bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
-    bool has_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id) {
+        return dot_sum(buf1, start_id, buf1.get_size());
+    }
 
     template<class T>
-    bool has_nan_or_inf(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
+    shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1) {
+        return dot_sum(buf1, 0, buf1.get_size());
+    }
 
-} // namespace shamalgs::reduction
+} // namespace shamalgs::primitives

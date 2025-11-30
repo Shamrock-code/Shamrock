@@ -904,8 +904,17 @@ namespace shammodels::sph {
             solver.print_timestep_logs();
         }
 
+        inline void evolve_once_substep() {
+            solver.evolve_once_substep();
+            solver.print_timestep_logs();
+        }
+
         inline bool evolve_until(Tscal target_time, i32 niter_max) {
             return solver.evolve_until(target_time, niter_max);
+        }
+
+        inline bool evolve_until_substep(Tscal target_time, i32 niter_max) {
+            return solver.evolve_until_substep(target_time, niter_max);
         }
 
         private:

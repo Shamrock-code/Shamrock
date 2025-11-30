@@ -123,22 +123,32 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
     delta_min_tol = (tols["min_rel_delta"][1] + tols["min_rel_delta"][0]) / 2 - min_rel_delta
     delta_std_tol = (tols["std_rel_delta"][1] + tols["std_rel_delta"][0]) / 2 - std_rel_delta
 
+    to_raise = []
+
     if max_rel_delta > tols["max_rel_delta"][1] or max_rel_delta < tols["max_rel_delta"][0]:
-        raise ValueError(
+        to_raise.append(
             f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}], delta = {delta_max_tol}"
         )
     if avg_rel_delta > tols["avg_rel_delta"][1] or avg_rel_delta < tols["avg_rel_delta"][0]:
-        raise ValueError(
+        to_raise.append(
             f"avg relative error {method_name} is out of tolerance for {setup_name}: {avg_rel_delta} not in [{tols['avg_rel_delta'][0]}, {tols['avg_rel_delta'][1]}], delta = {delta_avg_tol}"
         )
     if min_rel_delta > tols["min_rel_delta"][1] or min_rel_delta < tols["min_rel_delta"][0]:
-        raise ValueError(
+        to_raise.append(
             f"min relative error {method_name} is out of tolerance for {setup_name}: {min_rel_delta} not in [{tols['min_rel_delta'][0]}, {tols['min_rel_delta'][1]}], delta = {delta_min_tol}"
         )
     if std_rel_delta > tols["std_rel_delta"][1] or std_rel_delta < tols["std_rel_delta"][0]:
-        raise ValueError(
+        to_raise.append(
             f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}], delta = {delta_std_tol}"
         )
+
+    if len(to_raise) > 0:
+        print(f"Errors for {setup_name} {method_name}:")
+        for to_raise_item in to_raise:
+            print(to_raise_item)
+
+    for to_raise_item in to_raise:
+        raise ValueError(to_raise_item)
 
 
 # Compare the SG method to the reference and the one without SG and return error metrics

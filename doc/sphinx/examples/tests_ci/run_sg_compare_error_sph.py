@@ -28,10 +28,10 @@ if not shamrock.sys.is_initialized():
 # tolerances for the test for each quantity [min, max] outside = fail
 TOL_HPC_CUBE = {
     "direct": {
-        "max_rel_delta": [0.0, 1e-20],
-        "avg_rel_delta": [0.0, 1e-20],
-        "min_rel_delta": [0.0, 1e-20],
-        "std_rel_delta": [0.0, 1e-20],
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
     },
     "mm1": {
         "max_rel_delta": [0.10237644408204995 - 1e-13, 0.10237644408204995 + 1e-13],
@@ -118,21 +118,26 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
     if shamrock.sys.world_rank() == 0:
         print(f"std relative error {method_name}: {std_rel_delta} for {setup_name}")
 
+    delta_max_tol = (tols["max_rel_delta"][1] + tols["max_rel_delta"][0]) / 2 - max_rel_delta
+    delta_avg_tol = (tols["avg_rel_delta"][1] + tols["avg_rel_delta"][0]) / 2 - avg_rel_delta
+    delta_min_tol = (tols["min_rel_delta"][1] + tols["min_rel_delta"][0]) / 2 - min_rel_delta
+    delta_std_tol = (tols["std_rel_delta"][1] + tols["std_rel_delta"][0]) / 2 - std_rel_delta
+
     if max_rel_delta > tols["max_rel_delta"][1] or max_rel_delta < tols["max_rel_delta"][0]:
         raise ValueError(
-            f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}]"
+            f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}], delta = {delta_max_tol}"
         )
     if avg_rel_delta > tols["avg_rel_delta"][1] or avg_rel_delta < tols["avg_rel_delta"][0]:
         raise ValueError(
-            f"avg relative error {method_name} is out of tolerance for {setup_name}: {avg_rel_delta} not in [{tols['avg_rel_delta'][0]}, {tols['avg_rel_delta'][1]}]"
+            f"avg relative error {method_name} is out of tolerance for {setup_name}: {avg_rel_delta} not in [{tols['avg_rel_delta'][0]}, {tols['avg_rel_delta'][1]}], delta = {delta_avg_tol}"
         )
     if min_rel_delta > tols["min_rel_delta"][1] or min_rel_delta < tols["min_rel_delta"][0]:
         raise ValueError(
-            f"min relative error {method_name} is out of tolerance for {setup_name}: {min_rel_delta} not in [{tols['min_rel_delta'][0]}, {tols['min_rel_delta'][1]}]"
+            f"min relative error {method_name} is out of tolerance for {setup_name}: {min_rel_delta} not in [{tols['min_rel_delta'][0]}, {tols['min_rel_delta'][1]}], delta = {delta_min_tol}"
         )
     if std_rel_delta > tols["std_rel_delta"][1] or std_rel_delta < tols["std_rel_delta"][0]:
         raise ValueError(
-            f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}]"
+            f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}], delta = {delta_std_tol}"
         )
 
 

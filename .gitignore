@@ -8,7 +8,6 @@ __pycache__
 #compile/build/test folders
 build_*
 build
-run
 
 test_pipeline
 test_res_*

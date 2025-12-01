@@ -115,9 +115,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Isothermal<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P  = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
-            auto rho_getter                   = rho_getter_gen(mpdat);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            auto rho_getter = rho_getter_gen(mpdat);
 
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
@@ -143,8 +145,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Adiabatic<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P    = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs   = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -180,8 +184,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         u32 isoundspeed_interf = ghost_layout.get_field_idx<Tscal>("soundspeed");
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P    = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs   = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
             sham::DeviceBuffer<Tscal> &buf_cs0 = mpdat.get_field_buf_ref<Tscal>(isoundspeed_interf);
@@ -223,8 +229,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
             sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
-            sham::DeviceBuffer<Tscal> &buf_P    = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs   = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -290,8 +298,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
             sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
-            sham::DeviceBuffer<Tscal> &buf_P    = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs   = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -366,7 +376,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    shambase::DistributedData<u32> &counts_with_ghosts = shambase::get_check_ref(storage.part_counts_with_ghost).indexes;
+    shambase::DistributedData<u32> &counts_with_ghosts
+        = shambase::get_check_ref(storage.part_counts_with_ghost).indexes;
 
     shambase::get_check_ref(storage.pressure).ensure_sizes(counts_with_ghosts);
     shambase::get_check_ref(storage.soundspeed).ensure_sizes(counts_with_ghosts);

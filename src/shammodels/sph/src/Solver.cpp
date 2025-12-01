@@ -121,6 +121,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             1, "alpha_av_updated", "\\alpha_{\\rm AV}");
     }
+
+    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
+    storage.soundspeed
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
 }
 
 template<class Tvec, template<class> class Kern>

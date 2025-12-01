@@ -85,8 +85,8 @@ namespace shammodels::sph {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> alpha_av_updated;
         Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;
 
-        Component<shamrock::ComputeField<Tscal>> pressure;
-        Component<shamrock::ComputeField<Tscal>> soundspeed;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> pressure;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> soundspeed;
 
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;

@@ -77,6 +77,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
+        .def("set_eos_polytropic", &TConfig::set_eos_polytropic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def(
             "set_eos_locally_isothermalLP07",

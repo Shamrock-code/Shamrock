@@ -11,6 +11,7 @@
 
 /**
  * @file eos_config.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -57,6 +58,8 @@ namespace shamphys {
         Tscal gamma;
     };
 
+
+
     /**
      * @brief Equal operator for the EOS_Config_Adiabatic struct
      *
@@ -73,6 +76,41 @@ namespace shamphys {
     inline bool operator==(
         const EOS_Config_Adiabatic<Tscal> &lhs, const EOS_Config_Adiabatic<Tscal> &rhs) {
         return lhs.gamma == rhs.gamma;
+    }
+
+        /**
+     * @brief Configuration struct for polytropic equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * This struct holds the configuration for the polytropic equation of state.
+     * It contains K and the adiabatic index, which are dimensionless quantities that
+     * determines the behavior of the gas.
+     *
+     * The equation of state is given by:
+     * \f$ P = K\rho^\gamma \f$
+     */
+    template<class Tscal>
+    struct EOS_Config_Polytropic {
+        Tscal K;
+        Tscal gamma;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Polytropic struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Polytropic struct to compare
+     * @param rhs Second EOS_Config_Polytropic struct to compare
+     *
+     * This function checks if two EOS_Config_Polytropic structs are equal by comparing their K and gamma values.
+     *
+     * @return true if the two structs have the same K and gamma values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_Polytropic<Tscal> &lhs, const EOS_Config_Polytropic<Tscal> &rhs) {
+        return (lhs.K == rhs.K) && (lhs.gamma == rhs.gamma);
     }
 
     /**

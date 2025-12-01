@@ -25,6 +25,8 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
+#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 #include <fstream>
@@ -471,6 +473,19 @@ class PatchScheduler {
 
         field.build_global(dtype);
     }
+
+    inline auto get_node_set_edge_patchdata_layer_refs() {
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::PatchDataLayerRefs> node_set_edge(
+            [&](shamrock::solvergraph::PatchDataLayerRefs &edge) {
+                edge.free_alloc();
+                using namespace shamrock::patch;
+                for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    edge.patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
+                });
+            });
+
+        return std::make_shared<decltype(node_set_edge)>(std::move(node_set_edge));
+    };
 
     /**
      * @brief add a root patch to the scheduler

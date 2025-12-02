@@ -24,12 +24,12 @@ namespace shamalgs::primitives {
     shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
-    shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id) {
+    inline shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id) {
         return dot_sum(buf1, start_id, buf1.get_size());
     }
 
     template<class T>
-    shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1) {
+    inline shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1) {
         return dot_sum(buf1, 0, buf1.get_size());
     }
 

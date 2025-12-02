@@ -12,7 +12,8 @@
 /**
  * @file dot_sum.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides functions to compute the sum of dot products of elements in a device buffer with
+ * themselves.
  */
 
 #include "shambackends/DeviceBuffer.hpp"
@@ -20,14 +21,26 @@
 
 namespace shamalgs::primitives {
 
+    /**
+     * @brief Compute the sum of dot products of elements in a device buffer with themselves.
+     *
+     * @tparam T The data type of elements in the buffer (e.g., float, double, int).
+     * @param buf1 The input buffer containing the elements to sum.
+     * @param start_id The starting index (inclusive) of the range to sum.
+     * @param end_id The ending index (exclusive) of the range to sum.
+     * @return shambase::VecComponent<T> The computed sum of dot products.
+     *
+     * Example:
+     * @code{.cpp}
+     * auto sched = shamsys::get_compute_Scheduler_ptr();
+     * sham::DeviceBuffer<f64> values = ...;
+     * f64 result = shamalgs::primitives::dot_sum(sched, values, 0, values.get_size());
+     * @endcode
+     */
     template<class T>
     shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id, u32 end_id);
 
-    template<class T>
-    inline shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1, u32 start_id) {
-        return dot_sum(buf1, start_id, buf1.get_size());
-    }
-
+    // alias for dot_sum(buf1, 0, buf1.get_size())
     template<class T>
     inline shambase::VecComponent<T> dot_sum(sham::DeviceBuffer<T> &buf1) {
         return dot_sum(buf1, 0, buf1.get_size());

@@ -10,7 +10,7 @@
 /**
  * @file dot_sum.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Implementation of the dot_sum primitive.
  */
 
 #include "shamalgs/primitives/reduction.hpp"

@@ -153,7 +153,6 @@ namespace shammodels::sph {
 
         void compute_eos_fields();
 
-        [[deprecated("reset_eos_fields will be removed with the migration to solvergraph")]]
         void reset_eos_fields();
 
         void prepare_corrector();

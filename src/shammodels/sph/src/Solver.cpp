@@ -1072,7 +1072,10 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_eos_fields() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::reset_eos_fields() {}
+void shammodels::sph::Solver<Tvec, Kern>::reset_eos_fields() {
+    shambase::get_check_ref(storage.pressure).free_alloc();
+    shambase::get_check_ref(storage.soundspeed).free_alloc();
+}
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {

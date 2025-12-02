@@ -12,7 +12,7 @@
 /**
  * @file ExtractGhostField.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief  This module allows to extract ghosts for a generic field such as density, velocity, etc
  *
  */
@@ -55,8 +55,8 @@ namespace shamrock::solvergraph {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "ExtractGhostField"; };
+        inline virtual std::string _impl_get_label() const { return "ExtractGhostField"; };
 
-        virtual std::string _impl_get_tex() { return "TODO"; };
+        virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shamrock::solvergraph

@@ -34,7 +34,7 @@ namespace shammodels::sph::modules {
             });
     }
 
-    std::string KillParticles::_impl_get_tex() {
+    std::string KillParticles::_impl_get_tex() const {
 
         auto part_to_remove = get_ro_edge_base(0).get_tex_symbol();
         auto patchdatas     = get_rw_edge_base(0).get_tex_symbol();

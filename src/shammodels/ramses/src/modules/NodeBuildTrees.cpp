@@ -222,7 +222,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class Umorton, class TgridVec>
-    std::string NodeBuildTrees<Umorton, TgridVec>::_impl_get_tex() {
+    std::string NodeBuildTrees<Umorton, TgridVec>::_impl_get_tex() const {
 
         std::string sizes     = get_ro_edge_base(0).get_tex_symbol();
         std::string block_min = get_ro_edge_base(1).get_tex_symbol();

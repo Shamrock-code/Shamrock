@@ -10,7 +10,7 @@
 /**
  * @file ExtractGhostField.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief  This module allows to extract ghosts for a generic field such as density, velocity, etc
  *
  */
@@ -38,6 +38,7 @@ namespace shamrock::solvergraph {
             auto nvar               = orig_data_fields.get_field(sender).get_nvar();
             PatchDataField<T> gz_field(field_name, nvar);
 
+            // TODO: replace cast by narrowing when added
             orig_data_fields.get_field(sender).append_subset_to(
                 sender_idx_in_ghost, static_cast<u32>(sender_idx_in_ghost.get_size()), gz_field);
 

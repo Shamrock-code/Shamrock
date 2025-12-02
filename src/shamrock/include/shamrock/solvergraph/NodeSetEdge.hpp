@@ -16,6 +16,7 @@
  * @date 2023-07-31
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include <functional>
@@ -73,21 +74,24 @@ namespace shamrock::solvergraph {
          * Applies the custom function to the connected read-write edge.
          * This is where the actual modification of the edge takes place.
          */
-        inline void _impl_evaluate_internal() { set_edge(get_rw_edge<Tedge>(0)); }
+        inline void _impl_evaluate_internal() {
+            __shamrock_stack_entry();
+            set_edge(get_rw_edge<Tedge>(0));
+        }
 
         /**
          * @brief Get the label of the node
          *
          * @return std::string The node label "SetEdge"
          */
-        inline virtual std::string _impl_get_label() { return "SetEdge"; };
+        inline virtual std::string _impl_get_label() const { return "SetEdge"; };
 
         /**
          * @brief Get the TeX representation of the node
          *
          * @return std::string A TeX string describing the node operation
          */
-        inline virtual std::string _impl_get_tex() {
+        inline virtual std::string _impl_get_tex() const {
 
             auto to_set = get_rw_edge_base(0).get_tex_symbol();
 

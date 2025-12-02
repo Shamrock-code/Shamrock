@@ -12,8 +12,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          path: repo
           submodules: recursive
           fetch-depth: 0
+
+      - name: Create repository archive
+        run: |
+          tar -czf repo.tar.gz -C repo .
+          cp repo/.github/dockerfiles/phys_test_image_acpp_omp/Dockerfile .
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -22,7 +28,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           tags: ci-phys-test-image
-          file: .github/dockerfiles/phys_test_image_acpp_omp/Dockerfile
+          file: Dockerfile
           context: .
           push: false
           outputs: type=docker,dest=/tmp/ci-phys-test-image.tar
@@ -79,6 +85,8 @@ jobs:
             testfile: regression_godunov_soundwave_3d.py
           - worldsize: 2
             testfile: regression_godunov_soundwave_3d.py
+          - worldsize: 1
+            testfile: run_sg_compare_error_sph.py
       fail-fast: false
 
 

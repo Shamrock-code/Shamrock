@@ -9,7 +9,7 @@
 
 /**
  * @file pySPHModel.cpp
- * @author David Fang (fang.david03@gmail.com)
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -160,6 +160,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("sigma_u"))
+        .def(
+            "set_self_gravity_none",
+            [](TConfig &self) {
+                self.self_grav_config.set_none();
+            })
+        .def(
+            "set_self_gravity_direct",
+            [](TConfig &self, bool reference_mode = false) {
+                self.self_grav_config.set_direct(reference_mode);
+            },
+            py::kw_only(),
+            py::arg("reference_mode") = false)
+        .def(
+            "set_self_gravity_mm",
+            [](TConfig &self, u32 mm_order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_mm(mm_order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_softening_plummer",
+            [](TConfig &self, f64 epsilon) {
+                self.self_grav_config.set_softening_plummer(epsilon);
+            },
+            py::kw_only(),
+            py::arg("epsilon"))
+        .def(
+            "set_softening_none",
+            [](TConfig &self) {
+                self.self_grav_config.set_softening_none();
+            })
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)

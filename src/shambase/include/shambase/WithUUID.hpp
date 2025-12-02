@@ -48,7 +48,7 @@ namespace shambase {
          *
          * @return The uuid of the class
          */
-        inline Tint get_uuid() { return uuid; }
+        inline Tint get_uuid() const { return uuid; }
 
         /**
          * @brief Constructor of the class

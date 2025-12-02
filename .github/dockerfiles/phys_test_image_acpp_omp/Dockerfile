@@ -12,7 +12,7 @@ RUN pip install matplotlib numpy scipy h5py
 
 WORKDIR /opt/Shamrock_src
 
-COPY . .
+ADD repo.tar.gz .
 
 RUN ls -la
 

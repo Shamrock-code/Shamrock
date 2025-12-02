@@ -6,7 +6,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/Shamrock_src
 
-COPY . .
+ADD repo.tar.gz .
 
 RUN ls -la
 

@@ -63,6 +63,7 @@
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -1388,6 +1389,29 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             self_gravity_direct_node.set_edges(
                 sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
             self_gravity_direct_node.evaluate();
+
+        } else if (solver_config.self_grav_config.is_mm()) {
+
+            SelfGravConfig::MM &mm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::MM>(&solver_config.self_grav_config.config));
+
+            auto run_sg_mm = [&](auto mm_order_tag) {
+                constexpr u32 order = decltype(mm_order_tag)::value;
+                modules::SGMMPlummer<Tvec, order> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            };
+
+            switch (mm_config.order) {
+            case 1 : run_sg_mm(std::integral_constant<u32, 1>{}); break;
+            case 2 : run_sg_mm(std::integral_constant<u32, 2>{}); break;
+            case 3 : run_sg_mm(std::integral_constant<u32, 3>{}); break;
+            case 4 : run_sg_mm(std::integral_constant<u32, 4>{}); break;
+            case 5 : run_sg_mm(std::integral_constant<u32, 5>{}); break;
+            default: shambase::throw_unimplemented();
+            }
 
         } else {
             throw shambase::make_except_with_loc<std::runtime_error>(

@@ -45,28 +45,51 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         return tmp;
     }
 
-    auto &pdl                         = sched.pdl();
+    auto &pdl      = sched.pdl();
+    auto obj_cnt   = tmp.get_obj_cnt();
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
     sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tscal> &buf_hpart
         = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("hpart"));
+    // sham::DeviceBuffer<Tscal> &buf_idpart
+    //     = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("id_a"));
+    sham::DeviceBuffer<u32> buf_mask(obj_cnt, dev_sched);
 
     auto acc_xyz   = buf_xyz.copy_to_stdvec();
     auto acc_hpart = buf_hpart.copy_to_stdvec();
+    auto acc_mask  = buf_mask.copy_to_stdvec();
 
     Tscal npart = 0;
 
-    for (i32 id_a = 0; id_a < tmp.get_obj_cnt(); ++id_a) {
+    for (i32 id_a = 0; id_a < obj_cnt; ++id_a) {
         Tvec &xyz_a    = acc_xyz[id_a];
         Tscal &hpart_a = acc_hpart[id_a];
+        auto &mask_a   = acc_mask[id_a];
 
-        xyz_a   = stretchpart(xyz_a, smap_inputdata);
-        hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
+        bool outside_boundaries = false;
+        for (size_t ii = 0; ii < smap_inputdata.a_from_poss.size(); ii++) {
+            auto &a_from_pos = smap_inputdata.a_from_poss[ii];
+            auto &ximax      = smap_inputdata.ximaxs[ii];
+            if (a_from_pos(xyz_a - smap_inputdata.center) >= ximax) {
+                outside_boundaries = true;
+            };
+        }
+        mask_a = outside_boundaries;
+        if (!outside_boundaries) {
+            npart += 1;
+            xyz_a   = stretchpart(xyz_a, smap_inputdata);
+            hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
+        };
 
-        npart += 1;
+        ;
     };
 
     buf_xyz.copy_from_stdvec(acc_xyz);
     buf_hpart.copy_from_stdvec(acc_hpart);
+    buf_mask.copy_from_stdvec(acc_mask);
+
+    auto part_to_remove = shamalgs::stream_compact(dev_sched, buf_mask, obj_cnt);
 
     shamlog_debug_ln("ModifierApplyStretchMapping", npart, "particles have been stretched");
 
@@ -79,6 +102,13 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         [npart](u32 i, Tscal *__restrict hpart) {
             hpart[i] = hpart[i] / sycl::rootn(npart, 3);
         });
+
+    { // killing
+        u32 bsize = part_to_remove.get_size();
+        if (bsize > 0) {
+            tmp.remove_ids(part_to_remove, bsize);
+        }
+    }
 
     return tmp;
 }

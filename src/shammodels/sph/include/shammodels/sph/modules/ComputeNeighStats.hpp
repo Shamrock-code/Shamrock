@@ -18,6 +18,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
@@ -30,11 +31,14 @@ namespace shammodels::sph::modules {
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal kernel_radius;
+        std::string filename_dump;
 
         public:
-        ComputeNeighStats(Tscal kernel_radius) : kernel_radius(kernel_radius) {}
+        ComputeNeighStats(Tscal kernel_radius, std::string filename)
+            : kernel_radius(kernel_radius), filename_dump(filename) {}
 
         struct Edges {
+            const shamrock::solvergraph::IDataEdge<Tscal> &sim_time;
             const shamrock::solvergraph::Indexes<u32> &part_counts;
             const shammodels::sph::solvergraph::NeighCache &neigh_cache;
             const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
@@ -42,20 +46,22 @@ namespace shammodels::sph::modules {
         };
 
         inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> sim_time, // should be optional
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
             std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart) {
-            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart});
+            __internal_set_ro_edges({sim_time, part_counts, neigh_cache, xyz, hpart});
             __internal_set_rw_edges({});
         }
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
+                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
+                get_ro_edge<shammodels::sph::solvergraph::NeighCache>(2),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
             };
         }
 

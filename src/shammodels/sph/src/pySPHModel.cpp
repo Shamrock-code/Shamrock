@@ -426,7 +426,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         }))
         .def("init_scheduler", &T::init_scheduler)
 
-        .def("evolve_once_override_time", &T::evolve_once_time_expl)
+        .def(
+            "evolve_once_override_time",
+            &T::evolve_once_time_expl,
+            py::arg("t_curr"),
+            py::arg("dt_input"))
         .def("evolve_once", &T::evolve_once)
         .def(
             "evolve_until",
@@ -437,10 +441,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("niter_max") = -1)
         .def("timestep", &T::timestep)
-        .def("set_cfl_cour", &T::set_cfl_cour)
-        .def("set_cfl_force", &T::set_cfl_force)
-        .def("set_eta_sink", &T::set_eta_sink)
-        .def("set_particle_mass", &T::set_particle_mass)
+        .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
+        .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
+        .def("set_eta_sink", &T::set_eta_sink, py::arg("eta_sink"))
+        .def("set_particle_mass", &T::set_particle_mass, py::arg("gpart_mass"))
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
@@ -891,12 +895,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "set_cfl_multipler",
             [](T &self, Tscal lambda) {
                 return self.solver.solver_config.set_cfl_multipler(lambda);
-            })
+            },
+            py::arg("lambda"))
         .def(
             "set_cfl_mult_stiffness",
             [](T &self, Tscal cstiff) {
                 return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
-            })
+            },
+            py::arg("cstiff"))
         .def(
             "change_htolerance",
             [](T &self, Tscal in) {
@@ -937,7 +943,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_ref,
                     x_min,
                     x_max);
-            })
+            },
+            py::arg("sod"),
+            py::arg("direction"),
+            py::arg("time_val"),
+            py::arg("x_ref"),
+            py::arg("x_min"),
+            py::arg("x_max"))
         .def(
             "make_analysis_disc",
             [](T &self) {

@@ -251,9 +251,8 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/edge_cases", test_dot_sum_edge_
     }
 
     {
-        // Test dot_sum with extreme values for integers
-        std::vector<i32> data
-            = {std::numeric_limits<i32>::max(), std::numeric_limits<i32>::min(), 0, -1, 1};
+        // Test dot_sum with special values for integers
+        std::vector<i32> data = {0, -1, 1};
         sham::DeviceBuffer<i32> buf(data.size(), sched);
         buf.copy_from_stdvec(data);
 

@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shamalgs/primitives/dot_sum.hpp"
+#include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -86,10 +87,12 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/scalar_types", test_dot_sum_sca
 
         f32 result = shamalgs::primitives::dot_sum(buf, 0, static_cast<u32>(data.size()));
 
-        f32 expected = 0.0f;
-        for (auto val : data) {
-            expected += val * val;
+        for (u32 i = 0; i < data.size(); ++i) {
+            data[i] = data[i] * data[i];
         }
+        buf.copy_from_stdvec(data);
+
+        f32 expected = shamalgs::primitives::sum(sched, buf, 0, static_cast<u32>(data.size()));
         REQUIRE_EQUAL(result, expected);
     }
 
@@ -101,10 +104,12 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/scalar_types", test_dot_sum_sca
 
         f64 result = shamalgs::primitives::dot_sum(buf, 0, static_cast<u32>(data.size()));
 
-        f64 expected = 0.0;
-        for (auto val : data) {
-            expected += val * val;
+        for (u32 i = 0; i < data.size(); ++i) {
+            data[i] = data[i] * data[i];
         }
+        buf.copy_from_stdvec(data);
+
+        f64 expected = shamalgs::primitives::sum(sched, buf, 0, static_cast<u32>(data.size()));
         REQUIRE_EQUAL(result, expected);
     }
 
@@ -312,10 +317,12 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/edge_cases", test_dot_sum_edge_
 
         f64 result = shamalgs::primitives::dot_sum(buf, 0, static_cast<u32>(data.size()));
 
-        f64 expected = 0.0;
-        for (auto val : data) {
-            expected += val * val;
+        for (u32 i = 0; i < data.size(); ++i) {
+            data[i] = data[i] * data[i];
         }
+        buf.copy_from_stdvec(data);
+
+        f64 expected = shamalgs::primitives::sum(sched, buf, 0, static_cast<u32>(data.size()));
         REQUIRE_EQUAL(result, expected);
     }
 

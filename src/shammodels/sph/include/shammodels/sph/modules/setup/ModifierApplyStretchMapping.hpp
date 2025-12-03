@@ -373,7 +373,7 @@ namespace shammodels::sph::modules {
                 auto &a_from_pos       = smap_inputdata.a_from_poss[i];
                 auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
 
-                rhoa *= rhoprofile(a_from_pos(pos)) / integral_profile;
+                rhoa *= rhoprofile(a_from_pos(pos - smap_inputdata.center)) / integral_profile;
             }
 
             Tscal h = shamrock::sph::h_rho(

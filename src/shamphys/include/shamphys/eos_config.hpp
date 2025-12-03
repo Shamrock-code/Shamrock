@@ -58,8 +58,6 @@ namespace shamphys {
         Tscal gamma;
     };
 
-
-
     /**
      * @brief Equal operator for the EOS_Config_Adiabatic struct
      *
@@ -78,7 +76,7 @@ namespace shamphys {
         return lhs.gamma == rhs.gamma;
     }
 
-        /**
+    /**
      * @brief Configuration struct for polytropic equation of state
      *
      * @tparam Tscal Scalar type
@@ -103,7 +101,8 @@ namespace shamphys {
      * @param lhs First EOS_Config_Polytropic struct to compare
      * @param rhs Second EOS_Config_Polytropic struct to compare
      *
-     * This function checks if two EOS_Config_Polytropic structs are equal by comparing their K and gamma values.
+     * This function checks if two EOS_Config_Polytropic structs are equal by comparing their K and
+     * gamma values.
      *
      * @return true if the two structs have the same K and gamma values, false otherwise
      */

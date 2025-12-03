@@ -83,8 +83,6 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
 
     shamlog_debug_ln("ModifierApplyStretchMapping", npart, "particles have been stretched");
 
-    auto &q   = shamsys::instance::get_compute_scheduler().get_queue();
-    Tscal n13 = sycl::rootn(npart, 3);
     { // killing
         u32 bsize = part_to_remove.get_size();
         if (bsize > 0) {
@@ -92,7 +90,8 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         }
     }
 
-    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+    Tscal n13 = sycl::rootn(npart, 3);
+    auto &q   = shamsys::instance::get_compute_scheduler().get_queue();
     sham::kernel_call(
         q,
         sham::MultiRef{},

@@ -46,7 +46,7 @@ namespace shamphys {
         static constexpr T pressure(T gamma, T K, T rho) { return K * sycl::pow(rho, gamma); }
 
         static constexpr T soundspeed(T gamma, T K, T rho) {
-            return sycl::sqrt(gamma * eos_adiabatic(gamma, K, rho) / rho);
+            return sycl::sqrt(gamma * pressure(gamma, K, rho) / rho);
         }
 
         static constexpr T polytropic_index(T n) { return 1. + 1. / n; }

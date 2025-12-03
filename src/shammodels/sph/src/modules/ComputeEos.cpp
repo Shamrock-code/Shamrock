@@ -180,9 +180,9 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Polytropic<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P = storage.pressure.get().get_buf_check(id);
-            // sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
-            auto rho_getter = rho_getter_gen(mpdat);
+            sham::DeviceBuffer<Tscal> &buf_P  = storage.pressure.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(id);
+            auto rho_getter                   = rho_getter_gen(mpdat);
 
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
@@ -190,19 +190,16 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             sham::kernel_call(
                 q,
                 sham::MultiRef{rho_getter},
-                // sham::MultiRef{buf_P, buf_cs},
-                sham::MultiRef{buf_P},
+                sham::MultiRef{buf_P, buf_cs},
                 total_elements,
                 [K = eos_config->K, gamma = eos_config->gamma](
-                    u32 i, auto rho, Tscal *__restrict P
-                    // ,Tscal *__restrict cs
-                ) {
+                    u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
                     using namespace shamrock::sph;
                     Tscal rho_a = rho(i);
                     Tscal P_a   = EOS::pressure(gamma, K, rho_a);
-                    // Tscal cs_a  = EOS::soundspeed(gamma, K, rho_a);
-                    P[i] = P_a;
-                    // cs[i]       = cs_a;
+                    Tscal cs_a  = EOS::soundspeed(gamma, K, rho_a);
+                    P[i]        = P_a;
+                    cs[i]       = cs_a;
                 });
         });
 

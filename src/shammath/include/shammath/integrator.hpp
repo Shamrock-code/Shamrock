@@ -30,4 +30,17 @@ namespace shammath {
         return acc;
     }
 
+    template<class T, class Lambda>
+    inline constexpr T integ_trapezoidal(T start, T end, T step, Lambda &&fct) {
+        T acc   = {};
+        T fprev = 0;
+        T f     = 0;
+        for (T x = start; x < end; x += step) {
+            f = fct(x);
+            acc += 0.5 * (f + fprev) * step;
+            fprev = f;
+        }
+        return acc;
+    }
+
 } // namespace shammath

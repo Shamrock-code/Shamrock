@@ -20,16 +20,8 @@
 #include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <shambackends/sycl.hpp>
 #include <cstddef>
-
-// template<class Tvec>
-
-// template<class Tvec, template<class> class SPHKernel>
-// Tvec shammodels::sph::modules::ModifierApplyStretchMapping<Tvec, SPHKernel>::
-//     ModifierApplyStretchMapping<Tvec, SPHKernel>::testvec(
-//         Tvec x, std::vector<std::function<Tscal(Tscal)>> rhoprofiles) {
-//     return x * 2.;
-// }
 
 template<class Tvec, template<class> class SPHKernel>
 shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMapping<
@@ -52,8 +44,6 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
     sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tscal> &buf_hpart
         = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("hpart"));
-    // sham::DeviceBuffer<Tscal> &buf_idpart
-    //     = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("id_a"));
     sham::DeviceBuffer<u32> buf_mask(obj_cnt, dev_sched);
 
     auto acc_xyz   = buf_xyz.copy_to_stdvec();
@@ -95,6 +85,14 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
 
     auto &q   = shamsys::instance::get_compute_scheduler().get_queue();
     Tscal n13 = sycl::rootn(npart, 3);
+    { // killing
+        u32 bsize = part_to_remove.get_size();
+        if (bsize > 0) {
+            tmp.remove_ids(part_to_remove, bsize);
+        }
+    }
+
+    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
     sham::kernel_call(
         q,
         sham::MultiRef{},
@@ -103,13 +101,6 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         [n13](u32 i, Tscal *__restrict hpart) {
             hpart[i] = hpart[i] / n13;
         });
-
-    { // killing
-        u32 bsize = part_to_remove.get_size();
-        if (bsize > 0) {
-            tmp.remove_ids(part_to_remove, bsize);
-        }
-    }
 
     return tmp;
 }

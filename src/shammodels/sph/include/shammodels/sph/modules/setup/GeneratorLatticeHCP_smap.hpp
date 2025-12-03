@@ -14,7 +14,7 @@
  * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
- *
+ * Moved to a Modifier. To be removed eventually
  */
 
 #include "shambase/stacktrace.hpp"

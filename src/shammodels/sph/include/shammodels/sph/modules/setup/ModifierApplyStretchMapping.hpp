@@ -18,6 +18,7 @@
  *
  */
 
+#include "shambase/logs/loglevels.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/density.hpp"
@@ -38,8 +39,8 @@ namespace shammodels::sph::modules {
         using Kernel = SPHKernel<Tscal>;
 
         static constexpr Tscal tol     = 1e-9;
-        static constexpr u32 maxits    = 200;
-        static constexpr u32 maxits_nr = 20;
+        static constexpr u32 maxits    = 300;
+        static constexpr u32 maxits_nr = 30;
 
         struct Smap_inputdata {
             Tvec center;
@@ -246,7 +247,7 @@ namespace shammodels::sph::modules {
                                                 // (that will be stretched)
                 Tscal step = (thisxmax - thisxmin) / ngrid;
 
-                integral_profile = shammath::integ_riemann_sum(thisxmin, thisxmax, step, rhodS);
+                integral_profile = shammath::integ_trapezoidal(thisxmin, thisxmax, step, rhodS);
 
                 smap_inputdata.rhoprofiles.push_back(rhoprofile);
                 smap_inputdata.rhodSs.push_back(rhodS);
@@ -262,6 +263,7 @@ namespace shammodels::sph::modules {
             smap_inputdata.axes   = axes;
             smap_inputdata.boxmin = boxmin;
             smap_inputdata.boxmax = boxmax;
+            shamlog_debug_ln("ModifierApplyStretchMapping", "Stretch mapping...")
         }
         /**
          * @brief stretch a single coordinate of a particle position
@@ -284,20 +286,18 @@ namespace shammodels::sph::modules {
             Tscal amax,
             Tvec center,
             Tscal step) {
-            // if (a > amax) {
-            //     return 2 * amax; // TODO Current way of kicking the particle out.
-            // }
 
             u32 its       = 0;
             Tscal initpos = a;
-            Tscal newr    = a;
-            Tscal prevr   = a;
+            Tscal newr    = a; // initial guess
+            Tscal prevr   = newr;
 
-            Tscal initrelatpos = (sycl::pown(initpos, 3) - sycl::pown(amin, 3))
-                                 / (sycl::pown(amax, 3)
-                                    - sycl::pown(amin, 3)); // TODO Only works in spherical case!!
+            Tscal initrelatpos
+                = (sycl::pown(initpos, 3) - sycl::pown(amin, 3))
+                  / (sycl::pown(amax, 3) - sycl::pown(amin, 3)); // TODO Only works in spherical
+            //                         case!!
             Tscal newrelatpos
-                = shammath::integ_riemann_sum(amin, newr, step, rhodS) / integral_profile;
+                = shammath::integ_trapezoidal(amin, newr, step, rhodS) / integral_profile;
             Tscal func       = newrelatpos - initrelatpos;
             Tscal xminbisect = amin;
             Tscal xmaxbisect = amax;
@@ -331,7 +331,7 @@ namespace shammodels::sph::modules {
                     newr   = 0.5 * (xminbisect + xmaxbisect);
                 }
                 newrelatpos
-                    = shammath::integ_riemann_sum(amin, newr, step, rhodS) / integral_profile;
+                    = shammath::integ_trapezoidal(amin, newr, step, rhodS) / integral_profile;
                 func  = newrelatpos - initrelatpos;
                 prevr = newr;
             }
@@ -340,8 +340,9 @@ namespace shammodels::sph::modules {
 
         static Tvec stretchpart(Tvec pos, Smap_inputdata smap_inputdata) {
             Tvec center = smap_inputdata.center;
-            if (sycl::length(pos) < 1e-12) {
-                return -1. * center;
+            Tvec cpos   = pos - center;
+            if (sycl::length(cpos) < 1e-12) {
+                return center;
             }
             for (size_t i = 0; i < smap_inputdata.rhoprofiles.size(); ++i) {
                 auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
@@ -352,17 +353,13 @@ namespace shammodels::sph::modules {
                 auto &a_to_pos         = smap_inputdata.a_to_poss[i];
                 auto &integral_profile = smap_inputdata.integral_profiles[i];
                 auto &step             = smap_inputdata.steps[i];
-                Tscal a                = a_from_pos(pos);
+                Tscal a                = a_from_pos(cpos);
 
                 Tscal new_a = stretchcoord(
                     a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
-                // if (new_a >= ximax) {
-                //     return 999 * ximax * pos; // TODO Hoping this will get the particle
-                //     kicked....
-                // }
-                pos = a_to_pos(new_a, pos);
+                cpos = a_to_pos(new_a, cpos);
             }
-            return pos - center;
+            return center + cpos;
         }
 
         static Tscal h_rho_stretched(
@@ -377,17 +374,15 @@ namespace shammodels::sph::modules {
             }
 
             Tscal h = shamrock::sph::h_rho(
-                mpart, rhoa, hfact); // to be divided by number of particles ^(1/3)
+                1.,
+                rhoa,
+                hfact); // to be divided by number of particles ^(1/3) (Thus we don't need the mass)
             return h;
         }
 
         bool is_done() { return parent->is_done(); }
 
         shamrock::patch::PatchDataLayer next_n(u32 nmax);
-        static Tvec testvec(Tvec x) { return x; };
-        static Tvec testfunc(Tvec x, std::vector<std::function<Tscal(Tscal)>> rhoprofiles) {
-            return x;
-        };
 
         std::string get_name() { return "ModifierApplyStretchMapping"; }
         ISPHSetupNode_Dot get_dot_subgraph() {

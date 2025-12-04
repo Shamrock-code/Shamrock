@@ -866,7 +866,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         /** @brief For each patch on  the current MPI process, this node build the graph of
          *  their blocks in all 6 directions and store them in block_graph_edge. So, for
-         *  a given patch, we know for each of its block their neighborhs in all the 6 directions
+         *  a given patch, we know for each of its block their neighbors in all the 6 directions
          *  and the needed information to access them.
          */
         modules::FindBlockNeigh<Tvec, TgridVec, u_morton> node1;
@@ -880,7 +880,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         /** @brief For each patch on  the current MPI process, this node build the graph of
          *  their cells in all 6 directions and store them in cell_graph_edge. So, for
-         *  a given patch, we know for each of its cell their neighborhs in all the 6 directions
+         *  a given patch, we know for each of its cell their neighbors in all the 6 directions
          *  and the needed information to access them.
          */
         modules::BlockNeighToCellNeigh<Tvec, TgridVec, u_morton> node2(Config::NsideBlockPow);

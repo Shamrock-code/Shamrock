@@ -32,8 +32,7 @@ namespace shammodels::basegodunov::modules {
         sham::DeviceBuffer<u32> node_link_offset;
         sham::DeviceBuffer<u32> node_links;
         u32 link_count;
-        u32 obj_cnt; /*obj_cnt here represents number of cells in the patch : block_counts *
-                        block_size ?? */
+        u32 obj_cnt; /* Number of objects (e.g., cells or blocks) in the patch. */
 
         std::optional<sham::DeviceBuffer<u32>> antecedent = std::nullopt;
 

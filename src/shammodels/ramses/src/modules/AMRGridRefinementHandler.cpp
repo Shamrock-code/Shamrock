@@ -43,27 +43,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         u64 id_patch = cur_p.id_patch;
 
-        // // cells graph in each direction for the current patch
-
-        // AMRGraph &graph_neighs_xp = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::xp)
-        //                                 .get(id_patch);
-        // AMRGraph &graph_neighs_xm = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::xm)
-        //                                 .get(id_patch);
-        // AMRGraph &graph_neighs_yp = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::yp)
-        //                                 .get(id_patch);
-        // AMRGraph &graph_neighs_ym = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::ym)
-        //                                 .get(id_patch);
-        // AMRGraph &graph_neighs_zp = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::zp)
-        //                                 .get(id_patch);
-        // AMRGraph &graph_neighs_zm = shambase::get_check_ref(storage.cell_graph_edge)
-        //                                 .get_refs_dir(Direction_::zm)
-        //                                 .get(id_patch);
-
         // blocks graph in each direction for the current patch
         AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
                                               .get_refs_dir(Direction_::xp)
@@ -130,13 +109,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto acc_min = buf_cell_min.get_read_access(depends_list);
         auto acc_max = buf_cell_max.get_read_access(depends_list);
 
-        // AMRGraphLinkiterator graph_xp = graph_neighs_xp.get_read_access(depends_list);
-        // AMRGraphLinkiterator graph_xm = graph_neighs_xm.get_read_access(depends_list);
-        // AMRGraphLinkiterator graph_yp = graph_neighs_yp.get_read_access(depends_list);
-        // AMRGraphLinkiterator graph_ym = graph_neighs_ym.get_read_access(depends_list);
-        // AMRGraphLinkiterator graph_zp = graph_neighs_zp.get_read_access(depends_list);
-        // AMRGraphLinkiterator graph_zm = graph_neighs_zm.get_read_access(depends_list);
-
         AMRGraphLinkiterator block_graph_xp = block_graph_neighs_xp.get_read_access(depends_list);
         AMRGraphLinkiterator block_graph_xm = block_graph_neighs_xm.get_read_access(depends_list);
         AMRGraphLinkiterator block_graph_yp = block_graph_neighs_yp.get_read_access(depends_list);
@@ -175,7 +147,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     */
 
                     if (current_block_level >= neigh_block_level) {
-                        neigh_refine_flag = (neigh_refine_flag || current_refinement_flag);
+                        sycl::
+                            atomic_ref<u32, sycl::memory_order::relaxed, sycl::memory_scope::device>
+                                atomic_flag(acc_refine_flag[b_id]);
+
+                        atomic_flag.fetch_or(1); // Atomically set flag to true
                     }
 
                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
@@ -189,7 +165,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                      * do nothing.
                      */
                     else if (current_block_level < neigh_block_level) {
-                        neigh_refine_flag = (neigh_refine_flag && current_refinement_flag);
+                        // Nothing
                     } else {
                         // Should not happen. Raise an exception.
                     }

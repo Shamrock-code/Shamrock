@@ -355,8 +355,6 @@ namespace shammath {
                         if (aabb_mapped.get_intersect(aabb).is_volume_not_null()) {
                             indices.push_back({i_s, j, k});
                         }
-
-                        // indices.push_back({i_s, j, k});
                     }
                 }
             }

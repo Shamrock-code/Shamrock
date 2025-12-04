@@ -12,13 +12,12 @@ Formally speaking for a paving function f:
 
 .. math::
 
-   \begin{align}
-   \text{Ghost layer} &= f(\text{patch}) \vee \text{box} \\
-                      &= f( f^{-1}(f(\text{patch}) \vee \text{box}) ) \\
-                      &= f( \text{patch} \vee f^{-1}(\text{box}) ),
-   \end{align}
+   \\text{Ghost layer} = f(\\text{patch}) \\vee \\text{box} \\
+                      = f( f^{-1}(f(\\text{patch}) \\vee \\text{box}) ) \\
+                      = f( \\text{patch} \\vee f^{-1}(\\text{box}) ),
 
-where :math:`\vee` denotes a ghost layer intersection.
+
+where :math:`\\vee` denotes a ghost layer intersection.
 """
 
 # sphinx_gallery_multi_image = "single"

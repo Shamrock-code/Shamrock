@@ -16,8 +16,10 @@
  *
  */
 
+#include "shambackends/fmt_bindings/fmt_defs.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/AABB.hpp"
 
 namespace shammath {
@@ -328,12 +330,33 @@ namespace shammath {
                 for (int j = low_int[1]; j <= upper[1]; ++j) {
                     for (int k = low_int[2]; k <= upper[2]; ++k) {
 
-                        Tscal shear_x_floor = std::floor(i * shear_x / box_size[0]);
+                        Tscal shear_x_floor = std::floor(j * shear_x / box_size[0]);
                         i32 s_x             = static_cast<i32>(shear_x_floor);
 
                         i32 i_s = i - s_x;
 
-                        indices.push_back({i_s, j, k});
+                        auto aabb_mapped = f_aabb(
+                            AABB<Tvec>{box_center - box_size / 2, box_center + box_size / 2},
+                            i_s,
+                            j,
+                            k);
+
+                        shamcomm::logs::raw_ln("aabb: {}x{}", aabb.lower, aabb.upper);
+                        shamcomm::logs::raw_ln(
+                            "aabb_mapped: {}x{}", aabb_mapped.lower, aabb_mapped.upper);
+                        shamcomm::logs::raw_ln(
+                            "aabb_intersect: {}x{}",
+                            aabb_mapped.get_intersect(aabb).lower,
+                            aabb_mapped.get_intersect(aabb).upper);
+                        shamcomm::logs::raw_ln(
+                            "is_volume_not_null: {}",
+                            aabb_mapped.get_intersect(aabb).is_volume_not_null());
+
+                        if (aabb_mapped.get_intersect(aabb).is_volume_not_null()) {
+                            indices.push_back({i_s, j, k});
+                        }
+
+                        // indices.push_back({i_s, j, k});
                     }
                 }
             }

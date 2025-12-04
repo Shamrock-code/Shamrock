@@ -10,11 +10,15 @@ in a space transformed by the paving function, and then map the result back to t
 
 Formally speaking for a paving function f:
 
-Ghost layer = f(patch) V box
-            = f( f_inv(f(patch) V box) )
-            = f( patch V f_inv(box) ),
+.. math::
 
-where V denotes a ghost layer intersection.
+   \begin{align}
+   \text{Ghost layer} &= f(\text{patch}) \vee \text{box} \\
+                      &= f( f^{-1}(f(\text{patch}) \vee \text{box}) ) \\
+                      &= f( \text{patch} \vee f^{-1}(\text{box}) ),
+   \end{align}
+
+where :math:`\vee` denotes a ghost layer intersection.
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -29,6 +33,7 @@ import shamrock
 
 box_size_x = 2.0
 box_size_y = 2.0
+box_size_z = 2.0
 
 # %%
 # Particle set
@@ -197,7 +202,11 @@ def plot_paving_function(pav_func, pav_func_name):
 
 plot_paving_function(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.0), (box_size_x / 2.0, box_size_y / 2.0, 0.0), True, True, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        True,
+        True,
+        True,
     ),
     "Periodic box",
 )
@@ -208,7 +217,11 @@ plot_paving_function(
 
 plot_paving_function(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.0), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, True, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        False,
+        True,
+        True,
     ),
     "reflective in x periodic in y",
 )
@@ -219,7 +232,11 @@ plot_paving_function(
 
 plot_paving_function(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.0), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, False, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        False,
+        False,
+        True,
     ),
     "Fully reflective",
 )
@@ -230,8 +247,8 @@ plot_paving_function(
 
 plot_paving_function(
     shamrock.math.paving_function_general_3d_shear_x(
-        (box_size_x, box_size_y, 0.0),
-        (box_size_x / 2.0, box_size_y / 2.0, 0.0),
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
         False,
         True,
         True,
@@ -248,8 +265,10 @@ plot_paving_function(
 
 def test_paving_index_intersecting(pav_func, pav_func_name):
 
+    radius_int = 3.5
     box_to_intersect = shamrock.math.AABB_f64_3(
-        (-2.5, -2.5, 0.0), (box_size_x + 2.5, box_size_y + 2.5, 0.0)
+        (box_size_x / 2 - radius_int, box_size_y / 2 - radius_int, box_size_z / 2 - radius_int),
+        (box_size_x / 2 + radius_int, box_size_y / 2 + radius_int, box_size_z / 2 + radius_int),
     )
 
     indices = pav_func.get_paving_index_intersecting(box_to_intersect)
@@ -263,7 +282,7 @@ def test_paving_index_intersecting(pav_func, pav_func_name):
             for j in range(-y_r, y_r + 1):
                 yield i, j
 
-    domain = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (box_size_x, box_size_y, 0.0))
+    domain = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (box_size_x, box_size_y, box_size_z))
 
     plt.figure()
 
@@ -291,7 +310,11 @@ def test_paving_index_intersecting(pav_func, pav_func_name):
 
 test_paving_index_intersecting(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), True, True, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        True,
+        True,
+        True,
     ),
     "Periodic box",
 )
@@ -302,7 +325,11 @@ test_paving_index_intersecting(
 
 test_paving_index_intersecting(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, True, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        False,
+        True,
+        True,
     ),
     "reflective in x periodic in y",
 )
@@ -313,7 +340,11 @@ test_paving_index_intersecting(
 
 test_paving_index_intersecting(
     shamrock.math.paving_function_general_3d(
-        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, False, True
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
+        False,
+        False,
+        True,
     ),
     "Fully reflective",
 )
@@ -324,8 +355,8 @@ test_paving_index_intersecting(
 
 test_paving_index_intersecting(
     shamrock.math.paving_function_general_3d_shear_x(
-        (box_size_x, box_size_y, 0.1),
-        (box_size_x / 2.0, box_size_y / 2.0, 0.0),
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
         False,
         True,
         True,
@@ -339,8 +370,8 @@ test_paving_index_intersecting(
 
 test_paving_index_intersecting(
     shamrock.math.paving_function_general_3d_shear_x(
-        (box_size_x, box_size_y, -0.1),
-        (box_size_x / 2.0, box_size_y / 2.0, 0.1),
+        (box_size_x, box_size_y, box_size_z),
+        (box_size_x / 2.0, box_size_y / 2.0, box_size_z / 2.0),
         False,
         True,
         True,

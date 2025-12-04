@@ -9,6 +9,7 @@
 
 /**
  * @file ComputeEos.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -103,6 +104,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     using SolverConfigEOS                   = typename Config::EOSConfig;
     using SolverEOS_Isothermal              = typename SolverConfigEOS::Isothermal;
     using SolverEOS_Adiabatic               = typename SolverConfigEOS::Adiabatic;
+    using SolverEOS_Polytropic              = typename SolverConfigEOS::Polytropic;
     using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
@@ -115,9 +117,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Isothermal<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P  = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(id);
-            auto rho_getter                   = rho_getter_gen(mpdat);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            auto rho_getter = rho_getter_gen(mpdat);
 
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
@@ -143,8 +147,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Adiabatic<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -172,6 +178,38 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         });
 
     } else if (
+        SolverEOS_Polytropic *eos_config
+        = std::get_if<SolverEOS_Polytropic>(&solver_config.eos_config.config)) {
+
+        using EOS = shamphys::EOS_Polytropic<Tscal>;
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            auto rho_getter = rho_getter_gen(mpdat);
+
+            u32 total_elements
+                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{rho_getter},
+                sham::MultiRef{buf_P, buf_cs},
+                total_elements,
+                [K = eos_config->K, gamma = eos_config->gamma](
+                    u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
+                    using namespace shamrock::sph;
+                    Tscal rho_a = rho(i);
+                    Tscal P_a   = EOS::pressure(gamma, K, rho_a);
+                    Tscal cs_a  = EOS::soundspeed(gamma, K, rho_a);
+                    P[i]        = P_a;
+                    cs[i]       = cs_a;
+                });
+        });
+
+    } else if (
         SolverEOS_LocallyIsothermal *eos_config
         = std::get_if<SolverEOS_LocallyIsothermal>(&solver_config.eos_config.config)) {
 
@@ -180,8 +218,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         u32 isoundspeed_interf = ghost_layout.get_field_idx<Tscal>("soundspeed");
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
             sham::DeviceBuffer<Tscal> &buf_cs0 = mpdat.get_field_buf_ref<Tscal>(isoundspeed_interf);
@@ -223,8 +263,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
             sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
-            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -290,8 +332,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
             sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
 
-            sham::DeviceBuffer<Tscal> &buf_P    = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs   = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             auto rho_getter                     = rho_getter_gen(mpdat);
 
@@ -366,19 +410,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
     shamrock::SchedulerUtility utility(scheduler());
 
-    storage.pressure.set(utility.make_compute_field<Tscal>("pressure", 1, [&](u64 id) {
-        u32 total_elements
-            = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+    shambase::DistributedData<u32> &counts_with_ghosts
+        = shambase::get_check_ref(storage.part_counts_with_ghost).indexes;
 
-        return total_elements;
-    }));
-
-    storage.soundspeed.set(utility.make_compute_field<Tscal>("soundspeed", 1, [&](u64 id) {
-        u32 total_elements
-            = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
-
-        return total_elements;
-    }));
+    shambase::get_check_ref(storage.pressure).ensure_sizes(counts_with_ghosts);
+    shambase::get_check_ref(storage.soundspeed).ensure_sizes(counts_with_ghosts);
 
     if (solver_config.dust_config.has_epsilon_field()) {
 

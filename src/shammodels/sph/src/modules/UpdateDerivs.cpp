@@ -94,8 +94,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -295,10 +296,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_alpha_AV
             = storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf();
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -508,10 +510,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_alpha_AV
             = storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf();
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -710,8 +713,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -933,8 +937,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sham::DeviceBuffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
         sham::DeviceBuffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);

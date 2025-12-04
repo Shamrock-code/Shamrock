@@ -12,6 +12,7 @@
 /**
  * @file AMRGrid.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */

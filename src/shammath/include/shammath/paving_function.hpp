@@ -341,17 +341,6 @@ namespace shammath {
                             j,
                             k);
 
-                        shamcomm::logs::raw_ln("aabb: {}x{}", aabb.lower, aabb.upper);
-                        shamcomm::logs::raw_ln(
-                            "aabb_mapped: {}x{}", aabb_mapped.lower, aabb_mapped.upper);
-                        shamcomm::logs::raw_ln(
-                            "aabb_intersect: {}x{}",
-                            aabb_mapped.get_intersect(aabb).lower,
-                            aabb_mapped.get_intersect(aabb).upper);
-                        shamcomm::logs::raw_ln(
-                            "is_volume_not_null: {}",
-                            aabb_mapped.get_intersect(aabb).is_volume_not_null());
-
                         if (aabb_mapped.get_intersect(aabb).is_volume_not_null()) {
                             indices.push_back({i_s, j, k});
                         }

@@ -184,8 +184,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         using EOS = shamphys::EOS_Polytropic<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
-            sham::DeviceBuffer<Tscal> &buf_P  = storage.pressure.get().get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
             auto rho_getter                   = rho_getter_gen(mpdat);
 
             u32 total_elements

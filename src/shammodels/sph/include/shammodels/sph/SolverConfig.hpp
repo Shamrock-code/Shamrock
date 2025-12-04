@@ -11,6 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -487,6 +488,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is an polytropic equation of state
+    inline bool is_eos_polytropic() {
+        using T = typename EOSConfig::Polytropic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
@@ -506,6 +513,13 @@ struct shammodels::sph::SolverConfig {
      * @param gamma The adiabatic index
      */
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+
+    /**
+     * @brief Set the EOS configuration to an polytropic equation of state
+     *
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_polytropic(Tscal K, Tscal gamma) { eos_config.set_polytropic(K, gamma); }
 
     /**
      * @brief Set the EOS configuration to a locally isothermal equation of state

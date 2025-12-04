@@ -188,7 +188,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_cs
                 = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
-            auto rho_getter                   = rho_getter_gen(mpdat);
+            auto rho_getter = rho_getter_gen(mpdat);
 
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);

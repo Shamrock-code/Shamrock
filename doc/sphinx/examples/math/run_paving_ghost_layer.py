@@ -272,8 +272,6 @@ def test_paving_index_intersecting(pav_func, pav_func_name):
 
     indices = pav_func.get_paving_index_intersecting(box_to_intersect)
 
-    print(indices)
-
     def get_indices():
         x_r = 6
         y_r = 4

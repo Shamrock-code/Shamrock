@@ -95,6 +95,8 @@ namespace shamrock::amr {
 
             u64 tot_refine = 0;
 
+            // loop through every patches on the current process and apply the functor fct to get
+            // the list of flagged blocks (for refinement) per patch and stored them in the map ret.
             sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
                 sycl::queue &q = shamsys::instance::get_compute_queue();
 
@@ -149,6 +151,10 @@ namespace shamrock::amr {
             });
         }
 
+        /**
+         * @brief count total number of flagged blocks (for refinement) on the current process
+         * @param splits The map of flagged blocks on the current process
+         */
         inline u64 get_process_refine_count(shambase::DistributedData<OptIndexList> &splits) {
             u64 acc = 0;
 

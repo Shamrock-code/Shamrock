@@ -77,6 +77,14 @@ namespace shammodels::basegodunov::modules {
 
             TgridVec dir_offset;
 
+            /**
+             * @brief apply a specific treatment (specify by the functor fct) to all neighborh of
+             *        the cell identify by id_a (global id in the patch) not only in the current
+             * block. but also in the neighbors blocks.
+             * @tparam IndexFunctor
+             * @param id_a cell's global id
+             * @param fct fct to apply on each cell's neighborh
+             */
             template<class IndexFunctor>
             void for_each_other_index_safe(u32 id_a, IndexFunctor &&fct) const {
 
@@ -96,9 +104,11 @@ namespace shammodels::basegodunov::modules {
                     return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
                 };
 
-                TgridVec lcoord = get_cell_local_coord();
+                // get local coordinates of id_a
+                const TgridVec lcoord = get_cell_local_coord();
 
-                shammath::AABB<TgridVec> current_cell_aabb
+                // corresponding aabb to id_a
+                const shammath::AABB<TgridVec> current_cell_aabb
                     = {cblock_min + lcoord * delta_cell,
                        cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
 
@@ -128,6 +138,7 @@ namespace shammodels::basegodunov::modules {
                                            block_b_min
                                            + TgridVec{lx + 1, ly + 1, lz + 1} * delta_cell_b}};
 
+                                // get the global id of the cell at {lx, ly,lz} in the block
                                 u32 idx = block_b * AMRBlock::block_size
                                           + AMRBlock::get_index({lx, ly, lz});
 
@@ -135,6 +146,8 @@ namespace shammodels::basegodunov::modules {
                                                    .is_volume_not_null()
                                                && id_a != idx;
 
+                                // if the cell of (global id) idx is a neighorh cell in the
+                                // direction given by the offset dir_offset then apply fct to it
                                 if (overlap) {
                                     fct(idx);
                                 }
@@ -163,12 +176,14 @@ namespace shammodels::basegodunov::modules {
                     return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
                 };
 
+                // get local coordinates of id_a
                 const TgridVec lcoord = get_cell_local_coord();
 
                 const shammath::AABB<TgridVec> current_cell_aabb
                     = {cblock_min + lcoord * delta_cell,
                        cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
 
+                // corresponding aabb to id_a
                 const shammath::AABB<TgridVec> current_cell_aabb_shifted
                     = {current_cell_aabb.lower + dir_offset * delta_cell,
                        current_cell_aabb.upper + dir_offset * delta_cell};
@@ -299,10 +314,14 @@ namespace shammodels::basegodunov::modules {
             sham::DeviceBuffer<TgridVec> &buf_block_min = block_min.get_buf();
             sham::DeviceBuffer<TgridVec> &buf_block_max = block_max.get_buf();
 
+            // Build the cell graphs for the current patch in all 6 directions
             for (u32 dir = 0; dir < 6; dir++) {
 
                 TgridVec dir_offset = result.offset_check[dir];
 
+                // This build for the current patch in the direction [dir], the graph of its cells.
+                // So for each cell in the patch we know its neighborhs, and neccessary information
+                // to access them
                 AMRGraph &block_graph
                     = shambase::get_check_ref(oriented_block_graph.graph_links[dir]);
 

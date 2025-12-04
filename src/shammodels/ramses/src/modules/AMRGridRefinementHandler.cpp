@@ -30,6 +30,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     using namespace shamrock::patch;
 
+    using AMRGraph             = shammodels::basegodunov::modules::AMRGraph;
+    using Direction_           = shammodels::basegodunov::modules::Direction;
+    using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
+    using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+
     u64 tot_refine   = 0;
     u64 tot_derefine = 0;
 
@@ -37,6 +42,51 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u64 id_patch = cur_p.id_patch;
+
+        // // cells graph in each direction for the current patch
+
+        // AMRGraph &graph_neighs_xp = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::xp)
+        //                                 .get(id_patch);
+        // AMRGraph &graph_neighs_xm = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::xm)
+        //                                 .get(id_patch);
+        // AMRGraph &graph_neighs_yp = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::yp)
+        //                                 .get(id_patch);
+        // AMRGraph &graph_neighs_ym = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::ym)
+        //                                 .get(id_patch);
+        // AMRGraph &graph_neighs_zp = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::zp)
+        //                                 .get(id_patch);
+        // AMRGraph &graph_neighs_zm = shambase::get_check_ref(storage.cell_graph_edge)
+        //                                 .get_refs_dir(Direction_::zm)
+        //                                 .get(id_patch);
+
+        // blocks graph in each direction for the current patch
+        AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_xm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xm)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_yp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::yp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_ym = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::ym)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zm)
+                                              .get(id_patch);
+
+        // get the current buffer of block levels in the current patch
+        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
+            = shambase::get_check_ref(storage.block_levels).get_buf(id_patch);
 
         // create the refine and derefine flags buffers
         u32 obj_cnt = pdat.get_obj_cnt();
@@ -80,6 +130,103 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto acc_min = buf_cell_min.get_read_access(depends_list);
         auto acc_max = buf_cell_max.get_read_access(depends_list);
 
+        // AMRGraphLinkiterator graph_xp = graph_neighs_xp.get_read_access(depends_list);
+        // AMRGraphLinkiterator graph_xm = graph_neighs_xm.get_read_access(depends_list);
+        // AMRGraphLinkiterator graph_yp = graph_neighs_yp.get_read_access(depends_list);
+        // AMRGraphLinkiterator graph_ym = graph_neighs_ym.get_read_access(depends_list);
+        // AMRGraphLinkiterator graph_zp = graph_neighs_zp.get_read_access(depends_list);
+        // AMRGraphLinkiterator graph_zm = graph_neighs_zm.get_read_access(depends_list);
+
+        AMRGraphLinkiterator block_graph_xp = block_graph_neighs_xp.get_read_access(depends_list);
+        AMRGraphLinkiterator block_graph_xm = block_graph_neighs_xm.get_read_access(depends_list);
+        AMRGraphLinkiterator block_graph_yp = block_graph_neighs_yp.get_read_access(depends_list);
+        AMRGraphLinkiterator block_graph_ym = block_graph_neighs_ym.get_read_access(depends_list);
+        AMRGraphLinkiterator block_graph_zp = block_graph_neighs_zp.get_read_access(depends_list);
+        AMRGraphLinkiterator block_graph_zm = block_graph_neighs_zm.get_read_access(depends_list);
+
+        auto acc_amr_block_levels = buf_amr_block_levels.get_read_access(depends_list);
+
+        // Enforce 2:1 restriction using blocks_neighborh graph and amr_levels
+        auto e1 = q.submit(depends_list, [&](sycl::handler &cgh) {
+            sycl::accessor acc_refine_flag{refine_flags, cgh, sycl::read_write};
+
+            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                u32 block_id                = gid.get_linear_id();
+                u32 current_refinement_flag = acc_refine_flag[block_id];
+                auto current_block_level    = acc_amr_block_levels[block_id];
+
+                auto apply_to_each_neigh_block = [&](u32 b_id) {
+                    u32 neigh_refine_flag  = acc_refine_flag[b_id];
+                    auto neigh_block_level = acc_amr_block_levels[b_id];
+                    /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
+                        such that L1 >= L2.
+                        *
+                        * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked for
+                        refinement but not neigh_b. We refine also neigh_b.
+                        * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+                        are both marked for refinement. We do nothing.
+                        * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+                        1), cur_b is marked for refinement but not neigh_b. We refine also
+                        neigh_b.
+                        * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+                        1), cur_b and neigh_b are both marked for refinement. We do nothing.
+                        * It's important to observe that we don't consider the case with
+                        abs(L1-L2)>1 because the 2:1 condition should prevent this.
+                    */
+
+                    if (current_block_level >= neigh_block_level) {
+                        neigh_refine_flag = (neigh_refine_flag || current_refinement_flag);
+                    }
+
+                    /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
+                     * such that L1 < L2.
+                     *
+                     * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+                     * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+                     * (since effective refinement of cur_b will lead to L1_new such that
+                     * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2 with
+                     * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement. We
+                     * do nothing.
+                     */
+                    else if (current_block_level < neigh_block_level) {
+                        neigh_refine_flag = (neigh_refine_flag && current_refinement_flag);
+                    } else {
+                        // Should not happen. Raise an exception.
+                    }
+                    acc_refine_flag[b_id] = neigh_refine_flag;
+                };
+
+                if (current_refinement_flag) {
+                    block_graph_xp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                    block_graph_xm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                    block_graph_yp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                    block_graph_ym.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                    block_graph_zp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                    block_graph_zm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+                        apply_to_each_neigh_block(neigh_block_id);
+                    });
+                }
+            });
+        });
+
+        block_graph_neighs_xp.complete_event_state(e1);
+        block_graph_neighs_xm.complete_event_state(e1);
+        block_graph_neighs_yp.complete_event_state(e1);
+        block_graph_neighs_ym.complete_event_state(e1);
+        block_graph_neighs_zp.complete_event_state(e1);
+        block_graph_neighs_zm.complete_event_state(e1);
+        buf_amr_block_levels.complete_event_state(e1);
+
         // keep only derefine flags on only if the eight cells want to merge and if they can
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             sycl::accessor acc_merge_flag{derefine_flags, cgh, sycl::read_write};
@@ -109,6 +256,423 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 acc_merge_flag[gid] = do_merge;
             });
         });
+
+        // // Enforce 2:1 restriction
+        // auto e_21 = q.submit(depends_list, [&](sycl::handler &cgh) {
+        //     sycl::accessor acc_refine_flag{refine_flags, cgh, sycl::read_write};
+
+        //     cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+        //         u32 block_id            = gid;
+        //         u32 linearized_block_id = gid.get_linear_id();
+
+        //         // Get current level
+        //         Tscal one_over_Nside = 1. / AMRBlock::Nside;
+        //         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+        //         TgridVec low_bound  = acc_min[block_id];
+        //         TgridVec high_bound = acc_max[block_id];
+        //         Tvec lower_flt      = low_bound.template convert<Tscal>() * dxfact;
+        //         Tvec high_flt       = high_bound.template convert<Tscal>() * dxfact;
+
+        //         Tvec block_cell_size    = (high_flt - lower_flt) * one_over_Nside;
+        //         u32 current_refine_flag = acc_refine_flag[gid];
+
+        //         if (current_refine_flag != 0) {
+
+        //             u32 cell_local_id;
+
+        //             // get cell_size in neigh block
+        //             u32 neigh_block_id;
+        //             TgridVec low_bound_neigh_block;
+        //             TgridVec high_bound_neigh_block;
+        //             Tvec neigh_lower_flt;
+        //             Tvec neigh_high_flt;
+        //             Tvec neigh_block_cell_size;
+        //             u32 neigh_refine_flag;
+
+        //             for (cell_local_id = 0; cell_local_id < split_count; cell_local_id++) {
+        //                 u32 cell_global_id = linearized_block_id + cell_local_id;
+
+        //                 // Direction xp
+        //                 graph_xp.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+
+        //                 // Direction xm
+        //                 graph_xm.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+
+        //                 // Direction yp
+        //                 graph_yp.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+
+        //                 // Direction ym
+        //                 graph_ym.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+
+        //                 // Direction zp
+        //                 graph_zp.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+
+        //                 // Direction zm
+        //                 graph_zm.for_each_object_link(cell_global_id, [&](u32 id_neigh) {
+        //                     // get neigh block id
+        //                     neigh_block_id = id_neigh / AMRBlock::block_size;
+
+        //                     // get cell_size in neigh block
+        //                     low_bound_neigh_block  = acc_min[neigh_block_id];
+        //                     high_bound_neigh_block = acc_max[neigh_block_id];
+        //                     neigh_lower_flt
+        //                         = low_bound_neigh_block.template convert<Tscal>() * dxfact;
+        //                     neigh_high_flt
+        //                         = high_bound_neigh_block.template convert<Tscal>() * dxfact;
+
+        //                     neigh_block_cell_size
+        //                         = (neigh_high_flt - neigh_lower_flt) * one_over_Nside;
+        //                     neigh_refine_flag = acc_refine_flag[neigh_block_id];
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      such that L1 >= L2.
+        //                      *
+        //                      * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked
+        //                      for refinement but not neigh_b. We refine also neigh_b.
+        //                      * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                      are both marked for refinement. We do nothing.
+        //                      * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                      neigh_b.
+        //                      * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2
+        //                      = 1), cur_b and neigh_b are both marked for refinement. We do
+        //                      nothing.
+        //                      * It's important to observe that we don't consider the case with
+        //                      abs(L1-L2)>1 because the 2:1 condition should prevent this.
+
+        //                     */
+        //                     if (block_cell_size.x() <= neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag || current_refine_flag);
+        //                     }
+
+        //                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b)
+        //                     L2
+        //                      * such that L1 < L2.
+        //                      *
+        //                      * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                      * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //                      * (since effective refinement of cur_b will lead to L1_new such that
+        //                      * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2
+        //                      with
+        //                      * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement.
+        //                      We
+        //                      * do nothing.
+        //                      */
+        //                     else if (block_cell_size.x() > neigh_block_cell_size.x()) {
+        //                         acc_refine_flag[neigh_block_id]
+        //                             = (neigh_refine_flag && current_refine_flag);
+        //                     }
+
+        //                     else {
+        //                         // Should not happen. Raise an exception.
+        //                     }
+        //                 });
+        //             }
+        //         }
+        //     });
+        // });
 
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
@@ -305,6 +869,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     }
 
                     // user lambda to fill the fields
+
                     uacc.apply_derefine(
                         old_indexes, block_coords, idx_to_derefine, merged_block_coord, uacc);
                 });

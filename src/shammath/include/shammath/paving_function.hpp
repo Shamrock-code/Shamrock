@@ -26,6 +26,8 @@ namespace shammath {
     inline AABB<Tvec> f_aabb(
         const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
 
+        static_assert(!paving_func::can_deform_aabb, "The paving function cannot deform the AABB");
+
         Tvec min = paving.f(aabb.lower, i, j, k);
         Tvec max = paving.f(aabb.upper, i, j, k);
 
@@ -42,6 +44,8 @@ namespace shammath {
     template<typename Tvec, class paving_func>
     inline AABB<Tvec> f_aabb_inv(
         const paving_func &paving, const AABB<Tvec> &aabb, int i, int j, int k) {
+
+        static_assert(!paving_func::can_deform_aabb, "The paving function cannot deform the AABB");
 
         Tvec min = paving.f_inv(aabb.lower, i, j, k);
         Tvec max = paving.f_inv(aabb.upper, i, j, k);
@@ -63,6 +67,9 @@ namespace shammath {
      */
     template<typename Tvec>
     struct paving_function_periodic_3d {
+
+        // only translation so f(AABB) is still an AABB
+        inline static constexpr bool can_deform_aabb = false;
 
         Tvec box_size; ///< The size of the box in each dimension.
 
@@ -95,6 +102,32 @@ namespace shammath {
         inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
             return shammath::f_aabb_inv(*this, aabb, i, j, k);
         }
+
+        inline std::vector<std::array<int, 3>> get_paving_index_intersecting(
+            AABB<Tvec> aabb) const {
+
+            Tvec lower = aabb.lower / box_size;
+            Tvec upper = aabb.upper / box_size;
+
+            lower[0] = std::floor(lower[0]);
+            lower[1] = std::floor(lower[1]);
+            lower[2] = std::floor(lower[2]);
+
+            i32_3 low_int = {
+                static_cast<i32>(lower[0]), static_cast<i32>(lower[1]), static_cast<i32>(lower[2])};
+
+            std::vector<std::array<int, 3>> indices;
+
+            for (int i = low_int[0]; i <= upper[0]; ++i) {
+                for (int j = low_int[1]; j <= upper[1]; ++j) {
+                    for (int k = low_int[2]; k <= upper[2]; ++k) {
+                        indices.push_back({i, j, k});
+                    }
+                }
+            }
+
+            return indices;
+        }
     };
 
     /**
@@ -105,6 +138,9 @@ namespace shammath {
      */
     template<typename Tvec>
     struct paving_function_general_3d {
+
+        // only translation so f(AABB) is still an AABB
+        inline static constexpr bool can_deform_aabb = false;
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -170,6 +206,32 @@ namespace shammath {
         inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
             return shammath::f_aabb_inv(*this, aabb, i, j, k);
         }
+
+        inline std::vector<std::array<int, 3>> get_paving_index_intersecting(
+            AABB<Tvec> aabb) const {
+
+            Tvec lower = aabb.lower / box_size;
+            Tvec upper = aabb.upper / box_size;
+
+            lower[0] = std::floor(lower[0]);
+            lower[1] = std::floor(lower[1]);
+            lower[2] = std::floor(lower[2]);
+
+            i32_3 low_int = {
+                static_cast<i32>(lower[0]), static_cast<i32>(lower[1]), static_cast<i32>(lower[2])};
+
+            std::vector<std::array<int, 3>> indices;
+
+            for (int i = low_int[0]; i <= upper[0]; ++i) {
+                for (int j = low_int[1]; j <= upper[1]; ++j) {
+                    for (int k = low_int[2]; k <= upper[2]; ++k) {
+                        indices.push_back({i, j, k});
+                    }
+                }
+            }
+
+            return indices;
+        }
     };
 
     /**
@@ -183,6 +245,9 @@ namespace shammath {
      */
     template<typename Tvec>
     struct paving_function_general_3d_shear_x {
+
+        // only translation so f(AABB) is still an AABB
+        inline static constexpr bool can_deform_aabb = false;
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -239,6 +304,41 @@ namespace shammath {
 
         inline AABB<Tvec> f_aabb_inv(const AABB<Tvec> &aabb, int i, int j, int k) const {
             return shammath::f_aabb_inv(*this, aabb, i, j, k);
+        }
+
+        inline std::vector<std::array<int, 3>> get_paving_index_intersecting(
+            AABB<Tvec> aabb) const {
+
+            Tvec lower = aabb.lower / box_size;
+            Tvec upper = aabb.upper / box_size;
+
+            lower[0] = std::floor(lower[0]);
+            lower[1] = std::floor(lower[1]);
+            lower[2] = std::floor(lower[2]);
+
+            lower[0] -= 1;
+            upper[0] += 1;
+
+            i32_3 low_int = {
+                static_cast<i32>(lower[0]), static_cast<i32>(lower[1]), static_cast<i32>(lower[2])};
+
+            std::vector<std::array<int, 3>> indices;
+
+            for (int i = low_int[0]; i <= upper[0]; ++i) {
+                for (int j = low_int[1]; j <= upper[1]; ++j) {
+                    for (int k = low_int[2]; k <= upper[2]; ++k) {
+
+                        Tscal shear_x_floor = std::floor(i * shear_x / box_size[0]);
+                        i32 s_x             = static_cast<i32>(shear_x_floor);
+
+                        i32 i_s = i - s_x;
+
+                        indices.push_back({i_s, j, k});
+                    }
+                }
+            }
+
+            return indices;
         }
     };
 

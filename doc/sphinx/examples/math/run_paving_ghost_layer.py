@@ -70,26 +70,32 @@ for x in x_set:
 # %%
 # Utility to plot the paving function
 
-margin = 0.1
+margin = 0.0
 
 
-def add_rect(x, y, w, h):
+def add_rect(x, y, w, h, facecolor="grey", alpha=0.5):
     plt.gca().add_patch(
         plt.Rectangle(
             (x + margin, y + margin),
             w - 2 * margin,
             h - 2 * margin,
-            alpha=0.5,
+            alpha=alpha,
             fill=True,
-            facecolor="grey",
-            linewidth=2,
+            facecolor=facecolor,
+            edgecolor="black",
+            linewidth=4,
         )
     )
 
 
-def add_rect_aabb(aabb):
+def add_rect_aabb(aabb, facecolor="grey", alpha=0.5):
     add_rect(
-        aabb.lower[0], aabb.lower[1], aabb.upper[0] - aabb.lower[0], aabb.upper[1] - aabb.lower[1]
+        aabb.lower[0],
+        aabb.lower[1],
+        aabb.upper[0] - aabb.lower[0],
+        aabb.upper[1] - aabb.lower[1],
+        facecolor=facecolor,
+        alpha=alpha,
     )
 
 
@@ -115,8 +121,8 @@ def plot_paving_function(pav_func, pav_func_name):
     box_to_intersect = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (box_size_x, box_size_y, 0.0))
 
     def get_indices():
-        for i in range(-2, 3):
-            for j in range(-3, 4):
+        for i in range(-3, 4):
+            for j in range(-2, 3):
                 if i == 0 and j == 0:
                     continue
                 yield i, j
@@ -136,6 +142,7 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.title(f"Paving function: {pav_func_name}\n1. Inverse map current sim box")
     plt.xlabel("x")
     plt.ylabel("y")
+    plt.axis("equal")
 
     plt.figure()
 
@@ -153,6 +160,7 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.title(f"Paving function: {pav_func_name}\n2. Inverse ghost layer with inverse map")
     plt.xlabel("x")
     plt.ylabel("y")
+    plt.axis("equal")
 
     plt.figure()
 
@@ -177,6 +185,7 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.title(f"Paving function: {pav_func_name}\n3. Map back the resulting ghost layer")
     plt.xlabel("x")
     plt.ylabel("y")
+    plt.axis("equal")
 
 
 # %%
@@ -227,6 +236,115 @@ plot_paving_function(
         True,
         True,
         0.3,
+    ),
+    "reflective in x periodic in y with shear",
+)
+
+
+# %%
+# Testing the list of indices with the paving function
+# ----------------------------------------------------
+
+
+def test_paving_index_intersecting(pav_func, pav_func_name):
+
+    box_to_intersect = shamrock.math.AABB_f64_3(
+        (-2.5, -2.5, 0.0), (box_size_x + 2.5, box_size_y + 2.5, 0.0)
+    )
+
+    indices = pav_func.get_paving_index_intersecting(box_to_intersect)
+
+    print(indices)
+
+    def get_indices():
+        x_r = 6
+        y_r = 4
+        for i in range(-x_r, x_r + 1):
+            for j in range(-y_r, y_r + 1):
+                yield i, j
+
+    domain = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (box_size_x, box_size_y, 0.0))
+
+    plt.figure()
+
+    for i, j in get_indices():
+
+        domain_mapped = pav_func.f_aabb(domain, i, j, 0)
+
+        print(domain_mapped)
+
+        if [i, j, 0] in indices:
+            add_rect_aabb(domain_mapped, facecolor="green")
+        else:
+            add_rect_aabb(domain_mapped, facecolor="grey")
+
+    add_rect_aabb(box_to_intersect, facecolor="lightblue", alpha=0.5)
+
+    plt.title(f"Paving function: {pav_func_name}\n")
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.axis("equal")
+
+
+# %%
+# Periodic paving function
+
+test_paving_index_intersecting(
+    shamrock.math.paving_function_general_3d(
+        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), True, True, True
+    ),
+    "Periodic box",
+)
+
+
+# %%
+# Periodic & reflective paving function
+
+test_paving_index_intersecting(
+    shamrock.math.paving_function_general_3d(
+        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, True, True
+    ),
+    "reflective in x periodic in y",
+)
+
+
+# %%
+# Fully reflective paving function
+
+test_paving_index_intersecting(
+    shamrock.math.paving_function_general_3d(
+        (box_size_x, box_size_y, 0.1), (box_size_x / 2.0, box_size_y / 2.0, 0.0), False, False, True
+    ),
+    "Fully reflective",
+)
+
+
+# %%
+# Periodic & reflective paving function with shear
+
+test_paving_index_intersecting(
+    shamrock.math.paving_function_general_3d_shear_x(
+        (box_size_x, box_size_y, 0.1),
+        (box_size_x / 2.0, box_size_y / 2.0, 0.0),
+        False,
+        True,
+        True,
+        0.3,
+    ),
+    "reflective in x periodic in y with shear",
+)
+
+# %%
+# Periodic & reflective paving function with strong shear
+
+test_paving_index_intersecting(
+    shamrock.math.paving_function_general_3d_shear_x(
+        (box_size_x, box_size_y, -0.1),
+        (box_size_x / 2.0, box_size_y / 2.0, 0.1),
+        False,
+        True,
+        True,
+        1.8,
     ),
     "reflective in x periodic in y with shear",
 )

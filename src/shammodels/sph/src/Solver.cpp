@@ -121,6 +121,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             1, "alpha_av_updated", "\\alpha_{\\rm AV}");
     }
+
+    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
+    storage.soundspeed
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1069,8 +1073,8 @@ void shammodels::sph::Solver<Tvec, Kern>::compute_eos_fields() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::reset_eos_fields() {
-    storage.pressure.reset();
-    storage.soundspeed.reset();
+    shambase::get_check_ref(storage.pressure).free_alloc();
+    shambase::get_check_ref(storage.soundspeed).free_alloc();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1764,9 +1768,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
                 sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
                 sham::DeviceBuffer<Tscal> &buf_pressure
-                    = storage.pressure.get().get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &cs_buf
-                    = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+                    = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+                sham::DeviceBuffer<Tscal> &cs_buf = shambase::get_check_ref(storage.soundspeed)
+                                                        .get_field(cur_p.id_patch)
+                                                        .get_buf();
 
                 sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
 
@@ -2061,7 +2066,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tscal> &buf_cs = pdat.get_field_buf_ref<Tscal>(isoundspeed);
                     sham::DeviceBuffer<Tscal> &buf_cs_in
-                        = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+                        = shambase::get_check_ref(storage.soundspeed)
+                              .get_field(cur_p.id_patch)
+                              .get_buf();
 
                     sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -2114,11 +2121,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     u64 rank_count = scheduler().get_rank_count();
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
 
+    u64 npatch = scheduler().patch_list.local.size();
+
     // logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
 
     std::string log_step = report_perf_timestep(
         rate,
         rank_count,
+        npatch,
         tstep.elasped_sec(),
         delta_mpi_timer,
         t_dev_alloc,

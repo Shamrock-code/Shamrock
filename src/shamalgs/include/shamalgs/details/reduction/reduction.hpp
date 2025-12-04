@@ -30,10 +30,6 @@
 namespace shamalgs::reduction {
 
     template<class T>
-    shambase::VecComponent<T> dot_sum(
-        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
-
-    template<class T>
     bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);
 
     template<class T>

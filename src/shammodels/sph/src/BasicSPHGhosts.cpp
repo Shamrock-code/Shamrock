@@ -153,7 +153,13 @@ int main(){
 
 #include "shambase/exception.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shammath/paving_function.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shamrock/solvergraph/DDSharedBuffers.hpp"
+#include "shamrock/solvergraph/DDSharedScalar.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 #include <functional>
 #include <vector>
 
@@ -251,6 +257,402 @@ inline void for_each_patch_shift(
         funct(off, shift);
     }
 }
+
+namespace shammodels::sph::modules {
+    enum class GhostType { None, Periodic, Reflective, ShearingPeriodic };
+
+    struct GhostLayerGenMode {
+        GhostType ghost_type_x;
+        GhostType ghost_type_y;
+        GhostType ghost_type_z;
+    };
+
+    template<class Tvec, class Tscal>
+    shammath::paving_function_general_3d<Tvec> get_paving_with_no_shear(
+        GhostLayerGenMode mode, shammath::AABB<Tvec> sim_box) {
+
+        Tvec box_size   = sim_box.upper - sim_box.lower;
+        Tvec box_center = (sim_box.upper + sim_box.lower) / 2;
+
+        SHAM_ASSERT(sim_box.is_volume_not_null());
+
+        { // check that rebuildind the AABB from size and center gives the same AABB
+            shammath::AABB<Tvec> new_box = {box_center - box_size / 2, box_center + box_size / 2};
+            if (new_box != sim_box) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "Rebuilding AABB from size and center gives a different AABB");
+            }
+        }
+
+        return shammath::paving_function_general_3d<Tvec>{
+            box_size,
+            box_center,
+            mode.ghost_type_x == GhostType::Periodic,
+            mode.ghost_type_y == GhostType::Periodic,
+            mode.ghost_type_z == GhostType::Periodic};
+    }
+
+    template<class Tvec, class Tscal>
+    shammath::paving_function_general_3d_shear_x<Tvec> get_paving_with_shear(
+        GhostLayerGenMode mode, shammath::AABB<Tvec> sim_box, Tscal shear_x) {
+
+        static_assert(
+            std::is_same_v<Tscal, shambase::VecComponent<Tvec>>,
+            "Tscal must be a vector component");
+
+        Tvec box_size   = sim_box.upper - sim_box.lower;
+        Tvec box_center = (sim_box.upper + sim_box.lower) / 2;
+
+        SHAM_ASSERT(sim_box.is_volume_not_null());
+
+        { // check that rebuildind the AABB from size and center gives the same AABB
+            shammath::AABB<Tvec> new_box = {box_center - box_size / 2, box_center + box_size / 2};
+            if (new_box != sim_box) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "Rebuilding AABB from size and center gives a different AABB");
+            }
+        }
+
+        return shammath::paving_function_general_3d_shear_x<Tvec>{
+            box_size,
+            box_center,
+            mode.ghost_type_x == GhostType::Periodic,
+            mode.ghost_type_y == GhostType::Periodic,
+            mode.ghost_type_z == GhostType::Periodic,
+            shear_x};
+    }
+
+    template<class Func>
+    void for_each_paving_tile(GhostLayerGenMode mode, Func &&func) {
+
+        // if the ghost type is none, we do not need to repeat as there is no ghost layer
+        i32 repetition_x = mode.ghost_type_x != GhostType::None;
+        i32 repetition_y = mode.ghost_type_y != GhostType::None;
+        i32 repetition_z = mode.ghost_type_z != GhostType::None;
+
+        for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
+            for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
+                for (i32 zoff = -repetition_z; zoff <= repetition_z; zoff++) {
+                    func(xoff, yoff, zoff);
+                }
+            }
+        }
+    }
+
+    struct GhostLayerCandidateInfos {
+        i32 xoff;
+        i32 yoff;
+        i32 zoff;
+    };
+
+    template<class Tvec>
+    class FindGhostLayerCandidatesSPH : public shamrock::solvergraph::INode {
+
+        public:
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        FindGhostLayerCandidatesSPH(GhostLayerGenMode mode, std::optional<Tscal> shear_x)
+            : mode(mode), shear_x(shear_x) {}
+
+        struct Edges {
+            // inputs
+            const shamrock::solvergraph::IDataEdge<std::vector<u64>> &ids_to_check;
+            const shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>> &sim_box;
+            const shamrock::solvergraph::SerialPatchTreeRefEdge<Tvec> &patch_tree;
+            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>> &patch_boxes;
+            const shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal> &int_range_max;
+            const shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>
+                &int_range_max_serialized;
+            // outputs
+            shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>
+                &ghost_layers_candidates;
+        };
+
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<u64>>> ids_to_check,
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>>> sim_box,
+            std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<Tvec>> patch_tree,
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>>> patch_boxes,
+            std::shared_ptr<shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal>> int_range_max,
+            std::shared_ptr<shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>>
+                int_range_max_serialized,
+            std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
+                ghost_layers_candidates) {
+            __internal_set_ro_edges(
+                {ids_to_check,
+                 sim_box,
+                 patch_tree,
+                 patch_boxes,
+                 int_range_max,
+                 int_range_max_serialized});
+            __internal_set_rw_edges({ghost_layers_candidates});
+        }
+
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::IDataEdge<std::vector<u64>>>(0),
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>>>(1),
+                get_ro_edge<shamrock::solvergraph::SerialPatchTreeRefEdge<Tvec>>(2),
+                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>>>(3),
+                get_ro_edge<shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal>>(4),
+                get_ro_edge<shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>>(5),
+                get_rw_edge<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(0),
+            };
+        }
+
+        void _impl_evaluate_internal();
+
+        inline virtual std::string _impl_get_label() const {
+            return "FindGhostLayerCandidatesSPH";
+        };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+
+        private:
+        GhostLayerGenMode mode;
+        std::optional<Tscal> shear_x;
+    };
+
+    template<class Tvec>
+    void shammodels::sph::modules::FindGhostLayerCandidatesSPH<Tvec>::_impl_evaluate_internal() {
+        auto edges = get_edges();
+
+        // inputs
+        auto &ids_to_check       = edges.ids_to_check.data;
+        auto &sim_box            = edges.sim_box.value;
+        auto &patch_tree         = edges.patch_tree.get_patch_tree();
+        auto &patch_boxes        = edges.patch_boxes;
+        auto &int_range_max      = edges.int_range_max.get_patch_tree_field();
+        auto &int_range_max_tree = edges.int_range_max_tree.get_patch_tree_field();
+
+        using PtNode = typename SerialPatchTree<Tvec>::PtNode;
+
+        // outputs
+        auto &ghost_layers_candidates = edges.ghost_layers_candidates.values;
+
+        auto run_gz_search = [&](auto &paving, auto &for_each_paving_tile) {
+            using namespace shamrock::patch;
+
+            // for each repetitions
+            for_each_paving_tile(mode, [&](i32 xoff, i32 yoff, i32 zoff) {
+                // for all local patches
+                for (auto id : ids_to_check) {
+                    auto patch_box = patch_boxes.values.get(id);
+
+                    Tscal sender_h_max = int_range_max.get(id);
+
+                    // f(patch)
+                    auto patch_box_mapped = paving.f_aabb(patch_box, xoff, yoff, zoff);
+
+                    patch_tree.host_for_each_leafs(
+                        [&](u64 tree_id, PtNode n) {
+                            // here we use the group group interaction criteria AABB1 V (AABB2 +
+                            // max(h_max1, h_max2))
+
+                            shammath::AABB<Tvec> tree_cell{n.box_min, n.box_max};
+                            Tscal receiv_h_max = int_range_max_tree.get(tree_id);
+
+                            tree_cell = tree_cell.expand_all(sham::max(sender_h_max, receiv_h_max));
+
+                            // f(patch) V box =! empty (a surface is not an empty set btw)
+                            // <=> is ghost layer != empty
+                            return tree_cell.get_intersect(patch_box_mapped).is_not_empty();
+                        },
+                        [&](u64 id_found, PtNode n) {
+                            // skip self intersection (but not if we are through a boundary)
+                            if ((id_found == id) && (xoff == 0) && (yoff == 0) && (zoff == 0)) {
+                                return;
+                            }
+
+                            // we have an ghost layer between
+                            // patch `id` and patch `id_found` for this offset
+                            // so we store that
+                            ghost_layers_candidates.add_obj(
+                                id, id_found, GhostLayerCandidateInfos{xoff, yoff, zoff});
+
+                            // TODO: we should suppress this add if the source or dest is empty
+                        });
+                }
+            });
+        };
+
+        if (shear_x.has_value()) {
+            auto paving = get_paving_with_shear(mode, sim_box, shear_x.value());
+            run_gz_search(
+                paving,
+                for_each_paving_tile); // TODO: we need to offset the x index during search when
+                                       // shearing
+        } else {
+            auto paving = get_paving_with_no_shear(mode, sim_box);
+            run_gz_search(paving, for_each_paving_tile);
+        }
+    }
+
+    template<class Tvec>
+    class FindGhostLayerIndices : public shamrock::solvergraph::INode {
+
+        public:
+        using Tscal = shambase::VecComponent<Tvec>;
+        FindGhostLayerIndices(GhostLayerGenMode mode, u32 ixyz, u32 ihpart)
+            : mode(mode), ixyz(ixyz), ihpart(ihpart) {}
+
+        struct Edges {
+            // inputs
+            const shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>> &sim_box;
+            const shamrock::solvergraph::IPatchDataLayerRefs &patch_data_layers;
+            const shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>
+                &ghost_layers_candidates;
+            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>> &patch_boxes;
+            const shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal> &int_range_max;
+            const shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>
+                &int_range_max_serialized;
+            // outputs
+            shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghost;
+        };
+
+        inline void set_edges(
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>>> sim_box,
+            std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> patch_data_layers,
+            std::shared_ptr<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>
+                ghost_layers_candidates,
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>>> patch_boxes,
+            std::shared_ptr<shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal>> int_range_max,
+            std::shared_ptr<shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>>
+                int_range_max_serialized,
+            std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost) {
+            __internal_set_ro_edges(
+                {sim_box,
+                 patch_data_layers,
+                 ghost_layers_candidates,
+                 patch_boxes,
+                 int_range_max,
+                 int_range_max_serialized});
+            __internal_set_rw_edges({idx_in_ghost});
+        }
+
+        inline Edges get_edges() {
+            return Edges{
+                get_ro_edge<shamrock::solvergraph::ScalarEdge<shammath::AABB<Tvec>>>(0),
+                get_ro_edge<shamrock::solvergraph::IPatchDataLayerRefs>(1),
+                get_ro_edge<shamrock::solvergraph::DDSharedScalar<GhostLayerCandidateInfos>>(2),
+                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<Tvec>>>(3),
+                get_ro_edge<shamrock::solvergraph::SerialPatchFieldRefEdge<Tscal>>(4),
+                get_ro_edge<shamrock::solvergraph::SerialPatchTreeFieldRefEdge<Tscal>>(5),
+                get_rw_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(0),
+            };
+        }
+
+        void _impl_evaluate_internal();
+
+        inline virtual std::string _impl_get_label() const { return "FindGhostLayerIndices"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+
+        private:
+        GhostLayerGenMode mode;
+        std::optional<Tscal> shear_x;
+        u32 ixyz;
+        u32 ihpart;
+    };
+
+    template<class Tvec, class Tscal>
+    sham::DeviceBuffer<u32> get_ids_in_ghost(
+        const sham::DeviceScheduler_ptr &dev_sched,
+        sham::DeviceQueue &q,
+        const sham::DeviceBuffer<Tvec> &xyz,
+        const sham::DeviceBuffer<Tscal> &hpart,
+        const shammath::AABB<Tvec> &test_volume,
+        const shammath::AABB<Tscal> &volume_hmax,
+        u32 obj_cnt) {
+
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            sham::DeviceBuffer<u32> mask(obj_cnt, dev_sched);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{xyz, hpart},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [test_volume, volume_hmax](
+                    u32 id,
+                    const Tvec *__restrict xyz,
+                    const Tscal *__restrict hpart,
+                    u32 *__restrict is_in_ghost) {
+                    Tvec xyz_1 = xyz[id];
+                    Tscal h_1  = hpart[id];
+
+                    // object group interaction criteria {xyz_1} V (AABB2 + max(h_1, h_max2))
+                    is_in_ghost[id] = test_volume.expand_all(sham::max(h_1, volume_hmax))
+                                          .contains_symmetric(xyz_1);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
+        }
+    }
+
+    template<class Tvec>
+    void shammodels::sph::modules::FindGhostLayerIndices<Tvec>::_impl_evaluate_internal() {
+        auto edges = get_edges();
+
+        // inputs
+        auto &sim_box                 = edges.sim_box.value;
+        auto &patch_data_layers       = edges.patch_data_layers;
+        auto &ghost_layers_candidates = edges.ghost_layers_candidates;
+        auto &patch_boxes             = edges.patch_boxes;
+        auto &int_range_max           = edges.int_range_max.get_patch_tree_field();
+        auto &int_range_max_tree      = edges.int_range_max_tree.get_patch_tree_field();
+
+        // outputs
+        auto &idx_in_ghost = edges.idx_in_ghost;
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto &patch_data_layers_ref = patch_data_layers.get_const_refs();
+
+        auto run_id_find = [&](auto &paving_function) {
+            // map candidates to indexes in ghosts
+            idx_in_ghost.buffers
+                = ghost_layers_candidates.values.template map<sham::DeviceBuffer<u32>>(
+                    [&](u64 sender,
+                        u64 receiver,
+                        const GhostLayerCandidateInfos &infos) -> sham::DeviceBuffer<u32> {
+                        shamrock::patch::PatchDataLayer &sender_patch
+                            = patch_data_layers_ref.get(sender).get();
+
+                        PatchDataField<Tvec> &xyz    = sender_patch.get_field<Tvec>(ixyz);
+                        PatchDataField<Tscal> &hpart = sender_patch.get_field<Tscal>(ihpart);
+
+                        auto brecv = patch_boxes.values.get(receiver);
+
+                        auto test_volume
+                            = paving_function.f_aabb_inv(brecv, infos.xoff, infos.yoff, infos.zoff);
+                        auto volume_hmax = int_range_max.get(receiver);
+
+                        return get_ids_in_ghost(
+                            dev_sched,
+                            q,
+                            xyz.get_buf(),
+                            hpart.get_buf(),
+                            test_volume,
+                            volume_hmax,
+                            sender_patch.get_obj_cnt());
+                    });
+        };
+
+        if (shear_x.has_value()) {
+            auto paving = get_paving_with_shear(mode, sim_box, shear_x.value());
+            run_id_find(paving);
+        } else {
+            auto paving = get_paving_with_no_shear(mode, sim_box);
+            run_id_find(paving);
+        }
+    }
+
+} // namespace shammodels::sph::modules
 
 using namespace shammodels::sph;
 

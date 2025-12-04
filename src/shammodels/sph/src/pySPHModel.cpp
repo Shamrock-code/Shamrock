@@ -314,10 +314,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_generator_lattice_hcp_smap",
+            [](TSPHSetup &self,
+               Tscal dr,
+               //    Tvec center,
+               Tvec box_min,
+               Tvec box_max,
+               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+               std::string system,
+               std::vector<std::string> axes) {
+                return self.make_generator_lattice_hcp_smap(
+                    dr, {box_min, box_max}, rhoprofiles, system, axes);
+            })
+        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
-               Tscal disc_mass,
+               Tscal tot_mass,
                Tscal r_in,
                Tscal r_out,
                std::function<Tscal(Tscal)> sigma_profile,
@@ -328,7 +341,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal init_h_factor) {
                 return self.make_generator_disc_mc(
                     part_mass,
-                    disc_mass,
+                    tot_mass,
                     r_in,
                     r_out,
                     sigma_profile,
@@ -398,6 +411,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("parent"),
             py::arg("offset_position"),
             py::arg("offset_velocity"))
+        .def(
+            "make_modifier_stretch_mapping",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+               std::string system,
+               std::vector<std::string> axes) {
+                return self.make_modifier_apply_stretch_mapping(parent, rhoprofiles, system, axes);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("rhoprofiles"),
+            py::arg("system"),
+            py::arg("axes"))
         .def(
             "make_modifier_filter",
             [](TSPHSetup &self,

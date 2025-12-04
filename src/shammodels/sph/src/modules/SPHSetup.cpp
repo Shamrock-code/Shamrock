@@ -9,6 +9,7 @@
 
 /**
  * @file SPHSetup.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -27,9 +28,11 @@
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeHCP_smap.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyStretchMapping.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
@@ -39,6 +42,22 @@ template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
     SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp_smap(
+        Tscal dr,
+        // Tvec center,
+        // Tscal xmax,
+        std::pair<Tvec, Tvec> box,
+        std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+        std::string system,
+        std::vector<std::string> axes) {
+    // std::pair<Tvec, Tvec> box
+    //     = {center + Tvec(-xmax, -xmax, -xmax), center + Tvec(xmax, xmax, xmax)};
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP_smap<Tvec, SPHKernel>(
+        context, solver_config, dr, box, rhoprofiles, system, axes));
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -195,6 +214,18 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierOffset<Tvec>(context, parent, offset_postion, offset_velocity));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_apply_stretch_mapping(
+        SetupNodePtr parent,
+        std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+        std::string system,
+        std::vector<std::string> axes) {
+
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyStretchMapping<Tvec, SPHKernel>(
+        context, solver_config, parent, rhoprofiles, system, axes));
 }
 
 template<class Tvec, template<class> class SPHKernel>

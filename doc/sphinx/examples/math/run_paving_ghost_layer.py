@@ -287,7 +287,6 @@ def test_paving_index_intersecting(pav_func, pav_func_name):
 
         domain_mapped = pav_func.f_aabb(domain, i, j, 0)
 
-        print(domain_mapped)
 
         if [i, j, 0] in indices:
             add_rect_aabb(domain_mapped, facecolor="green")

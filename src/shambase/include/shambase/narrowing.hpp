@@ -9,8 +9,12 @@
 
 #pragma once
 
+#include "shambase/SourceLocation.hpp"
+#include "shambase/exception.hpp"
+#include "shambase/string.hpp"
 #include "shambase/type_traits.hpp"
 #include <limits>
+#include <stdexcept>
 
 /**
  * @file narrowing.hpp
@@ -69,6 +73,18 @@ namespace shambase {
         } else {
             static_assert(
                 shambase::always_false_v<T>, "can_narrow is not implemented for this type");
+        }
+    }
+
+    template<class U, class T>
+    inline U narrow_check(T val, SourceLocation loc = SourceLocation{}) {
+        if (can_narrow<U, T>(val)) {
+            return static_cast<U>(val);
+        } else {
+            throw make_except_with_loc<std::runtime_error>(
+                shambase::format(
+                    "value cannot be narrowed to type U: {} -> {}", val, static_cast<U>(val)),
+                loc);
         }
     }
 

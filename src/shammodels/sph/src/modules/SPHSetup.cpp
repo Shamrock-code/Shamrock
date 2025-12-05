@@ -456,16 +456,25 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 DATA_LIMIT = 2 * _insert_step;
 
         std::vector<u64> msg_count_rank(shamcomm::world_size());
-        std::vector<u64> recv_size_rank(shamcomm::world_size());
+        std::vector<u64> comm_size_rank(shamcomm::world_size());
 
         std::vector<std::tuple<u32, u32, u64>> rank_msg_list;
 
+        bool was_count_limited = false;
+        bool was_size_limited  = false;
+
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            bool can_send_recv = msg_count_rank[receiver_rank] < MSG_LIMIT
-                                 && msg_count_rank[sender_rank] < MSG_LIMIT
-                                 && recv_size_rank[receiver_rank] < DATA_LIMIT
-                                 && recv_size_rank[sender_rank] < DATA_LIMIT;
+            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < MSG_LIMIT
+                                               && msg_count_rank[sender_rank] < MSG_LIMIT;
+
+            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < DATA_LIMIT
+                                               && comm_size_rank[sender_rank] < DATA_LIMIT;
+
+            was_count_limited = was_count_limited || !msg_count_limit_not_reached;
+            was_size_limited  = was_size_limited || !recv_size_limit_not_reached;
+
+            bool can_send_recv = msg_count_limit_not_reached && recv_size_limit_not_reached;
 
             if (can_send_recv) {
                 if (sender_rank == shamcomm::world_rank()
@@ -479,9 +488,16 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             msg_count_rank[receiver_rank] += 1;
             msg_count_rank[sender_rank] += 1;
-            recv_size_rank[receiver_rank] += indices_size;
-            recv_size_rank[sender_rank] += indices_size;
+            comm_size_rank[receiver_rank] += indices_size;
+            comm_size_rank[sender_rank] += indices_size;
         }
+
+        logger::raw_ln(
+            shamcomm::world_rank(),
+            was_count_limited,
+            was_size_limited,
+            msg_count_rank,
+            comm_size_rank);
 
         // logger::info_ln(
         //     "SPH setup", "rank", shamcomm::world_rank(), "rank_msg_list", rank_msg_list);
@@ -538,7 +554,19 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             to_insert.insert_elements(pdat);
         });
 
-        log_inject_status(" <- global loop ->");
+        was_count_limited
+            = !shamalgs::collective::are_all_rank_true(!was_count_limited, MPI_COMM_WORLD);
+        was_size_limited
+            = !shamalgs::collective::are_all_rank_true(!was_size_limited, MPI_COMM_WORLD);
+
+        std::string log_suffix = "";
+        if (was_count_limited) {
+            log_suffix += " (msg count limited)";
+        }
+        if (was_size_limited) {
+            log_suffix += " (msg size limited)";
+        }
+        log_inject_status(" <- global loop ->" + log_suffix);
     }
 
     time_part_inject.end();

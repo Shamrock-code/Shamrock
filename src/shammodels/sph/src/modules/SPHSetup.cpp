@@ -226,8 +226,6 @@ struct SetupLog {
     }
 };
 
-bool do_setup_log = true;
-
 inline constexpr f64 golden_number = 1.61803398874989484820458683436563;
 
 template<class Tvec, template<class> class SPHKernel>
@@ -236,7 +234,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     bool part_reordering,
     std::optional<u32> insert_count_per_step,
     std::optional<u64> max_msg_count_per_rank_per_step,
-    std::optional<u64> max_data_count_per_rank_per_step) {
+    std::optional<u64> max_data_count_per_rank_per_step,
+    bool do_setup_log) {
 
     __shamrock_stack_entry();
 
@@ -357,7 +356,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         }
 
         if (setup_log) {
-            setup_log.value().update_count_per_rank(sum_push);
+            setup_log.value().update_count_per_rank(to_insert.get_obj_cnt());
         }
 
         injected_parts += sum_push;

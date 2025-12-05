@@ -381,16 +381,23 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                bool part_reordering,
                std::optional<u32> insert_step,
                std::optional<u64> msg_count_limit,
-               std::optional<u64> msg_size_limit) {
+               std::optional<u64> msg_size_limit,
+               bool do_setup_log) {
                 return self.apply_setup_new(
-                    setup, part_reordering, insert_step, msg_count_limit, msg_size_limit);
+                    setup,
+                    part_reordering,
+                    insert_step,
+                    msg_count_limit,
+                    msg_size_limit,
+                    do_setup_log);
             },
             py::arg("setup"),
             py::kw_only(),
             py::arg("part_reordering") = true,
             py::arg("insert_step")     = std::nullopt,
             py::arg("msg_count_limit") = std::nullopt,
-            py::arg("msg_size_limit")  = std::nullopt);
+            py::arg("msg_size_limit")  = std::nullopt,
+            py::arg("do_setup_log")    = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

@@ -38,6 +38,7 @@
 #include "shammodels/ramses/modules/FuseGhostLayer.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
+#include "shammodels/ramses/modules/ParticleInCell.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
@@ -376,6 +377,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         storage.refs_rhov_dust = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
             "rhovel_dust", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
     }
+
+    // will be filled by NodePIC
+    storage.rho_pic
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
 
     // will be filled by NodeConsToPrimGas
     storage.vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -916,6 +921,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         node2.set_edges(
             storage.block_counts, storage.cell_mass, storage.simulation_volume, storage.rho_mean);
         solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
+    }
+
+    { // Build PIC (Particle in Cell) node
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> pic_sequence;
+
+        {
+            modules::NodePIC<Tvec> node{AMRBlock::block_size};
+            printf("!!!ASDBG!!! Building PIC node\n");
+            node.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho,
+                storage.rho_pic);
+
+            pic_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+        }
+
+        shamrock::solvergraph::OperationSequence seq(
+            "Particle in Cell", std::move(pic_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq))
+        );
+
     }
 
     { // Build ConsToPrim node

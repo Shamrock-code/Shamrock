@@ -187,10 +187,14 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     SetupNodePtr setup, bool part_reordering, std::optional<u32> insert_step) {
 
+    __shamrock_stack_entry();
+
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
     }
 
+    shambase::Timer time_setup;
+    time_setup.start();
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
     shamrock::DataInserterUtility inserter(sched);
 
@@ -218,7 +222,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr());
 
+    if (shamcomm::world_rank() == 0) {
+        logger::normal_ln("SPH setup", "generating particles ...");
+    }
+
     while (!setup->is_done()) {
+        shambase::Timer timer_gen;
+        timer_gen.start();
 
         shamrock::patch::PatchDataLayer tmp = setup->next_n(_insert_step);
 
@@ -267,15 +277,20 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 sum_push = shamalgs::collective::allreduce_sum<u64>(tmp.get_obj_cnt());
         u64 sum_all  = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
 
+        timer_gen.end();
+
         if (shamcomm::world_rank() == 0) {
-            logger::info_ln(
+            f64 part_per_sec = f64(sum_push) / f64(timer_gen.elasped_sec());
+            logger::normal_ln(
                 "SPH setup",
                 shambase::format(
-                    "generating particles, Nstep = {} ( {:e} ) Ntotal = {} ( {:e} )",
+                    "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} ) rate = {:e} "
+                    "N.s^-1",
                     sum_push,
                     f64(sum_push),
                     sum_all,
-                    f64(sum_all)));
+                    f64(sum_all),
+                    part_per_sec));
         }
 
         injected_parts += sum_push;
@@ -283,16 +298,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     time_part_gen.end();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln(
+        logger::normal_ln(
             "SPH setup", "the generation step took :", time_part_gen.elasped_sec(), "s");
     }
 
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln(
-            "SPH setup",
-            "final particle count =",
-            to_insert.get_obj_cnt(),
-            "begining injection ...");
+        logger::normal_ln(
+            "SPH setup", "final particle count =", injected_parts, "begining injection ...");
     }
 
     // injection part (holy shit this is hard)
@@ -300,12 +312,52 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     shambase::Timer time_part_inject;
     time_part_inject.start();
 
+    auto inject_in_local_domains = [&]() {
+        bool has_been_limited = true;
+
+        while (has_been_limited) {
+            has_been_limited = false;
+            using namespace shamrock::patch;
+
+            // inject in local domains first
+            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+
+                PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
+
+                auto ids = xyz.get_ids_where(
+                    [](auto access, u32 id, shammath::CoordRange<Tvec> patch_coord) {
+                        Tvec tmp = access[id];
+                        return patch_coord.contain_pos(tmp);
+                    },
+                    patch_coord);
+
+                if (ids.get_size() > _insert_step) {
+                    ids.resize(_insert_step);
+                    has_been_limited = true;
+                }
+
+                if (ids.get_size() > 0) {
+                    to_insert.extract_elements(ids, pdat);
+                }
+            });
+
+            sched.check_patchdata_locality_corectness();
+
+            inserter.balance_load(compute_load);
+
+            has_been_limited
+                = shamalgs::collective::are_all_rank_true(has_been_limited, MPI_COMM_WORLD);
+        }
+    };
+
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
         // assume that the sched is synchronized and that there is at least a patch.
         // TODO actually check that
 
-        enum class strategy { RingRotation } mode = strategy::RingRotation;
+        enum class strategy { RingRotation, SparseXchg } mode = strategy::SparseXchg;
 
         if (mode == strategy::RingRotation) {
             // ring rotation strategy
@@ -431,11 +483,170 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             time_rotation.end();
             if (shamcomm::world_rank() == 0) {
-                logger::info_ln(
+                logger::normal_ln(
                     "SPH setup", "the rotation step took :", time_rotation.elasped_sec(), "s");
             }
 
             inserter.balance_load(compute_load);
+        }
+        if (mode == strategy::SparseXchg) {
+            using namespace shamrock::patch;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
+            sptree.attach_buf();
+
+            inject_in_local_domains();
+
+            // find where each particle should be inserted
+            PatchDataField<Tvec> &pos_field = to_insert.get_field<Tvec>(0);
+
+            if (pos_field.get_nvar() != 1) {
+                shambase::throw_unimplemented();
+            }
+
+            sycl::buffer<u64> new_id_buf = sptree.compute_patch_owner(
+                shamsys::instance::get_compute_scheduler_ptr(),
+                pos_field.get_buf(),
+                pos_field.get_obj_cnt());
+
+            std::unordered_map<i32, std::vector<u32>> index_per_ranks;
+            bool err_id_in_newid = false;
+            {
+                sycl::host_accessor nid{new_id_buf, sycl::read_only};
+                for (u32 i = 0; i < pos_field.get_obj_cnt(); i++) {
+                    u64 patch_id    = nid[i];
+                    bool err        = patch_id == u64_max;
+                    err_id_in_newid = err_id_in_newid || (err);
+
+                    i32 rank = sched.get_patch_rank_owner(patch_id);
+                    index_per_ranks[rank].push_back(i);
+                }
+            }
+
+            if (err_id_in_newid) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "a new id could not be computed");
+            }
+
+            // allgather the list of messages
+            // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
+            std::vector<u64> send_msg;
+            for (auto &[rank, indices] : index_per_ranks) {
+                send_msg.push_back(sham::pack32(shamcomm::world_rank(), rank));
+                send_msg.push_back(indices.size());
+            }
+
+            std::vector<u64> recv_msg;
+            shamalgs::collective::vector_allgatherv(send_msg, recv_msg, MPI_COMM_WORLD);
+
+            std::vector<std::tuple<u32, u32, u64>> msg_list;
+            for (u64 i = 0; i < recv_msg.size(); i += 2) {
+                u32_2 sender_receiver = sham::unpack32(recv_msg[i]);
+                u64 indices_size      = recv_msg[i + 1];
+
+                u32 sender_rank   = sender_receiver.x();
+                u32 receiver_rank = sender_receiver.y();
+
+                if (sender_rank == receiver_rank) {
+                    continue; // only mean that it was not fully inserted in the patch
+                }
+
+                msg_list.push_back(std::make_tuple(sender_rank, receiver_rank, indices_size));
+            }
+
+            // logger::info_ln("SPH setup", "rank", shamcomm::world_rank(), "msg_list", msg_list);
+
+            // now that we are in sync we can determine who should send to who
+
+            u64 MSG_LIMIT  = 16;
+            u64 DATA_LIMIT = 2 * _insert_step;
+
+            std::vector<u64> msg_count_rank(shamcomm::world_size());
+            std::vector<u64> recv_size_rank(shamcomm::world_size());
+
+            std::vector<std::tuple<u32, u32, u64>> rank_msg_list;
+
+            for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
+
+                bool can_send_recv = msg_count_rank[receiver_rank] < MSG_LIMIT
+                                     && msg_count_rank[sender_rank] < MSG_LIMIT
+                                     && recv_size_rank[receiver_rank] < DATA_LIMIT
+                                     && recv_size_rank[sender_rank] < DATA_LIMIT;
+
+                if (can_send_recv) {
+                    if (sender_rank == shamcomm::world_rank()
+                        || receiver_rank == shamcomm::world_rank()) {
+                        if (indices_size > 0) {
+                            rank_msg_list.push_back(
+                                std::make_tuple(sender_rank, receiver_rank, indices_size));
+                        }
+                    }
+                }
+
+                msg_count_rank[receiver_rank] += 1;
+                msg_count_rank[sender_rank] += 1;
+                recv_size_rank[receiver_rank] += indices_size;
+                recv_size_rank[sender_rank] += indices_size;
+            }
+
+            // logger::info_ln(
+            //     "SPH setup", "rank", shamcomm::world_rank(), "rank_msg_list", rank_msg_list);
+
+            // extract the data
+            shambase::DistributedDataShared<PatchDataLayer> send_data;
+            sham::DeviceBuffer idx_to_rem = sham::DeviceBuffer<u32>(0, dev_sched);
+            for (auto &[sender_rank, receiver_rank, indices_size] : rank_msg_list) {
+                if (sender_rank == shamcomm::world_rank()) {
+                    std::vector<u32> &idx_to_extract = index_per_ranks[receiver_rank];
+                    sham::DeviceBuffer _tmp
+                        = sham::DeviceBuffer<u32>(idx_to_extract.size(), dev_sched);
+                    _tmp.copy_from_stdvec(idx_to_extract);
+
+                    if (_tmp.get_size() > DATA_LIMIT) {
+                        _tmp.resize(DATA_LIMIT);
+                    }
+
+                    PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
+                    to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
+
+                    idx_to_rem.append(_tmp);
+
+                    send_data.add_obj(sender_rank, receiver_rank, std::move(_tmp_pdat));
+                }
+            }
+
+            to_insert.remove_ids(idx_to_rem, idx_to_rem.get_size());
+
+            // comm the data to the right ranks
+            shambase::DistributedDataShared<PatchDataLayer> recv_dat;
+
+            shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
+                dev_sched,
+                std::move(send_data),
+                recv_dat,
+                [&](u64 id) {
+                    return id; // here the ids in the DDshared are the MPI ranks
+                },
+                [&](PatchDataLayer &pdat) {
+                    shamalgs::SerializeHelper ser(dev_sched);
+                    ser.allocate(pdat.serialize_buf_byte_size());
+                    pdat.serialize_buf(ser);
+                    return ser.finalize();
+                },
+                [&](sham::DeviceBuffer<u8> &&buf) {
+                    // exchange the buffer held by the distrib data and give it to the
+                    // serializer
+                    shamalgs::SerializeHelper ser(
+                        dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
+                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
+                });
+
+            // insert the data into the data to be inserted
+            recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
+                to_insert.insert_elements(pdat);
+            });
 
         } else {
             shambase::throw_unimplemented("Not implemented yet");
@@ -444,10 +655,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 sum_all = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
 
         if (shamcomm::world_rank() == 0) {
-            logger::info_ln(
+            logger::normal_ln(
                 "SPH setup",
                 shambase::format(
-                    "injection step, injected {} / {} => {}%",
+                    "injected {} / {} => {}%",
                     injected_parts - sum_all,
                     injected_parts,
                     f64(injected_parts - sum_all) / f64(injected_parts) * 100.0));
@@ -456,8 +667,18 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     time_part_inject.end();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln(
+        logger::normal_ln(
             "SPH setup", "the injection step took :", time_part_inject.elasped_sec(), "s");
+    }
+
+    if (part_reordering) {
+        modules::ParticleReordering<Tvec, u32, SPHKernel>(context, solver_config, storage)
+            .reorder_particles();
+    }
+
+    time_setup.end();
+    if (shamcomm::world_rank() == 0) {
+        logger::normal_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");
     }
 }
 

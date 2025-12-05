@@ -415,6 +415,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
             "the number of ids to remove is greater than the patchdatafield obj count");
     }
 
+    if (len == 0) {
+        return;
+    }
+
     auto nobj      = get_obj_cnt();
     auto remaining = nobj - len;
 

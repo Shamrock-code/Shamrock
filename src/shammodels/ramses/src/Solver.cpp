@@ -1353,10 +1353,19 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
-    if (false) {
-        logger::raw_ln(" -- tex:\n" + shambase::get_check_ref(storage.solver_sequence).get_tex());
-        logger::raw_ln(
-            " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
+    if (true) {
+        // logger::raw_ln(" -- tex:\n" + shambase::get_check_ref(storage.solver_sequence).get_tex());
+        // logger::raw_ln(
+        //     " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
+
+        if (shamcomm::world_rank() == 0) {
+            std::ofstream graph_dot_file;
+            graph_dot_file.open("./solvergraph.dot");
+            graph_dot_file << "digraph G {\n";
+            graph_dot_file << shambase::get_check_ref(storage.solver_sequence).get_dot_graph();
+            graph_dot_file << "}\n";
+            graph_dot_file.close();
+        }
     }
 }
 

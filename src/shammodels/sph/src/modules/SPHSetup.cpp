@@ -332,350 +332,211 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         }
     };
 
-    auto inject_in_local_domains = [&]() {
-        bool has_been_limited = true;
+    auto inject_in_local_domains =
+        [&sched, &inserter, &compute_load, &_insert_step, &log_inject_status](
+            shamrock::patch::PatchDataLayer &to_insert) {
+            bool has_been_limited = true;
 
-        while (has_been_limited) {
-            has_been_limited = false;
-            using namespace shamrock::patch;
+            while (has_been_limited) {
+                has_been_limited = false;
+                using namespace shamrock::patch;
 
-            // inject in local domains first
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+                // inject in local domains first
+                PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
+                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+                    shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
-                PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
+                    PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
 
-                auto ids = xyz.get_ids_where(
-                    [](auto access, u32 id, shammath::CoordRange<Tvec> patch_coord) {
-                        Tvec tmp = access[id];
-                        return patch_coord.contain_pos(tmp);
-                    },
-                    patch_coord);
+                    auto ids = xyz.get_ids_where(
+                        [](auto access, u32 id, shammath::CoordRange<Tvec> patch_coord) {
+                            Tvec tmp = access[id];
+                            return patch_coord.contain_pos(tmp);
+                        },
+                        patch_coord);
 
-                if (ids.get_size() > _insert_step) {
-                    ids.resize(_insert_step);
-                    has_been_limited = true;
+                    if (ids.get_size() > _insert_step) {
+                        ids.resize(_insert_step);
+                        has_been_limited = true;
+                    }
+
+                    if (ids.get_size() > 0) {
+                        to_insert.extract_elements(ids, pdat);
+                    }
+                });
+
+                sched.check_patchdata_locality_corectness();
+
+                inserter.balance_load(compute_load);
+
+                has_been_limited
+                    = !shamalgs::collective::are_all_rank_true(!has_been_limited, MPI_COMM_WORLD);
+
+                if (has_been_limited) {
+                    // since we will restart this one let's print
+                    log_inject_status(" -> local loop <-");
                 }
-
-                if (ids.get_size() > 0) {
-                    to_insert.extract_elements(ids, pdat);
-                }
-            });
-
-            sched.check_patchdata_locality_corectness();
-
-            inserter.balance_load(compute_load);
-
-            has_been_limited
-                = !shamalgs::collective::are_all_rank_true(!has_been_limited, MPI_COMM_WORLD);
-
-            if (has_been_limited) {
-                // since we will restart this one let's print
-                log_inject_status(" -> local loop <-");
             }
-        }
-    };
+        };
 
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
         // assume that the sched is synchronized and that there is at least a patch.
         // TODO actually check that
 
-        enum class strategy { RingRotation, SparseXchg } mode = strategy::SparseXchg;
+        using namespace shamrock::patch;
 
-        if (mode == strategy::RingRotation) {
-            // ring rotation strategy
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-            using namespace shamrock::patch;
+        SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
+        sptree.attach_buf();
 
-            // inject in local domains first
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-                shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+        inject_in_local_domains(to_insert);
 
-                PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
+        // find where each particle should be inserted
+        PatchDataField<Tvec> &pos_field = to_insert.get_field<Tvec>(0);
 
-                auto ids = xyz.get_ids_where(
-                    [](auto access, u32 id, shammath::CoordRange<Tvec> patch_coord) {
-                        Tvec tmp = access[id];
-                        return patch_coord.contain_pos(tmp);
-                    },
-                    patch_coord);
-
-                if (ids.get_size() > _insert_step) {
-                    ids.resize(_insert_step);
-                }
-
-                if (ids.get_size() > 0) {
-                    to_insert.extract_elements(ids, pdat);
-                }
-            });
-
-            sched.check_patchdata_locality_corectness();
-
-            // rotate the ring
-            shambase::Timer time_rotation;
-            time_rotation.start();
-            {
-                using namespace shambase;
-                DistributedDataShared<PatchDataLayer> part_exchange = {};
-
-                auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-                auto &q        = shambase::get_check_ref(dev_sched).get_queue();
-
-                PatchDataLayer to_rotate(sched.get_layout_ptr());
-
-                u32 part_to_rotate_size = sham::min(_insert_step / 8, to_insert.get_obj_cnt());
-
-                if (part_to_rotate_size > 0) {
-                    sham::DeviceBuffer<u32> part_to_rotate
-                        = sham::DeviceBuffer<u32>(part_to_rotate_size, dev_sched);
-
-                    sham::kernel_call(
-                        q,
-                        sham::MultiRef{},
-                        sham::MultiRef{part_to_rotate},
-                        part_to_rotate.get_size(),
-                        [](u32 i, u32 *__restrict part_to_rotate) {
-                            part_to_rotate[i] = i;
-                        });
-
-                    to_insert.extract_elements(part_to_rotate, to_rotate);
-                }
-
-                auto serialize = [](PatchDataLayer &pdat) {
-                    shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
-                    ser.allocate(pdat.serialize_buf_byte_size());
-                    pdat.serialize_buf(ser);
-                    return ser.finalize();
-                };
-                auto deserialize = [&](sham::DeviceBuffer<u8> &&buf) {
-                    // exchange the buffer held by the distrib data and give it to the
-                    // serializer
-                    shamalgs::SerializeHelper ser(
-                        shamsys::instance::get_compute_scheduler_ptr(),
-                        std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-                };
-
-                auto ser_sed   = serialize(to_rotate);
-                auto send_data = shamcomm::CommunicationBuffer(ser_sed, dev_sched);
-
-                MPI_Request send_rq;
-                MPI_Request recv_rq;
-
-                shamcomm::mpi::Isend(
-                    send_data.get_ptr(),
-                    send_data.get_size(),
-                    MPI_BYTE,
-                    (shamcomm::world_rank() + 1) % shamcomm::world_size(),
-                    0,
-                    MPI_COMM_WORLD,
-                    &send_rq);
-
-                MPI_Status st;
-                i32 cnt;
-                shamcomm::mpi::Probe(
-                    (shamcomm::world_rank() + shamcomm::world_size() - 1) % shamcomm::world_size(),
-                    0,
-                    MPI_COMM_WORLD,
-                    &st);
-                shamcomm::mpi::Get_count(&st, MPI_BYTE, &cnt);
-
-                auto recv_data = shamcomm::CommunicationBuffer(cnt, dev_sched);
-
-                shamcomm::mpi::Irecv(
-                    recv_data.get_ptr(),
-                    cnt,
-                    MPI_BYTE,
-                    (shamcomm::world_rank() + shamcomm::world_size() - 1) % shamcomm::world_size(),
-                    0,
-                    MPI_COMM_WORLD,
-                    &recv_rq);
-
-                std::vector<MPI_Status> st_lst(2);
-                shamcomm::mpi::Wait(&send_rq, &st_lst[0]);
-                shamcomm::mpi::Wait(&recv_rq, &st_lst[1]);
-
-                sham::DeviceBuffer<u8> buf
-                    = shamcomm::CommunicationBuffer::convert_usm(std::move(recv_data));
-
-                PatchDataLayer tmp = deserialize(std::move(buf));
-
-                to_insert.insert_elements(tmp);
-            }
-
-            time_rotation.end();
-            if (shamcomm::world_rank() == 0) {
-                logger::normal_ln(
-                    "SPH setup", "the rotation step took :", time_rotation.elasped_sec(), "s");
-            }
-
-            inserter.balance_load(compute_load);
+        if (pos_field.get_nvar() != 1) {
+            shambase::throw_unimplemented();
         }
-        if (mode == strategy::SparseXchg) {
-            using namespace shamrock::patch;
 
-            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        sycl::buffer<u64> new_id_buf = sptree.compute_patch_owner(
+            shamsys::instance::get_compute_scheduler_ptr(),
+            pos_field.get_buf(),
+            pos_field.get_obj_cnt());
 
-            SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
-            sptree.attach_buf();
+        std::unordered_map<i32, std::vector<u32>> index_per_ranks;
+        bool err_id_in_newid = false;
+        {
+            sycl::host_accessor nid{new_id_buf, sycl::read_only};
+            for (u32 i = 0; i < pos_field.get_obj_cnt(); i++) {
+                u64 patch_id    = nid[i];
+                bool err        = patch_id == u64_max;
+                err_id_in_newid = err_id_in_newid || (err);
 
-            inject_in_local_domains();
+                i32 rank = sched.get_patch_rank_owner(patch_id);
+                index_per_ranks[rank].push_back(i);
+            }
+        }
 
-            // find where each particle should be inserted
-            PatchDataField<Tvec> &pos_field = to_insert.get_field<Tvec>(0);
+        if (err_id_in_newid) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "a new id could not be computed");
+        }
 
-            if (pos_field.get_nvar() != 1) {
-                shambase::throw_unimplemented();
+        // allgather the list of messages
+        // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
+        std::vector<u64> send_msg;
+        for (auto &[rank, indices] : index_per_ranks) {
+            send_msg.push_back(sham::pack32(shamcomm::world_rank(), rank));
+            send_msg.push_back(indices.size());
+        }
+
+        std::vector<u64> recv_msg;
+        shamalgs::collective::vector_allgatherv(send_msg, recv_msg, MPI_COMM_WORLD);
+
+        std::vector<std::tuple<u32, u32, u64>> msg_list;
+        for (u64 i = 0; i < recv_msg.size(); i += 2) {
+            u32_2 sender_receiver = sham::unpack32(recv_msg[i]);
+            u64 indices_size      = recv_msg[i + 1];
+
+            u32 sender_rank   = sender_receiver.x();
+            u32 receiver_rank = sender_receiver.y();
+
+            if (sender_rank == receiver_rank) {
+                continue; // only mean that it was not fully inserted in the patch
             }
 
-            sycl::buffer<u64> new_id_buf = sptree.compute_patch_owner(
-                shamsys::instance::get_compute_scheduler_ptr(),
-                pos_field.get_buf(),
-                pos_field.get_obj_cnt());
+            msg_list.push_back(std::make_tuple(sender_rank, receiver_rank, indices_size));
+        }
 
-            std::unordered_map<i32, std::vector<u32>> index_per_ranks;
-            bool err_id_in_newid = false;
-            {
-                sycl::host_accessor nid{new_id_buf, sycl::read_only};
-                for (u32 i = 0; i < pos_field.get_obj_cnt(); i++) {
-                    u64 patch_id    = nid[i];
-                    bool err        = patch_id == u64_max;
-                    err_id_in_newid = err_id_in_newid || (err);
+        // now that we are in sync we can determine who should send to who
 
-                    i32 rank = sched.get_patch_rank_owner(patch_id);
-                    index_per_ranks[rank].push_back(i);
-                }
-            }
+        u64 MSG_LIMIT  = 16;
+        u64 DATA_LIMIT = 2 * _insert_step;
 
-            if (err_id_in_newid) {
-                throw shambase::make_except_with_loc<std::runtime_error>(
-                    "a new id could not be computed");
-            }
+        std::vector<u64> msg_count_rank(shamcomm::world_size());
+        std::vector<u64> recv_size_rank(shamcomm::world_size());
 
-            // allgather the list of messages
-            // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
-            std::vector<u64> send_msg;
-            for (auto &[rank, indices] : index_per_ranks) {
-                send_msg.push_back(sham::pack32(shamcomm::world_rank(), rank));
-                send_msg.push_back(indices.size());
-            }
+        std::vector<std::tuple<u32, u32, u64>> rank_msg_list;
 
-            std::vector<u64> recv_msg;
-            shamalgs::collective::vector_allgatherv(send_msg, recv_msg, MPI_COMM_WORLD);
+        for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            std::vector<std::tuple<u32, u32, u64>> msg_list;
-            for (u64 i = 0; i < recv_msg.size(); i += 2) {
-                u32_2 sender_receiver = sham::unpack32(recv_msg[i]);
-                u64 indices_size      = recv_msg[i + 1];
+            bool can_send_recv = msg_count_rank[receiver_rank] < MSG_LIMIT
+                                 && msg_count_rank[sender_rank] < MSG_LIMIT
+                                 && recv_size_rank[receiver_rank] < DATA_LIMIT
+                                 && recv_size_rank[sender_rank] < DATA_LIMIT;
 
-                u32 sender_rank   = sender_receiver.x();
-                u32 receiver_rank = sender_receiver.y();
-
-                if (sender_rank == receiver_rank) {
-                    continue; // only mean that it was not fully inserted in the patch
-                }
-
-                msg_list.push_back(std::make_tuple(sender_rank, receiver_rank, indices_size));
-            }
-
-            // logger::info_ln("SPH setup", "rank", shamcomm::world_rank(), "msg_list", msg_list);
-
-            // now that we are in sync we can determine who should send to who
-
-            u64 MSG_LIMIT  = 16;
-            u64 DATA_LIMIT = 2 * _insert_step;
-
-            std::vector<u64> msg_count_rank(shamcomm::world_size());
-            std::vector<u64> recv_size_rank(shamcomm::world_size());
-
-            std::vector<std::tuple<u32, u32, u64>> rank_msg_list;
-
-            for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
-
-                bool can_send_recv = msg_count_rank[receiver_rank] < MSG_LIMIT
-                                     && msg_count_rank[sender_rank] < MSG_LIMIT
-                                     && recv_size_rank[receiver_rank] < DATA_LIMIT
-                                     && recv_size_rank[sender_rank] < DATA_LIMIT;
-
-                if (can_send_recv) {
-                    if (sender_rank == shamcomm::world_rank()
-                        || receiver_rank == shamcomm::world_rank()) {
-                        if (indices_size > 0) {
-                            rank_msg_list.push_back(
-                                std::make_tuple(sender_rank, receiver_rank, indices_size));
-                        }
+            if (can_send_recv) {
+                if (sender_rank == shamcomm::world_rank()
+                    || receiver_rank == shamcomm::world_rank()) {
+                    if (indices_size > 0) {
+                        rank_msg_list.push_back(
+                            std::make_tuple(sender_rank, receiver_rank, indices_size));
                     }
                 }
-
-                msg_count_rank[receiver_rank] += 1;
-                msg_count_rank[sender_rank] += 1;
-                recv_size_rank[receiver_rank] += indices_size;
-                recv_size_rank[sender_rank] += indices_size;
             }
 
-            // logger::info_ln(
-            //     "SPH setup", "rank", shamcomm::world_rank(), "rank_msg_list", rank_msg_list);
+            msg_count_rank[receiver_rank] += 1;
+            msg_count_rank[sender_rank] += 1;
+            recv_size_rank[receiver_rank] += indices_size;
+            recv_size_rank[sender_rank] += indices_size;
+        }
 
-            // extract the data
-            shambase::DistributedDataShared<PatchDataLayer> send_data;
-            sham::DeviceBuffer idx_to_rem = sham::DeviceBuffer<u32>(0, dev_sched);
-            for (auto &[sender_rank, receiver_rank, indices_size] : rank_msg_list) {
-                if (sender_rank == shamcomm::world_rank()) {
-                    std::vector<u32> &idx_to_extract = index_per_ranks[receiver_rank];
-                    sham::DeviceBuffer _tmp
-                        = sham::DeviceBuffer<u32>(idx_to_extract.size(), dev_sched);
-                    _tmp.copy_from_stdvec(idx_to_extract);
+        // logger::info_ln(
+        //     "SPH setup", "rank", shamcomm::world_rank(), "rank_msg_list", rank_msg_list);
 
-                    if (_tmp.get_size() > DATA_LIMIT) {
-                        _tmp.resize(DATA_LIMIT);
-                    }
+        // extract the data
+        shambase::DistributedDataShared<PatchDataLayer> send_data;
+        sham::DeviceBuffer idx_to_rem = sham::DeviceBuffer<u32>(0, dev_sched);
+        for (auto &[sender_rank, receiver_rank, indices_size] : rank_msg_list) {
+            if (sender_rank == shamcomm::world_rank()) {
+                std::vector<u32> &idx_to_extract = index_per_ranks[receiver_rank];
+                sham::DeviceBuffer _tmp = sham::DeviceBuffer<u32>(idx_to_extract.size(), dev_sched);
+                _tmp.copy_from_stdvec(idx_to_extract);
 
-                    PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
-                    to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
-
-                    idx_to_rem.append(_tmp);
-
-                    send_data.add_obj(sender_rank, receiver_rank, std::move(_tmp_pdat));
+                if (_tmp.get_size() > DATA_LIMIT) {
+                    _tmp.resize(DATA_LIMIT);
                 }
+
+                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
+                to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
+
+                idx_to_rem.append(_tmp);
+
+                send_data.add_obj(sender_rank, receiver_rank, std::move(_tmp_pdat));
             }
+        }
 
-            to_insert.remove_ids(idx_to_rem, idx_to_rem.get_size());
+        to_insert.remove_ids(idx_to_rem, idx_to_rem.get_size());
 
-            // comm the data to the right ranks
-            shambase::DistributedDataShared<PatchDataLayer> recv_dat;
+        // comm the data to the right ranks
+        shambase::DistributedDataShared<PatchDataLayer> recv_dat;
 
-            shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
-                dev_sched,
-                std::move(send_data),
-                recv_dat,
-                [&](u64 id) {
-                    return id; // here the ids in the DDshared are the MPI ranks
-                },
-                [&](PatchDataLayer &pdat) {
-                    shamalgs::SerializeHelper ser(dev_sched);
-                    ser.allocate(pdat.serialize_buf_byte_size());
-                    pdat.serialize_buf(ser);
-                    return ser.finalize();
-                },
-                [&](sham::DeviceBuffer<u8> &&buf) {
-                    // exchange the buffer held by the distrib data and give it to the
-                    // serializer
-                    shamalgs::SerializeHelper ser(
-                        dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-                });
-
-            // insert the data into the data to be inserted
-            recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
-                to_insert.insert_elements(pdat);
+        shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
+            dev_sched,
+            std::move(send_data),
+            recv_dat,
+            [&](u64 id) {
+                return id; // here the ids in the DDshared are the MPI ranks
+            },
+            [&](PatchDataLayer &pdat) {
+                shamalgs::SerializeHelper ser(dev_sched);
+                ser.allocate(pdat.serialize_buf_byte_size());
+                pdat.serialize_buf(ser);
+                return ser.finalize();
+            },
+            [&](sham::DeviceBuffer<u8> &&buf) {
+                // exchange the buffer held by the distrib data and give it to the
+                // serializer
+                shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
+                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
             });
 
-        } else {
-            shambase::throw_unimplemented("Not implemented yet");
-        }
+        // insert the data into the data to be inserted
+        recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
+            to_insert.insert_elements(pdat);
+        });
 
         log_inject_status(" <- global loop ->");
     }

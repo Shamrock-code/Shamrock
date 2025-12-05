@@ -183,6 +183,53 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
     }
 }
 
+struct SetupLog {
+    struct State {
+        std::vector<u64> count_per_rank;
+        std::vector<std::tuple<u32, u32, u64>> msg_list;
+    } state;
+
+    u64 step_counter = 0;
+
+    nlohmann::json json_data = nlohmann::json::array();
+
+    void dump_state() {
+        std::string fname = "setup_log_step.json";
+        if (shamcomm::world_rank() == 0) {
+            logger::normal_ln("SPH setup", "dumping setup log to ", fname);
+        }
+
+        nlohmann::json step_data;
+        step_data["step_counter"]   = step_counter;
+        step_data["count_per_rank"] = state.count_per_rank;
+        step_data["msg_list"]       = state.msg_list;
+        json_data.push_back(step_data);
+
+        std::ofstream file(fname);
+        file << json_data.dump(4);
+        file.close();
+
+        step_counter++;
+    }
+
+    void update_count_per_rank(u64 count) {
+        std::vector<u64> tmp{count};
+        std::vector<u64> recv_count_per_rank;
+        shamalgs::collective::vector_allgatherv(tmp, recv_count_per_rank, MPI_COMM_WORLD);
+        state.count_per_rank = recv_count_per_rank;
+        dump_state();
+    }
+
+    void update_msg_list(std::vector<std::tuple<u32, u32, u64>> &msg_list) {
+        state.msg_list = msg_list;
+        dump_state();
+    }
+};
+
+bool do_setup_log = true;
+
+inline constexpr f64 golden_number = 1.61803398874989484820458683436563;
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     SetupNodePtr setup,
@@ -196,6 +243,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
     }
+
+    std::optional<SetupLog> setup_log
+        = (do_setup_log) ? std::make_optional<SetupLog>() : std::nullopt;
 
     shambase::Timer time_setup;
     time_setup.start();
@@ -306,6 +356,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     part_per_sec));
         }
 
+        if (setup_log) {
+            setup_log.value().update_count_per_rank(sum_push);
+        }
+
         injected_parts += sum_push;
     }
 
@@ -342,6 +396,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     shamcomm::world_size() - rank_without_patch,
                     shamcomm::world_size(),
                     log_suffix));
+        }
+
+        if (setup_log) {
+            setup_log.value().update_count_per_rank(to_insert.get_obj_cnt());
         }
     };
 
@@ -392,6 +450,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             }
         };
 
+    u32 step_count = 0;
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
         // assume that the sched is synchronized and that there is at least a patch.
@@ -462,6 +521,14 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             msg_list.push_back(std::make_tuple(sender_rank, receiver_rank, indices_size));
         }
+
+        if (setup_log) {
+            setup_log.value().update_msg_list(msg_list);
+        }
+
+        // shuffle msg_list according to seed golden_number*1000*step_count
+        std::mt19937 eng(u64(golden_number * 1000 * step_count));
+        std::shuffle(msg_list.begin(), msg_list.end(), eng);
 
         // now that we are in sync we can determine who should send to who
 
@@ -577,6 +644,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             log_suffix += " (msg size limited)";
         }
         log_inject_status(" <- global loop ->" + log_suffix);
+
+        step_count++;
     }
 
     time_part_inject.end();

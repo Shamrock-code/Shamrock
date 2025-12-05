@@ -86,7 +86,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_periodic_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_periodic_3d<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_periodic_3d<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_periodic_3d<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_periodic_3d<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_periodic_3d<f64_3>::get_paving_index_intersecting);
 
     py::class_<shammath::paving_function_general_3d<f64_3>>(
         math_module, "paving_function_general_3d")
@@ -103,7 +106,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_general_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_general_3d<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_general_3d<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_general_3d<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_general_3d<f64_3>::get_paving_index_intersecting);
 
     py::class_<shammath::paving_function_general_3d_shear_x<f64_3>>(
         math_module, "paving_function_general_3d_shear_x")
@@ -126,7 +132,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_general_3d_shear_x<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_general_3d_shear_x<f64_3>::get_paving_index_intersecting);
 
     py::class_<f64_4x4>(math_module, "f64_4x4")
         .def(py::init([]() {

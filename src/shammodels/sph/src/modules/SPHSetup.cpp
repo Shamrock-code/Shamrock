@@ -312,6 +312,26 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     shambase::Timer time_part_inject;
     time_part_inject.start();
 
+    auto log_inject_status = [&](std::string log_suffix = "") {
+        u64 sum_all = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
+
+        u32 rank_without_patch
+            = shamalgs::collective::allreduce_sum<u32>(sched.patch_list.local.size() == 0 ? 1 : 0);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::normal_ln(
+                "SPH setup",
+                shambase::format(
+                    "injected {:12} / {:} => {:5.1f}% | ranks with patchs = {:d} / {:d} {}",
+                    injected_parts - sum_all,
+                    injected_parts,
+                    f64(injected_parts - sum_all) / f64(injected_parts) * 100.0,
+                    shamcomm::world_size() - rank_without_patch,
+                    shamcomm::world_size(),
+                    log_suffix));
+        }
+    };
+
     auto inject_in_local_domains = [&]() {
         bool has_been_limited = true;
 
@@ -348,7 +368,12 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             inserter.balance_load(compute_load);
 
             has_been_limited
-                = shamalgs::collective::are_all_rank_true(has_been_limited, MPI_COMM_WORLD);
+                = !shamalgs::collective::are_all_rank_true(!has_been_limited, MPI_COMM_WORLD);
+
+            if (has_been_limited) {
+                // since we will restart this one let's print
+                log_inject_status(" -> local loop <-");
+            }
         }
     };
 
@@ -652,17 +677,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             shambase::throw_unimplemented("Not implemented yet");
         }
 
-        u64 sum_all = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
-
-        if (shamcomm::world_rank() == 0) {
-            logger::normal_ln(
-                "SPH setup",
-                shambase::format(
-                    "injected {} / {} => {}%",
-                    injected_parts - sum_all,
-                    injected_parts,
-                    f64(injected_parts - sum_all) / f64(injected_parts) * 100.0));
-        }
+        log_inject_status(" <- global loop ->");
     }
 
     time_part_inject.end();

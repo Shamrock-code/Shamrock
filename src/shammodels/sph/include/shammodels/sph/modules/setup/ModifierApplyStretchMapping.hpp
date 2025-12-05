@@ -263,7 +263,7 @@ namespace shammodels::sph::modules {
             smap_inputdata.axes   = axes;
             smap_inputdata.boxmin = boxmin;
             smap_inputdata.boxmax = boxmax;
-            shamlog_debug_ln("ModifierApplyStretchMapping", "Stretch mapping...")
+            shambase::println("Stretch mapping...");
         }
         /**
          * @brief stretch a single coordinate of a particle position

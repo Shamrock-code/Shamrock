@@ -185,7 +185,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
-    SetupNodePtr setup, bool part_reordering, std::optional<u32> insert_step) {
+    SetupNodePtr setup,
+    bool part_reordering,
+    std::optional<u32> insert_count_per_step,
+    std::optional<u64> max_msg_count_per_rank_per_step,
+    std::optional<u64> max_data_count_per_rank_per_step) {
 
     __shamrock_stack_entry();
 
@@ -198,9 +202,18 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
     shamrock::DataInserterUtility inserter(sched);
 
-    u32 _insert_step = sched.crit_patch_split * 8;
-    if (bool(insert_step)) {
-        _insert_step = insert_step.value();
+    u32 insert_step = sched.crit_patch_split * 8;
+    if (bool(insert_count_per_step)) {
+        insert_step = insert_count_per_step.value();
+    }
+
+    u64 msg_limit = 16;
+    if (bool(max_msg_count_per_rank_per_step)) {
+        msg_limit = max_msg_count_per_rank_per_step.value();
+    }
+    u64 data_count_limit = 2 * insert_step;
+    if (bool(max_data_count_per_rank_per_step)) {
+        data_count_limit = max_data_count_per_rank_per_step.value();
     }
 
     auto compute_load = [&]() {
@@ -230,7 +243,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         shambase::Timer timer_gen;
         timer_gen.start();
 
-        shamrock::patch::PatchDataLayer tmp = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer tmp = setup->next_n(insert_step);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles
@@ -333,7 +346,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     };
 
     auto inject_in_local_domains =
-        [&sched, &inserter, &compute_load, &_insert_step, &log_inject_status](
+        [&sched, &inserter, &compute_load, &insert_step, &log_inject_status](
             shamrock::patch::PatchDataLayer &to_insert) {
             bool has_been_limited = true;
 
@@ -355,8 +368,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                         },
                         patch_coord);
 
-                    if (ids.get_size() > _insert_step) {
-                        ids.resize(_insert_step);
+                    if (ids.get_size() > insert_step) {
+                        ids.resize(insert_step);
                         has_been_limited = true;
                     }
 
@@ -452,9 +465,6 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         // now that we are in sync we can determine who should send to who
 
-        u64 MSG_LIMIT  = 16;
-        u64 DATA_LIMIT = 2 * _insert_step;
-
         std::vector<u64> msg_count_rank(shamcomm::world_size());
         std::vector<u64> comm_size_rank(shamcomm::world_size());
 
@@ -465,11 +475,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < MSG_LIMIT
-                                               && msg_count_rank[sender_rank] < MSG_LIMIT;
+            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < msg_limit
+                                               && msg_count_rank[sender_rank] < msg_limit;
 
-            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < DATA_LIMIT
-                                               && comm_size_rank[sender_rank] < DATA_LIMIT;
+            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < data_count_limit
+                                               && comm_size_rank[sender_rank] < data_count_limit;
 
             was_count_limited = was_count_limited || !msg_count_limit_not_reached;
             was_size_limited  = was_size_limited || !recv_size_limit_not_reached;
@@ -511,8 +521,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 sham::DeviceBuffer _tmp = sham::DeviceBuffer<u32>(idx_to_extract.size(), dev_sched);
                 _tmp.copy_from_stdvec(idx_to_extract);
 
-                if (_tmp.get_size() > DATA_LIMIT) {
-                    _tmp.resize(DATA_LIMIT);
+                if (_tmp.get_size() > data_count_limit) {
+                    _tmp.resize(data_count_limit);
                 }
 
                 PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());

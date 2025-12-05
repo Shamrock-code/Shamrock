@@ -492,12 +492,12 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             comm_size_rank[sender_rank] += indices_size;
         }
 
-        logger::raw_ln(
-            shamcomm::world_rank(),
-            was_count_limited,
-            was_size_limited,
-            msg_count_rank,
-            comm_size_rank);
+        // logger::raw_ln(
+        //     shamcomm::world_rank(),
+        //     was_count_limited,
+        //     was_size_limited,
+        //     msg_count_rank,
+        //     comm_size_rank);
 
         // logger::info_ln(
         //     "SPH setup", "rank", shamcomm::world_rank(), "rank_msg_list", rank_msg_list);

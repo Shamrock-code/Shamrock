@@ -152,7 +152,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                             atomic_ref<u32, sycl::memory_order::relaxed, sycl::memory_scope::device>
                                 atomic_flag(acc_refine_flag[b_id]);
 
-                        atomic_flag.fetch_or(1); // Atomically set flag to true
+                        //atomic_flag.fetch_or(1); // Atomically set flag to true
+                        atomic_flag.exchange(1); // Atomically set flag to true
                     }
 
                     /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2

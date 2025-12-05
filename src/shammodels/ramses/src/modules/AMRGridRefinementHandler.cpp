@@ -19,6 +19,7 @@
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include <stdexcept>
 
 template<class Tvec, class TgridVec>
@@ -35,6 +36,32 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     using Direction_           = shammodels::basegodunov::modules::Direction;
     using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
     using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+
+    // get level zeros sizes for each patch
+    std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> l0_edge
+        = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>("l0_loc_p", "l0_loc_p");
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u64 id_patch  = cur_p.id_patch;
+        auto p_coords = cur_p.get_coords();
+        TgridVec p_size
+            = {p_coords.coord_max[0] - p_coords.coord_min[0],
+               p_coords.coord_max[1] - p_coords.coord_min[1],
+               p_coords.coord_max[2] - p_coords.coord_min[2]
+
+            };
+        shambase::get_check_ref(l0_edge).values.add_obj(id_patch, std::move(p_size));
+    });
+
+    // get AMRLevels
+    modules::ComputeAMRLevel<TgridVec> amr_levels_node;
+    amr_levels_node.set_edges(
+        storage.block_counts,
+        l0_edge,
+        storage.refs_block_min,
+        storage.refs_block_max,
+        storage.block_levels);
+    amr_levels_node.evaluate();
 
     u64 tot_refine   = 0;
     u64 tot_derefine = 0;

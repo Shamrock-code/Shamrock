@@ -69,9 +69,9 @@ gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 # On aurora /2 was correct to avoid out of memory
 setup.apply_setup(
     gen,
-    insert_step=int(scheduler_split_val / 4),
+    insert_step=int(scheduler_split_val / 2),
     msg_count_limit=64,
-    msg_size_limit=int(scheduler_split_val /2),
+    msg_size_limit=int(scheduler_split_val /4),
     do_setup_log=True,
 )
 

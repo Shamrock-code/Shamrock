@@ -43,6 +43,19 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt update && \
+          sudo apt install -y -qq doxygen graphviz
+
+      - name : Modify texlive packages
+        run: |
+          sudo apt install -y \
+            texlive-full \
+            dvipng \
+            ghostscript \
+            latexmk
+            
       - name: create venv
         shell: bash
         run: |
@@ -55,18 +68,6 @@ jobs:
           source .pyvenv/bin/activate
           pip install matplotlib numpy scipy mkdocs-material mkdocs-git-committers-plugin-2 mkdocs-git-authors-plugin mkdocs-git-revision-date-plugin mkdocs-git-revision-date-localized-plugin
 
-      - name : Install pck (doxygen)
-        run: |
-          echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
-          sudo apt-get install -y -qq doxygen graphviz
-
-      - name : Modify texlive packages
-        run: |
-          sudo apt-get install -y \
-            texlive-full \
-            dvipng \
-            ghostscript \
-            latexmk
 
       - name: Gen doc
         shell: bash

@@ -2,8 +2,23 @@
 SPH Setup logs
 ==============
 
-This simple example shows how to run the SPH setup and print the logs.
+This simple example shows how to run the SPH setup while dumping the logs and render the steps.
+
+In general it boils down to setting ``do_setup_log=True``:
+
+.. code-block:: python
+
+    setup.apply_setup(
+        gen,
+        insert_step=int(scheduler_split_val / 4),
+        msg_count_limit=32, # Maximum number of message send & received per ranks per steps
+        msg_size_limit=scheduler_split_val // 4, # Max of the sum of the r&s messages size per steps
+        do_setup_log=True, # Dump the logs
+    )
 """
+
+# %%
+# Run a sedov setup
 
 import json
 import os
@@ -87,6 +102,10 @@ setup.apply_setup(
     do_setup_log=True,
 )
 
+# %%
+# Utility to render the logs
+# Copy paste this one if you want to do it outside of this setup
+
 folder = "_to_trash/sph_setup_logs"
 os.makedirs(folder, exist_ok=True)
 
@@ -95,11 +114,6 @@ def print_setup_logs(filepath, name_png_prefix):
 
     with open(filepath, "r") as file:
         data = json.load(file)
-
-        import pickle
-
-        with open("tmp.pkl", "wb") as file:
-            pickle.dump(data, file)
 
     max_count = np.max([np.max(step["count_per_rank"]) for step in data])
     print("Max count: ", max_count)
@@ -190,7 +204,7 @@ def print_setup_logs(filepath, name_png_prefix):
 
 # %%
 # Make gif for the doc (plot_to_gif.py)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
 # Convert PNG sequence to Image sequence in mpl
 
 # sphinx_gallery_multi_image = "single"

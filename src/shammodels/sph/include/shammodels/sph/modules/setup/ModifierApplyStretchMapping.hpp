@@ -42,6 +42,8 @@ namespace shammodels::sph::modules {
         static constexpr u32 maxits    = 300;
         static constexpr u32 maxits_nr = 30;
 
+        shammath::AABB<Tvec> box;
+
         struct Smap_inputdata {
             Tvec center;
             std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
@@ -78,8 +80,9 @@ namespace shammodels::sph::modules {
             SetupNodePtr parent,
             std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
             std::string system,
-            std::vector<std::string> axes)
-            : context(context), solver_config(solver_config), parent(parent) {
+            std::vector<std::string> axes,
+            std::pair<Tvec, Tvec> box)
+            : context(context), solver_config(solver_config), parent(parent), box(box) {
 
             // TODO: assert that rhoprofiles and axes have same length.
             // TODO: Optimisations avec std:make ?
@@ -94,8 +97,8 @@ namespace shammodels::sph::modules {
             CartToCylindrical<Tvec> tocylindrical;
             std::array<std::array<std::function<Tscal(Tscal)>, 3>, 3> transfo;
 
-            Tvec boxmin = {-1, -1, -1}; // TODO Il va falloir recover ça
-            Tvec boxmax = {1, 1, 1};    // TODO Il va falloir recover ça
+            Tvec boxmin = box.first;  // TODO Recover it from parent?
+            Tvec boxmax = box.second; // TODO Recover it from parent?
             Tvec center = (boxmin + boxmax) / 2;
 
             for (size_t k = 0; k < rhoprofiles.size(); ++k) {

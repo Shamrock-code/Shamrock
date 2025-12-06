@@ -93,7 +93,8 @@ namespace shammodels::sph::modules {
             SetupNodePtr parent,
             std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
             std::string system,
-            std::vector<std::string> axes);
+            std::vector<std::string> axes,
+            std::pair<Tvec, Tvec> box);
 
         std::shared_ptr<ISPHSetupNode> make_modifier_filter(
             SetupNodePtr parent, std::function<bool(Tvec)> filter);

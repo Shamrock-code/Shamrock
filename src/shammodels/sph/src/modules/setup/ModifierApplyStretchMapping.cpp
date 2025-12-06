@@ -70,6 +70,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
             npart += 1;
             xyz_a   = stretchpart(xyz_a, smap_inputdata);
             hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
+            std::cout << "\rProgression : " << npart << " " << obj_cnt << std::flush;
         };
 
         ;

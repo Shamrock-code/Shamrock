@@ -222,10 +222,11 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         SetupNodePtr parent,
         std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
         std::string system,
-        std::vector<std::string> axes) {
+        std::vector<std::string> axes,
+        std::pair<Tvec, Tvec> box) {
 
     return std::shared_ptr<ISPHSetupNode>(new ModifierApplyStretchMapping<Tvec, SPHKernel>(
-        context, solver_config, parent, rhoprofiles, system, axes));
+        context, solver_config, parent, rhoprofiles, system, axes, box));
 }
 
 template<class Tvec, template<class> class SPHKernel>

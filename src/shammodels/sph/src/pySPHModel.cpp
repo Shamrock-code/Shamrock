@@ -416,14 +416,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                shammodels::sph::modules::SetupNodePtr parent,
                std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
                std::string system,
-               std::vector<std::string> axes) {
-                return self.make_modifier_apply_stretch_mapping(parent, rhoprofiles, system, axes);
+               std::vector<std::string> axes,
+               Tvec box_min,
+               Tvec box_max) {
+                return self.make_modifier_apply_stretch_mapping(
+                    parent, rhoprofiles, system, axes, {box_min, box_max});
             },
             py::kw_only(),
             py::arg("parent"),
             py::arg("rhoprofiles"),
             py::arg("system"),
-            py::arg("axes"))
+            py::arg("axes"),
+            py::arg("box_min"),
+            py::arg("box_max"))
         .def(
             "make_modifier_filter",
             [](TSPHSetup &self,

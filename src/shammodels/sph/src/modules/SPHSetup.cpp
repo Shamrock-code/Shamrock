@@ -217,12 +217,14 @@ struct SetupLog {
         std::vector<u64> recv_count_per_rank;
         shamalgs::collective::vector_allgatherv(tmp, recv_count_per_rank, MPI_COMM_WORLD);
         state.count_per_rank = recv_count_per_rank;
-        dump_state();
+        if (step_counter % 20 == 0)
+            dump_state();
     }
 
     void update_msg_list(std::vector<std::tuple<u32, u32, u64>> &msg_list) {
         state.msg_list = msg_list;
-        dump_state();
+        if (step_counter % 20 == 0)
+            dump_state();
     }
 };
 
@@ -645,6 +647,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         log_inject_status(" <- global loop ->" + log_suffix);
 
         step_count++;
+    }
+
+    if (setup_log) {
+        setup_log.value().dump_state();
     }
 
     time_part_inject.end();

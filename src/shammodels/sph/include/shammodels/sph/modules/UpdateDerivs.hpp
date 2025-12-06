@@ -67,6 +67,13 @@ namespace shammodels::sph::modules {
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
         void update_derivs_MHD(IdealMHD cfg);
+
+        using Cfg_Dust = typename Config::DustConfig;
+
+        using NoDust             = typename Cfg_Dust::None;
+        using FullOneFluidConfig = typename Cfg_Dust::MonofluidComplete;
+        void
+        update_derivs_cd10_full_one_fluid(VaryingCD10 cfg_visco, FullOneFluidConfig cfg_one_fluid);
     };
 
 } // namespace shammodels::sph::modules

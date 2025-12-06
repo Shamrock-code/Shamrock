@@ -193,17 +193,19 @@ struct SetupLog {
 
     nlohmann::json json_data = nlohmann::json::array();
 
-    void dump_state() {
-        std::string fname = "setup_log_step.json";
-        if (shamcomm::world_rank() == 0) {
-            logger::normal_ln("SPH setup", "dumping setup log to ", fname);
-        }
-
+    void log_state() {
         nlohmann::json step_data;
         step_data["step_counter"]   = step_counter;
         step_data["count_per_rank"] = state.count_per_rank;
         step_data["msg_list"]       = state.msg_list;
         json_data.push_back(step_data);
+    }
+
+    void dump_state() {
+        std::string fname = "setup_log_step.json";
+        if (shamcomm::world_rank() == 0) {
+            logger::normal_ln("SPH setup", "dumping setup log to ", fname);
+        }
 
         std::ofstream file(fname);
         file << json_data.dump(4);
@@ -217,12 +219,14 @@ struct SetupLog {
         std::vector<u64> recv_count_per_rank;
         shamalgs::collective::vector_allgatherv(tmp, recv_count_per_rank, MPI_COMM_WORLD);
         state.count_per_rank = recv_count_per_rank;
+        log_state();
         if (step_counter % 20 == 0)
             dump_state();
     }
 
     void update_msg_list(std::vector<std::tuple<u32, u32, u64>> &msg_list) {
         state.msg_list = msg_list;
+        log_state();
         if (step_counter % 20 == 0)
             dump_state();
     }

@@ -21,10 +21,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - clang: 18
-            cuda: 11.0.2
-            rocm: 5.4.3
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+          - clang: 20
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
     #if: false
 
     timeout-minutes: 120

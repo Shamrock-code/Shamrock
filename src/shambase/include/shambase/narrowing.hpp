@@ -11,6 +11,7 @@
 
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/type_traits.hpp"
 #include <limits>
@@ -79,15 +80,25 @@ namespace shambase {
     }
 
     template<class U, class T>
-    inline U narrow_check(T val, SourceLocation loc = SourceLocation{}) {
+    inline U narrow_or_throw(T val, SourceLocation &&callsite = SourceLocation{}) {
+
+        __shamrock_log_callsite(callsite);
+
         if (can_narrow<U, T>(val)) {
             return static_cast<U>(val);
         } else {
-            throw make_except_with_loc<std::runtime_error>(
-                shambase::format(
-                    "value cannot be narrowed to type U: {} -> {}", val, static_cast<U>(val)),
-                loc);
+            using lim_U = std::numeric_limits<U>;
+            throw make_except_with_loc<std::runtime_error>(shambase::format(
+                "value {} cannot be narrowed to type U (see signature) static_cast<U>({}) = {} "
+                "(U::min() = {}, U::max() = {})",
+                val,
+                val,
+                static_cast<U>(val),
+                lim_U::min(),
+                lim_U::max()));
         }
     }
+
+    // When we will support it narrow_expected or narrow_or_expected would be nice
 
 } // namespace shambase

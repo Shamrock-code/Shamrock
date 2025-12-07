@@ -214,3 +214,25 @@ using NamedStackEntry = shambase::details::NamedBasicStackEntry;
  */
 #define __shamrock_stack_entry()                                                                   \
     [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}
+
+/**
+ * @brief Macro to create a stack entry from a given location. Can be used with any source
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry_at(callsite)                                                        \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {                               \
+        false, SourceLocation { callsite }                                                         \
+    }
+
+/**
+ * @brief Macro to create a stack entry from a given location. Can be used only on SourceLocation &&
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry_at_fwd(callsite)                                                    \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {                               \
+        false, std::forward<SourceLocation>(callsite)                                              \
+    }

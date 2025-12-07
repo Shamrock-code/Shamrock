@@ -280,7 +280,14 @@ namespace sham {
         /// internal implementation of typed_index_kernel_call
         template<class index_t, class RefIn, class RefOut, class Functor>
         void typed_index_kernel_call_lambda(
-            sham::DeviceQueue &q, RefIn in, RefOut in_out, index_t n, Functor &&kernel_gen) {
+            sham::DeviceQueue &q,
+            RefIn in,
+            RefOut in_out,
+            index_t n,
+            Functor &&kernel_gen,
+            SourceLocation &&callsite = SourceLocation{}) {
+
+            __shamrock_stack_entry_at_fwd(callsite);
 
             if (n == 0) {
                 shambase::throw_with_loc<std::runtime_error>("kernel call with : n == 0");
@@ -313,7 +320,14 @@ namespace sham {
         /// internal implementation of typed_index_kernel_call
         template<class index_t, class RefIn, class RefOut, class Functor>
         void typed_index_kernel_call(
-            sham::DeviceQueue &q, RefIn in, RefOut in_out, index_t n, Functor &&func) {
+            sham::DeviceQueue &q,
+            RefIn in,
+            RefOut in_out,
+            index_t n,
+            Functor &&func,
+            SourceLocation &&callsite = SourceLocation{}) {
+
+            __shamrock_stack_entry_at_fwd(callsite);
 
             typed_index_kernel_call_lambda(
                 q,
@@ -498,14 +512,32 @@ namespace sham {
      * @param func The functor to call for each thread launched.
      */
     template<class RefIn, class RefOut, class Functor>
-    void kernel_call(sham::DeviceQueue &q, RefIn in, RefOut in_out, u32 n, Functor &&func) {
+    void kernel_call(
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u32 n,
+        Functor &&func,
+        SourceLocation &&callsite = SourceLocation{}) {
+
+        __shamrock_stack_entry_at_fwd(callsite);
+
         details::typed_index_kernel_call<u32, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(func));
     }
 
     /// u64 indexed variant of kernel_call
     template<class RefIn, class RefOut, class Functor>
-    void kernel_call_u64(sham::DeviceQueue &q, RefIn in, RefOut in_out, u64 n, Functor &&func) {
+    void kernel_call_u64(
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u64 n,
+        Functor &&func,
+        SourceLocation &&callsite = SourceLocation{}) {
+
+        __shamrock_stack_entry_at_fwd(callsite);
+
         details::typed_index_kernel_call<u64, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(func));
     }
@@ -513,7 +545,15 @@ namespace sham {
     // version where one supplies a kernel generator in the form of [&](sycl::handler &cgh) { ... }
     template<class RefIn, class RefOut, class Functor>
     void kernel_call_hndl(
-        sham::DeviceQueue &q, RefIn in, RefOut in_out, u32 n, Functor &&kernel_gen) {
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u32 n,
+        Functor &&kernel_gen,
+        SourceLocation &&callsite = SourceLocation{}) {
+
+        __shamrock_stack_entry_at_fwd(callsite);
+
         details::typed_index_kernel_call_lambda<u32, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(kernel_gen));
     }
@@ -521,7 +561,15 @@ namespace sham {
     /// u64 indexed variant of kernel_call_hndl
     template<class RefIn, class RefOut, class Functor>
     void kernel_call_hndl_u64(
-        sham::DeviceQueue &q, RefIn in, RefOut in_out, u64 n, Functor &&kernel_gen) {
+        sham::DeviceQueue &q,
+        RefIn in,
+        RefOut in_out,
+        u64 n,
+        Functor &&kernel_gen,
+        SourceLocation &&callsite = SourceLocation{}) {
+
+        __shamrock_stack_entry_at_fwd(callsite);
+
         details::typed_index_kernel_call_lambda<u64, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(kernel_gen));
     }

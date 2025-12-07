@@ -232,7 +232,5 @@ using NamedStackEntry = shambase::details::NamedBasicStackEntry;
  * This macro defines a `StackEntry` variable with a unique name by leveraging
  * the `__shamrock_unique_name` macro.
  */
-#define __shamrock_stack_entry_at_fwd(callsite)                                                    \
-    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {                               \
-        false, std::forward<SourceLocation>(callsite)                                              \
-    }
+#define __shamrock_stack_entry_callsite(callsite)                                                  \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) { false, std::move(callsite) }

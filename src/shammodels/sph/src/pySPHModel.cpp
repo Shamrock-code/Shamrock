@@ -313,19 +313,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
-            "make_generator_lattice_hcp_smap",
-            [](TSPHSetup &self,
-               Tscal dr,
-               //    Tvec center,
-               Tvec box_min,
-               Tvec box_max,
-               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
-               std::string system,
-               std::vector<std::string> axes) {
-                return self.make_generator_lattice_hcp_smap(
-                    dr, {box_min, box_max}, rhoprofiles, system, axes);
-            })
-        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
@@ -414,19 +401,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "make_modifier_stretch_mapping",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent,
-               std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+               std::vector<Tscal> tabrho,
+               std::vector<Tscal> tabx,
                std::string system,
-               std::vector<std::string> axes,
+               std::string axis,
                Tvec box_min,
                Tvec box_max) {
                 return self.make_modifier_apply_stretch_mapping(
-                    parent, rhoprofiles, system, axes, {box_min, box_max});
+                    parent, tabrho, tabx, system, axis, {box_min, box_max});
             },
             py::kw_only(),
             py::arg("parent"),
-            py::arg("rhoprofiles"),
+            py::arg("tabrho"),
+            py::arg("tabx"),
             py::arg("system"),
-            py::arg("axes"),
+            py::arg("axis"),
             py::arg("box_min"),
             py::arg("box_max"))
         .def(

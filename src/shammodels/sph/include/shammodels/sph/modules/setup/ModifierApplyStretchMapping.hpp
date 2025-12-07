@@ -26,6 +26,58 @@
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <shambackends/sycl.hpp>
+#include <cstddef>
+
+template<typename T, typename arr_t>
+std::array<size_t, 2> get_closest_range(const arr_t &arr, const T &val, size_t size) {
+    size_t low = 0, high = size - 1;
+
+    if (val < arr[low]) {
+        return {low, low};
+    }
+
+    if (val > arr[high]) {
+        return {high, high};
+    }
+
+    while (high - low > 1) {
+
+        size_t mid = (low + high) / 2;
+
+        if (arr[mid] < val) {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+
+    return {low, high};
+}
+
+template<typename T, typename arr_t>
+T linear_interpolate(const arr_t &arr_x, const arr_t &arr_y, size_t arr_size, const T &x) {
+
+    auto closest_range = get_closest_range(arr_x, x, arr_size);
+    size_t left_idx    = closest_range[0];
+    size_t right_idx   = closest_range[1];
+
+    if (left_idx == right_idx) {
+        return arr_y[left_idx];
+    }
+
+    T x0 = arr_x[left_idx];
+    T x1 = arr_x[right_idx];
+    T y0 = arr_y[left_idx];
+    T y1 = arr_y[right_idx];
+
+    if (x1 == x0) {
+        return std::numeric_limits<T>::signaling_NaN();
+    }
+
+    T interpolated_y = y0 + (x - x0) / (x1 - x0) * (y1 - y0);
+
+    return interpolated_y;
+} // from SedovTaylor
 
 namespace shammodels::sph::modules {
 
@@ -44,21 +96,26 @@ namespace shammodels::sph::modules {
 
         shammath::AABB<Tvec> box;
 
+        struct TabulatedDensity {
+            std::vector<Tscal> x;
+            std::vector<Tscal> rho;
+        };
+
         struct Smap_inputdata {
             Tvec center;
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles;
+            std::function<Tscal(Tscal)> rhoprofile;
             std::string system;
-            std::vector<std::string> axes;
+            std::string axis;
 
-            std::vector<std::function<Tscal(Tscal)>> rhodSs;
-            std::vector<std::function<Tscal(Tvec)>> a_from_poss;
-            std::vector<std::function<Tvec(Tscal, Tvec)>> a_to_poss;
-            std::vector<Tscal> integral_profiles;
-            std::vector<Tscal> steps;
+            std::function<Tscal(Tscal)> rhodS;
+            std::function<Tscal(Tvec)> a_from_pos;
+            std::function<Tvec(Tscal, Tvec)> a_to_pos;
+            Tscal integral_profile;
+            Tscal step;
             Tvec boxmin;
             Tvec boxmax;
-            std::vector<Tscal> ximins;
-            std::vector<Tscal> ximaxs;
+            Tscal ximin;
+            Tscal ximax;
         };
 
         ShamrockCtx &context;
@@ -78,13 +135,16 @@ namespace shammodels::sph::modules {
             ShamrockCtx &context,
             Config &solver_config,
             SetupNodePtr parent,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+            std::vector<Tscal> tabrho,
+            std::vector<Tscal> tabx,
             std::string system,
-            std::vector<std::string> axes,
+            std::string axis,
             std::pair<Tvec, Tvec> box)
             : context(context), solver_config(solver_config), parent(parent), box(box) {
 
-            // TODO: assert that rhoprofiles and axes have same length.
+            TabulatedDensity tabul = {tabx, tabrho};
+            shamlog_debug_ln("ModifierApplyStretchMapping", "tabul", tabul.x, tabul.rho);
+
             // TODO: Optimisations avec std:make ?
             Tscal x0min;
             Tscal x0max;
@@ -101,169 +161,176 @@ namespace shammodels::sph::modules {
             Tvec boxmax = box.second; // TODO Recover it from parent?
             Tvec center = (boxmin + boxmax) / 2;
 
-            for (size_t k = 0; k < rhoprofiles.size(); ++k) {
-                auto rhoprofile = rhoprofiles[k];
-                auto axis       = axes[k];
-                size_t axisnb   = hashAxis(axis, system);
+            // auto rhoprofile = rhoprofiles[k];
+            // std::function<Tscal(Tscal)> rhoprofile;
+            auto rhoprofile = [tabul](Tscal r) -> Tscal {
+                return linear_interpolate(tabul.x, tabul.rho, tabul.x.size(), r);
+            };
+            // auto rhoprofile = [](Tscal r) -> Tscal {
+            //         if (r < 1e-12) {
+            //             return 1;
+            //         }
+            //         Tscal r_adim = r * sycl::sqrt(2 * pi); // n=1
+            //         return sycl::sin(r_adim) / r_adim;};
 
-                std::function<Tscal(Tscal)> S;
-                std::function<Tscal(Tvec)>
-                    a_from_pos; // from a cartesian position get the coordinate
-                                // to stretch in the appropriate system
-                std::function<Tvec(Tscal, Tvec)>
-                    a_to_pos; // from the appropriate system, convert stretched coordinate into
-                              // cartesian position
-                Tscal integral_profile;
+            size_t axisnb = hashAxis(axis, system);
 
-                Tscal lx = sham::abs(boxmin.x() - boxmax.x());
-                Tscal ly = sham::abs(boxmin.y() - boxmax.y());
-                Tscal lz = sham::abs(boxmin.z() - boxmax.z());
+            std::function<Tscal(Tscal)> S;
+            std::function<Tscal(Tvec)> a_from_pos; // from a cartesian position get the coordinate
+                                                   // to stretch in the appropriate system
+            std::function<Tvec(Tscal, Tvec)>
+                a_to_pos; // from the appropriate system, convert stretched coordinate into
+                          // cartesian position
+            Tscal integral_profile;
 
-                if (system == "spherical") {
-                    x0min   = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
-                    x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
-                    x1min   = 0;
-                    x1max   = pi;
-                    x2min   = 0;
-                    x2max   = 2 * pi;
-                    transfo = tospherical.matrix;
+            Tscal lx = sham::abs(boxmin.x() - boxmax.x());
+            Tscal ly = sham::abs(boxmin.y() - boxmax.y());
+            Tscal lz = sham::abs(boxmin.z() - boxmax.z());
 
-                    switch (axisnb) {
-                    case 0:
-                        S = [](Tscal r) -> Tscal {
-                            return 4 * pi * sycl::pown(r, 2);
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::length(pos); // r
-                        };
-                        break;
-                    case 1:
-                        S = [x0max](Tscal theta) -> Tscal {
-                            return 2 * pi * sycl::pown(x0max, 3) * sycl::sin(theta) / 3;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::acos(pos.z() / sycl::length(pos)); // theta
-                        };
-                        break;
-                    case 2:
-                        S = [x0max](Tscal phi) -> Tscal {
-                            return 2 * pi * sycl::pown(x0max, 3) / 3;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::atan2(pos.y(), pos.x()); // phi
-                        };
-                        break;
-                    }
-                } else if (system == "cylindrical") {
-                    x0min   = 0;
-                    x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
-                    x1min   = 0;
-                    x1max   = 2. * pi;
-                    x2min   = -lz / 2.;
-                    x2max   = lz / 2.;
-                    transfo = tocylindrical.matrix;
-                    switch (axisnb) {
-                    case 0:
-                        S = [lz](Tscal r) -> Tscal {
-                            return 4 * pi * r * lz;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::sqrt(pos.x() * pos.x() + pos.y() * pos.y());
-                        };
-                        break;
-                    case 1:
-                        S = [x0max, lz](Tscal theta) -> Tscal {
-                            return sycl::pown(x0max, 2) * lz / 2;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return sycl::atan2(pos.y(), pos.x());
-                        };
-                        break;
-                    case 2:
-                        S = [x0max, lz](Tscal z) -> Tscal {
-                            return pi * sycl::pown(x0max, 2) * lz;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return pos.z();
-                        };
-                        break;
-                    }
-                } else if (system == "cart") {
-                    x0min   = -lx / 2.;
-                    x0max   = lx / 2.;
-                    x1min   = -ly / 2.;
-                    x1max   = ly / 2.;
-                    x2min   = -lz / 2.;
-                    x2max   = lz / 2.;
-                    transfo = tocart.matrix;
-                    switch (axisnb) {
-                    case 0:
-                        S = [ly, lz](Tscal x) -> Tscal {
-                            return ly * lz;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return pos.x();
-                        };
-                        break;
-                    case 1:
-                        S = [lx, lz](Tscal y) -> Tscal {
-                            return lx * lz;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return pos.y();
-                        };
-                        break;
-                    case 2:
-                        S = [ly, lz](Tscal z) -> Tscal {
-                            return ly * lz;
-                        };
-                        a_from_pos = [](Tvec pos) -> Tscal {
-                            return pos.z();
-                        };
-                        break;
-                    }
-                } else {
-                    shamlog_error("ModifierApplyStretchMapping", "Ah non hein");
+            if (system == "spherical") {
+                x0min   = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
+                x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
+                x1min   = 0;
+                x1max   = pi;
+                x2min   = 0;
+                x2max   = 2 * pi;
+                transfo = tospherical.matrix;
+
+                switch (axisnb) {
+                case 0:
+                    S = [](Tscal r) -> Tscal {
+                        return 4 * pi * sycl::pown(r, 2);
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return sycl::length(pos); // r
+                    };
+                    break;
+                case 1:
+                    S = [x0max](Tscal theta) -> Tscal {
+                        return 2 * pi * sycl::pown(x0max, 3) * sycl::sin(theta) / 3;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return sycl::acos(pos.z() / sycl::length(pos)); // theta
+                    };
+                    break;
+                case 2:
+                    S = [x0max](Tscal phi) -> Tscal {
+                        return 2 * pi * sycl::pown(x0max, 3) / 3;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return sycl::atan2(pos.y(), pos.x()); // phi
+                    };
+                    break;
                 }
-
-                a_to_pos = [a_from_pos, transfo, axisnb](Tscal new_yk, Tvec pos) -> Tvec {
-                    Tvec new_pos;
-                    Tscal yk = a_from_pos(pos);
-                    for (size_t i = 0; i < pos.size(); ++i) {
-                        new_pos[i]
-                            = pos[i] * (transfo)[i][axisnb](new_yk) / (transfo)[i][axisnb](yk);
-                    }
-                    return new_pos;
-                };
-
-                auto rhodS = [rhoprofile, S](Tscal xi) -> Tscal {
-                    return rhoprofile(xi) * S(xi);
-                };
-                std::vector<Tscal> ximin
-                    = {x0min, x1min, x2min}; // temporary, will not be sent to lattice
-                std::vector<Tscal> ximax
-                    = {x0max, x1max, x2max}; // temporary, will not be sent to lattice
-
-                Tscal thisxmin = ximin[axisnb]; // integral boundaries for later, along axis k
-                                                // (that will be stretched)
-                Tscal thisxmax = ximax[axisnb]; // integral boundaries for later, along axis k
-                                                // (that will be stretched)
-                Tscal step = (thisxmax - thisxmin) / ngrid;
-
-                integral_profile = shammath::integ_trapezoidal(thisxmin, thisxmax, step, rhodS);
-
-                smap_inputdata.rhoprofiles.push_back(rhoprofile);
-                smap_inputdata.rhodSs.push_back(rhodS);
-                smap_inputdata.a_from_poss.push_back(a_from_pos);
-                smap_inputdata.a_to_poss.push_back(a_to_pos);
-                smap_inputdata.integral_profiles.push_back(integral_profile);
-                smap_inputdata.steps.push_back(step);
-                smap_inputdata.ximins.push_back(thisxmin);
-                smap_inputdata.ximaxs.push_back(thisxmax);
+            } else if (system == "cylindrical") {
+                x0min   = 0;
+                x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
+                x1min   = 0;
+                x1max   = 2. * pi;
+                x2min   = -lz / 2.;
+                x2max   = lz / 2.;
+                transfo = tocylindrical.matrix;
+                switch (axisnb) {
+                case 0:
+                    S = [lz](Tscal r) -> Tscal {
+                        return 4 * pi * r * lz;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return sycl::sqrt(pos.x() * pos.x() + pos.y() * pos.y());
+                    };
+                    break;
+                case 1:
+                    S = [x0max, lz](Tscal theta) -> Tscal {
+                        return sycl::pown(x0max, 2) * lz / 2;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return sycl::atan2(pos.y(), pos.x());
+                    };
+                    break;
+                case 2:
+                    S = [x0max, lz](Tscal z) -> Tscal {
+                        return pi * sycl::pown(x0max, 2) * lz;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return pos.z();
+                    };
+                    break;
+                }
+            } else if (system == "cart") {
+                x0min   = -lx / 2.;
+                x0max   = lx / 2.;
+                x1min   = -ly / 2.;
+                x1max   = ly / 2.;
+                x2min   = -lz / 2.;
+                x2max   = lz / 2.;
+                transfo = tocart.matrix;
+                switch (axisnb) {
+                case 0:
+                    S = [ly, lz](Tscal x) -> Tscal {
+                        return ly * lz;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return pos.x();
+                    };
+                    break;
+                case 1:
+                    S = [lx, lz](Tscal y) -> Tscal {
+                        return lx * lz;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return pos.y();
+                    };
+                    break;
+                case 2:
+                    S = [ly, lz](Tscal z) -> Tscal {
+                        return ly * lz;
+                    };
+                    a_from_pos = [](Tvec pos) -> Tscal {
+                        return pos.z();
+                    };
+                    break;
+                }
+            } else {
+                shamlog_error("ModifierApplyStretchMapping", "Ah non hein");
             }
+
+            a_to_pos = [a_from_pos, transfo, axisnb](Tscal new_yk, Tvec pos) -> Tvec {
+                Tvec new_pos;
+                Tscal yk = a_from_pos(pos);
+                for (size_t i = 0; i < pos.size(); ++i) {
+                    new_pos[i] = pos[i] * (transfo)[i][axisnb](new_yk) / (transfo)[i][axisnb](yk);
+                }
+                return new_pos;
+            };
+
+            auto rhodS = [rhoprofile, S](Tscal xi) -> Tscal {
+                return rhoprofile(xi) * S(xi);
+            };
+            std::vector<Tscal> ximin
+                = {x0min, x1min, x2min}; // temporary, will not be sent to lattice
+            std::vector<Tscal> ximax
+                = {x0max, x1max, x2max}; // temporary, will not be sent to lattice
+
+            Tscal thisxmin = ximin[axisnb]; // integral boundaries for later, along axis k
+                                            // (that will be stretched)
+            Tscal thisxmax = ximax[axisnb]; // integral boundaries for later, along axis k
+                                            // (that will be stretched)
+            Tscal step = (thisxmax - thisxmin) / ngrid;
+
+            integral_profile = shammath::integ_trapezoidal(thisxmin, thisxmax, step, rhodS);
+
+            smap_inputdata.rhoprofile       = rhoprofile;
+            smap_inputdata.rhodS            = rhodS;
+            smap_inputdata.a_from_pos       = a_from_pos;
+            smap_inputdata.a_to_pos         = a_to_pos;
+            smap_inputdata.integral_profile = integral_profile;
+            smap_inputdata.step             = step;
+            smap_inputdata.ximin            = thisxmin;
+            smap_inputdata.ximax            = thisxmax;
+
             smap_inputdata.center = center;
             smap_inputdata.system = system;
-            smap_inputdata.axes   = axes;
+            smap_inputdata.axis   = axis;
             smap_inputdata.boxmin = boxmin;
             smap_inputdata.boxmax = boxmax;
             shambase::println("Stretch mapping...");
@@ -347,34 +414,33 @@ namespace shammodels::sph::modules {
             if (sycl::length(cpos) < 1e-12) {
                 return center;
             }
-            for (size_t i = 0; i < smap_inputdata.rhoprofiles.size(); ++i) {
-                auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
-                auto &rhodS            = smap_inputdata.rhodSs[i];
-                auto &ximax            = smap_inputdata.ximaxs[i];
-                auto &ximin            = smap_inputdata.ximins[i];
-                auto &a_from_pos       = smap_inputdata.a_from_poss[i];
-                auto &a_to_pos         = smap_inputdata.a_to_poss[i];
-                auto &integral_profile = smap_inputdata.integral_profiles[i];
-                auto &step             = smap_inputdata.steps[i];
-                Tscal a                = a_from_pos(cpos);
 
-                Tscal new_a = stretchcoord(
-                    a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
-                cpos = a_to_pos(new_a, cpos);
-            }
+            auto &rhoprofile       = smap_inputdata.rhoprofile;
+            auto &rhodS            = smap_inputdata.rhodS;
+            auto &ximax            = smap_inputdata.ximax;
+            auto &ximin            = smap_inputdata.ximin;
+            auto &a_from_pos       = smap_inputdata.a_from_pos;
+            auto &a_to_pos         = smap_inputdata.a_to_pos;
+            auto &integral_profile = smap_inputdata.integral_profile;
+            auto &step             = smap_inputdata.step;
+            Tscal a                = a_from_pos(cpos);
+
+            Tscal new_a
+                = stretchcoord(a, rhoprofile, rhodS, integral_profile, ximin, ximax, center, step);
+            cpos = a_to_pos(new_a, cpos);
+
             return center + cpos;
         }
 
         static Tscal h_rho_stretched(
             Tvec pos, const Smap_inputdata &smap_inputdata, Tscal mpart, Tscal hfact) {
             Tscal rhoa = 1.;
-            for (size_t i = 0; i < smap_inputdata.integral_profiles.size(); i++) {
-                Tscal integral_profile = smap_inputdata.integral_profiles[i];
-                auto &a_from_pos       = smap_inputdata.a_from_poss[i];
-                auto &rhoprofile       = smap_inputdata.rhoprofiles[i];
 
-                rhoa *= rhoprofile(a_from_pos(pos - smap_inputdata.center)) / integral_profile;
-            }
+            Tscal integral_profile = smap_inputdata.integral_profile;
+            auto &a_from_pos       = smap_inputdata.a_from_pos;
+            auto &rhoprofile       = smap_inputdata.rhoprofile;
+
+            rhoa *= rhoprofile(a_from_pos(pos - smap_inputdata.center)) / integral_profile;
 
             Tscal h = shamrock::sph::h_rho(
                 1.,

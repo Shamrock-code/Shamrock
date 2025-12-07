@@ -65,15 +65,6 @@ namespace shammodels::sph::modules {
             std::mt19937 eng,
             Tscal init_h_factor);
 
-        std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp_smap(
-            Tscal dr,
-            // Tvec center,
-            // Tscal xmax,
-            std::pair<Tvec, Tvec> box,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
-            std::string system,
-            std::vector<std::string> axes);
-
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);
 
@@ -91,9 +82,10 @@ namespace shammodels::sph::modules {
 
         std::shared_ptr<ISPHSetupNode> make_modifier_apply_stretch_mapping(
             SetupNodePtr parent,
-            std::vector<std::function<Tscal(Tscal)>> rhoprofiles,
+            std::vector<Tscal> tabrho,
+            std::vector<Tscal> tabx,
             std::string system,
-            std::vector<std::string> axes,
+            std::string axis,
             std::pair<Tvec, Tvec> box);
 
         std::shared_ptr<ISPHSetupNode> make_modifier_filter(

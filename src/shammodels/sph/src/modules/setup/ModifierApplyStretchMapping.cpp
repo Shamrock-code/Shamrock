@@ -52,19 +52,20 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
 
     Tscal npart = 0;
 
+    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+
     for (i32 id_a = 0; id_a < obj_cnt; ++id_a) {
         Tvec &xyz_a    = acc_xyz[id_a];
         Tscal &hpart_a = acc_hpart[id_a];
         auto &mask_a   = acc_mask[id_a];
 
         bool outside_boundaries = false;
-        for (size_t ii = 0; ii < smap_inputdata.a_from_poss.size(); ii++) {
-            auto &a_from_pos = smap_inputdata.a_from_poss[ii];
-            auto &ximax      = smap_inputdata.ximaxs[ii];
-            if (a_from_pos(xyz_a - smap_inputdata.center) >= ximax) {
-                outside_boundaries = true;
-            };
-        }
+        auto &a_from_pos        = smap_inputdata.a_from_pos;
+        auto &ximax             = smap_inputdata.ximax;
+        if (a_from_pos(xyz_a - smap_inputdata.center) >= ximax) {
+            outside_boundaries = true;
+        };
+
         mask_a = outside_boundaries;
         if (!outside_boundaries) {
             npart += 1;
@@ -72,7 +73,6 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
             hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
             std::cout << "\rProgression : " << npart << " " << obj_cnt << std::flush;
         };
-
         ;
     };
 
@@ -80,7 +80,10 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
     buf_hpart.copy_from_stdvec(acc_hpart);
     buf_mask.copy_from_stdvec(acc_mask);
 
-    auto part_to_remove = shamalgs::stream_compact(dev_sched, buf_mask, obj_cnt);
+    auto part_to_remove = shamalgs::stream_compact(
+        dev_sched,
+        buf_mask,
+        obj_cnt); // TODO, maybe add the possibility to not kill these particles (crop=False ?)
 
     shamlog_debug_ln("ModifierApplyStretchMapping", npart, "particles have been stretched");
 
@@ -92,7 +95,6 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
     }
 
     Tscal n13 = sycl::rootn(npart, 3);
-    auto &q   = shamsys::instance::get_compute_scheduler().get_queue();
     sham::kernel_call(
         q,
         sham::MultiRef{},

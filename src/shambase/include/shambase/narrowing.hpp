@@ -56,21 +56,19 @@ namespace shambase {
 
         if constexpr (lim_T::is_integer && lim_U::is_integer) {
             if constexpr (lim_T::is_signed) {
-                // Source is signed
                 if constexpr (lim_U::is_signed) {
-                    // Destination is signed
+                    // signed -> signed
                     return val >= lim_U::min() && val <= lim_U::max();
                 } else {
-                    // Destination is unsigned  (cast to avoid compiler warning)
+                    // signed -> unsigned (cast to avoid compiler warning -Wsign-compare)
                     return val >= 0 && static_cast<std::make_unsigned_t<T>>(val) <= lim_U::max();
                 }
             } else {
-                // Source is unsigned
                 if constexpr (lim_U::is_signed) {
-                    // Destination is signed  (again cast to avoid warning)
+                    // unsigned -> signed (again cast to avoid warning -Wsign-compare)
                     return val <= static_cast<std::make_unsigned_t<U>>(lim_U::max());
                 } else {
-                    // Destination is unsigned
+                    // unsigned -> unsigned
                     return val <= lim_U::max();
                 }
             }

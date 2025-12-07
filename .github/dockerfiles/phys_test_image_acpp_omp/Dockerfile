@@ -4,6 +4,7 @@ ARG CLANGVERSION=18
 
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
+    sudo apt update && \
     sudo ./llvm.sh ${CLANGVERSION} && \
     sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
     rm llvm.sh

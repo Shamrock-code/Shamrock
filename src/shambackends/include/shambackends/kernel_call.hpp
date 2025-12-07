@@ -287,13 +287,12 @@ namespace sham {
             Functor &&kernel_gen,
             SourceLocation &&callsite = SourceLocation{}) {
 
-            __shamrock_stack_entry_callsite(callsite);
+            __shamrock_stack_entry_with_callsite(callsite);
 
             if (n == 0) {
                 shambase::throw_with_loc<std::runtime_error>("kernel call with : n == 0");
             }
 
-            __shamrock_stack_entry();
             sham::EventList depends_list;
 
             auto acc_in     = in.get_read_access(depends_list);
@@ -327,7 +326,7 @@ namespace sham {
             Functor &&func,
             SourceLocation &&callsite = SourceLocation{}) {
 
-            __shamrock_stack_entry_callsite(callsite);
+            __shamrock_log_callsite(callsite);
 
             typed_index_kernel_call_lambda(
                 q,
@@ -520,7 +519,7 @@ namespace sham {
         Functor &&func,
         SourceLocation &&callsite = SourceLocation{}) {
 
-        __shamrock_stack_entry_callsite(callsite);
+        __shamrock_log_callsite(callsite);
 
         details::typed_index_kernel_call<u32, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(func));
@@ -536,7 +535,7 @@ namespace sham {
         Functor &&func,
         SourceLocation &&callsite = SourceLocation{}) {
 
-        __shamrock_stack_entry_callsite(callsite);
+        __shamrock_log_callsite(callsite);
 
         details::typed_index_kernel_call<u64, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(func));
@@ -552,7 +551,7 @@ namespace sham {
         Functor &&kernel_gen,
         SourceLocation &&callsite = SourceLocation{}) {
 
-        __shamrock_stack_entry_callsite(callsite);
+        __shamrock_log_callsite(callsite);
 
         details::typed_index_kernel_call_lambda<u32, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(kernel_gen));
@@ -568,7 +567,7 @@ namespace sham {
         Functor &&kernel_gen,
         SourceLocation &&callsite = SourceLocation{}) {
 
-        __shamrock_stack_entry_callsite(callsite);
+        __shamrock_log_callsite(callsite);
 
         details::typed_index_kernel_call_lambda<u64, RefIn, RefOut>(
             q, in, in_out, n, std::forward<Functor>(kernel_gen));

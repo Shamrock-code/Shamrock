@@ -11,6 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -179,6 +180,53 @@ namespace shammodels::sph {
 
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
+    struct SelfGravConfig {
+
+        struct MM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
+        struct Direct {
+            bool reference_mode = false;
+        };
+
+        struct None {};
+
+        using mode = std::variant<MM, Direct, None>;
+
+        mode config = None{};
+
+        void set_none() { config = None{}; }
+        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
+        void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
+            config = MM{mm_order, opening_angle, reduction_level};
+        }
+
+        bool is_none() const { return std::holds_alternative<None>(config); }
+        bool is_direct() const { return std::holds_alternative<Direct>(config); }
+
+        bool is_mm() const { return std::holds_alternative<MM>(config); }
+
+        bool is_sg_on() const { return !is_none(); }
+        bool is_sg_off() const { return is_none(); }
+
+        struct SofteningPlummer {
+            f64 epsilon;
+        };
+
+        using mode_soft          = std::variant<SofteningPlummer>;
+        mode_soft softening_mode = SofteningPlummer{1e-9};
+
+        void set_softening_plummer(f64 epsilon) { softening_mode = SofteningPlummer{epsilon}; }
+        void set_softening_none() { set_softening_plummer(0.); }
+
+        bool is_softening_plummer() const {
+            return std::holds_alternative<SofteningPlummer>(softening_mode);
         }
     };
 
@@ -353,6 +401,16 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    SelfGravConfig self_grav_config = SelfGravConfig{};
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -430,6 +488,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is an polytropic equation of state
+    inline bool is_eos_polytropic() {
+        using T = typename EOSConfig::Polytropic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
@@ -449,6 +513,13 @@ struct shammodels::sph::SolverConfig {
      * @param gamma The adiabatic index
      */
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+
+    /**
+     * @brief Set the EOS configuration to an polytropic equation of state
+     *
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_polytropic(Tscal K, Tscal gamma) { eos_config.set_polytropic(K, gamma); }
 
     /**
      * @brief Set the EOS configuration to a locally isothermal equation of state
@@ -753,6 +824,13 @@ struct shammodels::sph::SolverConfig {
                 shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
             }
         }
+
+        if (!self_grav_config.is_none()) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Self gravity is experimental, please enable experimental features to use it");
+            }
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
@@ -884,6 +962,65 @@ namespace shammodels::sph {
         }
     }
 
+    /// JSON serialization for SelfGravConfig
+    inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
+        if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+            j = {
+                {"type", "mm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (
+            const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
+            j = {
+                {"type", "direct"},
+                {"reference_mode", conf->reference_mode},
+            };
+        } else if (
+            const SelfGravConfig::None *conf = std::get_if<SelfGravConfig::None>(&p.config)) {
+            j = {
+                {"type", "none"},
+            };
+        }
+
+        if (const SelfGravConfig::SofteningPlummer *conf
+            = std::get_if<SelfGravConfig::SofteningPlummer>(&p.softening_mode)) {
+            j["softening_mode"]   = "plummer";
+            j["softening_length"] = conf->epsilon;
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    /// JSON deserialization for SelfGravConfig
+    inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
+        if (j.at("type").get<std::string>() == "mm") {
+            p.config = SelfGravConfig::MM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "direct") {
+            p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
+        } else if (j.at("type").get<std::string>() == "none") {
+            p.config = SelfGravConfig::None{};
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "Invalid self gravity type: " + j.at("type").get<std::string>());
+        }
+
+        if (j.contains("softening_mode")) {
+            std::string softening_mode = j.at("softening_mode").get<std::string>();
+            if (softening_mode == "plummer") {
+                p.softening_mode
+                    = SelfGravConfig::SofteningPlummer{j.at("softening_length").get<f64>()};
+            } else {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "Invalid softening mode: " + softening_mode);
+            }
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -912,6 +1049,8 @@ namespace shammodels::sph {
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // self gravity config
+            {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -984,6 +1123,16 @@ namespace shammodels::sph {
             logger::warn_ln(
                 "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
             p.mhd_config.set(typename T::MHDConfig::None{});
+        }
+
+        // self gravity config
+        if (j.contains("self_grav_config")) {
+            j.at("self_grav_config").get_to(p.self_grav_config);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "self_grav_config not found when deserializing, defaulting to ",
+                nlohmann::json{p.self_grav_config}.dump(4));
         }
 
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);

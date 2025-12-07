@@ -85,7 +85,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
 
 template<class Tvec, class TgridVec, RiemannSolverMode mode, Direction dir>
 std::string shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, dir>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -137,7 +137,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxDustDirMode<Tvec, TgridVec
 
 template<class Tvec, class TgridVec, DustRiemannSolverMode mode, Direction dir>
 std::string shammodels::basegodunov::modules::
-    NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, dir>::_impl_get_tex() {
+    NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, dir>::_impl_get_tex() const {
     return "TODO";
 }
 

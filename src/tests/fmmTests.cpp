@@ -18,6 +18,7 @@
 #include "shambase/time.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
+#include "shamphys/fmm/contract_grav_moment.hpp"
 #include "shamphys/fmm/grav_moments.hpp"
 #include "shamphys/fmm/offset_multipole.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -90,16 +91,16 @@ class FMM_prec_eval {
                 phi_val += M_k.t1 * a_k.t1;
             }
             if constexpr (order >= 2) {
-                phi_val += M_k.t2 * a_k.t2;
+                phi_val += M_k.t2 * a_k.t2 / 2;
             }
             if constexpr (order >= 3) {
-                phi_val += M_k.t3 * a_k.t3;
+                phi_val += M_k.t3 * a_k.t3 / 6;
             }
             if constexpr (order >= 4) {
-                phi_val += M_k.t4 * a_k.t4;
+                phi_val += M_k.t4 * a_k.t4 / 24;
             }
             if constexpr (order >= 5) {
-                phi_val += M_k.t5 * a_k.t5;
+                phi_val += M_k.t5 * a_k.t5 / 120;
             }
 
             // printf("contrib phi : %e %e %e %e %e %e\n",phi_0,phi_1,phi_2,phi_3,phi_4,phi_5);
@@ -142,6 +143,9 @@ class FMM_prec_eval {
 
                 auto B_n = moment_types::from_vec(bj);
 
+                // logger::raw_ln("bj =", bj);
+                // logger::raw_ln("B_n =", py::str(py::cast(B_n)).cast<std::string>());
+
                 B_n *= m_j;
 
                 B_n.store(multipoles, 0);
@@ -157,13 +161,20 @@ class FMM_prec_eval {
 
             f64_3 a_i = xi - sa;
 
-            auto a_k = SymTensorCollection<f64, 0, order>::from_vec(a_i);
+            auto a_k = SymTensorCollection<f64, 0, order - 1>::from_vec(a_i);
 
             auto Q_n = moment_types::load(multipoles, 0);
 
             auto D_n = shamphys::GreenFuncGravCartesian<f64, 1, order>::get_der_tensors(r_fmm);
 
             auto dM_k = shamphys::get_dM_mat(D_n, Q_n);
+
+            // logger::raw_ln("r_fmm =", r_fmm);
+            // logger::raw_ln("a_i =", a_i);
+            // logger::raw_ln("a_k =", py::str(py::cast(a_k)).cast<std::string>());
+            // logger::raw_ln("Q_n =", py::str(py::cast(Q_n)).cast<std::string>());
+            // logger::raw_ln("D_n =", py::str(py::cast(D_n)).cast<std::string>());
+            // logger::raw_ln("dM_k =", py::str(py::cast(dM_k)).cast<std::string>());
 
             auto tensor_to_sycl = [](SymTensor3d_1<T> a) {
                 return sycl::vec<T, 3>{a.v_0, a.v_1, a.v_2};
@@ -182,6 +193,9 @@ class FMM_prec_eval {
             if constexpr (order >= 5) {
                 force_val += tensor_to_sycl(dM_k.t5 * a_k.t4);
             }
+
+            f64_3 force_val_t = shamphys::contract_grav_moment_to_force<f64, order>(a_k, dM_k);
+            force_val         = force_val_t;
 
             // printf("contrib phi : %e %e %e %e %e %e\n",phi_0,phi_1,phi_2,phi_3,phi_4,phi_5);
 
@@ -427,7 +441,7 @@ TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_mome
 
     SymTensorCollection<f64, 0, 5> d_ = SymTensorCollection<f64, 0, 5>::from_vec(d);
 
-    auto B_nb_offseted = shamphys::offset_multipole(B_nB, d);
+    auto B_nb_offseted = shamphys::offset_multipole_delta(B_nB, d);
 
     auto diff_0 = B_nBp.t0 - B_nb_offseted.t0;
     auto diff_1 = B_nBp.t1 - B_nb_offseted.t1;
@@ -689,7 +703,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
                             multipoles,
                             s_cid * SymTensorCollection<flt, 0, fmm_order>::num_component);
 
-                        auto B_ns_offseted = shamphys::offset_multipole(B_ns, d);
+                        auto B_ns_offseted = shamphys::offset_multipole_delta(B_ns, d);
 
                         B_n += B_ns_offseted;
                     };
@@ -1002,21 +1016,8 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
             walker::iter_object_in_cell(tree_acc, id_cell_a, [&](u32 id_a) {
                 auto ai = SymTensorCollection<flt, 0, fmm_order>::from_vec(xyz[id_a] - sa);
 
-                auto tensor_to_sycl = [](SymTensor3d_1<flt> a) {
-                    return vec{a.v_0, a.v_1, a.v_2};
-                };
+                vec tmp = shamphys::contract_grav_moment_to_force<flt, fmm_order + 1>(ai, dM_k);
 
-                vec tmp{0, 0, 0};
-
-                tmp += tensor_to_sycl(dM_k.t1 * ai.t0);
-                tmp += tensor_to_sycl(dM_k.t2 * ai.t1);
-                tmp += tensor_to_sycl(dM_k.t3 * ai.t2);
-                if constexpr (fmm_order >= 3) {
-                    tmp += tensor_to_sycl(dM_k.t4 * ai.t3);
-                }
-                if constexpr (fmm_order >= 4) {
-                    tmp += tensor_to_sycl(dM_k.t5 * ai.t4);
-                }
                 fxyz[id_a] += tmp;
 
                 // auto dphi_0 = tensor_to_sycl(dM_k.t1*ai.t0);

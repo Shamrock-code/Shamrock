@@ -14,7 +14,7 @@ cd Shamrock
 brew install cmake libomp boost open-mpi adaptivecpp
 
 # Select the env to build from source
-./env/new-env --builddir build --machine macos-generic.acpp -- --backend omp
+./env/new-env --builddir build --machine macos-generic.acpp --
 
 # Now move in the build directory
 cd build

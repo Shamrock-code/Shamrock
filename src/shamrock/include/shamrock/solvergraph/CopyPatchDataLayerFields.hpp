@@ -55,8 +55,8 @@ namespace shamrock::solvergraph {
 
         void _impl_evaluate_internal();
 
-        std::string _impl_get_label() { return "CopyPatchDataLayerFields"; }
+        std::string _impl_get_label() const { return "CopyPatchDataLayerFields"; }
 
-        std::string _impl_get_tex() { return "TODO"; }
+        std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shamrock::solvergraph

@@ -54,6 +54,8 @@ set(Sources
     src/modules/setup/ModifierApplyCustomWarp.cpp
     src/modules/setup/ModifierOffset.cpp
     src/modules/setup/ModifierFilter.cpp
+    src/modules/self_gravity/SGDirectPlummer.cpp
+    src/modules/self_gravity/SGMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 

@@ -190,9 +190,9 @@ class PatchDataField {
 
     void insert(const PatchDataField<T> &f2);
 
-    void overwrite(PatchDataField<T> &f2, u32 obj_cnt);
+    void overwrite(const PatchDataField<T> &f2, u32 obj_cnt);
 
-    void overwrite(sham::DeviceBuffer<T> &f2, u32 len);
+    void overwrite(const sham::DeviceBuffer<T> &f2, u32 len);
 
     void override(sycl::buffer<T> &data, u32 cnt);
 
@@ -367,11 +367,9 @@ class PatchDataField {
                 sham::MultiRef{buf},
                 sham::MultiRef{mask},
                 obj_cnt,
-                [=, nvar_field = nvar](
-                    u32 id, const T *__restrict acc, u32 *__restrict acc_mask, Args... args_f) {
-                    acc_mask[id] = cd_true(acc, id * nvar_field, std::forward<Args>(args_f)...);
-                },
-                std::forward<Args>(args)...);
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
 
             return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
         } else {
@@ -452,6 +450,9 @@ class PatchDataField {
      * @param len the length of the map (must match with the current count)
      */
     void index_remap(sham::DeviceBuffer<u32> &index_map, u32 len);
+
+    /// permut the variables of the field according to the permut
+    void permut_vars(const std::vector<u32> &permut);
 
     /**
      * @brief this function remaps the patchdatafield like so
@@ -578,13 +579,13 @@ inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 }
 
 template<class T>
-inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
+inline void PatchDataField<T>::overwrite(const PatchDataField<T> &f2, u32 obj_cnt) {
     StackEntry stack_loc{};
     buf.copy_from(f2.buf, obj_cnt * f2.nvar);
 }
 
 template<class T>
-inline void PatchDataField<T>::overwrite(sham::DeviceBuffer<T> &f2, u32 len) {
+inline void PatchDataField<T>::overwrite(const sham::DeviceBuffer<T> &f2, u32 len) {
     StackEntry stack_loc{};
     buf.copy_from(f2, len);
 }

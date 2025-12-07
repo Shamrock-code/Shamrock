@@ -42,7 +42,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class T>
-    std::string NodeComputeSumOverV<T>::_impl_get_tex() {
+    std::string NodeComputeSumOverV<T>::_impl_get_tex() const {
 
         auto block_count  = get_ro_edge_base(0).get_tex_symbol();
         auto field        = get_ro_edge_base(1).get_tex_symbol();

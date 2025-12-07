@@ -56,8 +56,8 @@ namespace shammodels::sph::modules {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() { return "GetParticlesOutsideSphere"; };
+        inline virtual std::string _impl_get_label() const { return "GetParticlesOutsideSphere"; };
 
-        virtual std::string _impl_get_tex();
+        virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules

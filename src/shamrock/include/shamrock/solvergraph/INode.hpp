@@ -34,6 +34,17 @@ namespace shamrock::solvergraph {
         std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
+        INode() = default;
+
+        INode(const INode &)            = delete; /// would violate shared_from_this() & unique UUID
+        INode &operator=(const INode &) = delete; /// would violate shared_from_this() & unique UUID
+
+        /// Move constructor - automatically delegates to base classes and members
+        INode(INode &&) noexcept = default;
+
+        /// Move assignment - automatically delegates to base classes and members
+        INode &operator=(INode &&) noexcept = default;
+
         /// Get a shared pointer to this node
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
         /// Get a weak pointer to this node
@@ -80,8 +91,16 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(ro_edges.at(slot));
         }
 
+        inline const IEdge &get_ro_edge_base(int slot) const {
+            return shambase::get_check_ref(ro_edges.at(slot));
+        }
+
         /// Get a reference to a read write edge and cast it to the type IEdge
         inline IEdge &get_rw_edge_base(int slot) {
+            return shambase::get_check_ref(rw_edges.at(slot));
+        }
+
+        inline const IEdge &get_rw_edge_base(int slot) const {
             return shambase::get_check_ref(rw_edges.at(slot));
         }
 
@@ -105,7 +124,7 @@ namespace shamrock::solvergraph {
         inline std::string get_tex_partial() { return _impl_get_tex(); };
 
         /// print the node info
-        inline virtual std::string print_node_info() {
+        inline virtual std::string print_node_info() const {
             std::string node_info = shambase::format("Node info :\n");
             node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
             node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
@@ -135,17 +154,17 @@ namespace shamrock::solvergraph {
         virtual void _impl_evaluate_internal() = 0;
 
         /// get the label of the node
-        virtual std::string _impl_get_label() = 0;
+        virtual std::string _impl_get_label() const = 0;
 
         /// get the dot graph of the node partial
-        virtual std::string _impl_get_dot_graph_partial();
+        virtual std::string _impl_get_dot_graph_partial() const;
         /// get the dot graph of the node start
-        virtual std::string _impl_get_dot_graph_node_start();
+        virtual std::string _impl_get_dot_graph_node_start() const;
         /// get the dot graph of the node end
-        virtual std::string _impl_get_dot_graph_node_end();
+        virtual std::string _impl_get_dot_graph_node_end() const;
 
         /// get the tex of the node
-        virtual std::string _impl_get_tex() = 0;
+        virtual std::string _impl_get_tex() const = 0;
     };
 
     inline void INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges) {
@@ -182,7 +201,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    inline std::string INode::_impl_get_dot_graph_partial() {
+    inline std::string INode::_impl_get_dot_graph_partial() const {
         std::string node_str
             = shambase::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
 
@@ -207,10 +226,10 @@ namespace shamrock::solvergraph {
         return shambase::format("{}{}", node_str, edge_str);
     };
 
-    inline std::string INode::_impl_get_dot_graph_node_start() {
+    inline std::string INode::_impl_get_dot_graph_node_start() const {
         return shambase::format("n_{}", this->get_uuid());
     }
-    inline std::string INode::_impl_get_dot_graph_node_end() {
+    inline std::string INode::_impl_get_dot_graph_node_end() const {
         return shambase::format("n_{}", this->get_uuid());
     }
 

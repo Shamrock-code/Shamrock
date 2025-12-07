@@ -15,11 +15,18 @@
 
 using namespace shamrock::patch;
 
-inline void
-test_serialize_basic(std::shared_ptr<PatchDataLayerLayout> pdl_ptr, PatchDataLayer &pdat) {
+inline void test_serialize_basic(
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr, PatchDataLayer &pdat) {
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
+
+    if (pdat.serialize_buf_byte_size().get_total_size() > std::numeric_limits<u32>::max()) {
+        REQUIRE_EXCEPTION_THROW(ser.allocate(pdat.serialize_buf_byte_size()), std::runtime_error);
+        return;
+    }
+
     ser.allocate(pdat.serialize_buf_byte_size());
+
     pdat.serialize_buf(ser);
 
     auto recov = ser.finalize();
@@ -70,7 +77,10 @@ TestStart(
         test_serialize_basic(pdl_ptr, pdat);
     }
 
-    { // case where the total data count exceed the int 32 limit
+    u64 dev_mem_size
+        = shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().global_mem_size;
+
+    if (dev_mem_size > 4'000'000'000) { // case where the total data count exceed the int 32 limit
 
         u32 obj = 1e7;
 
@@ -108,5 +118,7 @@ TestStart(
             pdat.serialize_buf_byte_size().get_total_size() > std::numeric_limits<i32>::max());
 
         test_serialize_basic(pdl_ptr, pdat);
+    } else {
+        REQUIRE_NAMED("dev_mem_size < 4'000'000'000, skipping test", false);
     }
 }

@@ -55,21 +55,25 @@ namespace shambase {
         using lim_U = std::numeric_limits<U>;
 
         if constexpr (lim_T::is_integer && lim_U::is_integer) {
-            // Check if signs differ and handle appropriately
-            if constexpr (lim_T::is_signed && !lim_U::is_signed) {
-                // Signed to unsigned: must be non-negative
-                if (val < 0) {
-                    return false;
+            if constexpr (lim_T::is_signed) {
+                // Source is signed
+                if constexpr (lim_U::is_signed) {
+                    // Destination is signed
+                    return val >= lim_U::min() && val <= lim_U::max();
+                } else {
+                    // Destination is unsigned  (cast to avoid compiler warning)
+                    return val >= 0 && static_cast<std::make_unsigned_t<T>>(val) <= lim_U::max();
                 }
-            } else if constexpr (!lim_T::is_signed && lim_U::is_signed) {
-                // Unsigned to signed: must not exceed signed max
-                if (val > static_cast<T>(lim_U::max())) {
-                    return false;
+            } else {
+                // Source is unsigned
+                if constexpr (lim_U::is_signed) {
+                    // Destination is signed  (again cast to avoid warning)
+                    return val <= static_cast<std::make_unsigned_t<U>>(lim_U::max());
+                } else {
+                    // Destination is unsigned
+                    return val <= lim_U::max();
                 }
             }
-
-            // Cast to U and back to T - if the value is unchanged, narrowing is safe
-            return static_cast<T>(static_cast<U>(val)) == val;
         } else {
             static_assert(
                 shambase::always_false_v<T>, "can_narrow is not implemented for this type");

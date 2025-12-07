@@ -51,6 +51,7 @@ namespace shammodels {
         /// Adiabatic equation of state configuration
         using Adiabatic = shamphys::EOS_Config_Adiabatic<Tscal>;
 
+        /// Polytropic equation of state configuration
         using Polytropic = shamphys::EOS_Config_Polytropic<Tscal>;
 
         /// Isothermal equation of state configuration
@@ -66,6 +67,9 @@ namespace shammodels {
         using LocallyIsothermalFA2014
             = shamphys::EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal>;
 
+        /// Fermi equation of state configuration
+        using Fermi = shamphys::EOS_Config_Fermi<Tscal>;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<
             Isothermal,
@@ -73,7 +77,8 @@ namespace shammodels {
             Polytropic,
             LocallyIsothermal,
             LocallyIsothermalLP07,
-            LocallyIsothermalFA2014>;
+            LocallyIsothermalFA2014,
+            Fermi>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -124,6 +129,12 @@ namespace shammodels {
         }
 
         /**
+         * @brief Set the EOS configuration to an Fermi equation of state
+         *
+         */
+        inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
+
+        /**
          * @brief Print current status of the EOSConfig
          */
         inline void print_status();
@@ -150,6 +161,10 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (Adiabatic *eos_config = std::get_if<Adiabatic>(&config)) {
         logger::raw_ln("adiabatic : ");
         logger::raw_ln("gamma", eos_config->gamma);
+    } else if (Polytropic *eos_config = std::get_if<Polytropic>(&config)) {
+        logger::raw_ln("polytropic : ");
+        logger::raw_ln("K", eos_config->K);
+        logger::raw_ln("gamma", eos_config->gamma);
     } else if (LocallyIsothermal *eos_config = std::get_if<LocallyIsothermal>(&config)) {
         logger::raw_ln("locally isothermal : ");
     } else if (LocallyIsothermalLP07 *eos_config = std::get_if<LocallyIsothermalLP07>(&config)) {
@@ -157,6 +172,9 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (
         LocallyIsothermalFA2014 *eos_config = std::get_if<LocallyIsothermalFA2014>(&config)) {
         logger::raw_ln("locally isothermal (Farris 2014) : ");
+    } else if (Fermi *eos_config = std::get_if<Fermi>(&config)) {
+        logger::raw_ln("Fermi : ");
+        logger::raw_ln("mu_e", eos_config->mu_e);
     } else {
         shambase::throw_unimplemented();
     }

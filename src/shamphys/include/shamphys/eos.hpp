@@ -94,6 +94,36 @@ namespace shamphys {
                 return cs * cs * rho_c1 * sycl::pow(rho_c2 / rho_c1, 7. / 5.)
                        * sycl::pow(rho_c3 / rho_c2, 1.1) * sycl::pow(rho / rho_c3, 5. / 3.);
             }
+        };
+    };
+
+    template<class T>
+    struct EOS_Fermi {
+        static constexpr T pi  = shamunits::pi<T>;
+        static constexpr T h   = shamunits::Constants<T>::Si::h;
+        static constexpr T m_e = shamunits::Constants<T>::Si::electron_mass;
+        static constexpr T m_p = shamunits::Constants<T>::Si::proton_mass;
+        static constexpr T c   = shamunits::Constants<T>::Si::c;
+        static constexpr T coeff_p
+            = pi * m_e * m_e * m_e * m_e * c * c * c * c * c / (3 * h * h * h);
+        static constexpr T coeff_pf = 3 * h * h * h / (8 * pi * m_p);
+
+        static constexpr T tpf(T mu_e, T rho) {
+            return sycl::rootn(coeff_pf * rho / mu_e, 3) / (m_e * c);
+        } //= \tilde p_F = Fermi momentum divided by m_e*c
+
+        static constexpr T soundspeed(T mu_e, T rho) {
+            T pf2 = sycl::pown(tpf(mu_e, rho), 2);
+            T cs2 = 8 * coeff_pf * coeff_p * pf2 * pf2
+                    / (3 * mu_e * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + pf2));
+            return sycl::sqrt(cs2);
+        }
+
+        static constexpr T pressure(T mu_e, T rho) {
+
+            T pf = tpf(mu_e, rho);
+            return coeff_p
+                   * (pf * sycl::sqrt(pf * pf + 1) * (2 * pf * pf - 3) + 3 * sycl::asinh(pf));
         }
     };
 

@@ -95,6 +95,23 @@ namespace shamphys {
     };
 
     /**
+     * @brief Configuration struct for Fermi equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * This struct holds the configuration for Fermi equation of state.
+     * It contains mu_e the mean molecular weight which is dimensionless quantities that
+     * determines the behavior of the gas.
+     *
+     * The equation of state is given by:
+     * \f$ P = K\rho^\gamma \f$ //TODO
+     */
+    template<class Tscal>
+    struct EOS_Config_Fermi {
+        Tscal mu_e;
+    };
+
+    /**
      * @brief Equal operator for the EOS_Config_Polytropic struct
      *
      * @tparam Tscal Scalar type
@@ -185,6 +202,23 @@ namespace shamphys {
         const EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal> &lhs,
         const EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal> &rhs) {
         return (lhs.h_over_r == rhs.h_over_r);
+    }
+
+    /**
+     * @brief Equal operator for the EOS_Config_Fermi struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Fermi struct to compare
+     * @param rhs Second EOS_Config_Fermi struct to compare
+     *
+     * This function checks if two EOS_Config_Fermi structs are equal by comparing their mu_e
+     * values.
+     *
+     * @return true if the two structs have the same mu_e values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(const EOS_Config_Fermi<Tscal> &lhs, const EOS_Config_Fermi<Tscal> &rhs) {
+        return lhs.mu_e == rhs.mu_e;
     }
 
 } // namespace shamphys

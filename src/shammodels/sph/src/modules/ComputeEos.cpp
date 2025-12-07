@@ -108,6 +108,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
+    using SolverEOS_Fermi                   = typename SolverConfigEOS::Fermi;
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -387,6 +388,38 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             rho_getter.complete_event_state(e);
             buf_uint.complete_event_state(e);
             buf_xyz.complete_event_state(e);
+        });
+
+    } else if (
+        SolverEOS_Fermi *eos_config
+        = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
+
+        using EOS = shamphys::EOS_Fermi<Tscal>;
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            auto rho_getter = rho_getter_gen(mpdat);
+
+            u32 total_elements
+                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{rho_getter},
+                sham::MultiRef{buf_P, buf_cs},
+                total_elements,
+                [mu_e
+                 = eos_config->mu_e](u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
+                    using namespace shamrock::sph;
+                    Tscal rho_a = rho(i);
+                    Tscal cs_a  = EOS::soundspeed(mu_e, rho_a);
+                    Tscal P_a   = EOS::pressure(mu_e, rho_a);
+                    P[i]        = P_a;
+                    cs[i]       = cs_a;
+                });
         });
 
     } else {

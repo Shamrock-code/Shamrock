@@ -38,8 +38,8 @@ namespace shamrock::solvergraph {
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> fields) {
-            __internal_set_ro_edges({});
-            __internal_set_rw_edges({ghost_fields, fields});
+            __internal_set_ro_edges({ghost_fields});
+            __internal_set_rw_edges({fields});
         }
 
         inline Edges get_edges() {

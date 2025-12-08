@@ -311,39 +311,6 @@ struct shammodels::sph::SolverConfig {
         }
     }
 
-    /// Retrieves the value of the constant h based on the unit system.
-    inline Tscal get_constant_h() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.h();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.h();
-        }
-    }
-
-    /// Retrieves the value of the electron_mass based on the unit system.
-    inline Tscal get_constant_electron_mass() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.electron_mass();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.electron_mass();
-        }
-    }
-
-    /// Retrieves the value of the electron_mass based on the unit system.
-    inline Tscal get_constant_proton_mass() {
-        if (!unit_sys) {
-            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
-            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            return ctes.proton_mass();
-        } else {
-            return shamunits::Constants<Tscal>{*unit_sys}.proton_mass();
-        }
-    }
-
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

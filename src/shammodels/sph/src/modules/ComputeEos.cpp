@@ -394,11 +394,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Fermi *eos_config
         = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
 
-        Tscal m_e = solver_config.get_constant_electron_mass();
-        Tscal m_p = solver_config.get_constant_proton_mass();
-        Tscal h   = solver_config.get_constant_h();
-        Tscal c   = solver_config.get_constant_c();
-
         using EOS = shamphys::EOS_Fermi<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
@@ -416,11 +411,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 sham::MultiRef{rho_getter},
                 sham::MultiRef{buf_P, buf_cs},
                 total_elements,
-                [mu_e = eos_config->mu_e, m_e, m_p, h, c](
-                    u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
+                [mu_e
+                 = eos_config->mu_e](u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
                     using namespace shamrock::sph;
                     Tscal rho_a    = rho(i);
-                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a, m_e, m_p, h, c);
+                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a);
                     P[i]           = res.pressure;
                     cs[i]          = res.soundspeed;
                 });

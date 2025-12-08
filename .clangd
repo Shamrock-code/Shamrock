@@ -17,6 +17,8 @@ Diagnostics:
   UnusedIncludes: Strict
   # >= clangd-17
   MissingIncludes: None
+  # >=clangd-12 - Enable clang-tidy and read configuration from .clang-tidy
+  ClangTidy: {}
 
 Hover:
   # >= clangd-14

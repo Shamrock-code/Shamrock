@@ -17,6 +17,7 @@
  *
  */
 
+#include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/slopeLimiter.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
@@ -243,6 +244,8 @@ namespace {
             = {field_access_rho(cell_global_id),
                field_access_rhoe(cell_global_id),
                field_access_rho_vel(cell_global_id)};
+
+        logger::raw_ln("global_id rho ", W_i.rho);
 
         shammath::ConsState<Tvec> W_xp = get_avg_neigh(graph_iter_xp);
         shammath::ConsState<Tvec> W_xm = get_avg_neigh(graph_iter_xm);

@@ -56,32 +56,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
     using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
 
-    // get level zeros sizes for each patch
-    std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> l0_edge
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>("l0_loc_p", "l0_loc_p");
-
-    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-        u64 id_patch  = cur_p.id_patch;
-        auto p_coords = cur_p.get_coords();
-        TgridVec p_size
-            = {p_coords.coord_max[0] - p_coords.coord_min[0],
-               p_coords.coord_max[1] - p_coords.coord_min[1],
-               p_coords.coord_max[2] - p_coords.coord_min[2]
-
-            };
-        shambase::get_check_ref(l0_edge).values.add_obj(id_patch, std::move(p_size));
-    });
-
-    // get AMRLevels
-    modules::ComputeAMRLevel<TgridVec> amr_levels_node;
-    amr_levels_node.set_edges(
-        storage.block_counts,
-        l0_edge,
-        storage.refs_block_min,
-        storage.refs_block_max,
-        storage.block_levels);
-    amr_levels_node.evaluate();
-
     // flag blocks for refinement or derefinement based on user-provided criterion
     u64 tot_refine   = 0;
     u64 tot_derefine = 0;
@@ -113,7 +87,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         // get the current buffer of block levels in the current patch
         sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
-            = shambase::get_check_ref(storage.block_levels).get_buf(id_patch);
+            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
 
         // create the refine and derefine flags buffers
         u32 obj_cnt = pdat.get_obj_cnt();
@@ -157,100 +131,103 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto acc_min = buf_cell_min.get_read_access(depends_list);
         auto acc_max = buf_cell_max.get_read_access(depends_list);
 
-        AMRGraphLinkiterator block_graph_xp = block_graph_neighs_xp.get_read_access(depends_list);
-        AMRGraphLinkiterator block_graph_xm = block_graph_neighs_xm.get_read_access(depends_list);
-        AMRGraphLinkiterator block_graph_yp = block_graph_neighs_yp.get_read_access(depends_list);
-        AMRGraphLinkiterator block_graph_ym = block_graph_neighs_ym.get_read_access(depends_list);
-        AMRGraphLinkiterator block_graph_zp = block_graph_neighs_zp.get_read_access(depends_list);
-        AMRGraphLinkiterator block_graph_zm = block_graph_neighs_zm.get_read_access(depends_list);
+        // AMRGraphLinkiterator block_graph_xp =
+        // block_graph_neighs_xp.get_read_access(depends_list); AMRGraphLinkiterator block_graph_xm
+        // = block_graph_neighs_xm.get_read_access(depends_list); AMRGraphLinkiterator
+        // block_graph_yp = block_graph_neighs_yp.get_read_access(depends_list);
+        // AMRGraphLinkiterator block_graph_ym =
+        // block_graph_neighs_ym.get_read_access(depends_list); AMRGraphLinkiterator block_graph_zp
+        // = block_graph_neighs_zp.get_read_access(depends_list); AMRGraphLinkiterator
+        // block_graph_zm = block_graph_neighs_zm.get_read_access(depends_list);
 
-        auto acc_amr_block_levels = buf_amr_block_levels.get_read_access(depends_list);
+        // auto acc_amr_block_levels = buf_amr_block_levels.get_read_access(depends_list);
 
-        // Enforce 2:1 restriction using blocks_neighborh graph and amr_levels
-        auto e1 = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor acc_refine_flag{refine_flags, cgh, sycl::read_write};
+        // // Enforce 2:1 restriction using blocks_neighborh graph and amr_levels
+        // auto e1 = q.submit(depends_list, [&](sycl::handler &cgh) {
+        //     sycl::accessor acc_refine_flag{refine_flags, cgh, sycl::read_write};
 
-            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
-                u32 block_id                = gid.get_linear_id();
-                u32 current_refinement_flag = acc_refine_flag[block_id];
-                auto current_block_level    = acc_amr_block_levels[block_id];
+        //     cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+        //         u32 block_id                = gid.get_linear_id();
+        //         u32 current_refinement_flag = acc_refine_flag[block_id];
+        //         auto current_block_level    = acc_amr_block_levels[block_id];
 
-                auto apply_to_each_neigh_block = [&](u32 b_id) {
-                    u32 neigh_refine_flag  = acc_refine_flag[b_id];
-                    auto neigh_block_level = acc_amr_block_levels[b_id];
-                    /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
-                        such that L1 >= L2.
-                        *
-                        * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked for
-                        refinement but not neigh_b. We refine also neigh_b.
-                        * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
-                        are both marked for refinement. We do nothing.
-                        * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
-                        1), cur_b is marked for refinement but not neigh_b. We refine also
-                        neigh_b.
-                        * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
-                        1), cur_b and neigh_b are both marked for refinement. We do nothing.
-                        * It's important to observe that we don't consider the case with
-                        abs(L1-L2)>1 because the 2:1 condition should prevent this.
-                    */
+        //         auto apply_to_each_neigh_block = [&](u32 b_id) {
+        //             u32 neigh_refine_flag  = acc_refine_flag[b_id];
+        //             auto neigh_block_level = acc_amr_block_levels[b_id];
+        //             /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
+        //                 such that L1 >= L2.
+        //                 *
+        //                 * Case 1 : cur_b and neigh_b are the same level L, cur_b is marked for
+        //                 refinement but not neigh_b. We refine also neigh_b.
+        //                 * Case 2 : cur_b and neigh_b are the same level L, cur_b and neigh_b
+        //                 are both marked for refinement. We do nothing.
+        //                 * Case 3 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                 1), cur_b is marked for refinement but not neigh_b. We refine also
+        //                 neigh_b.
+        //                 * Case 4 : cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //                 1), cur_b and neigh_b are both marked for refinement. We do nothing.
+        //                 * It's important to observe that we don't consider the case with
+        //                 abs(L1-L2)>1 because the 2:1 condition should prevent this.
+        //             */
 
-                    if (current_block_level >= neigh_block_level) {
-                        sycl::
-                            atomic_ref<u32, sycl::memory_order::relaxed, sycl::memory_scope::system>
-                                atomic_flag(acc_refine_flag[b_id]);
+        //             if (current_block_level >= neigh_block_level) {
+        //                 sycl::
+        //                     atomic_ref<u32, sycl::memory_order::relaxed,
+        //                     sycl::memory_scope::system>
+        //                         atomic_flag(acc_refine_flag[b_id]);
 
-                        // atomic_flag.fetch_or(1); // Atomically set flag to true
-                        atomic_flag.exchange(1); // Atomically set flag to true
-                    }
+        //                 // atomic_flag.fetch_or(1); // Atomically set flag to true
+        //                 atomic_flag.exchange(1); // Atomically set flag to true
+        //             }
 
-                    /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
-                     * such that L1 < L2.
-                     *
-                     * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
-                     * -1), cur_b is marked for refinement but not neigh_b. We do nothing
-                     * (since effective refinement of cur_b will lead to L1_new such that
-                     * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2 with
-                     * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement. We
-                     * do nothing.
-                     */
-                    else if (current_block_level < neigh_block_level) {
-                        // Nothing
-                    } else {
-                        // Should not happen. Raise an exception.
-                    }
-                    acc_refine_flag[b_id] = neigh_refine_flag;
-                };
+        //             /* current block (cur_b) is at level L1 and neighborh block (neigh_b) L2
+        //              * such that L1 < L2.
+        //              *
+        //              * Case 5: cur_b is at level L1 and neigh at level L2 with (L1 - L2 =
+        //              * -1), cur_b is marked for refinement but not neigh_b. We do nothing
+        //              * (since effective refinement of cur_b will lead to L1_new such that
+        //              * L1_new = L2). Case 6: cur_b is at level L1 and neigh at level L2 with
+        //              * (L1 - L2 = -1), cur_b and neigh_b are both marked for refinement. We
+        //              * do nothing.
+        //              */
+        //             else if (current_block_level < neigh_block_level) {
+        //                 // Nothing
+        //             } else {
+        //                 // Should not happen. Raise an exception.
+        //             }
+        //             acc_refine_flag[b_id] = neigh_refine_flag;
+        //         };
 
-                if (current_refinement_flag) {
-                    block_graph_xp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                    block_graph_xm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                    block_graph_yp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                    block_graph_ym.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                    block_graph_zp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                    block_graph_zm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                        apply_to_each_neigh_block(neigh_block_id);
-                    });
-                }
-            });
-        });
+        //         if (current_refinement_flag) {
+        //             block_graph_xp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //             block_graph_xm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //             block_graph_yp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //             block_graph_ym.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //             block_graph_zp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //             block_graph_zm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
+        //                 apply_to_each_neigh_block(neigh_block_id);
+        //             });
+        //         }
+        //     });
+        // });
 
-        block_graph_neighs_xp.complete_event_state(e1);
-        block_graph_neighs_xm.complete_event_state(e1);
-        block_graph_neighs_yp.complete_event_state(e1);
-        block_graph_neighs_ym.complete_event_state(e1);
-        block_graph_neighs_zp.complete_event_state(e1);
-        block_graph_neighs_zm.complete_event_state(e1);
-        buf_amr_block_levels.complete_event_state(e1);
+        // block_graph_neighs_xp.complete_event_state(e1);
+        // block_graph_neighs_xm.complete_event_state(e1);
+        // block_graph_neighs_yp.complete_event_state(e1);
+        // block_graph_neighs_ym.complete_event_state(e1);
+        // block_graph_neighs_zp.complete_event_state(e1);
+        // block_graph_neighs_zm.complete_event_state(e1);
+        // buf_amr_block_levels.complete_event_state(e1);
 
         // keep only derefine flags on only if the eight cells want to merge and if they can
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -714,7 +691,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                       .get_refs_dir(Direction_::zm)
                       .get(id_patch)
                       .get()
-                      .get_read_access(depends_list)) {
+                      .get_read_access(depends_list))
+
+        {
             p_id      = id_patch;
             rho       = pdat.get_field<f64>(2).get_buf().get_write_access(depends_list);
             rho_vel   = pdat.get_field<f64_3>(3).get_buf().get_write_access(depends_list);
@@ -860,11 +839,19 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     [=](u32 id) {
                         return acc.rhoE[id];
                     });
+                logger::raw_ln(
+                    "[limited slopes ] rho_x = ",
+                    result[0].rho,
+                    "  rho_y = ",
+                    result[1].rho,
+                    "  rho_z = ",
+                    result[2].rho);
 
                 shammath::ConsState<Tvec> mean_cons_var{0., 0, {0., 0., 0.}};
                 Tscal rho_interpolate   = 0;
                 Tvec rhovel_interpolate = {0., 0., 0.};
                 Tscal rhoe_interpolate  = 0.0;
+                Tscal checK_rho         = 0;
 
                 for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
 
@@ -899,10 +886,20 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     acc.rho[new_cell_idx]     = rho_interpolate * rho_block;
                     acc.rho_vel[new_cell_idx] = rhovel_interpolate * rho_vel_block;
                     acc.rhoE[new_cell_idx]    = rhoe_interpolate * rhoE_block;
+
+                    checK_rho += rho_interpolate * rho_block;
+
+                    /*
+                        // acc.rho[new_cell_idx]     = rho_block;
+                        // acc.rho_vel[new_cell_idx] = rho_vel_block;
+                        // acc.rhoE[new_cell_idx]    = rhoE_block;
+                    */
                 }
 
                 // average
                 mean_cons_var *= (1 / 8);
+                // logger::raw_ln("Old-rho = ", rho_block, "   some -child-rho = ",
+                // checK_rho/mean_cons_var.rho);
 
                 // completed the renormalization step
                 for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {

@@ -90,7 +90,6 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
-        std::shared_ptr<shamrock::solvergraph::Field<TgridUint>> block_levels;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_rho;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dx_v;
@@ -143,6 +142,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box_edge;
 
         std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size;
+        std::shared_ptr<shamrock::solvergraph::Field<TgridUint>> amr_block_levels;
 
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;

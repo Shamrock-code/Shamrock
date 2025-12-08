@@ -39,7 +39,7 @@ namespace shamrock::solvergraph {
         });
 
         // replace new fields
-        ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, PatchDataField<T> &pdat_field) {
+        ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, const PatchDataField<T> &pdat_field) {
             fields.get_field(r).insert(pdat_field);
         });
     }

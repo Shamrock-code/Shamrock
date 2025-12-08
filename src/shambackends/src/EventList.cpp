@@ -16,7 +16,7 @@
 #include "shambackends/EventList.hpp"
 #include "shamcomm/logs.hpp"
 
-sham::EventList::~EventList() {
+sham::EventList::~EventList() noexcept(false) {
     if (!consumed && !events.empty()) {
         std::string log_str = shambase::format(
             "EventList destroyed without being consumed :\n    -> creation : {}",
@@ -25,6 +25,6 @@ sham::EventList::~EventList() {
         for (auto &e : events) {
             e.wait();
         }
-        shambase::throw_with_loc<std::runtime_error>(log_str);
+        throw shambase::make_except_with_loc<std::runtime_error>(log_str);
     }
 }

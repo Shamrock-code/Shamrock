@@ -9,7 +9,7 @@ jobs:
 
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,  docker-runner]
 
     container:
       image: ${{ matrix.container }}
@@ -79,6 +79,7 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd acpp_omp_debug
+          export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate && shammake
 
       - name: Pull reference files

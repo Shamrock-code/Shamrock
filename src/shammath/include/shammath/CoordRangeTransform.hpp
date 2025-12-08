@@ -36,13 +36,13 @@ namespace shammath {
 
         enum TransformFactMode { multiply, divide };
 
-        TransformFactMode mode;
-
         // written as Patch->Coord transform
         Tdest fact;
 
         Tdest dest_coord_min;
         Tsource source_coord_min;
+
+        TransformFactMode mode;
 
         public:
         static_assert(

@@ -31,7 +31,7 @@ namespace shamrock::solvergraph {
         ReplaceGhostField() {}
 
         struct Edges {
-            shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
+            const shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
             shamrock::solvergraph::IFieldRefs<T> &fields;
         };
 

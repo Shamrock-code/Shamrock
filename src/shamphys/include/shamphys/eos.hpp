@@ -99,30 +99,24 @@ namespace shamphys {
 
     template<class T>
     struct EOS_Fermi {
-        static constexpr T pi  = shamunits::pi<T>;
-        static constexpr T h   = shamunits::Constants<T>::Si::h;
-        static constexpr T m_e = shamunits::Constants<T>::Si::electron_mass;
-        static constexpr T m_p = shamunits::Constants<T>::Si::proton_mass;
-        static constexpr T c   = shamunits::Constants<T>::Si::c;
-        static constexpr T coeff_p
-            = pi * m_e * m_e * m_e * m_e * c * c * c * c * c / (3 * h * h * h);
-        static constexpr T coeff_pf = 3 * h * h * h / (8 * pi * m_p);
-
-        //= \tilde p_F = Fermi momentum divided by m_e*c
-        static constexpr T tpf(T mu_e, T rho) {
-            return sycl::rootn(coeff_pf * rho / mu_e, 3) / (m_e * c);
-        }
+        static constexpr T pi = shamunits::pi<T>;
 
         struct PressureAndCs {
             T pressure;
             T soundspeed;
         };
-        static constexpr PressureAndCs pressure_and_soundspeed(T mu_e, T rho) {
-            T pf  = tpf(mu_e, rho);
-            T pf2 = pf * pf;
-            T P   = coeff_p * (pf * sycl::sqrt(pf2 + 1) * (2 * pf2 - 3) + 3 * sycl::asinh(pf));
-            T cs2 = 8 * coeff_pf * coeff_p * pf2 * pf2
-                    / (3 * mu_e * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + pf2));
+        static constexpr PressureAndCs pressure_and_soundspeed(
+            T mu_e, T rho, T m_e, T m_p, T h, T c) {
+            T coeff_p = pi * sycl::pown(m_e, 4) * sycl::pown(c, 4) / (3 * sycl::pown(h, 3));
+
+            T coeff_pf = 3 * h * h * h / (8 * pi * m_p);
+
+            //= \tilde p_F = Fermi momentum divided by m_e*c
+            T tpf  = sycl::rootn(coeff_pf * rho / mu_e, 3) / (m_e * c);
+            T tpf2 = tpf * tpf;
+            T P    = coeff_p * (tpf * sycl::sqrt(tpf2 + 1) * (2 * tpf2 - 3) + 3 * sycl::asinh(tpf));
+            T cs2  = 8 * coeff_pf * coeff_p * tpf2 * tpf2
+                    / (3 * mu_e * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + tpf2));
             return {P, sycl::sqrt(cs2)};
         }
     };

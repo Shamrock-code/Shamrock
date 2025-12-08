@@ -207,6 +207,9 @@ namespace shammodels::basegodunov {
                 })
             .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
                 self.npscal_gas_config.npscal_gas = npscal_gas;
+            })
+            .def("set_pic", [](TConfig &self) {
+                self.pic_config.enabled = true;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

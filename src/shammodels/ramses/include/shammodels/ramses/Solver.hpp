@@ -55,7 +55,6 @@ namespace shammodels::basegodunov {
             context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
             context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
             context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
-            context.pdata_layout_add_field<Tscal>("rho_pic", AMRBlock::block_size);
 
             if (solver_config.is_dust_on()) {
                 u32 ndust = solver_config.dust_config.ndust;
@@ -72,6 +71,11 @@ namespace shammodels::basegodunov {
                 context.pdata_layout_add_field<Tscal>(
                     "rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
             }
+
+            if (solver_config.is_pic_enabled()) {
+                context.pdata_layout_add_field<Tscal>("rho_pic", AMRBlock::block_size);
+            }
+
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

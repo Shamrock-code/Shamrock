@@ -378,10 +378,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             "rhovel_dust", "(\\rho_{\\rm dust} \\mathbf{v}_{\\rm dust})");
     }
 
-    // will be filled by NodePIC
-    storage.rho_pic
-        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
-
     // will be filled by NodeConsToPrimGas
     storage.vel = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "vel", "\\mathbf{v}");
@@ -659,6 +655,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 "flux_rhov_dust_face_zp", "flux_rhov_dust_face_zp", ndust);
     }
 
+    // will be filled by NodePIC
+    if (solver_config.is_pic_enabled()) {
+    storage.rho_pic
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
@@ -923,7 +925,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
     }
 
-    { // Build PIC (Particle in Cell) node
+    // Build PIC (Particle in Cell) node
+    if (solver_config.is_pic_enabled()) {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> pic_sequence;
 
         {

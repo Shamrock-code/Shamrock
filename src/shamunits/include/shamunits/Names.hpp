@@ -11,6 +11,7 @@
 
 /**
  * @file Names.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -59,6 +60,7 @@
     X1(astronomical_unit, au)                                                                      \
     X1(light_year, ly)                                                                             \
     X1(parsec, pc)                                                                                 \
+    X1(solar_radius, sr)                                                                           \
     X1(electron_volt, eV)                                                                          \
     X1(ergs, erg)                                                                                  \
     X1(british_pint, pint)

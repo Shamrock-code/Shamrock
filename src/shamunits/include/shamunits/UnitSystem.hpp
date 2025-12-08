@@ -11,6 +11,7 @@
 
 /**
  * @file UnitSystem.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -210,6 +211,7 @@ namespace shamunits {
         addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Uconvert::au_to_m, 1); }
         addget(light_year)        { return PREF* Uget(m, 1) * Cget(Uconvert::ly_to_m, 1); }
         addget(parsec)            { return PREF* Uget(m, 1) * Cget(Uconvert::pc_to_m, 1); }
+        addget(solar_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::sr_to_m, 1); }
 
         addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
@@ -283,6 +285,7 @@ namespace shamunits {
             case units::astronomical_unit: return get<pref, units::astronomical_unit>(); break;
             case units::light_year       : return get<pref, units::light_year>(); break;
             case units::parsec           : return get<pref, units::parsec>(); break;
+            case units::solar_radius     : return get<pref, units::solar_radius>(); break;
             case units::eV               : return get<pref, units::eV>(); break;
             case units::erg              : return get<pref, units::erg>(); break;
             case units::pint             : return get<pref, units::pint>(); break;

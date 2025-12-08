@@ -151,6 +151,9 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
     shamcomm::CommunicationBuffer buf_recv{length, instance::get_compute_scheduler_ptr()};
     shamcomm::CommunicationBuffer buf_send{length, instance::get_compute_scheduler_ptr()};
 
+    shambase::Timer bench_timer;
+    bench_timer.start();
+
     f64 t        = 0;
     u64 loops    = 0;
     bool is_used = false;
@@ -180,7 +183,9 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
         f64 t_end = MPI_Wtime();
         t += t_end - t_start;
 
-    } while (shamalgs::collective::allreduce_min(t) < 1);
+        bench_timer.end();
+
+    } while (shamalgs::collective::allreduce_min(bench_timer.elasped_sec()) < 1);
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(

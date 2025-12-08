@@ -152,6 +152,7 @@ namespace shammodels::sph {
         void reset_merge_ghosts_fields();
 
         void compute_eos_fields();
+
         void reset_eos_fields();
 
         void prepare_corrector();

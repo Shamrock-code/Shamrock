@@ -9,6 +9,7 @@
 
 /**
  * @file EOSConfig.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -56,6 +57,7 @@ namespace shammodels {
 
         using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
         using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic    = typename EOSConfig<Tvec>::Polytropic;
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
@@ -64,6 +66,12 @@ namespace shammodels {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
         } else if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "adiabatic"}, {"gamma", eos_config->gamma}};
+        } else if (const Polytropic *eos_config = std::get_if<Polytropic>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "polytropic"},
+                {"K", eos_config->K},
+                {"gamma", eos_config->gamma}};
         } else if (const LocIsoT *eos_config = std::get_if<LocIsoT>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "locally_isothermal"}};
         } else if (const LocIsoTLP07 *eos_config = std::get_if<LocIsoTLP07>(&p.config)) {
@@ -126,6 +134,7 @@ namespace shammodels {
 
         using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
         using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic    = typename EOSConfig<Tvec>::Polytropic;
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
@@ -134,6 +143,8 @@ namespace shammodels {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
         } else if (eos_type == "adiabatic") {
             p.config = Adiabatic{j.at("gamma").get<Tscal>()};
+        } else if (eos_type == "polytropic") {
+            p.config = Polytropic{j.at("K").get<Tscal>(), j.at("gamma").get<Tscal>()};
         } else if (eos_type == "locally_isothermal") {
             p.config = LocIsoT{};
         } else if (eos_type == "locally_isothermal_lp07") {

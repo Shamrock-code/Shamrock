@@ -11,6 +11,7 @@
 
 /**
  * @file EOSConfig.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -50,6 +51,8 @@ namespace shammodels {
         /// Adiabatic equation of state configuration
         using Adiabatic = shamphys::EOS_Config_Adiabatic<Tscal>;
 
+        using Polytropic = shamphys::EOS_Config_Polytropic<Tscal>;
+
         /// Isothermal equation of state configuration
         using Isothermal = shamphys::EOS_Config_Isothermal<Tscal>;
 
@@ -67,6 +70,7 @@ namespace shammodels {
         using Variant = std::variant<
             Isothermal,
             Adiabatic,
+            Polytropic,
             LocallyIsothermal,
             LocallyIsothermalLP07,
             LocallyIsothermalFA2014>;
@@ -87,6 +91,13 @@ namespace shammodels {
          * @param gamma The adiabatic index
          */
         inline void set_adiabatic(Tscal gamma) { config = Adiabatic{gamma}; }
+
+        /**
+         * @brief Set the EOS configuration to an polytropic equation of state
+         *
+         * @param gamma The adiabatic index
+         */
+        inline void set_polytropic(Tscal K, Tscal gamma) { config = Polytropic{K, gamma}; }
 
         /**
          * @brief Set the EOS configuration to a locally isothermal equation of state

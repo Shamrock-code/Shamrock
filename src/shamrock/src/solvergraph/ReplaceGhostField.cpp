@@ -29,9 +29,10 @@ namespace shamrock::solvergraph {
         auto &fields       = edges.fields;
 
         std::map<u32, u32> gz_map;
-        ghost_fields.patchdata_fields.for_each([&](u32 s, u32 r, const PatchDataField<T> &pdat_field) {
-            gz_map[r] += pdat_field.get_obj_cnt();
-        });
+        ghost_fields.patchdata_fields.for_each(
+            [&](u32 s, u32 r, const PatchDataField<T> &pdat_field) {
+                gz_map[r] += pdat_field.get_obj_cnt();
+            });
 
         // remove old fields
         fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {

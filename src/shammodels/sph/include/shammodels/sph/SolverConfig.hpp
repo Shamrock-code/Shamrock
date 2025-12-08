@@ -558,6 +558,7 @@ struct shammodels::sph::SolverConfig {
     /**
      * @brief Set the EOS configuration to a Fermi equation of state
      *
+     * @param mu_e The mean molecular weight
      */
     inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
 

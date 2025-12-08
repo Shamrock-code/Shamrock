@@ -414,11 +414,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 [mu_e
                  = eos_config->mu_e](u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
                     using namespace shamrock::sph;
-                    Tscal rho_a = rho(i);
-                    Tscal cs_a  = EOS::soundspeed(mu_e, rho_a);
-                    Tscal P_a   = EOS::pressure(mu_e, rho_a);
-                    P[i]        = P_a;
-                    cs[i]       = cs_a;
+                    Tscal rho_a    = rho(i);
+                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a);
+                    P[i]           = res.pressure;
+                    cs[i]          = res.soundspeed;
                 });
         });
 

@@ -129,8 +129,9 @@ namespace shammodels {
         }
 
         /**
-         * @brief Set the EOS configuration to an Fermi equation of state
+         * @brief Set the EOS configuration to a Fermi equation of state
          *
+         * @param mu_e The mean molecular weight
          */
         inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
 

@@ -108,22 +108,22 @@ namespace shamphys {
             = pi * m_e * m_e * m_e * m_e * c * c * c * c * c / (3 * h * h * h);
         static constexpr T coeff_pf = 3 * h * h * h / (8 * pi * m_p);
 
+        //= \tilde p_F = Fermi momentum divided by m_e*c
         static constexpr T tpf(T mu_e, T rho) {
             return sycl::rootn(coeff_pf * rho / mu_e, 3) / (m_e * c);
-        } //= \tilde p_F = Fermi momentum divided by m_e*c
-
-        static constexpr T soundspeed(T mu_e, T rho) {
-            T pf2 = sycl::pown(tpf(mu_e, rho), 2);
-            T cs2 = 8 * coeff_pf * coeff_p * pf2 * pf2
-                    / (3 * mu_e * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + pf2));
-            return sycl::sqrt(cs2);
         }
 
-        static constexpr T pressure(T mu_e, T rho) {
-
-            T pf = tpf(mu_e, rho);
-            return coeff_p
-                   * (pf * sycl::sqrt(pf * pf + 1) * (2 * pf * pf - 3) + 3 * sycl::asinh(pf));
+        struct PressureAndCs {
+            T pressure;
+            T soundspeed;
+        };
+        static constexpr PressureAndCs pressure_and_soundspeed(T mu_e, T rho) {
+            T pf  = tpf(mu_e, rho);
+            T pf2 = pf * pf;
+            T P   = coeff_p * (pf * sycl::sqrt(pf2 + 1) * (2 * pf2 - 3) + 3 * sycl::asinh(pf));
+            T cs2 = 8 * coeff_pf * coeff_p * pf2 * pf2
+                    / (3 * mu_e * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + pf2));
+            return {P, sycl::sqrt(cs2)};
         }
     };
 

@@ -159,7 +159,7 @@ namespace shammodels {
         } else if (eos_type == "fermi") {
             p.config = Fermi{j.at("mu_e").get<Tscal>()};
         } else {
-            shambase::throw_unimplemented("wtf !");
+            shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }
     }
 

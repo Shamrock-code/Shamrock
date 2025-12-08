@@ -104,7 +104,7 @@ namespace shamphys {
      * determines the behavior of the gas.
      *
      * The equation of state is given by:
-     * \f$ P = K\rho^\gamma \f$ //TODO
+     * \f$ P = P(\rho, \mu_e) \f$, see `shamphys::EOS_Fermi` for the exact formula.
      */
     template<class Tscal>
     struct EOS_Config_Fermi {

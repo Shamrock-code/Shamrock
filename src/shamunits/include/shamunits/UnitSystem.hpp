@@ -211,7 +211,7 @@ namespace shamunits {
         addget(astronomical_unit) { return PREF* Uget(m, 1) * Cget(Uconvert::au_to_m, 1); }
         addget(light_year)        { return PREF* Uget(m, 1) * Cget(Uconvert::ly_to_m, 1); }
         addget(parsec)            { return PREF* Uget(m, 1) * Cget(Uconvert::pc_to_m, 1); }
-        addget(solar_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::sr_to_m, 1); }
+        addget(solar_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::rsol_to_m, 1); }
 
         addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}

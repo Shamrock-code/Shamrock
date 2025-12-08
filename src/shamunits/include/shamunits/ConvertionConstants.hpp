@@ -23,10 +23,10 @@ namespace shamunits {
     template<class T>
     struct ConvertionConstants {
 
-        static constexpr T au_to_m = 149597870700;     //(m)
-        static constexpr T ly_to_m = 9460730472580800; //(m)
-        static constexpr T pc_to_m = 3.0857e16;        //(m)
-        static constexpr T sr_to_m = 6.957e8;          //(m)
+        static constexpr T au_to_m   = 149597870700;     //(m)
+        static constexpr T ly_to_m   = 9460730472580800; //(m)
+        static constexpr T pc_to_m   = 3.0857e16;        //(m)
+        static constexpr T rsol_to_m = 6.957e8;          //(m)
 
         static constexpr T mn_to_s  = 60;            //(s)
         static constexpr T hr_to_s  = 3600;          //(s)
@@ -70,7 +70,7 @@ namespace shamunits {
  * @fn shamunits::ConvertionConstants::pc_to_m()
  * @brief conversion factor from parsecs to meters
  *
- * @fn shamunits::ConvertionConstants::sr_to_m()
+ * @fn shamunits::ConvertionConstants::rsol_to_m()
  * @brief conversion factor from solar radii to meters
  *
  * @fn shamunits::ConvertionConstants::mn_to_s()

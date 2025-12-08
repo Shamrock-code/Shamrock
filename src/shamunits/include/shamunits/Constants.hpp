@@ -17,7 +17,7 @@
  * @brief
  */
 
-#include "ConvertionConstants.hpp"
+#include "ConversionConstants.hpp"
 #include "Names.hpp"
 #include "UnitSystem.hpp"
 #include "details/utils.hpp"
@@ -110,7 +110,7 @@ namespace shamunits {
     struct Constants {
 
         /// Alias to the conversion constants
-        using Conv = ConvertionConstants<T>;
+        using Conv = ConversionConstants<T>;
 
         /// Physical constant in SI units
         struct Si {

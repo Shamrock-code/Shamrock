@@ -16,7 +16,7 @@
  * @brief
  */
 
-#include "ConvertionConstants.hpp"
+#include "ConversionConstants.hpp"
 #include "Names.hpp"
 #include <cmath>
 
@@ -83,7 +83,7 @@ namespace shamunits {
 
         inline T pown(T a, int n) { return std::pow(a, n); }
 
-        using Uconvert = ConvertionConstants<T>;
+        using Uconvert = ConversionConstants<T>;
 
         public:
         /**

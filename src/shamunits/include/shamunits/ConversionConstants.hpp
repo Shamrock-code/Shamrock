@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file ConvertionConstants.hpp
- * @author David Fang (david.fang@ikmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @file ConversionConstants.hpp
+ * @author David Fang (david.fang@ikmail.com) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  */
 
@@ -21,7 +21,7 @@ namespace shamunits {
     /// Conversion constants from a units to another one
     /// \todo Could be also a XMacro next to names definitions
     template<class T>
-    struct ConvertionConstants {
+    struct ConversionConstants {
 
         static constexpr T au_to_m   = 149597870700;     //(m)
         static constexpr T ly_to_m   = 9460730472580800; //(m)
@@ -61,46 +61,46 @@ namespace shamunits {
 } // namespace shamunits
 
 /**
- * @fn shamunits::ConvertionConstants::au_to_m()
+ * @fn shamunits::ConversionConstants::au_to_m()
  * @brief conversion factor from au to meters
  *
- * @fn shamunits::ConvertionConstants::ly_to_m()
+ * @fn shamunits::ConversionConstants::ly_to_m()
  * @brief conversion factor from light years to meters
  *
- * @fn shamunits::ConvertionConstants::pc_to_m()
+ * @fn shamunits::ConversionConstants::pc_to_m()
  * @brief conversion factor from parsecs to meters
  *
- * @fn shamunits::ConvertionConstants::rsol_to_m()
+ * @fn shamunits::ConversionConstants::rsol_to_m()
  * @brief conversion factor from solar radii to meters
  *
- * @fn shamunits::ConvertionConstants::mn_to_s()
+ * @fn shamunits::ConversionConstants::mn_to_s()
  * @brief conversion factor from minutes to seconds
  *
- * @fn shamunits::ConvertionConstants::hr_to_s()
+ * @fn shamunits::ConversionConstants::hr_to_s()
  * @brief conversion factor from hours to seconds
  *
- * @fn shamunits::ConvertionConstants::dy_to_s()
+ * @fn shamunits::ConversionConstants::dy_to_s()
  * @brief conversion factor from days to seconds
  *
- * @fn shamunits::ConvertionConstants::yr_to_s()
+ * @fn shamunits::ConversionConstants::yr_to_s()
  * @brief conversion factor from years to seconds
  *
- * @fn shamunits::ConvertionConstants::Myr_to_s()
+ * @fn shamunits::ConversionConstants::Myr_to_s()
  * @brief conversion factor from $10^6$ years to seconds
  *
- * @fn shamunits::ConvertionConstants::Gyr_to_s()
+ * @fn shamunits::ConversionConstants::Gyr_to_s()
  * @brief conversion factor from $10^9$ years to seconds
  *
- * @fn shamunits::ConvertionConstants::eV_to_J()
+ * @fn shamunits::ConversionConstants::eV_to_J()
  * @brief conversion factor from electron volts to joules
  *
- * @fn shamunits::ConvertionConstants::erg_to_J()
+ * @fn shamunits::ConversionConstants::erg_to_J()
  * @brief conversion factor from ergs to joules
  *
- * @fn shamunits::ConvertionConstants::K_degC_offset()
+ * @fn shamunits::ConversionConstants::K_degC_offset()
  * @brief conversion offset from kelvin degrees to celsius
  *
- * @fn shamunits::ConvertionConstants::litre_to_pint()
+ * @fn shamunits::ConversionConstants::litre_to_pint()
  * @brief conversion offset from litre to british pint
  *
  */

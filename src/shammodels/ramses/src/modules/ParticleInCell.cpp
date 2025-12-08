@@ -64,11 +64,8 @@ namespace shammodels::basegodunov::modules {
     void NodePIC<Tvec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        printf("!!!ASDBG!!! just before check_sizes in PIC node\n");
         edges.spans_rho.check_sizes(edges.sizes.indexes);
-        printf("!!!ASDBG!!! just after check_sizes in PIC node\n");
         edges.spans_rho_pic.ensure_sizes(edges.sizes.indexes);
-        printf("!!!ASDBG!!! just after ensure_sizes in PIC node\n");
 
         KernelPIC<Tvec>::kernel(
             edges.spans_rho.get_spans(),

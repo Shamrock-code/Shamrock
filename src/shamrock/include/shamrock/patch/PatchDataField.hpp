@@ -367,11 +367,9 @@ class PatchDataField {
                 sham::MultiRef{buf},
                 sham::MultiRef{mask},
                 obj_cnt,
-                [=, nvar_field = nvar](
-                    u32 id, const T *__restrict acc, u32 *__restrict acc_mask, Args... args_f) {
-                    acc_mask[id] = cd_true(acc, id * nvar_field, std::forward<Args>(args_f)...);
-                },
-                std::forward<Args>(args)...);
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
 
             return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
         } else {

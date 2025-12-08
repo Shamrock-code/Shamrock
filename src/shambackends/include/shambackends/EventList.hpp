@@ -144,7 +144,7 @@ namespace sham {
          * still contains events. If so, it logs an error message and throws
          * a runtime exception after waiting for all events.
          */
-        ~EventList();
+        ~EventList() noexcept(false);
 
         /// Get the list of events
         inline std::vector<sycl::event> &get_events() { return events; }

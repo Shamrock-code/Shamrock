@@ -349,11 +349,9 @@ namespace shamalgs::algorithm::details {
                             sham::MultiRef{},
                             sham::MultiRef{buf_key, buf_values},
                             nThreads,
-                            [](u64 gid, Tkey *m, Tval *id, u32 inc, u32 length) {
+                            [=](u64 gid, Tkey *m, Tval *id) {
                                 B::template order_kernel<8>(m, id, inc, length, gid);
-                            },
-                            inc,
-                            length);
+                            });
 
                         // sort_kernel_B8(arg_eq,* buf_key->buf,*
                         // particles::buf_ids->buf,inc,length<<1);//.wait();

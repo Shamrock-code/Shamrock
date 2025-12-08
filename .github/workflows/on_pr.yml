@@ -94,7 +94,16 @@ jobs:
 
       - name : Install pck (doxygen)
         run: |
-          sudo apt-get install -y -qq doxygen graphviz
+          sudo apt update && \
+          sudo apt install -y -qq doxygen graphviz
+
+      - name : Modify texlive packages
+        run: |
+          sudo apt install -y \
+            texlive-full \
+            dvipng \
+            ghostscript \
+            latexmk
 
       - name : Run doxygen
         run: |

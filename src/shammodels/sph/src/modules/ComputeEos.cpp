@@ -394,6 +394,18 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Fermi *eos_config
         = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
 
+        Tscal metre = solver_config.unit_sys
+                          ->template to<shamunits::units::metre>(); // = 1m in the input system unit
+        Tscal second = solver_config.unit_sys->template to<shamunits::units::second>();
+        Tscal kg     = solver_config.unit_sys->template to<shamunits::units::kilogramm>();
+
+        Tscal Pa              = kg / metre / (second * second);
+        Tscal velocity_unit   = metre / second;
+        Tscal density_unit    = kg / (metre * metre * metre);
+        Tscal cs_unit_partial = sycl::sqrt(Pa / sycl::powr(density_unit, 1. / 3.));
+        // in eos.hpp, coeff_p and coeff_fp are in SI and have respectively
+        // density**{-1/3} and pressure dimensions
+
         using EOS = shamphys::EOS_Fermi<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
@@ -411,13 +423,15 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 sham::MultiRef{rho_getter},
                 sham::MultiRef{buf_P, buf_cs},
                 total_elements,
-                [mu_e
-                 = eos_config->mu_e](u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
+                [mu_e = eos_config->mu_e, Pa, cs_unit_partial](
+                    u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
                     using namespace shamrock::sph;
                     Tscal rho_a    = rho(i);
                     auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a);
-                    P[i]           = res.pressure;
-                    cs[i]          = res.soundspeed;
+                    P[i]           = res.pressure * Pa;
+                    cs[i]          = res.soundspeed * cs_unit_partial;
+                    // coeff_p and coeff_fp are in SI and have respectively
+                    // density**{-1/3} and pressure dimensions
                 });
         });
 

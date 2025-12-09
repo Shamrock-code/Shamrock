@@ -96,6 +96,8 @@ namespace shammodels::sph::modules {
 
         shammath::AABB<Tvec> box;
 
+        Tscal mtot;
+
         struct TabulatedDensity {
             std::vector<Tscal> x;
             std::vector<Tscal> rho;
@@ -125,7 +127,6 @@ namespace shammodels::sph::modules {
 
         public:
         static constexpr u32 ngrid = 2048;
-        Tscal mpart                = solver_config.gpart_mass;
         Tscal hfact                = Kernel::hfactd;
 
         Smap_inputdata smap_inputdata;
@@ -139,8 +140,9 @@ namespace shammodels::sph::modules {
             std::vector<Tscal> tabx,
             std::string system,
             std::string axis,
-            std::pair<Tvec, Tvec> box)
-            : context(context), solver_config(solver_config), parent(parent), box(box) {
+            std::pair<Tvec, Tvec> box,
+            Tscal mtot)
+            : context(context), solver_config(solver_config), parent(parent), box(box), mtot(mtot) {
 
             TabulatedDensity tabul = {tabx, tabrho};
             shamlog_debug_ln("ModifierApplyStretchMapping", "tabul", tabul.x, tabul.rho);
@@ -432,8 +434,7 @@ namespace shammodels::sph::modules {
             return center + cpos;
         }
 
-        static Tscal h_rho_stretched(
-            Tvec pos, const Smap_inputdata &smap_inputdata, Tscal mpart, Tscal hfact) {
+        static Tscal h_rho_stretched(Tvec pos, const Smap_inputdata &smap_inputdata, Tscal hfact) {
             Tscal rhoa = 1.;
 
             Tscal integral_profile = smap_inputdata.integral_profile;

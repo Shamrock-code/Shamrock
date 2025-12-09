@@ -69,8 +69,10 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         mask_a = outside_boundaries;
         if (!outside_boundaries) {
             npart += 1;
+            // TODO not sure if that will be the total nb of particles or the nb of particles per
+            //  patch
             xyz_a   = stretchpart(xyz_a, smap_inputdata);
-            hpart_a = h_rho_stretched(xyz_a, smap_inputdata, mpart, hfact);
+            hpart_a = h_rho_stretched(xyz_a, smap_inputdata, hfact);
             std::cout << "\rProgression : " << npart << " " << obj_cnt << std::flush;
         };
         ;
@@ -94,7 +96,8 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
         }
     }
 
-    Tscal n13 = sycl::rootn(npart, 3);
+    solver_config.gpart_mass = mtot / npart;
+    Tscal n13                = sycl::rootn(npart, 3);
     sham::kernel_call(
         q,
         sham::MultiRef{},

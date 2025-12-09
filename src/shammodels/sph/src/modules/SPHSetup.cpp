@@ -208,11 +208,12 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         std::vector<Tscal> tabx,
         std::string system,
         std::string axis,
-        std::pair<Tvec, Tvec> box) {
+        std::pair<Tvec, Tvec> box,
+        Tscal mtot) {
 
     // SHAM_ASSERT(tabrho.size() == tabx.size()); //TODO
     return std::shared_ptr<ISPHSetupNode>(new ModifierApplyStretchMapping<Tvec, SPHKernel>(
-        context, solver_config, parent, tabrho, tabx, system, axis, box));
+        context, solver_config, parent, tabrho, tabx, system, axis, box, mtot));
 }
 
 template<class Tvec, template<class> class SPHKernel>

@@ -86,7 +86,8 @@ namespace shammodels::sph::modules {
             std::vector<Tscal> tabx,
             std::string system,
             std::string axis,
-            std::pair<Tvec, Tvec> box);
+            std::pair<Tvec, Tvec> box,
+            Tscal mtot);
 
         std::shared_ptr<ISPHSetupNode> make_modifier_filter(
             SetupNodePtr parent, std::function<bool(Tvec)> filter);

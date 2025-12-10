@@ -12,7 +12,7 @@
 /**
  * @file ReplaceGhostField.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief This module allows replacing ghost values for a generic field with updated values.
  *
  */

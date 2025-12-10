@@ -245,7 +245,8 @@ namespace {
                field_access_rhoe(cell_global_id),
                field_access_rho_vel(cell_global_id)};
 
-        logger::raw_ln("global_id rho ", W_i.rho);
+        // logger::raw_ln("id_grad ", cell_global_id ,"global_id rho  grad  ",
+        // field_access_rho(cell_global_id));
 
         shammath::ConsState<Tvec> W_xp = get_avg_neigh(graph_iter_xp);
         shammath::ConsState<Tvec> W_xm = get_avg_neigh(graph_iter_xm);

@@ -16,6 +16,7 @@
  */
 
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradientUtilities.hpp"

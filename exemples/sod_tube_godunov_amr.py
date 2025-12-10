@@ -11,12 +11,12 @@ ctx.pdata_layout_new()
 model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
 
-multx = 4
+multx = 1
 multy = 1
 multz = 1
 
 cell_size = 1 << 2  # refinement is limited to cell_size = 2
-base = 16
+base = 8
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (cell_size * base * multx)
@@ -88,7 +88,7 @@ model.set_field_value_lambda_f64("rho", rho_map)
 model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-t_target = 0.1
+t_target = 0.05
 
 # for i in range(1000):
 #    model.dump_vtk(f"test{i:04d}.vtk")

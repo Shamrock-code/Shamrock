@@ -394,19 +394,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         SolverEOS_Fermi *eos_config
         = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
 
-        // Tscal metre = solver_config.unit_sys
-        //                   ->template to<shamunits::units::metre>(); // = 1m in the input system
-        //                   unit
-        // Tscal second = solver_config.unit_sys->template to<shamunits::units::second>();
-        // Tscal kg     = solver_config.unit_sys->template to<shamunits::units::kilogramm>();
-
-        // Tscal Pa              = kg / metre / (second * second);
-        // Tscal velocity_unit   = metre / second;
-        // Tscal density_unit    = kg / (metre * metre * metre);
-        // Tscal cs_unit_partial = sycl::sqrt(Pa / sycl::powr(density_unit, 1. / 3.));
-        // in eos.hpp, coeff_p and coeff_fp are in SI and have respectively
-        // density**{-1/3} and pressure dimensions
-
         using EOS = shamphys::EOS_Fermi<Tscal>;
 
         storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
@@ -419,57 +406,31 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
 
-            // UnitSystem<Tscal> unit1{
-            //     si->template get<mega, units::years>(),
-            //     si->template get<units::astronomical_unit>(),
-            //     si->template get<units::kilogramm>() * sol_mass,
-            // };
-            // m_e = c = 1
             using namespace shamunits;
             auto unit_sys = *solver_config.unit_sys;
-            UnitSystem<Tscal> si{};
-            Constants<Tscal> ctes_si{si};
-            Tscal second = si.template get<units::second>(); // une seconde en secondes..
-            UnitSystem<Tscal> unit2{
-                si.template get<units::second>() / 1e-3,
-                si.template get<units::metre>() * (ctes_si.c() * second / 1e-3),
-                si.template get<units::kilogramm>() * (ctes_si.electron_mass()),
-            };
-            Tscal mass
-                = unit_sys.template to<units::kilogramm>() * unit2.template get<units::kilogramm>();
-            Tscal length
-                = unit_sys.template to<units::metre>() * unit2.template get<units::metre>();
-            Tscal time
-                = unit_sys.template to<units::second>() * unit2.template get<units::second>();
 
-            Tscal betaunit      = mass / length / (time * time); // pressure
+            Tscal mass   = unit_sys.template to<units::kilogramm>(); // SI
+            Tscal length = unit_sys.template to<units::metre>();     // SI
+            Tscal time   = unit_sys.template to<units::second>();    // SI
+
+            Tscal pressure_unit = mass / length / (time * time);
             Tscal density_unit  = mass / (length * length * length);
-            Tscal alphabetaunit = sycl::sqrt(betaunit / sycl::rootn(density_unit, 3));
-
-            Constants<Tscal> ctes{unit2};
-            const Tscal m_e = ctes.electron_mass();
-            const Tscal m_p = ctes.proton_mass();
-            const Tscal h   = ctes.h();
-            const Tscal c   = ctes.c();
-            shamlog_debug_ln("CONSTANTS ??", "unit2:", "m_e", m_e, "m_p", m_p, "h", h, "c", c);
-            shamlog_debug_ln("RATIOS ??", betaunit, alphabetaunit);
+            Tscal velocity_unit = length / time;
 
             sham::kernel_call(
                 q,
                 sham::MultiRef{rho_getter},
                 sham::MultiRef{buf_P, buf_cs},
                 total_elements,
-                [mu_e = eos_config->mu_e, unit2, betaunit, alphabetaunit](
+                [mu_e = eos_config->mu_e, density_unit, pressure_unit, velocity_unit](
                     u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
                     UnitSystem<Tscal> si{};
 
                     using namespace shamrock::sph;
                     Tscal rho_a    = rho(i);
-                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a, unit2);
-                    P[i]           = res.pressure / betaunit;
-                    cs[i]          = res.soundspeed / alphabetaunit;
-                    // coeff_p and coeff_fp are in SI and have respectively
-                    // density**{-1/3} and pressure dimensions
+                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a * density_unit);
+                    P[i]           = res.pressure / pressure_unit;
+                    cs[i]          = res.soundspeed / velocity_unit;
                 });
         });
 

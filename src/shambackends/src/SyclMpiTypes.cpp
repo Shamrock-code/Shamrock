@@ -56,7 +56,8 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
 #define __SYCL_TYPE_COMMIT_len3(base_name, src_type)                                               \
     {                                                                                              \
         check_offset_validity<base_name>();                                                        \
-        MPICHECK(MPI_Type_contiguous(__len_vec3, mpi_type_##src_type, &__tmp_mpi_type_##base_name));     \
+        MPICHECK(                                                                                  \
+            MPI_Type_contiguous(__len_vec3, mpi_type_##src_type, &__tmp_mpi_type_##base_name));    \
         MPICHECK(MPI_Type_create_resized(                                                          \
             __tmp_mpi_type_##base_name, 0, sizeof(base_name), &mpi_type_##base_name));             \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \

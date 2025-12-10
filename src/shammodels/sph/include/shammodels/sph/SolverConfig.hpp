@@ -238,8 +238,11 @@ struct shammodels::sph::SolverStatusVar {
     /// The type of the scalar used to represent the quantities
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time   = 0; ///< Current time
-    Tscal dt_sph = 0; ///< Current time step
+    Tscal time     = 0; ///< Current time
+    Tscal dt_sph   = 0; ///< Current time step
+    Tscal dt_force = 0; ///< Current force time step
+    Tscal dt_true_sph
+        = 0; ///< Current "true" sph time step, ie Courant condition + SPH acceleration
 
     Tscal cfl_multiplier = 1e-2; ///< Current cfl multiplier
 };
@@ -341,11 +344,24 @@ struct shammodels::sph::SolverConfig {
     /// Set the time step for the next iteration
     inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
 
+    /// Set the external force time step for the next substep iteration
+    inline void set_next_dt_force(Tscal dt) { time_state.dt_force = dt; }
+
+    /// Set the sph time step (Courant + SPH acceleration)for the next substep iteration
+    // cf eq 72 and 73 of the Phantom paper
+    inline void set_next_dt_sph(Tscal dt) { time_state.dt_true_sph = dt; }
+
     /// Get the current time
     inline Tscal get_time() { return time_state.time; }
 
     /// Get the time step for the next iteration
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
+
+    /// Get the force dt
+    inline Tscal get_dt_force() { return time_state.dt_force; }
+
+    /// Get the true sph dt
+    inline Tscal get_dt_true_sph() { return time_state.dt_true_sph; }
 
     /// Set the CFL multiplier for the time step
     inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }

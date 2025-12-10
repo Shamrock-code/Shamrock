@@ -106,10 +106,32 @@ jobs:
             -extra-arg-before="-Wno-unused-command-line-argument" \
             | tee clang-tidy.log
 
-      - name: Convert clang-tidy log to HTML
+      - name: Convert clang-tidy log to HTML with Monokai theme
         run: |
           python3 -m pip install --break-system-packages ansi2html
+
+          # Convert ANSI log to HTML using the Monokai palette
           ansi2html < clang-tidy.log > clang-tidy.html
+
+          sed -i \
+              \
+              -e 's/color: #AAAAAA;/color: #f8f8f2;/g' \
+              -e 's/color: #000000;/color: #272822;/g' \
+              \
+              -e 's/background-color: #000000;/background-color: #272822;/g' \
+              -e 's/background-color: #AAAAAA;/background-color: #f8f8f2;/g' \
+              \
+              -e 's/color: #272822;/color: #272822;/g' \
+              -e 's/color: #f92672;/color: #f92672;/g' \
+              -e 's/color: #00aa00;/color: #a6e22e;/g' \
+              -e 's/color: #f4bf75;/color: #f4bf75;/g' \
+              -e 's/color: #66d9ef;/color: #66d9ef;/g' \
+              -e 's/color: #E850A8;/color: #ae81ff;/g' \
+              -e 's/color: #00aaaa;/color: #a1efe4;/g' \
+              -e 's/color: #AAAAAA;/color: #f8f8f2;/g' \
+              \
+              clang-tidy.html
+
 
       - uses: actions/upload-artifact@v4
         with:

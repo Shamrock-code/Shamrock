@@ -47,24 +47,16 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
 
 #define __SYCL_TYPE_COMMIT_len2(base_name, src_type)                                               \
     {                                                                                              \
-        base_name a;                                                                               \
-        MPI_Aint offset_##base_name = ((size_t) ((char *) &(a.x()) - (char *) &(a)));              \
-        MPICHECK(MPI_Type_create_struct(                                                           \
-            1, &__len_vec2, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
+        check_offset_validity<base_name>();                                                        \
+        MPICHECK(MPI_Type_contiguous(__len_vec2, mpi_type_##src_type, &mpi_type_##base_name));     \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
         shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len3(base_name, src_type)                                               \
     {                                                                                              \
-        base_name a;                                                                               \
-        MPI_Aint offset_##base_name = ((size_t) ((char *) &(a.x()) - (char *) &(a)));              \
-        MPICHECK(MPI_Type_create_struct(                                                           \
-            1,                                                                                     \
-            &__len_vec3,                                                                           \
-            &offset_##base_name,                                                                   \
-            &mpi_type_##src_type,                                                                  \
-            &__tmp_mpi_type_##base_name));                                                         \
+        check_offset_validity<base_name>();                                                        \
+        MPICHECK(MPI_Type_contiguous(__len_vec3, mpi_type_##src_type, &__tmp_mpi_type_##base_name));     \
         MPICHECK(MPI_Type_create_resized(                                                          \
             __tmp_mpi_type_##base_name, 0, sizeof(base_name), &mpi_type_##base_name));             \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
@@ -73,35 +65,40 @@ inline MPI_Datatype __tmp_mpi_type_f64_3;
 
 #define __SYCL_TYPE_COMMIT_len4(base_name, src_type)                                               \
     {                                                                                              \
-        base_name a;                                                                               \
-        MPI_Aint offset_##base_name = ((size_t) ((char *) &(a.x()) - (char *) &(a)));              \
-        MPICHECK(MPI_Type_create_struct(                                                           \
-            1, &__len_vec4, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
+        check_offset_validity<base_name>();                                                        \
+        MPICHECK(MPI_Type_contiguous(__len_vec4, mpi_type_##src_type, &mpi_type_##base_name));     \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
         shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len8(base_name, src_type)                                               \
     {                                                                                              \
-        base_name a;                                                                               \
-        MPI_Aint offset_##base_name = ((size_t) ((char *) &(a.s0()) - (char *) &(a)));             \
-        MPICHECK(MPI_Type_create_struct(                                                           \
-            1, &__len_vec8, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));    \
+        check_offset_validity<base_name>();                                                        \
+        MPICHECK(MPI_Type_contiguous(__len_vec8, mpi_type_##src_type, &mpi_type_##base_name));     \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
         shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
 #define __SYCL_TYPE_COMMIT_len16(base_name, src_type)                                              \
     {                                                                                              \
-        base_name a;                                                                               \
-        MPI_Aint offset_##base_name = ((size_t) ((char *) &(a.s0()) - (char *) &(a)));             \
-        MPICHECK(MPI_Type_create_struct(                                                           \
-            1, &__len_vec16, &offset_##base_name, &mpi_type_##src_type, &mpi_type_##base_name));   \
+        check_offset_validity<base_name>();                                                        \
+        MPICHECK(MPI_Type_contiguous(__len_vec16, mpi_type_##src_type, &mpi_type_##base_name));    \
         MPICHECK(MPI_Type_commit(&mpi_type_##base_name));                                          \
         shamlog_debug_mpi_ln("SyclMpiTypes", "init mpi type for : " #base_name);                   \
     }
 
-// TODO check mpi errors
+template<class T>
+void check_offset_validity() {
+    T a{};
+
+    std::ptrdiff_t base = reinterpret_cast<std::ptrdiff_t>(&a);
+    std::ptrdiff_t s0   = reinterpret_cast<std::ptrdiff_t>(&a.s0());
+
+    if (s0 - base != 0) {
+        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+            "Offset is not valid for type {}, base = {}, s0 = {}", typeid(T).name(), base, s0));
+    }
+}
 
 void create_sycl_mpi_types() {
 

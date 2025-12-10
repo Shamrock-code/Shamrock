@@ -239,7 +239,7 @@ jobs:
 
   make_github_page:
     name: "GithubPage"
-    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov]
+    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: false

@@ -7,44 +7,26 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/logs/loglevels.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", testpatchdatalayerserialize, 1) {
-    using namespace shamrock::patch;
+using namespace shamrock::patch;
 
-    u32 obj = 1000;
-
-    std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
-    auto &pdl                                     = *pdl_ptr;
-
-    pdl.add_field<f32>("f32", 1);
-    pdl.add_field<f32_2>("f32_2", 1);
-
-    pdl.add_field<f32_3>("f32_3", 1);
-    pdl.add_field<f32_3>("f32_3'", 1);
-    pdl.add_field<f32_3>("f32_3''", 1);
-
-    pdl.add_field<f32_4>("f32_4", 1);
-    pdl.add_field<f32_8>("f32_8", 1);
-    pdl.add_field<f32_16>("f32_16", 1);
-    pdl.add_field<f64>("f64", 1);
-    pdl.add_field<f64_2>("f64_2", 1);
-    pdl.add_field<f64_3>("f64_3", 1);
-    pdl.add_field<f64_4>("f64_4", 2);
-    pdl.add_field<f64_8>("f64_8", 1);
-    pdl.add_field<f64_16>("f64_16", 1);
-
-    pdl.add_field<u32>("u32", 1);
-    pdl.add_field<u64>("u64", 1);
-
-    PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, obj, pdl_ptr);
+inline void test_serialize_basic(
+    std::shared_ptr<PatchDataLayerLayout> pdl_ptr, PatchDataLayer &pdat) {
 
     shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
+
+    if (pdat.serialize_buf_byte_size().get_total_size() > std::numeric_limits<u32>::max()) {
+        REQUIRE_EXCEPTION_THROW(ser.allocate(pdat.serialize_buf_byte_size()), std::runtime_error);
+        return;
+    }
+
     ser.allocate(pdat.serialize_buf_byte_size());
+
     pdat.serialize_buf(ser);
 
     auto recov = ser.finalize();
@@ -56,5 +38,87 @@ TestStart(
         PatchDataLayer pdat2 = PatchDataLayer::deserialize_buf(ser2, pdl_ptr);
 
         REQUIRE_NAMED("input match out", pdat == pdat2);
+    }
+}
+
+TestStart(
+    Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", testpatchdatalayerserialize, 1) {
+    using namespace shamrock::patch;
+
+    { // basic case
+
+        u32 obj = 1000;
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        auto &pdl                                     = *pdl_ptr;
+
+        pdl.add_field<f32>("f32", 1);
+        pdl.add_field<f32_2>("f32_2", 1);
+
+        pdl.add_field<f32_3>("f32_3", 1);
+        pdl.add_field<f32_3>("f32_3'", 1);
+        pdl.add_field<f32_3>("f32_3''", 1);
+
+        pdl.add_field<f32_4>("f32_4", 1);
+        pdl.add_field<f32_8>("f32_8", 1);
+        pdl.add_field<f32_16>("f32_16", 1);
+        pdl.add_field<f64>("f64", 1);
+        pdl.add_field<f64_2>("f64_2", 1);
+        pdl.add_field<f64_3>("f64_3", 1);
+        pdl.add_field<f64_4>("f64_4", 2);
+        pdl.add_field<f64_8>("f64_8", 1);
+        pdl.add_field<f64_16>("f64_16", 1);
+
+        pdl.add_field<u32>("u32", 1);
+        pdl.add_field<u64>("u64", 1);
+
+        PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, obj, pdl_ptr);
+
+        test_serialize_basic(pdl_ptr, pdat);
+    }
+
+    u64 dev_mem_size
+        = shamsys::instance::get_compute_scheduler().get_queue().get_device_prop().global_mem_size;
+
+    if (dev_mem_size > 4'000'000'000) { // case where the total data count exceed the int 32 limit
+
+        u32 obj = 1e7;
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        auto &pdl                                     = *pdl_ptr;
+
+        pdl.add_field<f32>("f32", 1);
+        pdl.add_field<f32_2>("f32_2", 1);
+
+        pdl.add_field<f32_3>("f32_3", 1);
+        pdl.add_field<f32_3>("f32_3'", 1);
+        pdl.add_field<f32_3>("f32_3''", 1);
+
+        pdl.add_field<f32_4>("f32_4", 1);
+        pdl.add_field<f32_8>("f32_8", 1);
+        pdl.add_field<f32_16>("f32_16", 1);
+        pdl.add_field<f64>("f64", 1);
+        pdl.add_field<f64_2>("f64_2", 1);
+        pdl.add_field<f64_3>("f64_3", 1);
+        pdl.add_field<f64_4>("f64_4", 2);
+        pdl.add_field<f64_8>("f64_8", 1);
+        pdl.add_field<f64_16>("f64_16", 1);
+
+        pdl.add_field<u32>("u32", 1);
+        pdl.add_field<u64>("u64", 1);
+
+        // weirdness to avoid having to generate that many objects in CI
+        PatchDataLayer pdat = PatchDataLayer::mock_patchdata(0x111, 1000, pdl_ptr);
+        pdat.resize(obj);
+
+        shamlog_info_ln("test", pdat.serialize_buf_byte_size().get_total_size());
+
+        REQUIRE_NAMED(
+            "total size exceed int 32 limit",
+            pdat.serialize_buf_byte_size().get_total_size() > std::numeric_limits<i32>::max());
+
+        test_serialize_basic(pdl_ptr, pdat);
+    } else {
+        REQUIRE_NAMED("dev_mem_size < 4'000'000'000, skipping test", false);
     }
 }

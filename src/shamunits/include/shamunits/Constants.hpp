@@ -11,12 +11,13 @@
 
 /**
  * @file Constants.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
-#include "ConvertionConstants.hpp"
+#include "ConversionConstants.hpp"
 #include "Names.hpp"
 #include "UnitSystem.hpp"
 #include "details/utils.hpp"
@@ -60,6 +61,7 @@
     X(astronomical_unit /**/, Uget(m, 1))                                                          \
     X(light_year /*********/, Uget(m, 1))                                                          \
     X(parsec /*************/, Uget(m, 1))                                                          \
+    X(solar_radius /*******/, Uget(m, 1))                                                          \
     X(planck_length /******/, Uget(m, 1))                                                          \
     /* masses */                                                                                   \
     X(proton_mass /****/, Uget(kg, 1))                                                             \
@@ -108,7 +110,7 @@ namespace shamunits {
     struct Constants {
 
         /// Alias to the conversion constants
-        using Conv = ConvertionConstants<T>;
+        using Conv = ConversionConstants<T>;
 
         /// Physical constant in SI units
         struct Si {
@@ -144,6 +146,7 @@ namespace shamunits {
             static constexpr T au                = astronomical_unit; //(m)
             static constexpr T light_year        = Conv::ly_to_m;     //(m)
             static constexpr T parsec            = Conv::pc_to_m;     //(m)
+            static constexpr T solar_radius      = Conv::rsol_to_m;   //(m)
             static constexpr T planck_length     = 1.61625518e-35;    //(m)
 
             static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
@@ -313,6 +316,12 @@ namespace shamunits {
  *
  * \fn shamunits::Constants::Si::parsec()
  * \brief get the value of a parsec in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::solar_radius()
+ * \brief get the value of a solar radius in the distance unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::solar_radius()
+ * \brief get the value of a solar radius in the distance unit of the si unit system (m)
  *
  * \fn shamunits::Constants::planck_length()
  * \brief get the value of a planck_length in the distance unit of the current unit system @ref

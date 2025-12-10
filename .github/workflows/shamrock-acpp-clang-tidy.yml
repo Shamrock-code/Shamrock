@@ -12,7 +12,7 @@ jobs:
 
   shamrock_acpp_omp_tidy:
     name: AdaptiveCpp omp tidy clang-${{ matrix.clang }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,  docker-runner]
 
     container:
       image: ${{ matrix.container }}
@@ -94,12 +94,27 @@ jobs:
 
       - name: Copy DB
         run: |
-          ls build
-          python3 ./buildbot/make_clang_tidy_db.py
+          cd build
+          python3 ../buildbot/make_clang_tidy_db.py
 
       - name: Run clang-tidy
         run: |
-          run-clang-tidy-${{matrix.clang}} -p build/clang-tidy.mod -use-color -config-file .clang-tidy -export-fixes clang-tidy_results.yaml -extra-arg-before="-Wno-unused-command-line-argument"
+          run-clang-tidy-${{matrix.clang}} \
+            -p build/clang-tidy.mod \
+            -use-color \
+            -config-file .clang-tidy \
+            -extra-arg-before="-Wno-unused-command-line-argument" \
+            | tee clang-tidy.log
+
+      - name: Convert clang-tidy log to HTML
+        run: |
+          python3 -m pip install --break-system-packages ansi2html
+          ansi2html < clang-tidy.log > clang-tidy.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: clang-tidy.html
+          path: ./clang-tidy.html
 
       - name: Run clang-tidy-diff
         if: >

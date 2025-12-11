@@ -60,18 +60,26 @@ linf_errors = [
     8.546689196645526e-05,
 ]
 
+N_h = [16, 128]
+resol_er = [8e-1 * (1.0 / i**2) for i in N_h]
+resol_it = [2 * i for i in N_h]
+
 
 fig, axs = plt.subplots(1, 2, figsize=(25, 12))
 plt.subplots_adjust(wspace=0.25, hspace=0.3, top=0.94, bottom=0.7, left=0.7, right=0.94)
 
 axs[0].plot(nb_cubes, l1_errors, linestyle="-", marker="X", color="green", lw=5, label="$L1$")
 axs[0].plot(nb_cubes, l2_errors, linestyle=":", marker="D", color="purple", lw=5, label="$L2$")
+axs[0].plot(N_h, resol_er, "k--")
+axs[0].text(
+    32, 8e-1 * (1.0 / 32**2), "$\\rm{\\propto O\\left(\\frac{1}{h^{2}} \\right)}$", size=fontsize
+)
 axs[0].plot(
     nb_cubes, linf_errors, linestyle="-.", marker="8", color="orange", lw=5, label="$L_{\\infty}$"
 )
 
-axs[0].set_title("Errror to analytical solution " + " $\\epsilon = 10^{-10}$")
-axs[0].set_xlabel("N cubes", fontsize=fontsize)
+axs[0].set_title("Errror to analytical solution ")
+axs[0].set_xlabel("$N$", fontsize=fontsize)
 axs[0].set_ylabel(
     " $\\frac{||\\phi_{num} - \\phi_{ana} ||}{|| \\phi_{ana} ||} $ ", fontsize=fontsize
 )
@@ -107,12 +115,14 @@ axs[0].patch.set_linewidth(5)
 axs[0].legend(prop={"size": fontsize})
 
 
-axs[1].plot(nb_cubes, nb_iterations_stg1, marker="X", color="green", lw=5, label="$1st$-stg")
-axs[1].plot(nb_cubes, nb_iterations, marker="D", color="purple", lw=5, label="$2nd$-stg")
+# axs[1].plot(nb_cubes, nb_iterations_stg1, marker="X", color="green", lw=5, label="$1st$-stg")
+axs[1].plot(nb_cubes, nb_iterations, marker="D", color="purple", lw=5)
+axs[1].plot(N_h, resol_it, "k--")
+axs[1].text(33.4, 2 * 32, "$\\rm{\\propto O\\left(h \\right)}$", size=fontsize)
 
 
-axs[1].set_title("Iteration scaling " + " $\\epsilon = 10^{-10}$")
-axs[1].set_xlabel("N cubes", fontsize=fontsize)
+axs[1].set_title("Iteration scaling ")
+axs[1].set_xlabel("$N$", fontsize=fontsize)
 axs[1].set_ylabel(" Number of iterations ", fontsize=fontsize)
 # axs[0].set_ylim(5e-11,2.5e-5)
 # Set log-log scale
@@ -136,7 +146,7 @@ axs[1].set_xticks(nb_cubes)
 axs[1].set_xticklabels(labels, fontsize=fontsize)
 
 # Y-axis tick size
-label_ticks = [4, 25, 52, 105, 214, 434, 892]
+label_ticks = [25, 52, 105, 214, 434, 892]
 labels = [str(val) for val in label_ticks]
 axs[1].set_yticks(label_ticks)
 axs[1].set_yticklabels(labels, fontsize=fontsize)
@@ -153,4 +163,4 @@ axs[1].patch.set_linewidth(5)
 axs[1].legend(prop={"size": fontsize})
 
 plt.tight_layout()
-plt.savefig("CG-convergence-test-v1.pdf")
+plt.savefig("CG-convergence-test-v2.pdf")

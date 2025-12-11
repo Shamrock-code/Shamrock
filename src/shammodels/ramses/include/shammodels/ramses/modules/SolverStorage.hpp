@@ -261,6 +261,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> new_val;
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> old_val;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> const_v1;
 
         // for PCG
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_pres;
@@ -276,6 +277,12 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rho_next;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> refs_rhov_next;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rhoe_next;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_phi_update_m;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_phi_update_p;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_phi_update_m2;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_phi_update_p2;
     };
 
 } // namespace shammodels::basegodunov

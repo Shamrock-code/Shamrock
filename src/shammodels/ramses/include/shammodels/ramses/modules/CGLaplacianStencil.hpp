@@ -61,9 +61,9 @@ namespace shammodels::basegodunov {
                 acc += field_access(id_b);
             });
 
-            T err_val = std::numeric_limits<T>::quiet_NaN();
-            return (cnt > 0) ? acc / cnt : err_val;
-            // return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+            // T err_val = std::numeric_limits<T>::quiet_NaN();
+            // return (cnt > 0) ? acc / cnt : err_val;
+            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
         };
 
         T W_i  = field_access(cell_global_id);
@@ -84,3 +84,47 @@ namespace shammodels::basegodunov {
         return -res;
     }
 } // namespace shammodels::basegodunov
+
+/*
+
+    template<class T, class Tvec, class ACCField>
+    inline T laplacian_7pt(
+        const u32 cell_global_id,
+        const T delta_cell,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm,
+        ACCField &&field_access) {
+        auto get_avg_neigh = [&](auto &graph_links) -> T {
+            T acc   = shambase::VectorProperties<T>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+
+            T err_val = std::numeric_limits<T>::quiet_NaN();
+            return (cnt > 0) ? acc / cnt : err_val;
+        };
+
+        T W_i  = field_access(cell_global_id);
+        T W_xp = get_avg_neigh(graph_iter_xp);
+        T W_xm = get_avg_neigh(graph_iter_xm);
+        T W_yp = get_avg_neigh(graph_iter_yp);
+        T W_ym = get_avg_neigh(graph_iter_ym);
+        T W_zp = get_avg_neigh(graph_iter_zp);
+        T W_zm = get_avg_neigh(graph_iter_zm);
+
+        T inv_delta_cell_sqr = 1.0 / (delta_cell * delta_cell);
+
+        T laplace_x = inv_delta_cell_sqr * (-W_xm + 2. * W_i - W_xp);
+        T laplace_y = inv_delta_cell_sqr * (-W_ym + 2. * W_i - W_yp);
+        T laplace_z = inv_delta_cell_sqr * (-W_zm + 2. * W_i - W_zp);
+        T res       = (laplace_x + laplace_y + laplace_z);
+
+        return -res;
+    }
+
+
+*/

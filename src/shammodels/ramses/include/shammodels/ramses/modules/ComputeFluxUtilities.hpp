@@ -18,6 +18,7 @@
  */
 
 #include "shambackends/sycl.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shammodels/ramses/Solver.hpp"
@@ -40,6 +41,7 @@ namespace shammodels::basegodunov::modules {
         inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma) {
             Tcons cL = shammath::prim_to_cons(pL, gamma);
             Tcons cR = shammath::prim_to_cons(pR, gamma);
+            // logger::raw("left : ", cL.rho, " -- right : ", cR.rho);
 
             if constexpr (mode == RiemannSolverMode::Rusanov) {
                 if constexpr (dir == Direction::xp) {

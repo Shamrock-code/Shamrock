@@ -46,6 +46,8 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi;
             const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
+            // shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_m;
+            // shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_p;
             shamrock::solvergraph::IFieldSpan<Tvec> &spans_phi_g;
         };
 
@@ -55,11 +57,13 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_m,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_p,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g) {
 
             __internal_set_ro_edges(
                 {sizes, cell_neigh_graph, spans_block_cell_sizes, spans_phi, dt});
-            __internal_set_rw_edges({spans_phi_g});
+            __internal_set_rw_edges({/* spans_grad_phi_m, spans_grad_phi_p, */ spans_phi_g});
         }
 
         inline Edges get_edges() {
@@ -69,7 +73,11 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(4),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)
+                // get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
+                // get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2)
+
+            };
         }
 
         void _impl_evaluate_internal();

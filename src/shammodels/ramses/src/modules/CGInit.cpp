@@ -28,7 +28,7 @@
 namespace {
     template<class Tvec, class TgridVec>
     class _Kernel {
-        using Tscal            = shambase::VecComponent<Tvec>;
+        using Tscal            = sham::VecComponent<Tvec>;
         using OrientedAMRGraph = shammodels::basegodunov::modules::OrientedAMRGraph<Tvec, TgridVec>;
         using AMRGraph         = shammodels::basegodunov::modules::AMRGraph;
         using Edges = typename shammodels::basegodunov::modules::CGInit<Tvec, TgridVec>::Edges;
@@ -106,6 +106,8 @@ namespace {
                                 [=](u32 id) {
                                     return phi[id];
                                 });
+
+                            // logger::raw_ln(rho[cell_global_id]);
 
                             auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
                             phi_res[cell_global_id] = res;

@@ -16,6 +16,7 @@
 
 #include "shammodels/ramses/modules/NodeAXPYTwoVectors.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shambackends/typeAliasVec.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
@@ -26,7 +27,7 @@ namespace {
         inline static void kernel(
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_x,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_y,
-            const T alpha,
+            const f64 alpha,
             const shambase::DistributedData<u32> &sizes,
             const shambase::DistributedData<u32> &sizes_no_gz,
             u32 block_size) {
@@ -65,7 +66,7 @@ namespace shammodels::basegodunov::modules {
 
         // logger::raw_ln("AXPY:[x, y] \t", &edges.spans_x, "-", &edges.spans_y,"\n");
 
-        edges.spans_x.check_sizes(edges.sizes.indexes);
+        // edges.spans_x.check_sizes(edges.sizes.indexes);
         edges.spans_y.ensure_sizes(edges.sizes.indexes);
 
         // edges.spans_x.check_sizes(edges.sizes_no_gz.indexes);
@@ -93,3 +94,4 @@ namespace shammodels::basegodunov::modules {
 } // namespace shammodels::basegodunov::modules
 
 template class shammodels::basegodunov::modules::NodeAXPYTwoVectors<f64>;
+template class shammodels::basegodunov::modules::NodeAXPYTwoVectors<f64_3>;

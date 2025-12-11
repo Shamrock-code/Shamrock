@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     multz = 1
 
     sz = 1 << 1
-    base = 32
+    base = 16
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -33,7 +33,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
     cfg.set_self_gravity_Niter_max(300)
-    cfg.set_self_gravity_tol(1e-10)
+    cfg.set_self_gravity_tol(1e-6)
     cfg.set_self_gravity_happy_breakdown_tol(1e-6)
     model.set_solver_config(cfg)
 
@@ -145,7 +145,7 @@ def run_sim(X, Y, Z, rho, phi, G=1, rho_0=1, r0=0.25):
 
     for k in range(1):
         # if k % freq == 0:
-        model.dump_vtk("test" + str(k) + ".vtk")
+        # model.dump_vtk("test" + str(k) + ".vtk")
 
         model.evolve_once_override_time(t, dt)
 

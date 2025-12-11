@@ -14,7 +14,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     multz = 1
 
     sz = 1 << 1
-    base = 4
+    base = 16
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -28,8 +28,9 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # cfg.set_gravity_mode_bicgstab()
     cfg.set_self_gravity_G_values(True, 1.0)
     cfg.set_self_gravity_Niter_max(1500)
-    cfg.set_self_gravity_tol(1e-10)
-    cfg.set_self_gravity_happy_breakdown_tol(1e-10)
+    cfg.set_self_gravity_tol(1e-6)
+    cfg.set_self_gravity_happy_breakdown_tol(1e-6)
+    cfg.set_coupling_gravity_mode_ramses_like()
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(4000000), 1)
@@ -49,7 +50,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
             + (1 / 3) * np.cos(2 * np.pi * x) * np.cos(4 * np.pi * y) * np.cos(6 * np.pi * z)
         )
 
-        return res
+        return 2 + res
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
@@ -114,7 +115,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # dt = 0.01226171192153859
     t = 0
     tend = 0.245
-    Max_iter = 2
+    Max_iter = 5
 
     for k in range(Max_iter):
         # if k % freq == 0:

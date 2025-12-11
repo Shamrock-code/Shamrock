@@ -62,6 +62,7 @@ set(Sources
     src/modules/NodeGetNextConsVar.cpp
     src/modules/TimeIntegratorDust.cpp
     src/modules/TimeIntegratorSelfGravity.cpp
+    src/modules/NodeUpdateMomentum.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

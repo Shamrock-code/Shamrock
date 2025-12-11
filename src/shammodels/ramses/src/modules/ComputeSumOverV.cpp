@@ -27,7 +27,8 @@ namespace shammodels::basegodunov::modules {
     void NodeComputeSumOverV<T>::_impl_evaluate_internal() {
         auto edges = get_edges();
         // logger::raw_ln("dt in NodeComputeSumOverV", edges.dt.value);
-        if (edges.dt.value != 0) {
+        // if (edges.dt.value != 0)
+        {
             edges.spans_field.check_sizes(edges.sizes.indexes);
 
             T loc_val = {};
@@ -40,9 +41,9 @@ namespace shammodels::basegodunov::modules {
             edges.mean_val.value = (global_sum / edges.total_volume.value);
         }
 
-        else {
-            return;
-        }
+        // else {
+        //     return;
+        // }
     }
 
     template<class T>

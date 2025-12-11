@@ -88,7 +88,7 @@ namespace shambase {
      */
     template<class It, typename... Tformat>
     inline std::string format_array(
-        It &iter, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
+        const It &iter, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
 
         std::string accum;
 

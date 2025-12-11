@@ -45,14 +45,14 @@ namespace {
                     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
                 AMRGraph &graph_neigh_xm
                     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
-                AMRGraph &graph_neigh_yp
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
-                AMRGraph &graph_neigh_ym
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
-                AMRGraph &graph_neigh_zp
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
-                AMRGraph &graph_neigh_zm
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
+                // AMRGraph &graph_neigh_yp
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                // AMRGraph &graph_neigh_ym
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                // AMRGraph &graph_neigh_zp
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                // AMRGraph &graph_neigh_zm
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                 u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
 
@@ -62,53 +62,94 @@ namespace {
                     = edges.flux_rhov_face_xp.link_fields.get(id).link_graph_field;
                 auto &span_flux_rhov_xm
                     = edges.flux_rhov_face_xm.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhov_yp
-                    = edges.flux_rhov_face_yp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhov_ym
-                    = edges.flux_rhov_face_ym.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhov_zp
-                    = edges.flux_rhov_face_zp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhov_zm
-                    = edges.flux_rhov_face_zm.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhov_yp
+                //     = edges.flux_rhov_face_yp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhov_ym
+                //     = edges.flux_rhov_face_ym.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhov_zp
+                //     = edges.flux_rhov_face_zp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhov_zm
+                //     = edges.flux_rhov_face_zm.link_fields.get(id).link_graph_field;
 
                 auto &span_flux_rhoe_xp
                     = edges.flux_rhoe_face_xp.link_fields.get(id).link_graph_field;
                 auto &span_flux_rhoe_xm
                     = edges.flux_rhoe_face_xm.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhoe_yp
-                    = edges.flux_rhoe_face_yp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhoe_ym
-                    = edges.flux_rhoe_face_ym.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhoe_zp
-                    = edges.flux_rhoe_face_zp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rhoe_zm
-                    = edges.flux_rhoe_face_zm.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhoe_yp
+                //     = edges.flux_rhoe_face_yp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhoe_ym
+                //     = edges.flux_rhoe_face_ym.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhoe_zp
+                //     = edges.flux_rhoe_face_zp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rhoe_zm
+                //     = edges.flux_rhoe_face_zm.link_fields.get(id).link_graph_field;
+
+                // auto &span_flux_rho_xp
+                //     = edges.flux_rho_face_xp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_xm
+                //     = edges.flux_rho_face_xm.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_yp
+                //     = edges.flux_rho_face_yp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_ym
+                //     = edges.flux_rho_face_ym.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_zp
+                //     = edges.flux_rho_face_zp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_zm
+                //     = edges.flux_rho_face_zm.link_fields.get(id).link_graph_field;
 
                 auto &block_lower_span = edges.spans_cell0block_aabb_lower.get_spans().get(id);
                 auto &cell_size_span   = edges.spans_block_cell_sizes.get_spans().get(id);
 
-                auto &span_old_rho    = edges.spans_rho_old.get_spans().get(id);
-                auto &span_next_rho   = edges.spans_rho_next.get_spans().get(id);
-                auto &span_old_rhov   = edges.spans_rhov_old.get_spans().get(id);
-                auto &span_old_rhoe   = edges.spans_rhoe_old.get_spans().get(id);
+                auto &span_old_rho  = edges.spans_rho_old.get_spans().get(id);
+                auto &span_next_rho = edges.spans_rho_next.get_spans().get(id);
+                auto &span_old_rhov = edges.spans_rhov_old.get_spans().get(id);
+                auto &span_old_rhoe = edges.spans_rhoe_old.get_spans().get(id);
+
                 auto &span_old_phi_g  = edges.spans_phi_g_old.get_spans().get(id);
                 auto &span_next_phi_g = edges.spans_phi_g_next.get_spans().get(id);
-                auto &span_next_rhov  = edges.spans_rhov_next.get_spans().get(id);
-                auto &span_next_rhoe  = edges.spans_rhoe_next.get_spans().get(id);
+
+                // auto &span_old_grad_phi_m  = edges.spans_grad_phi_m_old.get_spans().get(id);
+                // auto &span_old_grad_phi_p  = edges.spans_grad_phi_p_old.get_spans().get(id);
+
+                // auto &span_new_grad_phi_m  = edges.spans_grad_phi_m_new.get_spans().get(id);
+                // auto &span_new_grad_phi_p  = edges.spans_grad_phi_p_new.get_spans().get(id);
+
+                auto &span_next_rhov = edges.spans_rhov_next.get_spans().get(id);
+                auto &span_next_rhoe = edges.spans_rhoe_next.get_spans().get(id);
 
                 auto &dt = edges.dt.value;
 
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
-                        cell_size_span,    block_lower_span,  span_flux_rhov_xp, span_flux_rhov_xm,
-                        span_flux_rhov_yp, span_flux_rhov_ym, span_flux_rhov_zp, span_flux_rhov_zm,
-                        span_flux_rhoe_xp, span_flux_rhoe_xm, span_flux_rhoe_yp, span_flux_rhoe_ym,
-                        span_flux_rhoe_zp, span_flux_rhoe_zm, span_old_rho,      span_next_rho,
-                        span_old_rhov,     span_old_rhoe,     span_old_phi_g,    span_next_phi_g,
+                        cell_size_span,
+                        block_lower_span,
+                        span_flux_rhov_xp,
+                        span_flux_rhov_xm,
+                        /*span_flux_rhov_yp, span_flux_rhov_ym, span_flux_rhov_zp,
+                           span_flux_rhov_zm,*/
+                        span_flux_rhoe_xp,
+                        span_flux_rhoe_xm,
+                        /*span_flux_rhoe_yp, span_flux_rhoe_ym,
+span_flux_rhoe_zp, span_flux_rhoe_zm,*/
+                        span_old_rho,
+                        span_next_rho,
+                        span_old_rhov,
+                        span_old_rhoe,
+                        span_old_phi_g,
+                        span_next_phi_g,
 
-                        graph_neigh_xp,    graph_neigh_xm,    graph_neigh_yp,    graph_neigh_ym,
-                        graph_neigh_zp,    graph_neigh_zm},
+                        graph_neigh_xp,
+                        graph_neigh_xm, /*graph_neigh_yp,    graph_neigh_ym,
+  graph_neigh_zp,    graph_neigh_zm*/
+
+                        // ,
+                        // span_old_grad_phi_m, span_old_grad_phi_p, span_new_grad_phi_m,
+                        // span_new_grad_phi_p, span_flux_rho_xp, span_flux_rho_xm,
+                        // span_flux_rho_yp, span_flux_rho_ym, span_flux_rho_zp, span_flux_rho_zm
+
+                    },
+
                     sham::MultiRef{span_next_rhov, span_next_rhoe},
                     cell_count,
 
@@ -118,28 +159,40 @@ namespace {
                         const Tvec *__restrict aabb_lower,
                         const auto flux_rhov_xp,
                         const auto flux_rhov_xm,
-                        const auto flux_rhov_yp,
-                        const auto flux_rhov_ym,
-                        const auto flux_rhov_zp,
-                        const auto flux_rhov_zm,
+                        // const auto flux_rhov_yp,
+                        // const auto flux_rhov_ym,
+                        // const auto flux_rhov_zp,
+                        // const auto flux_rhov_zm,
                         const auto flux_rhoe_xp,
                         const auto flux_rhoe_xm,
-                        const auto flux_rhoe_yp,
-                        const auto flux_rhoe_ym,
-                        const auto flux_rhoe_zp,
-                        const auto flux_rhoe_zm,
+                        // const auto flux_rhoe_yp,
+                        // const auto flux_rhoe_ym,
+                        // const auto flux_rhoe_zp,
+                        // const auto flux_rhoe_zm,
                         const Tscal *__restrict old_rho,
                         const Tscal *__restrict next_rho,
                         const Tvec *__restrict old_rhov,
                         const Tscal *__restrict old_rhoe,
+
                         const Tvec *__restrict old_phi_g,
                         const Tvec *__restrict next_phi_g,
+
                         const auto graph_iter_xp,
                         const auto graph_iter_xm,
-                        const auto graph_iter_yp,
-                        const auto graph_iter_ym,
-                        const auto graph_iter_zp,
-                        const auto graph_iter_zm,
+                        // const auto graph_iter_yp,
+                        // const auto graph_iter_ym,
+                        // const auto graph_iter_zp,
+                        // const auto graph_iter_zm,
+                        // const Tvec *__restrict old_grad_phi_m,
+                        // const Tvec *__restrict old_grad_phi_p,
+                        // const Tvec *__restrict new_grad_phi_m,
+                        // const Tvec *__restrict new_grad_phi_p,
+                        // const auto flux_rho_xp,
+                        // const auto flux_rho_xm,
+                        // const auto flux_rho_yp,
+                        // const auto flux_rho_ym,
+                        // const auto flux_rho_zp,
+                        // const auto flux_rho_zm,
                         Tvec *__restrict next_rhov,
                         Tscal *__restrict next_rhoe) {
                         /**/
@@ -186,51 +239,80 @@ namespace {
                         Tscal V_i = cell_size[block_id];
                         V_i       = V_i * V_i * V_i;
 
-                        Tvec dtrhov  = {0, 0, 0};
-                        Tscal dtrhoe = 0;
+                        Tvec dtrhov       = {0, 0, 0};
+                        Tscal dtrhoe      = 0;
+                        Tscal update_etot = 0;
 
                         graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
                             dtrhov -= flux_rhov_xp[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_xp[link_id] * S_ij;
+
+                            // update_etot += 0.5*flux_rho_xp[link_id] * (old_grad_phi_p[link_id][0]
+                            // + new_grad_phi_p[link_id][0])  * S_ij;
                         });
                         graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
                             dtrhov -= flux_rhov_xm[link_id] * S_ij;
                             dtrhoe -= flux_rhoe_xm[link_id] * S_ij;
+
+                            // update_etot -= 0.5*flux_rho_xm[link_id] * (old_grad_phi_m[link_id][0]
+                            // + old_grad_phi_m[link_id][0])  * S_ij;
                         });
-                        graph_iter_yp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_yp[link_id] * S_ij;
-                            dtrhoe -= flux_rhoe_yp[link_id] * S_ij;
-                        });
-                        graph_iter_ym.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_ym[link_id] * S_ij;
-                            dtrhoe -= flux_rhoe_ym[link_id] * S_ij;
-                        });
-                        graph_iter_zp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_zp[link_id] * S_ij;
-                            dtrhoe -= flux_rhoe_zp[link_id] * S_ij;
-                        });
-                        graph_iter_zm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrhov -= flux_rhov_zm[link_id] * S_ij;
-                            dtrhoe -= flux_rhoe_zm[link_id] * S_ij;
-                        });
+
+                        /*
+                                                graph_iter_yp.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); dtrhov -=
+                           flux_rhov_yp[link_id] * S_ij; dtrhoe -= flux_rhoe_yp[link_id] * S_ij;
+
+                                                    // update_etot += 0.5*flux_rho_yp[link_id] *
+                           (old_grad_phi_p[link_id][1] + new_grad_phi_p[link_id][1])  * S_ij;
+
+                                                });
+                                                graph_iter_ym.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); dtrhov -=
+                           flux_rhov_ym[link_id] * S_ij; dtrhoe -= flux_rhoe_ym[link_id] * S_ij;
+
+                                                    // update_etot -= 0.5*flux_rho_ym[link_id] *
+                           (old_grad_phi_m[link_id][1] + new_grad_phi_m[link_id][1])  * S_ij;
+
+                                                });
+                                                graph_iter_zp.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); dtrhov -=
+                           flux_rhov_zp[link_id] * S_ij; dtrhoe -= flux_rhoe_zp[link_id] * S_ij;
+
+                                                    // update_etot += 0.5*flux_rho_zp[link_id] *
+                           (old_grad_phi_p[link_id][2] + new_grad_phi_p[link_id][2])  * S_ij;
+
+                                                });
+                                                graph_iter_zm.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); dtrhov -=
+                           flux_rhov_zm[link_id] * S_ij; dtrhoe -= flux_rhoe_zm[link_id] * S_ij;
+
+                                                    // update_etot -= 0.5*flux_rho_zm[link_id] *
+                           (old_grad_phi_m[link_id][2] + new_grad_phi_m[link_id][2])  * S_ij;
+
+                                                });
+
+                        */
 
                         dtrhoe /= V_i;
                         dtrhov /= V_i;
 
+                        // update_etot /=V_i;
+
                         Tvec tmp
                             = old_rhov[i] + dt * dtrhov
-                              - 0.5 * dt
+                              + 0.5 * dt
                                     * (old_rho[i] * old_phi_g[i] + next_rho[i] * next_phi_g[i]);
+
                         next_rhov[i] = tmp;
+
+                        // next_rhoe[i] = old_rhoe[i] + dt * dtrhoe /*- 0.5 * dt * update_etot */;
+
                         next_rhoe[i]
                             = old_rhoe[i] + dt * dtrhoe
-                              - 0.5 * dt
+                              + 0.5 * dt
                                     * (old_rho[i]
                                            * sham::dot((old_rhov[i] / old_rho[i]), old_phi_g[i])
                                        + next_rho[i]
@@ -249,23 +331,33 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
         // logger::raw_ln("dt in NodeGetNextConsVar", edges.dt.value);
 
-        if (edges.dt.value != 0) {
+        // if (edges.dt.value != 0)
+
+        {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
             edges.spans_rho_old.check_sizes(edges.sizes.indexes);
             edges.spans_rho_next.check_sizes(edges.sizes.indexes);
             edges.spans_rhov_old.check_sizes(edges.sizes.indexes);
             edges.spans_rhoe_old.check_sizes(edges.sizes.indexes);
+
             edges.spans_phi_g_old.check_sizes(edges.sizes.indexes);
             edges.spans_phi_g_next.check_sizes(edges.sizes.indexes);
+
+            // edges.spans_grad_phi_m_old.check_sizes(edges.sizes.indexes);
+            // edges.spans_grad_phi_p_old.check_sizes(edges.sizes.indexes);
+            // edges.spans_grad_phi_m_new.check_sizes(edges.sizes.indexes);
+            // edges.spans_grad_phi_p_new.check_sizes(edges.sizes.indexes);
 
             edges.spans_rhov_next.ensure_sizes(edges.sizes.indexes);
             edges.spans_rhoe_next.ensure_sizes(edges.sizes.indexes);
 
             KernelGetNextConsVar<Tvec, TgridVec>::kernel(edges, block_size);
-        } else {
-            return;
         }
+
+        // else {
+        //     return;
+        // }
     }
 } // namespace shammodels::basegodunov::modules
 

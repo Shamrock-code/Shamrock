@@ -47,16 +47,19 @@ namespace {
                     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
                 AMRGraph &graph_neigh_xm
                     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
-                AMRGraph &graph_neigh_yp
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
-                AMRGraph &graph_neigh_ym
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
-                AMRGraph &graph_neigh_zp
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
-                AMRGraph &graph_neigh_zm
-                    = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
+
+                // AMRGraph &graph_neigh_yp
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                // AMRGraph &graph_neigh_ym
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                // AMRGraph &graph_neigh_zp
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                // AMRGraph &graph_neigh_zm
+                //     = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                 u32 cell_count = (edges.sizes.indexes.get(id)) * block_size;
+
+                // logger::raw_ln("cell_counts in Node-rho_next : ", cell_count, "\n");
 
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -64,14 +67,14 @@ namespace {
                     = edges.flux_rho_face_xp.link_fields.get(id).link_graph_field;
                 auto &span_flux_rho_xm
                     = edges.flux_rho_face_xm.link_fields.get(id).link_graph_field;
-                auto &span_flux_rho_yp
-                    = edges.flux_rho_face_yp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rho_ym
-                    = edges.flux_rho_face_ym.link_fields.get(id).link_graph_field;
-                auto &span_flux_rho_zp
-                    = edges.flux_rho_face_zp.link_fields.get(id).link_graph_field;
-                auto &span_flux_rho_zm
-                    = edges.flux_rho_face_zm.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_yp
+                //     = edges.flux_rho_face_yp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_ym
+                //     = edges.flux_rho_face_ym.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_zp
+                //     = edges.flux_rho_face_zp.link_fields.get(id).link_graph_field;
+                // auto &span_flux_rho_zm
+                //     = edges.flux_rho_face_zm.link_fields.get(id).link_graph_field;
 
                 auto &block_lower_span = edges.spans_cell0block_aabb_lower.get_spans().get(id);
                 auto &cell_size_span   = edges.spans_block_cell_sizes.get_spans().get(id);
@@ -87,16 +90,16 @@ namespace {
                         block_lower_span,
                         span_flux_rho_xp,
                         span_flux_rho_xm,
-                        span_flux_rho_yp,
-                        span_flux_rho_ym,
-                        span_flux_rho_zp,
-                        span_flux_rho_zm,
+                        // span_flux_rho_yp,
+                        // span_flux_rho_ym,
+                        // span_flux_rho_zp,
+                        // span_flux_rho_zm,
                         graph_neigh_xp,
                         graph_neigh_xm,
-                        graph_neigh_yp,
-                        graph_neigh_ym,
-                        graph_neigh_zp,
-                        graph_neigh_zm,
+                        // graph_neigh_yp,
+                        // graph_neigh_ym,
+                        // graph_neigh_zp,
+                        // graph_neigh_zm,
                         span_old_rho},
                     sham::MultiRef{span_next_rho},
                     cell_count,
@@ -106,16 +109,16 @@ namespace {
                         const Tvec *__restrict aabb_lower,
                         const auto flux_rho_xp,
                         const auto flux_rho_xm,
-                        const auto flux_rho_yp,
-                        const auto flux_rho_ym,
-                        const auto flux_rho_zp,
-                        const auto flux_rho_zm,
+                        // const auto flux_rho_yp,
+                        // const auto flux_rho_ym,
+                        // const auto flux_rho_zp,
+                        // const auto flux_rho_zm,
                         const auto graph_iter_xp,
                         const auto graph_iter_xm,
-                        const auto graph_iter_yp,
-                        const auto graph_iter_ym,
-                        const auto graph_iter_zp,
-                        const auto graph_iter_zm,
+                        // const auto graph_iter_yp,
+                        // const auto graph_iter_ym,
+                        // const auto graph_iter_zp,
+                        // const auto graph_iter_zm,
                         const Tscal *__restrict old_rho,
                         Tscal *__restrict next_rho) {
                         /**/
@@ -166,29 +169,66 @@ namespace {
 
                         graph_iter_xp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_xp[id_b] * S_ij;
+                            auto tmp   = flux_rho_xp[link_id];
+                            if (tmp != tmp) {
+                                throw shambase::make_except_with_loc<std::runtime_error>(
+                                    shambase::format(
+                                        "NaN in flux_rho_xp link_id={} value={}\n", link_id, tmp));
+                            }
+                            dtrho -= tmp * S_ij;
                         });
 
                         graph_iter_xm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
                             Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_xm[link_id] * S_ij;
+                            auto tmp   = flux_rho_xm[link_id];
+                            if (tmp != tmp) {
+                                throw shambase::make_except_with_loc<std::runtime_error>(
+                                    shambase::format(
+                                        "NaN in flux_rho_xm link_id={} value={}\n", link_id, tmp));
+                            }
+                            dtrho -= tmp * S_ij;
                         });
-                        graph_iter_yp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_yp[link_id] * S_ij;
-                        });
-                        graph_iter_ym.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_ym[link_id] * S_ij;
-                        });
-                        graph_iter_zp.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_zp[link_id] * S_ij;
-                        });
-                        graph_iter_zm.for_each_object_link_id(i, [&](u32 id_b, u32 link_id) {
-                            Tscal S_ij = get_face_surface(i, id_b);
-                            dtrho -= flux_rho_zm[link_id] * S_ij;
-                        });
+
+                        /*
+
+                                                graph_iter_yp.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); auto tmp   =
+                           flux_rho_yp[link_id]; if (tmp != tmp) { throw
+                           shambase::make_except_with_loc<std::runtime_error>( shambase::format(
+                                                                "NaN in flux_rho_yp link_id={}
+                           value={}\n", link_id, tmp));
+                                                    }
+                                                    dtrho -= tmp * S_ij;
+                                                });
+                                                graph_iter_ym.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); auto tmp   =
+                           flux_rho_ym[link_id]; if (tmp != tmp) { throw
+                           shambase::make_except_with_loc<std::runtime_error>( shambase::format(
+                                                                "NaN in flux_rho_ym link_id={}
+                           value={}\n", link_id, tmp));
+                                                    }
+                                                    dtrho -= tmp * S_ij;
+                                                });
+                                                graph_iter_zp.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); auto tmp   =
+                           flux_rho_zp[link_id]; if (tmp != tmp) { throw
+                           shambase::make_except_with_loc<std::runtime_error>( shambase::format(
+                                                                "NaN in flux_rho_zp link_id={}
+                           value={}\n", link_id, tmp));
+                                                    }
+                                                    dtrho -= tmp * S_ij;
+                                                });
+                                                graph_iter_zm.for_each_object_link_id(i, [&](u32
+                           id_b, u32 link_id) { Tscal S_ij = get_face_surface(i, id_b); auto tmp   =
+                           flux_rho_zm[link_id]; if (tmp != tmp) { throw
+                           shambase::make_except_with_loc<std::runtime_error>( shambase::format(
+                                                                "NaN in flux_rho_zm link_id={}
+                           value={}\n", link_id, tmp));
+                                                    }
+                                                    dtrho -= tmp * S_ij;
+                                                });
+
+                        */
 
                         dtrho /= V_i;
 
@@ -209,7 +249,7 @@ namespace shammodels::basegodunov::modules {
 
         // logger::raw_ln("dt in NodeRhoNext", edges.dt.value);
 
-        if (edges.dt.value != 0) {
+        {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
             edges.spans_rho_old.check_sizes(edges.sizes.indexes);
@@ -240,12 +280,11 @@ namespace shammodels::basegodunov::modules {
                     }
                 }
             }
-
         }
 
-        else {
-            return;
-        }
+        // else {
+        //     return;
+        // }
     }
 
 } // namespace shammodels::basegodunov::modules

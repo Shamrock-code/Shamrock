@@ -136,10 +136,10 @@ namespace {
         const shambase::VecComponent<Tvec> delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
-        const AMRGraphLinkiterator &graph_iter_yp,
-        const AMRGraphLinkiterator &graph_iter_ym,
-        const AMRGraphLinkiterator &graph_iter_zp,
-        const AMRGraphLinkiterator &graph_iter_zm,
+        // const AMRGraphLinkiterator &graph_iter_yp,
+        // const AMRGraphLinkiterator &graph_iter_ym,
+        // const AMRGraphLinkiterator &graph_iter_zp,
+        // const AMRGraphLinkiterator &graph_iter_zm,
         ACCField &&field_access) {
 
         auto get_avg_neigh = [&](auto &graph_links) -> Tfield {
@@ -153,20 +153,25 @@ namespace {
         Tfield W_i  = field_access(cell_global_id);
         Tfield W_xp = get_avg_neigh(graph_iter_xp);
         Tfield W_xm = get_avg_neigh(graph_iter_xm);
-        Tfield W_yp = get_avg_neigh(graph_iter_yp);
-        Tfield W_ym = get_avg_neigh(graph_iter_ym);
-        Tfield W_zp = get_avg_neigh(graph_iter_zp);
-        Tfield W_zm = get_avg_neigh(graph_iter_zm);
+        // Tfield W_yp = get_avg_neigh(graph_iter_yp);
+        // Tfield W_ym = get_avg_neigh(graph_iter_ym);
+        // Tfield W_zp = get_avg_neigh(graph_iter_zp);
+        // Tfield W_zm = get_avg_neigh(graph_iter_zm);
 
         Tfield delta_W_x_p = W_xp - W_i;
-        Tfield delta_W_y_p = W_yp - W_i;
-        Tfield delta_W_z_p = W_zp - W_i;
+        // Tfield delta_W_y_p = W_yp - W_i;
+        // Tfield delta_W_z_p = W_zp - W_i;
 
         Tfield delta_W_x_m = W_i - W_xm;
-        Tfield delta_W_y_m = W_i - W_ym;
-        Tfield delta_W_z_m = W_i - W_zm;
+        // Tfield delta_W_y_m = W_i - W_ym;
+        // Tfield delta_W_z_m = W_i - W_zm;
 
         Tfield fact = 1. / Tfield(delta_cell);
+
+        Tfield delta_W_y_p = shambase::VectorProperties<Tfield>::get_zero();
+        Tfield delta_W_z_p = shambase::VectorProperties<Tfield>::get_zero();
+        Tfield delta_W_y_m = shambase::VectorProperties<Tfield>::get_zero();
+        Tfield delta_W_z_m = shambase::VectorProperties<Tfield>::get_zero();
 
         Tfield lim_slope_W_x = slope_function<Tfield, mode>(delta_W_x_m * fact, delta_W_x_p * fact);
         Tfield lim_slope_W_y = slope_function<Tfield, mode>(delta_W_y_m * fact, delta_W_y_p * fact);
@@ -197,14 +202,18 @@ namespace {
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
                     AMRGraph &graph_neigh_xm
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
-                    AMRGraph &graph_neigh_yp
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
-                    AMRGraph &graph_neigh_ym
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
-                    AMRGraph &graph_neigh_zp
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
-                    AMRGraph &graph_neigh_zm
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
+                    // AMRGraph &graph_neigh_yp
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                    // AMRGraph &graph_neigh_ym
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                    // AMRGraph &graph_neigh_zp
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                    // AMRGraph &graph_neigh_zm
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                     sham::EventList depends_list;
 
@@ -214,10 +223,10 @@ namespace {
 
                     auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
                     auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
-                    auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
-                    auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
-                    auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
-                    auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+                    // auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+                    // auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+                    // auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+                    // auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -240,10 +249,10 @@ namespace {
                                     delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
-                                    graph_iter_yp,
-                                    graph_iter_ym,
-                                    graph_iter_zp,
-                                    graph_iter_zm,
+                                    // graph_iter_yp,
+                                    // graph_iter_ym,
+                                    // graph_iter_zp,
+                                    // graph_iter_zm,
                                     [=](u32 id) {
                                         return field[var_per_cell * id + var_off_loc];
                                     });
@@ -259,10 +268,10 @@ namespace {
 
                     graph_neigh_xp.complete_event_state(e);
                     graph_neigh_xm.complete_event_state(e);
-                    graph_neigh_yp.complete_event_state(e);
-                    graph_neigh_ym.complete_event_state(e);
-                    graph_neigh_zp.complete_event_state(e);
-                    graph_neigh_zm.complete_event_state(e);
+                    // graph_neigh_yp.complete_event_state(e);
+                    // graph_neigh_ym.complete_event_state(e);
+                    // graph_neigh_zp.complete_event_state(e);
+                    // graph_neigh_zm.complete_event_state(e);
                 });
         }
     };
@@ -291,29 +300,33 @@ namespace {
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
                     AMRGraph &graph_neigh_xm
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xm]);
-                    AMRGraph &graph_neigh_yp
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
-                    AMRGraph &graph_neigh_ym
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
-                    AMRGraph &graph_neigh_zp
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
-                    AMRGraph &graph_neigh_zm
-                        = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
+                    // AMRGraph &graph_neigh_yp
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::yp]);
+                    // AMRGraph &graph_neigh_ym
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::ym]);
+                    // AMRGraph &graph_neigh_zp
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zp]);
+                    // AMRGraph &graph_neigh_zm
+                    //     =
+                    //     shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::zm]);
 
                     sham::EventList depends_list;
 
                     auto cell_sizes = cell_sizes_span.get_read_access(depends_list);
                     auto field      = field_span.get_read_access(depends_list);
                     auto field_dx   = field_dx_span.get_write_access(depends_list);
-                    auto field_dy   = field_dy_span.get_write_access(depends_list);
-                    auto field_dz   = field_dz_span.get_write_access(depends_list);
+                    // auto field_dy   = field_dy_span.get_write_access(depends_list);
+                    // auto field_dz   = field_dz_span.get_write_access(depends_list);
 
                     auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
                     auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
-                    auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
-                    auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
-                    auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
-                    auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
+                    // auto graph_iter_yp = graph_neigh_yp.get_read_access(depends_list);
+                    // auto graph_iter_ym = graph_neigh_ym.get_read_access(depends_list);
+                    // auto graph_iter_zp = graph_neigh_zp.get_read_access(depends_list);
+                    // auto graph_iter_zm = graph_neigh_zm.get_read_access(depends_list);
 
                     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
                     auto e               = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -336,32 +349,33 @@ namespace {
                                     delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
-                                    graph_iter_yp,
-                                    graph_iter_ym,
-                                    graph_iter_zp,
-                                    graph_iter_zm,
+                                    // graph_iter_yp,
+                                    // graph_iter_ym,
+                                    // graph_iter_zp,
+                                    // graph_iter_zm,
                                     [=](u32 id) {
                                         return field[var_per_cell * id + var_off_loc];
                                     });
 
                                 field_dx[var_per_cell * cell_global_id + var_off_loc] = result[0];
-                                field_dy[var_per_cell * cell_global_id + var_off_loc] = result[1];
-                                field_dz[var_per_cell * cell_global_id + var_off_loc] = result[2];
+                                // field_dy[var_per_cell * cell_global_id + var_off_loc] =
+                                // result[1]; field_dz[var_per_cell * cell_global_id + var_off_loc]
+                                // = result[2];
                             });
                     });
 
                     cell_sizes_span.complete_event_state(e);
                     field_span.complete_event_state(e);
                     field_dx_span.complete_event_state(e);
-                    field_dy_span.complete_event_state(e);
-                    field_dz_span.complete_event_state(e);
+                    // field_dy_span.complete_event_state(e);
+                    // field_dz_span.complete_event_state(e);
 
                     graph_neigh_xp.complete_event_state(e);
                     graph_neigh_xm.complete_event_state(e);
-                    graph_neigh_yp.complete_event_state(e);
-                    graph_neigh_ym.complete_event_state(e);
-                    graph_neigh_zp.complete_event_state(e);
-                    graph_neigh_zm.complete_event_state(e);
+                    // graph_neigh_yp.complete_event_state(e);
+                    // graph_neigh_ym.complete_event_state(e);
+                    // graph_neigh_zp.complete_event_state(e);
+                    // graph_neigh_zm.complete_event_state(e);
                 });
         }
     };

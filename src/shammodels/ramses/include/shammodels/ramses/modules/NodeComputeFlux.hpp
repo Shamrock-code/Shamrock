@@ -208,53 +208,58 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_face_xp,
                 flux_rhoe_face_xp);
 
-            modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::ym>
-                node_ym(gamma);
-            node_ym.set_edges(
-                cell_neigh_graph,
-                rho_face_ym,
-                vel_face_ym,
-                press_face_ym,
-                flux_rho_face_ym,
-                flux_rhov_face_ym,
-                flux_rhoe_face_ym);
-            modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::yp>
-                node_yp(gamma);
-            node_yp.set_edges(
-                cell_neigh_graph,
-                rho_face_yp,
-                vel_face_yp,
-                press_face_yp,
-                flux_rho_face_yp,
-                flux_rhov_face_yp,
-                flux_rhoe_face_yp);
-            modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zm>
-                node_zm(gamma);
-            node_zm.set_edges(
-                cell_neigh_graph,
-                rho_face_zm,
-                vel_face_zm,
-                press_face_zm,
-                flux_rho_face_zm,
-                flux_rhov_face_zm,
-                flux_rhoe_face_zm);
-            modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zp>
-                node_zp(gamma);
-            node_zp.set_edges(
-                cell_neigh_graph,
-                rho_face_zp,
-                vel_face_zp,
-                press_face_zp,
-                flux_rho_face_zp,
-                flux_rhov_face_zp,
-                flux_rhoe_face_zp);
+            /*
+
+                    modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::ym>
+                        node_ym(gamma);
+                    node_ym.set_edges(
+                        cell_neigh_graph,
+                        rho_face_ym,
+                        vel_face_ym,
+                        press_face_ym,
+                        flux_rho_face_ym,
+                        flux_rhov_face_ym,
+                        flux_rhoe_face_ym);
+                    modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::yp>
+                        node_yp(gamma);
+                    node_yp.set_edges(
+                        cell_neigh_graph,
+                        rho_face_yp,
+                        vel_face_yp,
+                        press_face_yp,
+                        flux_rho_face_yp,
+                        flux_rhov_face_yp,
+                        flux_rhoe_face_yp);
+                    modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zm>
+                        node_zm(gamma);
+                    node_zm.set_edges(
+                        cell_neigh_graph,
+                        rho_face_zm,
+                        vel_face_zm,
+                        press_face_zm,
+                        flux_rho_face_zm,
+                        flux_rhov_face_zm,
+                        flux_rhoe_face_zm);
+                    modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zp>
+                        node_zp(gamma);
+                    node_zp.set_edges(
+                        cell_neigh_graph,
+                        rho_face_zp,
+                        vel_face_zp,
+                        press_face_zp,
+                        flux_rho_face_zp,
+                        flux_rhov_face_zp,
+                        flux_rhoe_face_zp);
+
+                */
 
             flux_sequence.push_back(std::make_shared<decltype(node_xm)>(std::move(node_xm)));
             flux_sequence.push_back(std::make_shared<decltype(node_xp)>(std::move(node_xp)));
-            flux_sequence.push_back(std::make_shared<decltype(node_ym)>(std::move(node_ym)));
-            flux_sequence.push_back(std::make_shared<decltype(node_yp)>(std::move(node_yp)));
-            flux_sequence.push_back(std::make_shared<decltype(node_zm)>(std::move(node_zm)));
-            flux_sequence.push_back(std::make_shared<decltype(node_zp)>(std::move(node_zp)));
+
+            // flux_sequence.push_back(std::make_shared<decltype(node_ym)>(std::move(node_ym)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_yp)>(std::move(node_yp)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_zm)>(std::move(node_zm)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_zp)>(std::move(node_zp)));
 
             return flux_sequence;
         };
@@ -406,29 +411,30 @@ namespace shammodels::basegodunov::modules {
             node_xp.set_edges(
                 cell_neigh_graph, rho_face_xp, vel_face_xp, flux_rho_face_xp, flux_rhov_face_xp);
 
-            modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, modules::Direction::ym>
-                node_ym(ndust);
-            node_ym.set_edges(
-                cell_neigh_graph, rho_face_ym, vel_face_ym, flux_rho_face_ym, flux_rhov_face_ym);
-            modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, modules::Direction::yp>
-                node_yp(ndust);
-            node_yp.set_edges(
-                cell_neigh_graph, rho_face_yp, vel_face_yp, flux_rho_face_yp, flux_rhov_face_yp);
-            modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, modules::Direction::zm>
-                node_zm(ndust);
-            node_zm.set_edges(
-                cell_neigh_graph, rho_face_zm, vel_face_zm, flux_rho_face_zm, flux_rhov_face_zm);
-            modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, modules::Direction::zp>
-                node_zp(ndust);
-            node_zp.set_edges(
-                cell_neigh_graph, rho_face_zp, vel_face_zp, flux_rho_face_zp, flux_rhov_face_zp);
+            /*
+                        modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode,
+               modules::Direction::ym> node_ym(ndust); node_ym.set_edges( cell_neigh_graph,
+               rho_face_ym, vel_face_ym, flux_rho_face_ym, flux_rhov_face_ym);
+                        modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode,
+               modules::Direction::yp> node_yp(ndust); node_yp.set_edges( cell_neigh_graph,
+               rho_face_yp, vel_face_yp, flux_rho_face_yp, flux_rhov_face_yp);
+                        modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode,
+               modules::Direction::zm> node_zm(ndust); node_zm.set_edges( cell_neigh_graph,
+               rho_face_zm, vel_face_zm, flux_rho_face_zm, flux_rhov_face_zm);
+                        modules::NodeComputeFluxDustDirMode<Tvec, TgridVec, mode,
+               modules::Direction::zp> node_zp(ndust); node_zp.set_edges( cell_neigh_graph,
+               rho_face_zp, vel_face_zp, flux_rho_face_zp, flux_rhov_face_zp);
+
+
+                    */
 
             flux_sequence.push_back(std::make_shared<decltype(node_xm)>(std::move(node_xm)));
             flux_sequence.push_back(std::make_shared<decltype(node_xp)>(std::move(node_xp)));
-            flux_sequence.push_back(std::make_shared<decltype(node_ym)>(std::move(node_ym)));
-            flux_sequence.push_back(std::make_shared<decltype(node_yp)>(std::move(node_yp)));
-            flux_sequence.push_back(std::make_shared<decltype(node_zm)>(std::move(node_zm)));
-            flux_sequence.push_back(std::make_shared<decltype(node_zp)>(std::move(node_zp)));
+
+            // flux_sequence.push_back(std::make_shared<decltype(node_ym)>(std::move(node_ym)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_yp)>(std::move(node_yp)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_zm)>(std::move(node_zm)));
+            // flux_sequence.push_back(std::make_shared<decltype(node_zp)>(std::move(node_zp)));
 
             return flux_sequence;
         };

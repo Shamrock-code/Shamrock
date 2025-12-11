@@ -69,7 +69,18 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe_old;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_phi_g_old;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_phi_g_next;
+            // const shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_m_old;
+            // const shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_p_old;
+            // const shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_m_new;
+            // const shamrock::solvergraph::IFieldSpan<Tvec> &spans_grad_phi_p_new;
             const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
+
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_xp;
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_xm;
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_yp;
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_ym;
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zp;
+            // const solvergraph::NeighGraphLinkFieldEdge<Tscal> &flux_rho_face_zm;
 
             shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov_next;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe_next;
@@ -100,35 +111,59 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_phi_g_next,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_m_old,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_p_old,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_m_new,
+            // std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_grad_phi_p_new,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
+
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xp,
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_xm,
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_yp,
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_ym,
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zp,
+            // std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tscal>> flux_rho_face_zm,
 
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov_next,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe_next) {
 
-            __internal_set_ro_edges(
-                {sizes,
-                 cell_neigh_graph,
-                 spans_block_cell_sizes,
-                 spans_cell0block_aabb_lower,
-                 flux_rhov_face_xp,
-                 flux_rhov_face_xm,
-                 flux_rhov_face_yp,
-                 flux_rhov_face_ym,
-                 flux_rhov_face_zp,
-                 flux_rhov_face_zm,
-                 flux_rhoe_face_xp,
-                 flux_rhoe_face_xm,
-                 flux_rhoe_face_yp,
-                 flux_rhoe_face_ym,
-                 flux_rhoe_face_zp,
-                 flux_rhoe_face_zm,
-                 spans_rho_old,
-                 spans_rho_next,
-                 spans_rhov_old,
-                 spans_rhoe_old,
-                 spans_phi_g_old,
-                 spans_phi_g_next,
-                 dt});
+            __internal_set_ro_edges({
+                sizes,
+                cell_neigh_graph,
+                spans_block_cell_sizes,
+                spans_cell0block_aabb_lower,
+                flux_rhov_face_xp,
+                flux_rhov_face_xm,
+                flux_rhov_face_yp,
+                flux_rhov_face_ym,
+                flux_rhov_face_zp,
+                flux_rhov_face_zm,
+                flux_rhoe_face_xp,
+                flux_rhoe_face_xm,
+                flux_rhoe_face_yp,
+                flux_rhoe_face_ym,
+                flux_rhoe_face_zp,
+                flux_rhoe_face_zm,
+                spans_rho_old,
+                spans_rho_next,
+                spans_rhov_old,
+                spans_rhoe_old,
+                spans_phi_g_old,
+                spans_phi_g_next,
+                //  spans_grad_phi_m_old,
+                //  spans_grad_phi_p_old,
+                //  spans_grad_phi_m_new,
+                //  spans_grad_phi_p_new,
+                dt
+                //  ,
+                //  flux_rho_face_xp,
+                //  flux_rho_face_xm,
+                //  flux_rho_face_yp,
+                //  flux_rho_face_ym,
+                //  flux_rho_face_zp,
+                //  flux_rho_face_zm
+
+            });
 
             __internal_set_rw_edges({spans_rhov_next, spans_rhoe_next});
         }
@@ -157,7 +192,19 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(19),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(20),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(21),
+                // get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(22),
+                // get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(23),
+                // get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(24),
+                // get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(25),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(22),
+
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(27),
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(28),
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(29),
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(30),
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(31),
+                // get_ro_edge<solvergraph::NeighGraphLinkFieldEdge<Tscal>>(32),
+
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1)};
         }

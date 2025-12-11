@@ -32,7 +32,9 @@ namespace shammodels::basegodunov::modules {
 
         // logger::raw_ln("dt in NodeCGLoop", edges.dt.value);
 
-        if (edges.dt.value != 0) {
+        // if (edges.dt.value != 0)
+
+        {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_phi.check_sizes(edges.sizes.indexes);
             edges.spans_rho.check_sizes(edges.sizes.indexes);
@@ -58,6 +60,11 @@ namespace shammodels::basegodunov::modules {
                     logger::raw_ln("Rho-mean", edges.mean_rho.value);
                 }
             }
+
+            // if (shamcomm::world_rank() == 0) {
+            //     // logger::raw_ln(" ================== k = ", k, "=======================\n");
+            //     logger::raw_ln("Rho-mean", edges.mean_rho.value);
+            // }
 
             /* compute r0 = p0 = 4*\pi*G* \left( \rho - \bar{\rho} \right) - A \phi_{0}*/
             node0.evaluate();
@@ -99,10 +106,10 @@ namespace shammodels::basegodunov::modules {
             node1.evaluate();
 
             u32 k = 0;
-            if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" k = ", k);
-                logger::raw_ln("RES (L2-squared) = ", edges.old_values.value);
-            }
+            // if (shamcomm::world_rank() == 0) {
+            //     logger::raw_ln(" k = ", k);
+            //     logger::raw_ln("RES (L2-squared) = ", edges.old_values.value);
+            // }
 
             auto diff_l2   = 1.;
             auto diff_l1   = 1.;
@@ -114,13 +121,13 @@ namespace shammodels::basegodunov::modules {
                 // increment iteration
                 k = k + 1;
 
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln(" ================== k = ", k, "=======================\n");
-                    logger::raw_ln(
-                        "Rho-mean",
-                        edges.mean_rho.value,
-                        (32.0 * shambase::constants::pi<Tscal> * 0.25 * 0.25 * 0.25) / 105.0);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln(" ================== k = ", k, "=======================\n");
+                //     logger::raw_ln(
+                //         "Rho-mean",
+                //         edges.mean_rho.value,
+                //         (32.0 * shambase::constants::pi<Tscal> * 0.25 * 0.25 * 0.25) / 105.0);
+                // }
 
                 /** Prevent NaN to propagate. This can happen for the second cell in the ghost-zone.
                  */
@@ -193,15 +200,15 @@ namespace shammodels::basegodunov::modules {
                 /** compute the A-norm of p_{k} , <p_{k}, Ap_{k}> and assign its value to
                  * edges.e_norm.value */
                 node4.evaluate();
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("e-norm = ", edges.e_norm.value);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln("e-norm = ", edges.e_norm.value);
+                // }
 
                 /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
                 edges.alpha.value = edges.old_values.value / edges.e_norm.value;
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("alpha  = ", edges.alpha.value);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln("alpha  = ", edges.alpha.value);
+                // }
 
                 /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
                 node5.evaluate();
@@ -252,16 +259,51 @@ namespace shammodels::basegodunov::modules {
                 linfdiff = shamalgs::collective::allreduce_max(linfdiff);
                 lszz     = shamalgs::collective::allreduce_sum(lszz);
 
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("l2diff = ", sycl::sqrt(l2diff) / lszz);
-                    logger::raw_ln("l1diff = ", l1diff / lszz);
-                    logger::raw_ln("linfdiff = ", linfdiff);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln("l2diff = ", sycl::sqrt(l2diff) / lszz);
+                //     logger::raw_ln("l1diff = ", l1diff / lszz);
+                //     logger::raw_ln("linfdiff = ", linfdiff);
+                // }
 
                 edges.alpha.value = -edges.alpha.value;
 
                 /** compute new residual : r_{k+1} = r_{k} - \alpha_{k} (Ap_{k}) */
                 node6.evaluate();
+
+                if (false) {
+                    for (auto id = 0; id < 1; id++) {
+                        auto &buf = edges.spans_phi_res.get_buf(id);
+                        auto vec  = buf.copy_to_stdvec();
+
+                        auto &buf_p = edges.spans_phi_p.get_buf(id);
+                        auto vec_p  = buf_p.copy_to_stdvec();
+
+                        auto &buf_Ap = edges.spans_phi_Ap.get_buf(id);
+                        auto vec_Ap  = buf_Ap.copy_to_stdvec();
+
+                        auto &buf_phi = edges.spans_phi.get_field(id).get_buf();
+                        auto vec_phi  = buf_phi.copy_to_stdvec();
+
+                        logger::raw_ln(id, "buf res size ", "--", buf.get_size());
+                        logger::raw_ln(
+                            "only active zone size  : ",
+                            edges.sizes_no_gz.indexes.get(id) * block_size,
+                            "\n");
+                        logger::raw_ln(
+                            "i ", "res[i] ", "p[i] ", "Ap[i] ", "p[i]*Ap[i] ", "phi[i] ", "\n");
+                        for (int i = 0; i < buf.get_size(); i++) {
+                            if (i < edges.sizes_no_gz.indexes.get(id) * block_size) {
+                                logger::raw_ln(
+                                    i,
+                                    vec[i],
+                                    vec_p[i],
+                                    vec_Ap[i],
+                                    vec_p[i] * vec_Ap[i],
+                                    vec_phi[i]);
+                            }
+                        }
+                    }
+                }
 
                 /** Ghost exhanges for residuals  */
                 edges.spans_phi_cpy.ensure_sizes(edges.sizes.indexes);
@@ -274,9 +316,9 @@ namespace shammodels::basegodunov::modules {
                 /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
                 edges.beta.value = edges.new_values.value / edges.old_values.value;
 
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("beta = ", edges.beta.value);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln("beta = ", edges.beta.value);
+                // }
 
                 /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
                 edges.old_values.value = edges.new_values.value;
@@ -292,7 +334,15 @@ namespace shammodels::basegodunov::modules {
                 diff_l1   = l1diff;
                 diff_linf = linfdiff;
 
-                if ((diff_l2 <= tol) && (diff_l1 <= tol) /* && (diff_linf <= tol) */) {
+                // if ((diff_l2 <= tol) && (diff_l1 <= tol) /* && (diff_linf <= tol) */) {
+                //     if (shamcomm::world_rank() == 0) {
+                //         logger::raw_ln("The solution converged after ", k, "iterations");
+                //     }
+
+                //     break;
+                // }
+
+                if (edges.old_values.value <= tol /* && (diff_linf <= tol) */) {
                     if (shamcomm::world_rank() == 0) {
                         logger::raw_ln("The solution converged after ", k, "iterations");
                     }
@@ -300,12 +350,11 @@ namespace shammodels::basegodunov::modules {
                     break;
                 }
             }
-
         }
 
-        else {
-            return;
-        }
+        // else {
+        //     return;
+        // }
     }
 
     template<class Tvec, class TgridVec>

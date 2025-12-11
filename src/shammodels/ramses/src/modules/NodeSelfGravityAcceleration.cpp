@@ -68,26 +68,33 @@ namespace {
         Tscal phi_i  = field_access(cell_global_id);
         Tscal phi_xp = get_avg_neigh(graph_iter_xp);
         Tscal phi_xm = get_avg_neigh(graph_iter_xm);
-        Tscal phi_yp = get_avg_neigh(graph_iter_yp);
-        Tscal phi_ym = get_avg_neigh(graph_iter_ym);
-        Tscal phi_zp = get_avg_neigh(graph_iter_zp);
-        Tscal phi_zm = get_avg_neigh(graph_iter_zm);
+        // Tscal phi_yp = get_avg_neigh(graph_iter_yp);
+        // Tscal phi_ym = get_avg_neigh(graph_iter_ym);
+        // Tscal phi_zp = get_avg_neigh(graph_iter_zp);
+        // Tscal phi_zm = get_avg_neigh(graph_iter_zm);
 
         Tscal delta_phi_x_p = phi_xp - phi_i;
-        Tscal delta_phi_y_p = phi_yp - phi_i;
-        Tscal delta_phi_z_p = phi_zp - phi_i;
+        // Tscal delta_phi_y_p = phi_yp - phi_i;
+        // Tscal delta_phi_z_p = phi_zp - phi_i;
 
         Tscal delta_phi_x_m = phi_i - phi_xm;
-        Tscal delta_phi_y_m = phi_i - phi_ym;
-        Tscal delta_phi_z_m = phi_i - phi_zm;
+        // Tscal delta_phi_y_m = phi_i - phi_ym;
+        // Tscal delta_phi_z_m = phi_i - phi_zm;
 
         Tscal fact = 1. / Tscal(delta_cell);
 
         Tscal phi_gx = -0.5 * (delta_phi_x_m + delta_phi_x_p) * fact;
-        Tscal phi_gy = -0.5 * (delta_phi_y_m + delta_phi_y_p) * fact;
-        Tscal phi_gz = -0.5 * (delta_phi_z_m + delta_phi_z_p) * fact;
+        Tscal phi_gy = 0;
+        Tscal phi_gz = 0;
+        // Tscal phi_gy = -0.5 * (delta_phi_y_m + delta_phi_y_p) * fact;
+        // Tscal phi_gz = -0.5 * (delta_phi_z_m + delta_phi_z_p) * fact;
 
         return {phi_gx, phi_gy, phi_gz};
+
+        // Tvec phi_g = {phi_gx, phi_gy, phi_gz};
+        // Tvec grad_phi_m = {delta_phi_x_m, delta_phi_y_m, delta_phi_z_m};
+        // Tvec grad_phi_p = {delta_phi_x_p, delta_phi_y_p, delta_phi_z_p};
+        // return {grad_phi_m, phi_g, grad_phi_p};
     }
 
     template<class Tvec, class TgridVec>
@@ -105,8 +112,10 @@ namespace {
 
             edges.cell_neigh_graph.graph.for_each(
                 [&](u64 id, const OrientedAMRGraph &oriented_cell_graph) {
-                    auto &phi_span        = edges.spans_phi.get_spans().get(id);
-                    auto &phi_g_span      = edges.spans_phi_g.get_spans().get(id);
+                    auto &phi_span   = edges.spans_phi.get_spans().get(id);
+                    auto &phi_g_span = edges.spans_phi_g.get_spans().get(id);
+                    // auto &grad_phi_m_span      = edges.spans_grad_phi_m.get_spans().get(id);
+                    // auto &grad_phi_p_span      = edges.spans_grad_phi_p.get_spans().get(id);
                     auto &cell_sizes_span = edges.spans_block_cell_sizes.get_spans().get(id);
 
                     AMRGraph &graph_neigh_xp
@@ -137,7 +146,7 @@ namespace {
                             graph_neigh_ym,
                             graph_neigh_zp,
                             graph_neigh_zm},
-                        sham::MultiRef{phi_g_span},
+                        sham::MultiRef{/*grad_phi_m_span, grad_phi_p_span,*/ phi_g_span},
                         cell_count,
                         [block_size](
                             i32 cell_global_id,
@@ -149,6 +158,8 @@ namespace {
                             const auto graph_iter_ym,
                             const auto graph_iter_zp,
                             const auto graph_iter_zm,
+                            // Tvec *__restrict out_m1,
+                            // Tvec *__restrict out_m2,
                             Tvec *__restrict out) {
                             const u32 block_id    = cell_global_id / block_size;
                             const u32 cell_loc_id = cell_global_id % block_size;
@@ -167,6 +178,9 @@ namespace {
                                     return in[id];
                                 });
 
+                            // out_m1[cell_global_id] = {grad_res[0][0], grad_res[0][1],
+                            // grad_res[0][2]}; out_m2[cell_global_id] = {grad_res[2][0],
+                            // grad_res[2][1], grad_res[2][2]};
                             out[cell_global_id] = {grad_res[0], grad_res[1], grad_res[2]};
                         }
 
@@ -185,15 +199,19 @@ namespace shammodels::basegodunov::modules {
 
         // logger::raw_ln("dt in compute_grad_acc", edges.dt.value);
 
-        if (edges.dt.value != 0) {
+        {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_phi.check_sizes(edges.sizes.indexes);
             edges.spans_phi_g.ensure_sizes(edges.sizes.indexes);
+            // edges.spans_grad_phi_m.ensure_sizes(edges.sizes.indexes);
+            // edges.spans_grad_phi_p.ensure_sizes(edges.sizes.indexes);
 
             KernelSelfGravAcc<Tvec, TgridVec>::kernel(edges, block_size);
-        } else {
-            return;
         }
+
+        // else {
+        //     return;
+        // }
     }
 
 } // namespace shammodels::basegodunov::modules

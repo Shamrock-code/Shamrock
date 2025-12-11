@@ -79,6 +79,12 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
                 gamma);
 
             flux_rho_face[link_id] = flux_dir.rho;
+            auto tmp               = flux_rho_face[link_id];
+
+            if (tmp != tmp) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    shambase::format("NaN in flux_rho link_id={} value={}\n", link_id, tmp));
+            }
             // logger::raw_ln("flux -face mod ",  flux_rho_face[link_id]);
             flux_rhov_face[link_id] = flux_dir.rhovel;
             flux_rhoe_face[link_id] = flux_dir.rhoe;

@@ -39,7 +39,7 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
     const u32 irhovel  = pdl.get_field_idx<Tvec>("rhovel");
     const u32 iphi     = pdl.get_field_idx<Tscal>("phi");
 
-    if (dt != 0) {
+    {
 
         auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
         auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
@@ -76,6 +76,8 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
                     rho_old[id_a]  = acc_rho_next_patch[id_a];
                     rhov_old[id_a] = acc_rhov_next_patch[id_a];
                     rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
+
+                    // logger::raw(rho_old[id_a]);
                 });
             });
 

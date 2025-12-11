@@ -15,6 +15,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -156,6 +157,8 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         auto acc_dt_rhoe_patch    = dt_rhoe_patch.get_write_access(depends_list);
 
         u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+        logger::raw_ln("cell_counts in Compute-time-derivative : ", cell_count, "\n");
 
         auto flux_rho_face_xp = buf_flux_rho_face_xp.get_read_access(depends_list);
         auto flux_rho_face_xm = buf_flux_rho_face_xm.get_read_access(depends_list);

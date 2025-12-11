@@ -158,6 +158,10 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_dy_vel;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_dz_vel;
 
+            /**/
+            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_g;
+            /**/
+
             solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xp;
             solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_xm;
             solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>> &vel_face_yp;
@@ -178,6 +182,10 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_dy_vel,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_dz_vel,
 
+            /**/
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_g,
+            /**/
+
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> &vel_face_xp,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> &vel_face_xm,
             std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> &vel_face_yp,
@@ -196,6 +204,7 @@ namespace shammodels::basegodunov::modules {
                 spans_dx_vel,
                 spans_dy_vel,
                 spans_dz_vel,
+                spans_g,
             });
             __internal_set_rw_edges({
                 vel_face_xp,
@@ -219,6 +228,7 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(7),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(8),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(9),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(10),
                 get_rw_edge<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>>(0),
                 get_rw_edge<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>>(1),
                 get_rw_edge<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>>(2),

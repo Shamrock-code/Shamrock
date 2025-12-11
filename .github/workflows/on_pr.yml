@@ -94,7 +94,16 @@ jobs:
 
       - name : Install pck (doxygen)
         run: |
-          sudo apt-get install -y -qq doxygen graphviz
+          sudo apt update && \
+          sudo apt install -y -qq doxygen graphviz
+
+      - name : Modify texlive packages
+        run: |
+          sudo apt install -y \
+            texlive-full \
+            dvipng \
+            ghostscript \
+            latexmk
 
       - name : Run doxygen
         run: |
@@ -230,7 +239,7 @@ jobs:
 
   make_github_page:
     name: "GithubPage"
-    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov]
+    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: false

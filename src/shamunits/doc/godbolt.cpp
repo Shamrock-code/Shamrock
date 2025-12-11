@@ -122,7 +122,7 @@ namespace shamunits {
 namespace shamunits {
 
     template<class T>
-    struct ConvertionConstants {
+    struct ConversionConstants {
 
         static constexpr T au_to_m = 149597870700;     //(m)
         static constexpr T ly_to_m = 9460730472580800; //(m)
@@ -170,7 +170,7 @@ namespace shamunits {
 
         inline T pown(T a, int n) { return std::pow(a, n); }
 
-        using Uconvert = ConvertionConstants<T>;
+        using Uconvert = ConversionConstants<T>;
 
         public:
         T s, m, kg, A, K, mol, cd;
@@ -352,7 +352,7 @@ namespace shamunits {
     template<class T>
     struct Constants {
 
-        using Conv = ConvertionConstants<T>;
+        using Conv = ConversionConstants<T>;
 
         struct Si {
 

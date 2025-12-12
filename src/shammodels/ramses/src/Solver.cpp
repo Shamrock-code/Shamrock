@@ -24,8 +24,10 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -39,6 +41,7 @@
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
@@ -407,6 +410,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         1, "block_cell_sizes", "s_{\\rm cell}");
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
+
+    // get blocks at level0 sizes for all patches
+    storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
+        "level0_amr", "level0_amr");
+    // get blocks amr leves
+    using TgridUint_         = typename SolverStorage<Tvec, TgridVec, u_morton>::TgridUint;
+    storage.amr_block_levels = std::make_shared<shamrock::solvergraph::Field<TgridUint_>>(
+        1, "amr_block_levels", "L_{\\rm amr}");
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_rho", "\\nabla \\rho");
@@ -904,6 +915,28 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    { // compute level0 sizes in patch
+        modules::ComputeLevel0CellSize<Tvec, TgridVec> node_level0_sizes{};
+        node_level0_sizes.set_edges(
+            graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
+            storage.source_patches,
+            storage.level0_size);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
+    }
+
+    { // compute block amr level in patch
+        modules::ComputeAMRLevel<TgridVec> node_amr_level{};
+        node_amr_level.set_edges(
+            storage.block_counts,
+            storage.level0_size,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.amr_block_levels);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_amr_level)>(std::move(node_amr_level)));
     }
 
     if (solver_config.should_compute_rho_mean()) {

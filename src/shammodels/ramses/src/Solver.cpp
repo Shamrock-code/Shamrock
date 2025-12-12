@@ -302,6 +302,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
             ghost_layout.add_field<Tscal>("rho_gas_pscal", npscal_gas * AMRBlock::block_size);
         }
+
+        if (solver_config.is_pic_enabled()) {
+            ghost_layout.add_field<Tscal>("mass_particles", AMRBlock::block_size);
+            ghost_layout.add_field<Tscal>("rho_pic", AMRBlock::block_size);
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -657,8 +662,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     // will be filled by NodePIC
     if (solver_config.is_pic_enabled()) {
-    storage.rho_pic
-        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
+        storage.refs_mass_particles
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("mass_particles", "m_{particles}");
+        storage.rho_pic
+            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -854,6 +861,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             solver_sequence.push_back(
                 std::make_shared<decltype(attach_rhov_dust)>(std::move(attach_rhov_dust)));
         }
+
+        if (solver_config.is_pic_enabled()) { // attach spans to PIC field with ghosts (temporary)
+            shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_mass_particles
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(storage.ghost_layout, "mass_particles");
+            attach_mass_particles.set_edges(storage.merged_patchdata_ghost, storage.refs_mass_particles);
+            solver_sequence.push_back(
+                std::make_shared<decltype(attach_mass_particles)>(std::move(attach_mass_particles)));
+        }
     }
 
     { // build trees
@@ -931,10 +946,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         {
             modules::NodePIC<Tvec> node{AMRBlock::block_size};
-            printf("!!!ASDBG!!! Building PIC node\n");
             node.set_edges(
                 storage.block_counts_with_ghost,
-                storage.refs_rho,
+                storage.refs_mass_particles,
                 storage.rho_pic);
 
             pic_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));

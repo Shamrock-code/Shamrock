@@ -26,7 +26,7 @@ namespace {
         using Tscal = shambase::VecComponent<Tvec>;
 
         inline static void kernel(
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_mass_particles,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho_pic,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size) {
@@ -39,12 +39,12 @@ namespace {
 
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{spans_rho},
+                sham::DDMultiRef{spans_mass_particles},
                 sham::DDMultiRef{spans_rho_pic},
                 cell_counts,
                 [](
                     u32 i,
-                    const Tscal *__restrict rho,
+                    const Tscal *__restrict mass_particles,
                     Tscal *__restrict rho_pic) {
 
                     /*
@@ -64,11 +64,11 @@ namespace shammodels::basegodunov::modules {
     void NodePIC<Tvec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
-        edges.spans_rho.check_sizes(edges.sizes.indexes);
+        edges.spans_mass_particles.check_sizes(edges.sizes.indexes);
         edges.spans_rho_pic.ensure_sizes(edges.sizes.indexes);
 
         KernelPIC<Tvec>::kernel(
-            edges.spans_rho.get_spans(),
+            edges.spans_mass_particles.get_spans(),
             edges.spans_rho_pic.get_spans(),
             edges.sizes.indexes,
             block_size);
@@ -77,15 +77,15 @@ namespace shammodels::basegodunov::modules {
     template<class Tvec>
     std::string NodePIC<Tvec>::_impl_get_tex() const {
         auto block_count = get_ro_edge_base(0).get_tex_symbol();
-        auto rho         = get_ro_edge_base(1).get_tex_symbol();
-        auto rho_pic     = get_rw_edge_base(0).get_tex_symbol();
+        auto mass_particles = get_ro_edge_base(1).get_tex_symbol();
+        auto rho_pic = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
             // TODO: Add TeX description here
         )tex";
 
         shambase::replace_all(tex, "{rho_pic}", rho_pic);
-        shambase::replace_all(tex, "{rho}", rho);
+        shambase::replace_all(tex, "{mass_particles}", mass_particles);
         shambase::replace_all(tex, "{block_count}", block_count);
         shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
 

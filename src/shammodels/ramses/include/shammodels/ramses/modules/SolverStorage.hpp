@@ -82,6 +82,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho_dust;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_rhov_dust;
 
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_mass_particles;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_pic;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel;

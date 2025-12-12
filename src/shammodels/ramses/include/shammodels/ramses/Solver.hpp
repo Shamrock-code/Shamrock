@@ -73,6 +73,7 @@ namespace shammodels::basegodunov {
             }
 
             if (solver_config.is_pic_enabled()) {
+                context.pdata_layout_add_field<Tscal>("mass_particles", AMRBlock::block_size);
                 context.pdata_layout_add_field<Tscal>("rho_pic", AMRBlock::block_size);
             }
 

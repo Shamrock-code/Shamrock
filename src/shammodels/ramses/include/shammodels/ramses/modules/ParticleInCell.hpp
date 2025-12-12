@@ -31,15 +31,15 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_mass_particles;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_pic;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_mass_particles,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_pic) {
-            __internal_set_ro_edges({sizes, spans_rho});
+            __internal_set_ro_edges({sizes, spans_mass_particles});
             __internal_set_rw_edges({spans_rho_pic});
         }
 

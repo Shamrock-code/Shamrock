@@ -33,3 +33,5 @@ jobs:
       - name: Commit and push if changed
         if: env.FIX_MODE == 'fix'
         uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
+        with:
+          commit-message: '[autofix.ci] fix file authorship'

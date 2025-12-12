@@ -70,6 +70,7 @@
     X(jupiter_mass /***/, Uget(kg, 1))                                                             \
     X(sol_mass /*******/, Uget(kg, 1))                                                             \
     X(planck_mass /****/, Uget(kg, 1))                                                             \
+    X(dalton /*********/, Uget(kg, 1))                                                             \
     /* densities */                                                                                \
     X(guiness_density, Uget(kg, 1) * Uget(m, -1))                                                  \
     /* derived ctes  */                                                                            \
@@ -155,6 +156,7 @@ namespace shamunits {
             static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
             static constexpr T sol_mass      = 1.98847e30;                             //(kg)
             static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
+            static constexpr T dalton        = 1.66053906892e-27;                      //(kg)
 
             static constexpr T guiness_density = Conv::gcm3_to_guiness_density * 1000; //(kg.m-3)
         };

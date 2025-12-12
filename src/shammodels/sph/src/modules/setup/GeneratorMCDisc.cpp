@@ -83,19 +83,11 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
     using namespace shamrock::patch;
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
-    auto has_pdat = [&]() {
-        bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-            ret = true;
-        });
-        return ret;
-    };
-
     std::vector<DiscOutput> pos_data;
 
     // Fill pos_data if the scheduler has some patchdata in this rank
     if (!is_done()) {
-        u64 loc_gen_count = (has_pdat()) ? nmax : 0;
+        u64 loc_gen_count = nmax;
 
         auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
 

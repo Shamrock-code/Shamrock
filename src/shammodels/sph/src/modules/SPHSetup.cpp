@@ -94,6 +94,15 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
             .update_load_balancing();
     };
 
+    auto has_pdat = [&]() {
+        bool ret = false;
+        using namespace shamrock::patch;
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            ret = true;
+        });
+        return ret;
+    };
+
     shamrock::DataInserterUtility inserter(sched);
     u32 _insert_step = sched.crit_patch_split * 8;
     if (bool(insert_step)) {
@@ -102,7 +111,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchDataLayer pdat = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer pdat = setup->next_n((has_pdat()) ? _insert_step : 0);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles

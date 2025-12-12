@@ -16,7 +16,7 @@ multy = 1
 multz = 1
 
 cell_size = 1 << 2  # refinement is limited to cell_size = 2
-base = 8
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (cell_size * base * multx)
@@ -33,7 +33,7 @@ cfg.set_riemann_solver_hll()
 # cfg.set_slope_lim_vanleer_sym()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
-mass_crit = 0.0000001 * 5 * 2 * 2
+mass_crit = 1e-6 * 5 * 2 * 2
 cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 model.set_solver_config(cfg)
 
@@ -88,13 +88,29 @@ model.set_field_value_lambda_f64("rho", rho_map)
 model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-t_target = 0.05
+t_target = 0.245
+
+dt = 0
+t = 0
+freq = 10
+for i in range(1000):
+    if i % freq == 0:
+        model.dump_vtk(f"test{i:04d}.vtk")
+    next_dt = model.evolve_once_override_time(t, dt)
+
+    t += dt
+    dt = next_dt
+
+    if t_target < t + next_dt:
+        dt = t_target - t
+    if t == t_target:
+        break
 
 # for i in range(1000):
-#    model.dump_vtk(f"test{i:04d}.vtk")
+# model.dump_vtk(f"test{i:04d}.vtk")
 #    model.timestep()
 
-model.evolve_until(t_target)
+# model.evolve_until(t_target)
 
 # model.evolve_once()
 xref = 1.0
@@ -213,7 +229,7 @@ if True:
     ax1.set_xlim(0.5, 1.5)
     ax2.set_ylabel("AMR level")
     plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
-    plt.savefig("sod_tube.pdf")
+    plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}.pdf")
     plt.savefig("sod_tube.png")
     #######
     plt.show()

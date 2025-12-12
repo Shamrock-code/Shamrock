@@ -226,7 +226,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         block_graph_neighs_zm.complete_event_state(e1);
         buf_amr_block_levels.complete_event_state(e1);
 
-        // keep only derefine flags on only if the eight cells want to merge and if they can
+        // keep derefine flags on only if the eight cells want to merge and if they can
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             sycl::accessor acc_merge_flag{derefine_flags, cgh, sycl::read_write};
 

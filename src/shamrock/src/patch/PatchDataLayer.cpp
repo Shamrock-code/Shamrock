@@ -9,11 +9,13 @@
 
 /**
  * @file PatchDataLayer.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
@@ -22,6 +24,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
+#include <vector>
 
 namespace shamrock::patch {
 
@@ -313,9 +316,19 @@ namespace shamrock::patch {
 
         PatchDataField<T> &main_field = fields[0].get_if_ref_throw<T>();
 
+        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
+        //     return main_field.get_elements_with_range(
+        //         [&](T val, T vmin, T vmax) {
+        //             return Patch::is_in_patch_converted(val, vmin, vmax);
+        //         },
+        //         vmin,
+        //         vmax);
+        // };
+
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-            return main_field.get_elements_with_range(
-                [&](T val, T vmin, T vmax) {
+            return main_field.get_ids_vec_where(
+                [&](const auto &acc, u32 idx, T vmin, T vmax) {
+                    T val = acc[idx];
                     return Patch::is_in_patch_converted(val, vmin, vmax);
                 },
                 vmin,

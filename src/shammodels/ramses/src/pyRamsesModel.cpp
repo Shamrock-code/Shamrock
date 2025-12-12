@@ -186,6 +186,44 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("crit_mass"))
             .def(
+                "set_amr_mode_pseudo_gradient_based",
+                [](TConfig &self, Tscal error_min, Tscal error_max) {
+                    self.amr_mode.set_refine_pseudo_gradient_based(error_min, error_max);
+                },
+                py::kw_only(),
+                py::arg("error_min"),
+                py::arg("error_max"))
+            .def(
+                "set_amr_mode_pseudo_second_gradient_based",
+                [](TConfig &self, Tscal crit_refine, Tscal crit_coarsen) {
+                    self.amr_mode.set_refine_second_derivative_based(crit_refine, crit_coarsen);
+                },
+                py::kw_only(),
+                py::arg("crit_refine"),
+                py::arg("crit_coarsen"))
+            .def(
+                "set_amr_mode_slope_based",
+                [](TConfig &self, Tscal crit_smooth) {
+                    self.amr_mode.set_refine_slope_based(crit_smooth);
+                },
+                py::kw_only(),
+                py::arg("crit_smooth"))
+            .def(
+                "set_amr_mode_shocks_based",
+                [](TConfig &self, Tscal crit_pressure, Tscal crit_energy) {
+                    self.amr_mode.set_refine_shocks_based(crit_pressure, crit_energy);
+                },
+                py::kw_only(),
+                py::arg("crit_pressure"),
+                py::arg("crit_energy"))
+            .def(
+                "set_amr_mode_shear_based",
+                [](TConfig &self, Tscal epsilon_shear) {
+                    self.amr_mode.set_refine_shear_based(epsilon_shear);
+                },
+                py::kw_only(),
+                py::arg("epsilon_shear"))
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;

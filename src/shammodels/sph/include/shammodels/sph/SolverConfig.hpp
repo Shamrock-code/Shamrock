@@ -185,6 +185,19 @@ namespace shammodels::sph {
 
     struct SelfGravConfig {
 
+        struct SFMM {
+            u32 fmm_order;
+            f64 opening_angle;
+            bool leaf_lowering;
+            u32 reduction_level;
+        };
+
+        struct FMM {
+            u32 fmm_order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
         struct MM {
             u32 order;
             f64 opening_angle;
@@ -197,7 +210,7 @@ namespace shammodels::sph {
 
         struct None {};
 
-        using mode = std::variant<MM, Direct, None>;
+        using mode = std::variant<SFMM, FMM, MM, Direct, None>;
 
         mode config = None{};
 
@@ -206,11 +219,18 @@ namespace shammodels::sph {
         void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
             config = MM{mm_order, opening_angle, reduction_level};
         }
+        void set_sfmm(u32 fmm_order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
+            config = SFMM{fmm_order, opening_angle, leaf_lowering, reduction_level};
+        }
+        void set_fmm(u32 fmm_order, f64 opening_angle, u32 reduction_level) {
+            config = FMM{fmm_order, opening_angle, reduction_level};
+        }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
-        bool is_direct() const { return std::holds_alternative<Direct>(config); }
-
+        bool is_sfmm() const { return std::holds_alternative<SFMM>(config); }
+        bool is_fmm() const { return std::holds_alternative<FMM>(config); }
         bool is_mm() const { return std::holds_alternative<MM>(config); }
+        bool is_direct() const { return std::holds_alternative<Direct>(config); }
 
         bool is_sg_on() const { return !is_none(); }
         bool is_sg_off() const { return is_none(); }
@@ -219,15 +239,23 @@ namespace shammodels::sph {
             f64 epsilon;
         };
 
-        using mode_soft          = std::variant<SofteningPlummer>;
+        struct SofteningSPH {};
+
+        using mode_soft          = std::variant<SofteningPlummer, SofteningSPH>;
         mode_soft softening_mode = SofteningPlummer{1e-9};
 
         void set_softening_plummer(f64 epsilon) { softening_mode = SofteningPlummer{epsilon}; }
+        void set_softening_SPH() { softening_mode = SofteningSPH{}; }
         void set_softening_none() { set_softening_plummer(0.); }
 
         bool is_softening_plummer() const {
             return std::holds_alternative<SofteningPlummer>(softening_mode);
         }
+        bool is_softening_SPH() const {
+            return std::holds_alternative<SofteningSPH>(softening_mode);
+        }
+
+        bool has_xi_field() const { return is_sg_on() && is_softening_SPH(); }
     };
 
 } // namespace shammodels::sph
@@ -964,7 +992,22 @@ namespace shammodels::sph {
 
     /// JSON serialization for SelfGravConfig
     inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
-        if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+        if (const SelfGravConfig::SFMM *conf = std::get_if<SelfGravConfig::SFMM>(&p.config)) {
+            j = {
+                {"type", "sfmm"},
+                {"fmm_order", conf->fmm_order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+                {"leaf_lowering", conf->leaf_lowering},
+            };
+        } else if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
+            j = {
+                {"type", "fmm"},
+                {"fmm_order", conf->fmm_order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
             j = {
                 {"type", "mm"},
                 {"order", conf->order},
@@ -988,6 +1031,10 @@ namespace shammodels::sph {
             = std::get_if<SelfGravConfig::SofteningPlummer>(&p.softening_mode)) {
             j["softening_mode"]   = "plummer";
             j["softening_length"] = conf->epsilon;
+        } else if (
+            const SelfGravConfig::SofteningSPH *conf
+            = std::get_if<SelfGravConfig::SofteningSPH>(&p.softening_mode)) {
+            j["softening_mode"] = "SPH";
         } else {
             shambase::throw_unimplemented();
         }
@@ -995,7 +1042,18 @@ namespace shammodels::sph {
 
     /// JSON deserialization for SelfGravConfig
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
-        if (j.at("type").get<std::string>() == "mm") {
+        if (j.at("type").get<std::string>() == "sfmm") {
+            p.config = SelfGravConfig::SFMM{
+                j.at("fmm_order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("leaf_lowering").get<bool>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "fmm") {
+            p.config = SelfGravConfig::FMM{
+                j.at("fmm_order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "mm") {
             p.config = SelfGravConfig::MM{
                 j.at("order").get<u32>(),
                 j.at("opening_angle").get<f64>(),
@@ -1004,9 +1062,6 @@ namespace shammodels::sph {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {
             p.config = SelfGravConfig::None{};
-        } else {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "Invalid self gravity type: " + j.at("type").get<std::string>());
         }
 
         if (j.contains("softening_mode")) {
@@ -1014,6 +1069,8 @@ namespace shammodels::sph {
             if (softening_mode == "plummer") {
                 p.softening_mode
                     = SelfGravConfig::SofteningPlummer{j.at("softening_length").get<f64>()};
+            } else if (softening_mode == "SPH") {
+                p.softening_mode = SelfGravConfig::SofteningSPH{};
             } else {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     "Invalid softening mode: " + softening_mode);

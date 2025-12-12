@@ -114,6 +114,9 @@ TestStart(
 
     sycl::buffer<T> b2 = b.copy_to_sycl_buffer();
 
+    REQUIRE_EQUAL(b1.size(), b2.size());
+    REQUIRE_EQUAL(b.get_size(), b1.size());
+
     if (b1.size() == b2.size() && b.get_size() == b1.size()) {
         sycl::host_accessor acc1(b1, sycl::read_only);
         sycl::host_accessor acc2(b2, sycl::read_only);

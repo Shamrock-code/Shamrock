@@ -654,16 +654,19 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 "flux_rhov_dust_face_zp", "flux_rhov_dust_face_zp", ndust);
     }
 
-    storage.dtrho  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "dtrho", "dtrho");
-    storage.dtrhov = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "dtrhov", "dtrhov");
-    storage.dtrhoe = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "dtrhoe", "dtrhoe");
+    storage.dtrho = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "dtrho", "dtrho");
+    storage.dtrhov = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        AMRBlock::block_size, "dtrhov", "dtrhov");
+    storage.dtrhoe = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "dtrhoe", "dtrhoe");
 
     if (solver_config.is_dust_on()) {
         u32 ndust          = solver_config.dust_config.ndust;
         storage.dtrho_dust = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            ndust, "dtrho_dust", "dtrho_dust");
+            AMRBlock::block_size * ndust, "dtrho_dust", "dtrho_dust");
         storage.dtrhov_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
-            ndust, "dtrhov_dust", "dtrhov_dust");
+            AMRBlock::block_size * ndust, "dtrhov_dust", "dtrhov_dust");
     }
 
     ////////////////////////////////////////////////////////////////////////////////

@@ -115,6 +115,7 @@ jobs:
   shamrock_linux_dpcpp:
     name: Tests
     needs: [src_check]
+    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
   build_push_docker:

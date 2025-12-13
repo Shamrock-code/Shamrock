@@ -83,6 +83,7 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd build
+          export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate && shammake
 
       - name: Pull reference files

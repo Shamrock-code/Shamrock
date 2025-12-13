@@ -7,7 +7,10 @@ on:
         description: "Whether to run the Dockerfiles build workflow"
         required: true
         type: boolean
-
+      light_ci:
+        description: "Whether to run the light CI"
+        required: true
+        type: boolean
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
@@ -16,6 +19,71 @@ env:
 
 jobs:
 
+  make_code_archive:
+    name: Make Code Archive
+    uses: ./.github/workflows/make_code_archive.yml
+
+  upload_pr_detail:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Save PR number
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          mkdir -p ./pr
+          echo $PR_NUMBER > ./pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_pr_number
+          path: ./pr_number.txt
+
+  email_check:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Extract author email
+        id: author
+        run: |
+          git log -1
+          echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
+
+      - name: Show email
+        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
+
+      - name: Validate author email
+        if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
+        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_email
+          path: ./report_______email.md
+
+  env_tests:
+    name: Tests
+    uses: ./.github/workflows/env_tests.yml
+
+  shamrock_linux_acpp_conda:
+    name: Tests
+    uses: ./.github/workflows/shamrock-acpp-conda.yml
+
+  shamrock_linux_acpp_asan:
+    name: Tests
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
+
+  shamrock_linux_acpp_ubsan:
+    name: Tests
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
+
   shamrock_linux_dpcpp:
     name: Tests
     uses: ./.github/workflows/shamrock-dpcpp.yml
@@ -23,5 +91,10 @@ jobs:
   build_push_docker:
     name: Build dockerfiles
     needs: [shamrock_linux_dpcpp]
-    if: ${{ inputs.run_build_push_docker}}
+    if: ${{ inputs.run_build_push_docker && !inputs.light_ci }}
     uses: ./.github/workflows/build-dockerfiles.yml
+
+  shamrock_linux_acpp_phystests:
+    name: Tests (Phys)
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-phys-test.yml

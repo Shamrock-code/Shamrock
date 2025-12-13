@@ -15,54 +15,6 @@ concurrency:
 
 jobs:
 
-  make_code_archive:
-    name: Make Code Archive
-    uses: ./.github/workflows/make_code_archive.yml
-
-  upload_pr_detail:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Save PR number
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-        run: |
-          mkdir -p ./pr
-          echo $PR_NUMBER > ./pr_number.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_pr_number
-          path: ./pr_number.txt
-
-
-  email_check:
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Extract author email
-        id: author
-        run: |
-          git log -1
-          echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
-
-      - name: Show email
-        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
-
-      - name: Validate author email
-        if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
-        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_email
-          path: ./report_______email.md
-
   src_check:
     name: Linting
     #needs: [detect_changes]
@@ -182,35 +134,12 @@ jobs:
         with:
           name: report_doc_diff
           path: ./report_doc_diff.md
-  env_tests:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/env_tests.yml
-
-  shamrock_linux_acpp_conda:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_asan:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
-
-  shamrock_linux_acpp_ubsan:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
 
   shamrock_linux_acpp_tidy:
     needs: [src_check]
@@ -230,12 +159,7 @@ jobs:
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
-
-  shamrock_linux_acpp_phystests:
-    needs: [src_check]
-    name: Tests (Phys)
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+      light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
 
   make_github_page:
     name: "GithubPage"

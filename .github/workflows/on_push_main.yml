@@ -18,10 +18,6 @@ env:
 
 jobs:
 
-  make_code_archive:
-    name: Make Code Archive
-    uses: ./.github/workflows/make_code_archive.yml
-
   src_check:
     name: Linting
     #needs: [detect_changes]
@@ -33,30 +29,10 @@ jobs:
     needs: [src_check]
     uses: ./.github/workflows/make_documentation.yml
 
-  env_tests:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/env_tests.yml
-
-  shamrock_linux_acpp_conda:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
-
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_asan:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
-
-  shamrock_linux_acpp_ubsan:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
 
   shamrock_linux_acpp_tidy:
     needs: [src_check]
@@ -74,12 +50,7 @@ jobs:
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
-
-  shamrock_linux_acpp_phystests:
-    needs: [src_check]
-    name: Tests (Phys)
-    uses: ./.github/workflows/shamrock-acpp-phys-test.yml
-
+      light_ci: false
 
   make_github_page:
     name: "GithubPage"

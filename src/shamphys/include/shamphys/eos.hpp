@@ -94,6 +94,34 @@ namespace shamphys {
                 return cs * cs * rho_c1 * sycl::pow(rho_c2 / rho_c1, 7. / 5.)
                        * sycl::pow(rho_c3 / rho_c2, 1.1) * sycl::pow(rho / rho_c3, 5. / 3.);
             }
+        };
+    };
+
+    template<class T>
+    struct PressureAndCs {
+        T pressure;
+        T soundspeed;
+    };
+
+    template<class T>
+    struct EOS_Fermi {
+
+        static constexpr PressureAndCs<T> pressure_and_soundspeed(T mu_e, T rho) {
+            // rho has to be SI !!!!
+
+            constexpr T ALPHA
+                = 0.10064082802851738e-2;            //(3/(8pi))**(1./3) * h / (mp^(1/3) m_e c) SI
+            constexpr T BETA = 6002.332181706928e18; // = (pi/3) * m_e^4c^5/h^3 SI
+
+            //\tilde p_F = Fermi momentum divided by m_e*c
+            const T mu13 = sycl::rootn(mu_e, 3);
+            T tpf        = ALPHA * sycl::rootn(rho, 3) / mu13;
+            T tpf2       = tpf * tpf;
+
+            T P   = BETA * (tpf * sycl::sqrt(tpf2 + 1) * (2 * tpf2 - 3) + 3 * sycl::asinh(tpf));
+            T cs2 = 8 * ALPHA * BETA * tpf2 * tpf2
+                    / (3 * mu13 * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + tpf2));
+            return {P, sycl::sqrt(cs2)};
         }
     };
 

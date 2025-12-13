@@ -79,11 +79,13 @@ jobs:
   env_tests:
     name: Tests
     needs: [src_check]
+    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/env_tests.yml
 
   shamrock_linux_acpp_conda:
     name: Tests
     needs: [src_check]
+    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-conda.yml
 
   shamrock_linux_acpp_asan:
@@ -130,7 +132,7 @@ jobs:
   shamrock_linux_acpp_pylib:
     needs: [src_check]
     name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
+    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-py.yml
 
   doxygen_warn_main:

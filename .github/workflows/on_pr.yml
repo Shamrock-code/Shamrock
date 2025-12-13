@@ -243,5 +243,3 @@ jobs:
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: false
-
-

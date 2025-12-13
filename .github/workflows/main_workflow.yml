@@ -25,5 +25,3 @@ jobs:
     needs: [shamrock_linux_dpcpp]
     if: ${{ inputs.run_build_push_docker}}
     uses: ./.github/workflows/build-dockerfiles.yml
-
-

@@ -11,6 +11,7 @@
 
 /**
  * @file crystalLattice.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -22,26 +23,13 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/CoordRange.hpp"
 #include "shammath/DiscontinuousIterator.hpp"
+#include "shammath/LatticeError.hpp"
 #include <array>
 #include <functional>
 #include <utility>
 #include <vector>
 
 namespace shammath {
-
-    class LatticeError : public std::exception {
-        public:
-        explicit LatticeError(const char *message) : msg_(message) {}
-
-        explicit LatticeError(const std::string &message) : msg_(message) {}
-
-        ~LatticeError() noexcept override = default;
-
-        [[nodiscard]] const char *what() const noexcept override { return msg_.c_str(); }
-
-        protected:
-        std::string msg_;
-    };
 
     /**
      * @brief utility for generating HCP crystal lattices

@@ -15,26 +15,25 @@ multx = 1
 multy = 1
 multz = 1
 
-cell_size = 1 << 2  # refinement is limited to cell_size = 2
-base = 16
+cell_size = 1 << 4  # refinement is limited to cell_size = 2
+base = 32
 
 cfg = model.gen_default_config()
-scale_fact = 2 / (cell_size * base * multx)
+scale_fact = 1 / (cell_size * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
-# cfg.set_riemann_solver_rusanov()
-cfg.set_riemann_solver_hll()
-
-# cfg.set_slope_lim_none()
-# cfg.set_slope_lim_vanleer_f()
-# cfg.set_slope_lim_vanleer_std()
-# cfg.set_slope_lim_vanleer_sym()
+cfg.set_boundary_condition("x", "reflective")
+cfg.set_boundary_condition("y", "reflective")
+cfg.set_boundary_condition("z", "reflective")
+cfg.set_riemann_solver_hllc()
+smooth_crit = 0.05
+cfg.set_amr_mode_slope_based(crit_smooth=smooth_crit)
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 mass_crit = 1e-6 * 5 * 2 * 2
-cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+# cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 model.set_solver_config(cfg)
 
 
@@ -50,14 +49,10 @@ model.make_base_grid(
 # 0.07894793711859852 (0.17754462339166546, 0.0, 0.0) 0.12498304725061045
 
 
-kx, ky, kz = 2 * np.pi, 0, 0
-delta_rho = 1e-2
-
-
 def rho_map(rmin, rmax):
 
     x, y, z = rmin
-    if x < 1:
+    if x < 0.5:
         return 1
     else:
         return 0.125
@@ -72,7 +67,7 @@ def rhoetot_map(rmin, rmax):
     rho = rho_map(rmin, rmax)
 
     x, y, z = rmin
-    if x < 1:
+    if x < 0.5:
         return etot_L
     else:
         return etot_R
@@ -113,10 +108,10 @@ for i in range(1000):
 # model.evolve_until(t_target)
 
 # model.evolve_once()
-xref = 1.0
+xref = 0.5
 xrange = 0.5
 sod = shamrock.phys.SodTube(gamma=gamma, rho_1=1, P_1=1, rho_5=0.125, P_5=0.1)
-sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, -xrange, xrange)
+sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, 0.0, 1.0)
 
 
 #################
@@ -225,11 +220,14 @@ if True:
     ax1.plot(arr_x, arr_vx, color="black")
     ax1.plot(arr_x, arr_P, color="black")
 
-    ax1.set_ylim(-0.1, 1.1)
-    ax1.set_xlim(0.5, 1.5)
+    # ax1.set_ylim(-0.1, 1.1)
+    # ax1.set_xlim(0.5, 1.5)
     ax2.set_ylabel("AMR level")
-    plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
-    plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}.pdf")
+    # plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
+    plt.title(r"$smooth_{crit}=" + str(smooth_crit) + "$")
+    # plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
+    plt.savefig(f"sod_tube-mass-{smooth_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
+
     plt.savefig("sod_tube.png")
     #######
     plt.show()

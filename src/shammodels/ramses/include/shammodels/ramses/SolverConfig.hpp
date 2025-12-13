@@ -125,13 +125,17 @@ namespace shammodels::basegodunov {
         struct DensityBased {
             Tscal crit_mass;
         };
+        struct SlopeBased {
+            Tscal crit_smooth;
+        };
 
-        using mode = std::variant<None, DensityBased>;
+        using mode = std::variant<None, DensityBased, SlopeBased>;
 
         mode config = None{};
 
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_slope_based(Tscal crit_smooth) { config = SlopeBased{crit_smooth}; }
     };
 
     struct BCConfig {

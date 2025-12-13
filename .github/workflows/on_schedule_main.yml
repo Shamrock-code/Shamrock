@@ -13,34 +13,7 @@ on:
 
 jobs:
 
-  src_check:
-    name: Linting
-    #needs: [detect_changes]
-    uses: ./.github/workflows/source_checks.yml
-
-  #make shamrock documentation
-  make_documentation:
-    needs: [src_check]
-    name: Doc
-    uses: ./.github/workflows/make_documentation.yml
-
-  shamrock_linux_acpp_pylib:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_tidy:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
-
-  shamrock_linux_acpp_cov:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-
   main_workflow:
-    needs: [src_check]
     name: CI
     uses: ./.github/workflows/main_workflow.yml
     with:

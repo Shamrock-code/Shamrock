@@ -182,7 +182,6 @@ jobs:
         with:
           name: report_doc_diff
           path: ./report_doc_diff.md
-
   env_tests:
     needs: [src_check]
     name: Tests
@@ -225,11 +224,12 @@ jobs:
     if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
 
-  shamrock_linux_dpcpp:
+  main_workflow:
     needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-dpcpp.yml
+    name: Main workflow
+    uses: ./.github/workflows/main_workflow.yml
+    with:
+      run_build_push_docker: true
 
   shamrock_linux_acpp_phystests:
     needs: [src_check]
@@ -244,7 +244,4 @@ jobs:
     with:
       upload-page-artifact: false
 
-  build_push_docker:
-    name: Build dockerfiles
-    needs: [shamrock_linux_dpcpp]
-    uses: ./.github/workflows/build-dockerfiles.yml
+

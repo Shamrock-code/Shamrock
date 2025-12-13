@@ -1,0 +1,29 @@
+name: Main workflow (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      run_build_push_docker:
+        description: "Whether to run the Dockerfiles build workflow"
+        required: true
+        type: boolean
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
+
+jobs:
+
+  shamrock_linux_dpcpp:
+    name: Tests
+    uses: ./.github/workflows/shamrock-dpcpp.yml
+
+  build_push_docker:
+    name: Build dockerfiles
+    needs: [shamrock_linux_dpcpp]
+    if: ${{ inputs.run_build_push_docker}}
+    uses: ./.github/workflows/build-dockerfiles.yml
+
+

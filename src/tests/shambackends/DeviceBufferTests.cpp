@@ -117,7 +117,13 @@ TestStart(
     REQUIRE_EQUAL(b1.size(), b2.size());
     REQUIRE_EQUAL(b.get_size(), b1.size());
 
-    REQUIRE(shamalgs::primitives::equals(q, b1, b2));
+    if (b1.size() == b2.size() && b.get_size() == b1.size()) {
+        sycl::host_accessor acc1(b1, sycl::read_only);
+        sycl::host_accessor acc2(b2, sycl::read_only);
+        for (size_t i = 0; i < b1.size(); ++i) {
+            REQUIRE_EQUAL(acc1[i], acc2[i]);
+        }
+    }
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {

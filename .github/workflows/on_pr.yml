@@ -167,3 +167,18 @@ jobs:
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: false
+
+  all:
+    needs: [ main_workflow ]
+    # run always except for cancel
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Status summary
+      run: |
+        if [ "${{ needs.main_workflow.result }}" == "failure" ] || [ "${{ needs.main_workflow.result }}" == "canceled" ]; then
+          echo "Tests failed."
+          exit 1
+        else
+          exit 0
+        fi

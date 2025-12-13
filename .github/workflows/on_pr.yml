@@ -19,7 +19,7 @@ jobs:
   all:
     needs: [ main_workflow ]
     # run always except for cancel
-    if: ${{ always() && !cancelled() }}
+    if: ${{ always() && !cancelled() && !contains(github.event.pull_request.labels.*.name, 'light-ci') }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary

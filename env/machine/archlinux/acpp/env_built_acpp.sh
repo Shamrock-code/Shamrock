@@ -6,8 +6,8 @@
 echo " ---------- Activating sham environment ---------- "
 echo "Checking required packages..."
 
-local missing_packages=()
-local all_packages=(
+missing_packages=()
+all_packages=(
     "base-devel"
     "git"
     "python"

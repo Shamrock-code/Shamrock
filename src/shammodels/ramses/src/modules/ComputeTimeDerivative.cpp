@@ -28,13 +28,15 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
 
     using MergedPDat = shamrock::MergedPatchData;
 
-    shamrock::SchedulerUtility utility(scheduler());
-    shamrock::ComputeField<Tscal> cfield_dtrho
-        = utility.make_compute_field<Tscal>("dt rho", AMRBlock::block_size);
-    shamrock::ComputeField<Tvec> cfield_dtrhov
-        = utility.make_compute_field<Tvec>("dt rhovel", AMRBlock::block_size);
-    shamrock::ComputeField<Tscal> cfield_dtrhoe
-        = utility.make_compute_field<Tscal>("dt rhoe", AMRBlock::block_size);
+    shamrock::solvergraph::Indexes<u32> block_counts
+        = shambase::get_check_ref(storage.block_counts);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
+    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
+
+    cfield_dtrho.ensure_sizes(block_counts.indexes);
+    cfield_dtrhov.ensure_sizes(block_counts.indexes);
+    cfield_dtrhoe.ensure_sizes(block_counts.indexes);
 
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_face_xp
         = shambase::get_check_ref(storage.flux_rho_face_xp).link_fields;
@@ -122,9 +124,9 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_zp = patch_flux_rhoe_face_zp.link_graph_field;
         sham::DeviceBuffer<Tscal> &buf_flux_rhoe_face_zm = patch_flux_rhoe_face_zm.link_graph_field;
 
-        sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf(id);
+        sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf(id);
+        sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf(id);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
@@ -319,10 +321,6 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::co
         graph_neigh_zp.complete_event_state(e);
         graph_neigh_zm.complete_event_state(e);
     });
-
-    storage.dtrho.set(std::move(cfield_dtrho));
-    storage.dtrhov.set(std::move(cfield_dtrhov));
-    storage.dtrhoe.set(std::move(cfield_dtrhoe));
 }
 
 template<class Tvec, class TgridVec>
@@ -333,11 +331,16 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
     using MergedPDat = shamrock::MergedPatchData;
 
     u32 ndust = solver_config.dust_config.ndust;
-    shamrock::SchedulerUtility utility(scheduler());
-    shamrock::ComputeField<Tscal> cfield_dtrho_dust
-        = utility.make_compute_field<Tscal>("dt rho dust", ndust * AMRBlock::block_size);
-    shamrock::ComputeField<Tvec> cfield_dtrhov_dust
-        = utility.make_compute_field<Tvec>("dt rhovel dust", ndust * AMRBlock::block_size);
+
+    shamrock::solvergraph::Indexes<u32> block_counts
+        = shambase::get_check_ref(storage.block_counts);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrho_dust
+        = shambase::get_check_ref(storage.dtrho_dust);
+    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_dust
+        = shambase::get_check_ref(storage.dtrhov_dust);
+
+    cfield_dtrho_dust.ensure_sizes(block_counts.indexes);
+    cfield_dtrhov_dust.ensure_sizes(block_counts.indexes);
 
     shambase::DistributedData<NGLink<Tscal>> &flux_rho_dust_face_xp
         = shambase::get_check_ref(storage.flux_rho_dust_face_xp).link_fields;
@@ -412,8 +415,8 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         sham::DeviceBuffer<Tvec> &buf_flux_rhov_dust_face_zm
             = patch_flux_rhov_dust_face_zm.link_graph_field;
 
-        sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf(id);
+        sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf(id);
 
         AMRGraph &graph_neigh_xp
             = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
@@ -598,9 +601,6 @@ void shammodels::basegodunov::modules::ComputeTimeDerivative<Tvec, TgridVec>::
         graph_neigh_zp.complete_event_state(e);
         graph_neigh_zm.complete_event_state(e);
     });
-
-    storage.dtrho_dust.set(std::move(cfield_dtrho_dust));
-    storage.dtrhov_dust.set(std::move(cfield_dtrhov_dust));
 }
 
 template class shammodels::basegodunov::modules::ComputeTimeDerivative<f64_3, i64_3>;

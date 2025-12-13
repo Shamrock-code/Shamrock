@@ -32,9 +32,10 @@ namespace shamalgs::primitives {
         auto &q = idxs_buf.get_queue();
 
         u64 idx_to_insert    = idxs_buf.get_size();
-        buf_other.expand(idx_to_insert * nvar);
-
+       
         u64 start_insert_idx = buf_other.get_size();
+
+        buf_other.expand(idx_to_insert * nvar);
 
         sham::kernel_call(
             q,

@@ -22,6 +22,18 @@
 
 namespace shamalgs::primitives {
 
+        /**
+     * @brief Appends a subset of elements from one buffer to another.
+     * @details The elements to append are specified by indices in `idxs_buf`.
+     * The source buffer `buf` is treated as an array of objects, each with `nvar` variables.
+     * The elements are appended to `buf_other`.
+     *
+     * @tparam T The type of data in the buffers.
+     * @param buf The source buffer.
+     * @param idxs_buf A buffer of indices specifying which objects to copy from `buf`.
+     * @param nvar The number of variables per object.
+     * @param buf_other The destination buffer to which the subset will be appended.
+     */
     template<class T>
     inline void append_subset_to(
         const sham::DeviceBuffer<T> &buf,

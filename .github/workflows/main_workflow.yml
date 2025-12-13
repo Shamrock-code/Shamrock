@@ -74,7 +74,6 @@ jobs:
   make_documentation:
     name: Doc
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/make_documentation.yml
 
   env_tests:
@@ -86,7 +85,6 @@ jobs:
   shamrock_linux_acpp_conda:
     name: Tests
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-conda.yml
 
   shamrock_linux_acpp_asan:
@@ -116,7 +114,6 @@ jobs:
   shamrock_linux_dpcpp:
     name: Tests
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-dpcpp.yml
 
   build_push_docker:

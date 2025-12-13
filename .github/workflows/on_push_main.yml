@@ -70,7 +70,7 @@ jobs:
 
   main_workflow:
     needs: [src_check]
-    name: Main workflow
+    name: CI
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true

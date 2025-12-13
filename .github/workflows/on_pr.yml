@@ -24,7 +24,7 @@ jobs:
         run: |
           cat >> report_______light_ci.md <<'EOF'
 
-          
+
           Light CI is enabled. This will only run the basic tests and not the full tests.
           Merging a PR require the job "on PR / all" to pass which is disabled in this case.
           EOF

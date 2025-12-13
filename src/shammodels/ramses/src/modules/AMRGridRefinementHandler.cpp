@@ -589,11 +589,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Tscal dxfact,
             Tscal wanted_mass) {
 
-            sham::DeviceBuffer<i64_3> &buf_cell_low_bound  = pdat.get_field<i64_3>(0).get_buf();
-            sham::DeviceBuffer<i64_3> &buf_cell_high_bound = pdat.get_field<i64_3>(1).get_buf();
+            pdat.get_field<TgridVec>(0).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<TgridVec>(1).get_buf().complete_event_state(resulting_events);
 
-            buf_cell_low_bound.complete_event_state(resulting_events);
-            buf_cell_high_bound.complete_event_state(resulting_events);
             pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
                 .get_buf()
                 .complete_event_state(resulting_events);
@@ -727,7 +725,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get_refs_dir(Direction_::xp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::xm)
                 .get(id_patch)
@@ -737,22 +735,22 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get_refs_dir(Direction_::yp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::ym)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::zp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::zm)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
         }
 
         void apply_refine(
@@ -1115,32 +1113,32 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get_refs_dir(Direction_::xp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::xm)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::yp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::ym)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::zp)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::zm)
                 .get(id_patch)
                 .get()
-                .get_read_access(resulting_events);
+                .complete_event_state(resulting_events);
         }
 
         void refine_criterion(

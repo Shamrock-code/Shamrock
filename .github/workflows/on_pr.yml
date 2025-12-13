@@ -16,6 +16,22 @@ jobs:
       run_build_push_docker: true
       light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
 
+  light_ci:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo message
+        run: |
+          cat >> report_______light_ci.md <<'EOF'
+          Light CI is enabled. This will only run the basic tests and not the full tests.
+          Merging a PR require the job "on PR / all" to pass which is disabled in this case.
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_light_ci
+          path: ./report_______light_ci.md
+
   all:
     needs: [ main_workflow ]
     # run always except for cancel

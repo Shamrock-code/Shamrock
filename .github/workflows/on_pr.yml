@@ -226,7 +226,7 @@ jobs:
 
   main_workflow:
     needs: [src_check]
-    name: Main workflow
+    #name: Main workflow
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true

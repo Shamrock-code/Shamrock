@@ -9,7 +9,7 @@ jobs:
 
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted,  docker-runner]
 
     container:
       image: ${{ matrix.container }}
@@ -54,6 +54,7 @@ jobs:
       - name: install LLVM
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
+          sudo apt update && \
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{matrix.clang}}
@@ -78,6 +79,7 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd acpp_omp_debug
+          export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate && shammake
 
       - name: Pull reference files

@@ -23,6 +23,7 @@
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamphys/eos.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
 #include "shamphys/fmm/contract_grav_moment.hpp"
 #include "shamphys/fmm/grav_moment_offset.hpp"
@@ -409,4 +410,26 @@ Register_pymod(shamphyslibinit) {
         py::arg("dM"),
         py::arg("from"),
         py::arg("to"));
+
+    // EOS
+
+    py::module eos_module = shamphys_module.def_submodule("eos");
+
+    eos_module.def(
+        "eos_Machida06",
+        [](f64 cs, f64 rho, f64 rho_c1, f64 rho_c2, f64 rho_c3, f64 mu, f64 mh, f64 kb) {
+            auto P   = shamphys::EOS_Machida06<f64>::pressure(cs, rho, rho_c1, rho_c2, rho_c3);
+            auto _cs = shamphys::EOS_Machida06<f64>::soundspeed(P, rho, rho_c1, rho_c2, rho_c3);
+            auto T   = shamphys::EOS_Machida06<f64>::temperature(P, rho, mu, mh, kb);
+            return std::tuple<f64, f64, f64>{P, _cs, T};
+        },
+        py::kw_only(),
+        py::arg("cs"),
+        py::arg("rho"),
+        py::arg("rho_c1"),
+        py::arg("rho_c2"),
+        py::arg("rho_c3"),
+        py::arg("mu"),
+        py::arg("mh"),
+        py::arg("kb"));
 }

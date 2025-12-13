@@ -186,6 +186,13 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("crit_mass"))
             .def(
+                "set_amr_mode_slope_based",
+                [](TConfig &self, Tscal crit_smooth) {
+                    self.amr_mode.set_refine_slope_based(crit_smooth);
+                },
+                py::kw_only(),
+                py::arg("crit_smooth"))
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;

@@ -101,6 +101,11 @@ namespace shammodels::basegodunov::modules {
             node_link_offset.complete_event_state(e);
             node_links.complete_event_state(e);
         }
+
+        void complete_event_state(sham::EventList &e) {
+            node_link_offset.complete_event_state(e);
+            node_links.complete_event_state(e);
+        }
     };
 
     using AMRGraph = NeighGraph;

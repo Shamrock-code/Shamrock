@@ -17,6 +17,7 @@ jobs:
       light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
 
   light_ci:
+    name: Notify Light CI
     if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
     runs-on: ubuntu-latest
     steps:

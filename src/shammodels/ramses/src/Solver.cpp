@@ -654,6 +654,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 "flux_rhov_dust_face_zp", "flux_rhov_dust_face_zp", ndust);
     }
 
+    storage.dtrho  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "dtrho", "dtrho");
+    storage.dtrhov = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "dtrhov", "dtrhov");
+    storage.dtrhoe = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "dtrhoe", "dtrhoe");
+
+    if (solver_config.is_dust_on()) {
+        u32 ndust          = solver_config.dust_config.ndust;
+        storage.dtrho_dust = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            ndust, "dtrho_dust", "dtrho_dust");
+        storage.dtrhov_dust = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            ndust, "dtrhov_dust", "dtrhov_dust");
+    }
+
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
@@ -1505,15 +1517,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     solver_config.set_next_dt(new_dt);
     solver_config.set_time(t_current + dt_input);
 
-    storage.dtrho.reset();
-    storage.dtrhov.reset();
-    storage.dtrhoe.reset();
-
-    if (solver_config.is_dust_on()) {
-        storage.dtrho_dust.reset();
-        storage.dtrhov_dust.reset();
-    }
-
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
         storage.rho_next_no_drag.reset();
         storage.rhov_next_no_drag.reset();
@@ -1620,7 +1623,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     writer.write_voxel_cells(pos_min_cell, pos_max_cell, num_obj * block_size);
 
     writer.add_cell_data_section();
-    writer.add_field_data_section(6);
+    writer.add_field_data_section(3);
 
     std::unique_ptr<sycl::buffer<Tscal>> fields_rho = sched.rankgather_field<Tscal>(2);
     writer.write_field("rho", fields_rho, num_obj * block_size);
@@ -1651,6 +1654,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
             = storage.grad_P.get().rankgather_computefield(sched);
         writer.write_field("grad_P", grad_P, num_obj * block_size);
     */
+
+    /*
     std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
     writer.write_field("dtrho", dtrho, num_obj * block_size);
 
@@ -1661,6 +1666,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     std::unique_ptr<sycl::buffer<Tscal>> dtrhoe
         = storage.dtrhoe.get().rankgather_computefield(sched);
     writer.write_field("dtrhoe", dtrhoe, num_obj * block_size);
+    */
 }
 
 template class shammodels::basegodunov::Solver<f64_3, i64_3>;

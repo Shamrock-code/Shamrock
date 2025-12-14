@@ -451,12 +451,13 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 }
 
 template<class vec>
-auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
-    -> shambase::DistributedDataShared<InterfaceIdTable> {
+auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &gen)
+    -> shamrock::solvergraph::DDSharedBuffers<u32> {
+
     StackEntry stack_loc{};
     using namespace shamrock::patch;
 
-    shambase::DistributedDataShared<InterfaceIdTable> res;
+    shamrock::solvergraph::DDSharedBuffers<u32> res ("","");
 
     std::map<u64, f64> send_count_stats;
 
@@ -490,8 +491,8 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
             build.volume_ratio,
             "part_ratio:",
             ratio);
-
-        res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs_res), ratio});
+        
+        res.buffers.add_obj(sender, receiver, std::move(idxs_res));
 
         send_count_stats[sender] += ratio;
     });

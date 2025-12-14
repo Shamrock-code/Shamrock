@@ -69,8 +69,7 @@ namespace shammodels::sph {
         static constexpr flt Rkern = SPHKernel::Rkern;
 
         using GhostHndl = BasicSPHGhostHandler<vec>;
-        using InterfBuildCache
-            = shambase::DistributedDataShared<typename GhostHndl::InterfaceIdTable>;
+        using InterfBuildCache = typename GhostHndl::CacheMap;
 
         PatchScheduler &sched;
 

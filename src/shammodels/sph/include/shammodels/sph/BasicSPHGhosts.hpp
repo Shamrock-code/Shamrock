@@ -25,6 +25,7 @@
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/ExchangeGhostField.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
@@ -113,12 +114,14 @@ namespace shammodels::sph {
          * @param gen
          * @return shambase::DistributedDataShared<InterfaceIdTable>
          */
-        shambase::DistributedDataShared<InterfaceIdTable> gen_id_table_interfaces(
-            GeneratorMap &&gen);
+        shamrock::solvergraph::DDSharedBuffers<u32> gen_id_table_interfaces(GeneratorMap &gen);
 
         void gen_debug_patch_ghost(shambase::DistributedDataShared<InterfaceIdTable> &interf_info);
 
-        using CacheMap = shambase::DistributedDataShared<InterfaceIdTable>;
+        struct CacheMap {
+            GeneratorMap gen;
+            shamrock::solvergraph::DDSharedBuffers<u32> ids_interf;
+        };
 
         /**
          * @brief utility to generate both the metadata and index tables
@@ -134,8 +137,9 @@ namespace shammodels::sph {
             shamrock::patch::PatchField<flt> &int_range_max) {
             StackEntry stack_loc{};
 
-            return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
+            auto gen = find_interfaces(sptree, int_range_max_tree, int_range_max);
+
+            return CacheMap{gen, gen_id_table_interfaces(gen)};
         }
 
         /**
@@ -156,31 +160,45 @@ namespace shammodels::sph {
          */
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native(
-            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            CacheMap &builder,
             std::function<T(u64, u64, InterfaceBuildInfos, sham::DeviceBuffer<u32> &, u32)> fct) {
             StackEntry stack_loc{};
 
-            // clang-format off
-            return builder.template map<T>([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (build_table.ids_interf.get_size() == 0) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(
-                        "their is an empty id table in the interface, it should have been removed");
+            shambase::DistributedDataShared<InterfaceBuildInfos> &gen = builder.gen;
+            shamrock::solvergraph::DDSharedBuffers<u32> &ids_interf   = builder.ids_interf;
+
+            auto it_gen        = gen.begin();
+            auto it_ids_interf = ids_interf.buffers.begin();
+
+            shambase::DistributedDataShared<T> ret{};
+
+            for (; it_gen != gen.end(); ++it_gen, ++it_ids_interf) {
+
+                auto [sender, receiver] = it_gen->first;
+
+                {
+                    auto [sender_other, receiver_other] = it_ids_interf->first;
+                    if (sender_other != sender || receiver_other != receiver) {
+                        throw shambase::make_except_with_loc<std::runtime_error>(
+                            "sender and receiver do not match");
+                    }
                 }
 
-                return fct(
+                auto &build_infos    = it_gen->second;
+                auto &ids_interf_buf = it_ids_interf->second;
+
+                ret.add_obj(
                     sender,
                     receiver,
-                    build_table.build_infos,
-                    build_table.ids_interf,
-                    build_table.ids_interf.get_size());
+                    fct(sender, receiver, build_infos, ids_interf_buf, ids_interf_buf.get_size()));
+            }
 
-            });
-            // clang-format on
+            return ret;
         }
 
         template<class T>
         void modify_interface_native(
-            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            CacheMap &builder,
             shambase::DistributedDataShared<T> &mod,
             std::function<void(u64, u64, InterfaceBuildInfos, sham::DeviceBuffer<u32> &, u32, T &)>
                 fct) {
@@ -189,21 +207,36 @@ namespace shammodels::sph {
             struct Args {
                 u64 sender;
                 u64 receiver;
-                InterfaceIdTable &build_table;
+                InterfaceBuildInfos &build_infos;
+                sham::DeviceBuffer<u32> &ids_interf;
             };
+
+            shambase::DistributedDataShared<InterfaceBuildInfos> &gen = builder.gen;
+            shamrock::solvergraph::DDSharedBuffers<u32> &ids_interf   = builder.ids_interf;
+
+            auto it_gen        = gen.begin();
+            auto it_ids_interf = ids_interf.buffers.begin();
 
             std::vector<Args> vecarg;
 
-            // clang-format off
-            builder.for_each([&](u64 sender, u64 receiver, InterfaceIdTable &build_table) {
-                if (build_table.ids_interf.get_size() == 0) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(
-                        "their is an empty id table in the interface, it should have been removed");
+            for (; it_gen != gen.end(); ++it_gen, ++it_ids_interf) {
+
+                auto [sender, receiver] = it_gen->first;
+
+                {
+                    auto [sender_other, receiver_other] = it_ids_interf->first;
+                    if (sender_other != sender || receiver_other != receiver) {
+                        throw shambase::make_except_with_loc<std::runtime_error>(
+                            "sender and receiver do not match");
+                    }
                 }
 
-                vecarg.push_back({sender,receiver,build_table});
-            });
-            // clang-format on
+                auto &build_infos    = it_gen->second;
+                auto &ids_interf_buf = it_ids_interf->second;
+
+                vecarg.push_back({sender, receiver, build_infos, ids_interf_buf});
+            }
+
 
             u32 i = 0;
             mod.for_each([&](u64 sender, u64 receiver, T &ref) {
@@ -234,7 +267,7 @@ namespace shammodels::sph {
          */
         template<class T>
         shambase::DistributedDataShared<T> build_interface_native_stagged(
-            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            CacheMap &builder,
             std::function<T(u64, u64, InterfaceBuildInfos, sycl::buffer<u32> &, u32)> gen_1,
             std::function<void(u64, u64, InterfaceBuildInfos, sycl::buffer<u32> &, u32, T &)>
                 modif) {
@@ -289,7 +322,7 @@ namespace shammodels::sph {
         ////////////////////////////////////////////////////////////////////////////////////////////
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
-        build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
+        build_position_interf_field(CacheMap &builder) {
             StackEntry stack_loc{};
 
             const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
@@ -423,7 +456,7 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
-        build_communicate_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
+        build_communicate_positions(CacheMap &builder) {
             auto pos_interf = build_position_interf_field(builder);
             return communicate_pdat(xyzh_ghost_layout, std::move(pos_interf));
         }
@@ -484,7 +517,7 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedData<shamrock::patch::PatchDataLayer>
-        build_comm_merge_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
+        build_comm_merge_positions(CacheMap &builder) {
             auto pos_interf = build_position_interf_field(builder);
             return merge_position_buf(communicate_pdat(xyzh_ghost_layout, std::move(pos_interf)));
         }

@@ -115,6 +115,8 @@ jobs:
     name: Tests
     needs: [src_check]
     uses: ./.github/workflows/shamrock-dpcpp.yml
+    with:
+      light_ci: ${{ inputs.light_ci }}
 
   build_push_docker:
     name: Build dockerfiles

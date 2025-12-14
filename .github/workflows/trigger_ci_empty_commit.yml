@@ -21,26 +21,9 @@ jobs:
     steps:
 
       - name: Remove label trigger-ci
-        if: always()
-        uses: actions/github-script@v6
+        uses: actions-ecosystem/action-remove-labels@v1
         with:
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const issue_number = context.payload.pull_request.number;
-            const name = "trigger-ci";
-
-            try {
-              await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
-              core.info(`Removed label: ${name}`);
-            } catch (e) {
-              // If the label was already removed or doesn't exist, don't fail the workflow.
-              if (e.status === 404) {
-                core.info(`Label '${name}' not present (already removed).`);
-                return;
-              }
-              throw e;
-            }
+          labels: trigger-ci
 
       - name: Determine if we can push to the PR branch
         id: can_push

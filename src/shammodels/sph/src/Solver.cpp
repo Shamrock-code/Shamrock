@@ -63,6 +63,7 @@
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGFMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
@@ -116,6 +117,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
 
     storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
+
+    if (solver_config.self_grav_config.has_xi_field()) {
+        storage.xi = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "xi", "\\xi");
+    }
 
     if (solver_config.has_field_alphaAV()) {
         storage.alpha_av_updated = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
@@ -1414,6 +1419,29 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             case 3 : run_sg_mm(std::integral_constant<u32, 3>{}); break;
             case 4 : run_sg_mm(std::integral_constant<u32, 4>{}); break;
             case 5 : run_sg_mm(std::integral_constant<u32, 5>{}); break;
+            default: shambase::throw_unimplemented();
+            }
+
+        } else if (solver_config.self_grav_config.is_fmm()) {
+
+            SelfGravConfig::FMM &mm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::FMM>(&solver_config.self_grav_config.config));
+
+            auto run_sg_fmm = [&](auto mm_order_tag) {
+                constexpr u32 order = decltype(mm_order_tag)::value;
+                modules::SGFMMPlummer<Tvec, order> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            };
+
+            switch (mm_config.order) {
+            case 1 : run_sg_fmm(std::integral_constant<u32, 1>{}); break;
+            case 2 : run_sg_fmm(std::integral_constant<u32, 2>{}); break;
+            case 3 : run_sg_fmm(std::integral_constant<u32, 3>{}); break;
+            case 4 : run_sg_fmm(std::integral_constant<u32, 4>{}); break;
+            case 5 : run_sg_fmm(std::integral_constant<u32, 5>{}); break;
             default: shambase::throw_unimplemented();
             }
 

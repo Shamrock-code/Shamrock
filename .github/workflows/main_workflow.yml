@@ -250,7 +250,7 @@ jobs:
     needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
     uses: ./.github/workflows/make_website.yml
     with:
-      upload-page-artifact: false
+      upload-page-artifact: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
 
   deploy_page:

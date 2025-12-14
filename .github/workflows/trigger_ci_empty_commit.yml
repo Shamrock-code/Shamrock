@@ -9,15 +9,18 @@ concurrency:
   group: trigger-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  issues: write
+
 
 jobs:
   trigger_ci:
     name: Trigger CI with empty commit
     if: ${{ github.event.label.name == 'trigger-ci' }}
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      
     steps:
 
       - name: Remove label trigger-ci

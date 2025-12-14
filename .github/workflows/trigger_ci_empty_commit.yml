@@ -26,6 +26,7 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: trigger-ci
+          github_token: ${{ secrets.GHACTION_PAT }}
 
       - name: Determine if we can push to the PR branch
         id: can_push

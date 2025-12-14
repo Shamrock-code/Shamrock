@@ -1,0 +1,100 @@
+name: trigger-ci-empty-commit
+
+on:
+  #pull_request_target: # should be PR target ultimately
+  pull_request:
+    types: [labeled]
+
+concurrency:
+  group: trigger-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  trigger_ci:
+    name: Trigger CI with empty commit
+    if: ${{ github.event.label.name == 'trigger-ci' }}
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Remove label trigger-ci
+        if: always()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+            const name = "trigger-ci";
+
+            try {
+              await github.rest.issues.removeLabel({ owner, repo, issue_number, name });
+              core.info(`Removed label: ${name}`);
+            } catch (e) {
+              // If the label was already removed or doesn't exist, don't fail the workflow.
+              if (e.status === 404) {
+                core.info(`Label '${name}' not present (already removed).`);
+                return;
+              }
+              throw e;
+            }
+
+      - name: Determine if we can push to the PR branch
+        id: can_push
+        run: |
+          IS_FORK="${{ github.event.pull_request.head.repo.full_name != github.repository }}"
+          MAINTAINER_CAN_MODIFY="${{ github.event.pull_request.maintainer_can_modify }}"
+
+          if [ "$IS_FORK" = "true" ] && [ "$MAINTAINER_CAN_MODIFY" != "true" ]; then
+            echo "can_push=false" >> "$GITHUB_OUTPUT"
+            echo "Cannot push: PR is from a fork and 'Allow edits from maintainers' is disabled."
+            exit 0
+          fi
+
+          echo "can_push=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout PR branch
+        if: steps.can_push.outputs.can_push == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push empty commit
+        if: steps.can_push.outputs.can_push == 'true'
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          git config --global --add safe.directory '*'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git commit --allow-empty -m "[gh-action] trigger CI with empty commit"
+          git push origin "HEAD:${HEAD_REF}"
+
+      - name: Explain why we could not push (fork PRs without maintainer edits)
+        if: steps.can_push.outputs.can_push != 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const issue_number = context.payload.pull_request.number;
+
+            const msg = [
+              "I can't push the empty commit to this PR branch because it comes from a fork and **'Allow edits from maintainers'** is disabled.",
+              "",
+              "To trigger CI, either:",
+              "- enable **Allow edits from maintainers** on the PR, then re-add the `trigger-ci` label, or",
+              "- push an empty commit yourself with message `[gh-action] trigger CI with empty commit`."
+            ].join("\n");
+
+            await github.rest.issues.createComment({ owner, repo, issue_number, body: msg });
+
+

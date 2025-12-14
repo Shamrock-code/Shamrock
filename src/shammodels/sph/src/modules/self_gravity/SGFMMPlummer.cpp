@@ -50,7 +50,7 @@ namespace shammodels::sph::modules {
         Tscal G          = edges.constant_G.data;
         Tscal gpart_mass = edges.gpart_mass.data;
 
-        Tscal gravitational_softening = epsilon;
+        Tscal gravitational_softening = epsilon * epsilon;
 
         using MassMoments = shammath::SymTensorCollection<Tscal, 0, mm_order - 1>;
         static constexpr u32 mass_moment_terms = MassMoments::num_component;

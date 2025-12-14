@@ -216,6 +216,26 @@ def compare_sg_methods(setup_func, setup_name, tols):
         cfg.set_self_gravity_mm(order=5, opening_angle=0.5, reduction_level=3)
         cfg.set_softening_plummer(epsilon=1e-9)
 
+    def sg_case_fmm1(cfg):
+        cfg.set_self_gravity_fmm(order=1, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm2(cfg):
+        cfg.set_self_gravity_fmm(order=2, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm3(cfg):
+        cfg.set_self_gravity_fmm(order=3, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm4(cfg):
+        cfg.set_self_gravity_fmm(order=4, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm5(cfg):
+        cfg.set_self_gravity_fmm(order=5, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
     no_sg_data = run_case(setup_func, setup_name, sg_case_none)
     reference_data = run_case(setup_func, setup_name, sg_case_reference)
 
@@ -225,6 +245,11 @@ def compare_sg_methods(setup_func, setup_name, tols):
     mm3_data = run_case(setup_func, setup_name, sg_case_mm3)
     mm4_data = run_case(setup_func, setup_name, sg_case_mm4)
     mm5_data = run_case(setup_func, setup_name, sg_case_mm5)
+    fmm1_data = run_case(setup_func, setup_name, sg_case_fmm1)
+    fmm2_data = run_case(setup_func, setup_name, sg_case_fmm2)
+    fmm3_data = run_case(setup_func, setup_name, sg_case_fmm3)
+    fmm4_data = run_case(setup_func, setup_name, sg_case_fmm4)
+    fmm5_data = run_case(setup_func, setup_name, sg_case_fmm5)
 
     delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods_data(
         no_sg_data, reference_data, direct_data
@@ -246,12 +271,33 @@ def compare_sg_methods(setup_func, setup_name, tols):
         no_sg_data, reference_data, mm5_data
     )
 
+    delta_sg_fmm1, rel_delta_fmm1, xyz_fmm1 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm1_data
+    )
+    delta_sg_fmm2, rel_delta_fmm2, xyz_fmm2 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm2_data
+    )
+    delta_sg_fmm3, rel_delta_fmm3, xyz_fmm3 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm3_data
+    )
+    delta_sg_fmm4, rel_delta_fmm4, xyz_fmm4 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm4_data
+    )
+    delta_sg_fmm5, rel_delta_fmm5, xyz_fmm5 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm5_data
+    )
+
     check_print_errors(rel_delta_direct, setup_name, "direct", tols["direct"])
     check_print_errors(rel_delta_mm1, setup_name, "mm1", tols["mm1"])
     check_print_errors(rel_delta_mm2, setup_name, "mm2", tols["mm2"])
     check_print_errors(rel_delta_mm3, setup_name, "mm3", tols["mm3"])
     check_print_errors(rel_delta_mm4, setup_name, "mm4", tols["mm4"])
     check_print_errors(rel_delta_mm5, setup_name, "mm5", tols["mm5"])
+    check_print_errors(rel_delta_fmm1, setup_name, "fmm1", tols["fmm1"])
+    check_print_errors(rel_delta_fmm2, setup_name, "fmm2", tols["fmm2"])
+    check_print_errors(rel_delta_fmm3, setup_name, "fmm3", tols["fmm3"])
+    check_print_errors(rel_delta_fmm4, setup_name, "fmm4", tols["fmm4"])
+    check_print_errors(rel_delta_fmm5, setup_name, "fmm5", tols["fmm5"])
 
     return (
         {
@@ -261,6 +307,11 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": delta_sg_mm3,
             "mm4": delta_sg_mm4,
             "mm5": delta_sg_mm5,
+            "fmm1": delta_sg_fmm1,
+            "fmm2": delta_sg_fmm2,
+            "fmm3": delta_sg_fmm3,
+            "fmm4": delta_sg_fmm4,
+            "fmm5": delta_sg_fmm5,
         },
         {
             "direct": rel_delta_direct,
@@ -269,6 +320,11 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": rel_delta_mm3,
             "mm4": rel_delta_mm4,
             "mm5": rel_delta_mm5,
+            "fmm1": rel_delta_fmm1,
+            "fmm2": rel_delta_fmm2,
+            "fmm3": rel_delta_fmm3,
+            "fmm4": rel_delta_fmm4,
+            "fmm5": rel_delta_fmm5,
         },
         {
             "direct": xyz_direct,
@@ -277,6 +333,11 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": xyz_mm3,
             "mm4": xyz_mm4,
             "mm5": xyz_mm5,
+            "fmm1": xyz_fmm1,
+            "fmm2": xyz_fmm2,
+            "fmm3": xyz_fmm3,
+            "fmm4": xyz_fmm4,
+            "fmm5": xyz_fmm5,
         },
     )
 
@@ -409,4 +470,24 @@ plt.show()
 
 # %%
 fig = plot3d_delta_sg(rel_delta_dict["mm5"], xyz_dict["mm5"], "cube_hcp", "mm5")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm1"], xyz_dict["fmm1"], "cube_hcp", "fmm1")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm2"], xyz_dict["fmm2"], "cube_hcp", "fmm2")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm3"], xyz_dict["fmm3"], "cube_hcp", "fmm3")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm4"], xyz_dict["fmm4"], "cube_hcp", "fmm4")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm5"], xyz_dict["fmm5"], "cube_hcp", "fmm5")
 plt.show()

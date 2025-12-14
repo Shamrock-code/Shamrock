@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       issues: write
-      
+
     steps:
 
       - name: Remove label trigger-ci

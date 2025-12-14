@@ -64,6 +64,36 @@ TOL_HPC_CUBE = {
         "min_rel_delta": [0.00011105937841131173 - 4e-8, 0.00011105937841131173 + 4e-8],
         "std_rel_delta": [0.003575474772831352 - 4e-7, 0.003575474772831352 + 4e-7],
     },
+    "fmm1": {
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
+    },
+    "fmm2": {
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
+    },
+    "fmm3": {
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
+    },
+    "fmm4": {
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
+    },
+    "fmm5": {
+        "max_rel_delta": [0.0, 1e-15],
+        "avg_rel_delta": [0.0, 1e-15],
+        "min_rel_delta": [0.0, 1e-16],
+        "std_rel_delta": [0.0, 1e-16],
+    },
 }
 
 

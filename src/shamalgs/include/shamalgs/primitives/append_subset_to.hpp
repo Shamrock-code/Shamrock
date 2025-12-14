@@ -22,7 +22,7 @@
 
 namespace shamalgs::primitives {
 
-        /**
+    /**
      * @brief Appends a subset of elements from one buffer to another.
      * @details The elements to append are specified by indices in `idxs_buf`.
      * The source buffer `buf` is treated as an array of objects, each with `nvar` variables.
@@ -43,8 +43,8 @@ namespace shamalgs::primitives {
 
         auto &q = idxs_buf.get_queue();
 
-        u64 idx_to_insert    = idxs_buf.get_size();
-       
+        u64 idx_to_insert = idxs_buf.get_size();
+
         u64 start_insert_idx = buf_other.get_size();
 
         buf_other.expand(idx_to_insert * nvar);

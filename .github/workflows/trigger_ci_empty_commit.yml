@@ -8,8 +8,6 @@ concurrency:
   group: trigger-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
-
-
 jobs:
   trigger_ci:
     name: Trigger CI with empty commit
@@ -26,6 +24,7 @@ jobs:
         uses: actions-ecosystem/action-remove-labels@v1
         with:
           labels: trigger-ci
+          github_token: ${{ secrets.GHACTION_PAT }}
 
       - name: Determine if we can push to the PR branch
         id: can_push
@@ -48,7 +47,7 @@ jobs:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GHACTION_PAT }}
 
       - name: Create and push empty commit
         if: steps.can_push.outputs.can_push == 'true'

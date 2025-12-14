@@ -1,8 +1,7 @@
 name: trigger-ci-empty-commit
 
 on:
-  #pull_request_target: # should be PR target ultimately
-  pull_request:
+  pull_request_target:
     types: [labeled]
 
 concurrency:

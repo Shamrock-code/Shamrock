@@ -8,8 +8,6 @@ concurrency:
   group: trigger-ci-${{ github.event.pull_request.number }}
   cancel-in-progress: false
 
-
-
 jobs:
   trigger_ci:
     name: Trigger CI with empty commit

@@ -401,9 +401,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
             sham::DeviceBuffer<Tscal> &buf_cs
                 = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_uint
-                = mpdat.get_field_buf_ref<Tscal>(iuint_interf); // ??
-            auto rho_getter = rho_getter_gen(mpdat);
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+            auto rho_getter                     = rho_getter_gen(mpdat);
 
             u32 total_elements
                 = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
@@ -429,7 +428,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                     Tscal *__restrict P,
                     Tscal *__restrict cs) {
                     using namespace shamrock::sph;
-                    Tscal rho_a   = rho(i);
                     auto P_and_cs = EOS::pressure_and_cs(
                         rho(i), uint[i], rho0, A, B, a, b, E0, alpha, beta, u_iv, u_cv);
                     P[i]  = P_and_cs.pressure;
@@ -437,9 +435,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                 });
         });
 
-    }
-
-    else {
+    } else {
         shambase::throw_unimplemented();
     }
 }

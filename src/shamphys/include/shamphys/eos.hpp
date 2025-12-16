@@ -104,12 +104,7 @@ namespace shamphys {
     template<class T>
     struct EOS_Tillotson {
 
-        struct PressureAndCs {
-            T pressure;
-            T soundspeed;
-        };
-
-        static PressureAndCs pressure_and_cs(
+        static PressureAndCs<T> pressure_and_cs(
             T rho, T u, T rho0, T A, T B, T a, T b, T E0, T alpha, T beta, T u_iv, T u_cv) {
 
             T eta    = rho / rho0;
@@ -144,7 +139,7 @@ namespace shamphys {
                 T X = (rho0 / rho) - 1.0;
 
                 T exp_beta  = sycl::exp(-beta * X);
-                T exp_alpha = sycl::exp(-alpha * X * X); // Facteur E (caligraphique)
+                T exp_alpha = sycl::exp(-alpha * X * X);
 
                 // P_h formula
                 // P = a*rho*u + [ b*rho*u / (1+w) + A*chi*e^(-beta*X) ] * e^(-alpha*X^2)
@@ -155,7 +150,7 @@ namespace shamphys {
                 T P_h = part_a + (part_b + part_A) * exp_alpha;
 
                 // dPh / du
-                // Formule : rho * [ a + (b / (1+w)^2) * exp_alpha ]
+                // rho * [ a + (b / (1+w)^2) * exp_alpha ]
                 T dPh_du = rho * (a + (b / denom2) * exp_alpha);
 
                 // dPh / drho
@@ -204,7 +199,7 @@ namespace shamphys {
 
             T c2 = dP_drho + (P / (rho * rho)) * dP_du;
 
-            return PressureAndCs{P, sycl::sqrt(c2)};
+            return {P, sycl::sqrt(c2)};
         }
     };
 

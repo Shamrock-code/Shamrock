@@ -575,7 +575,7 @@ struct shammodels::sph::SolverConfig {
      * @param alpha Tillotson parameter
      * @param beta Tillotson parameter
      * @param u_iv Energy at incipient vaporization
-     * @param u_cv Energy at complete varporization
+     * @param u_cv Energy at complete vaporization
      */
     inline void set_eos_tillotson(
         Tscal rho0,

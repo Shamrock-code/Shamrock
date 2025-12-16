@@ -227,7 +227,7 @@ namespace shamphys {
         const EOS_Config_Tillotson<Tscal> &lhs, const EOS_Config_Tillotson<Tscal> &rhs) {
         return (lhs.rho0 == rhs.rho0) && (lhs.A == rhs.A) && (lhs.B == rhs.B) && (lhs.a == rhs.a)
                && (lhs.b == rhs.b) && (lhs.E0 == rhs.E0) && (lhs.alpha == rhs.alpha)
-               && (lhs.beta == rhs.beta);
+               && (lhs.beta == rhs.beta) && (lhs.u_iv == rhs.u_iv) && (lhs.u_cv == rhs.u_cv);
     }
 
 } // namespace shamphys

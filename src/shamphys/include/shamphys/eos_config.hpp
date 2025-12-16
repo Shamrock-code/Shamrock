@@ -187,4 +187,47 @@ namespace shamphys {
         return (lhs.h_over_r == rhs.h_over_r);
     }
 
+    /**
+     * @brief Configuration struct for the Tillotson equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * The equation of state is given by:
+     * TODO
+     */
+    template<class Tscal>
+    struct EOS_Config_Tillotson {
+        /// Parameters
+        Tscal rho0;
+        Tscal E0;
+        Tscal A;
+        Tscal B;
+        Tscal a;
+        Tscal b;
+        Tscal alpha;
+        Tscal beta;
+        Tscal u_iv;
+        Tscal u_cv;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Tillotson struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Tillotson struct to compare
+     * @param rhs Second EOS_Config_Tillotson struct to compare
+     *
+     * This function checks if two EOS_Config_Tillotson structs are equal by
+     * comparing their parameters values
+     *
+     * @return true if the two structs have the same parameter values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_Tillotson<Tscal> &lhs, const EOS_Config_Tillotson<Tscal> &rhs) {
+        return (lhs.rho0 == rhs.rho0) && (lhs.A == rhs.A) && (lhs.B == rhs.B) && (lhs.a == rhs.a)
+               && (lhs.b == rhs.b) && (lhs.E0 == rhs.E0) && (lhs.alpha == rhs.alpha)
+               && (lhs.beta == rhs.beta);
+    }
+
 } // namespace shamphys

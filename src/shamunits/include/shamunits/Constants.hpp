@@ -328,11 +328,12 @@ namespace shamunits {
  * \brief get the value of a solar radius in the distance unit of the si unit system (m)
  *
  * \fn shamunits::Constants::earth_radius()
- * \brief get the value of one earth radius in the distance unit of the current unit system @ref
- * units
+ * \brief get the value of one earth equatorial radius in the distance unit of the current unit
+ * system @ref units
  *
  * \fn shamunits::Constants::Si::earth_radius()
- * \brief get the value of one earth radius in the distance unit of the si unit system (m)
+ * \brief get the value of one earth equatorial radius in the distance unit of the si unit system
+ * (m)
  *
  * \fn shamunits::Constants::planck_length()
  * \brief get the value of a planck_length in the distance unit of the current unit system @ref

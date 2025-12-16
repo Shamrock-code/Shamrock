@@ -61,6 +61,7 @@
     X1(light_year, ly)                                                                             \
     X1(parsec, pc)                                                                                 \
     X1(solar_radius, rsol)                                                                         \
+    X1(earth_radius, rearth)                                                                       \
     X1(electron_volt, eV)                                                                          \
     X1(ergs, erg)                                                                                  \
     X1(british_pint, pint)

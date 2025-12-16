@@ -62,6 +62,7 @@
     X(light_year /*********/, Uget(m, 1))                                                          \
     X(parsec /*************/, Uget(m, 1))                                                          \
     X(solar_radius /*******/, Uget(m, 1))                                                          \
+    X(earth_radius /*******/, Uget(m, 1))                                                          \
     X(planck_length /******/, Uget(m, 1))                                                          \
     /* masses */                                                                                   \
     X(proton_mass /****/, Uget(kg, 1))                                                             \
@@ -148,6 +149,7 @@ namespace shamunits {
             static constexpr T light_year        = Conv::ly_to_m;     //(m)
             static constexpr T parsec            = Conv::pc_to_m;     //(m)
             static constexpr T solar_radius      = Conv::rsol_to_m;   //(m)
+            static constexpr T earth_radius      = Conv::rearth_to_m; //(m)
             static constexpr T planck_length     = 1.61625518e-35;    //(m)
 
             static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
@@ -324,6 +326,13 @@ namespace shamunits {
  *
  * \fn shamunits::Constants::Si::solar_radius()
  * \brief get the value of a solar radius in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::earth_radius()
+ * \brief get the value of one earth radius in the distance unit of the current unit system @ref
+ * units
+ *
+ * \fn shamunits::Constants::Si::earth_radius()
+ * \brief get the value of one earth radius in the distance unit of the si unit system (m)
  *
  * \fn shamunits::Constants::planck_length()
  * \brief get the value of a planck_length in the distance unit of the current unit system @ref

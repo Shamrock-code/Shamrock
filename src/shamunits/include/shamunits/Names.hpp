@@ -27,7 +27,7 @@
 #define XMAC_UNITS                                                                                 \
     X1(second, s) /*base units*/                                                                   \
     X1(metre, m)                                                                                   \
-    X1(kilogramm, kg)                                                                              \
+    X1(kilogram, kg)                                                                               \
     X1(Ampere, A)                                                                                  \
     X1(Kelvin, K)                                                                                  \
     X1(mole, mol)                                                                                  \

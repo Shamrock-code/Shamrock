@@ -75,7 +75,7 @@ namespace shamunits {
  * @brief conversion factor from solar radii to meters
  *
  * @fn shamunits::ConversionConstants::rearth_to_m()
- * @brief conversion factor from earth radii to meters
+ * @brief conversion factor from earth equatorial radii to meters
  *
  * @fn shamunits::ConversionConstants::mn_to_s()
  * @brief conversion factor from minutes to seconds

@@ -27,7 +27,7 @@ namespace shamunits {
         static constexpr T ly_to_m     = 9460730472580800; //(m)
         static constexpr T pc_to_m     = 3.0857e16;        //(m)
         static constexpr T rsol_to_m   = 6.957e8;          //(m)
-        static constexpr T rearth_to_m = 6.378137e6;       //(m)
+        static constexpr T rearth_to_m = 6.378137e6;       // Earth equatorial radius (m)
 
         static constexpr T mn_to_s  = 60;            //(s)
         static constexpr T hr_to_s  = 3600;          //(s)

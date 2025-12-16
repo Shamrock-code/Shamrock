@@ -174,7 +174,7 @@ namespace shamunits {
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
         addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
-        addget(kilogram) { return PREF* pow_constexpr<power>(kg , kg_inv);  }
+        addget(kilogram)  { return PREF* pow_constexpr<power>(kg , kg_inv);  }
         addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
         addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
         addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }

@@ -17,6 +17,7 @@
  *
  */
 
+#include "shambase/narrowing.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 
@@ -41,16 +42,20 @@ namespace shamalgs::primitives {
         u32 nvar,
         sham::DeviceBuffer<T> &buf_other) {
 
-        auto &q = idxs_buf.get_queue();
+        const u64 idx_count = idxs_buf.get_size();
 
-        u64 idx_to_insert = idxs_buf.get_size();
+        if (idx_count == 0) {
+            return;
+        }
 
-        u64 start_insert_idx = buf_other.get_size();
+        u64 idx_to_insert = shambase::narrow_or_throw<u32>(idx_count);
 
-        buf_other.expand(idx_to_insert * nvar);
+        u32 start_insert_idx = shambase::narrow_or_throw<u32>(buf_other.get_size());
+
+        buf_other.expand(shambase::narrow_or_throw<u32>(idx_count * nvar));
 
         sham::kernel_call(
-            q,
+            idxs_buf.get_queue(),
             sham::MultiRef{idxs_buf, buf},
             sham::MultiRef{buf_other},
             idx_to_insert,

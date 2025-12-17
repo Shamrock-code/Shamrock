@@ -115,7 +115,7 @@ void PatchDataField<T>::append_subset_to(
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "field must be similar for extraction");
 
-    if (sz != idxs_buf.get_size())
+    if (static_cast<size_t>(sz) != idxs_buf.get_size())
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "the size of the idxs buffer does not match the size of the subset");
 

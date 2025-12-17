@@ -32,7 +32,7 @@ int main(void) {
     UnitSystem<double> astro_units{
         si.get<mega, units::years>(),
         si.get<units::astronomical_unit>(),
-        si.get<units::kilogramm>() * sol_mass,
+        si.get<units::kilogram>() * sol_mass,
     };
 
     // this time it returns 1 because the base length is the astronomical unit

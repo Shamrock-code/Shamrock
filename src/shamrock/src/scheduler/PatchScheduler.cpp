@@ -153,7 +153,8 @@ std::vector<u64> PatchScheduler::add_root_patches(
         //);
     }
 
-    patch_list.build_local();
+    // build_local() is declared as nodiscard
+    (void) patch_list.build_local();
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
     patch_list.build_global_idx_map();

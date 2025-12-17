@@ -120,7 +120,11 @@ void PatchDataField<T>::append_subset_to(
             "the size of the idxs buffer does not match the size of the subset");
 
     if (sz > 0) {
-        shamalgs::primitives::append_subset_to(buf, idxs_buf, nvar, pfield.get_buf());
+        const u32 start_enque = pfield.get_val_cnt();
+        const u32 nvar        = get_nvar();
+        pfield.expand(sz);
+
+        shamalgs::primitives::append_subset_to(buf, idxs_buf, nvar, pfield.get_buf(), start_enque);
     }
 }
 

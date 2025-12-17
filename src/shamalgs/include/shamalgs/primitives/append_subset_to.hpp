@@ -32,12 +32,14 @@ namespace shamalgs::primitives {
      * @param idxs_buf A buffer of indices specifying which objects to copy from `buf`.
      * @param nvar The number of variables per object.
      * @param buf_other The destination buffer to which the subset will be appended.
+     * @param start_enque The starting index in `buf_other` where the subset will be appended.
      */
     template<class T>
     void append_subset_to(
         const sham::DeviceBuffer<T> &buf,
         const sham::DeviceBuffer<u32> &idxs_buf,
         u32 nvar,
-        sham::DeviceBuffer<T> &buf_other);
+        sham::DeviceBuffer<T> &buf_other,
+        u32 start_enque);
 
 } // namespace shamalgs::primitives

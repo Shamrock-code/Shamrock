@@ -60,6 +60,7 @@ namespace shamalgs::primitives {
 
         buf_other.expand(shambase::narrow_or_throw<u32>(idx_count * nvar));
 
+        // TODO: flatten the kernel to squeeze more perf
         sham::kernel_call(
             idxs_buf.get_queue(),
             sham::MultiRef{idxs_buf, buf},

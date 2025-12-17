@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   autofix:
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'autofix.ci') }}
     runs-on: ubuntu-latest
     env:
       FIX_MODE: "${{ contains(github.event.pull_request.labels.*.name, 'autofix.ci') && 'fix' || 'check' }}"

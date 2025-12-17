@@ -11,6 +11,7 @@
 
 /**
  * @file PatchDataLayer.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -541,10 +542,13 @@ namespace shamrock::patch {
 
         PatchDataField<T> &main_field = pdat.get_field<T>(0);
 
+        // Note that using get_ids_vec_where here is safe since nvar for main_field is equal to 1
+        // hence the Lambda cd_true will be applied to each block on the patch. e.g : i * nvar = i
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-            return main_field.get_elements_with_range(
-                [&](T val, T vmin, T vmax) {
+            return main_field.get_ids_vec_where(
+                [&](const auto &acc, u32 idx, T vmin, T vmax) {
                     if (shambase::VectorProperties<T>::dimension == 3) {
+                        T val = acc[idx];
                         return shammath::is_in_half_open(val, vmin, vmax);
                     } else {
                         throw shambase::make_except_with_loc<std::runtime_error>(
@@ -554,6 +558,20 @@ namespace shamrock::patch {
                 vmin,
                 vmax);
         };
+
+        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
+        //     return main_field.get_elements_with_range(
+        //         [&](T val, T vmin, T vmax) {
+        //             if (shambase::VectorProperties<T>::dimension == 3) {
+        //                 return shammath::is_in_half_open(val, vmin, vmax);
+        //             } else {
+        //                 throw shambase::make_except_with_loc<std::runtime_error>(
+        //                     "dimension != 3 is not handled");
+        //             }
+        //         },
+        //         vmin,
+        //         vmax);
+        // };
 
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 

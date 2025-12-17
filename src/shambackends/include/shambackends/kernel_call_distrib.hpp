@@ -74,16 +74,14 @@ namespace sham {
      * @param in_out The input/output distributed data.
      * @param thread_counts The number of threads to use for each patch.
      * @param func The function to call.
-     * @param args The additional function arguments.
      */
-    template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
+    template<class index_t, class RefIn, class RefOut, class Functor>
     inline void distributed_data_kernel_call(
         sham::DeviceScheduler_ptr dev_sched,
         RefIn in,
         RefOut in_out,
         const shambase::DistributedData<index_t> &thread_counts,
-        Functor &&func,
-        Targs... args) {
+        Functor &&func) {
 
         auto mrefs_in
             = thread_counts.template map<decltype(in.get(0))>([&](u64 id, const index_t &n) {
@@ -105,20 +103,18 @@ namespace sham {
                 mrefs_in.get(id),
                 mrefs_in_out.get(id),
                 n,
-                std::forward<Functor>(func),
-                std::forward<Targs>(args)...);
+                std::forward<Functor>(func));
         });
     }
 
     // version where one supplies a kernel generator in the form of [&](sycl::handler &cgh) { ... }
-    template<class index_t, class RefIn, class RefOut, class... Targs, class Functor>
+    template<class index_t, class RefIn, class RefOut, class Functor>
     inline void distributed_data_kernel_call_hndl(
         sham::DeviceScheduler_ptr dev_sched,
         RefIn in,
         RefOut in_out,
         const shambase::DistributedData<index_t> &thread_counts,
-        Functor &&kernel_gen,
-        Targs... args) {
+        Functor &&kernel_gen) {
 
         auto mrefs_in
             = thread_counts.template map<decltype(in.get(0))>([&](u64 id, const index_t &n) {
@@ -141,8 +137,7 @@ namespace sham {
                 mrefs_in.get(id),
                 mrefs_in_out.get(id),
                 n,
-                std::forward<Functor>(kernel_gen),
-                std::forward<Targs>(args)...);
+                std::forward<Functor>(kernel_gen));
         });
     }
 

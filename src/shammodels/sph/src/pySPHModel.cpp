@@ -9,7 +9,7 @@
 
 /**
  * @file pySPHModel.cpp
- * @author David Fang (fang.david03@gmail.com)
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -77,6 +77,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
+        .def("set_eos_polytropic", &TConfig::set_eos_polytropic)
         .def("set_eos_locally_isothermal", &TConfig::set_eos_locally_isothermal)
         .def(
             "set_eos_locally_isothermalLP07",
@@ -160,6 +161,48 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("sigma_mhd"),
             py::arg("sigma_u"))
+        .def(
+            "set_self_gravity_none",
+            [](TConfig &self) {
+                self.self_grav_config.set_none();
+            })
+        .def(
+            "set_self_gravity_direct",
+            [](TConfig &self, bool reference_mode = false) {
+                self.self_grav_config.set_direct(reference_mode);
+            },
+            py::kw_only(),
+            py::arg("reference_mode") = false)
+        .def(
+            "set_self_gravity_mm",
+            [](TConfig &self, u32 mm_order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_mm(mm_order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_self_gravity_fmm",
+            [](TConfig &self, u32 order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_fmm(order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_softening_plummer",
+            [](TConfig &self, f64 epsilon) {
+                self.self_grav_config.set_softening_plummer(epsilon);
+            },
+            py::kw_only(),
+            py::arg("epsilon"))
+        .def(
+            "set_softening_none",
+            [](TConfig &self) {
+                self.self_grav_config.set_softening_none();
+            })
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
         .def("set_boundary_shearing_periodic", &TConfig::set_boundary_shearing_periodic)
@@ -405,7 +448,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         }))
         .def("init_scheduler", &T::init_scheduler)
 
-        .def("evolve_once_override_time", &T::evolve_once_time_expl)
+        .def(
+            "evolve_once_override_time",
+            &T::evolve_once_time_expl,
+            py::arg("t_curr"),
+            py::arg("dt_input"))
         .def("evolve_once", &T::evolve_once)
         .def(
             "evolve_until",
@@ -416,10 +463,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("niter_max") = -1)
         .def("timestep", &T::timestep)
-        .def("set_cfl_cour", &T::set_cfl_cour)
-        .def("set_cfl_force", &T::set_cfl_force)
-        .def("set_eta_sink", &T::set_eta_sink)
-        .def("set_particle_mass", &T::set_particle_mass)
+        .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
+        .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
+        .def("set_eta_sink", &T::set_eta_sink, py::arg("eta_sink"))
+        .def("set_particle_mass", &T::set_particle_mass, py::arg("gpart_mass"))
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
@@ -870,12 +917,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "set_cfl_multipler",
             [](T &self, Tscal lambda) {
                 return self.solver.solver_config.set_cfl_multipler(lambda);
-            })
+            },
+            py::arg("lambda"))
         .def(
             "set_cfl_mult_stiffness",
             [](T &self, Tscal cstiff) {
                 return self.solver.solver_config.set_cfl_mult_stiffness(cstiff);
-            })
+            },
+            py::arg("cstiff"))
         .def(
             "change_htolerance",
             [](T &self, Tscal in) {
@@ -916,7 +965,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     x_ref,
                     x_min,
                     x_max);
-            })
+            },
+            py::arg("sod"),
+            py::arg("direction"),
+            py::arg("time_val"),
+            py::arg("x_ref"),
+            py::arg("x_min"),
+            py::arg("x_max"))
         .def(
             "make_analysis_disc",
             [](T &self) {

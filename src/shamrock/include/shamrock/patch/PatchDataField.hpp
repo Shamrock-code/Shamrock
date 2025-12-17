@@ -11,6 +11,7 @@
 
 /**
  * @file PatchDataField.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -190,9 +191,9 @@ class PatchDataField {
 
     void insert(const PatchDataField<T> &f2);
 
-    void overwrite(PatchDataField<T> &f2, u32 obj_cnt);
+    void overwrite(const PatchDataField<T> &f2, u32 obj_cnt);
 
-    void overwrite(sham::DeviceBuffer<T> &f2, u32 len);
+    void overwrite(const sham::DeviceBuffer<T> &f2, u32 len);
 
     void override(sycl::buffer<T> &data, u32 cnt);
 
@@ -281,14 +282,14 @@ class PatchDataField {
      * @return std::vector<u32>
      */
     template<class Lambdacd, class... Args>
-    inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args... args) {
+    inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args &&...args) {
         StackEntry stack_loc{};
         std::vector<u32> idx_cd{};
         if (get_obj_cnt() > 0) {
             auto acc = buf.copy_to_stdvec();
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
-                if (cd_true(acc, i * nvar, args...)) {
+                if (std::forward<Lambdacd>(cd_true)(acc, i * nvar, std::forward<Args>(args)...)) {
                     idx_cd.push_back(i);
                 }
             }
@@ -367,11 +368,9 @@ class PatchDataField {
                 sham::MultiRef{buf},
                 sham::MultiRef{mask},
                 obj_cnt,
-                [=, nvar_field = nvar](
-                    u32 id, const T *__restrict acc, u32 *__restrict acc_mask, Args... args_f) {
-                    acc_mask[id] = cd_true(acc, id * nvar_field, std::forward<Args>(args_f)...);
-                },
-                std::forward<Args>(args)...);
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
 
             return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
         } else {
@@ -582,13 +581,13 @@ inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 }
 
 template<class T>
-inline void PatchDataField<T>::overwrite(PatchDataField<T> &f2, u32 obj_cnt) {
+inline void PatchDataField<T>::overwrite(const PatchDataField<T> &f2, u32 obj_cnt) {
     StackEntry stack_loc{};
     buf.copy_from(f2.buf, obj_cnt * f2.nvar);
 }
 
 template<class T>
-inline void PatchDataField<T>::overwrite(sham::DeviceBuffer<T> &f2, u32 len) {
+inline void PatchDataField<T>::overwrite(const sham::DeviceBuffer<T> &f2, u32 len) {
     StackEntry stack_loc{};
     buf.copy_from(f2, len);
 }

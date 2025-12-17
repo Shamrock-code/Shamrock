@@ -1,13 +1,9 @@
 name: on PR
 
 # Controls when the workflow will run
-on: [pull_request]
-
-env:
-  # Use docker.io for Docker Hub if empty
-  REGISTRY: ghcr.io
-  # github.repository as <account>/<repo>
-  IMAGE_NAME: ${{ github.repository_owner }}
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 concurrency:
   group: ci-${{github.ref}}-${{github.event.pull_request.number || github.run_number}}
@@ -15,227 +11,43 @@ concurrency:
 
 jobs:
 
-  make_code_archive:
-    name: Make Code Archive
-    uses: ./.github/workflows/make_code_archive.yml
-
-  upload_pr_detail:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Save PR number
-        env:
-          PR_NUMBER: ${{ github.event.number }}
-        run: |
-          mkdir -p ./pr
-          echo $PR_NUMBER > ./pr_number.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_pr_number
-          path: ./pr_number.txt
-
-
-  email_check:
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Extract author email
-        id: author
-        run: |
-          git log -1
-          echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
-
-      - name: Show email
-        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
-
-      - name: Validate author email
-        if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
-        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: report_email
-          path: ./report_______email.md
-
-  src_check:
-    name: Linting
-    #needs: [detect_changes]
-    uses: ./.github/workflows/source_checks.yml
-
-  #make shamrock documentation
-  make_documentation:
-    name: Doc
-    needs: [src_check]
-    uses: ./.github/workflows/make_documentation.yml
-
-  doxygen_warn_main:
-    name: Doxygen Main branch
-    needs: [make_documentation]
-    runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: main
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name : Install pck (doxygen)
-        run: |
-          sudo apt-get install -y -qq doxygen graphviz
-
-      - name : Run doxygen
-        run: |
-          cd doc/doxygen
-          doxygen dox.conf
-
-      - name: Archive doxygen warnings
-        uses: actions/upload-artifact@v4
-        with:
-          name: doxygen_warning_main
-          path: doc/doxygen/warn_doxygen.txt
-
-  doxygen_diff:
-    name: Doxygen Diff
-    needs: [doxygen_warn_main]
-
-    runs-on: ubuntu-latest
-
-    steps:
-      #### Checkout part ####
-      # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
-          git config --global --add safe.directory '*'
-          git config --global --list
-      - uses: actions/checkout@v4
-        if: github.event_name == 'pull_request_target'
-        with:
-          fetch-depth: 0
-          ref: "refs/pull/${{ github.event.number }}/merge"
-
-      - uses: actions/checkout@v4
-        if: github.event_name != 'pull_request_target'
-        with:
-          fetch-depth: 0
-
-      - name: Show diff against main
-        if: github.event_name == 'pull_request_target'
-        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
-      #### End Checkout part ####
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v4
-        with:
-          name: doxygen_warning
-          path: PR_dox_output
-
-      - name: 'Download PR doxygen warning'
-        uses: actions/download-artifact@v4
-        with:
-          name: doxygen_warning_main
-          path: main_dox_output
-
-      - name: 'ls PR_dox_output'
-        run: |
-          ls PR_dox_output
-
-      - name: 'ls main_dox_output'
-        run: |
-          ls main_dox_output
-
-      - name: 'Diff'
-        run: |
-          python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > report_doc_diff.md
-
-      - name: 'cat diff'
-        run: |
-          cat report_doc_diff.md
-
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: report_doc_diff
-          path: ./report_doc_diff.md
-
-  env_tests:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/env_tests.yml
-
-  shamrock_linux_acpp_conda:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
-
-  shamrock_linux_acpp_pylib:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_asan:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
-
-  shamrock_linux_acpp_ubsan:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
-
-  shamrock_linux_acpp_tidy:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
-
-  shamrock_linux_acpp_cov:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-
-  shamrock_linux_dpcpp:
-    needs: [src_check]
-    name: Tests
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-dpcpp.yml
-
-  shamrock_linux_acpp_phystests:
-    needs: [src_check]
-    name: Tests (Phys)
-    if: ${{!contains(github.event.pull_request.labels.*.name, 'no-src-change ')}}
-    uses: ./.github/workflows/shamrock-acpp-phys-test.yml
-
-  make_github_page:
-    name: "GithubPage"
-    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov]
-    uses: ./.github/workflows/make_website.yml
+  main_workflow:
+    name: CI
+    uses: ./.github/workflows/main_workflow.yml
     with:
-      upload-page-artifact: false
+      run_build_push_docker: true
+      light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
 
-  build_push_docker:
-    name: Build dockerfiles
-    needs: [shamrock_linux_dpcpp]
-    uses: ./.github/workflows/build-dockerfiles.yml
+  light_ci:
+    name: Notify Light CI
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Echo message
+        run: |
+          cat >> report_______light_ci.md <<'EOF'
+
+
+          Light CI is enabled. This will only run the basic tests and not the full tests.
+          Merging a PR require the job "on PR / all" to pass which is disabled in this case.
+          EOF
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_light_ci
+          path: ./report_______light_ci.md
+
+  all:
+    needs: [ main_workflow ]
+    # run always except for cancel
+    if: ${{ always() && !cancelled() && !contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Status summary
+      run: |
+        if [ "${{ needs.main_workflow.result }}" == "failure" ] || [ "${{ needs.main_workflow.result }}" == "canceled" ]; then
+          echo "Tests failed."
+          exit 1
+        else
+          exit 0
+        fi

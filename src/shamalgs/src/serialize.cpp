@@ -15,6 +15,7 @@
  */
 
 #include "shamalgs/serialize.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shamcomm/logs.hpp"
@@ -147,7 +148,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     StackEntry stack_loc{false};
     u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_length();
 
-    storage.resize(bytelen);
+    storage.resize(shambase::narrow_or_throw<u32>(bytelen));
     header_size = szinfo.head_size;
     storage_header.resize(header_size);
 

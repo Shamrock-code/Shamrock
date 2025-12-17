@@ -100,13 +100,13 @@ namespace shamrock::solvergraph {
          *
          * @return String identifier "CopyPatchDataField"
          */
-        std::string _impl_get_label() { return "CopyPatchDataField"; }
+        std::string _impl_get_label() const { return "CopyPatchDataField"; }
 
         /**
          * @brief Returns the LaTeX representation of this node for documentation.
          *
          * @return LaTeX string describing the copy operation with field symbols
          */
-        std::string _impl_get_tex();
+        std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph

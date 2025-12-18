@@ -12,7 +12,7 @@
 /**
  * @file iterative.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Iterative Riemann solver for GSPH (van Leer 1997)
  *
  * Implements the van Leer (1997) iterative Riemann solver for ideal gas.
@@ -178,11 +178,10 @@ namespace shammodels::gsph::riemann {
      * @param u_L Left state velocity
      * @param rho_L Left state density
      * @param p_L Left state pressure
-     * @param c_L Left state sound speed
      * @param u_R Right state velocity
      * @param rho_R Right state density
      * @param p_R Right state pressure
-     * @param c_R Right state sound speed
+     * @param gamma Adiabatic index
      * @return RiemannResult with p_star and v_star
      */
     template<class Tscal>
@@ -190,13 +189,16 @@ namespace shammodels::gsph::riemann {
         Tscal u_L,
         Tscal rho_L,
         Tscal p_L,
-        Tscal c_L,
         Tscal u_R,
         Tscal rho_R,
         Tscal p_R,
-        Tscal c_R) {
+        Tscal gamma) {
 
         RiemannResult<Tscal> result;
+
+        // Compute Eulerian sound speeds from gamma
+        const Tscal c_L = sycl::sqrt(gamma * p_L / rho_L);
+        const Tscal c_R = sycl::sqrt(gamma * p_R / rho_R);
 
         // Roe averages for wave speed estimates
         const Tscal sqrt_rho_L = sycl::sqrt(rho_L);

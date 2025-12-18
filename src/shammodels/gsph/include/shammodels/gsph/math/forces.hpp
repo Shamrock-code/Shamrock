@@ -12,7 +12,7 @@
 /**
  * @file forces.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief GSPH force computation using Riemann solver results
  *
  * Implements the Godunov SPH (GSPH) force formulation following Cha & Whitworth (2003).
@@ -189,16 +189,17 @@ namespace shammodels::gsph {
      *
      * For SPH with adaptive smoothing length: rho = m * (h_fact/h)^dim
      *
+     * @tparam dim Spatial dimension (1, 2, or 3)
      * @tparam Tscal Scalar type
      * @param m Particle mass
      * @param h Smoothing length
      * @param hfactd h_fact^dim constant from kernel
      * @return Density
      */
-    template<class Tscal>
+    template<u32 dim, class Tscal>
     inline Tscal rho_from_h(Tscal m, Tscal h, Tscal hfactd) {
         Tscal h_inv = Tscal{1} / h;
-        return m * hfactd * h_inv * h_inv * h_inv; // Assuming 3D
+        return m * hfactd * sycl::pown(h_inv, static_cast<int>(dim));
     }
 
 } // namespace shammodels::gsph

@@ -11,6 +11,7 @@
  * @file PatchTree.cpp
  * @author Guo (guo.yansong@optimind.tech)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief PatchTree implementation
  *
  *

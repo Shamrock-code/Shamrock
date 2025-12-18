@@ -31,3 +31,14 @@ target_link_libraries(shammath PUBLIC shambackends)
 target_include_directories(shammath PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
+
+###############################################################
+# Eigen support
+###############################################################
+
+find_package (Eigen3 3.3 NO_MODULE)
+
+if (TARGET Eigen3::Eigen)
+  target_link_libraries(shammath PUBLIC Eigen3::Eigen)
+  target_compile_definitions(shammath PUBLIC EIGEN3_FOUND=1)
+endif (TARGET Eigen3::Eigen)

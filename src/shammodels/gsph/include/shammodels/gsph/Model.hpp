@@ -122,6 +122,28 @@ namespace shammodels::gsph {
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
 
+        /**
+         * @brief Create wall particles for wall boundary conditions
+         *
+         * Finds particles near each enabled boundary wall and creates mirror particles
+         * on the other side. These wall particles provide neighbor support at boundaries
+         * and are marked with wall_flag = 1 (not time-integrated).
+         *
+         * Can be used with periodic boundaries for mixed boundary conditions
+         * (e.g., wall in x, periodic in y/z for shock tube).
+         *
+         * Must be called after:
+         * - Particles are added (add_cube_fcc_3d, etc.)
+         * - Internal energy is set (set_value_in_a_box for "uint")
+         * - Particle mass is set (set_particle_mass)
+         *
+         * @param num_layers Number of particle layers to mirror (default: 4)
+         * @param wall_flags Which walls to create (bit flags, default: 0x03 = x walls only)
+         *                   Bit 0: -x, Bit 1: +x, Bit 2: -y, Bit 3: +y, Bit 4: -z, Bit 5: +z
+         * @return Number of wall particles created
+         */
+        u64 create_wall_particles(u32 num_layers = 4, u32 wall_flags = 0x03);
+
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Field manipulation
         ////////////////////////////////////////////////////////////////////////////////////////////

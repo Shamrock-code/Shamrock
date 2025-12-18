@@ -305,6 +305,290 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
     shamlog_debug_ln("setup", log);
 }
 
+template<class Tvec, template<class> class SPHKernel>
+u64 shammodels::gsph::Model<Tvec, SPHKernel>::create_wall_particles(
+    u32 num_layers, u32 wall_flags) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    if (wall_flags == 0) {
+        logger::warn_ln("GSPH", "create_wall_particles called with wall_flags=0 - skipping");
+        return 0;
+    }
+
+    PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    // Get domain bounds
+    auto bounding_box = sched.get_sim_box().template get_bounding_box<Tvec>();
+    Tvec box_min      = std::get<0>(bounding_box);
+    Tvec box_max      = std::get<1>(bounding_box);
+
+    // Get field indices
+    const u32 ixyz       = sched.pdl().template get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = sched.pdl().template get_field_idx<Tvec>("vxyz");
+    const u32 ihpart     = sched.pdl().template get_field_idx<Tscal>("hpart");
+    const u32 iwall_flag = sched.pdl().template get_field_idx<u32>("wall_flag");
+
+    // Check if uint field exists (for adiabatic EOS)
+    bool has_uint = solver.solver_config.has_field_uint();
+    u32 iuint     = 0;
+    if (has_uint) {
+        iuint = sched.pdl().template get_field_idx<Tscal>("uint");
+    }
+
+    // Collect all particles that need to be mirrored
+    // Structure: position, velocity, hpart, uint, source wall bit
+    struct WallParticleData {
+        Tvec pos;
+        Tvec vel;
+        Tscal h;
+        Tscal u;
+    };
+
+    std::vector<WallParticleData> wall_particles;
+
+    // Estimate wall depth based on typical smoothing length
+    // Use kernel radius * h * num_layers
+    Tscal typical_h = Tscal{0};
+    u32 part_cnt    = 0;
+
+    // Get average h from first patch
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        if (pdat.get_obj_cnt() > 0 && part_cnt == 0) {
+            auto h_mirror
+                = pdat.get_field<Tscal>(ihpart).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < std::min(u32(100), pdat.get_obj_cnt()); i++) {
+                typical_h += h_mirror[i];
+                part_cnt++;
+            }
+        }
+    });
+
+    if (part_cnt > 0) {
+        typical_h /= part_cnt;
+    } else {
+        logger::warn_ln("GSPH", "No particles found to determine wall depth");
+        return 0;
+    }
+
+    // Wall depth = kernel radius * h * num_layers
+    Tscal wall_depth = Kernel::Rkern * typical_h * num_layers;
+
+    logger::info_ln(
+        "GSPH",
+        shambase::format(
+            "Creating wall particles: num_layers={}, wall_flags=0x{:02x}, wall_depth={}",
+            num_layers,
+            wall_flags,
+            wall_depth));
+
+    // For each patch, find boundary particles and mirror them
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        u32 n = pdat.get_obj_cnt();
+        if (n == 0)
+            return;
+
+        auto xyz_mirror  = pdat.get_field<Tvec>(ixyz).get_buf().template mirror_to<sham::host>();
+        auto vxyz_mirror = pdat.get_field<Tvec>(ivxyz).get_buf().template mirror_to<sham::host>();
+        auto h_mirror    = pdat.get_field<Tscal>(ihpart).get_buf().template mirror_to<sham::host>();
+
+        std::vector<Tscal> u_vals(n, Tscal{0});
+        if (has_uint) {
+            auto u_mirror = pdat.get_field<Tscal>(iuint).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n; i++) {
+                u_vals[i] = u_mirror[i];
+            }
+        }
+
+        for (u32 i = 0; i < n; i++) {
+            Tvec pos = xyz_mirror[i];
+            Tvec vel = vxyz_mirror[i];
+            Tscal h  = h_mirror[i];
+            Tscal u  = u_vals[i];
+
+            // Check each wall and mirror if needed
+            // Bit 0: -x wall, Bit 1: +x wall
+            // Bit 2: -y wall, Bit 3: +y wall
+            // Bit 4: -z wall, Bit 5: +z wall
+
+            // -x wall (bit 0)
+            if ((wall_flags & 0x01) && (pos[0] - box_min[0]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[0] = 2 * box_min[0] - pos[0]; // Mirror across x_min
+                wp.vel    = vel;
+                wp.vel[0] = -vel[0]; // Reflect x velocity for wall
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+
+            // +x wall (bit 1)
+            if ((wall_flags & 0x02) && (box_max[0] - pos[0]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[0] = 2 * box_max[0] - pos[0]; // Mirror across x_max
+                wp.vel    = vel;
+                wp.vel[0] = -vel[0]; // Reflect x velocity for wall
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+
+            // -y wall (bit 2)
+            if ((wall_flags & 0x04) && (pos[1] - box_min[1]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[1] = 2 * box_min[1] - pos[1];
+                wp.vel    = vel;
+                wp.vel[1] = -vel[1];
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+
+            // +y wall (bit 3)
+            if ((wall_flags & 0x08) && (box_max[1] - pos[1]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[1] = 2 * box_max[1] - pos[1];
+                wp.vel    = vel;
+                wp.vel[1] = -vel[1];
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+
+            // -z wall (bit 4)
+            if ((wall_flags & 0x10) && (pos[2] - box_min[2]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[2] = 2 * box_min[2] - pos[2];
+                wp.vel    = vel;
+                wp.vel[2] = -vel[2];
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+
+            // +z wall (bit 5)
+            if ((wall_flags & 0x20) && (box_max[2] - pos[2]) < wall_depth) {
+                WallParticleData wp;
+                wp.pos    = pos;
+                wp.pos[2] = 2 * box_max[2] - pos[2];
+                wp.vel    = vel;
+                wp.vel[2] = -vel[2];
+                wp.h      = h;
+                wp.u      = u;
+                wall_particles.push_back(wp);
+            }
+        }
+    });
+
+    u64 total_wall = wall_particles.size();
+    logger::info_ln("GSPH", "Found ", total_wall, " wall particles to create on this rank");
+
+    if (total_wall == 0) {
+        return shamalgs::collective::allreduce_sum(total_wall);
+    }
+
+    // Expand simulation box to include wall particles
+    Tvec new_box_min = box_min;
+    Tvec new_box_max = box_max;
+    for (const auto &wp : wall_particles) {
+        for (u32 d = 0; d < dim; d++) {
+            new_box_min[d] = std::min(new_box_min[d], wp.pos[d] - typical_h);
+            new_box_max[d] = std::max(new_box_max[d], wp.pos[d] + typical_h);
+        }
+    }
+
+    // Update domain bounds to include wall particles
+    sched.get_sim_box().template set_bounding_box<Tvec>({new_box_min, new_box_max});
+
+    // Now add wall particles to the scheduler - batch insert per patch
+    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        PatchCoordTransform<Tvec> ptransf
+            = sched.get_sim_box().template get_patch_transform<Tvec>();
+        shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+
+        // Collect wall particles belonging to this patch
+        std::vector<WallParticleData> patch_wall_parts;
+        for (const auto &wp : wall_particles) {
+            if (patch_coord.contain_pos(wp.pos)) {
+                patch_wall_parts.push_back(wp);
+            }
+        }
+
+        if (patch_wall_parts.empty()) {
+            return;
+        }
+
+        u32 n_add = patch_wall_parts.size();
+
+        // Create batch of particles
+        PatchDataLayer tmp(sched.get_layout_ptr());
+        tmp.resize(n_add);
+        tmp.fields_raz();
+
+        // Set positions
+        {
+            auto acc = tmp.get_field<Tvec>(ixyz).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n_add; i++) {
+                acc[i] = patch_wall_parts[i].pos;
+            }
+        }
+
+        // Set velocities
+        {
+            auto acc = tmp.get_field<Tvec>(ivxyz).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n_add; i++) {
+                acc[i] = patch_wall_parts[i].vel;
+            }
+        }
+
+        // Set smoothing lengths
+        {
+            auto acc = tmp.get_field<Tscal>(ihpart).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n_add; i++) {
+                acc[i] = patch_wall_parts[i].h;
+            }
+        }
+
+        // Set wall flags
+        {
+            auto acc = tmp.get_field<u32>(iwall_flag).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n_add; i++) {
+                acc[i] = 1; // Mark as wall particle
+            }
+        }
+
+        // Set internal energy if adiabatic
+        if (has_uint) {
+            auto acc = tmp.get_field<Tscal>(iuint).get_buf().template mirror_to<sham::host>();
+            for (u32 i = 0; i < n_add; i++) {
+                acc[i] = patch_wall_parts[i].u;
+            }
+        }
+
+        pdat.insert_elements(tmp);
+    });
+
+    // Update scheduler
+    sched.check_patchdata_locality_corectness();
+    sched.scheduler_step(true, true);
+    sched.owned_patch_id = sched.patch_list.build_local();
+    sched.patch_list.build_local_idx_map();
+    sched.update_local_load_value([&](Patch p) {
+        return sched.patch_data.owned_data.get(p.id_patch).get_obj_cnt();
+    });
+
+    u64 global_total = shamalgs::collective::allreduce_sum(total_wall);
+    logger::info_ln("GSPH", "Created ", global_total, " wall particles total");
+
+    return global_total;
+}
+
 // Explicit template instantiations for all supported kernel types
 template class shammodels::gsph::Model<f64_3, shammath::M4>;
 template class shammodels::gsph::Model<f64_3, shammath::M6>;

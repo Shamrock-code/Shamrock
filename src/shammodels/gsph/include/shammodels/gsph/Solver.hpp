@@ -118,6 +118,19 @@ namespace shammodels::gsph {
 
         void apply_position_boundary(Tscal time_val);
 
+        /**
+         * @brief Update wall particles dynamically
+         *
+         * Removes existing wall particles and creates new ones that mirror
+         * the current boundary particles. Should be called each timestep
+         * after the predictor step for wall boundary conditions.
+         *
+         * @param num_layers Number of particle layers to mirror
+         * @param wall_flags Which walls to create (bit flags)
+         * @return Number of wall particles created
+         */
+        u64 update_wall_particles(u32 num_layers, u32 wall_flags);
+
         void do_predictor_leapfrog(Tscal dt);
 
         void init_ghost_layout();

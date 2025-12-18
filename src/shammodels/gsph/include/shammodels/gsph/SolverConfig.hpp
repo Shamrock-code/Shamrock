@@ -234,6 +234,27 @@ struct shammodels::gsph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Wall Particle Config (independent of boundary type)
+    // Allows wall particles with periodic boundaries for mixed BC (e.g., shock tube)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    bool enable_dynamic_walls = false; ///< Enable dynamic wall particle updates
+    u32 wall_num_layers       = 4;     ///< Number of wall particle layers
+    u32 wall_flags            = 0x03;  ///< Wall flags (bit 0: -x, bit 1: +x, etc.)
+
+    inline void set_dynamic_walls(u32 num_layers = 4, u32 flags = 0x03) {
+        enable_dynamic_walls = true;
+        wall_num_layers      = num_layers;
+        wall_flags           = flags;
+    }
+
+    inline void disable_dynamic_walls() { enable_dynamic_walls = false; }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Wall Particle Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // External Force Config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -366,6 +387,9 @@ namespace shammodels::gsph {
             {"reconstruct_config", p.reconstruct_config},
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
+            {"enable_dynamic_walls", p.enable_dynamic_walls},
+            {"wall_num_layers", p.wall_num_layers},
+            {"wall_flags", p.wall_flags},
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
             {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
@@ -404,6 +428,11 @@ namespace shammodels::gsph {
         j.at("reconstruct_config").get_to(p.reconstruct_config);
         j.at("eos_config").get_to(p.eos_config);
         j.at("boundary_config").get_to(p.boundary_config);
+        if (j.contains("enable_dynamic_walls")) {
+            j.at("enable_dynamic_walls").get_to(p.enable_dynamic_walls);
+            j.at("wall_num_layers").get_to(p.wall_num_layers);
+            j.at("wall_flags").get_to(p.wall_flags);
+        }
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
         j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);

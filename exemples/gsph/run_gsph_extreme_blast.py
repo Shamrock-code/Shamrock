@@ -24,7 +24,7 @@ Usage:
 """
 
 import os
-
+import json
 import shamrock
 
 print("=" * 70)
@@ -45,7 +45,7 @@ P_R = 1e-7  # Right pressure (very low)
 u_L = P_L / ((gamma - 1) * rho_L)  # Left internal energy
 u_R = P_R / ((gamma - 1) * rho_R)  # Right internal energy
 
-# Resolution (100 particles on each side as in the paper)
+# Resolution (200 particles on each side for better stability)
 resol = 100
 
 # Output settings
@@ -72,14 +72,17 @@ os.makedirs(output_dir, exist_ok=True)
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
-# Use M4 kernel for GSPH
-model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+# Use Wendland C4 kernel for GSPH (better stability for strong shocks)
+model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="C4")
 
 # Configure GSPH solver
 cfg = model.gen_default_config()
-cfg.set_riemann_hllc()  # HLLC is more robust for extreme pressure ratios
+cfg.set_riemann_iterative(tolerance=1e-4, max_iter=100)
 cfg.set_reconstruct_piecewise_constant()  # 1st order (stable for strong shocks)
-cfg.set_boundary_periodic()  # Periodic boundaries (like working Sod test)
+# Use periodic boundaries for ghost communication (y/z directions)
+# Enable dynamic wall particles for x-direction (0x03 = -x and +x walls)
+cfg.set_boundary_periodic()
+cfg.set_dynamic_walls(num_layers=4, wall_flags=0x03)
 cfg.set_eos_adiabatic(gamma)
 
 print("Solver configuration:")
@@ -120,9 +123,13 @@ pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 print(f"Particle mass: {pmass:.6e}")
 
-# Set CFL conditions (same as working Sod test)
-model.set_cfl_cour(0.1)
-model.set_cfl_force(0.1)
+# Note: Wall particles are now created dynamically each timestep by the solver
+# via cfg.set_dynamic_walls() - no manual create_wall_particles() needed
+print("Dynamic wall particles enabled for x-direction boundaries")
+
+# Set CFL conditions (reduced for stability with extreme pressure ratios)
+model.set_cfl_cour(0.05)
+model.set_cfl_force(0.05)
 
 # Dump initial state
 vtk_file = os.path.join(output_dir, f"{vtk_prefix}_0000.vtk")
@@ -139,6 +146,9 @@ dump_count = 1
 dump_freq = 50  # Dump every N iterations
 t_current = model.get_time()
 
+# Track times for each VTK dump
+vtk_times = [t_current]
+
 while t_current < t_target:
     # Evolve one timestep
     model.evolve_once()
@@ -154,13 +164,21 @@ while t_current < t_target:
     if iteration % dump_freq == 0:
         vtk_file = os.path.join(output_dir, f"{vtk_prefix}_{dump_count:04d}.vtk")
         model.do_vtk_dump(vtk_file, True)
+        vtk_times.append(t_current)
         print(f"  -> Wrote: {vtk_file}")
         dump_count += 1
 
 # Final dump
 vtk_file = os.path.join(output_dir, f"{vtk_prefix}_{dump_count:04d}.vtk")
 model.do_vtk_dump(vtk_file, True)
+vtk_times.append(t_current)
 print(f"  -> Wrote final state: {vtk_file}")
+
+# Save times.json for animation scripts
+times_file = os.path.join(output_dir, "times_extreme.json")
+with open(times_file, "w") as f:
+    json.dump(vtk_times, f)
+print(f"  -> Wrote times: {times_file}")
 
 print("-" * 70)
 print("Simulation complete!")

@@ -489,6 +489,301 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
 }
 
 template<class Tvec, template<class> class Kern>
+u64 shammodels::gsph::Solver<Tvec, Kern>::update_wall_particles(u32 num_layers, u32 wall_flags) {
+    StackEntry stack_loc{};
+
+    // Skip if no walls requested
+    if (wall_flags == 0) {
+        return 0;
+    }
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchScheduler &sched     = scheduler();
+    PatchDataLayerLayout &pdl = sched.pdl();
+
+    const u32 ixyz       = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz      = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 ihpart     = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iwall_flag = pdl.get_field_idx<u32>("wall_flag");
+    const u32 iaxyz      = pdl.get_field_idx<Tvec>("axyz");
+
+    const bool has_uint = solver_config.has_field_uint();
+    const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+    const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>("duint") : 0;
+
+    auto bounding_box = sched.get_sim_box().template get_bounding_box<Tvec>();
+    Tvec box_min      = std::get<0>(bounding_box);
+    Tvec box_max      = std::get<1>(bounding_box);
+
+    // Remove existing wall particles
+    u64 removed_count = 0;
+
+    sched.for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        auto wall_flag_vec = pdat.get_field<u32>(iwall_flag).get_buf().copy_to_stdvec();
+
+        u32 regular_count = 0;
+        for (u32 i = 0; i < cnt; i++) {
+            if (wall_flag_vec[i] == 0) {
+                regular_count++;
+            }
+        }
+
+        u32 wall_count = cnt - regular_count;
+        if (wall_count == 0)
+            return;
+
+        removed_count += wall_count;
+
+        std::vector<u32> keep_indices;
+        keep_indices.reserve(regular_count);
+        for (u32 i = 0; i < cnt; i++) {
+            if (wall_flag_vec[i] == 0) {
+                keep_indices.push_back(i);
+            }
+        }
+
+        auto xyz_vec   = pdat.get_field<Tvec>(ixyz).get_buf().copy_to_stdvec();
+        auto vxyz_vec  = pdat.get_field<Tvec>(ivxyz).get_buf().copy_to_stdvec();
+        auto hpart_vec = pdat.get_field<Tscal>(ihpart).get_buf().copy_to_stdvec();
+        auto axyz_vec  = pdat.get_field<Tvec>(iaxyz).get_buf().copy_to_stdvec();
+
+        std::vector<Tscal> uint_vec, duint_vec;
+        if (has_uint) {
+            uint_vec  = pdat.get_field<Tscal>(iuint).get_buf().copy_to_stdvec();
+            duint_vec = pdat.get_field<Tscal>(iduint).get_buf().copy_to_stdvec();
+        }
+
+        std::vector<Tvec> new_xyz(regular_count);
+        std::vector<Tvec> new_vxyz(regular_count);
+        std::vector<Tscal> new_hpart(regular_count);
+        std::vector<u32> new_wall_flag(regular_count, 0);
+        std::vector<Tvec> new_axyz(regular_count);
+        std::vector<Tscal> new_uint(regular_count);
+        std::vector<Tscal> new_duint(regular_count);
+
+        for (u32 i = 0; i < regular_count; i++) {
+            new_xyz[i]   = xyz_vec[keep_indices[i]];
+            new_vxyz[i]  = vxyz_vec[keep_indices[i]];
+            new_hpart[i] = hpart_vec[keep_indices[i]];
+            new_axyz[i]  = axyz_vec[keep_indices[i]];
+            if (has_uint) {
+                new_uint[i]  = uint_vec[keep_indices[i]];
+                new_duint[i] = duint_vec[keep_indices[i]];
+            }
+        }
+
+        pdat.resize(regular_count);
+        pdat.get_field<Tvec>(ixyz).get_buf().copy_from_stdvec(new_xyz);
+        pdat.get_field<Tvec>(ivxyz).get_buf().copy_from_stdvec(new_vxyz);
+        pdat.get_field<Tscal>(ihpart).get_buf().copy_from_stdvec(new_hpart);
+        pdat.get_field<u32>(iwall_flag).get_buf().copy_from_stdvec(new_wall_flag);
+        pdat.get_field<Tvec>(iaxyz).get_buf().copy_from_stdvec(new_axyz);
+        if (has_uint) {
+            pdat.get_field<Tscal>(iuint).get_buf().copy_from_stdvec(new_uint);
+            pdat.get_field<Tscal>(iduint).get_buf().copy_from_stdvec(new_duint);
+        }
+    });
+
+    removed_count = shamalgs::collective::allreduce_sum(removed_count);
+
+    // Create new wall particles
+    const Tscal pmass = solver_config.gpart_mass;
+    Tscal h_avg       = Tscal(0);
+    u64 h_count = 0;
+
+    sched.for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
+        auto hpart_vec = pdat.get_field<Tscal>(ihpart).get_buf().copy_to_stdvec();
+        for (auto h : hpart_vec) {
+            h_avg += h;
+            h_count++;
+        }
+    });
+
+    h_avg   = shamalgs::collective::allreduce_sum(h_avg);
+    h_count = shamalgs::collective::allreduce_sum(h_count);
+    if (h_count > 0) {
+        h_avg /= h_count;
+    } else {
+        h_avg = Kernel::hfactd * std::pow(pmass, Tscal(1.0 / 3.0));
+    }
+
+    Tscal dr = h_avg / Kernel::hfactd;
+    Tscal layer_thickness = Tscal(num_layers) * dr * Tscal(2);
+
+    u64 wall_particles_created = 0;
+
+    sched.for_each_patchdata_nonempty([&](Patch p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        auto xyz_vec       = pdat.get_field<Tvec>(ixyz).get_buf().copy_to_stdvec();
+        auto vxyz_vec      = pdat.get_field<Tvec>(ivxyz).get_buf().copy_to_stdvec();
+        auto hpart_vec     = pdat.get_field<Tscal>(ihpart).get_buf().copy_to_stdvec();
+        auto wall_flag_vec = pdat.get_field<u32>(iwall_flag).get_buf().copy_to_stdvec();
+        auto axyz_vec      = pdat.get_field<Tvec>(iaxyz).get_buf().copy_to_stdvec();
+
+        std::vector<Tscal> uint_vec, duint_vec;
+        if (has_uint) {
+            uint_vec  = pdat.get_field<Tscal>(iuint).get_buf().copy_to_stdvec();
+            duint_vec = pdat.get_field<Tscal>(iduint).get_buf().copy_to_stdvec();
+        }
+
+        std::vector<Tvec> wall_xyz;
+        std::vector<Tvec> wall_vxyz;
+        std::vector<Tscal> wall_hpart;
+        std::vector<Tscal> wall_uint;
+        std::vector<Tscal> wall_duint;
+        std::vector<Tvec> wall_axyz;
+
+        // Create wall particles that continue the FCC lattice pattern.
+        // For FCC, spacing within a y-z column is 2*dr.
+        for (u32 i = 0; i < cnt; i++) {
+            Tvec pos = xyz_vec[i];
+            Tscal h  = hpart_vec[i];
+
+            // -x boundary (bit 0)
+            if ((wall_flags & 0x01) && (pos[0] - box_min[0] < dr * Tscal(1.5))) {
+                for (u32 k = 1; k <= num_layers; k++) {
+                    Tvec wall_pos = pos;
+                    wall_pos[0]   = pos[0] - Tscal(2 * k) * dr;
+
+                    wall_xyz.push_back(wall_pos);
+                    wall_vxyz.push_back(vxyz_vec[i]);
+                    wall_hpart.push_back(h);
+                    wall_axyz.push_back(axyz_vec[i]);
+                    if (has_uint) {
+                        wall_uint.push_back(uint_vec[i]);
+                        wall_duint.push_back(Tscal(0));
+                    }
+                }
+            }
+
+            // +x boundary (bit 1)
+            if ((wall_flags & 0x02) && (box_max[0] - pos[0] < dr * Tscal(1.5))) {
+                for (u32 k = 1; k <= num_layers; k++) {
+                    Tvec wall_pos = pos;
+                    wall_pos[0]   = pos[0] + Tscal(2 * k) * dr;
+
+                    wall_xyz.push_back(wall_pos);
+                    wall_vxyz.push_back(vxyz_vec[i]);
+                    wall_hpart.push_back(h);
+                    wall_axyz.push_back(axyz_vec[i]);
+                    if (has_uint) {
+                        wall_uint.push_back(uint_vec[i]);
+                        wall_duint.push_back(Tscal(0));
+                    }
+                }
+            }
+
+            // -y boundary (bit 2)
+            if ((wall_flags & 0x04) && (pos[1] - box_min[1] < layer_thickness)) {
+                Tvec wall_pos = pos;
+                wall_pos[1]   = Tscal(2) * box_min[1] - pos[1];
+
+                wall_xyz.push_back(wall_pos);
+                wall_vxyz.push_back(vxyz_vec[i]);
+                wall_hpart.push_back(h);
+                wall_axyz.push_back(axyz_vec[i]);
+                if (has_uint) {
+                    wall_uint.push_back(uint_vec[i]);
+                    wall_duint.push_back(Tscal(0));
+                }
+            }
+
+            // +y boundary (bit 3)
+            if ((wall_flags & 0x08) && (box_max[1] - pos[1] < layer_thickness)) {
+                Tvec wall_pos = pos;
+                wall_pos[1]   = Tscal(2) * box_max[1] - pos[1];
+
+                wall_xyz.push_back(wall_pos);
+                wall_vxyz.push_back(vxyz_vec[i]);
+                wall_hpart.push_back(h);
+                wall_axyz.push_back(axyz_vec[i]);
+                if (has_uint) {
+                    wall_uint.push_back(uint_vec[i]);
+                    wall_duint.push_back(Tscal(0));
+                }
+            }
+
+            // -z boundary (bit 4)
+            if ((wall_flags & 0x10) && (pos[2] - box_min[2] < layer_thickness)) {
+                Tvec wall_pos = pos;
+                wall_pos[2]   = Tscal(2) * box_min[2] - pos[2];
+
+                wall_xyz.push_back(wall_pos);
+                wall_vxyz.push_back(vxyz_vec[i]);
+                wall_hpart.push_back(h);
+                wall_axyz.push_back(axyz_vec[i]);
+                if (has_uint) {
+                    wall_uint.push_back(uint_vec[i]);
+                    wall_duint.push_back(Tscal(0));
+                }
+            }
+
+            // +z boundary (bit 5)
+            if ((wall_flags & 0x20) && (box_max[2] - pos[2] < layer_thickness)) {
+                Tvec wall_pos = pos;
+                wall_pos[2]   = Tscal(2) * box_max[2] - pos[2];
+
+                wall_xyz.push_back(wall_pos);
+                wall_vxyz.push_back(vxyz_vec[i]);
+                wall_hpart.push_back(h);
+                wall_axyz.push_back(axyz_vec[i]);
+                if (has_uint) {
+                    wall_uint.push_back(uint_vec[i]);
+                    wall_duint.push_back(Tscal(0));
+                }
+            }
+        }
+
+        u32 n_wall = wall_xyz.size();
+        if (n_wall == 0)
+            return;
+
+        wall_particles_created += n_wall;
+        u32 new_cnt = cnt + n_wall;
+
+        xyz_vec.insert(xyz_vec.end(), wall_xyz.begin(), wall_xyz.end());
+        vxyz_vec.insert(vxyz_vec.end(), wall_vxyz.begin(), wall_vxyz.end());
+        hpart_vec.insert(hpart_vec.end(), wall_hpart.begin(), wall_hpart.end());
+        axyz_vec.insert(axyz_vec.end(), wall_axyz.begin(), wall_axyz.end());
+
+        wall_flag_vec.resize(new_cnt);
+        for (u32 i = cnt; i < new_cnt; i++) {
+            wall_flag_vec[i] = 1;
+        }
+
+        if (has_uint) {
+            uint_vec.insert(uint_vec.end(), wall_uint.begin(), wall_uint.end());
+            duint_vec.insert(duint_vec.end(), wall_duint.begin(), wall_duint.end());
+        }
+
+        pdat.resize(new_cnt);
+
+        pdat.get_field<Tvec>(ixyz).get_buf().copy_from_stdvec(xyz_vec);
+        pdat.get_field<Tvec>(ivxyz).get_buf().copy_from_stdvec(vxyz_vec);
+        pdat.get_field<Tscal>(ihpart).get_buf().copy_from_stdvec(hpart_vec);
+        pdat.get_field<u32>(iwall_flag).get_buf().copy_from_stdvec(wall_flag_vec);
+        pdat.get_field<Tvec>(iaxyz).get_buf().copy_from_stdvec(axyz_vec);
+
+        if (has_uint) {
+            pdat.get_field<Tscal>(iuint).get_buf().copy_from_stdvec(uint_vec);
+            pdat.get_field<Tscal>(iduint).get_buf().copy_from_stdvec(duint_vec);
+        }
+    });
+
+    wall_particles_created = shamalgs::collective::allreduce_sum(wall_particles_created);
+    return wall_particles_created;
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     StackEntry stack_loc{};
     using namespace shamrock::patch;
@@ -1348,6 +1643,12 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Build serial patch tree first (needed for boundary application)
     gen_serial_patch_tree();
     apply_position_boundary(t_current + dt);
+
+    // STEP 2b: DYNAMIC WALL PARTICLES - update mirror particles at boundaries
+    // This must be done after boundary application and before tree building
+    if (solver_config.enable_dynamic_walls) {
+        update_wall_particles(solver_config.wall_num_layers, solver_config.wall_flags);
+    }
 
     // STEP 3: TREE BUILD - build trees on NEW positions
     // Generate ghost handler for the new positions

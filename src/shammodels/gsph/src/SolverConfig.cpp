@@ -10,7 +10,7 @@
 /**
  * @file SolverConfig.cpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Implementation of GSPH solver configuration methods
  */
 

@@ -12,7 +12,7 @@
 /**
  * @file SolverStorage.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Storage for GSPH solver runtime data
  *
  * This file contains the storage structure for GSPH solver runtime data,
@@ -59,8 +59,7 @@ namespace shammodels::gsph {
      * @tparam Tmorton Morton code type for tree construction
      */
     template<class Tvec, class Tmorton>
-    class SolverStorage {
-        public:
+    struct SolverStorage {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 

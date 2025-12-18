@@ -12,7 +12,7 @@
 /**
  * @file SolverConfig.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Configuration for the Godunov SPH (GSPH) solver
  *
  * This file contains the main configuration structure for the GSPH solver.
@@ -113,7 +113,7 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_units(shamunits::UnitSystem<Tscal> new_sys) { unit_sys = new_sys; }
 
-    inline Tscal get_constant_G() {
+    inline Tscal get_constant_G() const {
         if (!unit_sys) {
             ON_RANK_0(logger::warn_ln("gsph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
@@ -136,8 +136,8 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_time(Tscal t) { time_state.time = t; }
     inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-    inline Tscal get_time() { return time_state.time; }
-    inline Tscal get_dt() { return time_state.dt; }
+    inline Tscal get_time() const { return time_state.time; }
+    inline Tscal get_dt() const { return time_state.dt; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
@@ -195,12 +195,12 @@ struct shammodels::gsph::SolverConfig {
     using EOSConfig = shammodels::EOSConfig<Tvec>;
     EOSConfig eos_config;
 
-    inline bool is_eos_adiabatic() {
+    inline bool is_eos_adiabatic() const {
         using T = typename EOSConfig::Adiabatic;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    inline bool is_eos_isothermal() {
+    inline bool is_eos_isothermal() const {
         using T = typename EOSConfig::Isothermal;
         return bool(std::get_if<T>(&eos_config.config));
     }
@@ -297,7 +297,7 @@ struct shammodels::gsph::SolverConfig {
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline bool has_field_uint() { return is_eos_adiabatic(); }
+    inline bool has_field_uint() const { return is_eos_adiabatic(); }
 
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
@@ -312,14 +312,14 @@ struct shammodels::gsph::SolverConfig {
         logger::raw_ln("--------------------------------------");
     }
 
-    inline void check_config() {
+    inline void check_config() const {
         // Validate configuration (gpart_mass checked later at runtime)
         if (gamma <= 1) {
             shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for ideal gas");
         }
     }
 
-    inline void check_config_runtime() {
+    inline void check_config_runtime() const {
         // Validate configuration for runtime (called before simulation starts)
         if (gpart_mass <= 0) {
             shambase::throw_with_loc<std::runtime_error>(

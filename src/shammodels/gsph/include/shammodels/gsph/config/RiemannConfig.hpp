@@ -12,7 +12,7 @@
 /**
  * @file RiemannConfig.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Configuration for Riemann solvers in GSPH
  *
  * This file contains the configuration structures for different Riemann solver

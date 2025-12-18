@@ -12,7 +12,7 @@
 /**
  * @file ReconstructConfig.hpp
  * @author Guo (guo.yansong@optimind.tech)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Configuration for reconstruction methods in GSPH
  *
  * This file contains the configuration structures for spatial reconstruction

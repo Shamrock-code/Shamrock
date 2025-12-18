@@ -44,17 +44,17 @@ namespace shammodels::gsph {
 template<class Tvec>
 struct shammodels::gsph::ReconstructConfig {
 
-    using Tscal = shambase::VecComponent<Tvec>;
+    using Tscal              = shambase::VecComponent<Tvec>;
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
     /**
      * @brief Slope limiter types for MUSCL reconstruction
      */
     enum class Limiter {
-        VanLeer,   ///< van Leer limiter (smooth)
-        Minmod,    ///< Minmod limiter (most diffusive)
-        Superbee,  ///< Superbee limiter (least diffusive)
-        MC         ///< Monotonized Central limiter
+        VanLeer,  ///< van Leer limiter (smooth)
+        Minmod,   ///< Minmod limiter (most diffusive)
+        Superbee, ///< Superbee limiter (least diffusive)
+        MC        ///< Monotonized Central limiter
     };
 
     /**
@@ -73,7 +73,7 @@ struct shammodels::gsph::ReconstructConfig {
      * Reference: van Leer (1979)
      */
     struct MUSCL {
-        Limiter limiter = Limiter::VanLeer;  ///< Slope limiter type
+        Limiter limiter = Limiter::VanLeer; ///< Slope limiter type
     };
 
     using Variant = std::variant<PiecewiseConstant, MUSCL>;
@@ -82,25 +82,17 @@ struct shammodels::gsph::ReconstructConfig {
 
     void set(Variant v) { config = v; }
 
-    void set_piecewise_constant() {
-        set(PiecewiseConstant{});
-    }
+    void set_piecewise_constant() { set(PiecewiseConstant{}); }
 
-    void set_muscl(Limiter limiter = Limiter::VanLeer) {
-        set(MUSCL{limiter});
-    }
+    void set_muscl(Limiter limiter = Limiter::VanLeer) { set(MUSCL{limiter}); }
 
     inline bool is_piecewise_constant() const {
         return std::holds_alternative<PiecewiseConstant>(config);
     }
 
-    inline bool is_muscl() const {
-        return std::holds_alternative<MUSCL>(config);
-    }
+    inline bool is_muscl() const { return std::holds_alternative<MUSCL>(config); }
 
-    inline bool requires_gradients() const {
-        return is_muscl();
-    }
+    inline bool requires_gradients() const { return is_muscl(); }
 
     inline void print_status() const {
         logger::raw_ln("--- Reconstruction config");
@@ -110,18 +102,10 @@ struct shammodels::gsph::ReconstructConfig {
         } else if (const MUSCL *v = std::get_if<MUSCL>(&config)) {
             logger::raw_ln("  Type    : MUSCL (2nd order)");
             switch (v->limiter) {
-                case Limiter::VanLeer:
-                    logger::raw_ln("  Limiter : VanLeer");
-                    break;
-                case Limiter::Minmod:
-                    logger::raw_ln("  Limiter : Minmod");
-                    break;
-                case Limiter::Superbee:
-                    logger::raw_ln("  Limiter : Superbee");
-                    break;
-                case Limiter::MC:
-                    logger::raw_ln("  Limiter : MC");
-                    break;
+            case Limiter::VanLeer : logger::raw_ln("  Limiter : VanLeer"); break;
+            case Limiter::Minmod  : logger::raw_ln("  Limiter : Minmod"); break;
+            case Limiter::Superbee: logger::raw_ln("  Limiter : Superbee"); break;
+            case Limiter::MC      : logger::raw_ln("  Limiter : MC"); break;
             }
         } else {
             shambase::throw_unimplemented();
@@ -135,7 +119,7 @@ namespace shammodels::gsph {
 
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const ReconstructConfig<Tvec> &p) {
-        using T = ReconstructConfig<Tvec>;
+        using T                 = ReconstructConfig<Tvec>;
         using PiecewiseConstant = typename T::PiecewiseConstant;
         using MUSCL             = typename T::MUSCL;
         using Limiter           = typename T::Limiter;
@@ -147,10 +131,10 @@ namespace shammodels::gsph {
         } else if (const MUSCL *v = std::get_if<MUSCL>(&p.config)) {
             std::string limiter_str;
             switch (v->limiter) {
-                case Limiter::VanLeer:  limiter_str = "vanleer";  break;
-                case Limiter::Minmod:   limiter_str = "minmod";   break;
-                case Limiter::Superbee: limiter_str = "superbee"; break;
-                case Limiter::MC:       limiter_str = "mc";       break;
+            case Limiter::VanLeer : limiter_str = "vanleer"; break;
+            case Limiter::Minmod  : limiter_str = "minmod"; break;
+            case Limiter::Superbee: limiter_str = "superbee"; break;
+            case Limiter::MC      : limiter_str = "mc"; break;
             }
             j = {
                 {"reconstruct_type", "muscl"},
@@ -163,7 +147,7 @@ namespace shammodels::gsph {
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, ReconstructConfig<Tvec> &p) {
-        using T = ReconstructConfig<Tvec>;
+        using T                 = ReconstructConfig<Tvec>;
         using PiecewiseConstant = typename T::PiecewiseConstant;
         using MUSCL             = typename T::MUSCL;
         using Limiter           = typename T::Limiter;

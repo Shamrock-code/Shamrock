@@ -246,8 +246,8 @@ namespace shammodels::gsph {
 
         inline SolverConfig gen_default_config() {
             SolverConfig cfg;
-            cfg.set_riemann_iterative();  // Default to iterative Riemann solver
-            cfg.set_reconstruct_piecewise_constant();  // Default to 1st order
+            cfg.set_riemann_iterative();              // Default to iterative Riemann solver
+            cfg.set_reconstruct_piecewise_constant(); // Default to 1st order
             cfg.set_eos_adiabatic(Tscal{1.4});
             cfg.set_boundary_periodic();
             return cfg;
@@ -284,7 +284,7 @@ namespace shammodels::gsph {
             solver.init_solver_graph();
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            sched.owned_patch_id = sched.patch_list.build_local();
+            sched.owned_patch_id  = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();
             sched.update_local_load_value([&](shamrock::patch::Patch p) {

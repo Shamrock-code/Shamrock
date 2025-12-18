@@ -19,9 +19,9 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammath/CoordRange.hpp"
 #include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammath/CoordRange.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -67,8 +67,8 @@ f64 shammodels::gsph::Model<Tvec, SPHKernel>::total_mass_to_part_mass(f64 totmas
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
-    -> std::pair<Tvec, Tvec> {
+auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(
+    Tscal dr, std::pair<Tvec, Tvec> box) -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
     auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(
         dr, std::make_tuple(box.first, box.second));
@@ -76,8 +76,8 @@ auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> box)
-    -> std::pair<Tvec, Tvec> {
+auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(
+    Tscal dr, std::pair<Tvec, Tvec> box) -> std::pair<Tvec, Tvec> {
     StackEntry stack_loc{};
     // Use FCC box for now since HCP is similar
     auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(
@@ -86,7 +86,8 @@ auto shammodels::gsph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(Tscal dr, std::
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
@@ -134,7 +135,8 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pa
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
         sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().template get_patch_transform<Tvec>();
+            PatchCoordTransform<Tvec> ptransf
+                = sched.get_sim_box().template get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
@@ -170,8 +172,8 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pa
             }
 
             {
-                PatchDataField<Tscal> &f
-                    = tmp.template get_field<Tscal>(sched.pdl().template get_field_idx<Tscal>("hpart"));
+                PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
+                    sched.pdl().template get_field_idx<Tscal>("hpart"));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }
@@ -193,7 +195,8 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(Tscal dr, std::pa
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box) {
+void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
+    Tscal dr, std::pair<Tvec, Tvec> _box) {
     StackEntry stack_loc{};
 
     shammath::CoordRange<Tvec> box = _box;
@@ -242,7 +245,8 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pa
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
         sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-            PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().template get_patch_transform<Tvec>();
+            PatchCoordTransform<Tvec> ptransf
+                = sched.get_sim_box().template get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
@@ -278,8 +282,8 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(Tscal dr, std::pa
             }
 
             {
-                PatchDataField<Tscal> &f
-                    = tmp.template get_field<Tscal>(sched.pdl().template get_field_idx<Tscal>("hpart"));
+                PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
+                    sched.pdl().template get_field_idx<Tscal>("hpart"));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }

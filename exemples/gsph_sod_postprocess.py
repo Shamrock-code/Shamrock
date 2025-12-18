@@ -12,26 +12,28 @@ Example:
     python gsph_sod_postprocess.py gsph_sod_output --fps 15 --format mp4
 """
 
+import argparse
+import glob
 import os
 import sys
-import glob
-import argparse
-import numpy as np
+
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation, PillowWriter, FFMpegWriter
+import numpy as np
+from matplotlib.animation import FFMpegWriter, FuncAnimation, PillowWriter
 
 # =============================================================================
 # VTK Parser
 # =============================================================================
+
 
 def parse_vtk_file(filepath):
     """
     Parse a legacy VTK unstructured grid file.
     Returns dict with positions and field data.
     """
-    data = {'points': None, 'fields': {}}
+    data = {"points": None, "fields": {}}
 
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         lines = f.readlines()
 
     i = 0
@@ -41,7 +43,7 @@ def parse_vtk_file(filepath):
         line = lines[i].strip()
 
         # Parse POINTS section
-        if line.startswith('POINTS'):
+        if line.startswith("POINTS"):
             parts = line.split()
             n_points = int(parts[1])
             points = []
@@ -50,17 +52,17 @@ def parse_vtk_file(filepath):
                 values = lines[i].strip().split()
                 points.extend([float(v) for v in values])
                 i += 1
-            data['points'] = np.array(points).reshape(n_points, 3)
+            data["points"] = np.array(points).reshape(n_points, 3)
             continue
 
         # Parse POINT_DATA section
-        if line.startswith('POINT_DATA'):
+        if line.startswith("POINT_DATA"):
             n_point_data = int(line.split()[1])
             i += 1
             continue
 
         # Parse SCALARS
-        if line.startswith('SCALARS'):
+        if line.startswith("SCALARS"):
             parts = line.split()
             field_name = parts[1]
             i += 1  # Skip LOOKUP_TABLE line
@@ -68,41 +70,44 @@ def parse_vtk_file(filepath):
             values = []
             while len(values) < n_points and i < len(lines):
                 line_values = lines[i].strip().split()
-                if not line_values or line_values[0] in ['SCALARS', 'VECTORS', 'POINT_DATA']:
+                if not line_values or line_values[0] in ["SCALARS", "VECTORS", "POINT_DATA"]:
                     break
                 values.extend([float(v) for v in line_values])
                 i += 1
-            data['fields'][field_name] = np.array(values[:n_points])
+            data["fields"][field_name] = np.array(values[:n_points])
             continue
 
         # Parse VECTORS
-        if line.startswith('VECTORS'):
+        if line.startswith("VECTORS"):
             parts = line.split()
             field_name = parts[1]
             i += 1
             values = []
             while len(values) < n_points * 3 and i < len(lines):
                 line_values = lines[i].strip().split()
-                if not line_values or line_values[0] in ['SCALARS', 'VECTORS', 'POINT_DATA']:
+                if not line_values or line_values[0] in ["SCALARS", "VECTORS", "POINT_DATA"]:
                     break
                 values.extend([float(v) for v in line_values])
                 i += 1
-            data['fields'][field_name] = np.array(values[:n_points*3]).reshape(n_points, 3)
+            data["fields"][field_name] = np.array(values[: n_points * 3]).reshape(n_points, 3)
             continue
 
         i += 1
 
     return data
 
+
 # =============================================================================
 # Analytical Solution (Sod Tube)
 # =============================================================================
+
 
 class SodTubeAnalytical:
     """
     Analytical solution for Sod shock tube problem.
     Uses exact Riemann solver approach.
     """
+
     def __init__(self, gamma=1.4, rho_L=1.0, P_L=1.0, rho_R=0.125, P_R=0.1, x0=0.0):
         self.gamma = gamma
         self.rho_L = rho_L
@@ -160,19 +165,24 @@ class SodTubeAnalytical:
             P_star = max(P_new, 1e-10)
 
         self.P_star = P_star
-        self.u_star = 0.5 * (f(P_star, self.rho_L, self.P_L, self.c_L)
-                            - f(P_star, self.rho_R, self.P_R, self.c_R))
+        self.u_star = 0.5 * (
+            f(P_star, self.rho_L, self.P_L, self.c_L) - f(P_star, self.rho_R, self.P_R, self.c_R)
+        )
 
         # Densities in star region
         if self.P_star > self.P_L:  # Left shock
-            self.rho_star_L = self.rho_L * ((self.P_star / self.P_L + (gamma - 1) / (gamma + 1))
-                                            / ((gamma - 1) / (gamma + 1) * self.P_star / self.P_L + 1))
+            self.rho_star_L = self.rho_L * (
+                (self.P_star / self.P_L + (gamma - 1) / (gamma + 1))
+                / ((gamma - 1) / (gamma + 1) * self.P_star / self.P_L + 1)
+            )
         else:  # Left rarefaction
             self.rho_star_L = self.rho_L * (self.P_star / self.P_L) ** (1 / gamma)
 
         if self.P_star > self.P_R:  # Right shock
-            self.rho_star_R = self.rho_R * ((self.P_star / self.P_R + (gamma - 1) / (gamma + 1))
-                                            / ((gamma - 1) / (gamma + 1) * self.P_star / self.P_R + 1))
+            self.rho_star_R = self.rho_R * (
+                (self.P_star / self.P_R + (gamma - 1) / (gamma + 1))
+                / ((gamma - 1) / (gamma + 1) * self.P_star / self.P_R + 1)
+            )
         else:  # Right rarefaction
             self.rho_star_R = self.rho_R * (self.P_star / self.P_R) ** (1 / gamma)
 
@@ -192,8 +202,9 @@ class SodTubeAnalytical:
 
         # Wave speeds
         if self.P_star > self.P_L:  # Left shock
-            S_L = self.u_star - self.c_L * np.sqrt((gamma + 1) / (2 * gamma) * self.P_star / self.P_L
-                                                   + (gamma - 1) / (2 * gamma))
+            S_L = self.u_star - self.c_L * np.sqrt(
+                (gamma + 1) / (2 * gamma) * self.P_star / self.P_L + (gamma - 1) / (2 * gamma)
+            )
             head_L = S_L
             tail_L = S_L
         else:  # Left rarefaction
@@ -201,8 +212,9 @@ class SodTubeAnalytical:
             tail_L = self.u_star - c_star_L
 
         if self.P_star > self.P_R:  # Right shock
-            S_R = self.u_star + self.c_R * np.sqrt((gamma + 1) / (2 * gamma) * self.P_star / self.P_R
-                                                   + (gamma - 1) / (2 * gamma))
+            S_R = self.u_star + self.c_R * np.sqrt(
+                (gamma + 1) / (2 * gamma) * self.P_star / self.P_R + (gamma - 1) / (2 * gamma)
+            )
         else:  # Right rarefaction (not present in standard Sod)
             S_R = self.u_star + self.c_R * (self.P_star / self.P_R) ** ((gamma - 1) / (2 * gamma))
 
@@ -230,22 +242,24 @@ class SodTubeAnalytical:
             # Right region (undisturbed)
             return self.rho_R, 0.0, self.P_R
 
+
 # =============================================================================
 # Main
 # =============================================================================
 
+
 def main():
-    parser = argparse.ArgumentParser(description='Generate animation from GSPH Sod VTK files')
-    parser.add_argument('output_dir', nargs='?', default='gsph_sod_output',
-                        help='Directory containing VTK files')
-    parser.add_argument('--fps', type=int, default=10, help='Frames per second')
-    parser.add_argument('--format', choices=['gif', 'mp4'], default='gif',
-                        help='Output format')
-    parser.add_argument('--gamma', type=float, default=1.4, help='Adiabatic index')
+    parser = argparse.ArgumentParser(description="Generate animation from GSPH Sod VTK files")
+    parser.add_argument(
+        "output_dir", nargs="?", default="gsph_sod_output", help="Directory containing VTK files"
+    )
+    parser.add_argument("--fps", type=int, default=10, help="Frames per second")
+    parser.add_argument("--format", choices=["gif", "mp4"], default="gif", help="Output format")
+    parser.add_argument("--gamma", type=float, default=1.4, help="Adiabatic index")
     args = parser.parse_args()
 
     # Find VTK files
-    vtk_pattern = os.path.join(args.output_dir, '*.vtk')
+    vtk_pattern = os.path.join(args.output_dir, "*.vtk")
     vtk_files = sorted(glob.glob(vtk_pattern))
 
     if not vtk_files:
@@ -263,7 +277,7 @@ def main():
         print(f"  Parsed: {os.path.basename(vtk_file)}")
 
     # Determine x range from first frame
-    x_coords = frames_data[0]['points'][:, 0]
+    x_coords = frames_data[0]["points"][:, 0]
     x_min, x_max = x_coords.min(), x_coords.max()
     x_center = (x_min + x_max) / 2
 
@@ -277,7 +291,7 @@ def main():
 
     # Setup figure
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-    fig.suptitle('GSPH Sod Shock Tube', fontsize=14)
+    fig.suptitle("GSPH Sod Shock Tube", fontsize=14)
 
     ax_rho = axes[0, 0]
     ax_vx = axes[0, 1]
@@ -285,23 +299,25 @@ def main():
     ax_info = axes[1, 1]
 
     # Initialize plots
-    scat_rho, = ax_rho.plot([], [], 'b.', markersize=1, alpha=0.5, label='GSPH')
-    scat_vx, = ax_vx.plot([], [], 'b.', markersize=1, alpha=0.5, label='GSPH')
-    scat_P, = ax_P.plot([], [], 'b.', markersize=1, alpha=0.5, label='GSPH')
+    (scat_rho,) = ax_rho.plot([], [], "b.", markersize=1, alpha=0.5, label="GSPH")
+    (scat_vx,) = ax_vx.plot([], [], "b.", markersize=1, alpha=0.5, label="GSPH")
+    (scat_P,) = ax_P.plot([], [], "b.", markersize=1, alpha=0.5, label="GSPH")
 
-    line_rho, = ax_rho.plot([], [], 'r-', linewidth=1.5, label='Analytical')
-    line_vx, = ax_vx.plot([], [], 'r-', linewidth=1.5, label='Analytical')
-    line_P, = ax_P.plot([], [], 'r-', linewidth=1.5, label='Analytical')
+    (line_rho,) = ax_rho.plot([], [], "r-", linewidth=1.5, label="Analytical")
+    (line_vx,) = ax_vx.plot([], [], "r-", linewidth=1.5, label="Analytical")
+    (line_P,) = ax_P.plot([], [], "r-", linewidth=1.5, label="Analytical")
 
     # Configure axes
-    for ax, ylabel, title in [(ax_rho, 'Density', 'Density'),
-                               (ax_vx, 'Velocity', 'Velocity'),
-                               (ax_P, 'Pressure', 'Pressure')]:
+    for ax, ylabel, title in [
+        (ax_rho, "Density", "Density"),
+        (ax_vx, "Velocity", "Velocity"),
+        (ax_P, "Pressure", "Pressure"),
+    ]:
         ax.set_xlim(x_min, x_max)
-        ax.set_xlabel('x')
+        ax.set_xlabel("x")
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-        ax.legend(loc='best')
+        ax.legend(loc="best")
         ax.grid(True, alpha=0.3)
 
     ax_rho.set_ylim(0, 1.2)
@@ -309,12 +325,18 @@ def main():
     ax_P.set_ylim(0, 1.2)
 
     # Info panel
-    ax_info.axis('off')
-    info_text = ax_info.text(0.1, 0.5, '', transform=ax_info.transAxes,
-                             fontsize=12, verticalalignment='center',
-                             family='monospace')
+    ax_info.axis("off")
+    info_text = ax_info.text(
+        0.1,
+        0.5,
+        "",
+        transform=ax_info.transAxes,
+        fontsize=12,
+        verticalalignment="center",
+        family="monospace",
+    )
 
-    time_text = fig.text(0.5, 0.02, '', ha='center', fontsize=12)
+    time_text = fig.text(0.5, 0.02, "", ha="center", fontsize=12)
     plt.tight_layout(rect=[0, 0.04, 1, 0.96])
 
     def init():
@@ -324,22 +346,22 @@ def main():
         line_rho.set_data([], [])
         line_vx.set_data([], [])
         line_P.set_data([], [])
-        time_text.set_text('')
-        info_text.set_text('')
+        time_text.set_text("")
+        info_text.set_text("")
         return scat_rho, scat_vx, scat_P, line_rho, line_vx, line_P, time_text, info_text
 
     def animate(frame_idx):
         data = frames_data[frame_idx]
         t = frame_times[frame_idx]
 
-        x = data['points'][:, 0]
+        x = data["points"][:, 0]
 
         # Get fields (try different possible names)
-        rho = data['fields'].get('rho', data['fields'].get('density', np.zeros(len(x))))
-        vx = data['fields'].get('vxyz', data['fields'].get('vel', np.zeros((len(x), 3))))
+        rho = data["fields"].get("rho", data["fields"].get("density", np.zeros(len(x))))
+        vx = data["fields"].get("vxyz", data["fields"].get("vel", np.zeros((len(x), 3))))
         if vx.ndim == 2:
             vx = vx[:, 0]
-        P = data['fields'].get('P', data['fields'].get('pressure', np.zeros(len(x))))
+        P = data["fields"].get("P", data["fields"].get("pressure", np.zeros(len(x))))
 
         scat_rho.set_data(x, rho)
         scat_vx.set_data(x, vx)
@@ -358,7 +380,7 @@ def main():
         line_vx.set_data(x_ana, vx_ana)
         line_P.set_data(x_ana, P_ana)
 
-        time_text.set_text(f't = {t:.4f}')
+        time_text.set_text(f"t = {t:.4f}")
 
         info = f"Frame: {frame_idx + 1}/{n_frames}\n"
         info += f"Particles: {len(x)}\n"
@@ -368,14 +390,15 @@ def main():
         return scat_rho, scat_vx, scat_P, line_rho, line_vx, line_P, time_text, info_text
 
     # Create animation
-    anim = FuncAnimation(fig, animate, init_func=init, frames=n_frames,
-                         interval=1000//args.fps, blit=True)
+    anim = FuncAnimation(
+        fig, animate, init_func=init, frames=n_frames, interval=1000 // args.fps, blit=True
+    )
 
     # Save animation
-    output_file = os.path.join(args.output_dir, f'gsph_sod_animation.{args.format}')
+    output_file = os.path.join(args.output_dir, f"gsph_sod_animation.{args.format}")
     print(f"Saving animation to {output_file}...")
 
-    if args.format == 'gif':
+    if args.format == "gif":
         anim.save(output_file, writer=PillowWriter(fps=args.fps))
     else:
         anim.save(output_file, writer=FFMpegWriter(fps=args.fps))
@@ -383,12 +406,13 @@ def main():
     print(f"Animation saved to {output_file}")
 
     # Save final frame
-    final_png = os.path.join(args.output_dir, 'gsph_sod_final.png')
+    final_png = os.path.join(args.output_dir, "gsph_sod_final.png")
     animate(n_frames - 1)
     fig.savefig(final_png, dpi=150)
     print(f"Final frame saved to {final_png}")
 
     plt.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

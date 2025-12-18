@@ -36,8 +36,8 @@ namespace shammodels::gsph::riemann {
      */
     template<class Tscal>
     struct RiemannResult {
-        Tscal p_star;  ///< Interface pressure
-        Tscal v_star;  ///< Interface velocity (normal component)
+        Tscal p_star; ///< Interface pressure
+        Tscal v_star; ///< Interface velocity (normal component)
     };
 
     /**
@@ -72,8 +72,8 @@ namespace shammodels::gsph::riemann {
         Tscal rho_R,
         Tscal p_R,
         Tscal gamma,
-        Tscal tol     = Tscal{1.0e-6},
-        u32 max_iter  = 20) {
+        Tscal tol    = Tscal{1.0e-6},
+        u32 max_iter = 20) {
 
         RiemannResult<Tscal> result;
 
@@ -89,9 +89,9 @@ namespace shammodels::gsph::riemann {
         }
 
         // Derived constants
-        const Tscal gm1     = gamma - Tscal{1};
-        const Tscal gp1     = gamma + Tscal{1};
-        const Tscal gamma1  = Tscal{0.5} * gp1 / gamma;  // (gamma+1)/(2*gamma)
+        const Tscal gm1    = gamma - Tscal{1};
+        const Tscal gp1    = gamma + Tscal{1};
+        const Tscal gamma1 = Tscal{0.5} * gp1 / gamma; // (gamma+1)/(2*gamma)
 
         // Specific volumes
         const Tscal V_L = Tscal{1} / rho_L;
@@ -104,8 +104,8 @@ namespace shammodels::gsph::riemann {
         // Initial guess for p_star using PVRS (Primitive Variable Riemann Solver)
         // p_star = p_L + (p_R - p_L - c_R*(u_R - u_L)) * c_L / (c_L + c_R)
         Tscal p_star = p_R - p_L - c_R * (u_R - u_L);
-        p_star = p_L + p_star * c_L / (c_L + c_R);
-        p_star = sycl::fmax(p_star, smallp);
+        p_star       = p_L + p_star * c_L / (c_L + c_R);
+        p_star       = sycl::fmax(p_star, smallp);
 
         // Newton-Raphson iteration
         for (u32 iter = 0; iter < max_iter; ++iter) {
@@ -113,20 +113,20 @@ namespace shammodels::gsph::riemann {
 
             // Left wave impedance: W_L = c_L * sqrt(1 + gamma1*(p_star - p_L)/p_L)
             Tscal W_L = Tscal{1} + gamma1 * (p_star - p_L) / p_L;
-            W_L = c_L * sycl::sqrt(sycl::fmax(W_L, smallp));
+            W_L       = c_L * sycl::sqrt(sycl::fmax(W_L, smallp));
 
             // Right wave impedance: W_R = c_R * sqrt(1 + gamma1*(p_star - p_R)/p_R)
             Tscal W_R = Tscal{1} + gamma1 * (p_star - p_R) / p_R;
-            W_R = c_R * sycl::sqrt(sycl::fmax(W_R, smallp));
+            W_R       = c_R * sycl::sqrt(sycl::fmax(W_R, smallp));
 
             // Derivatives dW/dp for Newton-Raphson
             // Z_L = -dW_L/dp * W_L (note the sign convention)
             Tscal Z_L = Tscal{4} * V_L * W_L * W_L;
-            Z_L = -Z_L * W_L / (Z_L - gp1 * (p_star - p_L));
+            Z_L       = -Z_L * W_L / (Z_L - gp1 * (p_star - p_L));
 
             // Z_R = dW_R/dp * W_R
             Tscal Z_R = Tscal{4} * V_R * W_R * W_R;
-            Z_R = Z_R * W_R / (Z_R - gp1 * (p_star - p_R));
+            Z_R       = Z_R * W_R / (Z_R - gp1 * (p_star - p_R));
 
             // Intermediate velocities from each side
             // u*_L = u_L - (p* - p_L) / W_L
@@ -151,10 +151,10 @@ namespace shammodels::gsph::riemann {
 
         // Recalculate wave impedances with final p_star
         Tscal W_L = Tscal{1} + gamma1 * (p_star - p_L) / p_L;
-        W_L = c_L * sycl::sqrt(sycl::fmax(W_L, smallp));
+        W_L       = c_L * sycl::sqrt(sycl::fmax(W_L, smallp));
 
         Tscal W_R = Tscal{1} + gamma1 * (p_star - p_R) / p_R;
-        W_R = c_R * sycl::sqrt(sycl::fmax(W_R, smallp));
+        W_R       = c_R * sycl::sqrt(sycl::fmax(W_R, smallp));
 
         // Calculate final u_star (average of left and right estimates)
         const Tscal ustar_L = u_L - (p_star - p_L) / W_L;
@@ -223,7 +223,7 @@ namespace shammodels::gsph::riemann {
 
         // Star pressure
         Tscal p_star = p_L + rho_L * (S_L - u_L) * (S_star - u_L);
-        p_star = sycl::fmax(smallval, p_star);
+        p_star       = sycl::fmax(smallval, p_star);
 
         result.p_star = p_star;
         result.v_star = S_star;

@@ -116,6 +116,7 @@ print("=" * 60)
 # For now, just test that the module can be imported (placeholder)
 try:
     import shamrock
+
     print("\nShamrock module imported successfully")
 except ImportError as e:
     print(f"\nNote: shamrock module not available ({e})")

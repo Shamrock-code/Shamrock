@@ -162,8 +162,10 @@ namespace shammodels::gsph {
 
         inline void print_timestep_logs() {
             if (shamcomm::world_rank() == 0) {
-                logger::info_ln("GSPH", "iteration since start :", solve_logs.get_iteration_count());
-                logger::info_ln("GSPH", "time since start :", shambase::details::get_wtime(), "(s)");
+                logger::info_ln(
+                    "GSPH", "iteration since start :", solve_logs.get_iteration_count());
+                logger::info_ln(
+                    "GSPH", "time since start :", shambase::details::get_wtime(), "(s)");
             }
         }
 

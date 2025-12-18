@@ -18,9 +18,11 @@ Usage:
 """
 
 import os
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.animation import FuncAnimation, PillowWriter
+
 import shamrock
 
 # =============================================================================
@@ -30,10 +32,10 @@ import shamrock
 gamma = 1.4  # Adiabatic index
 
 # Initial conditions (Sod problem)
-rho_L = 1.0      # Left density
-rho_R = 0.125    # Right density
-P_L = 1.0        # Left pressure
-P_R = 0.1        # Right pressure
+rho_L = 1.0  # Left density
+rho_R = 0.125  # Right density
+P_L = 1.0  # Left pressure
+P_R = 0.1  # Right pressure
 
 # Derived quantities
 u_L = P_L / ((gamma - 1) * rho_L)  # Left internal energy
@@ -43,8 +45,8 @@ u_R = P_R / ((gamma - 1) * rho_R)  # Right internal energy
 resol = 128
 
 # Timing
-t_target = 0.245      # Final simulation time
-n_frames = 30         # Number of animation frames
+t_target = 0.245  # Final simulation time
+n_frames = 30  # Number of animation frames
 dt_output = t_target / n_frames  # Time between frames
 
 # Output settings
@@ -111,17 +113,17 @@ dr = 1 / xs
 (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 24, 24)
 
 # Resize simulation box
-model.resize_simulation_box((-xs, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Add particles
 # Left region: high density
-model.add_cube_fcc_3d(dr, (-xs, -ys/2, -zs/2), (0, ys/2, zs/2))
+model.add_cube_fcc_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
 # Right region: low density (larger spacing for equal mass)
-model.add_cube_fcc_3d(dr * fact, (0, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.add_cube_fcc_3d(dr * fact, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Set internal energy in each region
-model.set_value_in_a_box("uint", "f64", u_L, (-xs, -ys/2, -zs/2), (0, ys/2, zs/2))
-model.set_value_in_a_box("uint", "f64", u_R, (0, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.set_value_in_a_box("uint", "f64", u_L, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
+model.set_value_in_a_box("uint", "f64", u_R, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Calculate and set particle mass
 vol_b = xs * ys * zs
@@ -140,6 +142,7 @@ model.set_cfl_force(0.1)
 # Data Collection Function
 # =============================================================================
 
+
 def collect_frame_data(ctx, model, pmass, gamma, hfact):
     """Collect particle data for plotting."""
     dic = ctx.collect_data()
@@ -155,12 +158,14 @@ def collect_frame_data(ctx, model, pmass, gamma, hfact):
 
     return x, rho, vx, P, uint
 
+
 # =============================================================================
 # Analytical Solution
 # =============================================================================
 
 # Get analytical solution object
 sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=P_R)
+
 
 def get_analytical_solution(t, x_range=(-xs, xs), npoints=500):
     """Get analytical solution at time t."""
@@ -180,6 +185,7 @@ def get_analytical_solution(t, x_range=(-xs, xs), npoints=500):
 
     return x_ana_shifted, np.array(rho_ana), np.array(vx_ana), np.array(P_ana)
 
+
 # =============================================================================
 # Run Simulation and Collect Data
 # =============================================================================
@@ -196,7 +202,7 @@ frame_times = []
 
 # Initial frame
 x, rho, vx, P, uint = collect_frame_data(ctx, model, pmass, gamma, hfact)
-frames_data.append({'x': x, 'rho': rho, 'vx': vx, 'P': P})
+frames_data.append({"x": x, "rho": rho, "vx": vx, "P": P})
 frame_times.append(0.0)
 
 # Initial VTK dump
@@ -220,7 +226,7 @@ while t_current < t_target:
     if t_current >= t_next_frame or t_current >= t_target:
         # Collect data
         x, rho, vx, P, uint = collect_frame_data(ctx, model, pmass, gamma, hfact)
-        frames_data.append({'x': x, 'rho': rho, 'vx': vx, 'P': P})
+        frames_data.append({"x": x, "rho": rho, "vx": vx, "P": P})
         frame_times.append(t_current)
 
         # VTK dump
@@ -244,7 +250,7 @@ print("Creating matplotlib animation...")
 
 # Setup figure
 fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-fig.suptitle('SPH Sod Shock Tube', fontsize=14)
+fig.suptitle("SPH Sod Shock Tube", fontsize=14)
 
 # Plot limits
 x_lim = (0, 2 * xs)
@@ -259,53 +265,54 @@ ax_P = axes[1, 0]
 ax_uint = axes[1, 1]
 
 # Particle scatter plots
-scat_rho, = ax_rho.plot([], [], 'b.', markersize=1, alpha=0.5, label='SPH')
-scat_vx, = ax_vx.plot([], [], 'b.', markersize=1, alpha=0.5, label='SPH')
-scat_P, = ax_P.plot([], [], 'b.', markersize=1, alpha=0.5, label='SPH')
+(scat_rho,) = ax_rho.plot([], [], "b.", markersize=1, alpha=0.5, label="SPH")
+(scat_vx,) = ax_vx.plot([], [], "b.", markersize=1, alpha=0.5, label="SPH")
+(scat_P,) = ax_P.plot([], [], "b.", markersize=1, alpha=0.5, label="SPH")
 
 # Analytical solution lines
-line_rho, = ax_rho.plot([], [], 'r-', linewidth=1.5, label='Analytical')
-line_vx, = ax_vx.plot([], [], 'r-', linewidth=1.5, label='Analytical')
-line_P, = ax_P.plot([], [], 'r-', linewidth=1.5, label='Analytical')
+(line_rho,) = ax_rho.plot([], [], "r-", linewidth=1.5, label="Analytical")
+(line_vx,) = ax_vx.plot([], [], "r-", linewidth=1.5, label="Analytical")
+(line_P,) = ax_P.plot([], [], "r-", linewidth=1.5, label="Analytical")
 
 # Configure axes
 ax_rho.set_xlim(x_lim)
 ax_rho.set_ylim(rho_lim)
-ax_rho.set_xlabel('x')
-ax_rho.set_ylabel('Density')
-ax_rho.set_title('Density')
-ax_rho.legend(loc='upper right')
+ax_rho.set_xlabel("x")
+ax_rho.set_ylabel("Density")
+ax_rho.set_title("Density")
+ax_rho.legend(loc="upper right")
 ax_rho.grid(True, alpha=0.3)
 
 ax_vx.set_xlim(x_lim)
 ax_vx.set_ylim(vx_lim)
-ax_vx.set_xlabel('x')
-ax_vx.set_ylabel('Velocity')
-ax_vx.set_title('Velocity')
-ax_vx.legend(loc='upper left')
+ax_vx.set_xlabel("x")
+ax_vx.set_ylabel("Velocity")
+ax_vx.set_title("Velocity")
+ax_vx.legend(loc="upper left")
 ax_vx.grid(True, alpha=0.3)
 
 ax_P.set_xlim(x_lim)
 ax_P.set_ylim(P_lim)
-ax_P.set_xlabel('x')
-ax_P.set_ylabel('Pressure')
-ax_P.set_title('Pressure')
-ax_P.legend(loc='upper right')
+ax_P.set_xlabel("x")
+ax_P.set_ylabel("Pressure")
+ax_P.set_title("Pressure")
+ax_P.legend(loc="upper right")
 ax_P.grid(True, alpha=0.3)
 
 # Internal energy (no analytical for this plot)
-scat_uint, = ax_uint.plot([], [], 'g.', markersize=1, alpha=0.5)
+(scat_uint,) = ax_uint.plot([], [], "g.", markersize=1, alpha=0.5)
 ax_uint.set_xlim(x_lim)
 ax_uint.set_ylim(0, 3.5)
-ax_uint.set_xlabel('x')
-ax_uint.set_ylabel('Internal Energy')
-ax_uint.set_title('Internal Energy')
+ax_uint.set_xlabel("x")
+ax_uint.set_ylabel("Internal Energy")
+ax_uint.set_title("Internal Energy")
 ax_uint.grid(True, alpha=0.3)
 
 # Time text
-time_text = fig.text(0.5, 0.02, '', ha='center', fontsize=12)
+time_text = fig.text(0.5, 0.02, "", ha="center", fontsize=12)
 
 plt.tight_layout(rect=[0, 0.04, 1, 0.96])
+
 
 def init():
     """Initialize animation."""
@@ -316,8 +323,9 @@ def init():
     line_rho.set_data([], [])
     line_vx.set_data([], [])
     line_P.set_data([], [])
-    time_text.set_text('')
+    time_text.set_text("")
     return scat_rho, scat_vx, scat_P, scat_uint, line_rho, line_vx, line_P, time_text
+
 
 def animate(frame_idx):
     """Update animation frame."""
@@ -325,13 +333,13 @@ def animate(frame_idx):
     t = frame_times[frame_idx]
 
     # Update particle data
-    scat_rho.set_data(data['x'], data['rho'])
-    scat_vx.set_data(data['x'], data['vx'])
-    scat_P.set_data(data['x'], data['P'])
+    scat_rho.set_data(data["x"], data["rho"])
+    scat_vx.set_data(data["x"], data["vx"])
+    scat_P.set_data(data["x"], data["P"])
 
     # Compute internal energy for display
-    uint_display = data['P'] / ((gamma - 1) * data['rho'])
-    scat_uint.set_data(data['x'], uint_display)
+    uint_display = data["P"] / ((gamma - 1) * data["rho"])
+    scat_uint.set_data(data["x"], uint_display)
 
     # Update analytical solution
     if t > 0:
@@ -341,15 +349,16 @@ def animate(frame_idx):
         line_P.set_data(x_ana, P_ana)
     else:
         # Initial condition (step function)
-        x_ana = np.array([0, xs, xs, 2*xs])
+        x_ana = np.array([0, xs, xs, 2 * xs])
         line_rho.set_data(x_ana, [rho_L, rho_L, rho_R, rho_R])
         line_vx.set_data(x_ana, [0, 0, 0, 0])
         line_P.set_data(x_ana, [P_L, P_L, P_R, P_R])
 
     # Update time text
-    time_text.set_text(f't = {t:.4f}')
+    time_text.set_text(f"t = {t:.4f}")
 
     return scat_rho, scat_vx, scat_P, scat_uint, line_rho, line_vx, line_P, time_text
+
 
 # Create animation
 anim = FuncAnimation(
@@ -358,14 +367,14 @@ anim = FuncAnimation(
     init_func=init,
     frames=len(frames_data),
     interval=100,  # 100ms between frames
-    blit=True
+    blit=True,
 )
 
 # Save animation
 animation_path = os.path.join(output_dir, animation_file)
 print(f"Saving animation to {animation_path}...")
 anim.save(animation_path, writer=PillowWriter(fps=10))
-print(f"Animation saved!")
+print("Animation saved!")
 
 # Also save final frame as PNG
 final_frame_path = os.path.join(output_dir, "sph_sod_final.png")

@@ -25,9 +25,6 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shammodels/gsph/config/RiemannConfig.hpp"
-#include "shammodels/gsph/config/ReconstructConfig.hpp"
-#include "shammodels/sph/config/BCConfig.hpp"  // Reuse boundary conditions from SPH
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/type_traits.hpp"
@@ -36,14 +33,17 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/gsph/config/ReconstructConfig.hpp"
+#include "shammodels/gsph/config/RiemannConfig.hpp"
+#include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
+#include <nlohmann/json.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
-#include <nlohmann/json.hpp>
 #include <variant>
 #include <vector>
 
@@ -73,8 +73,8 @@ namespace shammodels::gsph {
      */
     template<class Tscal>
     struct CFLConfig {
-        Tscal cfl_cour  = 0.3;   ///< CFL condition for the courant factor
-        Tscal cfl_force = 0.25;  ///< CFL condition for the force
+        Tscal cfl_cour  = 0.3;  ///< CFL condition for the courant factor
+        Tscal cfl_force = 0.25; ///< CFL condition for the force
     };
 
 } // namespace shammodels::gsph
@@ -83,26 +83,26 @@ template<class Tvec>
 struct shammodels::gsph::SolverStatusVar {
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time   = 0;  ///< Current time
-    Tscal dt     = 0;  ///< Current time step
+    Tscal time = 0; ///< Current time
+    Tscal dt   = 0; ///< Current time step
 };
 
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::gsph::SolverConfig {
 
-    using Tscal = shambase::VecComponent<Tvec>;
+    using Tscal              = shambase::VecComponent<Tvec>;
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
-    using Kernel = SPHKernel<Tscal>;
-    using u_morton = u32;
+    using Kernel             = SPHKernel<Tscal>;
+    using u_morton           = u32;
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass{0};          ///< The mass of each gas particle (must be set before use)
-    Tscal gamma = Tscal{1.4};     ///< Adiabatic index (for ideal gas EOS)
+    Tscal gpart_mass{0};      ///< The mass of each gas particle (must be set before use)
+    Tscal gamma = Tscal{1.4}; ///< Adiabatic index (for ideal gas EOS)
 
-    CFLConfig<Tscal> cfl_config;  ///< CFL configuration
+    CFLConfig<Tscal> cfl_config; ///< CFL configuration
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -153,13 +153,9 @@ struct shammodels::gsph::SolverConfig {
         riemann_config.set_iterative(tol, max_iter);
     }
 
-    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}) {
-        riemann_config.set_exact(tol);
-    }
+    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}) { riemann_config.set_exact(tol); }
 
-    inline void set_riemann_hllc() {
-        riemann_config.set_hllc();
-    }
+    inline void set_riemann_hllc() { riemann_config.set_hllc(); }
 
     inline void set_riemann_roe(Tscal entropy_fix = Tscal{0.1}) {
         riemann_config.set_roe(entropy_fix);
@@ -180,14 +176,12 @@ struct shammodels::gsph::SolverConfig {
         reconstruct_config.set_piecewise_constant();
     }
 
-    inline void set_reconstruct_muscl(typename ReconstructConfig::Limiter limiter
-                                      = ReconstructConfig::Limiter::VanLeer) {
+    inline void set_reconstruct_muscl(
+        typename ReconstructConfig::Limiter limiter = ReconstructConfig::Limiter::VanLeer) {
         reconstruct_config.set_muscl(limiter);
     }
 
-    inline bool requires_gradients() const {
-        return reconstruct_config.requires_gradients();
-    }
+    inline bool requires_gradients() const { return reconstruct_config.requires_gradients(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Reconstruction Config (END)
@@ -215,9 +209,7 @@ struct shammodels::gsph::SolverConfig {
         eos_config.set_adiabatic(_gamma);
     }
 
-    inline void set_eos_isothermal(Tscal cs) {
-        eos_config.set_isothermal(cs);
-    }
+    inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
@@ -227,7 +219,7 @@ struct shammodels::gsph::SolverConfig {
     // Boundary Config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    using BCConfig = shammodels::sph::BCConfig<Tvec>;  // Reuse from SPH
+    using BCConfig = shammodels::sph::BCConfig<Tvec>; // Reuse from SPH
     BCConfig boundary_config;
 
     inline void set_boundary_free() { boundary_config.set_free(); }
@@ -283,9 +275,7 @@ struct shammodels::gsph::SolverConfig {
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    inline bool has_field_uint() {
-        return is_eos_adiabatic();
-    }
+    inline bool has_field_uint() { return is_eos_adiabatic(); }
 
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
@@ -393,15 +383,15 @@ namespace shammodels::gsph {
         std::string kernel_id = j.at("kernel_id").get<std::string>();
         if (kernel_id != shambase::get_type_name<Tkernel>()) {
             shambase::throw_with_loc<std::runtime_error>(
-                "Invalid kernel type: expected " + shambase::get_type_name<Tkernel>()
-                + " but got " + kernel_id);
+                "Invalid kernel type: expected " + shambase::get_type_name<Tkernel>() + " but got "
+                + kernel_id);
         }
 
         std::string type_id = j.at("type_id").get<std::string>();
         if (type_id != shambase::get_type_name<Tvec>()) {
             shambase::throw_with_loc<std::runtime_error>(
-                "Invalid vector type: expected " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+                "Invalid vector type: expected " + shambase::get_type_name<Tvec>() + " but got "
+                + type_id);
         }
 
         j.at("gpart_mass").get_to(p.gpart_mass);

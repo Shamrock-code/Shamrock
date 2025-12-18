@@ -50,7 +50,7 @@ namespace shammodels::gsph {
 template<class Tvec>
 struct shammodels::gsph::RiemannConfig {
 
-    using Tscal = shambase::VecComponent<Tvec>;
+    using Tscal              = shambase::VecComponent<Tvec>;
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
     /**
@@ -61,8 +61,8 @@ struct shammodels::gsph::RiemannConfig {
      * Reference: van Leer, B. (1997) "Towards the ultimate conservative difference scheme"
      */
     struct Iterative {
-        Tscal tol     = Tscal{1.0e-6};  ///< Convergence tolerance
-        u32 max_iter  = 20;             ///< Maximum iterations
+        Tscal tol    = Tscal{1.0e-6}; ///< Convergence tolerance
+        u32 max_iter = 20;            ///< Maximum iterations
     };
 
     /**
@@ -73,7 +73,7 @@ struct shammodels::gsph::RiemannConfig {
      * Reference: Toro, E.F. (2009) "Riemann Solvers and Numerical Methods for Fluid Dynamics"
      */
     struct Exact {
-        Tscal tol = Tscal{1.0e-8};  ///< Convergence tolerance
+        Tscal tol = Tscal{1.0e-8}; ///< Convergence tolerance
     };
 
     /**
@@ -93,7 +93,7 @@ struct shammodels::gsph::RiemannConfig {
      * Reference: Roe, P.L. (1981)
      */
     struct Roe {
-        Tscal entropy_fix = Tscal{0.1};  ///< Entropy fix parameter
+        Tscal entropy_fix = Tscal{0.1}; ///< Entropy fix parameter
     };
 
     using Variant = std::variant<Iterative, Exact, HLLC, Roe>;
@@ -106,17 +106,11 @@ struct shammodels::gsph::RiemannConfig {
         set(Iterative{tol, max_iter});
     }
 
-    void set_exact(Tscal tol = Tscal{1.0e-8}) {
-        set(Exact{tol});
-    }
+    void set_exact(Tscal tol = Tscal{1.0e-8}) { set(Exact{tol}); }
 
-    void set_hllc() {
-        set(HLLC{});
-    }
+    void set_hllc() { set(HLLC{}); }
 
-    void set_roe(Tscal entropy_fix = Tscal{0.1}) {
-        set(Roe{entropy_fix});
-    }
+    void set_roe(Tscal entropy_fix = Tscal{0.1}) { set(Roe{entropy_fix}); }
 
     inline bool is_iterative() const { return std::holds_alternative<Iterative>(config); }
     inline bool is_exact() const { return std::holds_alternative<Exact>(config); }
@@ -150,7 +144,7 @@ namespace shammodels::gsph {
 
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const RiemannConfig<Tvec> &p) {
-        using T = RiemannConfig<Tvec>;
+        using T         = RiemannConfig<Tvec>;
         using Iterative = typename T::Iterative;
         using Exact     = typename T::Exact;
         using HLLC      = typename T::HLLC;
@@ -200,9 +194,7 @@ namespace shammodels::gsph {
         using Roe       = typename T::Roe;
 
         if (riemann_type == "iterative") {
-            p.set(Iterative{
-                j.at("tol").get<Tscal>(),
-                j.at("max_iter").get<u32>()});
+            p.set(Iterative{j.at("tol").get<Tscal>(), j.at("max_iter").get<u32>()});
         } else if (riemann_type == "exact") {
             p.set(Exact{j.at("tol").get<Tscal>()});
         } else if (riemann_type == "hllc") {

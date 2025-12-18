@@ -24,6 +24,7 @@ Usage:
 """
 
 import os
+
 import shamrock
 
 print("=" * 70)
@@ -35,10 +36,10 @@ print()
 gamma = 5.0 / 3.0  # Monatomic gas
 
 # Initial conditions (Extreme blast wave from Inutsuka 2002)
-rho_L = 1.0        # Left density
-rho_R = 1.0        # Right density (same as left)
-P_L = 3000.0       # Left pressure (high)
-P_R = 1e-7         # Right pressure (very low)
+rho_L = 1.0  # Left density
+rho_R = 1.0  # Right density (same as left)
+P_L = 3000.0  # Left pressure (high)
+P_R = 1e-7  # Right pressure (very low)
 
 # Derived quantities
 u_L = P_L / ((gamma - 1) * rho_L)  # Left internal energy
@@ -95,18 +96,22 @@ dr = 1 / xs
 (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 24, 24)
 
 # Resize simulation box (tube from -xs to xs)
-model.resize_simulation_box((-xs, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Add particles - equal spacing since densities are equal
-model.add_cube_fcc_3d(dr, (-xs, -ys/2, -zs/2), (0, ys/2, zs/2))
-model.add_cube_fcc_3d(dr, (0, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.add_cube_fcc_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
+model.add_cube_fcc_3d(dr, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 N_total = model.get_total_part_count()
 print(f"Total particles: {N_total}")
 
 # Set internal energy in each region
-model.set_value_in_a_box("uint", "f64", u_L, (-xs - dr, -ys/2 - dr, -zs/2 - dr), (0, ys/2 + dr, zs/2 + dr))
-model.set_value_in_a_box("uint", "f64", u_R, (0, -ys/2 - dr, -zs/2 - dr), (xs + dr, ys/2 + dr, zs/2 + dr))
+model.set_value_in_a_box(
+    "uint", "f64", u_L, (-xs - dr, -ys / 2 - dr, -zs / 2 - dr), (0, ys / 2 + dr, zs / 2 + dr)
+)
+model.set_value_in_a_box(
+    "uint", "f64", u_R, (0, -ys / 2 - dr, -zs / 2 - dr), (xs + dr, ys / 2 + dr, zs / 2 + dr)
+)
 
 # Calculate and set particle mass
 vol_box = xs * ys * zs
@@ -158,7 +163,7 @@ model.do_vtk_dump(vtk_file, True)
 print(f"  -> Wrote final state: {vtk_file}")
 
 print("-" * 70)
-print(f"Simulation complete!")
+print("Simulation complete!")
 print(f"  Final time: {t_current:.6e}")
 print(f"  Total iterations: {iteration}")
 print(f"  VTK files: {dump_count + 1}")

@@ -242,11 +242,9 @@ wall_flags : int
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
             })
-        .def(
-            "to_json",
-            [](TConfig &self) {
-                return nlohmann::json{self}.dump(4);
-            });
+        .def("to_json", [](TConfig &self) {
+            return nlohmann::json{self}.dump(4);
+        });
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -458,8 +456,7 @@ Register_pymod(pygsphmodel) {
 
     m.def(
         "get_Model_GSPH",
-        [](ShamrockCtx &ctx, std::string vector_type, std::string kernel)
-            -> VariantGSPHModelBind {
+        [](ShamrockCtx &ctx, std::string vector_type, std::string kernel) -> VariantGSPHModelBind {
             VariantGSPHModelBind ret;
 
             if (vector_type == "f64_3" && kernel == "M4") {

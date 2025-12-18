@@ -22,124 +22,124 @@
 
 namespace {
 
-template<class vec>
-shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
-    StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
+    template<class vec>
+    shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
+        StackEntry stack_loc{};
+        shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
 
-    using namespace shamrock::patch;
+        using namespace shamrock::patch;
 
-    u64 num_obj = sched.get_rank_count();
+        u64 num_obj = sched.get_rank_count();
 
-    shamlog_debug_mpi_ln("gsph::VTKDump", "rank count =", num_obj);
+        shamlog_debug_mpi_ln("gsph::VTKDump", "rank count =", num_obj);
 
-    std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
+        std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
 
-    writer.write_points(pos, num_obj);
+        writer.write_points(pos, num_obj);
 
-    return writer;
-}
-
-void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
-
-    u64 num_obj = sched.get_rank_count();
-
-    using namespace shamrock::patch;
-
-    if (num_obj > 0) {
-        sycl::buffer<u64> idp(num_obj);
-
-        u64 ptr = 0;
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                cur_p.id_patch,
-                ptr,
-                pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
-
-        writter.write_field("patchid", idp, num_obj);
-    } else {
-        writter.write_field_no_buf<u64>("patchid");
+        return writer;
     }
-}
 
-void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
+    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+        StackEntry stack_loc{};
 
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
+        u64 num_obj = sched.get_rank_count();
 
-    if (num_obj > 0) {
-        sycl::buffer<u32> idp(num_obj);
+        using namespace shamrock::patch;
 
-        u64 ptr = 0;
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
+        if (num_obj > 0) {
+            sycl::buffer<u64> idp(num_obj);
 
-            write_with_offset_into<u32>(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                shamcomm::world_rank(),
-                ptr,
-                pdat.get_obj_cnt());
+            u64 ptr = 0;
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                using namespace shamalgs::memory;
+                using namespace shambase;
 
-            ptr += pdat.get_obj_cnt();
-        });
+                write_with_offset_into(
+                    shamsys::instance::get_compute_queue(),
+                    idp,
+                    cur_p.id_patch,
+                    ptr,
+                    pdat.get_obj_cnt());
 
-        writter.write_field("world_rank", idp, num_obj);
-    } else {
-        writter.write_field_no_buf<u32>("world_rank");
+                ptr += pdat.get_obj_cnt();
+            });
+
+            writter.write_field("patchid", idp, num_obj);
+        } else {
+            writter.write_field_no_buf<u64>("patchid");
+        }
     }
-}
 
-template<class T>
-void vtk_dump_add_compute_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    shamrock::ComputeField<T> &field,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
+    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+        StackEntry stack_loc{};
 
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
+        using namespace shamrock::patch;
+        u64 num_obj = sched.get_rank_count();
 
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
+        if (num_obj > 0) {
+            sycl::buffer<u32> idp(num_obj);
 
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
+            u64 ptr = 0;
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                using namespace shamalgs::memory;
+                using namespace shambase;
+
+                write_with_offset_into<u32>(
+                    shamsys::instance::get_compute_queue(),
+                    idp,
+                    shamcomm::world_rank(),
+                    ptr,
+                    pdat.get_obj_cnt());
+
+                ptr += pdat.get_obj_cnt();
+            });
+
+            writter.write_field("world_rank", idp, num_obj);
+        } else {
+            writter.write_field_no_buf<u32>("world_rank");
+        }
     }
-}
 
-template<class T>
-void vtk_dump_add_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    u32 field_idx,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
+    template<class T>
+    void vtk_dump_add_compute_field(
+        PatchScheduler &sched,
+        shamrock::LegacyVtkWritter &writter,
+        shamrock::ComputeField<T> &field,
+        std::string field_dump_name) {
+        StackEntry stack_loc{};
 
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
+        using namespace shamrock::patch;
+        u64 num_obj = sched.get_rank_count();
 
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
+        if (num_obj > 0) {
+            std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
 
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
+            writter.write_field(field_dump_name, field_vals, num_obj);
+        } else {
+            writter.write_field_no_buf<T>(field_dump_name);
+        }
     }
-}
+
+    template<class T>
+    void vtk_dump_add_field(
+        PatchScheduler &sched,
+        shamrock::LegacyVtkWritter &writter,
+        u32 field_idx,
+        std::string field_dump_name) {
+        StackEntry stack_loc{};
+
+        using namespace shamrock::patch;
+        u64 num_obj = sched.get_rank_count();
+
+        if (num_obj > 0) {
+            std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
+
+            writter.write_field(field_dump_name, field_vals, num_obj);
+        } else {
+            writter.write_field_no_buf<T>(field_dump_name);
+        }
+    }
 
 } // anonymous namespace
 
@@ -228,7 +228,7 @@ namespace shammodels::gsph::modules {
                         acc_P[gid] = (gamma - Tscal(1)) * rho * acc_u[gid];
                     } else {
                         // Isothermal: use cs = 1 by default
-                        acc_P[gid] = rho;  // P = cs^2 * rho with cs = 1
+                        acc_P[gid] = rho; // P = cs^2 * rho with cs = 1
                     }
                 });
             });
@@ -246,17 +246,17 @@ namespace shammodels::gsph::modules {
         // Count fields to write
         u32 fnum = 0;
         if (add_patch_world_id) {
-            fnum += 2;  // patchid and world_rank
+            fnum += 2; // patchid and world_rank
         }
-        fnum++;  // h
-        fnum++;  // v
-        fnum++;  // a
-        fnum++;  // rho
-        fnum++;  // P
-        fnum++;  // wall_flag
+        fnum++; // h
+        fnum++; // v
+        fnum++; // a
+        fnum++; // rho
+        fnum++; // P
+        fnum++; // wall_flag
 
         if (has_uint) {
-            fnum++;  // u
+            fnum++; // u
         }
 
         writter.add_field_data_section(fnum);

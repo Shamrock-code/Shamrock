@@ -32,16 +32,17 @@ Expected features at t = 0.245:
 """
 
 import os
+
 import shamrock
 
 # Simulation parameters
 gamma = 1.4
 
 # Initial conditions (Sod problem)
-rho_L = 1.0      # Left density
-rho_R = 0.125    # Right density
-P_L = 1.0        # Left pressure
-P_R = 0.1        # Right pressure
+rho_L = 1.0  # Left density
+rho_R = 0.125  # Right density
+P_L = 1.0  # Left pressure
+P_R = 0.1  # Right pressure
 
 # Derived quantities
 u_L = P_L / ((gamma - 1) * rho_L)  # Left internal energy
@@ -115,17 +116,17 @@ dr = 1 / xs
 (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 24, 24)
 
 # Resize simulation box
-model.resize_simulation_box((-xs, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Add particles
 # Left region: high density
-model.add_cube_fcc_3d(dr, (-xs, -ys/2, -zs/2), (0, ys/2, zs/2))
+model.add_cube_fcc_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
 # Right region: low density (larger spacing for equal mass)
-model.add_cube_fcc_3d(dr * fact, (0, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.add_cube_fcc_3d(dr * fact, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Set internal energy in each region
-model.set_value_in_a_box("uint", "f64", u_L, (-xs, -ys/2, -zs/2), (0, ys/2, zs/2))
-model.set_value_in_a_box("uint", "f64", u_R, (0, -ys/2, -zs/2), (xs, ys/2, zs/2))
+model.set_value_in_a_box("uint", "f64", u_L, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
+model.set_value_in_a_box("uint", "f64", u_R, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Calculate and set particle mass
 vol_b = xs * ys * zs
@@ -178,7 +179,7 @@ model.do_vtk_dump(vtk_file, True)
 print(f"  -> Wrote final state: {vtk_file}")
 
 print("-" * 70)
-print(f"Simulation complete!")
+print("Simulation complete!")
 print(f"  Final time: {t_current:.6f}")
 print(f"  Total iterations: {iteration}")
 print(f"  VTK files: {dump_count + 1}")

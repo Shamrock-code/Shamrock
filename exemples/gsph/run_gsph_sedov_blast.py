@@ -27,8 +27,10 @@ Usage:
 """
 
 import os
-import shamrock
+
 import numpy as np
+
+import shamrock
 
 print("=" * 70)
 print("GSPH Sedov-Taylor Blast Wave Benchmark")
@@ -39,9 +41,9 @@ print()
 gamma = 5.0 / 3.0  # Adiabatic index for monatomic gas
 
 # Initial conditions
-rho_0 = 1.0        # Background density
-P_0 = 1e-6         # Background pressure (effectively zero)
-E_blast = 1.0      # Total blast energy
+rho_0 = 1.0  # Background density
+P_0 = 1e-6  # Background pressure (effectively zero)
+E_blast = 1.0  # Total blast energy
 
 # Derived quantities
 u_0 = P_0 / ((gamma - 1) * rho_0)  # Background internal energy
@@ -67,14 +69,17 @@ print(f"  Resolution: {resol}^3 particles")
 print(f"  Target time: {t_target}")
 print()
 
-def sedov_shock_radius(t, E, rho_0, gamma=5/3):
-    """Analytical shock radius for Sedov-Taylor blast wave."""
-    xi_0 = 1.15167 if abs(gamma - 5/3) < 0.01 else 1.0
-    return xi_0 * (E * t**2 / rho_0)**(1/5)
 
-def sedov_post_shock_density(rho_0, gamma=5/3):
+def sedov_shock_radius(t, E, rho_0, gamma=5 / 3):
+    """Analytical shock radius for Sedov-Taylor blast wave."""
+    xi_0 = 1.15167 if abs(gamma - 5 / 3) < 0.01 else 1.0
+    return xi_0 * (E * t**2 / rho_0) ** (1 / 5)
+
+
+def sedov_post_shock_density(rho_0, gamma=5 / 3):
     """Post-shock density from Rankine-Hugoniot conditions."""
     return rho_0 * (gamma + 1) / (gamma - 1)
+
 
 # Create output directory
 os.makedirs(output_dir, exist_ok=True)
@@ -107,10 +112,10 @@ dr = 1 / xs
 (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, resol, resol)
 
 # Resize simulation box (centered at origin)
-model.resize_simulation_box((-xs/2, -ys/2, -zs/2), (xs/2, ys/2, zs/2))
+model.resize_simulation_box((-xs / 2, -ys / 2, -zs / 2), (xs / 2, ys / 2, zs / 2))
 
 # Add uniform particle distribution
-model.add_cube_fcc_3d(dr, (-xs/2, -ys/2, -zs/2), (xs/2, ys/2, zs/2))
+model.add_cube_fcc_3d(dr, (-xs / 2, -ys / 2, -zs / 2), (xs / 2, ys / 2, zs / 2))
 
 N_total = model.get_total_part_count()
 print(f"Total particles: {N_total}")
@@ -122,9 +127,13 @@ model.set_particle_mass(pmass)
 print(f"Particle mass: {pmass:.6e}")
 
 # Set background internal energy (cold gas)
-model.set_value_in_a_box("uint", "f64", u_0,
-                         (-xs/2 - dr, -ys/2 - dr, -zs/2 - dr),
-                         (xs/2 + dr, ys/2 + dr, zs/2 + dr))
+model.set_value_in_a_box(
+    "uint",
+    "f64",
+    u_0,
+    (-xs / 2 - dr, -ys / 2 - dr, -zs / 2 - dr),
+    (xs / 2 + dr, ys / 2 + dr, zs / 2 + dr),
+)
 
 # Deposit blast energy in central region
 # The blast region should be small (few particle spacings)
@@ -132,7 +141,7 @@ r_blast = 3 * dr  # Blast radius
 print(f"Blast radius: {r_blast:.4f}")
 
 # Estimate number of particles in blast region
-V_blast = (4/3) * np.pi * r_blast**3
+V_blast = (4 / 3) * np.pi * r_blast**3
 N_blast_estimate = int(V_blast * N_total / V_box)
 if N_blast_estimate < 1:
     N_blast_estimate = 1
@@ -144,9 +153,9 @@ print(f"Blast internal energy: {u_blast:.4e}")
 
 # Set blast energy using box approximation (sphere would be better but not available)
 # Use a small cube centered at origin
-model.set_value_in_a_box("uint", "f64", u_blast,
-                         (-r_blast, -r_blast, -r_blast),
-                         (r_blast, r_blast, r_blast))
+model.set_value_in_a_box(
+    "uint", "f64", u_blast, (-r_blast, -r_blast, -r_blast), (r_blast, r_blast, r_blast)
+)
 
 # Set CFL conditions
 model.set_cfl_cour(0.3)
@@ -191,7 +200,7 @@ model.do_vtk_dump(vtk_file, True)
 print(f"  -> Wrote final state: {vtk_file}")
 
 print("-" * 70)
-print(f"Simulation complete!")
+print("Simulation complete!")
 print(f"  Final time: {t_current:.6f}")
 print(f"  Total iterations: {iteration}")
 

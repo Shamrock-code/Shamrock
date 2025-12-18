@@ -28,8 +28,8 @@
 #include "shambackends/math.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
-#include "shamtree/TreeTraversal.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/TreeTraversal.hpp"
 
 namespace shammodels::gsph {
 
@@ -72,8 +72,8 @@ namespace shammodels::gsph {
         }
 
         // Constants (matching reference code)
-        const Tscal gamma2 = Tscal(1) + gamma;  // gamma + 1
-        const Tscal gamma1 = Tscal(0.5) * gamma2 / gamma;  // (gamma + 1) / (2 * gamma)
+        const Tscal gamma2 = Tscal(1) + gamma;            // gamma + 1
+        const Tscal gamma1 = Tscal(0.5) * gamma2 / gamma; // (gamma + 1) / (2 * gamma)
 
         // Specific volumes
         const Tscal V_L = Tscal(1) / rho_L;
@@ -85,8 +85,8 @@ namespace shammodels::gsph {
 
         // Initial guess for pstar (from reference code)
         Tscal pstar_guess = P_R - P_L - cr * (u_R - u_L);
-        pstar_guess = P_L + pstar_guess * cl / (cl + cr);
-        pstar_guess = sycl::max(pstar_guess, smallp);
+        pstar_guess       = P_L + pstar_guess * cl / (cl + cr);
+        pstar_guess       = sycl::max(pstar_guess, smallp);
 
         // Newton-Raphson iteration
         Tscal pstar = pstar_guess;
@@ -96,21 +96,21 @@ namespace shammodels::gsph {
 
             // Left wave impedance
             Tscal w_L = Tscal(1) + gamma1 * (pstar - P_L) / P_L;
-            w_L = cl * sycl::sqrt(sycl::max(w_L, Tscal(0.01)));
+            w_L       = cl * sycl::sqrt(sycl::max(w_L, Tscal(0.01)));
 
             // Right wave impedance
             Tscal w_R = Tscal(1) + gamma1 * (pstar - P_R) / P_R;
-            w_R = cr * sycl::sqrt(sycl::max(w_R, Tscal(0.01)));
+            w_R       = cr * sycl::sqrt(sycl::max(w_R, Tscal(0.01)));
 
             // Left derivative
-            Tscal z_L = Tscal(4) * V_L * w_L * w_L;
+            Tscal z_L     = Tscal(4) * V_L * w_L * w_L;
             Tscal denom_L = z_L - gamma2 * (pstar - P_L);
-            z_L = -z_L * w_L / (denom_L + Tscal(1e-30));
+            z_L           = -z_L * w_L / (denom_L + Tscal(1e-30));
 
             // Right derivative
-            Tscal z_R = Tscal(4) * V_R * w_R * w_R;
+            Tscal z_R     = Tscal(4) * V_R * w_R * w_R;
             Tscal denom_R = z_R - gamma2 * (pstar - P_R);
-            z_R = z_R * w_R / (denom_R + Tscal(1e-30));
+            z_R           = z_R * w_R / (denom_R + Tscal(1e-30));
 
             // Intermediate velocities
             const Tscal ustar_L = u_L - (pstar - P_L) / w_L;
@@ -119,7 +119,7 @@ namespace shammodels::gsph {
             // Newton-Raphson update
             Tscal denom = z_R - z_L;
             if (sycl::fabs(denom) < Tscal(1e-30)) {
-                break;  // Avoid division by zero
+                break; // Avoid division by zero
             }
             pstar = pstar + (ustar_R - ustar_L) * (z_L * z_R) / denom;
             pstar = sycl::max(smallp, pstar);
@@ -132,15 +132,15 @@ namespace shammodels::gsph {
 
         // Recalculate wave impedances with final pstar
         Tscal w_L = Tscal(1) + gamma1 * (pstar - P_L) / P_L;
-        w_L = cl * sycl::sqrt(sycl::max(w_L, Tscal(0.01)));
+        w_L       = cl * sycl::sqrt(sycl::max(w_L, Tscal(0.01)));
 
         Tscal w_R = Tscal(1) + gamma1 * (pstar - P_R) / P_R;
-        w_R = cr * sycl::sqrt(sycl::max(w_R, Tscal(0.01)));
+        w_R       = cr * sycl::sqrt(sycl::max(w_R, Tscal(0.01)));
 
         // Calculate averaged ustar
         const Tscal ustar_L = u_L - (pstar - P_L) / w_L;
         const Tscal ustar_R = u_R + (pstar - P_R) / w_R;
-        Tscal ustar = Tscal(0.5) * (ustar_L + ustar_R);
+        Tscal ustar         = Tscal(0.5) * (ustar_L + ustar_R);
 
         // Final validation
         if (!sycl::isfinite(pstar)) {
@@ -171,16 +171,18 @@ namespace shammodels::gsph {
 
         // Input validation
         const Tscal eps = Tscal(1e-30);
-        rho_L = sycl::max(rho_L, eps);
-        rho_R = sycl::max(rho_R, eps);
-        P_L = sycl::max(P_L, eps);
-        P_R = sycl::max(P_R, eps);
-        cs_L = sycl::max(cs_L, Tscal(1e-10));
-        cs_R = sycl::max(cs_R, Tscal(1e-10));
+        rho_L           = sycl::max(rho_L, eps);
+        rho_R           = sycl::max(rho_R, eps);
+        P_L             = sycl::max(P_L, eps);
+        P_R             = sycl::max(P_R, eps);
+        cs_L            = sycl::max(cs_L, Tscal(1e-10));
+        cs_R            = sycl::max(cs_R, Tscal(1e-10));
 
         // Guard against NaN velocities
-        if (!sycl::isfinite(u_L)) u_L = Tscal(0);
-        if (!sycl::isfinite(u_R)) u_R = Tscal(0);
+        if (!sycl::isfinite(u_L))
+            u_L = Tscal(0);
+        if (!sycl::isfinite(u_R))
+            u_R = Tscal(0);
 
         // PVRS estimate for p*
         Tscal p_pvrs = Tscal(0.5) * (P_L + P_R)
@@ -188,8 +190,10 @@ namespace shammodels::gsph {
         Tscal p_star = sycl::max(p_pvrs, Tscal(0));
 
         // Wave speed estimates
-        Tscal q_L = (p_star > P_L) ? sycl::sqrt(Tscal(1) + Tscal(1.2) * (p_star / P_L - Tscal(1))) : Tscal(1);
-        Tscal q_R = (p_star > P_R) ? sycl::sqrt(Tscal(1) + Tscal(1.2) * (p_star / P_R - Tscal(1))) : Tscal(1);
+        Tscal q_L = (p_star > P_L) ? sycl::sqrt(Tscal(1) + Tscal(1.2) * (p_star / P_L - Tscal(1)))
+                                   : Tscal(1);
+        Tscal q_R = (p_star > P_R) ? sycl::sqrt(Tscal(1) + Tscal(1.2) * (p_star / P_R - Tscal(1)))
+                                   : Tscal(1);
 
         Tscal S_L = u_L - cs_L * q_L;
         Tscal S_R = u_R + cs_R * q_R;
@@ -199,8 +203,10 @@ namespace shammodels::gsph {
                        / (rho_L * (S_L - u_L) - rho_R * (S_R - u_R) + Tscal(1e-30));
 
         // HLLC pressure
-        Tscal p_hllc = Tscal(0.5) * (P_L + P_R)
-                       + Tscal(0.5) * (rho_L * (S_L - u_L) * (S_star - u_L) + rho_R * (S_R - u_R) * (S_star - u_R));
+        Tscal p_hllc
+            = Tscal(0.5) * (P_L + P_R)
+              + Tscal(0.5)
+                    * (rho_L * (S_L - u_L) * (S_star - u_L) + rho_R * (S_R - u_R) * (S_star - u_R));
         p_hllc = sycl::max(p_hllc, Tscal(1e-10));
 
         // Final validation
@@ -271,9 +277,11 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
     shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
-    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after compute_eos_fields!)
+    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after
+    // compute_eos_fields!)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
-    shamrock::solvergraph::Field<Tscal> &soundspeed_field = shambase::get_check_ref(storage.soundspeed);
+    shamrock::solvergraph::Field<Tscal> &soundspeed_field
+        = shambase::get_check_ref(storage.soundspeed);
 
     // Iterate over all non-empty patches
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -282,12 +290,13 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         // Get buffers for local and ghost data
         sham::DeviceBuffer<Tvec> &buf_xyz
             = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
-        sham::DeviceBuffer<Tvec> &buf_axyz    = pdat.get_field_buf_ref<Tvec>(iaxyz);
-        sham::DeviceBuffer<Tvec> &buf_vxyz    = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sham::DeviceBuffer<Tscal> &buf_hpart  = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sham::DeviceBuffer<Tscal> &buf_omega  = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         // CRITICAL: Use pressure and soundspeed from storage (sized for local + ghost!)
-        sham::DeviceBuffer<Tscal> &buf_pressure = pressure_field.get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_pressure
+            = pressure_field.get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs = soundspeed_field.get_field(cur_p.id_patch).get_buf();
 
         // Get neighbor cache for this patch
@@ -310,15 +319,15 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         auto density_acc = buf_density.get_read_access(depends_list);
         // Use pressure and soundspeed from storage (includes ghosts!)
         auto pressure_acc = buf_pressure.get_read_access(depends_list);
-        auto cs_acc      = buf_cs.get_read_access(depends_list);
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
+        auto cs_acc       = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs   = pcache.get_read_access(depends_list);
 
         // Optional: internal energy
         sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
-        Tscal *duint_acc = nullptr;
+        Tscal *duint_acc                         = nullptr;
         if (has_uint) {
             buf_duint_ptr = &pdat.get_field_buf_ref<Tscal>(iduint);
-            duint_acc = buf_duint_ptr->get_write_access(depends_list);
+            duint_acc     = buf_duint_ptr->get_write_access(depends_list);
         }
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -351,13 +360,15 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                 // Use SPH-summation density (from compute_omega, communicated to ghosts)
                 const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Use pressure and soundspeed from storage (already computed for all particles including ghosts)
-                const Tscal P_a = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+                // Use pressure and soundspeed from storage (already computed for all particles
+                // including ghosts)
+                const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
                 const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
 
                 // Loop over neighbors using shamrock's neighbor cache
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    if (id_a == id_b) return;  // Skip self
+                    if (id_a == id_b)
+                        return; // Skip self
 
                     // Distance and kernel support check
                     const Tvec dr    = xyz_a - xyz[id_b];
@@ -380,7 +391,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     const Tscal P_b = sycl::max(pressure_acc[id_b], Tscal(1e-30));
 
                     // Unit vector from a to b (handles rab = 0 gracefully)
-                    const Tscal rab_inv = sham::inv_sat_positive(rab);
+                    const Tscal rab_inv  = sham::inv_sat_positive(rab);
                     const Tvec r_ab_unit = dr * rab_inv;
 
                     // Project velocities onto pair axis for 1D Riemann problem
@@ -393,26 +404,34 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     //   - Along this axis, b is at "left" (lower s), a is at "right" (higher s)
                     //   - Left state = neighbor b, Right state = current a
                     auto [p_star, v_star] = gsph::riemann_iterative<Tscal>(
-                        rho_b, u_b_proj, P_b,   // Left = neighbor (at lower s along r_ab_unit)
-                        rho_a, u_a_proj, P_a,   // Right = current (at higher s along r_ab_unit)
-                        gamma, tol, max_iter);
+                        rho_b,
+                        u_b_proj,
+                        P_b, // Left = neighbor (at lower s along r_ab_unit)
+                        rho_a,
+                        u_a_proj,
+                        P_a, // Right = current (at higher s along r_ab_unit)
+                        gamma,
+                        tol,
+                        max_iter);
 
                     // Limit p_star to prevent excessive shock forces
                     // Maximum p_star is limited to a multiple of the average pressure
-                    const Tscal p_avg = Tscal(0.5) * (P_a + P_b);
+                    const Tscal p_avg      = Tscal(0.5) * (P_a + P_b);
                     const Tscal p_star_max = Tscal(10.0) * sycl::max(p_avg, sycl::max(P_a, P_b));
-                    p_star = sycl::min(p_star, p_star_max);
+                    p_star                 = sycl::min(p_star, p_star_max);
 
                     // Kernel gradients
                     const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     // GSPH momentum equation (Cha & Whitworth 2003)
-                    // f = dW_a * (m_b * p* / (rho_a^2 * omega_a)) + dW_b * (m_b * p* / (rho_b^2 * omega_b))
-                    // dv_a/dt = -sum_b f
+                    // f = dW_a * (m_b * p* / (rho_a^2 * omega_a)) + dW_b * (m_b * p* / (rho_b^2 *
+                    // omega_b)) dv_a/dt = -sum_b f
                     const Tscal rho_a_sq = rho_a * rho_a;
                     const Tscal rho_b_sq = rho_b * rho_b;
-                    const Tscal coeff = pmass * p_star * (Fab_a / (omega_a * rho_a_sq) + Fab_b / (omega_b * rho_b_sq));
+                    const Tscal coeff
+                        = pmass * p_star
+                          * (Fab_a / (omega_a * rho_a_sq) + Fab_b / (omega_b * rho_b_sq));
 
                     sum_axyz -= coeff * r_ab_unit;
 
@@ -429,8 +448,8 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                 // Maximum acceleration is based on expected shock dynamics
                 // For Sod tube: max |a| ~ 10 * max(cs^2) / h ~ 10 * 1.4 / 0.004 ~ 3500
                 // Use a generous limit to allow shocks while preventing instabilities
-                const Tscal max_acc = Tscal(1e6);  // Large but finite limit
-                Tscal acc_mag = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
+                const Tscal max_acc = Tscal(1e6); // Large but finite limit
+                Tscal acc_mag       = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
                 if (acc_mag > max_acc) {
                     sum_axyz *= max_acc / acc_mag;
                 }
@@ -438,7 +457,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                 // Clamp du/dt to prevent energy blow-up
                 if (do_energy) {
                     const Tscal max_dudt = Tscal(1e6);
-                    sum_du_a = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
+                    sum_du_a             = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
                 }
 
                 // Write accumulated derivatives
@@ -502,21 +521,24 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
     shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
-    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after compute_eos_fields!)
+    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after
+    // compute_eos_fields!)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
-    shamrock::solvergraph::Field<Tscal> &soundspeed_field = shambase::get_check_ref(storage.soundspeed);
+    shamrock::solvergraph::Field<Tscal> &soundspeed_field
+        = shambase::get_check_ref(storage.soundspeed);
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
         sham::DeviceBuffer<Tvec> &buf_xyz
             = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
-        sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field_buf_ref<Tvec>(iaxyz);
-        sham::DeviceBuffer<Tvec> &buf_vxyz     = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
-        sham::DeviceBuffer<Tscal> &buf_hpart   = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
-        sham::DeviceBuffer<Tscal> &buf_omega   = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         // CRITICAL: Use pressure and soundspeed from storage (sized for local + ghost!)
-        sham::DeviceBuffer<Tscal> &buf_pressure = pressure_field.get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_pressure
+            = pressure_field.get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs = soundspeed_field.get_field(cur_p.id_patch).get_buf();
 
         tree::ObjectCache &pcache
@@ -536,14 +558,14 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
         auto density_acc = buf_density.get_read_access(depends_list);
         // Use pressure and soundspeed from storage (includes ghosts!)
         auto pressure_acc = buf_pressure.get_read_access(depends_list);
-        auto cs_acc      = buf_cs.get_read_access(depends_list);
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
+        auto cs_acc       = buf_cs.get_read_access(depends_list);
+        auto ploop_ptrs   = pcache.get_read_access(depends_list);
 
         sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
-        Tscal *duint_acc = nullptr;
+        Tscal *duint_acc                         = nullptr;
         if (has_uint) {
             buf_duint_ptr = &pdat.get_field_buf_ref<Tscal>(iduint);
-            duint_acc = buf_duint_ptr->get_write_access(depends_list);
+            duint_acc     = buf_duint_ptr->get_write_access(depends_list);
         }
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -571,12 +593,14 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                 // Use SPH-summation density (from compute_omega, communicated to ghosts)
                 const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Use pressure and soundspeed from storage (already computed for all particles including ghosts)
-                const Tscal P_a = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+                // Use pressure and soundspeed from storage (already computed for all particles
+                // including ghosts)
+                const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
                 const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
 
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    if (id_a == id_b) return;
+                    if (id_a == id_b)
+                        return;
 
                     const Tvec dr    = xyz_a - xyz[id_b];
                     const Tscal rab2 = sycl::dot(dr, dr);
@@ -594,10 +618,10 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                     const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
 
                     // Use pressure and soundspeed from storage (includes ghosts!)
-                    const Tscal P_b = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+                    const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
                     const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
 
-                    const Tscal rab_inv = sham::inv_sat_positive(rab);
+                    const Tscal rab_inv  = sham::inv_sat_positive(rab);
                     const Tvec r_ab_unit = dr * rab_inv;
 
                     const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
@@ -607,20 +631,28 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                     // IMPORTANT: Convention follows reference (g_fluid_force.cpp):
                     //   - Left state = neighbor b, Right state = current a
                     auto [p_star, v_star] = gsph::riemann_hllc<Tscal>(
-                        rho_b, u_b_proj, P_b, cs_b,   // Left = neighbor
-                        rho_a, u_a_proj, P_a, cs_a);  // Right = current
+                        rho_b,
+                        u_b_proj,
+                        P_b,
+                        cs_b, // Left = neighbor
+                        rho_a,
+                        u_a_proj,
+                        P_a,
+                        cs_a); // Right = current
 
                     // Limit p_star to prevent excessive shock forces
-                    const Tscal p_avg = Tscal(0.5) * (P_a + P_b);
+                    const Tscal p_avg      = Tscal(0.5) * (P_a + P_b);
                     const Tscal p_star_max = Tscal(10.0) * sycl::max(p_avg, sycl::max(P_a, P_b));
-                    p_star = sycl::min(p_star, p_star_max);
+                    p_star                 = sycl::min(p_star, p_star_max);
 
                     const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
                     const Tscal rho_a_sq = rho_a * rho_a;
                     const Tscal rho_b_sq = rho_b * rho_b;
-                    const Tscal coeff = pmass * p_star * (Fab_a / (omega_a * rho_a_sq) + Fab_b / (omega_b * rho_b_sq));
+                    const Tscal coeff
+                        = pmass * p_star
+                          * (Fab_a / (omega_a * rho_a_sq) + Fab_b / (omega_b * rho_b_sq));
 
                     sum_axyz -= coeff * r_ab_unit;
 
@@ -633,7 +665,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
 
                 // Clamp acceleration to prevent numerical blow-up at shock fronts
                 const Tscal max_acc = Tscal(1e6);
-                Tscal acc_mag = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
+                Tscal acc_mag       = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
                 if (acc_mag > max_acc) {
                     sum_axyz *= max_acc / acc_mag;
                 }
@@ -641,7 +673,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                 // Clamp du/dt to prevent energy blow-up
                 if (do_energy) {
                     const Tscal max_dudt = Tscal(1e6);
-                    sum_du_a = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
+                    sum_du_a             = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
                 }
 
                 axyz[id_a] = sum_axyz;

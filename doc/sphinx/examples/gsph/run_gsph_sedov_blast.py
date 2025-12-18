@@ -47,16 +47,16 @@ print()
 gamma = 5.0 / 3.0  # Adiabatic index for monatomic gas
 
 # Initial conditions
-rho_0 = 1.0        # Background density
-P_0 = 1e-6         # Background pressure (effectively zero)
-E_blast = 1.0      # Total blast energy
+rho_0 = 1.0  # Background density
+P_0 = 1e-6  # Background pressure (effectively zero)
+E_blast = 1.0  # Total blast energy
 
 # Derived quantities
 u_0 = P_0 / ((gamma - 1) * rho_0)  # Background internal energy
 
 # Resolution
 N_per_dim = 50  # Particles per dimension
-L_box = 1.0     # Box size
+L_box = 1.0  # Box size
 
 # Sedov solution parameters
 xi_0 = 1.15167  # Dimensionless shock position for gamma = 5/3
@@ -68,14 +68,17 @@ print(f"  gamma = {gamma:.4f}")
 print(f"  Resolution: {N_per_dim}^3 particles")
 print()
 
-def sedov_shock_radius(t, E, rho_0, gamma=5/3):
-    """Analytical shock radius for Sedov-Taylor blast wave."""
-    xi_0 = 1.15167 if abs(gamma - 5/3) < 0.01 else 1.0  # Approximate
-    return xi_0 * (E * t**2 / rho_0)**(1/5)
 
-def sedov_post_shock_density(rho_0, gamma=5/3):
+def sedov_shock_radius(t, E, rho_0, gamma=5 / 3):
+    """Analytical shock radius for Sedov-Taylor blast wave."""
+    xi_0 = 1.15167 if abs(gamma - 5 / 3) < 0.01 else 1.0  # Approximate
+    return xi_0 * (E * t**2 / rho_0) ** (1 / 5)
+
+
+def sedov_post_shock_density(rho_0, gamma=5 / 3):
     """Post-shock density from Rankine-Hugoniot conditions."""
     return rho_0 * (gamma + 1) / (gamma - 1)
+
 
 # Expected API when Python bindings are complete:
 """
@@ -174,6 +177,7 @@ print()
 # Try to import shamrock
 try:
     import shamrock
+
     print("Shamrock module imported successfully")
     print("Note: GSPH Model bindings pending implementation")
 except ImportError as e:

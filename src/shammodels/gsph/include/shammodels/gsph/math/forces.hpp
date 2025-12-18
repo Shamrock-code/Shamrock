@@ -197,7 +197,7 @@ namespace shammodels::gsph {
     template<class Tscal>
     inline Tscal rho_from_h(Tscal m, Tscal h, Tscal hfactd) {
         Tscal h_inv = Tscal{1} / h;
-        return m * hfactd * h_inv * h_inv * h_inv;  // Assuming 3D
+        return m * hfactd * h_inv * h_inv * h_inv; // Assuming 3D
     }
 
 } // namespace shammodels::gsph

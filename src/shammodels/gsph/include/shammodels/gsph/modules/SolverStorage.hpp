@@ -127,7 +127,7 @@ namespace shammodels::gsph {
             f64 interface = 0;
             f64 neighbors = 0;
             f64 io        = 0;
-            f64 riemann   = 0;  ///< Time spent in Riemann solver
+            f64 riemann   = 0; ///< Time spent in Riemann solver
 
             void reset() { *this = {}; }
         } timings_details;

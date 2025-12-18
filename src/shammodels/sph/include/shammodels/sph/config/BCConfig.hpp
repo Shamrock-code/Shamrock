@@ -88,8 +88,36 @@ struct shammodels::sph::BCConfig {
         Tscal shear_speed;
     };
 
+    /**
+     * @brief Wall boundary condition with mirror particles
+     *
+     * Creates "wall particles" (not to be confused with "ghost particles" used for MPI)
+     * beyond the domain boundaries to provide proper neighbor support for particles
+     * near walls. These particles mirror the state of boundary particles with
+     * the same velocity (inflow-style boundary).
+     *
+     * Reference: Similar to ghost particle approach in sphcode (sr_sod.cpp)
+     */
+    struct Wall {
+        /**
+         * @brief Number of wall particle layers beyond each boundary
+         * More layers = better neighbor support but more particles
+         * Typically 2-6 layers (2*Rkern smoothing lengths worth)
+         */
+        u32 num_layers = 4;
+
+        /**
+         * @brief Which boundaries have walls (bit flags)
+         * Bit 0: -x wall, Bit 1: +x wall
+         * Bit 2: -y wall, Bit 3: +y wall
+         * Bit 4: -z wall, Bit 5: +z wall
+         * Default: all walls enabled (0x3F = 0b111111)
+         */
+        u32 wall_flags = 0x3F;
+    };
+
     /// Variant of all types of artificial viscosity possible
-    using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
+    using Variant = std::variant<Free, Periodic, ShearingPeriodic, Wall>;
 
     /// The actual configuration (default to free boundaries)
     Variant config = Free{};
@@ -113,10 +141,20 @@ struct shammodels::sph::BCConfig {
     }
 
     /**
+     * @brief Set the boundary condition to wall boundaries
+     *
+     * @param num_layers Number of wall particle layers (default 4)
+     * @param wall_flags Which walls to enable (default all = 0x3F)
+     */
+    inline void set_wall(u32 num_layers = 4, u32 wall_flags = 0x3F) {
+        config = Wall{num_layers, wall_flags};
+    }
+
+    /**
      * @brief Prints the current boundary condition configuration to the logger.
      *
-     * The function logs the type of boundary condition (free, periodic, or shearing periodic)
-     * and the relevant parameters for the shearing periodic case.
+     * The function logs the type of boundary condition (free, periodic, shearing periodic, or wall)
+     * and the relevant parameters for each case.
      */
     inline void print_status() {
         logger::raw_ln("--- Bondaries config");
@@ -130,6 +168,10 @@ struct shammodels::sph::BCConfig {
             logger::raw_ln("  shear_base   =", v->shear_base);
             logger::raw_ln("  shear_dir   =", v->shear_dir);
             logger::raw_ln("  shear_speed =", v->shear_speed);
+        } else if (Wall *v = std::get_if<Wall>(&config)) {
+            logger::raw_ln("  Config Type : Wall boundaries (mirror particles)");
+            logger::raw_ln("  num_layers  =", v->num_layers);
+            logger::raw_ln("  wall_flags  =", v->wall_flags, "(hex)");
         } else {
             shambase::throw_unimplemented();
         }
@@ -155,6 +197,7 @@ namespace shammodels::sph {
         using Free             = typename T::Free;
         using Periodic         = typename T::Periodic;
         using ShearingPeriodic = typename T::ShearingPeriodic;
+        using Wall             = typename T::Wall;
 
         // Write the config type into the JSON object
         if (const Free *v = std::get_if<Free>(&p.config)) {
@@ -172,6 +215,12 @@ namespace shammodels::sph {
                 {"shear_base", v->shear_base},
                 {"shear_dir", v->shear_dir},
                 {"shear_speed", v->shear_speed},
+            };
+        } else if (const Wall *v = std::get_if<Wall>(&p.config)) {
+            j = {
+                {"bc_type", "wall"},
+                {"num_layers", v->num_layers},
+                {"wall_flags", v->wall_flags},
             };
         } else {
             shambase::throw_unimplemented();
@@ -192,7 +241,7 @@ namespace shammodels::sph {
 
         // Check if the JSON object contains the "bc_type" field
         if (!j.contains("bc_type")) {
-            shambase::throw_with_loc<std::runtime_error>("no field eos_type is found in this json");
+            shambase::throw_with_loc<std::runtime_error>("no field bc_type is found in this json");
         }
 
         // Read the config type from the JSON object
@@ -202,6 +251,7 @@ namespace shammodels::sph {
         using Free             = typename T::Free;
         using Periodic         = typename T::Periodic;
         using ShearingPeriodic = typename T::ShearingPeriodic;
+        using Wall             = typename T::Wall;
 
         // Set the BCConfig based on the config type
         if (bc_type == "free") {
@@ -213,8 +263,12 @@ namespace shammodels::sph {
                 j.at("shear_base").get<i32_3>(),
                 j.at("shear_dir").get<i32_3>(),
                 j.at("speed").get<Tscal>());
+        } else if (bc_type == "wall") {
+            u32 num_layers = j.at("num_layers").get<u32>();
+            u32 wall_flags = j.at("wall_flags").get<u32>();
+            p.set_wall(num_layers, wall_flags);
         } else {
-            shambase::throw_unimplemented("wtf !");
+            shambase::throw_unimplemented("Unknown boundary type: " + bc_type);
         }
     }
 

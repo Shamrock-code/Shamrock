@@ -96,6 +96,17 @@ namespace BBAA {
     }
 
     template<>
+    inline bool iscellb_inside_a<u64_3>(
+        u64_3 pos_min_cella, u64_3 pos_max_cella, u64_3 pos_min_cellb, u64_3 pos_max_cellb) {
+        return (
+            (pos_min_cella.x() <= pos_min_cellb.x()) && (pos_min_cellb.x() < pos_max_cellb.x())
+            && (pos_max_cellb.x() <= pos_max_cella.x()) && (pos_min_cella.y() <= pos_min_cellb.y())
+            && (pos_min_cellb.y() < pos_max_cellb.y()) && (pos_max_cellb.y() <= pos_max_cella.y())
+            && (pos_min_cella.z() <= pos_min_cellb.z()) && (pos_min_cellb.z() < pos_max_cellb.z())
+            && (pos_max_cellb.z() <= pos_max_cella.z()));
+    }
+
+    template<>
     inline bool iscellb_inside_a<f32_3>(
         f32_3 pos_min_cella, f32_3 pos_max_cella, f32_3 pos_min_cellb, f32_3 pos_max_cellb) {
         return (

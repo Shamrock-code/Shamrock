@@ -182,7 +182,7 @@ namespace shamrock::scheduler {
                         for (u64 idxptch : idvec) {
                             shamrock::patch::Patch &p = plist[idxptch];
 
-                            bool is_inside = BBAA::iscellb_inside_a<u32_3>(
+                            bool is_inside = BBAA::iscellb_inside_a<u64_3>(
                                 {curr.coord_min[0], curr.coord_min[1], curr.coord_min[2]},
                                 {curr.coord_max[0], curr.coord_max[1], curr.coord_max[2]},
                                 {p.coord_min[0], p.coord_min[1], p.coord_min[2]},
@@ -224,7 +224,7 @@ namespace shamrock::scheduler {
             }
         } else if (plist.size() == 1) {
 
-            patch::PatchCoord patch_coord;
+            patch::PatchCoord<3> patch_coord;
             patch_coord.coord_max[0] = max_val_1axis;
             patch_coord.coord_max[1] = max_val_1axis;
             patch_coord.coord_max[2] = max_val_1axis;

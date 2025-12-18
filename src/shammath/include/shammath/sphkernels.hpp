@@ -1263,7 +1263,8 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        /// Using same hfact as M4 for comparable neighbor counts
+        inline static constexpr Tscal hfactd = 1.2;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 27. / 32.;

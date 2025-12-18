@@ -1,0 +1,78 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file SolverConfig.cpp
+ * @author Guo
+ * @brief Implementation of GSPH solver configuration methods
+ */
+
+#include "shammodels/gsph/SolverConfig.hpp"
+#include "shammath/sphkernels.hpp"
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
+    shamrock::patch::PatchDataLayerLayout &pdl) {
+
+    // Position
+    pdl.add_field<Tvec>("xyz", 1);
+
+    // Velocity
+    pdl.add_field<Tvec>("vxyz", 1);
+
+    // Acceleration
+    pdl.add_field<Tvec>("axyz", 1);
+
+    // Smoothing length
+    pdl.add_field<Tscal>("hpart", 1);
+
+    // Wall particle flag (0 = regular, 1 = wall particle)
+    // Wall particles are used for wall boundary conditions and are not time-integrated
+    pdl.add_field<u32>("wall_flag", 1);
+
+    // Internal energy (for adiabatic EOS)
+    if (has_field_uint()) {
+        pdl.add_field<Tscal>("uint", 1);
+        pdl.add_field<Tscal>("duint", 1);
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
+    shamrock::patch::PatchDataLayerLayout &ghost_layout) {
+
+    // Velocity (needed for Riemann solver)
+    ghost_layout.add_field<Tvec>("vxyz", 1);
+
+    // Smoothing length
+    ghost_layout.add_field<Tscal>("hpart", 1);
+
+    // Omega (grad-h correction)
+    ghost_layout.add_field<Tscal>("omega", 1);
+
+    // Density (computed via SPH summation)
+    ghost_layout.add_field<Tscal>("density", 1);
+
+    // Wall particle flag (for identifying wall particles in ghost data)
+    ghost_layout.add_field<u32>("wall_flag", 1);
+
+    // Internal energy (for adiabatic EOS)
+    if (has_field_uint()) {
+        ghost_layout.add_field<Tscal>("uint", 1);
+    }
+}
+
+// Explicit template instantiations
+using namespace shammath;
+template class shammodels::gsph::SolverConfig<f64_3, M4>;
+template class shammodels::gsph::SolverConfig<f64_3, M6>;
+template class shammodels::gsph::SolverConfig<f64_3, M8>;
+template class shammodels::gsph::SolverConfig<f64_3, C2>;
+template class shammodels::gsph::SolverConfig<f64_3, C4>;
+template class shammodels::gsph::SolverConfig<f64_3, C6>;

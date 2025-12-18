@@ -103,8 +103,12 @@ namespace sham {
          * @brief Destructor
          *
          * Copies the data from the mirror back to the original buffer.
+         * We must wait for the copy to complete before the mirror is destroyed.
          */
-        ~BufferMirror() { mirrored_buffer.copy_from(mirror); }
+        ~BufferMirror() {
+            mirrored_buffer.copy_from(mirror);
+            mirrored_buffer.synchronize();
+        }
     };
 
 } // namespace sham

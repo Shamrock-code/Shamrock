@@ -46,8 +46,15 @@ namespace shammodels::sph {
             Tscal shear_value;
             Tscal shear_speed;
         };
+        /**
+         * @brief Wall boundary configuration for ghost handling
+         *
+         * For wall boundaries, ghost communication is handled like Free boundaries,
+         * but wall particles (created manually) provide neighbor support at boundaries.
+         */
+        struct Wall {};
 
-        using Variant = std::variant<Free, Periodic, ShearingPeriodic>;
+        using Variant = std::variant<Free, Periodic, ShearingPeriodic, Wall>;
     };
 
     template<class vec>

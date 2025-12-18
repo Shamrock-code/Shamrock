@@ -14,9 +14,9 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 multx = 1
 multy = 1
 multz = 1
-
-cell_size = 1 << 4  # refinement is limited to cell_size = 2
-base = 32
+max_amr_lev = 2
+cell_size = 1 << max_amr_lev  # refinement is limited to cell_size = 2
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -28,12 +28,22 @@ cfg.set_boundary_condition("x", "reflective")
 cfg.set_boundary_condition("y", "reflective")
 cfg.set_boundary_condition("z", "reflective")
 cfg.set_riemann_solver_hllc()
-smooth_crit = 0.05
-cfg.set_amr_mode_slope_based(crit_smooth=smooth_crit)
+smooth_crit = 0.3
+# cfg.set_amr_mode_slope_based(crit_smooth=smooth_crit)
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 mass_crit = 1e-6 * 5 * 2 * 2
 # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+
+
+err_min = 0.01
+err_max = 0.02
+# cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
+
+
+crit_refin = 0.1
+crit_coars = 0.2
+cfg.set_amr_mode_second_order_derivative_based(crit_min=crit_refin, crit_max=crit_coars)
 model.set_solver_config(cfg)
 
 
@@ -83,15 +93,63 @@ model.set_field_value_lambda_f64("rho", rho_map)
 model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
 model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
+
+def convert_to_cell_coords(dic):
+
+    cmin = dic["cell_min"]
+    cmax = dic["cell_max"]
+
+    xmin = []
+    ymin = []
+    zmin = []
+    xmax = []
+    ymax = []
+    zmax = []
+
+    for i in range(len(cmin)):
+
+        m, M = cmin[i], cmax[i]
+
+        mx, my, mz = m
+        Mx, My, Mz = M
+
+        for j in range(8):
+            a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
+
+            x, y, z = a
+            xmin.append(x)
+            ymin.append(y)
+            zmin.append(z)
+
+            x, y, z = b
+            xmax.append(x)
+            ymax.append(y)
+            zmax.append(z)
+
+    dic["xmin"] = np.array(xmin)
+    dic["ymin"] = np.array(ymin)
+    dic["zmin"] = np.array(zmin)
+    dic["xmax"] = np.array(xmax)
+    dic["ymax"] = np.array(ymax)
+    dic["zmax"] = np.array(zmax)
+
+    return dic
+
+
 t_target = 0.245
 
 dt = 0
 t = 0
-freq = 10
-for i in range(1000):
+freq = 1
+dX0 = []
+for i in range(10000):
+
     if i % freq == 0:
         model.dump_vtk(f"test{i:04d}.vtk")
     next_dt = model.evolve_once_override_time(t, dt)
+    if i == 0:
+        dic0 = convert_to_cell_coords(ctx.collect_data())
+        dX0.append(dic0["xmax"][i] - dic0["xmin"][i])
 
     t += dt
     dt = next_dt
@@ -120,47 +178,6 @@ sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, 0.0, 1
 # do plot or not
 if True:
 
-    def convert_to_cell_coords(dic):
-
-        cmin = dic["cell_min"]
-        cmax = dic["cell_max"]
-
-        xmin = []
-        ymin = []
-        zmin = []
-        xmax = []
-        ymax = []
-        zmax = []
-
-        for i in range(len(cmin)):
-
-            m, M = cmin[i], cmax[i]
-
-            mx, my, mz = m
-            Mx, My, Mz = M
-
-            for j in range(8):
-                a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
-
-                x, y, z = a
-                xmin.append(x)
-                ymin.append(y)
-                zmin.append(z)
-
-                x, y, z = b
-                xmax.append(x)
-                ymax.append(y)
-                zmax.append(z)
-
-        dic["xmin"] = np.array(xmin)
-        dic["ymin"] = np.array(ymin)
-        dic["zmin"] = np.array(zmin)
-        dic["xmax"] = np.array(xmax)
-        dic["ymax"] = np.array(ymax)
-        dic["zmax"] = np.array(zmax)
-
-        return dic
-
     dic = convert_to_cell_coords(ctx.collect_data())
 
     X = []
@@ -179,6 +196,7 @@ if True:
 
     X = np.array(X)
     dX = np.array(dX)
+    dX0 = np.array(dX0)
     rho = np.array(rho)
     rhovelx = np.array(rhovelx)
     rhoetot = np.array(rhoetot)
@@ -190,7 +208,7 @@ if True:
     ax1 = plt.gca()
     ax2 = ax1.twinx()
 
-    l = -np.log2(dX / np.max(dX)) + 1
+    l = -np.log2(dX / np.max(dX0)) + 1
 
     ax1.scatter(X, rho, rasterized=True, label="rho")
     ax1.scatter(X, vx, rasterized=True, label="v")
@@ -224,9 +242,17 @@ if True:
     # ax1.set_xlim(0.5, 1.5)
     ax2.set_ylabel("AMR level")
     # plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
-    plt.title(r"$smooth_{crit}=" + str(smooth_crit) + "$")
-    # plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
-    plt.savefig(f"sod_tube-mass-{smooth_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
+    # plt.title(r"$smooth_{crit}=" + str(smooth_crit) + "$")
+    # plt.title(f"err_min={err_min} --- err_max = {err_max} -- max_amr_lev ={max_amr_lev}")
+    plt.title(f"crit_ref={crit_refin} --- crit_coars = {crit_coars} -- max_amr_lev ={max_amr_lev}")
+    # plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}-reflective_mass.pdf")
+    # plt.savefig(f"sod_tube-mass-{smooth_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
+    # plt.savefig(
+    #     f"sod_tube-err_min-{err_min}-err_max-{err_max}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_pseudo_gradient_based.pdf"
+    # )
+    plt.savefig(
+        f"sod_tube-crit_ref-{crit_refin}-crit_coars-{crit_coars}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_second_order_derivative_based_no_interpolation.pdf"
+    )
 
     plt.savefig("sod_tube.png")
     #######

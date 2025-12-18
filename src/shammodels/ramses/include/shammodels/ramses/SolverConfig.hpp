@@ -129,13 +129,34 @@ namespace shammodels::basegodunov {
             Tscal crit_smooth;
         };
 
-        using mode = std::variant<None, DensityBased, SlopeBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        struct SecondOrderDerivativeBased {
+            Tscal crit_min;
+            Tscal crit_max;
+        };
+
+        using mode = std::variant<
+            None,
+            DensityBased,
+            SlopeBased,
+            PseudoGradientBased,
+            SecondOrderDerivativeBased>;
 
         mode config = None{};
 
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
         void set_refine_slope_based(Tscal crit_smooth) { config = SlopeBased{crit_smooth}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
+        void set_refine_second_order_derivative_based(Tscal crit_min, Tscal crit_max) {
+            config = SecondOrderDerivativeBased{crit_min, crit_max};
+        }
     };
 
     struct BCConfig {

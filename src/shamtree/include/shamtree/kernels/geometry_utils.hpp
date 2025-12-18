@@ -11,6 +11,7 @@
 
 /**
  * @file geometry_utils.hpp
+ * @author Guo (guo.yansong@optimind.tech)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

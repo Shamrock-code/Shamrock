@@ -9,7 +9,8 @@
 
 /**
  * @file VTKDump.cpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief VTK dump implementation for GSPH solver
  */
 

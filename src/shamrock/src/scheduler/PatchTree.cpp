@@ -9,6 +9,7 @@
 
 /**
  * @file PatchTree.cpp
+ * @author Guo (guo.yansong@optimind.tech)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief PatchTree implementation
  *

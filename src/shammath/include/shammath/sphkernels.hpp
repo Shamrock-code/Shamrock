@@ -11,6 +11,7 @@
 
 /**
  * @file sphkernels.hpp
+ * @author Guo (guo.yansong@optimind.tech)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief sph kernels
  */

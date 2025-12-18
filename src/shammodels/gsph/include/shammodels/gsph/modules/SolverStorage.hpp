@@ -11,7 +11,8 @@
 
 /**
  * @file SolverStorage.hpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Storage for GSPH solver runtime data
  *
  * This file contains the storage structure for GSPH solver runtime data,

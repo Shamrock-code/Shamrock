@@ -9,7 +9,7 @@
 
 /**
  * @file SolverConfig.cpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
  * @brief Implementation of GSPH solver configuration methods
  */
 

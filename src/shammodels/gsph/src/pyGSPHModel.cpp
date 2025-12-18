@@ -9,7 +9,8 @@
 
 /**
  * @file pyGSPHModel.cpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Python bindings for the GSPH (Godunov SPH) model
  *
  * This provides Python interface for GSPH simulations using Riemann solvers.

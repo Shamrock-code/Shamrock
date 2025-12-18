@@ -11,7 +11,7 @@
 
 /**
  * @file UpdateDerivs.hpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
  * @brief GSPH derivative update module
  *
  * This module computes the time derivatives (acceleration and energy rate)

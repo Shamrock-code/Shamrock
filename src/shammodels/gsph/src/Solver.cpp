@@ -9,7 +9,8 @@
 
 /**
  * @file Solver.cpp
- * @author Guo
+ * @author Guo (guo.yansong@optimind.tech)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Solver implementation
  *
  * The GSPH method originated from:

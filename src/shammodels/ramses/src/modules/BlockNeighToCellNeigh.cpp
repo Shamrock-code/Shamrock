@@ -9,6 +9,7 @@
 
 /**
  * @file BlockNeighToCellNeigh.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -77,6 +78,14 @@ namespace shammodels::basegodunov::modules {
 
             TgridVec dir_offset;
 
+            /**
+             * @brief apply a specific treatment (specified by the functor fct) to all neighbors of
+             *        the cell identified by id_a (global id in the patch) not only in the current
+             * block. but also in the neighbor blocks.
+             * @tparam IndexFunctor
+             * @param id_a cell's global id
+             * @param fct functor to apply on each cell's neighbor
+             */
             template<class IndexFunctor>
             void for_each_other_index_safe(u32 id_a, IndexFunctor &&fct) const {
 
@@ -90,15 +99,17 @@ namespace shammodels::basegodunov::modules {
                 const TgridVec cblock_max = acc_block_max[block_id];
                 const TgridVec delta_cell = (cblock_max - cblock_min) / AMRBlock::Nside;
 
-                // Compute wanted neighbourg cell bounds
+                // Compute wanted neighbor cell bounds
                 auto get_cell_local_coord = [&]() -> TgridVec {
                     std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
                     return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
                 };
 
-                TgridVec lcoord = get_cell_local_coord();
+                // get local coordinates of id_a
+                const TgridVec lcoord = get_cell_local_coord();
 
-                shammath::AABB<TgridVec> current_cell_aabb
+                // corresponding aabb to id_a
+                const shammath::AABB<TgridVec> current_cell_aabb
                     = {cblock_min + lcoord * delta_cell,
                        cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
 
@@ -128,6 +139,7 @@ namespace shammodels::basegodunov::modules {
                                            block_b_min
                                            + TgridVec{lx + 1, ly + 1, lz + 1} * delta_cell_b}};
 
+                                // get the global id of the cell at {lx, ly,lz} in the block
                                 u32 idx = block_b * AMRBlock::block_size
                                           + AMRBlock::get_index({lx, ly, lz});
 
@@ -135,6 +147,8 @@ namespace shammodels::basegodunov::modules {
                                                    .is_volume_not_null()
                                                && id_a != idx;
 
+                                // if the cell of (global id) idx is a neighor cell in the
+                                // direction given by the offset dir_offset then apply fct to it
                                 if (overlap) {
                                     fct(idx);
                                 }
@@ -163,8 +177,10 @@ namespace shammodels::basegodunov::modules {
                     return {lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]};
                 };
 
+                // get local coordinates of id_a
                 const TgridVec lcoord = get_cell_local_coord();
 
+                // corresponding aabb to id_a
                 const shammath::AABB<TgridVec> current_cell_aabb
                     = {cblock_min + lcoord * delta_cell,
                        cblock_min + (lcoord + TgridVec{1, 1, 1}) * delta_cell};
@@ -299,10 +315,14 @@ namespace shammodels::basegodunov::modules {
             sham::DeviceBuffer<TgridVec> &buf_block_min = block_min.get_buf();
             sham::DeviceBuffer<TgridVec> &buf_block_max = block_max.get_buf();
 
+            // Build the cell graphs for the current patch in all 6 directions
             for (u32 dir = 0; dir < 6; dir++) {
 
                 TgridVec dir_offset = result.offset_check[dir];
 
+                // This build for the current patch in the direction [dir], the graph of its cells.
+                // So for each cell in the patch we know its neighbors, and neccessary information
+                // to access them
                 AMRGraph &block_graph
                     = shambase::get_check_ref(oriented_block_graph.graph_links[dir]);
 

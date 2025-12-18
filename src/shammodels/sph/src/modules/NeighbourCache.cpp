@@ -342,6 +342,25 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         //    }
         //}
 
+        { // tmp debug print max, min, mean, stddev
+            std::vector<u32> neigh_cnt_vec = neigh_count_leaf.copy_to_stdvec();
+
+            double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+            double min  = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+            double mean = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
+                          / neigh_cnt_vec.size();
+            double stddev = std::sqrt(
+                std::accumulate(
+                    neigh_cnt_vec.begin(),
+                    neigh_cnt_vec.end(),
+                    0.0,
+                    [mean](double acc, double x) {
+                        return acc + (x - mean) * (x - mean);
+                    })
+                / neigh_cnt_vec.size());
+            logger::raw_ln("max, min, mean, stddev =", max, min, mean, stddev);
+        }
+
         tree::ObjectCache pleaf_cache
             = tree::prepare_object_cache(std::move(neigh_count_leaf), leaf_cnt);
 

@@ -59,7 +59,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
+        .def(
+            "set_show_neigh_stats",
+            [](TConfig &self, bool enable, std::string filename) {
+                self.set_show_neigh_stats(enable, filename);
+            },
+            py::arg("enable"),
+            py::kw_only(),
+            py::arg("filename") = "")
         .def(
             "set_max_neigh_cache_size",
             [](TConfig &self, py::object max_neigh_cache_size) {
@@ -73,6 +80,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_smoothing_length_density_based_neigh_lim",
             &TConfig::set_smoothing_length_density_based_neigh_lim)
+        .def(
+            "set_smoothing_length_num_density_based",
+            &TConfig::set_smoothing_length_num_density_based)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)

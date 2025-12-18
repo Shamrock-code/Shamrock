@@ -789,10 +789,10 @@ namespace shammodels::sph {
         // }
 
         inline void set_solver_config(typename Solver::Config cfg) {
-            if (ctx.is_scheduler_initialized()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "Cannot change solver config after scheduler is initialized");
-            }
+            // if (ctx.is_scheduler_initialized()) {
+            //     shambase::throw_with_loc<std::runtime_error>(
+            //         "Cannot change solver config after scheduler is initialized");
+            // }
             cfg.check_config();
             solver.solver_config = cfg;
         }

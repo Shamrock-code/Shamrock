@@ -168,8 +168,22 @@ namespace shammodels::sph {
         struct DensityBasedNeighLim {
             u32 max_neigh_count = 500;
         };
+        struct NumDensityBased {
+            enum class Mode {
+                BaseKernel,
+                DoubleHump,
+                DoubleHump3,
+                DoubleHump5,
+                DoubleHump7,
+                Shift2,
+                Shift4,
+                Shift8,
+                Shift16
+            };
+            Mode mode = Mode::BaseKernel;
+        };
 
-        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+        using mode = std::variant<DensityBased, DensityBasedNeighLim, NumDensityBased>;
 
         mode config = DensityBased{};
 
@@ -177,9 +191,12 @@ namespace shammodels::sph {
         void set_density_based_neigh_lim(u32 max_neigh_count) {
             config = DensityBasedNeighLim{max_neigh_count};
         }
-
+        void set_num_density_based(NumDensityBased::Mode mode) { config = NumDensityBased{mode}; }
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+        bool is_num_density_based() const {
+            return std::holds_alternative<NumDensityBased>(config);
         }
     };
 
@@ -431,8 +448,12 @@ struct shammodels::sph::SolverConfig {
     /// Setter for the two stage search
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
 
-    bool show_neigh_stats = false;
-    inline void set_show_neigh_stats(bool enable) { show_neigh_stats = enable; }
+    bool show_neigh_stats            = false;
+    std::string neigh_stats_filename = "";
+    inline void set_show_neigh_stats(bool enable, std::string filename) {
+        show_neigh_stats     = enable;
+        neigh_stats_filename = filename;
+    }
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -458,6 +479,39 @@ struct shammodels::sph::SolverConfig {
     }
     inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
+    inline void set_smoothing_length_num_density_based(std::string mode) {
+        if ("base_kernel" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::BaseKernel);
+        } else if ("double_hump" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump);
+        } else if ("double_hump3" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump3);
+        } else if ("double_hump5" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump5);
+        } else if ("double_hump7" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump7);
+        } else if ("shift2" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::Shift2);
+        } else if ("shift4" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::Shift4);
+        } else if ("shift8" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::Shift8);
+        } else if ("shift16" == mode) {
+            smoothing_length_config.set_num_density_based(
+                SmoothingLengthConfig::NumDensityBased::Mode::Shift16);
+        } else {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "Invalid mode for smoothing length num density based");
+        }
     }
 
     bool enable_particle_reordering = false;
@@ -954,6 +1008,37 @@ namespace shammodels::sph {
             j = {
                 {"type", "density_based_neigh_lim"},
                 {"max_neigh_count", conf->max_neigh_count},
+            };
+        } else if (
+            const SmoothingLengthConfig::NumDensityBased *conf
+            = std::get_if<SmoothingLengthConfig::NumDensityBased>(&p.config)) {
+
+            std::string mode_str = "";
+            switch (conf->mode) {
+            case SmoothingLengthConfig::NumDensityBased::Mode::BaseKernel:
+                mode_str = "base_kernel";
+                break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump:
+                mode_str = "double_hump";
+                break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump3:
+                mode_str = "double_hump3";
+                break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump5:
+                mode_str = "double_hump5";
+                break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::DoubleHump7:
+                mode_str = "double_hump7";
+                break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::Shift2 : mode_str = "shift2"; break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::Shift4 : mode_str = "shift4"; break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::Shift8 : mode_str = "shift8"; break;
+            case SmoothingLengthConfig::NumDensityBased::Mode::Shift16: mode_str = "shift16"; break;
+            }
+
+            j = {
+                {"type", "num_density_based"},
+                {"mode", mode_str},
             };
         } else {
             shambase::throw_unimplemented();

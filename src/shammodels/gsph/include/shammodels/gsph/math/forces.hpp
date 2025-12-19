@@ -11,7 +11,7 @@
 
 /**
  * @file forces.hpp
- * @author Guo (guo.yansong@optimind.tech)
+ * @author Guo (guo.yansong.ngy@gmail.com)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief GSPH force computation using Riemann solver results
  *

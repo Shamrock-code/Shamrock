@@ -11,7 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
- * @author Guo (guo.yansong.ngy@gmail.com) --no git blame--
+ * @author Guo (guo.yansong.ngy@gmail.com)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Configuration for the Godunov SPH (GSPH) solver
  *

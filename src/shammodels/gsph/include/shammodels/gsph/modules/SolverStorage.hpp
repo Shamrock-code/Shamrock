@@ -11,7 +11,7 @@
 
 /**
  * @file SolverStorage.hpp
- * @author Guo (guo.yansong@optimind.tech)
+ * @author Guo (guo.yansong.ngy@gmail.com)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Storage for GSPH solver runtime data
  *

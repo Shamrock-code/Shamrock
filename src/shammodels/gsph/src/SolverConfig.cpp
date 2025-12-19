@@ -33,10 +33,6 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
     // Smoothing length
     pdl.add_field<Tscal>("hpart", 1);
 
-    // Wall particle flag (0 = regular, 1 = wall particle)
-    // Wall particles are used for wall boundary conditions and are not time-integrated
-    pdl.add_field<u32>("wall_flag", 1);
-
     // Internal energy (for adiabatic EOS)
     if (has_field_uint()) {
         pdl.add_field<Tscal>("uint", 1);
@@ -59,9 +55,6 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
 
     // Density (computed via SPH summation)
     ghost_layout.add_field<Tscal>("density", 1);
-
-    // Wall particle flag (for identifying wall particles in ghost data)
-    ghost_layout.add_field<u32>("wall_flag", 1);
 
     // Internal energy (for adiabatic EOS)
     if (has_field_uint()) {

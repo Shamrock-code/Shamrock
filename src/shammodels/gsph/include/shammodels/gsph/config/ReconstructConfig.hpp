@@ -11,7 +11,7 @@
 
 /**
  * @file ReconstructConfig.hpp
- * @author Guo (guo.yansong.ngy@gmail.com)
+ * @author Guo (guo.yansong.ngy@gmail.com) --no git blame--
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Configuration for reconstruction methods in GSPH
  *

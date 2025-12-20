@@ -68,7 +68,6 @@ namespace shamcomm {
             }
         }
 
-
         inline CommunicationBuffer(
             sham::DeviceBuffer<u8> &&bytebuf, sham::DeviceScheduler_ptr dev_sched) {
             sham::Device &dev  = *dev_sched->ctx->device;
@@ -98,7 +97,6 @@ namespace shamcomm {
                 throw shambase::make_except_with_loc<std::invalid_argument>("unknown mode");
             }
         }
-
 
         /**
          * @brief Gets the size of the buffer (here in bytes)

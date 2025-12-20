@@ -29,7 +29,6 @@ TestStart(
         sham::DeviceBuffer<u8> ret = shamcomm::CommunicationBuffer::convert_usm(std::move(cbuf));
         REQUIRE_EQUAL(buf_comp.copy_to_stdvec(), ret.copy_to_stdvec());
     }
-
 }
 
 TestStart(

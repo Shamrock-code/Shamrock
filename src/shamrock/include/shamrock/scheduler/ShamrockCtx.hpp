@@ -151,7 +151,7 @@ class ShamrockCtx {
         }
 
         if (!sched) {
-            throw ShamAPIException("scheduler is not initialized");
+            throw  ShamAPIException("scheduler is not initialized");
         }
 
         auto [a, b] = box;

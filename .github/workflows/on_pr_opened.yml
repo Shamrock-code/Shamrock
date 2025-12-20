@@ -38,4 +38,3 @@ jobs:
             1 - Comment `/gemini review` to trigger a review
             2 - Comment `/gemini summary` for a summary
             3 - Tag it using `@gemini-code-assist` either in the PR or in review comments on files
-

@@ -103,7 +103,7 @@ namespace shamalgs::collective {
 
         int local_count = shambase::narrow_or_throw<int>(send_vec.size());
 
-        std::vector<int> table_data_count(shamcomm::world_size());
+        std::vector<int> table_data_count((size_t) shamcomm::world_size());
 
         shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
 
@@ -132,7 +132,8 @@ namespace shamalgs::collective {
             return;
         }
 
-        std::vector<int> node_displacments_data_table(shamcomm::world_size());
+        // here we can not overflow since we know that the sum can be narrowed to an int
+        std::vector<int> node_displacments_data_table((size_t) shamcomm::world_size());
         std::exclusive_scan(
             table_data_count.begin(),
             table_data_count.end(),

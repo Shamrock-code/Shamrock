@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/narrowing.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -24,6 +25,7 @@
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
+#include <numeric>
 #include <vector>
 
 namespace shamalgs::collective {
@@ -105,29 +107,36 @@ namespace shamalgs::collective {
 
         shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
 
-        std::vector<int> node_displacments_data_table(shamcomm::world_size());
-        node_displacments_data_table[0] = 0;
-        for (u32 i = 1; i < shamcomm::world_size(); i++) {
-            node_displacments_data_table[i]
-                = node_displacments_data_table[i - 1] + table_data_count[i - 1];
-        }
-
-        u32 global_len = 0;
+        int global_len = 0;
         // use work duplication or MPI reduction
 #if false
         // querry global size and resize the receiving vector
         shamcomm::mpi::Allreduce(
             &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #else
-        for (const u32 &v : table_data_count) {
-            global_len += v;
+        {
+            u64 tmp = std::accumulate(
+                table_data_count.begin(), table_data_count.end(), u64{0}, [](u64 acc, int v) {
+                    return acc + static_cast<u64>(v);
+                });        
+                
+                // if it exceeds the max size of int, i can not garantee that the next MPI call will work
+            global_len = shambase::narrow_or_throw<int>(tmp);
         }
 #endif
+
         recv_vec.resize(global_len);
 
         if (global_len == 0) {
             return;
         }
+
+        std::vector<int> node_displacments_data_table(shamcomm::world_size());
+        std::exclusive_scan(
+            table_data_count.begin(),
+            table_data_count.end(),
+            node_displacments_data_table.begin(),
+            0);
 
         shamcomm::mpi::Allgatherv(
             send_vec.data(),

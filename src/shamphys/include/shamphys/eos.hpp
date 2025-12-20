@@ -105,7 +105,7 @@ namespace shamphys {
     struct EOS_Tillotson {
 
         static PressureAndCs<T> pressure_and_cs(
-            T rho, T u, T rho0, T A, T B, T a, T b, T E0, T alpha, T beta, T u_iv, T u_cv) {
+            T rho, T u, T rho0, T E0, T A, T B, T a, T b, T alpha, T beta, T u_iv, T u_cv) {
 
             T eta    = rho / rho0;
             T eta2   = eta * eta;

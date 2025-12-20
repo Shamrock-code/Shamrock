@@ -18,7 +18,7 @@ jobs:
     env:
       FIX_MODE: "${{ contains(github.event.pull_request.labels.*.name, 'autofix.ci') && 'fix' || 'check' }}"
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -26,13 +26,56 @@ jobs:
         with:
            python-version: '>=3.10'
 
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      # Run all formatters to fix code style
+      - name: Run clang-format (C++)
+        continue-on-error: true
+        run: |
+          pre-commit run clang-format --all-files || true
+
+      - name: Run black (Python)
+        continue-on-error: true
+        run: |
+          pre-commit run black --all-files || true
+
+      - name: Run ruff fixes (Python)
+        continue-on-error: true
+        run: |
+          pre-commit run ruff-check --all-files || true
+
+      - name: Run trailing-whitespace
+        continue-on-error: true
+        run: |
+          pre-commit run trailing-whitespace --all-files || true
+
+      - name: Run end-of-file-fixer
+        continue-on-error: true
+        run: |
+          pre-commit run end-of-file-fixer --all-files || true
+
+      - name: Run remove-tabs
+        continue-on-error: true
+        run: |
+          pre-commit run remove-tabs --all-files || true
+
       - name: "Run author update script"
         continue-on-error: true
         run: |
           python3 buildbot/update_authors.py
 
+      - name: Show changes
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+          else
+            echo "Files modified:"
+            git diff --stat
+          fi
+
       - name: Commit and push if changed
         if: env.FIX_MODE == 'fix'
-        uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
+        uses: autofix-ci/action@ff86a557419858bb967097bfc916833f5647fa8c
         with:
-          commit-message: '[autofix.ci] fix file authorship'
+          commit-message: '[autofix.ci] fix formatting and authorship'

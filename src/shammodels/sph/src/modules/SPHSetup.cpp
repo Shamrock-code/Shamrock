@@ -509,6 +509,16 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             send_msg.push_back(indices.size());
         }
 
+        u64 max_send      = (1 << 24) / shamcomm::world_size();
+        bool sync_limited = false;
+        if (send_msg.size() > max_send) {
+            std::mt19937 eng_local_msg(
+                u64(golden_number * 1000 * step_count + shamcomm::world_rank()));
+            std::shuffle(send_msg.begin(), send_msg.end(), eng_local_msg);
+            send_msg.resize(max_send);
+            sync_limited = true;
+        }
+
         std::vector<u64> recv_msg;
         shamalgs::collective::vector_allgatherv(send_msg, recv_msg, MPI_COMM_WORLD);
 
@@ -532,8 +542,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         }
 
         // shuffle msg_list according to seed golden_number*1000*step_count
-        std::mt19937 eng(u64(golden_number * 1000 * step_count));
-        std::shuffle(msg_list.begin(), msg_list.end(), eng);
+        std::mt19937 eng_global_msg(u64(golden_number * 1000 * step_count));
+        std::shuffle(msg_list.begin(), msg_list.end(), eng_global_msg);
 
         // now that we are in sync we can determine who should send to who
 
@@ -640,6 +650,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             = !shamalgs::collective::are_all_rank_true(!was_count_limited, MPI_COMM_WORLD);
         was_size_limited
             = !shamalgs::collective::are_all_rank_true(!was_size_limited, MPI_COMM_WORLD);
+        bool was_sync_limited
+            = !shamalgs::collective::are_all_rank_true(!sync_limited, MPI_COMM_WORLD);
 
         std::string log_suffix = "";
         if (was_count_limited) {
@@ -647,6 +659,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         }
         if (was_size_limited) {
             log_suffix += " (msg size limited)";
+        }
+        if (was_sync_limited) {
+            log_suffix += " (sync limited)";
         }
         log_inject_status(" <- global loop ->" + log_suffix);
 

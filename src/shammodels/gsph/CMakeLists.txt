@@ -31,7 +31,9 @@ target_link_libraries(shammodels_gsph PUBLIC shamlib)
 target_link_libraries(shammodels_gsph PUBLIC shammath)
 target_link_libraries(shammodels_gsph PUBLIC shamphys)
 target_link_libraries(shammodels_gsph PUBLIC shamsys)
+target_link_libraries(shammodels_gsph PUBLIC shamtree)
 target_link_libraries(shammodels_gsph PUBLIC shammodels_common)
+target_link_libraries(shammodels_gsph PUBLIC shammodels_sph)
 target_link_libraries(shammodels_gsph PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shammodels_gsph PUBLIC

@@ -20,6 +20,31 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
 
+namespace {
+    void test_queue(const sham::DeviceScheduler_ptr &dev_sched, sham::DeviceQueue &q) {
+        sham::DeviceBuffer<u32> b(10, dev_sched);
+
+        sham::kernel_call(q, sham::MultiRef{}, sham::MultiRef{b}, 10, [](u32 i, u32 *__restrict b) {
+            b[i] = i;
+        });
+
+        {
+            std::vector<u32> acc = b.copy_to_stdvec();
+            if (acc != std::vector<u32>({0, 1, 2, 3, 4, 5, 6, 7, 8, 9})) {
+                auto &ctx    = shambase::get_check_ref(q.ctx);
+                auto &device = shambase::get_check_ref(ctx.device);
+                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    "The chosen SYCL queue (name={}, device={}) cannot execute a basic kernel\n"
+                    "  expected acc = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}\n"
+                    "  actual acc = {}",
+                    q.queue_name,
+                    device.dev.get_info<sycl::info::device::name>(),
+                    acc));
+            }
+        }
+    }
+} // namespace
+
 namespace sham {
 
     DeviceScheduler::DeviceScheduler(std::shared_ptr<DeviceContext> ctx) : ctx(ctx) {
@@ -46,22 +71,6 @@ namespace sham {
     void test_device_scheduler(sham::DeviceScheduler_ptr dev_sched) {
         for (auto &q : dev_sched->queues) {
 
-            auto test_kernel = [&](sham::DeviceQueue &q) {
-                sham::DeviceBuffer<u32> b(10, dev_sched);
-
-                sham::kernel_call(q, sham::MultiRef{}, sham::MultiRef{b}, 10, [](u32 i, u32 *b) {
-                    b[i] = i;
-                });
-
-                {
-                    std::vector<u32> acc = b.copy_to_stdvec();
-                    if (acc[9] != 9) {
-                        throw shambase::make_except_with_loc<std::runtime_error>(
-                            "The chosen SYCL queue cannot execute a basic kernel");
-                    }
-                }
-            };
-
             std::exception_ptr eptr;
             try {
                 sham::DeviceQueue &qref     = shambase::get_check_ref(q);
@@ -70,7 +79,7 @@ namespace sham {
                 std::string device_name     = deviceref.dev.get_info<sycl::info::device::name>();
 
                 logger::debug_ln("Backends", "[Queue testing] name = ", device_name);
-                test_kernel(qref);
+                test_queue(dev_sched, qref);
                 logger::debug_ln(
                     "Backends", "[Queue testing] name = ", device_name, " -> working !");
 

@@ -112,7 +112,7 @@ namespace shamalgs::collective {
 #if false
         // querry global size and resize the receiving vector
         shamcomm::mpi::Allreduce(
-            &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+            &local_count, &global_len, 1, MPI_INT, MPI_SUM, comm);
 #else
         {
             u64 tmp = std::accumulate(
@@ -141,7 +141,7 @@ namespace shamalgs::collective {
 
         shamcomm::mpi::Allgatherv(
             send_vec.data(),
-            send_vec.size(),
+            local_count,
             send_type,
             recv_vec.data(),
             &table_data_count[0],

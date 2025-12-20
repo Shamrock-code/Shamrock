@@ -101,7 +101,7 @@ namespace shamalgs::collective {
         const MPI_Comm comm) {
         StackEntry stack_loc{};
 
-        u32 local_count = send_vec.size();
+        int local_count = shambase::narrow_or_throw<int>(send_vec.size());
 
         std::vector<int> table_data_count(shamcomm::world_size());
 
@@ -118,9 +118,10 @@ namespace shamalgs::collective {
             u64 tmp = std::accumulate(
                 table_data_count.begin(), table_data_count.end(), u64{0}, [](u64 acc, int v) {
                     return acc + static_cast<u64>(v);
-                });        
-                
-                // if it exceeds the max size of int, i can not garantee that the next MPI call will work
+                });
+
+            // if it exceeds the max size of int, i can not garantee that the next MPI call will
+            // work
             global_len = shambase::narrow_or_throw<int>(tmp);
         }
 #endif

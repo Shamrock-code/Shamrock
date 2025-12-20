@@ -1,0 +1,40 @@
+name: on PR opened
+
+on:
+  pull_request_target:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+  issues: write
+
+jobs:
+  comment:
+    name: Post welcome comment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract PR author
+        id: pr_meta
+        shell: bash
+        run: |
+          echo "author=${{ github.event.pull_request.user.login }}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: |
+            Thanks @${{ steps.pr_meta.outputs.author }} for opening this PR!
+
+            You can do multiple things directly here:
+            1 - Comment `pre-commit.ci run` to run pre-commit checks.
+            2 - Comment `pre-commit.ci autofix` to apply fixes.
+            3 - Add label `autofix.ci` to fix authorship.
+            4 - Add label `light-ci` to only trigger a reduced & faster version of the CI (need the full one before merge).
+            5 - Add label `trigger-ci` to create an empty commit to trigger the CI.
+
+            Once the workflow completes a message will appear displaying informations related to the run.
+
+            Also the PR gets automatically reviewed by gemini, you can:
+            1 - Comment `/gemini review` to trigger a review
+            2 - Comment `/gemini summary` for a summary
+            3 - Tag it using `@gemini-code-assist` either in the PR or in review comments on files

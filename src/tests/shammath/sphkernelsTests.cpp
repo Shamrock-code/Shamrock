@@ -19,6 +19,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <cmath>
 #include <vector>
 
 template<class Ker>
@@ -82,13 +83,17 @@ inline void validate_kernel_3d(
     // is df = f' ?
     Tscal L2_sum = 0;
     Tscal step   = 0.01;
-    for (Tscal x = 0; x < Ker::Rkern; x += step) {
-        Tscal diff = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
+
+    const int num_steps = static_cast<int>(std::ceil(Ker::Rkern / step));
+    for (int i = 0; i < num_steps; i++) {
+        const Tscal x = i * step;
+        Tscal diff    = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
                          return Ker::f(x);
                      });
         diff *= gen_norm3d;
         L2_sum += diff * diff * step;
     }
+
     REQUIRE_FLOAT_EQUAL(L2_sum, 0, tol);
 }
 

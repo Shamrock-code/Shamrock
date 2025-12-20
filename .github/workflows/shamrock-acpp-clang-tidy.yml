@@ -99,7 +99,9 @@ jobs:
 
       - name: Run clang-tidy
         run: |
+          export CLANGTIDYBINARY=clang-tidy-${{matrix.clang}}
           run-clang-tidy-${{matrix.clang}} \
+            -clang-tidy-binary ./buildbot/clang-tidy-wrapper.sh \
             -p build/clang-tidy.mod \
             -use-color \
             -config-file .clang-tidy \

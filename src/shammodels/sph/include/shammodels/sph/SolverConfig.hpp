@@ -567,11 +567,11 @@ struct shammodels::sph::SolverConfig {
      * @brief Set the EOS configuration to a Tillotson equation of state
      *
      * @param rho0 Density at zero-pressure
-     * @param E0 Tillotson parameter
+     * @param E0 Tillotson parameter, ~ vaporization energy
      * @param A Bulk modulus
      * @param B Tillotson parameter
-     * @param a Tillotson parameter
-     * @param b Tillotson parameter
+     * @param a Tillotson parameter (often 0.5)
+     * @param b Tillotson parameter (often 0.5)
      * @param alpha Tillotson parameter
      * @param beta Tillotson parameter
      * @param u_iv Energy at incipient vaporization

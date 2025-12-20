@@ -124,6 +124,10 @@ namespace shamphys {
                 T term_bracket = a + b / denom;
                 T P_c          = term_bracket * rho * u + A * chi + B * chi * chi;
 
+                if (P_c < 0.0) {
+                    P_c = 0.0;
+                }
+
                 T term_rho_1 = u * term_bracket;
                 T term_rho_2 = (u * u / E0) * (2.0 / eta2) * (b / denom2);
                 T term_rho_3 = (1.0 / rho0) * (A + 2.0 * B * chi);
@@ -198,6 +202,9 @@ namespace shamphys {
             }
 
             T c2 = dP_drho + (P / (rho * rho)) * dP_du;
+            if (c2 < 0.0) {
+                c2 = 0.0;
+            }
 
             return {P, sycl::sqrt(c2)};
         }

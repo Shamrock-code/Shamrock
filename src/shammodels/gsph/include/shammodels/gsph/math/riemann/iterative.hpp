@@ -122,12 +122,13 @@ namespace shammodels::gsph::riemann {
 
             // Derivatives dW/dp for Newton-Raphson
             // Z_L = -dW_L/dp * W_L (note the sign convention)
+            // Add smallp to denominator to prevent division by zero near vacuum/shock
             Tscal Z_L = Tscal{4} * V_L * W_L * W_L;
-            Z_L       = -Z_L * W_L / (Z_L - gp1 * (p_star - p_L));
+            Z_L       = -Z_L * W_L / (Z_L - gp1 * (p_star - p_L) + smallp);
 
             // Z_R = dW_R/dp * W_R
             Tscal Z_R = Tscal{4} * V_R * W_R * W_R;
-            Z_R       = Z_R * W_R / (Z_R - gp1 * (p_star - p_R));
+            Z_R       = Z_R * W_R / (Z_R - gp1 * (p_star - p_R) + smallp);
 
             // Intermediate velocities from each side
             // u*_L = u_L - (p* - p_L) / W_L

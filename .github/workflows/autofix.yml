@@ -27,6 +27,7 @@ jobs:
            python-version: '>=3.10'
 
       - uses: pre-commit/action@v3.0.1
+        continue-on-error: true
 
       - name: "Run author update script"
         continue-on-error: true

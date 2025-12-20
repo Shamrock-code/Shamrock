@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/narrowing.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -24,6 +25,7 @@
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
+#include <numeric>
 #include <vector>
 
 namespace shamalgs::collective {
@@ -99,43 +101,58 @@ namespace shamalgs::collective {
         const MPI_Comm comm) {
         StackEntry stack_loc{};
 
-        u32 local_count = send_vec.size();
+        int comm_size = 0;
 
-        std::vector<int> table_data_count(shamcomm::world_size());
-
-        shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
-
-        std::vector<int> node_displacments_data_table(shamcomm::world_size());
-        node_displacments_data_table[0] = 0;
-        for (u32 i = 1; i < shamcomm::world_size(); i++) {
-            node_displacments_data_table[i]
-                = node_displacments_data_table[i - 1] + table_data_count[i - 1];
+        if (comm == MPI_COMM_WORLD) {
+            comm_size = shamcomm::world_size();
+        } else {
+            MPICHECK(MPI_Comm_size(comm, &comm_size));
         }
 
-        u32 global_len = 0;
+        int local_count = shambase::narrow_or_throw<int>(send_vec.size());
+
+        std::vector<int> table_data_count(static_cast<std::size_t>(comm_size));
+
+        shamcomm::mpi::Allgather(
+            &local_count, 1, MPI_INT, table_data_count.data(), 1, MPI_INT, comm);
+
+        int global_len = 0;
         // use work duplication or MPI reduction
 #if false
         // querry global size and resize the receiving vector
         shamcomm::mpi::Allreduce(
-            &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+            &local_count, &global_len, 1, MPI_INT, MPI_SUM, comm);
 #else
-        for (const u32 &v : table_data_count) {
-            global_len += v;
+        {
+            u64 tmp = std::accumulate(table_data_count.begin(), table_data_count.end(), 0_u64);
+
+            // if it exceeds the max size of int, MPI will trip like crazy
+            // god damn it just implement 64bits indicies ... Pleeeeeasssssse !!!
+            global_len = shambase::narrow_or_throw<int>(tmp);
         }
 #endif
+
         recv_vec.resize(global_len);
 
         if (global_len == 0) {
             return;
         }
 
+        // here we can not overflow since we know that the sum can be narrowed to an int
+        std::vector<int> node_displacments_data_table(static_cast<std::size_t>(comm_size));
+        std::exclusive_scan(
+            table_data_count.begin(),
+            table_data_count.end(),
+            node_displacments_data_table.begin(),
+            0);
+
         shamcomm::mpi::Allgatherv(
-            send_vec.data(),
-            send_vec.size(),
+            send_vec.data(), // even if the size is 0 MPI does not care
+            local_count,
             send_type,
             recv_vec.data(),
-            &table_data_count[0],
-            &node_displacments_data_table[0],
+            table_data_count.data(),
+            node_displacments_data_table.data(),
             recv_type,
             comm);
     }

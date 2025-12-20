@@ -27,7 +27,7 @@
 #define XMAC_UNITS                                                                                 \
     X1(second, s) /*base units*/                                                                   \
     X1(metre, m)                                                                                   \
-    X1(kilogramm, kg)                                                                              \
+    X1(kilogram, kg)                                                                               \
     X1(Ampere, A)                                                                                  \
     X1(Kelvin, K)                                                                                  \
     X1(mole, mol)                                                                                  \
@@ -61,6 +61,7 @@
     X1(light_year, ly)                                                                             \
     X1(parsec, pc)                                                                                 \
     X1(solar_radius, rsol)                                                                         \
+    X1(earth_radius, rearth)                                                                       \
     X1(electron_volt, eV)                                                                          \
     X1(ergs, erg)                                                                                  \
     X1(british_pint, pint)

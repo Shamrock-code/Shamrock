@@ -94,7 +94,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
     void _impl_evaluate_internal() {
         __shamrock_stack_entry();
 
-        auto edges = get_edges();
+        auto edges = get_edges() ;
 
         auto &filename          = edges.filename;
         auto &patch_data_layers = edges.patch_data_layers;

@@ -432,4 +432,37 @@ Register_pymod(shamphyslibinit) {
         py::arg("mu"),
         py::arg("mh"),
         py::arg("kb"));
+    eos_module.def(
+        "eos_Tillotson",
+        [](f64 rho,
+           f64 u,
+           f64 rho0,
+           f64 E0,
+           f64 A,
+           f64 B,
+           f64 a,
+           f64 b,
+           f64 alpha,
+           f64 beta,
+           f64 u_iv,
+           f64 u_cv) {
+            auto p_cs = shamphys::EOS_Tillotson<f64>::pressure_and_cs(
+                rho, u, rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
+            auto P   = p_cs.pressure;
+            auto _cs = p_cs.soundspeed;
+            return std::tuple<f64, f64>{P, _cs};
+        },
+        py::kw_only(),
+        py::arg("rho"),
+        py::arg("u"),
+        py::arg("rho0"),
+        py::arg("E0"),
+        py::arg("A"),
+        py::arg("B"),
+        py::arg("a"),
+        py::arg("b"),
+        py::arg("alpha"),
+        py::arg("beta"),
+        py::arg("u_iv"),
+        py::arg("u_cv"));
 }

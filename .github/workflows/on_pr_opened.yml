@@ -28,7 +28,7 @@ jobs:
             You can do multiple things directly here:
             1 - Comment `pre-commit.ci run` to run pre-commit checks.
             2 - Comment `pre-commit.ci autofix` to apply fixes.
-            3 - Add label `autofix.ci` to fix authorship.
+            3 - Add label `autofix.ci` to fix authorship & pre-commit for every commit made.
             4 - Add label `light-ci` to only trigger a reduced & faster version of the CI (need the full one before merge).
             5 - Add label `trigger-ci` to create an empty commit to trigger the CI.
 

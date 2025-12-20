@@ -63,7 +63,7 @@ template<class Tvec, class TgridVec>
 class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
     bool write_id_patch;
     bool write_world_rank;
-    using Tscal = shambase::VecComponent<Tvec>;
+    using Tscal = shambase::VecComponent<Tvec> ;
     u32 block_size;
 
     public:

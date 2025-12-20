@@ -26,10 +26,10 @@ jobs:
             Thanks @${{ steps.pr_meta.outputs.author }} for opening this PR!
 
             You can do multiple things directly here:
-            1 - Comment `precommit.ci run` to check the precommit
-            2 - Comment `precommit.ci autofix` to apply fix
-            3 - Add label `autofix.ci` to fix authorship
-            4 - Add label `light-ci` to only trigger a reduced & faster version of the CI (need the full one before merge)
+            1 - Comment `precommit.ci run` to run pre-commit checks.
+            2 - Comment `precommit.ci autofix` to apply fixes.
+            3 - Add label `autofix.ci` to fix authorship.
+            4 - Add label `light-ci` to only trigger a reduced & faster version of the CI (need the full one before merge).
 
             Once the workflow completes a message will appear displaying informations related to the run.
 

@@ -186,13 +186,7 @@ namespace shammodels::gsph::riemann {
      */
     template<class Tscal>
     inline RiemannResult<Tscal> hllc_solver(
-        Tscal u_L,
-        Tscal rho_L,
-        Tscal p_L,
-        Tscal u_R,
-        Tscal rho_R,
-        Tscal p_R,
-        Tscal gamma) {
+        Tscal u_L, Tscal rho_L, Tscal p_L, Tscal u_R, Tscal rho_R, Tscal p_R, Tscal gamma) {
 
         RiemannResult<Tscal> result;
 

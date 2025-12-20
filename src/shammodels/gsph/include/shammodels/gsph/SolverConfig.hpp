@@ -154,13 +154,7 @@ struct shammodels::gsph::SolverConfig {
         riemann_config.set_iterative(tol, max_iter);
     }
 
-    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}) { riemann_config.set_exact(tol); }
-
     inline void set_riemann_hllc() { riemann_config.set_hllc(); }
-
-    inline void set_riemann_roe(Tscal entropy_fix = Tscal{0.1}) {
-        riemann_config.set_roe(entropy_fix);
-    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Riemann Solver Config (END)

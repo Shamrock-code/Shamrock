@@ -101,27 +101,33 @@ namespace shamalgs::collective {
         const MPI_Comm comm) {
         StackEntry stack_loc{};
 
+        int comm_size = 0;
+
+        if (comm == MPI_COMM_WORLD) {
+            comm_size = shamcomm::world_size();
+        } else {
+            MPICHECK(MPI_Comm_size(comm, &comm_size));
+        }
+
         int local_count = shambase::narrow_or_throw<int>(send_vec.size());
 
-        std::vector<int> table_data_count(shamcomm::world_size());
+        std::vector<int> table_data_count(static_cast<std::size_t>(comm_size));
 
-        shamcomm::mpi::Allgather(&local_count, 1, MPI_INT, &table_data_count[0], 1, MPI_INT, comm);
+        shamcomm::mpi::Allgather(
+            &local_count, 1, MPI_INT, table_data_count.data(), 1, MPI_INT, comm);
 
         int global_len = 0;
         // use work duplication or MPI reduction
 #if false
         // querry global size and resize the receiving vector
         shamcomm::mpi::Allreduce(
-            &local_count, &global_len, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+            &local_count, &global_len, 1, MPI_INT, MPI_SUM, comm);
 #else
         {
-            u64 tmp = std::accumulate(
-                table_data_count.begin(), table_data_count.end(), u64{0}, [](u64 acc, int v) {
-                    return acc + static_cast<u64>(v);
-                });
+            u64 tmp = std::accumulate(table_data_count.begin(), table_data_count.end(), 0_u64);
 
-            // if it exceeds the max size of int, i can not garantee that the next MPI call will
-            // work
+            // if it exceeds the max size of int, MPI will trip like crazy
+            // god damn it just implement 64bits indicies ... Pleeeeeasssssse !!!
             global_len = shambase::narrow_or_throw<int>(tmp);
         }
 #endif
@@ -132,7 +138,8 @@ namespace shamalgs::collective {
             return;
         }
 
-        std::vector<int> node_displacments_data_table(shamcomm::world_size());
+        // here we can not overflow since we know that the sum can be narrowed to an int
+        std::vector<int> node_displacments_data_table(static_cast<std::size_t>(comm_size));
         std::exclusive_scan(
             table_data_count.begin(),
             table_data_count.end(),
@@ -140,12 +147,12 @@ namespace shamalgs::collective {
             0);
 
         shamcomm::mpi::Allgatherv(
-            send_vec.data(),
-            send_vec.size(),
+            send_vec.data(), // even if the size is 0 MPI does not care
+            local_count,
             send_type,
             recv_vec.data(),
-            &table_data_count[0],
-            &node_displacments_data_table[0],
+            table_data_count.data(),
+            node_displacments_data_table.data(),
             recv_type,
             comm);
     }

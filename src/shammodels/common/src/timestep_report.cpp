@@ -75,17 +75,6 @@ namespace shammodels {
 
             std::array<size_t, cols_count> widths = compute_widths();
 
-            auto get_total_width = [&]() -> size_t {
-                // Calculate total width: sum of column widths + separators
-                // Format is: "| col0 | col1 | ... | colN |"
-                // Total = 1 + sum(widths) + 3*cols_count
-                size_t total_width = 1;
-                for (u32 i = 0; i < cols_count; i++) {
-                    total_width += widths[i] + 3;
-                }
-                return total_width;
-            };
-
             std::string print = "";
             for (auto &line : table_lines) {
                 if (data *data_line = std::get_if<data>(&line)) {
@@ -192,18 +181,17 @@ std::string shammodels::report_perf_timestep(
     Table table;
 
     table.add_double_rule();
-    table.table_lines.push_back(
-        Table::data{
-            {"rank",
-             "rate (N/s)",
-             "Nobj",
-             "Npatch",
-             "tstep",
-             "MPI",
-             "alloc d% h%",
-             "mem (max) d",
-             "mem (max) h"},
-            Table::center});
+    table.add_data(
+        {"rank",
+         "rate (N/s)",
+         "Nobj",
+         "Npatch",
+         "tstep",
+         "MPI",
+         "alloc d% h%",
+         "mem (max) d",
+         "mem (max) h"},
+        Table::center);
     table.add_double_rule();
     for (u32 i = 0; i < shamcomm::world_size(); i++) {
         table.add_data(
@@ -239,8 +227,7 @@ std::string shammodels::report_perf_timestep(
              shambase::format("{}", shambase::readable_sizeof(sum_mem_host_total))},
             Table::right);
     }
-
-    table.table_lines.push_back(Table::rule{});
+    table.add_rule();
 
     return "Timestep perf report:" + table.render();
 }

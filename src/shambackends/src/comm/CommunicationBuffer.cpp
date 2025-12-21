@@ -29,14 +29,14 @@ namespace shamcomm {
         sham::DeviceBuffer<u8> buf_comp(nbytes, device_sched);
 
         {
-            std::vector<u8> acc1 = buf_comp.copy_to_stdvec();
+            std::vector<u8> host_data(nbytes);
             for (u32 i = 0; i < nbytes; i++) {
-                acc1[i] = i % 100;
+                host_data[i] = i % 100;
             }
-            buf_comp.copy_from_stdvec(acc1);
+            buf_comp.copy_from_stdvec(host_data);
         }
 
-        shamcomm::CommunicationBuffer cbuf{buf_comp.copy(), device_sched};
+        shamcomm::CommunicationBuffer cbuf{buf_comp, device_sched};
         shamcomm::CommunicationBuffer cbuf_recv{nbytes, device_sched};
 
         MPI_Request rq1, rq2;

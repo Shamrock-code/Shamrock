@@ -12,7 +12,7 @@
 /**
  * @file GetObjCntFromLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Defines the GetFieldRefFromLayer class for extracting field references from patch data
+ * @brief Defines the GetObjCntFromLayer class for extracting object counts from patch data
  * layers.
  *
  */
@@ -24,10 +24,7 @@
 
 namespace shamrock::solvergraph {
 
-    template<class T>
     class GetObjCntFromLayer : public INode {
-
-        u32 field_idx;
 
         public:
         GetObjCntFromLayer() {}

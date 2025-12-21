@@ -1352,7 +1352,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             {
                 auto attach_part_counts
-                    = solver_graph.register_node("attach_part_counts", GetObjCntFromLayer<u32>());
+                    = solver_graph.register_node("attach_part_counts", GetObjCntFromLayer{});
                 shambase::get_check_ref(attach_part_counts)
                     .set_edges(
                         solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),

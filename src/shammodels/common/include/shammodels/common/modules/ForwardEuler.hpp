@@ -12,7 +12,7 @@
 /**
  * @file ForwardEuler.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Adds the inertial part of the acceleration for a shearing box force.
+ * @brief Implements a forward Euler integration step as a solver graph node.
  *
  */
 

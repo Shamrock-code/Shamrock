@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file GetFieldRefFromLayer.hpp
+ * @file GetObjCntFromLayer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Defines the GetFieldRefFromLayer class for extracting field references from patch data
  * layers.

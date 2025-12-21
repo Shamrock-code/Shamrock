@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file AddForceShearingBoxInertialPart.hpp
+ * @file ForwardEuler.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Adds the inertial part of the acceleration for a shearing box force.
  *
@@ -78,9 +78,7 @@ namespace shammodels::common::modules {
                 });
         }
 
-        inline virtual std::string _impl_get_label() const {
-            return "ForwardEuler";
-        };
+        inline virtual std::string _impl_get_label() const { return "ForwardEuler"; };
 
         virtual std::string _impl_get_tex() const { return "TODO"; }
     };

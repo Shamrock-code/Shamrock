@@ -1296,7 +1296,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         SolverGraph solver_graph;
 
-        solver_graph.register_edge("scheduler_patchdata", PatchDataLayerRefs("patchdatas", "\\mathbb{U}_{\\rm patch}"));
+        solver_graph.register_edge(
+            "scheduler_patchdata", PatchDataLayerRefs("patchdatas", "\\mathbb{U}_{\\rm patch}"));
         solver_graph.register_edge("part_counts", Indexes<u32>("Npart_patch", "N_{\\rm part}_p"));
 
         solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));
@@ -1632,7 +1633,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         solver_sequence.evaluate();
     }
 
-    //do_predictor_leapfrog(dt);
+    // do_predictor_leapfrog(dt);
 
     part_killing_step();
 

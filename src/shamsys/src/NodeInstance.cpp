@@ -114,8 +114,8 @@ namespace syclinit {
         sched_compute = std::make_shared<sham::DeviceScheduler>(ctx_compute);
         sched_alt     = std::make_shared<sham::DeviceScheduler>(ctx_alt);
 
-        sched_compute->test();
-        sched_alt->test();
+        test_device_scheduler(sched_compute);
+        test_device_scheduler(sched_alt);
 
         // logger::raw_ln("--- Compute ---");
         // sched_compute->print_info();

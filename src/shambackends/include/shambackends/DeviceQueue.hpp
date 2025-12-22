@@ -70,13 +70,6 @@ namespace sham {
         bool wait_after_submit = false;
 
         /**
-         * @brief Test if the queueus working properly
-         *
-         * Enqueue a simple kernel to test that the queue can execute something.
-         */
-        void test();
-
-        /**
          * @brief Create a device queue
          *
          * @param queue_name The name of the queue

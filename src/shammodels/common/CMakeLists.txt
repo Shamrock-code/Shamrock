@@ -16,6 +16,7 @@ set(Sources
     src/pyAMRTestModel.cpp
     src/pyAMRGrid.cpp
     src/modules/AddForceCentralGravPotential.cpp
+    src/timestep_report.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

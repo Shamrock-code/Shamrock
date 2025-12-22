@@ -23,6 +23,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <type_traits>
 #include <stdexcept>
@@ -121,6 +122,14 @@ namespace shamalgs::collective {
                 shambase::throw_unimplemented();
             }
         }
+    }
+
+    template<class T>
+    inline std::vector<T> gather(T a, MPI_Comm comm = MPI_COMM_WORLD, int root = 0) {
+        std::vector<T> ret(shamcomm::world_size());
+        shamcomm::mpi::Gather(
+            &a, 1, get_mpi_type<T>(), ret.data(), 1, get_mpi_type<T>(), root, comm);
+        return ret;
     }
 
 } // namespace shamalgs::collective

@@ -12,7 +12,8 @@
 /**
  * @file SolverConfig.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Configuration for the Godunov SPH (GSPH) solver
  *
  * This file contains the main configuration structure for the GSPH solver.

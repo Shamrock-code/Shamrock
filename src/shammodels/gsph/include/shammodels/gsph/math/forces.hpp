@@ -74,7 +74,7 @@ namespace shammodels::gsph {
 
         // Energy flux: p* * (v* - v_a) dot nabla W
         // Use sham::inv_sat_zero() for safe division when rho_a_sq * omega_a is zero
-        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_a   = rho_a_sq * omega_a;
         const Tscal factor = p_star * sham::inv_sat_zero(sub_fact_a);
         return m_b * factor * sycl::dot(v_star_vec - v_a, nabla_W_a);
     }

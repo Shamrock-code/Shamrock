@@ -29,48 +29,13 @@
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/gsph/math/riemann/iterative.hpp"
+#include "shammodels/sph/math/forces.hpp"
 
 namespace shammodels::gsph {
 
-    /**
-     * @brief Compute GSPH acceleration from Riemann solver result
-     *
-     * Following Cha & Whitworth (2003) Eq. 10:
-     *   dv_a/dt = -sum_b m_b * p*_ab * (nabla W_ab(h_a) / (rho_a^2 * Omega_a)
-     *                                 + nabla W_ab(h_b) / (rho_b^2 * Omega_b))
-     *
-     * This is the GSPH analog of the SPH pressure gradient, but using the
-     * interface pressure p* from the Riemann solver instead of (P_a + P_b)/2
-     * or P_a/rho_a^2 + P_b/rho_b^2.
-     *
-     * @tparam Tvec Vector type
-     * @tparam Tscal Scalar type
-     * @param m_b Mass of particle b
-     * @param p_star Interface pressure from Riemann solver
-     * @param rho_a_sq Density squared of particle a
-     * @param rho_b_sq Density squared of particle b
-     * @param omega_a Grad-h correction factor for particle a
-     * @param omega_b Grad-h correction factor for particle b
-     * @param nabla_W_a Kernel gradient at r_ab with smoothing length h_a
-     * @param nabla_W_b Kernel gradient at r_ab with smoothing length h_b
-     * @return Acceleration contribution from this pair
-     */
-    template<class Tvec, class Tscal>
-    inline Tvec gsph_acceleration(
-        Tscal m_b,
-        Tscal p_star,
-        Tscal rho_a_sq,
-        Tscal rho_b_sq,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tvec nabla_W_a,
-        Tvec nabla_W_b) {
-
-        const Tscal factor_a = p_star / (rho_a_sq * omega_a);
-        const Tscal factor_b = p_star / (rho_b_sq * omega_b);
-
-        return -m_b * (factor_a * nabla_W_a + factor_b * nabla_W_b);
-    }
+    // Note: For GSPH acceleration, use shamrock::sph::sph_pressure_symetric() with p_star
+    // as both P_a and P_b. This provides proper handling of zero denominators via
+    // sham::inv_sat_zero() and avoids code duplication.
 
     /**
      * @brief Compute GSPH energy equation contribution
@@ -108,7 +73,9 @@ namespace shammodels::gsph {
         Tvec v_star_vec = v_star * r_ab_unit;
 
         // Energy flux: p* * (v* - v_a) dot nabla W
-        const Tscal factor = p_star / (rho_a_sq * omega_a);
+        // Use sham::inv_sat_zero() for safe division when rho_a_sq * omega_a is zero
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        const Tscal factor = p_star * sham::inv_sat_zero(sub_fact_a);
         return m_b * factor * sycl::dot(v_star_vec - v_a, nabla_W_a);
     }
 
@@ -157,49 +124,17 @@ namespace shammodels::gsph {
         Tvec nabla_W_a = Fab_a * r_ab_unit;
         Tvec nabla_W_b = Fab_b * r_ab_unit;
 
-        // Acceleration
-        dv_dt += gsph_acceleration<Tvec, Tscal>(
-            m_b, p_star, rho_a_sq, rho_b_sq, omega_a, omega_b, nabla_W_a, nabla_W_b);
+        // Acceleration: use sph_pressure_symetric with p_star as both P_a and P_b
+        // This provides proper handling of zero denominators via sham::inv_sat_zero()
+        dv_dt += shamrock::sph::sph_pressure_symetric<Tvec, Tscal>(
+            m_b, rho_a_sq, rho_b_sq, p_star, p_star, omega_a, omega_b, nabla_W_a, nabla_W_b);
 
         // Energy rate
         du_dt += gsph_energy_rate<Tvec, Tscal>(
             m_b, p_star, v_star, rho_a_sq, omega_a, v_a, r_ab_unit, nabla_W_a);
     }
 
-    /**
-     * @brief Project velocity onto pair axis for 1D Riemann problem
-     *
-     * The Riemann problem at each particle interface is solved in 1D along
-     * the line connecting the two particles. This function projects the
-     * 3D velocity onto this axis.
-     *
-     * @tparam Tvec Vector type
-     * @tparam Tscal Scalar type
-     * @param v Velocity vector
-     * @param r_ab_unit Unit vector along pair axis (from a to b)
-     * @return Scalar velocity component along pair axis
-     */
-    template<class Tvec, class Tscal>
-    inline Tscal project_velocity(Tvec v, Tvec r_ab_unit) {
-        return sycl::dot(v, r_ab_unit);
-    }
-
-    /**
-     * @brief Compute density from smoothing length using mass-density relation
-     *
-     * For SPH with adaptive smoothing length: rho = m * (h_fact/h)^dim
-     *
-     * @tparam dim Spatial dimension (1, 2, or 3)
-     * @tparam Tscal Scalar type
-     * @param m Particle mass
-     * @param h Smoothing length
-     * @param hfactd h_fact^dim constant from kernel
-     * @return Density
-     */
-    template<u32 dim, class Tscal>
-    inline Tscal rho_from_h(Tscal m, Tscal h, Tscal hfactd) {
-        Tscal h_inv = Tscal{1} / h;
-        return m * hfactd * sycl::pown(h_inv, static_cast<int>(dim));
-    }
+    // Note: For velocity projection onto pair axis, use sycl::dot(v, r_ab_unit) directly.
+    // For density from smoothing length, use shamrock::sph::rho_h() from density.hpp.
 
 } // namespace shammodels::gsph

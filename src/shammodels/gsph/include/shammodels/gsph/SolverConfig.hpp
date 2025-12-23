@@ -101,8 +101,7 @@ struct shammodels::gsph::SolverConfig {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass{0};      ///< The mass of each gas particle (must be set before use)
-    Tscal gamma = Tscal{1.4}; ///< Adiabatic index (for ideal gas EOS)
+    Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
 
     CFLConfig<Tscal> cfl_config; ///< CFL configuration
 
@@ -200,10 +199,23 @@ struct shammodels::gsph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    inline void set_eos_adiabatic(Tscal _gamma) {
-        gamma = _gamma;
-        eos_config.set_adiabatic(_gamma);
+    /**
+     * @brief Get the adiabatic index (gamma) from the EOS config
+     *
+     * @return The adiabatic index from Adiabatic or Polytropic EOS, or 1.4 as default
+     */
+    inline Tscal get_eos_gamma() const {
+        using Adiabatic  = typename EOSConfig::Adiabatic;
+        using Polytropic = typename EOSConfig::Polytropic;
+        if (const auto *eos = std::get_if<Adiabatic>(&eos_config.config)) {
+            return eos->gamma;
+        } else if (const auto *eos = std::get_if<Polytropic>(&eos_config.config)) {
+            return eos->gamma;
+        }
+        return Tscal{1.4}; // Default for non-gamma EOS types
     }
+
+    inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
 
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
@@ -290,7 +302,6 @@ struct shammodels::gsph::SolverConfig {
         }
         logger::raw_ln("----- GSPH Solver configuration -----");
         logger::raw_ln("gpart_mass  =", gpart_mass);
-        logger::raw_ln("gamma       =", gamma);
         riemann_config.print_status();
         reconstruct_config.print_status();
         eos_config.print_status();
@@ -299,8 +310,9 @@ struct shammodels::gsph::SolverConfig {
 
     inline void check_config() const {
         // Validate configuration (gpart_mass checked later at runtime)
-        if (gamma <= 1) {
-            shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for ideal gas");
+        // Only check gamma for adiabatic EOS types
+        if (is_eos_adiabatic() && get_eos_gamma() <= 1) {
+            shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for adiabatic gas");
         }
     }
 
@@ -364,7 +376,6 @@ namespace shammodels::gsph {
             {"kernel_id", kernel_id},
             {"type_id", type_id},
             {"gpart_mass", p.gpart_mass},
-            {"gamma", p.gamma},
             {"cfl_config", p.cfl_config},
             {"unit_sys", junit},
             {"time_state", p.time_state},
@@ -402,7 +413,6 @@ namespace shammodels::gsph {
         }
 
         j.at("gpart_mass").get_to(p.gpart_mass);
-        j.at("gamma").get_to(p.gamma);
         j.at("cfl_config").get_to(p.cfl_config);
         from_json_optional(j.at("unit_sys"), p.unit_sys);
         j.at("time_state").get_to(p.time_state);

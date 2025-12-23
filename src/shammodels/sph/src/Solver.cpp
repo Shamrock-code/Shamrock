@@ -431,7 +431,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         }
     }
 
-    solver_graph.register_node(
+    storage.solver_sequence = solver_graph.register_node(
         "time_step",
         OperationSequence(
             "time step",
@@ -1644,7 +1644,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         // Solver evaluation
         ////////////////////////////////////////////////////////////////////////////////////////
 
-        shambase::get_check_ref(solver_graph.get_node_ptr_base("time_step")).evaluate();
+        shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
     // do_predictor_leapfrog(dt);

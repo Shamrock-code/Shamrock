@@ -3,8 +3,6 @@ name: autofix.ci  # needed to securely identify the workflow
 on:
   pull_request:
     types: [opened, synchronize, labeled]
-  push:
-    branches: ["main"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -15,10 +13,10 @@ permissions:
 
 jobs:
   autofix:
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'autofix.ci') }}
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'autofix.ci') }}
     runs-on: ubuntu-latest
     env:
-      FIX_MODE: "${{ (github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'autofix.ci')) && 'fix' || 'check' }}"
+      FIX_MODE: "${{ contains(github.event.pull_request.labels.*.name, 'autofix.ci') && 'fix' || 'check' }}"
     steps:
       - uses: actions/checkout@v6
         with:

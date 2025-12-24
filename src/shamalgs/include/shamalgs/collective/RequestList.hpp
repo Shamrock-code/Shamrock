@@ -12,7 +12,7 @@
 /**
  * @file RequestList.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Provides a helper class to manage a list of MPI requests.
  *
  */
 

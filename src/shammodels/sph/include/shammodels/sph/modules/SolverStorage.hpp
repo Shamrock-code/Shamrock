@@ -28,7 +28,9 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -51,6 +53,9 @@ namespace shammodels::sph {
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+
+        shamrock::solvergraph::SolverGraph solver_graph;
+        std::shared_ptr<shamrock::solvergraph::OperationSequence> solver_sequence;
 
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;

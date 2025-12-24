@@ -81,6 +81,17 @@ model.set_cfl_force(0.1)
 
 t_target = 0.245
 
+print("solver tex :")
+print("--------------------------------")
+print(model.get_solver_tex())
+print("--------------------------------")
+print("solver dot graph :")
+print("--------------------------------")
+print("digraph G {")
+print(model.get_solver_dot_graph())
+print("}")
+print("--------------------------------")
+
 model.evolve_until(t_target)
 
 # model.evolve_once()

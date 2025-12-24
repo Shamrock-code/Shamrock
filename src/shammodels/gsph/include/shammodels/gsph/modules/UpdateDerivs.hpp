@@ -12,8 +12,8 @@
 /**
  * @file UpdateDerivs.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief GSPH derivative update module
  *
  * This module computes the time derivatives (acceleration and energy rate)

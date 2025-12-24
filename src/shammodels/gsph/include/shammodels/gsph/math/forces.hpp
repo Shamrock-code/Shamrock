@@ -12,7 +12,8 @@
 /**
  * @file forces.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH force computation using Riemann solver results
  *
  * Implements the Godunov SPH (GSPH) force formulation following Cha & Whitworth (2003).

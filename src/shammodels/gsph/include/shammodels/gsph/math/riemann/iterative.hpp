@@ -12,7 +12,8 @@
 /**
  * @file iterative.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Iterative Riemann solver for GSPH (van Leer 1997)
  *
  * Implements the van Leer (1997) iterative Riemann solver for ideal gas.

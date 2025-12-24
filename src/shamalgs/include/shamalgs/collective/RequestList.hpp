@@ -62,6 +62,8 @@ namespace shamalgs::collective {
             std::vector<MPI_Status> st_lst(rqs.size());
             shamcomm::mpi::Waitall(
                 shambase::narrow_or_throw<i32>(rqs.size()), rqs.data(), st_lst.data());
+            ready_count = rqs.size();
+            is_ready.assign(rqs.size(), true);
         }
 
         size_t remain_count() {

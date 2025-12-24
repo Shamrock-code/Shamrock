@@ -961,7 +961,7 @@ namespace sham {
          *
          * @param new_size The new size of the buffer.
          */
-        inline void resize(u64 new_size) {
+        inline void resize(size_t new_size) {
 
             auto dev_sched = hold.get_dev_scheduler_ptr();
 

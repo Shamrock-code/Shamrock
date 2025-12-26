@@ -161,32 +161,6 @@ namespace shammodels::gsph {
 
         void vtk_do_dump(std::string filename, bool add_patch_world_id);
 
-        /**
-         * @brief Write a checkpoint to disk
-         *
-         * Saves the current simulation state to checkpoint files.
-         *
-         * @param basename Base filename (without extension)
-         */
-        void write_checkpoint(const std::string &basename);
-
-        /**
-         * @brief Read a checkpoint from disk
-         *
-         * Loads simulation state from checkpoint files.
-         *
-         * @param basename Base filename (without extension)
-         */
-        void read_checkpoint(const std::string &basename);
-
-        /**
-         * @brief Check if a checkpoint file exists
-         *
-         * @param basename Base filename (without extension)
-         * @return true if checkpoint exists
-         */
-        static bool checkpoint_exists(const std::string &basename);
-
         inline void print_timestep_logs() {
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(

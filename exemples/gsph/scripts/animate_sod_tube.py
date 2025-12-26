@@ -21,10 +21,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Import from shared analytical module
-exemples_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, exemples_dir)
-from common.analytical.riemann import SodAnalytical
+# Use shamrock's built-in SodTube analytical solution
+import shamrock
 
 # Try to import animation tools
 try:
@@ -135,8 +133,22 @@ print(f"  Left:  rho = {rho_L}, P = {p_L}")
 print(f"  Right: rho = {rho_R}, P = {p_R}")
 print()
 
-# Create analytical solution object
-sod_analytical = SodAnalytical(gamma=gamma, rho_L=rho_L, rho_R=rho_R, p_L=p_L, p_R=p_R, x0=0.0)
+# Create analytical solution object using shamrock's built-in SodTube
+# Note: SodTube uses rho_1/P_1 for left state and rho_5/P_5 for right state
+sod_analytical = shamrock.phys.SodTube(
+    gamma=gamma, rho_1=rho_L, P_1=p_L, rho_5=rho_R, P_5=p_R
+)
+
+
+def get_analytical_solution(sod, t, x_array):
+    """Get analytical solution at multiple x positions."""
+    rho = np.zeros(len(x_array))
+    vel = np.zeros(len(x_array))
+    pres = np.zeros(len(x_array))
+    for i, x in enumerate(x_array):
+        rho[i], vel[i], pres[i] = sod.get_value(t, x)
+    ene = pres / ((gamma - 1) * np.maximum(rho, 1e-10))
+    return rho, vel, pres, ene
 
 # Determine frame skip for reasonable animation size
 n_frames = len(files)
@@ -203,9 +215,8 @@ def update(frame_num):
     ene_sim = data["ene"][sort_idx]
 
     # Get analytical solution
-    x_ana, rho_ana, vel_ana, pres_ana, ene_ana = sod_analytical.solution_at_time(
-        time, x_min=x_sim.min(), x_max=x_sim.max(), n_points=500
-    )
+    x_ana = np.linspace(x_sim.min(), x_sim.max(), 500)
+    rho_ana, vel_ana, pres_ana, ene_ana = get_analytical_solution(sod_analytical, time, x_ana)
 
     # Clear axes
     ax1.clear()
@@ -309,9 +320,8 @@ if len(frame_data) > 0:
     pres_sim = data["pres"][sort_idx]
     ene_sim = data["ene"][sort_idx]
 
-    x_ana, rho_ana, vel_ana, pres_ana, ene_ana = sod_analytical.solution_at_time(
-        time, x_min=x_sim.min(), x_max=x_sim.max(), n_points=500
-    )
+    x_ana = np.linspace(x_sim.min(), x_sim.max(), 500)
+    rho_ana, vel_ana, pres_ana, ene_ana = get_analytical_solution(sod_analytical, time, x_ana)
 
     fig2, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(14, 12))
     fig2.suptitle(

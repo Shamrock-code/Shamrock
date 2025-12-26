@@ -11,10 +11,11 @@ cmake_minimum_required(VERSION 3.9)
 
 project(Shammodels_gsph CXX C)
 
-# Sources: GSPH solver and VTK I/O
+# Sources: GSPH solver, Model, and VTK I/O
 set(Sources
     src/SolverConfig.cpp
     src/Solver.cpp
+    src/Model.cpp
     src/modules/UpdateDerivs.cpp
     src/modules/io/VTKDump.cpp
 )

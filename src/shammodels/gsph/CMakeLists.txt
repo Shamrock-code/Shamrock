@@ -11,9 +11,10 @@ cmake_minimum_required(VERSION 3.9)
 
 project(Shammodels_gsph CXX C)
 
-# Core infrastructure sources (Phase 1)
+# Sources: Core infrastructure + Physics modules
 set(Sources
     src/SolverConfig.cpp
+    src/modules/UpdateDerivs.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

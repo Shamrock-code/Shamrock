@@ -26,8 +26,10 @@ namespace shamrock::solvergraph {
     template<class T>
     class IDataEdge : public IEdgeNamed {
 
+        static_assert(std::is_default_constructible_v<T>, "T must be default constructible");
+
         public:
-        T data;
+        T data = {};
 
         using IEdgeNamed::IEdgeNamed;
 

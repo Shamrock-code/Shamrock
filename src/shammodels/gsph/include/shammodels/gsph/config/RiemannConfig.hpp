@@ -38,7 +38,9 @@ namespace shammodels::gsph {
      *
      * This struct contains the configuration for different Riemann solver types:
      * - Iterative: van Leer (1997) Newton-Raphson iterative solver
+     * - Exact: Exact Riemann solver (Toro)
      * - HLLC: Harten-Lax-van Leer-Contact approximate solver
+     * - Roe: Roe linearized solver
      *
      * @tparam Tvec type of the vector of coordinates
      */
@@ -66,6 +68,17 @@ struct shammodels::gsph::RiemannConfig {
     };
 
     /**
+     * @brief Exact Riemann solver
+     *
+     * Solves the Riemann problem exactly using iterative root finding.
+     * Most accurate but computationally expensive.
+     * Reference: Toro, E.F. (2009) "Riemann Solvers and Numerical Methods for Fluid Dynamics"
+     */
+    struct Exact {
+        Tscal tol = Tscal{1.0e-8}; ///< Convergence tolerance
+    };
+
+    /**
      * @brief HLLC approximate Riemann solver
      *
      * Harten-Lax-van Leer-Contact solver. Approximate but efficient.
@@ -74,7 +87,18 @@ struct shammodels::gsph::RiemannConfig {
      */
     struct HLLC {};
 
-    using Variant = std::variant<Iterative, HLLC>;
+    /**
+     * @brief Roe linearized Riemann solver
+     *
+     * Uses Roe averaging for a linearized approximate solution.
+     * Fast but may have issues with expansion shocks.
+     * Reference: Roe, P.L. (1981)
+     */
+    struct Roe {
+        Tscal entropy_fix = Tscal{0.1}; ///< Entropy fix parameter
+    };
+
+    using Variant = std::variant<Iterative, Exact, HLLC, Roe>;
 
     Variant config = Iterative{};
 
@@ -84,10 +108,16 @@ struct shammodels::gsph::RiemannConfig {
         set(Iterative{tol, max_iter});
     }
 
+    void set_exact(Tscal tol = Tscal{1.0e-8}) { set(Exact{tol}); }
+
     void set_hllc() { set(HLLC{}); }
 
+    void set_roe(Tscal entropy_fix = Tscal{0.1}) { set(Roe{entropy_fix}); }
+
     inline bool is_iterative() const { return std::holds_alternative<Iterative>(config); }
+    inline bool is_exact() const { return std::holds_alternative<Exact>(config); }
     inline bool is_hllc() const { return std::holds_alternative<HLLC>(config); }
+    inline bool is_roe() const { return std::holds_alternative<Roe>(config); }
 
     inline void print_status() const {
         logger::raw_ln("--- Riemann solver config");
@@ -96,8 +126,14 @@ struct shammodels::gsph::RiemannConfig {
             logger::raw_ln("  Type     : Iterative (van Leer 1997)");
             logger::raw_ln("  tol      =", v->tol);
             logger::raw_ln("  max_iter =", v->max_iter);
+        } else if (const Exact *v = std::get_if<Exact>(&config)) {
+            logger::raw_ln("  Type : Exact (Toro)");
+            logger::raw_ln("  tol  =", v->tol);
         } else if (std::get_if<HLLC>(&config)) {
             logger::raw_ln("  Type : HLLC");
+        } else if (const Roe *v = std::get_if<Roe>(&config)) {
+            logger::raw_ln("  Type        : Roe");
+            logger::raw_ln("  entropy_fix =", v->entropy_fix);
         } else {
             shambase::throw_unimplemented();
         }
@@ -112,7 +148,9 @@ namespace shammodels::gsph {
     inline void to_json(nlohmann::json &j, const RiemannConfig<Tvec> &p) {
         using T         = RiemannConfig<Tvec>;
         using Iterative = typename T::Iterative;
+        using Exact     = typename T::Exact;
         using HLLC      = typename T::HLLC;
+        using Roe       = typename T::Roe;
 
         if (const Iterative *v = std::get_if<Iterative>(&p.config)) {
             j = {
@@ -120,9 +158,19 @@ namespace shammodels::gsph {
                 {"tol", v->tol},
                 {"max_iter", v->max_iter},
             };
+        } else if (const Exact *v = std::get_if<Exact>(&p.config)) {
+            j = {
+                {"riemann_type", "exact"},
+                {"tol", v->tol},
+            };
         } else if (std::get_if<HLLC>(&p.config)) {
             j = {
                 {"riemann_type", "hllc"},
+            };
+        } else if (const Roe *v = std::get_if<Roe>(&p.config)) {
+            j = {
+                {"riemann_type", "roe"},
+                {"entropy_fix", v->entropy_fix},
             };
         } else {
             shambase::throw_unimplemented();
@@ -143,12 +191,18 @@ namespace shammodels::gsph {
         j.at("riemann_type").get_to(riemann_type);
 
         using Iterative = typename T::Iterative;
+        using Exact     = typename T::Exact;
         using HLLC      = typename T::HLLC;
+        using Roe       = typename T::Roe;
 
         if (riemann_type == "iterative") {
             p.set(Iterative{j.at("tol").get<Tscal>(), j.at("max_iter").get<u32>()});
+        } else if (riemann_type == "exact") {
+            p.set(Exact{j.at("tol").get<Tscal>()});
         } else if (riemann_type == "hllc") {
             p.set(HLLC{});
+        } else if (riemann_type == "roe") {
+            p.set(Roe{j.at("entropy_fix").get<Tscal>()});
         } else {
             shambase::throw_unimplemented("Unknown Riemann solver type: " + riemann_type);
         }

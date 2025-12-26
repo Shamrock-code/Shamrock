@@ -1353,9 +1353,7 @@ bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_a
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {
-    // Update load balancing values - simplified for now
-}
+void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {}
 
 template<class Tvec, template<class> class Kern>
 shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once() {
@@ -1499,22 +1497,6 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     log.tcompute = tstep.elasped_sec();
 
     return log;
-}
-
-// Checkpoint methods (to be implemented in a follow-up PR)
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Solver<Tvec, SPHKernel>::write_checkpoint(const std::string &basename) {
-    shambase::throw_unimplemented("GSPH checkpoint writing is not yet implemented");
-}
-
-template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Solver<Tvec, SPHKernel>::read_checkpoint(const std::string &basename) {
-    shambase::throw_unimplemented("GSPH checkpoint reading is not yet implemented");
-}
-
-template<class Tvec, template<class> class SPHKernel>
-bool shammodels::gsph::Solver<Tvec, SPHKernel>::checkpoint_exists(const std::string &basename) {
-    return false; // No checkpoint implementation yet
 }
 
 // Template instantiations

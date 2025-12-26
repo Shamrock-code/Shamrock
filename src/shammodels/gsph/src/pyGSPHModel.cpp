@@ -232,7 +232,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def("get_total_part_count", &T::get_total_part_count)
         .def("total_mass_to_part_mass", &T::total_mass_to_part_mass)
         .def(
-            "set_value_in_a_box",
+            "set_field_in_box",
             [](T &self,
                std::string field_name,
                std::string field_type,
@@ -242,13 +242,13 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                u32 ivar) {
                 if (field_type == "f64") {
                     f64 val = value.cast<f64>();
-                    self.set_value_in_a_box(field_name, val, {box_min, box_max}, ivar);
+                    self.set_field_in_box(field_name, val, {box_min, box_max}, ivar);
                 } else if (field_type == "f64_3") {
                     f64_3 val = value.cast<f64_3>();
-                    self.set_value_in_a_box(field_name, val, {box_min, box_max}, ivar);
+                    self.set_field_in_box(field_name, val, {box_min, box_max}, ivar);
                 } else if (field_type == "u32") {
                     u32 val = value.cast<u32>();
-                    self.set_value_in_a_box(field_name, val, {box_min, box_max}, ivar);
+                    self.set_field_in_box(field_name, val, {box_min, box_max}, ivar);
                 } else {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "unknown field type: " + field_type + ". Valid types: f64, f64_3, u32");
@@ -263,6 +263,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::arg("ivar") = 0,
             R"==(
     Set field value for particles within a box region.
+
+    Useful for setting up discontinuous initial conditions like Sod shock tube.
 
     Parameters
     ----------
@@ -281,11 +283,13 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     Examples
     --------
-    >>> # Set velocity for particles in left half of domain
-    >>> model.set_value_in_a_box("vxyz", "f64_3", (0.0, 0.0, 0.0), (-1,-1,-1), (0,1,1))
+    >>> # Sod shock tube: set left state internal energy
+    >>> model.set_field_in_box("uint", "f64", u_left, (-1,-1,-1), (0,1,1))
+    >>> # Set right state
+    >>> model.set_field_in_box("uint", "f64", u_right, (0,-1,-1), (1,1,1))
 )==")
         .def(
-            "set_value_in_sphere",
+            "set_field_in_sphere",
             [](T &self,
                std::string field_name,
                std::string field_type,
@@ -294,17 +298,45 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                f64 radius) {
                 if (field_type == "f64") {
                     f64 val = value.cast<f64>();
-                    self.set_value_in_sphere(field_name, val, center, radius);
+                    self.set_field_in_sphere(field_name, val, center, radius);
                 } else if (field_type == "f64_3") {
                     f64_3 val = value.cast<f64_3>();
-                    self.set_value_in_sphere(field_name, val, center, radius);
+                    self.set_field_in_sphere(field_name, val, center, radius);
                 } else {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
                         "unknown field type");
                 }
-            })
-        .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-        .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+            },
+            py::arg("field_name"),
+            py::arg("field_type"),
+            py::arg("value"),
+            py::arg("center"),
+            py::arg("radius"),
+            R"==(
+    Set field value for particles within a spherical region.
+
+    Useful for setting up point-source initial conditions like Sedov blast.
+
+    Parameters
+    ----------
+    field_name : str
+        Name of the field to set (e.g., "uint")
+    field_type : str
+        Type of the field: "f64" or "f64_3"
+    value : float or tuple
+        Value to set (type must match field_type)
+    center : tuple
+        Center of the sphere (x, y, z)
+    radius : float
+        Radius of the sphere
+
+    Examples
+    --------
+    >>> # Sedov blast: inject energy in central sphere
+    >>> model.set_field_in_sphere("uint", "f64", u_blast, (0,0,0), r_blast)
+)==")
+        .def("apply_field_from_position_f64_3", &T::template apply_field_from_position<f64_3>)
+        .def("apply_field_from_position_f64", &T::template apply_field_from_position<f64>)
         .def(
             "get_sum",
             [](T &self, std::string field_name, std::string field_type) {

@@ -126,8 +126,26 @@ namespace shammodels::gsph {
         // Field manipulation
         ////////////////////////////////////////////////////////////////////////////////////////////
 
+        /**
+         * @brief Apply a position-dependent function to initialize a field
+         *
+         * Sets field values by evaluating a function at each particle position.
+         * Useful for setting up spatially-varying initial conditions.
+         *
+         * @tparam T Field type (e.g., Tscal for density, Tvec for velocity)
+         * @param field_name Name of the field to modify (e.g., "uint", "vxyz")
+         * @param pos_to_val Function mapping position to field value
+         *
+         * Example:
+         * @code
+         * // Set velocity as a function of position
+         * model.apply_field_from_position<Tvec>("vxyz", [](Tvec pos) {
+         *     return Tvec{pos[0], 0.0, 0.0};  // Linear velocity profile
+         * });
+         * @endcode
+         */
         template<class T>
-        inline void set_field_value_lambda(
+        inline void apply_field_from_position(
             std::string field_name, const std::function<T(Tvec)> pos_to_val) {
 
             StackEntry stack_loc{};
@@ -162,8 +180,29 @@ namespace shammodels::gsph {
                 });
         }
 
+        /**
+         * @brief Set field value for particles within a box region
+         *
+         * Sets the specified field to a constant value for all particles
+         * whose positions fall within the given axis-aligned box.
+         * Useful for setting up discontinuous initial conditions (e.g., Sod shock tube).
+         *
+         * @tparam T Field type (e.g., Tscal for scalars, Tvec for vectors)
+         * @param field_name Name of the field to modify (e.g., "uint", "vxyz")
+         * @param val Value to set for particles in the region
+         * @param box Bounding box as (min_corner, max_corner)
+         * @param ivar Variable index for multi-variable fields (default: 0)
+         *
+         * Example:
+         * @code
+         * // Sod shock tube: set left state internal energy
+         * model.set_field_in_box("uint", u_left, {box_min, interface_pos});
+         * // Set right state
+         * model.set_field_in_box("uint", u_right, {interface_pos, box_max});
+         * @endcode
+         */
         template<class T>
-        inline void set_value_in_a_box(
+        inline void set_field_in_box(
             std::string field_name, T val, std::pair<Tvec, Tvec> box, u32 ivar = 0) {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
@@ -180,7 +219,7 @@ namespace shammodels::gsph {
                     // Validate ivar parameter to prevent out-of-bounds access
                     if (ivar >= nvar) {
                         shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                            "set_value_in_a_box: ivar ({}) >= f.get_nvar ({}) for field {}",
+                            "set_field_in_box: ivar ({}) >= f.get_nvar ({}) for field {}",
                             ivar,
                             nvar,
                             field_name));
@@ -201,8 +240,28 @@ namespace shammodels::gsph {
                 });
         }
 
+        /**
+         * @brief Set field value for particles within a spherical region
+         *
+         * Sets the specified field to a constant value for all particles
+         * whose positions fall within the given sphere.
+         * Useful for setting up point-source initial conditions (e.g., Sedov blast).
+         *
+         * @tparam T Field type (must be single-variable, e.g., Tscal)
+         * @param field_name Name of the field to modify (e.g., "uint")
+         * @param val Value to set for particles in the region
+         * @param center Center of the sphere
+         * @param radius Radius of the sphere
+         *
+         * Example:
+         * @code
+         * // Sedov blast: inject energy in central sphere
+         * Tscal blast_energy_per_particle = E_blast / n_particles_in_sphere;
+         * model.set_field_in_sphere("uint", blast_energy_per_particle, origin, r_blast);
+         * @endcode
+         */
         template<class T>
-        inline void set_value_in_sphere(std::string field_name, T val, Tvec center, Tscal radius) {
+        inline void set_field_in_sphere(std::string field_name, T val, Tvec center, Tscal radius) {
             StackEntry stack_loc{};
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(

@@ -11,10 +11,12 @@ cmake_minimum_required(VERSION 3.9)
 
 project(Shammodels_gsph CXX C)
 
-# Sources: Core infrastructure + Physics modules
+# Sources: GSPH solver and VTK I/O
 set(Sources
     src/SolverConfig.cpp
+    src/Solver.cpp
     src/modules/UpdateDerivs.cpp
+    src/modules/io/VTKDump.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

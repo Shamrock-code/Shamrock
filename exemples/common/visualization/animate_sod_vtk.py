@@ -19,6 +19,7 @@ import os
 import sys
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -28,6 +29,7 @@ from matplotlib.animation import FuncAnimation, PillowWriter
 # Import shamrock for analytical solution
 try:
     import shamrock
+
     HAS_SHAMROCK = True
 except ImportError:
     HAS_SHAMROCK = False
@@ -37,16 +39,30 @@ except ImportError:
 def parse_args():
     parser = argparse.ArgumentParser(description="Animate Sod shock tube VTK results")
     parser.add_argument("vtk_dir", help="Directory containing VTK files")
-    parser.add_argument("output_dir", nargs="?", default=None,
-                        help="Output directory (defaults to parent of vtk_dir)")
-    parser.add_argument("--solver", choices=["SPH", "GSPH"], default="GSPH",
-                        help="Solver type (affects file naming)")
-    parser.add_argument("--gamma", type=float, default=1.4,
-                        help="Adiabatic index (default: 1.4)")
-    parser.add_argument("--t-final", type=float, default=0.245,
-                        help="Final simulation time (default: 0.245)")
-    parser.add_argument("--fps", type=int, default=10,
-                        help="Animation frames per second (default: 10)")
+    parser.add_argument(
+        "output_dir",
+        nargs="?",
+        default=None,
+        help="Output directory (defaults to parent of vtk_dir)",
+    )
+    parser.add_argument(
+        "--solver",
+        choices=["SPH", "GSPH"],
+        default="GSPH",
+        help="Solver type (affects file naming)",
+    )
+    parser.add_argument(
+        "--gamma", type=float, default=1.4, help="Adiabatic index (default: 1.4)"
+    )
+    parser.add_argument(
+        "--t-final",
+        type=float,
+        default=0.245,
+        help="Final simulation time (default: 0.245)",
+    )
+    parser.add_argument(
+        "--fps", type=int, default=10, help="Animation frames per second (default: 10)"
+    )
     return parser.parse_args()
 
 
@@ -105,10 +121,10 @@ def main():
         # Standard Sod problem: left state (rho=1, P=1), right state (rho=0.125, P=0.1)
         sod_solver = shamrock.phys.SodTube(
             gamma=gamma,
-            rho_1=1.0,    # Left density
-            P_1=1.0,      # Left pressure
+            rho_1=1.0,  # Left density
+            P_1=1.0,  # Left pressure
             rho_5=0.125,  # Right density
-            P_5=0.1       # Right pressure
+            P_5=0.1,  # Right pressure
         )
         print(f"Analytical solution: shamrock.phys.SodTube (gamma={gamma})")
     else:
@@ -181,7 +197,11 @@ def main():
         axes[1, 1].set_title("Smoothing Length h")
         axes[1, 1].set_xlim(-1.1, 1.1)
 
-        fig.suptitle(f"{solver_name} Sod Shock Tube (t = {t:.3f})", fontsize=14, fontweight="bold")
+        fig.suptitle(
+            f"{solver_name} Sod Shock Tube (t = {t:.3f})",
+            fontsize=14,
+            fontweight="bold",
+        )
         plt.tight_layout()
 
         return axes.flat

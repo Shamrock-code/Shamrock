@@ -30,6 +30,7 @@ from analytical.sedov import SedovAnalytical
 # Try to import animation tools
 try:
     from matplotlib.animation import FuncAnimation, PillowWriter
+
     HAS_ANIMATION = True
 except ImportError:
     HAS_ANIMATION = False
@@ -38,6 +39,7 @@ except ImportError:
 # Try to import tqdm for progress bar
 try:
     from tqdm import tqdm
+
     HAS_TQDM = True
 except ImportError:
     HAS_TQDM = False
@@ -48,10 +50,18 @@ def parse_args():
         description="Animate Sedov blast wave CSV results with analytical comparison"
     )
     parser.add_argument("data_dir", help="Directory containing snapshot CSV files")
-    parser.add_argument("output_file", nargs="?", default=None,
-                        help="Output GIF file (default: <solver>_sedov_animation.gif)")
-    parser.add_argument("--solver", choices=["SPH", "GSPH"], default="GSPH",
-                        help="Solver type for labeling (default: GSPH)")
+    parser.add_argument(
+        "output_file",
+        nargs="?",
+        default=None,
+        help="Output GIF file (default: <solver>_sedov_animation.gif)",
+    )
+    parser.add_argument(
+        "--solver",
+        choices=["SPH", "GSPH"],
+        default="GSPH",
+        help="Solver type for labeling (default: GSPH)",
+    )
     return parser.parse_args()
 
 
@@ -269,10 +279,17 @@ def main():
         ax4.clear()
 
         # Density
-        ax1.plot(r_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
+        ax1.plot(
+            r_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1
+        )
         ax1.scatter(
-            r_sim[mask], rho_sim[mask], color=sim_color, s=15, alpha=0.6,
-            label=solver_name, zorder=2
+            r_sim[mask],
+            rho_sim[mask],
+            color=sim_color,
+            s=15,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
         )
         ax1.set_ylabel(r"Density $\rho$", fontsize=12, fontweight="bold")
         ax1.set_title("Density Profile", fontsize=13, fontweight="bold")
@@ -288,10 +305,17 @@ def main():
         )
 
         # Velocity
-        ax2.plot(r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
+        ax2.plot(
+            r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1
+        )
         ax2.scatter(
-            r_sim[mask], vel_sim[mask], color=sim_color, s=15, alpha=0.6,
-            label=solver_name, zorder=2
+            r_sim[mask],
+            vel_sim[mask],
+            color=sim_color,
+            s=15,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
         )
         ax2.set_ylabel(r"Radial Velocity $v_r$", fontsize=12, fontweight="bold")
         ax2.set_title("Velocity Profile", fontsize=13, fontweight="bold")
@@ -300,10 +324,22 @@ def main():
         ax2.set_xlim(0, r_sim.max() * 1.1)
 
         # Pressure
-        ax3.plot(r_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
+        ax3.plot(
+            r_ana,
+            pres_ana,
+            color=ana_color,
+            linewidth=2.5,
+            label="Analytical",
+            zorder=1,
+        )
         ax3.scatter(
-            r_sim[mask], pres_sim[mask], color=sim_color, s=15, alpha=0.6,
-            label=solver_name, zorder=2
+            r_sim[mask],
+            pres_sim[mask],
+            color=sim_color,
+            s=15,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
         )
         ax3.set_ylabel(r"Pressure $P$", fontsize=12, fontweight="bold")
         ax3.set_xlabel(r"Radius $r$", fontsize=12, fontweight="bold")
@@ -394,19 +430,32 @@ def main():
 
         # Density
         ax1.plot(r_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical")
-        ax1.scatter(r_sim[mask], rho_sim[mask], color=sim_color, s=20, alpha=0.6,
-                    label=solver_name)
+        ax1.scatter(
+            r_sim[mask],
+            rho_sim[mask],
+            color=sim_color,
+            s=20,
+            alpha=0.6,
+            label=solver_name,
+        )
         ax1.set_ylabel(r"Density $\rho$", fontsize=12, fontweight="bold")
         ax1.set_title("Density Profile", fontsize=13, fontweight="bold")
         ax1.legend(fontsize=10)
         ax1.grid(True, alpha=0.3)
-        ax1.axvline(sedov_analytical.shock_radius(time), color="gray",
-                    linestyle="--", alpha=0.5)
+        ax1.axvline(
+            sedov_analytical.shock_radius(time), color="gray", linestyle="--", alpha=0.5
+        )
 
         # Velocity
         ax2.plot(r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical")
-        ax2.scatter(r_sim[mask], vel_sim[mask], color=sim_color, s=20, alpha=0.6,
-                    label=solver_name)
+        ax2.scatter(
+            r_sim[mask],
+            vel_sim[mask],
+            color=sim_color,
+            s=20,
+            alpha=0.6,
+            label=solver_name,
+        )
         ax2.set_ylabel(r"Radial Velocity $v_r$", fontsize=12, fontweight="bold")
         ax2.set_title("Velocity Profile", fontsize=13, fontweight="bold")
         ax2.legend(fontsize=10)
@@ -414,8 +463,14 @@ def main():
 
         # Pressure
         ax3.plot(r_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical")
-        ax3.scatter(r_sim[mask], pres_sim[mask], color=sim_color, s=20, alpha=0.6,
-                    label=solver_name)
+        ax3.scatter(
+            r_sim[mask],
+            pres_sim[mask],
+            color=sim_color,
+            s=20,
+            alpha=0.6,
+            label=solver_name,
+        )
         ax3.set_ylabel(r"Pressure $P$", fontsize=12, fontweight="bold")
         ax3.set_xlabel(r"Radius $r$", fontsize=12, fontweight="bold")
         ax3.set_title("Pressure Profile", fontsize=13, fontweight="bold")

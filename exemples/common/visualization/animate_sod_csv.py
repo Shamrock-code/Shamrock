@@ -24,6 +24,7 @@ import numpy as np
 # Use shamrock's built-in SodTube analytical solution
 try:
     import shamrock
+
     HAS_SHAMROCK = True
 except ImportError:
     HAS_SHAMROCK = False
@@ -32,6 +33,7 @@ except ImportError:
 # Try to import animation tools
 try:
     from matplotlib.animation import FuncAnimation, PillowWriter
+
     HAS_ANIMATION = True
 except ImportError:
     HAS_ANIMATION = False
@@ -40,6 +42,7 @@ except ImportError:
 # Try to import tqdm for progress bar
 try:
     from tqdm import tqdm
+
     HAS_TQDM = True
 except ImportError:
     HAS_TQDM = False
@@ -50,10 +53,18 @@ def parse_args():
         description="Animate Sod shock tube CSV results with analytical comparison"
     )
     parser.add_argument("data_dir", help="Directory containing snapshot CSV files")
-    parser.add_argument("output_file", nargs="?", default=None,
-                        help="Output GIF file (default: <solver>_sod_animation.gif)")
-    parser.add_argument("--solver", choices=["SPH", "GSPH"], default="GSPH",
-                        help="Solver type for labeling (default: GSPH)")
+    parser.add_argument(
+        "output_file",
+        nargs="?",
+        default=None,
+        help="Output GIF file (default: <solver>_sod_animation.gif)",
+    )
+    parser.add_argument(
+        "--solver",
+        choices=["SPH", "GSPH"],
+        default="GSPH",
+        help="Solver type for labeling (default: GSPH)",
+    )
     return parser.parse_args()
 
 
@@ -250,8 +261,23 @@ def main():
 
         # Density
         if rho_ana is not None:
-            ax1.plot(x_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
-        ax1.scatter(x_sim, rho_sim, color=sim_color, s=10, alpha=0.6, label=solver_name, zorder=2)
+            ax1.plot(
+                x_ana,
+                rho_ana,
+                color=ana_color,
+                linewidth=2.5,
+                label="Analytical",
+                zorder=1,
+            )
+        ax1.scatter(
+            x_sim,
+            rho_sim,
+            color=sim_color,
+            s=10,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
+        )
         ax1.set_ylabel("Density", fontsize=12, fontweight="bold")
         ax1.set_title("Density Profile", fontsize=13, fontweight="bold")
         ax1.legend(loc="upper right", fontsize=10)
@@ -260,8 +286,23 @@ def main():
 
         # Velocity
         if vel_ana is not None:
-            ax2.plot(x_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
-        ax2.scatter(x_sim, vel_sim, color=sim_color, s=10, alpha=0.6, label=solver_name, zorder=2)
+            ax2.plot(
+                x_ana,
+                vel_ana,
+                color=ana_color,
+                linewidth=2.5,
+                label="Analytical",
+                zorder=1,
+            )
+        ax2.scatter(
+            x_sim,
+            vel_sim,
+            color=sim_color,
+            s=10,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
+        )
         ax2.set_ylabel("Velocity", fontsize=12, fontweight="bold")
         ax2.set_title("Velocity Profile", fontsize=13, fontweight="bold")
         ax2.legend(loc="upper left", fontsize=10)
@@ -270,8 +311,23 @@ def main():
 
         # Pressure
         if pres_ana is not None:
-            ax3.plot(x_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
-        ax3.scatter(x_sim, pres_sim, color=sim_color, s=10, alpha=0.6, label=solver_name, zorder=2)
+            ax3.plot(
+                x_ana,
+                pres_ana,
+                color=ana_color,
+                linewidth=2.5,
+                label="Analytical",
+                zorder=1,
+            )
+        ax3.scatter(
+            x_sim,
+            pres_sim,
+            color=sim_color,
+            s=10,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
+        )
         ax3.set_ylabel("Pressure", fontsize=12, fontweight="bold")
         ax3.set_xlabel("Position x", fontsize=12, fontweight="bold")
         ax3.set_title("Pressure Profile", fontsize=13, fontweight="bold")
@@ -281,8 +337,23 @@ def main():
 
         # Internal Energy
         if ene_ana is not None:
-            ax4.plot(x_ana, ene_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
-        ax4.scatter(x_sim, ene_sim, color=sim_color, s=10, alpha=0.6, label=solver_name, zorder=2)
+            ax4.plot(
+                x_ana,
+                ene_ana,
+                color=ana_color,
+                linewidth=2.5,
+                label="Analytical",
+                zorder=1,
+            )
+        ax4.scatter(
+            x_sim,
+            ene_sim,
+            color=sim_color,
+            s=10,
+            alpha=0.6,
+            label=solver_name,
+            zorder=2,
+        )
         ax4.set_ylabel("Internal Energy", fontsize=12, fontweight="bold")
         ax4.set_xlabel("Position x", fontsize=12, fontweight="bold")
         ax4.set_title("Internal Energy Profile", fontsize=13, fontweight="bold")
@@ -383,8 +454,12 @@ def main():
         ax2.grid(True, alpha=0.3)
 
         if pres_ana is not None:
-            ax3.plot(x_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical")
-        ax3.scatter(x_sim, pres_sim, color=sim_color, s=15, alpha=0.6, label=solver_name)
+            ax3.plot(
+                x_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical"
+            )
+        ax3.scatter(
+            x_sim, pres_sim, color=sim_color, s=15, alpha=0.6, label=solver_name
+        )
         ax3.set_ylabel("Pressure", fontsize=12, fontweight="bold")
         ax3.set_xlabel("Position x", fontsize=12, fontweight="bold")
         ax3.set_title("Pressure Profile", fontsize=13, fontweight="bold")

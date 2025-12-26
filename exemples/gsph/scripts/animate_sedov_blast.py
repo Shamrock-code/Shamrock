@@ -24,7 +24,7 @@ import numpy as np
 # Import from shared analytical module
 exemples_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, exemples_dir)
-from common.analytical.riemann import SedovAnalytical
+from common.analytical.sedov import SedovAnalytical
 
 # Try to import animation tools
 try:
@@ -184,7 +184,7 @@ print(f"  rho_0 = {rho_0}")
 print()
 
 # Create analytical solution object
-sedov_analytical = SedovAnalytical(gamma=gamma, E_blast=E_blast, rho_0=rho_0, ndim=3)
+sedov_analytical = SedovAnalytical(gamma=gamma, E_blast=E_blast, rho_0=rho_0)
 
 # Determine frame skip for reasonable animation size
 n_frames = len(files)

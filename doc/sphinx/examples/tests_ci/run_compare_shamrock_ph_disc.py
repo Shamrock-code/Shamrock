@@ -85,7 +85,7 @@ set -e
 mkdir -p phantom_run
 
 cd phantom_run
-#git clone https://github.com/danieljprice/phantom.git
+git clone https://github.com/danieljprice/phantom.git
 cd phantom
 mkdir -p disc; cd disc
 

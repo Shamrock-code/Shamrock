@@ -22,6 +22,7 @@
 
 namespace sham {
 
+#ifdef SYCL2020_FEATURE_GROUP_REDUCTION
     /**
      * @brief Apply function to each component of a vector
      *
@@ -101,17 +102,17 @@ namespace sham {
      */
     template<class T>
     inline T sum_over_group(const sycl::group<1> &g, const T &v) {
-#ifdef SYCL_COMP_INTEL_LLVM
+    #ifdef SYCL_COMP_INTEL_LLVM
         return sycl::reduce_over_group(g, v, sycl::plus<>());
-#endif
-#ifdef SYCL_COMP_ACPP
+    #endif
+    #ifdef SYCL_COMP_ACPP
         return map_vector(
             v,
             [](auto component, const sycl::group<1> &g) {
                 return sycl::reduce_over_group(g, component, sycl::plus<decltype(component)>{});
             },
             g);
-#endif
+    #endif
     }
 
     /**
@@ -124,17 +125,17 @@ namespace sham {
      */
     template<class T>
     inline T min_over_group(const sycl::group<1> &g, const T &v) {
-#ifdef SYCL_COMP_INTEL_LLVM
+    #ifdef SYCL_COMP_INTEL_LLVM
         return sycl::reduce_over_group(g, v, sycl::minimum<>());
-#endif
-#ifdef SYCL_COMP_ACPP
+    #endif
+    #ifdef SYCL_COMP_ACPP
         return map_vector(
             v,
             [](auto component, const sycl::group<1> &g) {
                 return sycl::reduce_over_group(g, component, sycl::minimum<decltype(component)>{});
             },
             g);
-#endif
+    #endif
     }
 
     /**
@@ -147,17 +148,17 @@ namespace sham {
      */
     template<class T>
     inline T max_over_group(const sycl::group<1> &g, const T &v) {
-#ifdef SYCL_COMP_INTEL_LLVM
+    #ifdef SYCL_COMP_INTEL_LLVM
         return sycl::reduce_over_group(g, v, sycl::maximum<>());
-#endif
-#ifdef SYCL_COMP_ACPP
+    #endif
+    #ifdef SYCL_COMP_ACPP
         return map_vector(
             v,
             [](auto component, const sycl::group<1> &g) {
                 return sycl::reduce_over_group(g, component, sycl::maximum<decltype(component)>{});
             },
             g);
-#endif
+    #endif
     }
 #endif
 

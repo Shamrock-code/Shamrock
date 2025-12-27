@@ -166,14 +166,12 @@ TestStart(
         std::vector<f32_3> expected_pos
             = {original_pos[0], original_pos[2], original_pos[4], original_pos[6]};
         std::vector<f64_4> expected_vel;
-        expected_vel.push_back(original_vel[0]);  // obj 0, var 0
-        expected_vel.push_back(original_vel[1]);  // obj 0, var 1
-        expected_vel.push_back(original_vel[4]);  // obj 2, var 0
-        expected_vel.push_back(original_vel[5]);  // obj 2, var 1
-        expected_vel.push_back(original_vel[8]);  // obj 4, var 0
-        expected_vel.push_back(original_vel[9]);  // obj 4, var 1
-        expected_vel.push_back(original_vel[12]); // obj 6, var 0
-        expected_vel.push_back(original_vel[13]); // obj 6, var 1
+        const u32 nvar_vel = vel_field.get_nvar();
+        for (const u32 obj_idx : indices_vec) {
+            for (u32 var_idx = 0; var_idx < nvar_vel; ++var_idx) {
+                expected_vel.push_back(original_vel[obj_idx * nvar_vel + var_idx]);
+            }
+        }
 
         REQUIRE_EQUAL_CUSTOM_COMP(extracted_pos, expected_pos, sham::equals);
         REQUIRE_EQUAL_CUSTOM_COMP(extracted_vel, expected_vel, sham::equals);

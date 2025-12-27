@@ -279,9 +279,7 @@ def main():
         ax4.clear()
 
         # Density
-        ax1.plot(
-            r_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1
-        )
+        ax1.plot(r_ana, rho_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
         ax1.scatter(
             r_sim[mask],
             rho_sim[mask],
@@ -305,9 +303,7 @@ def main():
         )
 
         # Velocity
-        ax2.plot(
-            r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1
-        )
+        ax2.plot(r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical", zorder=1)
         ax2.scatter(
             r_sim[mask],
             vel_sim[mask],
@@ -442,9 +438,7 @@ def main():
         ax1.set_title("Density Profile", fontsize=13, fontweight="bold")
         ax1.legend(fontsize=10)
         ax1.grid(True, alpha=0.3)
-        ax1.axvline(
-            sedov_analytical.shock_radius(time), color="gray", linestyle="--", alpha=0.5
-        )
+        ax1.axvline(sedov_analytical.shock_radius(time), color="gray", linestyle="--", alpha=0.5)
 
         # Velocity
         ax2.plot(r_ana, vel_ana, color=ana_color, linewidth=2.5, label="Analytical")

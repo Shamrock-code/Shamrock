@@ -454,12 +454,8 @@ def main():
         ax2.grid(True, alpha=0.3)
 
         if pres_ana is not None:
-            ax3.plot(
-                x_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical"
-            )
-        ax3.scatter(
-            x_sim, pres_sim, color=sim_color, s=15, alpha=0.6, label=solver_name
-        )
+            ax3.plot(x_ana, pres_ana, color=ana_color, linewidth=2.5, label="Analytical")
+        ax3.scatter(x_sim, pres_sim, color=sim_color, s=15, alpha=0.6, label=solver_name)
         ax3.set_ylabel("Pressure", fontsize=12, fontweight="bold")
         ax3.set_xlabel("Position x", fontsize=12, fontweight="bold")
         ax3.set_title("Pressure Profile", fontsize=13, fontweight="bold")

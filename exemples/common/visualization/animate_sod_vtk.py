@@ -51,9 +51,7 @@ def parse_args():
         default="GSPH",
         help="Solver type (affects file naming)",
     )
-    parser.add_argument(
-        "--gamma", type=float, default=1.4, help="Adiabatic index (default: 1.4)"
-    )
+    parser.add_argument("--gamma", type=float, default=1.4, help="Adiabatic index (default: 1.4)")
     parser.add_argument(
         "--t-final",
         type=float,

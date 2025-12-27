@@ -210,6 +210,7 @@ shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> shammodels::zeu
 
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
+    shamalgs::collective::DDSCommCache cache;
     shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
         shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(interf),
@@ -229,7 +230,8 @@ shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> shammodels::zeu
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
-        });
+        },
+        cache);
 
     return recv_dat;
 }
@@ -242,6 +244,8 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
     StackEntry stack_loc{};
 
     shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
+
+    shamalgs::collective::DDSCommCache cache;
 
     shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
         shamsys::instance::get_compute_scheduler_ptr(),
@@ -262,7 +266,8 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
-        });
+        },
+        cache);
 
     return recv_dat;
 }

@@ -34,11 +34,17 @@ namespace shamalgs::collective {
 
     using SerializedDDataComm = shambase::DistributedDataShared<sham::DeviceBuffer<u8>>;
 
+    struct DDSCommCache {
+        std::unique_ptr<sham::DeviceBuffer<u8, sham::host>> cache1;
+        std::unique_ptr<sham::DeviceBuffer<u8, sham::host>> cache2;
+    };
+
     void distributed_data_sparse_comm(
         std::shared_ptr<sham::DeviceScheduler> dev_sched,
         SerializedDDataComm &send_ddistrib_data,
         SerializedDDataComm &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
+        DDSCommCache &cache,
         std::optional<SparseCommTable> comm_table = {});
 
     template<class T>
@@ -49,6 +55,7 @@ namespace shamalgs::collective {
         std::function<i32(u64)> rank_getter,
         std::function<sham::DeviceBuffer<u8>(T &)> serialize,
         std::function<T(sham::DeviceBuffer<u8> &&)> deserialize,
+        DDSCommCache &cache,
         std::optional<SparseCommTable> comm_table = {}) {
 
         StackEntry stack_loc{};
@@ -68,7 +75,7 @@ namespace shamalgs::collective {
 
         SerializedDDataComm dcomm_recv;
 
-        distributed_data_sparse_comm(dev_sched, dcomm_send, dcomm_recv, rank_getter);
+        distributed_data_sparse_comm(dev_sched, dcomm_send, dcomm_recv, rank_getter, cache);
 
         recv_distrib_data = dcomm_recv.map<T>([&](u64, u64, sham::DeviceBuffer<u8> &buf) {
             // exchange the buffer held by the distrib data and give it to the deserializer

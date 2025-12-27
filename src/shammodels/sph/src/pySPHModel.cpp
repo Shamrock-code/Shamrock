@@ -183,6 +183,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("opening_angle"),
             py::arg("reduction_level") = 3)
         .def(
+            "set_self_gravity_fmm",
+            [](TConfig &self, u32 order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_fmm(order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
             "set_softening_plummer",
             [](TConfig &self, f64 epsilon) {
                 self.self_grav_config.set_softening_plummer(epsilon);
@@ -449,6 +458,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
+        .def(
+            "get_solver_tex",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+            })
+        .def(
+            "get_solver_dot_graph",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
+            })
         .def(
             "get_box_dim_fcc_3d",
             [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {

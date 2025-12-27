@@ -19,7 +19,12 @@ missing_doxygenfilehead = []
 authorlist = []
 
 
-AUTH_BLACKLIST = ["gemini-code-assist[bot]", "autofix-ci[bot]"]
+AUTH_BLACKLIST = [
+    "autofix-ci[bot]",
+    "gemini-code-assist[bot]",
+    "github-actions[bot]",
+    "pre-commit-ci[bot]",
+]
 
 
 def is_not_in_blacklist(a):

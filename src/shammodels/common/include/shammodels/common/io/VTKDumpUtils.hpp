@@ -11,7 +11,8 @@
 
 /**
  * @file VTKDumpUtils.hpp
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief Shared VTK dump utilities for SPH-based models
  *
  * Contains common helper functions for VTK output that are shared

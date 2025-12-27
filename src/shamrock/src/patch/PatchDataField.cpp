@@ -94,6 +94,18 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 }
 
 template<class T>
+void PatchDataField<T>::extract_elements(
+    const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to) {
+    if (&to == this) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "source and destination for extract_elements cannot be the same");
+    }
+    StackEntry stack_loc{};
+    append_subset_to(idxs, idxs.get_size(), to);
+    remove_ids(idxs, idxs.get_size());
+}
+
+template<class T>
 bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     bool match = true;
 
@@ -319,6 +331,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     if (len > get_obj_cnt()) {
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "the number of ids to remove is greater than the patchdatafield obj count");
+    }
+
+    if (len == 0) {
+        return;
     }
 
     auto nobj      = get_obj_cnt();

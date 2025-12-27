@@ -1081,12 +1081,16 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
-    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout.get());
+        = shambase::get_check_ref(storage.ghost_layout);
 
     solver_config.set_ghost_layout(ghost_layout);
+
+    storage.xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+    storage.xyzh_ghost_layout->template add_field<Tvec>("xyz", 1);
+    storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1211,7 +1215,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
 
-    auto ghost_layout_ptr                               = storage.ghost_layout.get();
+    auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");

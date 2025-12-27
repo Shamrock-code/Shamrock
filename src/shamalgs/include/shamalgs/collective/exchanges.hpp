@@ -18,6 +18,7 @@
 
 #include "shambase/narrowing.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcomm/logs.hpp"
@@ -91,9 +92,10 @@ namespace shamalgs::collective {
      * @param send_type
      * @param recv_vec
      * @param recv_type
+     * @return the node displacments data table
      */
     template<class T>
-    inline void vector_allgatherv(
+    inline std::vector<int> vector_allgatherv(
         const std::vector<T> &send_vec,
         const MPI_Datatype &send_type,
         std::vector<T> &recv_vec,
@@ -135,7 +137,7 @@ namespace shamalgs::collective {
         recv_vec.resize(global_len);
 
         if (global_len == 0) {
-            return;
+            return {};
         }
 
         // here we can not overflow since we know that the sum can be narrowed to an int
@@ -155,6 +157,62 @@ namespace shamalgs::collective {
             node_displacments_data_table.data(),
             recv_type,
             comm);
+
+        return node_displacments_data_table;
+    }
+
+    /**
+     * @brief vector_allgatherv version that support having more than 2^31 elements in flight
+     * @tparam T
+     * @param send_vec
+     * @param send_type
+     * @param recv_vec
+     * @param recv_type
+     * @param comm
+     * @param com_per_step
+     */
+    template<class T>
+    inline void vector_allgatherv_large(
+        const std::vector<T> &send_vec,
+        const MPI_Datatype &send_type,
+        std::vector<T> &recv_vec,
+        const MPI_Datatype &recv_type,
+        const MPI_Comm comm,
+        u32 com_per_step = (1_i32 << 29) / static_cast<u32>(shamcomm::world_size())) {
+
+        // check that comm is MPI_COMM_WORLD
+        if (comm != MPI_COMM_WORLD) {
+            throw shambase::make_except_with_loc<std::runtime_error>("comm must be MPI_COMM_WORLD");
+        }
+
+        u64 send_offset = 0_u64;
+        std::vector<u64> result_disps(shamcomm::world_size() + 1, 0_u64);
+
+        while (!shamalgs::collective::are_all_rank_true(send_offset == send_vec.size(), comm)) {
+            // extract com_per_step elements from send_vec
+            u64 remaining
+                = (send_offset < send_vec.size()) ? (send_vec.size() - send_offset) : 0_u64;
+            u64 num_to_send = std::min<u64>(com_per_step, remaining);
+            std::vector<T> send_vec_internal(
+                send_vec.begin() + send_offset, send_vec.begin() + send_offset + num_to_send);
+            send_offset += num_to_send;
+
+            std::vector<T> recv_vec_internal{};
+            auto disp = vector_allgatherv(
+                send_vec_internal, send_type, recv_vec_internal, recv_type, comm);
+            disp.push_back(shambase::narrow_or_throw<int>(recv_vec_internal.size()));
+
+            // The bit that insert in such a way that it reproduce vector_allgatherv
+            for (u32 i = 0; i < (disp.size() - 1); i++) {
+                auto insert_loc = recv_vec.begin() + result_disps[i + 1] + disp[i];
+                recv_vec.insert(
+                    insert_loc,
+                    recv_vec_internal.begin() + disp[i],
+                    recv_vec_internal.begin() + disp[i + 1]);
+                result_disps[i] += disp[i];
+            }
+            result_disps[disp.size() - 1] += disp[disp.size() - 1];
+        }
     }
 
     template<class T>

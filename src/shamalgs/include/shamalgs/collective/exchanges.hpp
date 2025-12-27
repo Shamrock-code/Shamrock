@@ -200,7 +200,7 @@ namespace shamalgs::collective {
             std::vector<T> recv_vec_internal{};
             auto disp = vector_allgatherv(
                 send_vec_internal, send_type, recv_vec_internal, recv_type, comm);
-            disp.push_back(recv_vec_internal.size());
+            disp.push_back(shambase::narrow_or_throw<int>(recv_vec_internal.size()));
 
             // The bit that insert in such a way that it reproduce vector_allgatherv
             for (u32 i = 0; i < (disp.size() - 1); i++) {

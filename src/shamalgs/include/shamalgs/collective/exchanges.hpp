@@ -185,7 +185,7 @@ namespace shamalgs::collective {
             throw shambase::make_except_with_loc<std::runtime_error>("comm must be MPI_COMM_WORLD");
         }
 
-        u32 send_offset = 0;
+        u64 send_offset = 0_u64;
         std::vector<u64> result_disps(shamcomm::world_size() + 1, 0_u64);
 
         while (!shamalgs::collective::are_all_rank_true(send_offset == send_vec.size(), comm)) {

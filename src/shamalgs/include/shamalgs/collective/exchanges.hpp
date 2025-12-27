@@ -180,21 +180,27 @@ namespace shamalgs::collective {
         const MPI_Comm comm,
         u32 com_per_step = (1_i32 << 29) / static_cast<u32>(shamcomm::world_size())) {
 
-        u32 send_offset = 0;
+        // check that comm is MPI_COMM_WORLD
+        if (comm != MPI_COMM_WORLD) {
+            throw shambase::make_except_with_loc<std::runtime_error>("comm must be MPI_COMM_WORLD");
+        }
+
+        u64 send_offset = 0_u64;
         std::vector<u64> result_disps(shamcomm::world_size() + 1, 0_u64);
 
         while (!shamalgs::collective::are_all_rank_true(send_offset == send_vec.size(), comm)) {
             // extract com_per_step elements from send_vec
-            std::vector<T> send_vec_internal{};
-            for (u32 i = 0; (i < com_per_step) && (send_offset < send_vec.size()); i++) {
-                send_vec_internal.push_back(send_vec[send_offset]);
-                send_offset++;
-            }
+            u64 remaining
+                = (send_offset < send_vec.size()) ? (send_vec.size() - send_offset) : 0_u64;
+            u64 num_to_send = std::min<u64>(com_per_step, remaining);
+            std::vector<T> send_vec_internal(
+                send_vec.begin() + send_offset, send_vec.begin() + send_offset + num_to_send);
+            send_offset += num_to_send;
 
             std::vector<T> recv_vec_internal{};
             auto disp = vector_allgatherv(
                 send_vec_internal, send_type, recv_vec_internal, recv_type, comm);
-            disp.push_back(recv_vec_internal.size());
+            disp.push_back(shambase::narrow_or_throw<int>(recv_vec_internal.size()));
 
             // The bit that insert in such a way that it reproduce vector_allgatherv
             for (u32 i = 0; i < (disp.size() - 1); i++) {

@@ -407,6 +407,7 @@ class PatchDataField {
     void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "");
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
+    void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to);
 
     bool check_field_match(PatchDataField<T> &f2);
 

@@ -77,6 +77,29 @@ namespace shamrock::patch {
         }
     }
 
+    void PatchDataLayer::extract_elements(
+        const sham::DeviceBuffer<u32> &idxs, PatchDataLayer &out_pdat) {
+        StackEntry stack_loc{};
+
+        for (u32 idx = 0; idx < fields.size(); idx++) {
+
+            std::visit(
+                [&](auto &field, auto &out_field) {
+                    using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+                    using t2 =
+                        typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+                    if constexpr (std::is_same<t1, t2>::value) {
+                        field.extract_elements(idxs, out_field);
+                    } else {
+                        throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
+                    }
+                },
+                fields[idx].value,
+                out_pdat.fields[idx].value);
+        }
+    }
+
     void PatchDataLayer::insert_elements(const PatchDataLayer &pdat) {
 
         StackEntry stack_loc{};

@@ -293,8 +293,8 @@ namespace shamalgs::memory {
     /**
      * @brief Write elements from DeviceBuffer to sycl::buffer at an offset
      *
-     * @tparam T
-     * @param q
+     * @tparam T Type of buffer elements
+     * @param q Device queue to submit operation
      * @param buf_ctn Container buffer (destination)
      * @param buf_in Input DeviceBuffer (source)
      * @param offset Starting position in container

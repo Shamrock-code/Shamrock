@@ -38,7 +38,8 @@ namespace shammodels::common::io {
      * @return VTK writer ready for additional fields
      */
     template<class Tvec>
-    inline shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
+    inline shamrock::LegacyVtkWritter start_dump(
+        PatchScheduler &sched, const std::string &dump_name) {
         StackEntry stack_loc{};
         shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
 
@@ -142,7 +143,7 @@ namespace shammodels::common::io {
         PatchScheduler &sched,
         shamrock::LegacyVtkWritter &writer,
         shamrock::ComputeField<T> &field,
-        std::string field_dump_name) {
+        const std::string &field_dump_name) {
         StackEntry stack_loc{};
 
         using namespace shamrock::patch;
@@ -171,7 +172,7 @@ namespace shammodels::common::io {
         PatchScheduler &sched,
         shamrock::LegacyVtkWritter &writer,
         u32 field_idx,
-        std::string field_dump_name) {
+        const std::string &field_dump_name) {
         StackEntry stack_loc{};
 
         using namespace shamrock::patch;

@@ -20,7 +20,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"

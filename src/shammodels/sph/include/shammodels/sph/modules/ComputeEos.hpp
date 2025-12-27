@@ -25,6 +25,11 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for computing equation of state quantities
+     * @tparam Tvec Vector type for positions
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, template<class> class SPHKernel>
     class ComputeEos {
         public:
@@ -42,6 +47,7 @@ namespace shammodels::sph::modules {
         ComputeEos(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// @brief Computes pressure and sound speed from equation of state
         void compute_eos();
 
         private:

@@ -24,6 +24,11 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for writing VTK format output files
+     * @tparam Tvec Vector type for positions
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, template<class> class SPHKernel>
     class VTKDump {
         public:
@@ -40,6 +45,7 @@ namespace shammodels::sph::modules {
         VTKDump(ShamrockCtx &context, Config &solver_config)
             : context(context), solver_config(solver_config) {}
 
+        /// @brief Writes particle data to VTK file for visualization
         void do_dump(std::string filename, bool add_patch_world_id);
 
         private:

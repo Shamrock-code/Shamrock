@@ -24,6 +24,11 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for constructing spatial tree structures for SPH neighbor searches
+     * @tparam Tvec Vector type for positions
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, template<class> class SPHKernel>
     class BuildTrees {
         public:
@@ -43,6 +48,7 @@ namespace shammodels::sph::modules {
         BuildTrees(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// @brief Builds compressed leaf BVH trees for merged particle positions including ghosts
         void build_merged_pos_trees();
 
         private:

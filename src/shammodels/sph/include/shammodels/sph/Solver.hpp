@@ -103,12 +103,20 @@ namespace shammodels::sph {
             if (SolverBCFree *c
                 = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
                 storage.ghost_handler.set(
-                    GhostHandle{scheduler(), BCFree{}, storage.patch_rank_owner});
+                    GhostHandle{
+                        scheduler(),
+                        BCFree{},
+                        storage.patch_rank_owner,
+                        storage.xyzh_ghost_layout});
             } else if (
                 SolverBCPeriodic *c
                 = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
                 storage.ghost_handler.set(
-                    GhostHandle{scheduler(), BCPeriodic{}, storage.patch_rank_owner});
+                    GhostHandle{
+                        scheduler(),
+                        BCPeriodic{},
+                        storage.patch_rank_owner,
+                        storage.xyzh_ghost_layout});
             } else if (
                 SolverBCShearingPeriodic *c
                 = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
@@ -117,7 +125,8 @@ namespace shammodels::sph {
                         scheduler(),
                         BCShearingPeriodic{
                             c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                        storage.patch_rank_owner});
+                        storage.patch_rank_owner,
+                        storage.xyzh_ghost_layout});
             }
         }
         inline void reset_ghost_handler() { storage.ghost_handler.reset(); }

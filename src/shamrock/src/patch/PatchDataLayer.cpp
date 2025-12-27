@@ -92,7 +92,7 @@ namespace shamrock::patch {
                     if constexpr (std::is_same<t1, t2>::value) {
                         field.extract_elements(idxs, out_field);
                     } else {
-                        throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
+                        throw shambase::make_except_with_loc<std::invalid_argument>("mismatch");
                     }
                 },
                 fields[idx].value,

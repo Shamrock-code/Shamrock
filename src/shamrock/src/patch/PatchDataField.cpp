@@ -96,6 +96,10 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 template<class T>
 void PatchDataField<T>::extract_elements(
     const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to) {
+    if (&to == this) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "source and destination for extract_elements cannot be the same");
+    }
     StackEntry stack_loc{};
     append_subset_to(idxs, idxs.get_size(), to);
     remove_ids(idxs, idxs.get_size());

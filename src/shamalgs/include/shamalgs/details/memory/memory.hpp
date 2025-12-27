@@ -370,7 +370,7 @@ namespace shamalgs::memory {
      * @tparam T Type of vector elements
      * @param q SYCL queue to submit operation
      * @param vec Vector to convert
-     * @return sycl::buffer<T>
+     * @return sycl::buffer<T> A new buffer containing the data from the vector.
      */
     template<class T>
     sycl::buffer<T> vector_to_buf(sycl::queue &q, std::vector<T> &vec) {

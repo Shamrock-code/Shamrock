@@ -37,6 +37,15 @@ namespace shamalgs::memory {
     template<class T>
     T extract_element(sycl::queue &q, sycl::buffer<T> &buf, u32 idx);
 
+    /**
+     * @brief Extract a value from a DeviceBuffer
+     *
+     * @tparam T Type of buffer elements
+     * @param q Device queue to submit operation
+     * @param buf Device buffer to extract from
+     * @param idx Index of element to extract
+     * @return T the extracted value
+     */
     template<class T>
     T extract_element(sham::DeviceQueue &q, sham::DeviceBuffer<T> &buf, u32 idx) {
         T val;
@@ -247,6 +256,17 @@ namespace shamalgs::memory {
         });
     }
 
+    /**
+     * @brief Write elements from input buffer to container buffer at an offset (DeviceBuffer
+     * variant)
+     *
+     * @tparam T Type of buffer elements
+     * @param q Device queue to submit operation
+     * @param buf_ctn Container buffer (destination)
+     * @param buf_in Input buffer (source)
+     * @param offset Starting position in container
+     * @param element_count Number of elements to write
+     */
     template<class T>
     void write_with_offset_into(
         sham::DeviceQueue &q,
@@ -270,6 +290,16 @@ namespace shamalgs::memory {
         buf_ctn.complete_event_state(e);
     }
 
+    /**
+     * @brief Write elements from DeviceBuffer to sycl::buffer at an offset
+     *
+     * @tparam T
+     * @param q
+     * @param buf_ctn Container buffer (destination)
+     * @param buf_in Input DeviceBuffer (source)
+     * @param offset Starting position in container
+     * @param element_count Number of elements to write
+     */
     template<class T>
     void write_with_offset_into(
         sham::DeviceQueue &q,
@@ -334,6 +364,14 @@ namespace shamalgs::memory {
         return std::move(ret);
     }
 
+    /**
+     * @brief Convert std::vector to sycl::buffer with data copy (lvalue reference version)
+     *
+     * @tparam T Type of vector elements
+     * @param q SYCL queue to submit operation
+     * @param vec Vector to convert
+     * @return sycl::buffer<T>
+     */
     template<class T>
     sycl::buffer<T> vector_to_buf(sycl::queue &q, std::vector<T> &vec) {
 

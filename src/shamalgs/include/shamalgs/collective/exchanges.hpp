@@ -215,6 +215,14 @@ namespace shamalgs::collective {
         }
     }
 
+    /**
+     * @brief Simplified allgatherv wrapper using default MPI type
+     *
+     * @tparam T Type of elements to gather
+     * @param send_vec Vector to send from this rank
+     * @param recv_vec Vector to receive all gathered data
+     * @param comm MPI communicator
+     */
     template<class T>
     inline void vector_allgatherv(
         const std::vector<T> &send_vec, std::vector<T> &recv_vec, const MPI_Comm comm) {

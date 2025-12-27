@@ -188,20 +188,15 @@ TestStart(
         u32 obj_cnt                = 5;
         PatchDataLayer pdat_source = PatchDataLayer::mock_patchdata(0x789, obj_cnt, pdl_ptr);
 
-        std::vector<u32> indices_vec = {};
-        auto sched                   = shamsys::instance::get_compute_scheduler_ptr();
-        sham::DeviceBuffer<u32> indices(1, sched); // Need non-zero size buffer
+        auto sched = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceBuffer<u32> indices(0, sched);
 
         PatchDataLayer pdat_dest{pdl_ptr};
+        pdat_source.extract_elements(indices, pdat_dest);
 
-        // Note: empty indices means size 0, so we use the size parameter
-        if (indices_vec.size() == 0) {
-            // Can't create 0-size buffer, so create minimal buffer
-            sham::DeviceBuffer<u32> empty_indices(1, sched);
-            // But the extract will use size 0 implicitly if buffer is empty
-            // For this test, just verify source stays unchanged
-            u32 original_cnt = pdat_source.get_obj_cnt();
-            REQUIRE_EQUAL(original_cnt, 5);
-        }
+        REQUIRE_EQUAL(pdat_dest.get_obj_cnt(), 0);
+        REQUIRE_EQUAL(pdat_dest.is_empty(), true);
+        REQUIRE_EQUAL(pdat_source.get_obj_cnt(), 5);
+        REQUIRE_EQUAL(pdat_source.is_empty(), false);
     }
 }

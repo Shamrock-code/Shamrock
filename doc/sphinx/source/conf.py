@@ -61,10 +61,59 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
 }
 
+############################
+# Shamrock doc preprocessing
+############################
+
+# Shinx gallery does not support more than one level of nesting so we hack around
+# by moving the folders to a new location and contracting the folder name with an underscore
+
+print()
+print("########################################################")
+print("Shamrock doc preprocessing")
+print("########################################################")
+
+example_dir = "../examples"
+example_dir_generated = "../examples/_as_gen"
+
+# Copy the content of example_dir to example_dir_generated
+import os
+import shutil
+
+if os.path.exists(example_dir_generated):
+    shutil.rmtree(example_dir_generated)
+shutil.copytree(example_dir, example_dir_generated)
+
+# glob all GALLERY_HEADER.rst in example_dir (recursive)
+import glob
+
+gallery_headers = glob.glob(
+    os.path.join(example_dir_generated, "**", "GALLERY_HEADER.rst"), recursive=True
+)
+gallery_folders = [os.path.dirname(gallery_header) for gallery_header in gallery_headers]
+
+print("Gallery folder list:")
+for gallery_folder in gallery_folders:
+    print(gallery_folder)
+
+# for all folders if there is more than one level of nesting compared to example_dir_generated
+# perform a move to example_dir_generated/<name contracted with underscores>
+for gallery_folder in gallery_folders:
+    # get relative path to example_dir_generated
+    relative_path = os.path.relpath(gallery_folder, example_dir_generated)
+
+    if len(relative_path.split(os.path.sep)) > 1:
+        contracted = relative_path.replace(os.path.sep, "_")
+        destination = os.path.join(example_dir_generated, contracted)
+        shutil.move(gallery_folder, destination)
+        print(f"Moved {gallery_folder} to {destination}")
+
+print("########################################################\n")
+
 sphinx_gallery_conf = {
     "backreferences_dir": "_as_gen",  # link to source from examples
     "doc_module": ("shamrock"),  # The name of the module that is documented
-    "examples_dirs": "../examples",  # path to your example scripts
+    "examples_dirs": example_dir_generated,  # path to your example scripts
     "gallery_dirs": "_as_gen",  # path to where to save gallery generated output
     "line_numbers": True,  # line numbers in examples
     # The 3 next args are a bit like dark magic which allows the link

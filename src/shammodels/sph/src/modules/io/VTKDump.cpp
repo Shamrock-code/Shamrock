@@ -17,133 +17,18 @@
 
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shammodels/common/io/VTKDumpUtils.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
-template<class vec>
-shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
-    StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
-
-    using namespace shamrock::patch;
-
-    u64 num_obj = sched.get_rank_count();
-
-    shamlog_debug_mpi_ln("sph::BasicGas", "rank count =", num_obj);
-
-    std::unique_ptr<sycl::buffer<vec>> pos = sched.rankgather_field<vec>(0);
-
-    writer.write_points(pos, num_obj);
-
-    return writer;
-}
-
-void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
-
-    u64 num_obj = sched.get_rank_count();
-
-    using namespace shamrock::patch;
-
-    if (num_obj > 0) {
-        // TODO aggregate field ?
-        sycl::buffer<u64> idp(num_obj);
-
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                cur_p.id_patch,
-                ptr,
-                pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
-
-        writter.write_field("patchid", idp, num_obj);
-    } else {
-        writter.write_field_no_buf<u64>("patchid");
-    }
-}
-
-void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-
-        // TODO aggregate field ?
-        sycl::buffer<u32> idp(num_obj);
-
-        u64 ptr = 0; // TODO accumulate_field() in scheduler ?
-        sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            using namespace shamalgs::memory;
-            using namespace shambase;
-
-            write_with_offset_into<u32>(
-                shamsys::instance::get_compute_queue(),
-                idp,
-                shamcomm::world_rank(),
-                ptr,
-                pdat.get_obj_cnt());
-
-            ptr += pdat.get_obj_cnt();
-        });
-
-        writter.write_field("world_rank", idp, num_obj);
-
-    } else {
-        writter.write_field_no_buf<u32>("world_rank");
-    }
-}
-
-template<class T>
-void vtk_dump_add_compute_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    shamrock::ComputeField<T> &field,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
-    }
-}
-
-template<class T>
-void vtk_dump_add_field(
-    PatchScheduler &sched,
-    shamrock::LegacyVtkWritter &writter,
-    u32 field_idx,
-    std::string field_dump_name) {
-    StackEntry stack_loc{};
-
-    using namespace shamrock::patch;
-    u64 num_obj = sched.get_rank_count();
-
-    if (num_obj > 0) {
-        std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
-
-        writter.write_field(field_dump_name, field_vals, num_obj);
-    } else {
-        writter.write_field_no_buf<T>(field_dump_name);
-    }
-}
+// Use shared VTK dump utilities
+using shammodels::common::io::start_dump;
+using shammodels::common::io::vtk_dump_add_compute_field;
+using shammodels::common::io::vtk_dump_add_field;
+using shammodels::common::io::vtk_dump_add_patch_id;
+using shammodels::common::io::vtk_dump_add_worldrank;
 
 namespace shammodels::sph::modules {
 

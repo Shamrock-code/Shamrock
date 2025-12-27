@@ -953,7 +953,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-            shambase::parallel_for(cgh, cnt, "gsph_compute_density_omega", [=, pmass](u64 gid) {
+            shambase::parallel_for(cgh, cnt, "gsph_compute_density_omega", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 Tvec xyz_a = xyz_acc[id_a];

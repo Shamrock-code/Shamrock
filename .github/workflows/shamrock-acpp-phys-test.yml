@@ -87,6 +87,8 @@ jobs:
             testfile: regression_godunov_soundwave_3d.py
           - worldsize: 1
             testfile: run_sg_compare_error_sph.py
+          - worldsize: 1
+            testfile: run_compare_shamrock_ph_disc.py
       fail-fast: false
 
 
@@ -100,6 +102,11 @@ jobs:
 
       - name: Load image
         run: docker load --input /tmp/ci-phys-test-image.tar
+
+      # if run_compare_shamrock_ph_disc.py install gfortran
+      - if: ${{ matrix.testfile == 'run_compare_shamrock_ph_disc.py' }}
+        run: |
+          sudo apt install -y gfortran
 
       - name: run test
         uses: addnab/docker-run-action@v3

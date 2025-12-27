@@ -93,6 +93,10 @@ jobs:
         run: |
           sudo apt install -y ffmpeg
 
+      - name: install gfortran (for run_compare_shamrock_ph_disc.py)
+        run: |
+          sudo apt install -y gfortran
+
       - name: Setup env
         run : |
           ./env/new-env --machine debian-generic.acpp --builddir build -- --backend ${{ matrix.backend }} --arch ${{ matrix.arch }}

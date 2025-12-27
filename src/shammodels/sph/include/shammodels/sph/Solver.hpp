@@ -22,6 +22,7 @@
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/SolverLog.hpp"
+#include "shammodels/sph/config/AVConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -62,6 +63,7 @@ namespace shammodels::sph {
         using Kernel             = SPHKernel<Tscal>;
 
         using Config = SolverConfig<Tvec, SPHKernel>;
+        using AVConfig = AVConfig<Tvec>;
 
         using u_morton = typename Config::u_morton;
 
@@ -73,6 +75,7 @@ namespace shammodels::sph {
         SolverStorage<Tvec, u_morton> storage{};
 
         Config solver_config;
+        AVConfig av_config;
         SolverLog solve_logs;
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }

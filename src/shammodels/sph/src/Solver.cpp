@@ -48,6 +48,7 @@
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
@@ -1999,6 +2000,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         prepare_corrector();
 
         update_derivs();
+
+        modules::NodeComputeLuminosity<Tvec, Kern> compute_luminosity{solver_config.gpart_mass, av_config.alpha_u};
+        compute_luminosity.set_edges(
+            storage.part_counts,
+            storage.neigh_cache,
+            storage.positions_with_ghosts,
+            storage.hpart_with_ghosts,
+            storage.omega,
+            pdl.uint,
+            storage.pressure,
+            storage.luminosity);
+        compute_luminosity.evaluate();
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();

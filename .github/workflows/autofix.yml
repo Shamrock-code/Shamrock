@@ -26,6 +26,9 @@ jobs:
         with:
            python-version: '>=3.10'
 
+      - uses: pre-commit/action@v3.0.1
+        continue-on-error: true
+
       - name: "Run author update script"
         continue-on-error: true
         run: |
@@ -35,4 +38,4 @@ jobs:
         if: env.FIX_MODE == 'fix'
         uses: autofix-ci/action@635ffb0c9798bd160680f18fd73371e355b85f27
         with:
-          commit-message: '[autofix.ci] fix file authorship'
+          commit-message: '[autofix.ci] fix file authorship & pre-commit'

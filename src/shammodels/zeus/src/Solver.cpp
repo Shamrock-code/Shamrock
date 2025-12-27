@@ -564,6 +564,8 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+    f64 t_host_alloc = (mem_perf_infos_end.time_alloc_host - mem_perf_infos_start.time_alloc_host)
+                       + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
@@ -577,7 +579,9 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
         tstep.elasped_sec(),
         delta_mpi_timer,
         t_dev_alloc,
-        mem_perf_infos_end.max_allocated_byte_device);
+        t_host_alloc,
+        mem_perf_infos_end.max_allocated_byte_device,
+        mem_perf_infos_end.max_allocated_byte_host);
 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("amr::Zeus", log_step);

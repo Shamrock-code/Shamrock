@@ -471,6 +471,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
         .def(
+            "get_solver_tex",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+            })
+        .def(
+            "get_solver_dot_graph",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
+            })
+        .def(
             "get_box_dim_fcc_3d",
             [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {
                 return self.get_box_dim_fcc_3d(dr, xcnt, ycnt, zcnt);

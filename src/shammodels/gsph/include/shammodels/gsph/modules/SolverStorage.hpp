@@ -11,26 +11,30 @@
 
 /**
  * @file SolverStorage.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @brief Storage for GSPH solver runtime data
  *
+ * This file contains the storage structure for GSPH solver runtime data,
+ * including neighbor caches, ghost data, and field storage.
+ *
+ * The GSPH solver originated from:
+ * - Inutsuka, S. (2002) "Reformulation of Smoothed Particle Hydrodynamics
+ *   with Riemann Solver"
  */
 
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SinkPartStruct.hpp"
-#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -38,80 +42,96 @@
 #include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 
-namespace shammodels::sph {
+namespace shammodels::gsph {
 
     template<class T>
     using Component = shambase::StorageComponent<T>;
 
+    /**
+     * @brief Runtime storage for GSPH solver
+     *
+     * Stores all temporary data needed during GSPH simulation steps:
+     * - Neighbor caches for particle interactions
+     * - Ghost particle data for boundary handling
+     * - Computed fields (pressure, sound speed, omega)
+     * - Tree structures for neighbor search
+     *
+     * @tparam Tvec Vector type (e.g., f64_3)
+     * @tparam Tmorton Morton code type for tree construction
+     */
     template<class Tvec, class Tmorton>
-    class SolverStorage {
-        public:
+    struct SolverStorage {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using GhostHandle      = BasicSPHGhostHandler<Tvec>;
+        // Reuse SPH ghost handler - the mechanism is the same
+        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
-        shamrock::solvergraph::SolverGraph solver_graph;
-        std::shared_ptr<shamrock::solvergraph::OperationSequence> solver_sequence;
-
+        /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
 
+        /// Position and smoothing length fields with ghosts
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> positions_with_ghosts;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_with_ghosts;
 
+        /// Neighbor cache - uses shamrock's tree-based neighbor search
         std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
 
+        /// Patch rank ownership
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
+        /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 
+        /// Ghost handler for boundary particles
         Component<GhostHandle> ghost_handler;
-
         Component<GhostHandleCache> ghost_patch_cache;
 
+        /// Merged position-h data for neighbor search
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>> merged_xyzh;
 
+        /// Radix trees for neighbor search
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
-
         Component<shambase::DistributedData<shamtree::KarrasRadixTreeField<Tscal>>>
             rtree_rint_field;
 
+        /// Grad-h correction factor (Omega)
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
+        /// Ghost data layout and merged data
         Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
-
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;
 
-        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> alpha_av_updated;
-        Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;
+        /// Density field computed via SPH summation
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> density;
 
+        /// Thermodynamic fields computed from EOS
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> pressure;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> soundspeed;
 
+        /// Minimum h/v_sig for CFL timestep calculation (signal velocity from Riemann solver)
+        /// v_sig = c_i + c_j - 3.0 * (v_ij · r_ij) / r  (Monaghan convention)
+        /// This accounts for relative particle motion in the CFL condition.
+        Tscal h_per_v_sig = std::numeric_limits<Tscal>::max();
+
+        /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
 
-        Component<shamrock::ComputeField<Tvec>> old_dB_on_rho;
-        Component<shamrock::ComputeField<Tscal>> old_dpsi_on_ch;
-
-        Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
-        Component<shamrock::ComputeField<Tvec>> old_dtdeltav;
-
-        Component<std::vector<SinkParticle<Tvec>>> sinks;
-
+        /// Timing statistics
         struct Timings {
             f64 interface = 0;
             f64 neighbors = 0;
             f64 io        = 0;
+            f64 riemann   = 0; ///< Time spent in Riemann solver
 
-            /// Reset the timings logged in the storage
             void reset() { *this = {}; }
         } timings_details;
     };
 
-} // namespace shammodels::sph
+} // namespace shammodels::gsph

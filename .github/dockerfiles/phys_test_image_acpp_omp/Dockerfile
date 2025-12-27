@@ -9,6 +9,7 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
     rm llvm.sh
 
+RUN sudo apt install gfortran
 RUN pip install matplotlib numpy scipy h5py
 
 WORKDIR /opt/Shamrock_src

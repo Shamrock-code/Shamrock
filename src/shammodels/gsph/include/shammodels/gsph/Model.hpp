@@ -14,6 +14,7 @@
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author tdavidcl (5550916+tdavidcl@users.noreply.github.com)
  * @brief GSPH Model class - high-level interface for GSPH simulations
  *
  * The GSPH method originated from:

@@ -35,10 +35,17 @@ namespace shamphys {
         public:
         inline SedovTaylor() {}
 
+        /// @brief Field values at a given position
         struct field_val {
             f64 rho, vx, P;
         };
 
+        /**
+         * @brief Compute field values at radial distance x
+         *
+         * @param x Radial distance from blast center
+         * @return field_val Structure containing density, velocity, and pressure
+         */
         field_val get_value(f64 x);
     };
 

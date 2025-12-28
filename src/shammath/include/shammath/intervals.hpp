@@ -37,6 +37,15 @@ namespace shammath {
         return (val >= min) && (val < max);
     }
 
+    /**
+     * @brief Check if value is in [min,max) for 2D vectors
+     *
+     * @tparam T Component type
+     * @param val Value to test
+     * @param min Lower bounds
+     * @param max Upper bounds
+     * @return true if val is in [min, max) for all components
+     */
     template<class T>
     inline bool is_in_half_open(sycl::vec<T, 2> val, sycl::vec<T, 2> min, sycl::vec<T, 2> max) {
         return (
@@ -44,6 +53,15 @@ namespace shammath {
             && is_in_half_open(val.y(), min.y(), max.y()));
     }
 
+    /**
+     * @brief Check if value is in [min,max) for 3D vectors
+     *
+     * @tparam T Component type
+     * @param val Value to test
+     * @param min Lower bounds
+     * @param max Upper bounds
+     * @return true if val is in [min, max) for all components
+     */
     template<class T>
     inline bool is_in_half_open(sycl::vec<T, 3> val, sycl::vec<T, 3> min, sycl::vec<T, 3> max) {
         return (
@@ -51,6 +69,15 @@ namespace shammath {
             && is_in_half_open(val.z(), min.z(), max.z()));
     }
 
+    /**
+     * @brief Check if value is in [min,max) for 4D vectors
+     *
+     * @tparam T Component type
+     * @param val Value to test
+     * @param min Lower bounds
+     * @param max Upper bounds
+     * @return true if val is in [min, max) for all components
+     */
     template<class T>
     inline bool is_in_half_open(sycl::vec<T, 4> val, sycl::vec<T, 4> min, sycl::vec<T, 4> max) {
         return (
@@ -59,6 +86,15 @@ namespace shammath {
             && is_in_half_open(val.w(), min.w(), max.w()));
     }
 
+    /**
+     * @brief Check if value is in [min,max) for 8D vectors
+     *
+     * @tparam T Component type
+     * @param val Value to test
+     * @param min Lower bounds
+     * @param max Upper bounds
+     * @return true if val is in [min, max) for all components
+     */
     template<class T>
     inline bool is_in_half_open(sycl::vec<T, 8> val, sycl::vec<T, 8> min, sycl::vec<T, 8> max) {
         return (
@@ -72,6 +108,15 @@ namespace shammath {
             && is_in_half_open(val.s7(), min.s7(), max.s7()));
     }
 
+    /**
+     * @brief Check if value is in [min,max) for 16D vectors
+     *
+     * @tparam T Component type
+     * @param val Value to test
+     * @param min Lower bounds
+     * @param max Upper bounds
+     * @return true if val is in [min, max) for all components
+     */
     template<class T>
     inline bool is_in_half_open(sycl::vec<T, 16> val, sycl::vec<T, 16> min, sycl::vec<T, 16> max) {
         return (
@@ -97,11 +142,31 @@ namespace shammath {
     // domain_are_connected
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * @brief Check if two 1D intervals share boundary or overlap
+     *
+     * @tparam T Scalar type
+     * @param bmin1 Minimum of first interval
+     * @param bmax1 Maximum of first interval
+     * @param bmin2 Minimum of second interval
+     * @param bmax2 Maximum of second interval
+     * @return true if intervals are connected (share boundary or overlap)
+     */
     template<class T, std::enable_if_t<sham::is_valid_sycl_base_type<T>, int> = 0>
     inline bool domain_are_connected(T bmin1, T bmax1, T bmin2, T bmax2) {
         return sham::max(bmin1, bmin2) <= sham::min(bmax1, bmax2);
     }
 
+    /**
+     * @brief Check if two 2D boxes share boundary or overlap
+     *
+     * @tparam T Component type
+     * @param bmin1 Minimum bounds of first box
+     * @param bmax1 Maximum bounds of first box
+     * @param bmin2 Minimum bounds of second box
+     * @param bmax2 Maximum bounds of second box
+     * @return true if boxes are connected (share boundary or overlap)
+     */
     template<class T>
     inline bool domain_are_connected(
         sycl::vec<T, 2> bmin1,
@@ -114,6 +179,16 @@ namespace shammath {
             && domain_are_connected(bmin1.y(), bmax1.y(), bmin2.y(), bmax2.y()));
     }
 
+    /**
+     * @brief Check if two 3D boxes share boundary or overlap
+     *
+     * @tparam T Component type
+     * @param bmin1 Minimum bounds of first box
+     * @param bmax1 Maximum bounds of first box
+     * @param bmin2 Minimum bounds of second box
+     * @param bmax2 Maximum bounds of second box
+     * @return true if boxes are connected (share boundary or overlap)
+     */
     template<class T>
     inline bool domain_are_connected(
         sycl::vec<T, 3> bmin1,
@@ -131,11 +206,31 @@ namespace shammath {
     // domain_have_intersect
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * @brief Check if two 1D intervals have non-empty intersection
+     *
+     * @tparam T Scalar type
+     * @param bmin1 Minimum of first interval
+     * @param bmax1 Maximum of first interval
+     * @param bmin2 Minimum of second interval
+     * @param bmax2 Maximum of second interval
+     * @return true if intervals have non-empty intersection
+     */
     template<class T, std::enable_if_t<sham::is_valid_sycl_base_type<T>, int> = 0>
     inline bool domain_have_intersect(T bmin1, T bmax1, T bmin2, T bmax2) {
         return sham::max(bmin1, bmin2) < sham::min(bmax1, bmax2);
     }
 
+    /**
+     * @brief Check if two 2D boxes have non-empty intersection
+     *
+     * @tparam T Component type
+     * @param bmin1 Minimum bounds of first box
+     * @param bmax1 Maximum bounds of first box
+     * @param bmin2 Minimum bounds of second box
+     * @param bmax2 Maximum bounds of second box
+     * @return true if boxes have non-empty intersection
+     */
     template<class T>
     inline bool domain_have_intersect(
         sycl::vec<T, 2> bmin1,
@@ -148,6 +243,16 @@ namespace shammath {
             && domain_have_intersect(bmin1.y(), bmax1.y(), bmin2.y(), bmax2.y()));
     }
 
+    /**
+     * @brief Check if two 3D boxes have non-empty intersection
+     *
+     * @tparam T Component type
+     * @param bmin1 Minimum bounds of first box
+     * @param bmax1 Maximum bounds of first box
+     * @param bmin2 Minimum bounds of second box
+     * @param bmax2 Maximum bounds of second box
+     * @return true if boxes have non-empty intersection
+     */
     template<class T>
     inline bool domain_have_intersect(
         sycl::vec<T, 3> bmin1,
@@ -165,6 +270,16 @@ namespace shammath {
     // domain_have_common_face
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * @brief Check if two 3D boxes share a common face
+     *
+     * @tparam T Component type
+     * @param bmin1 Minimum bounds of first box
+     * @param bmax1 Maximum bounds of first box
+     * @param bmin2 Minimum bounds of second box
+     * @param bmax2 Maximum bounds of second box
+     * @return true if boxes share a common face
+     */
     template<class T>
     inline bool domain_have_common_face(
         sycl::vec<T, 3> bmin1,

@@ -20,6 +20,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
@@ -88,6 +89,20 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
+    auto compute_load = [&]() {
+        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
+            .update_load_balancing();
+    };
+
+    auto has_pdat = [&]() {
+        bool ret = false;
+        using namespace shamrock::patch;
+        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            ret = true;
+        });
+        return ret;
+    };
+
     shamrock::DataInserterUtility inserter(sched);
     u32 _insert_step = sched.crit_patch_split * 8;
     if (bool(insert_step)) {
@@ -96,7 +111,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
 
     while (!setup->is_done()) {
 
-        shamrock::patch::PatchDataLayer pdat = setup->next_n(_insert_step);
+        shamrock::patch::PatchDataLayer pdat = setup->next_n((has_pdat()) ? _insert_step : 0);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles
@@ -139,12 +154,17 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
         }
 
         u64 injected
-            = inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, [&]() {
-                  modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
-                      .update_load_balancing();
-              });
+            = inserter.push_patch_data<Tvec>(pdat, "xyz", sched.crit_patch_split * 8, compute_load);
 
         injected_parts += injected;
+    }
+
+    u32 final_balancing_steps = 3;
+    for (u32 i = 0; i < final_balancing_steps; i++) {
+        ON_RANK_0(
+            logger::info_ln(
+                "SPH setup", "Final load balancing step", i, "of", final_balancing_steps));
+        inserter.balance_load(compute_load);
     }
 
     if (part_reordering) {

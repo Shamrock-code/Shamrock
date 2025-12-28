@@ -9,10 +9,12 @@
 
 /**
  * @file AnalysisBarycenter.cpp
- * @author David Fang (fang.david03@gmail.com)
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief
+ * @brief Implementation of the AnalysisBarycenter class
+ *
+ * @todo move the impl to this file.
  *
  */
 

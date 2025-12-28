@@ -6,8 +6,21 @@
 echo " ---------- Activating sham environment ---------- "
 echo "Checking required packages..."
 
-local missing_packages=()
-local all_packages=("python" "cmake" "clang" "llvm" "boost" "ninja" "openmp" "openmpi" "doxygen")
+missing_packages=()
+all_packages=(
+    "base-devel"
+    "git"
+    "python"
+    "cmake"
+    "boost"
+    "ninja"
+    "openmp"
+    "openmpi"
+    "doxygen"
+    "llvm19"
+    "clang19"
+    "lld"
+)
 
 for package in "${all_packages[@]}"; do
     if pacman -Q "$package" >/dev/null 2>&1; then
@@ -29,15 +42,22 @@ echo " ------------- Environment activated ------------- "
 
 
 
-export ACPP_VERSION=v25.02.0
+export ACPP_VERSION=develop
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
+export LLVM_INSTALL_DIR=/usr/lib/llvm19
 
 function setupcompiler {
     clone_acpp || return
-    cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} || return
+    cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
+        -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
+        -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
+        -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
+        -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/ \
+        -DACPP_LLD_PATH=/usr/bin/ld.lld \
+        || return
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return
 }
 

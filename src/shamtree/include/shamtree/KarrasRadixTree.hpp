@@ -92,6 +92,9 @@ class shamtree::KarrasRadixTree {
             sham::DeviceBuffer<u32>(0, dev_sched),
             0};
     }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return get_internal_cell_count() == 0; }
 };
 
 namespace shamtree {

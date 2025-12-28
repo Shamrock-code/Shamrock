@@ -16,9 +16,12 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/algorithm.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
+#include "shamalgs/primitives/append_subset_to.hpp"
+#include "shamalgs/primitives/dot_sum.hpp"
 #include "shamalgs/primitives/equals.hpp"
 #include "shamalgs/primitives/mock_value.hpp"
 #include "shamalgs/primitives/mock_vector.hpp"
@@ -91,6 +94,18 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
 }
 
 template<class T>
+void PatchDataField<T>::extract_elements(
+    const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to) {
+    if (&to == this) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "source and destination for extract_elements cannot be the same");
+    }
+    StackEntry stack_loc{};
+    append_subset_to(idxs, idxs.get_size(), to);
+    remove_ids(idxs, idxs.get_size());
+}
+
+template<class T>
 bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     bool match = true;
 
@@ -105,85 +120,6 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
 }
 
 template<class T>
-class PdatField_append_subset_to;
-
-template<class T>
-void PatchDataField<T>::append_subset_to(
-    sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
-
-    if (pfield.nvar != nvar)
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "field must be similar for extraction");
-
-    const u32 start_enque = pfield.get_val_cnt();
-
-    const u32 nvar = get_nvar();
-
-    pfield.expand(sz);
-
-    auto &buf_other = pfield.get_buf();
-
-#ifdef false
-    {
-        sycl::host_accessor acc_idxs{idxs_buf, sycl::read_only};
-        sycl::host_accessor acc_curr{*buf, sycl::read_only};
-        sycl::host_accessor acc_other{*buf_other, sycl::write_only, sycl::no_init};
-
-        const u32 nvar_loc        = nvar;
-        const u32 start_enque_loc = start_enque;
-
-        for (u32 gid = 0; gid < sz; gid++) {
-
-            u32 _sz = sz;
-
-            const u32 idx_extr = acc_idxs[gid] * nvar_loc;
-            const u32 idx_push = start_enque_loc + gid * nvar_loc;
-
-            for (u32 a = 0; a < nvar_loc; a++) {
-                auto tmp                = acc_curr[idx_extr + a];
-                acc_other[idx_push + a] = tmp;
-            }
-        }
-
-        // printf("extracting : (%u)\n",sz);
-        // for(u32 i = 0; i < sz; i++){
-        //     printf("%u ",acc_idxs[i]);
-        // }
-        // printf("\n");
-    }
-#endif
-
-    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    auto &q   = sptr->get_queue();
-
-    sham::EventList depends_list;
-
-    const T *acc_curr = buf.get_read_access(depends_list);
-    T *acc_other      = buf_other.get_write_access(depends_list);
-
-    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-        sycl::accessor acc_idxs{idxs_buf, cgh, sycl::read_only};
-
-        const u32 nvar_loc        = nvar;
-        const u32 start_enque_loc = start_enque;
-
-        cgh.parallel_for(sycl::range<1>{sz}, [=](sycl::item<1> i) {
-            const u32 gid = i.get_linear_id();
-
-            const u32 idx_extr = acc_idxs[gid] * nvar_loc;
-            const u32 idx_push = start_enque_loc + gid * nvar_loc;
-
-            for (u32 a = 0; a < nvar_loc; a++) {
-                acc_other[idx_push + a] = acc_curr[idx_extr + a];
-            }
-        });
-    });
-
-    buf.complete_event_state(e);
-    buf_other.complete_event_state(e);
-}
-
-template<class T>
 void PatchDataField<T>::append_subset_to(
     const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) const {
 
@@ -191,48 +127,38 @@ void PatchDataField<T>::append_subset_to(
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "field must be similar for extraction");
 
-    const u32 start_enque = pfield.get_val_cnt();
+    if (static_cast<size_t>(sz) != idxs_buf.get_size())
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "the size of the idxs buffer does not match the size of the subset");
 
-    const u32 nvar = get_nvar();
+    if (sz > 0) {
+        const u32 start_enque = pfield.get_val_cnt();
+        const u32 nvar        = get_nvar();
+        pfield.expand(sz);
 
-    pfield.expand(sz);
+        shamalgs::primitives::append_subset_to(buf, idxs_buf, nvar, pfield.get_buf(), start_enque);
+    }
+}
 
-    auto &buf_other = pfield.get_buf();
+template<class T>
+void PatchDataField<T>::append_subset_to(
+    sycl::buffer<u32> &idxs_buf, u32 sz, PatchDataField &pfield) {
 
-    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    auto &q   = sptr->get_queue();
-
-    sham::kernel_call(
-        q,
-        sham::MultiRef{idxs_buf, buf},
-        sham::MultiRef{buf_other},
-        sz,
-        [nvar_loc = nvar, start_enque_loc = start_enque](
-            u32 gid,
-            const u32 *__restrict acc_idxs,
-            const T *__restrict acc_curr,
-            T *__restrict acc_other) {
-            u32 idx_extr = acc_idxs[gid] * nvar_loc;
-            u32 idx_push = start_enque_loc + gid * nvar_loc;
-
-            for (u32 a = 0; a < nvar_loc; a++) {
-                acc_other[idx_push + a] = acc_curr[idx_extr + a];
-            }
-        });
+    if (sz > 0) {
+        sham::DeviceBuffer<u32> buffer(sz, shamsys::instance::get_compute_scheduler_ptr());
+        buffer.copy_from_sycl_buffer(idxs_buf);
+        append_subset_to(buffer, sz, pfield);
+    }
 }
 
 template<class T>
 void PatchDataField<T>::append_subset_to(const std::vector<u32> &idxs, PatchDataField &pfield) {
 
-    if (pfield.nvar != nvar) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "field must be similar for extraction");
-    }
-
-    u32 sz = idxs.size();
+    u32 sz = shambase::narrow_or_throw<u32>(idxs.size());
 
     if (sz > 0) {
-        sycl::buffer<u32> idxs_buf(idxs.data(), sz);
+        sham::DeviceBuffer<u32> idxs_buf(sz, shamsys::instance::get_compute_scheduler_ptr());
+        idxs_buf.copy_from_stdvec(idxs);
         append_subset_to(idxs_buf, sz, pfield);
     }
 }
@@ -364,6 +290,39 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 }
 
 template<class T>
+void PatchDataField<T>::permut_vars(const std::vector<u32> &permut) {
+    if (permut.size() != get_nvar()) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the number of permut is not equal to the patchdatafield nvar: {} != {}",
+            permut.size(),
+            get_nvar()));
+    }
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q        = dev_sched->get_queue();
+
+    sham::DeviceBuffer<u32> permut_buf(
+        permut.size(), shamsys::instance::get_compute_scheduler_ptr());
+    permut_buf.copy_from_stdvec(permut);
+
+    sham::DeviceBuffer<T> copy = buf.copy();
+
+    sham::kernel_call(
+        q,
+        sham::MultiRef{copy, permut_buf},
+        sham::MultiRef{buf},
+        get_val_cnt(),
+        [nvar = nvar](u32 i, const T *src, const u32 *permut, T *dst) {
+            u32 obj_id = i / nvar;
+            u32 var_id = i % nvar;
+
+            u32 new_var_id = permut[var_id];
+
+            dst[obj_id * nvar + new_var_id] = src[i];
+        });
+}
+
+template<class T>
 void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u32 len) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -372,6 +331,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     if (len > get_obj_cnt()) {
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "the number of ids to remove is greater than the patchdatafield obj count");
+    }
+
+    if (len == 0) {
+        return;
     }
 
     auto nobj      = get_obj_cnt();
@@ -519,10 +482,7 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    auto tmp = buf.copy_to_sycl_buffer();
-
-    return shamalgs::reduction::dot_sum(
-        shamsys::instance::get_compute_queue(), tmp, 0, obj_cnt * nvar);
+    return shamalgs::primitives::dot_sum(buf, 0, obj_cnt * nvar);
 }
 
 template<class T>

@@ -44,12 +44,22 @@ namespace shamtree {
 
 template<class Tmorton, class Tvec, u32 dim>
 class shamtree::CompressedLeafBVH {
+
+    void internal_rebuild_from_positions_no_aabb(
+        sham::DeviceBuffer<Tvec> &positions,
+        u32 obj_cnt,
+        const shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
     public:
     /// Get internal cell count
     inline u32 get_total_cell_count() { return structure.get_total_cell_count(); }
 
     /// Get internal cell count
     inline u32 get_internal_cell_count() { return structure.get_internal_cell_count(); }
+
+    /// is the root a leaf ?
+    inline bool is_root_leaf() const { return structure.is_root_leaf(); }
 
     /// Get leaf cell count
     inline u32 get_leaf_cell_count() { return structure.get_leaf_count(); }
@@ -83,6 +93,9 @@ class shamtree::CompressedLeafBVH {
     /// make an empty BVH
     static CompressedLeafBVH make_empty(sham::DeviceScheduler_ptr dev_sched);
 
+    /// is the BVH empty ?
+    inline bool is_empty() const { return reduced_morton_set.is_empty(); }
+
     /**
      * @brief rebuild the BVH from the given positions
      *
@@ -109,13 +122,18 @@ class shamtree::CompressedLeafBVH {
         const shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 
-#if false
+    void rebuild_from_position_range(
+        sham::DeviceBuffer<Tvec> &min,
+        sham::DeviceBuffer<Tvec> &max,
+        u32 obj_cnt,
+        shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
     void rebuild_from_position_range(
         sham::DeviceBuffer<Tvec> &min,
         sham::DeviceBuffer<Tvec> &max,
         shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
-#endif
 
     inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() const {
         return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};

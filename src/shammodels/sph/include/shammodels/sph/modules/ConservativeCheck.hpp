@@ -24,6 +24,11 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for checking conservation of physical quantities
+     * @tparam Tvec Vector type for positions
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, template<class> class SPHKernel>
     class ConservativeCheck {
         public:
@@ -41,6 +46,7 @@ namespace shammodels::sph::modules {
         ConservativeCheck(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// @brief Verifies conservation of mass, momentum, and energy
         void check_conservation();
 
         private:

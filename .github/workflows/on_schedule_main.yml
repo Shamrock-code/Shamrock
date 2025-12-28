@@ -13,65 +13,9 @@ on:
 
 jobs:
 
-  src_check:
-    name: Linting
-    #needs: [detect_changes]
-    uses: ./.github/workflows/source_checks.yml
-
-
-  #make shamrock documentation
-  make_documentation:
-    needs: [src_check]
-    name: Doc
-    uses: ./.github/workflows/make_documentation.yml
-
-  shamrock_linux_acpp:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang.yml
-
-  shamrock_linux_acpp_conda:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
-
-  shamrock_linux_acpp_pylib:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
-
-  shamrock_linux_acpp_macos:
-    name: Shamrock Test
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-macos.yml
-
-  shamrock_linux_acpp_asan:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
-
-  shamrock_linux_acpp_ubsan:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
-
-  shamrock_linux_acpp_tidy:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
-
-  shamrock_linux_acpp_cov:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
-
-  shamrock_linux_dpcpp:
-    needs: [src_check]
-    name: Tests
-    uses: ./.github/workflows/shamrock-dpcpp.yml
-
-
-  shamrock_linux_acpp_phystests:
-    needs: [src_check]
-    name: Tests (Phys)
-    uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+  main_workflow:
+    name: CI
+    uses: ./.github/workflows/main_workflow.yml
+    with:
+      run_build_push_docker: true
+      light_ci: false

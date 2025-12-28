@@ -1,0 +1,251 @@
+name: Compile & Unit tests
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+  compile_and_test:
+    name: "${{ matrix.imagename }} -- ${{ matrix.machine }} -- ${{ matrix.args }}"
+    runs-on: ${{ matrix.runson }}
+
+    container:
+      image: ${{ matrix.container }}
+
+    strategy:
+      matrix:
+        include:
+
+          ##########################################################################################
+          # Ubuntu
+          ##########################################################################################
+          - machine: debian-generic.acpp
+            args: --backend omp
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            runson: ubuntu-latest
+            imagename: Ubuntu 20 LLVM 15
+            runtest: yes
+            runtestpy: yes
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          - machine: debian-generic.acpp
+            args: --backend generic
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            runson: ubuntu-latest
+            imagename: Ubuntu 20 LLVM 15
+            runtest: yes
+            runtestpy: yes
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          - machine: debian-generic.acpp
+            args: --backend cuda.explicit-multipass --arch sm_80
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            runson: ubuntu-latest
+            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          - machine: debian-generic.acpp
+            args: --backend cuda.integrated-multipass --arch sm_80
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            runson: ubuntu-latest
+            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          - machine: debian-generic.acpp
+            args: --backend hip --arch gfx906
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15rocm543
+            runson: ubuntu-latest
+            imagename: Ubuntu 20 LLVM 15 ROCM 5.4.3
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          ##########################################################################################
+          # Arch Linux
+          ##########################################################################################
+          - machine: archlinux.acpp
+            args: --backend generic
+            container: archlinux/archlinux:base-devel
+            runson: ubuntu-latest
+            imagename: ArchLinux
+            runtest: yes
+            runtestpy: yes
+            mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+
+          ##########################################################################################
+          # MacOS
+          ##########################################################################################
+          - machine: macos-generic.acpp
+            runson: macos-14
+            imagename: MacOS-14
+            runtest: yes
+            mpiargs: --oversubscribe
+
+          - machine: macos-generic.acpp
+            runson: macos-15
+            imagename: MacOS-15
+            runtest: yes
+            mpiargs: --oversubscribe
+
+          - machine: macos-generic.acpp
+            runson: macos-15-intel
+            imagename: MacOS-15 (intel)
+            runtest: yes
+            mpiargs: --oversubscribe
+
+          - machine: macos-generic.acpp
+            runson: macos-26
+            imagename: MacOS-26
+            runtest: yes
+            mpiargs: --oversubscribe
+
+    timeout-minutes: 120
+    steps:
+
+      # if archlinux container
+      - name : Install archlinux dependencies
+        if: matrix.container == 'archlinux/archlinux:base-devel'
+        run: |
+          sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
+
+      # if macos container
+      - name : Install macos dependencies
+        if: matrix.machine == 'macos-generic.acpp'
+        run: |
+          set +e
+
+          # Uninstall cmake to ensure that we test the version on peoples computers,
+          # why have you done this mess github, couldn't you just use the version in default brew???
+          brew uninstall cmake
+
+          brew update
+          brew install cmake libomp boost open-mpi adaptivecpp
+          set -e
+
+      # if ubuntu container
+      - name : Install ubuntu dependencies
+        if: matrix.machine == 'debian-generic.acpp'
+        run: |
+          sudo apt remove -y texlive-full
+          sudo apt-get install -y \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            dvipng \
+            ghostscript
+
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+
+      - name: ls local
+        run : ls -la
+
+      - name: Setup env
+        run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
+
+      - name: Configure
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate && shamconfigure
+
+      - name: Configure sham install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate &&  \
+            cmake . -DCMAKE_INSTALL_PREFIX=$(pwd)/install_test -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pyinstall_test
+
+      - name: Build & install
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          export NINJA_STATUS="[%f/%t j=%r] "
+          source ./activate && shammake install
+
+      - name: Pull reference files
+        run: |
+          cd build
+          git clone https://github.com/Shamrock-code/reference-files.git
+
+      - name: run Shamrock help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock --help
+          ./shamrock --help --color
+
+      - name: run Shamrock Test help
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --help
+          ./shamrock_test --help --color
+
+      - name: run Shamrock Unittests world_size = 1
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 2
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun ${{ matrix.mpiargs }} -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 3
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun ${{ matrix.mpiargs }} -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: run Shamrock Unittests world_size = 4
+        if: matrix.runtest
+        run: |
+          cd build
+          mpirun ${{ matrix.mpiargs }} -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+
+      - name: Try starting Shamrock (installed version)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cd build/install_test/bin
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
+
+      - name: Try starting Shamrock (installed python libs)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtestpy
+        run: |
+          cd build/install_test
+
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          PYTHONPATH=$(pwd)/../pyinstall_test:$PYTHONPATH \
+          LD_LIBRARY_PATH=$(pwd)/lib:$LD_LIBRARY_PATH \
+          python3 -c "import shamrock;print(shamrock.__file__);shamrock.change_loglevel(125);shamrock.sys.init('0:0')"

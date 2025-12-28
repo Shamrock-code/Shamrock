@@ -4,15 +4,17 @@ ARG CLANGVERSION=18
 
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
+    sudo apt update && \
     sudo ./llvm.sh ${CLANGVERSION} && \
     sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
     rm llvm.sh
 
+RUN sudo apt install -y gfortran
 RUN pip install matplotlib numpy scipy h5py
 
 WORKDIR /opt/Shamrock_src
 
-COPY . .
+ADD repo.tar.gz .
 
 RUN ls -la
 

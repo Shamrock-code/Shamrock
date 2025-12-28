@@ -90,3 +90,57 @@ TestStart(Unittest, "shamalgs/collective/exchange/vector_allgatherv", test_vecto
         REQUIRE_EQUAL(ref_vec, recv);
     }
 }
+
+TestStart(
+    Unittest,
+    "shamalgs/collective/exchange/vector_allgatherv_large",
+    test_vector_allgatherv_large,
+    -1) {
+
+    {
+        // Test case 1: Random sized vectors
+        std::mt19937 eng(0x1111);
+
+        std::vector<std::vector<u32>> test_array(shamcomm::world_size());
+        std::vector<u32> ref_vec;
+
+        for (u32 i = 0; i < shamcomm::world_size(); i++) {
+            auto &vec       = test_array[i];
+            u32 random_size = shamalgs::primitives::mock_value<u32>(
+                eng, 0, 200); // Random size between 1 and 10
+            vec.resize(random_size);
+            for (auto &num : vec) {
+                num = shamalgs::primitives::mock_value<u32>(
+                    eng, 1, 100000); // Random number between 0 and 100
+                ref_vec.push_back(num);
+            }
+        }
+
+        auto &source_vec = test_array[shamcomm::world_rank()];
+
+        std::vector<u32> recv;
+        shamalgs::collective::vector_allgatherv_large(
+            source_vec, get_mpi_type<u32>(), recv, get_mpi_type<u32>(), MPI_COMM_WORLD, 10);
+
+        REQUIRE_EQUAL(ref_vec, recv);
+    }
+
+    {
+        // Test case 3: All ranks have empty vectors
+        std::vector<std::vector<u32>> test_array(shamcomm::world_size());
+        std::vector<u32> ref_vec;
+
+        for (u32 i = 0; i < shamcomm::world_size(); i++) {
+            auto &vec = test_array[i];
+            vec.resize(0); // All vectors are empty
+        }
+
+        auto &source_vec = test_array[shamcomm::world_rank()];
+
+        std::vector<u32> recv;
+        shamalgs::collective::vector_allgatherv_large(
+            source_vec, get_mpi_type<u32>(), recv, get_mpi_type<u32>(), MPI_COMM_WORLD, 5);
+
+        REQUIRE_EQUAL(ref_vec, recv);
+    }
+}

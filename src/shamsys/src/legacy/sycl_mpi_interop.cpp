@@ -43,7 +43,7 @@ namespace impl::copy_to_host {
                 {
                     sycl::host_accessor acc{shambase::get_check_ref(buf), sycl::read_only};
 
-                    const T *src = acc.get_pointer();
+                    const T *src = &(acc[0]);
                     T *dest      = comm_ptr;
 
                     std::memcpy(dest, src, sizeof(T) * comm_sz);
@@ -104,7 +104,7 @@ namespace impl::copy_to_host {
                         shambase::get_check_ref(buf), sycl::write_only, sycl::no_init};
 
                     const T *src = comm_ptr;
-                    T *dest      = acc.get_pointer();
+                    T *dest      = &(acc[0]);
 
                     std::memcpy(dest, src, sizeof(T) * comm_sz);
                 }

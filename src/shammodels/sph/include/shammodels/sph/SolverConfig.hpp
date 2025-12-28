@@ -11,6 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -82,6 +83,9 @@ namespace shammodels::sph {
          * @brief The CFL multiplier stiffness
          */
         Tscal cfl_multiplier_stiffness = 2;
+
+        /// eta sink to control the sink integrator
+        Tscal eta_sink = 0.05;
     };
 
     template<class Tvec>
@@ -151,9 +155,10 @@ namespace shammodels::sph {
             bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
                                || bool(std::get_if<MonofluidComplete>(&current_mode));
             if (is_not_none) {
-                logger::warn_ln(
-                    "SPH::config",
-                    "Dust config != None is work in progress, use it at your own risk");
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH::config",
+                        "Dust config != None is work in progress, use it at your own risk"));
             }
         }
     };
@@ -175,6 +180,62 @@ namespace shammodels::sph {
 
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
+    struct SelfGravConfig {
+
+        struct FMM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
+        struct MM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
+        struct Direct {
+            bool reference_mode = false;
+        };
+
+        struct None {};
+
+        using mode = std::variant<FMM, MM, Direct, None>;
+
+        mode config = None{};
+
+        void set_none() { config = None{}; }
+        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
+        void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
+            config = MM{mm_order, opening_angle, reduction_level};
+        }
+        void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
+            config = FMM{order, opening_angle, reduction_level};
+        }
+
+        bool is_none() const { return std::holds_alternative<None>(config); }
+        bool is_direct() const { return std::holds_alternative<Direct>(config); }
+        bool is_mm() const { return std::holds_alternative<MM>(config); }
+        bool is_fmm() const { return std::holds_alternative<FMM>(config); }
+
+        bool is_sg_on() const { return !is_none(); }
+        bool is_sg_off() const { return is_none(); }
+
+        struct SofteningPlummer {
+            f64 epsilon;
+        };
+
+        using mode_soft          = std::variant<SofteningPlummer>;
+        mode_soft softening_mode = SofteningPlummer{1e-9};
+
+        void set_softening_plummer(f64 epsilon) { softening_mode = SofteningPlummer{epsilon}; }
+        void set_softening_none() { set_softening_plummer(0.); }
+
+        bool is_softening_plummer() const {
+            return std::holds_alternative<SofteningPlummer>(softening_mode);
         }
     };
 
@@ -229,7 +290,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant G based on the unit system.
     inline Tscal get_constant_G() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.G();
         } else {
@@ -240,7 +301,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant c based on the unit system.
     inline Tscal get_constant_c() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.c();
         } else {
@@ -251,7 +312,7 @@ struct shammodels::sph::SolverConfig {
     /// Retrieves the value of the constant mu_0 based on the unit system.
     inline Tscal get_constant_mu_0() {
         if (!unit_sys) {
-            logger::warn_ln("sph::Config", "the unit system is not set");
+            ON_RANK_0(logger::warn_ln("sph::Config", "the unit system is not set"));
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
             return ctes.mu_0();
         } else {
@@ -349,6 +410,16 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    SelfGravConfig self_grav_config = SelfGravConfig{};
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -389,6 +460,17 @@ struct shammodels::sph::SolverConfig {
         smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
     }
 
+    bool enable_particle_reordering = false;
+    inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
+    u64 particle_reordering_step_freq = 1000;
+    inline void set_particle_reordering_step_freq(u64 freq) {
+        if (freq == 0) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "particle_reordering_step_freq cannot be zero");
+        }
+        particle_reordering_step_freq = freq;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -415,6 +497,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is an polytropic equation of state
+    inline bool is_eos_polytropic() {
+        using T = typename EOSConfig::Polytropic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
@@ -434,6 +522,13 @@ struct shammodels::sph::SolverConfig {
      * @param gamma The adiabatic index
      */
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+
+    /**
+     * @brief Set the EOS configuration to an polytropic equation of state
+     *
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_polytropic(Tscal K, Tscal gamma) { eos_config.set_polytropic(K, gamma); }
 
     /**
      * @brief Set the EOS configuration to a locally isothermal equation of state
@@ -738,6 +833,13 @@ struct shammodels::sph::SolverConfig {
                 shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
             }
         }
+
+        if (!self_grav_config.is_none()) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Self gravity is experimental, please enable experimental features to use it");
+            }
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
@@ -757,7 +859,8 @@ namespace shammodels::sph {
         j = nlohmann::json{
             {"cfl_cour", p.cfl_cour},
             {"cfl_force", p.cfl_force},
-            {"cfl_multiplier_stiffness", p.cfl_multiplier_stiffness}};
+            {"cfl_multiplier_stiffness", p.cfl_multiplier_stiffness},
+            {"eta_sink", p.eta_sink}};
     }
 
     /**
@@ -771,6 +874,14 @@ namespace shammodels::sph {
         j.at("cfl_cour").get_to<Tscal>(p.cfl_cour);
         j.at("cfl_force").get_to<Tscal>(p.cfl_force);
         j.at("cfl_multiplier_stiffness").get_to<Tscal>(p.cfl_multiplier_stiffness);
+
+        if (j.contains("eta_sink")) {
+            j.at("eta_sink").get_to<Tscal>(p.eta_sink);
+        } else {
+            // Already set to default value
+            ON_RANK_0(shamlog_warn_ln(
+                "SPHConfig", "eta_sink not found when deserializing, defaulting to", p.eta_sink));
+        }
     }
 
     /**
@@ -860,6 +971,77 @@ namespace shammodels::sph {
         }
     }
 
+    /// JSON serialization for SelfGravConfig
+    inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
+        if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
+            j = {
+                {"type", "fmm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+            j = {
+                {"type", "mm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (
+            const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
+            j = {
+                {"type", "direct"},
+                {"reference_mode", conf->reference_mode},
+            };
+        } else if (
+            const SelfGravConfig::None *conf = std::get_if<SelfGravConfig::None>(&p.config)) {
+            j = {
+                {"type", "none"},
+            };
+        }
+
+        if (const SelfGravConfig::SofteningPlummer *conf
+            = std::get_if<SelfGravConfig::SofteningPlummer>(&p.softening_mode)) {
+            j["softening_mode"]   = "plummer";
+            j["softening_length"] = conf->epsilon;
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    /// JSON deserialization for SelfGravConfig
+    inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
+        if (j.at("type").get<std::string>() == "fmm") {
+            p.config = SelfGravConfig::FMM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "mm") {
+            p.config = SelfGravConfig::MM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "direct") {
+            p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
+        } else if (j.at("type").get<std::string>() == "none") {
+            p.config = SelfGravConfig::None{};
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "Invalid self gravity type: " + j.at("type").get<std::string>());
+        }
+
+        if (j.contains("softening_mode")) {
+            std::string softening_mode = j.at("softening_mode").get<std::string>();
+            if (softening_mode == "plummer") {
+                p.softening_mode
+                    = SelfGravConfig::SofteningPlummer{j.at("softening_length").get<f64>()};
+            } else {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "Invalid softening mode: " + softening_mode);
+            }
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -888,6 +1070,8 @@ namespace shammodels::sph {
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // self gravity config
+            {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -900,6 +1084,9 @@ namespace shammodels::sph {
             {"smoothing_length_config", p.smoothing_length_config},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
+
+            {"enable_particle_reordering", p.enable_particle_reordering},
+            {"particle_reordering_step_freq", p.particle_reordering_step_freq},
 
             {"eos_config", p.eos_config},
 
@@ -959,6 +1146,16 @@ namespace shammodels::sph {
             p.mhd_config.set(typename T::MHDConfig::None{});
         }
 
+        // self gravity config
+        if (j.contains("self_grav_config")) {
+            j.at("self_grav_config").get_to(p.self_grav_config);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "self_grav_config not found when deserializing, defaulting to ",
+                nlohmann::json{p.self_grav_config}.dump(4));
+        }
+
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
 
@@ -1000,6 +1197,24 @@ namespace shammodels::sph {
 
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
+
+        if (j.contains("enable_particle_reordering")) {
+            j.at("enable_particle_reordering").get_to(p.enable_particle_reordering);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "enable_particle_reordering not found when deserializing, defaulting to ",
+                p.enable_particle_reordering);
+        }
+
+        if (j.contains("particle_reordering_step_freq")) {
+            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "particle_reordering_step_freq not found when deserializing, defaulting to ",
+                p.particle_reordering_step_freq);
+        }
 
         j.at("eos_config").get_to(p.eos_config);
         j.at("artif_viscosity").get_to(p.artif_viscosity);

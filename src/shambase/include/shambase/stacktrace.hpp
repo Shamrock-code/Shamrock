@@ -20,6 +20,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/string.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <stack>
 
 namespace shambase::details {
@@ -82,6 +83,26 @@ namespace shambase::details {
      */
     inline std::stack<SourceLocation> call_stack;
 
+    /// Helper class to manage the call stack entry
+    struct CallStackEntry {
+        inline CallStackEntry(SourceLocation &loc) {
+            // Push the source location to the call stack
+            call_stack.emplace(loc);
+        }
+
+        // This class is not safe if copied or moved
+
+        CallStackEntry(const CallStackEntry &)            = delete;
+        CallStackEntry &operator=(const CallStackEntry &) = delete;
+        CallStackEntry(CallStackEntry &&)                 = delete;
+        CallStackEntry &operator=(CallStackEntry &&)      = delete;
+
+        inline ~CallStackEntry() {
+            // Pop the source location from the call stack
+            call_stack.pop();
+        }
+    };
+
     struct BasicStackEntry {
         SourceLocation loc; ///< Source location attached to the entry
         bool do_timer;      ///< is the timer enabled for this entry
@@ -89,6 +110,9 @@ namespace shambase::details {
 #ifdef SHAMROCK_USE_PROFILING
         f64 wtime_start; ///< start time of the entry
 #endif
+
+        CallStackEntry scoped_callstack_entry; ///< scoped call stack entry
+
         /**
          * @brief Construct a new Basic Stack Entry object.
          *
@@ -96,7 +120,7 @@ namespace shambase::details {
          * @param loc Source location attached to the entry (default: SourceLocation{})
          */
         inline BasicStackEntry(bool do_timer = true, SourceLocation &&loc = SourceLocation{})
-            : loc(loc), do_timer(do_timer) {
+            : loc(loc), do_timer(do_timer), scoped_callstack_entry(loc) {
 #ifdef SHAMROCK_USE_PROFILING
             if (do_timer) {
                 wtime_start = get_wtime();
@@ -105,8 +129,25 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_start_no_time(loc);
             }
 #endif
-            // Push the source location to the call stack
-            call_stack.emplace(loc);
+        }
+
+        /**
+         * @brief Construct a new Basic Stack Entry object.
+         *
+         * @param do_timer Is the timer enabled for this entry (default: true)
+         * @param loc Source location attached to the entry (default: SourceLocation{})
+         */
+        inline BasicStackEntry(
+            SourceLocation &callsite, bool do_timer = true, SourceLocation &&loc = SourceLocation{})
+            : loc(loc), do_timer(do_timer), scoped_callstack_entry(callsite) {
+#ifdef SHAMROCK_USE_PROFILING
+            if (do_timer) {
+                wtime_start = get_wtime();
+                shambase::profiling::stack_entry_start(loc, wtime_start);
+            } else {
+                shambase::profiling::stack_entry_start_no_time(loc);
+            }
+#endif
         }
 
         /**
@@ -123,8 +164,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_end_no_time(loc);
             }
 #endif
-            // Pop the source location from the call stack
-            call_stack.pop();
         }
     };
 
@@ -137,6 +176,8 @@ namespace shambase::details {
         f64 wtime_start; ///< start time of the entry
 #endif
 
+        CallStackEntry scoped_callstack_entry; ///< scoped call stack entry
+
         /**
          * @brief Construct a new Named Basic Stack Entry object
          *
@@ -146,7 +187,7 @@ namespace shambase::details {
          */
         inline NamedBasicStackEntry(
             std::string name, bool do_timer = true, SourceLocation &&loc = SourceLocation{})
-            : name(name), loc(loc), do_timer(do_timer) {
+            : name(name), loc(loc), do_timer(do_timer), scoped_callstack_entry(loc) {
 #ifdef SHAMROCK_USE_PROFILING
             if (do_timer) {
                 wtime_start = get_wtime();
@@ -155,7 +196,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_start_no_time(loc, name);
             }
 #endif
-            call_stack.emplace(loc);
         }
 
         /**
@@ -172,7 +212,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_end_no_time(loc);
             }
 #endif
-            call_stack.pop();
         }
     };
 
@@ -205,23 +244,31 @@ using StackEntry = shambase::details::BasicStackEntry;
  */
 using NamedStackEntry = shambase::details::NamedBasicStackEntry;
 
-/// Utility to concatenate two tokens
-#define internal_macro_shamrock_CONCAT2(a, b) a##b
-/// Utility to expand a macro with two tokens
-#define internal_macro_shamrock_EXPAND2(a, b) internal_macro_shamrock_CONCAT2(a, b)
-
 /**
- * @fn __shamrock_stack_entry
  * @brief Macro to create a stack entry.
  *
- * This macro defines a `StackEntry` variable with a unique name, either using
- * `__COUNTER__` or `__LINE__` to ensure uniqueness.
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
  */
+#define __shamrock_stack_entry()                                                                   \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}
 
-#ifdef __COUNTER__
-    #define __shamrock_stack_entry()                                                               \
-        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __COUNTER__) {}
-#else
-    #define __shamrock_stack_entry()                                                               \
-        [[maybe_unused]] StackEntry internal_macro_shamrock_EXPAND2(stack_loc_, __LINE__) {}
-#endif
+/**
+ * @brief Macro to create a stack entry from a given location. Can be used only on SourceLocation &&
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_log_callsite(callsite)                                                          \
+    [[maybe_unused]] shambase::details::CallStackEntry __shamrock_unique_name(call_site_loc) {     \
+        callsite                                                                                   \
+    }
+
+/**
+ * @brief Macro to create a stack entry.
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry_with_callsite(callsite)                                             \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) { callsite }

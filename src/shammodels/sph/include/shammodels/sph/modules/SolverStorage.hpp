@@ -28,7 +28,9 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -51,6 +53,9 @@ namespace shammodels::sph {
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+
+        shamrock::solvergraph::SolverGraph solver_graph;
+        std::shared_ptr<shamrock::solvergraph::OperationSequence> solver_sequence;
 
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -77,16 +82,17 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
-        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;
 
-        Component<shamrock::ComputeField<Tscal>> alpha_av_updated;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> alpha_av_updated;
         Component<shambase::DistributedData<PatchDataField<Tscal>>> alpha_av_ghost;
 
-        Component<shamrock::ComputeField<Tscal>> pressure;
-        Component<shamrock::ComputeField<Tscal>> soundspeed;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> pressure;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> soundspeed;
 
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;

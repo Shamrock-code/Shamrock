@@ -96,7 +96,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class Tvec, class TgridVec>
-    std::string NodeComputeCellAABB<Tvec, TgridVec>::_impl_get_tex() {
+    std::string NodeComputeCellAABB<Tvec, TgridVec>::_impl_get_tex() const {
 
         auto block_count           = get_ro_edge_base(0).get_tex_symbol();
         auto block_min             = get_ro_edge_base(1).get_tex_symbol();

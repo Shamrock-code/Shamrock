@@ -42,7 +42,7 @@ namespace shamunits::details {
     /*base units*/                                                                                 \
     X1(second, s)                                                                                  \
     X1(metre, m)                                                                                   \
-    X1(kilogramm, kg)                                                                              \
+    X1(kilogram, kg)                                                                               \
     X1(Ampere, A)                                                                                  \
     X1(Kelvin, K)                                                                                  \
     X1(mole, mol)                                                                                  \
@@ -122,7 +122,7 @@ namespace shamunits {
 namespace shamunits {
 
     template<class T>
-    struct ConvertionConstants {
+    struct ConversionConstants {
 
         static constexpr T au_to_m = 149597870700;     //(m)
         static constexpr T ly_to_m = 9460730472580800; //(m)
@@ -170,7 +170,7 @@ namespace shamunits {
 
         inline T pown(T a, int n) { return std::pow(a, n); }
 
-        using Uconvert = ConvertionConstants<T>;
+        using Uconvert = ConversionConstants<T>;
 
         public:
         T s, m, kg, A, K, mol, cd;
@@ -192,7 +192,7 @@ namespace shamunits {
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
         addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
-        addget(kilogramm) { return PREF* pow_constexpr<power>(kg , kg_inv);  }
+        addget(kilogram)  { return PREF* pow_constexpr<power>(kg , kg_inv);  }
         addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
         addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
         addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
@@ -255,13 +255,13 @@ namespace shamunits {
         inline T getter_1(units::UnitName name) {
             switch (name) {
 
-            case units::second   : return get<pref, units::second>(); break;
-            case units::metre    : return get<pref, units::metre>(); break;
-            case units::kilogramm: return get<pref, units::kilogramm>(); break;
-            case units::Ampere   : return get<pref, units::Ampere>(); break;
-            case units::Kelvin   : return get<pref, units::Kelvin>(); break;
-            case units::mole     : return get<pref, units::mole>(); break;
-            case units::candela  : return get<pref, units::candela>(); break;
+            case units::second  : return get<pref, units::second>(); break;
+            case units::metre   : return get<pref, units::metre>(); break;
+            case units::kilogram: return get<pref, units::kilogram>(); break;
+            case units::Ampere  : return get<pref, units::Ampere>(); break;
+            case units::Kelvin  : return get<pref, units::Kelvin>(); break;
+            case units::mole    : return get<pref, units::mole>(); break;
+            case units::candela : return get<pref, units::candela>(); break;
             // case units::mps: return get<pref, units::mps>(); break;
             case units::Hertz            : return get<pref, units::Hertz>(); break;
             case units::Newtown          : return get<pref, units::Newtown>(); break;
@@ -352,7 +352,7 @@ namespace shamunits {
     template<class T>
     struct Constants {
 
-        using Conv = ConvertionConstants<T>;
+        using Conv = ConversionConstants<T>;
 
         struct Si {
 
@@ -449,7 +449,7 @@ int main(void) {
     UnitSystem<double> astro_units{
         si.get<mega, units::years>(),
         si.get<units::astronomical_unit>(),
-        si.get<units::kilogramm>() * sol_mass,
+        si.get<units::kilogram>() * sol_mass,
     };
 
     // this time it returns 1 because the base length is the astronomical unit

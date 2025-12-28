@@ -148,11 +148,20 @@ namespace shamalgs::primitives {
 
 #define X(_arg_) X2(_arg_) X3(_arg_) X4(_arg_) X8(_arg_) X16(_arg_)
 
-    X(f32);
-    X(f64);
-    X(u32);
     X(u64);
+    X(u32);
+    X(u16);
+    X(u8);
+
     X(i64);
+    X(i32);
+    X(i16);
+    X(i8);
+
+    X(f64);
+    X(f32);
+    // X(f16);
+    // X(f8);
 
 #undef X
 #undef X2

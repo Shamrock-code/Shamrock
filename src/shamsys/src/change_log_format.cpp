@@ -239,7 +239,7 @@ namespace logformatter {
 
     /**
      * @brief Log formatter for style 3, simple details + time
-     *
+     * @brief Log formatter for style 4, simple details
      * @param args The arguments for the log formatter
      * @return std::string The formatted log
      */

@@ -27,6 +27,8 @@
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
+#include <type_traits>
+#include <cstddef>
 #include <utility>
 
 namespace sham {
@@ -116,72 +118,51 @@ namespace sham {
         }
 
         /**
+         * @brief Implementation helper for vector reduction using index_sequence
+         *
+         * Uses C++17 fold expression with index_sequence to reduce each
+         * component with proper barriers. This avoids code duplication
+         * for different vector dimensions.
+         *
+         * @tparam T Vector type
+         * @tparam Op Reduction operation type
+         * @tparam Is Index sequence for component access
+         */
+        template<class T, class Op, std::size_t... Is>
+        inline T reduce_vector_impl(
+            const sycl::group<1> &g, const T &v, Op op, std::index_sequence<Is...>) {
+            return T{reduce_component(g, v[Is], op)...};
+        }
+
+        /**
          * @brief Reduce vector components with barriers between each reduction
          *
          * For AdaptiveCPP, we must reduce each component separately with
          * explicit barriers between reductions. This prevents corruption of
          * the group's internal synchronization state.
          *
-         * @tparam T Vector type
+         * Uses std::is_same_v to correctly distinguish between:
+         * - Pure scalar types (e.g., float) - reduced directly
+         * - Vector types including sycl::vec<T,1> - reduced component-wise
+         *
+         * @tparam T Value type (scalar or vector)
          * @tparam Op Reduction operation type (plus, minimum, maximum)
          * @param g SYCL work-group
-         * @param v Vector value to reduce
+         * @param v Value to reduce
          * @param op Reduction operation
-         * @return T Reduced vector
+         * @return T Reduced value
          */
         template<class T, class Op>
         inline T reduce_vector_with_barriers(const sycl::group<1> &g, const T &v, Op op) {
             using Tscal              = shambase::VecComponent<T>;
             static constexpr u32 dim = shambase::VectorProperties<T>::dimension;
-            using ScalarOp           = Op;
 
-            if constexpr (dim == 1) {
-                return reduce_component(g, v, ScalarOp{});
-            } else if constexpr (dim == 2) {
-                auto r0 = reduce_component(g, v[0], ScalarOp{});
-                auto r1 = reduce_component(g, v[1], ScalarOp{});
-                return {r0, r1};
-            } else if constexpr (dim == 3) {
-                auto r0 = reduce_component(g, v[0], ScalarOp{});
-                auto r1 = reduce_component(g, v[1], ScalarOp{});
-                auto r2 = reduce_component(g, v[2], ScalarOp{});
-                return {r0, r1, r2};
-            } else if constexpr (dim == 4) {
-                auto r0 = reduce_component(g, v[0], ScalarOp{});
-                auto r1 = reduce_component(g, v[1], ScalarOp{});
-                auto r2 = reduce_component(g, v[2], ScalarOp{});
-                auto r3 = reduce_component(g, v[3], ScalarOp{});
-                return {r0, r1, r2, r3};
-            } else if constexpr (dim == 8) {
-                auto r0 = reduce_component(g, v[0], ScalarOp{});
-                auto r1 = reduce_component(g, v[1], ScalarOp{});
-                auto r2 = reduce_component(g, v[2], ScalarOp{});
-                auto r3 = reduce_component(g, v[3], ScalarOp{});
-                auto r4 = reduce_component(g, v[4], ScalarOp{});
-                auto r5 = reduce_component(g, v[5], ScalarOp{});
-                auto r6 = reduce_component(g, v[6], ScalarOp{});
-                auto r7 = reduce_component(g, v[7], ScalarOp{});
-                return {r0, r1, r2, r3, r4, r5, r6, r7};
-            } else if constexpr (dim == 16) {
-                auto r0  = reduce_component(g, v[0], ScalarOp{});
-                auto r1  = reduce_component(g, v[1], ScalarOp{});
-                auto r2  = reduce_component(g, v[2], ScalarOp{});
-                auto r3  = reduce_component(g, v[3], ScalarOp{});
-                auto r4  = reduce_component(g, v[4], ScalarOp{});
-                auto r5  = reduce_component(g, v[5], ScalarOp{});
-                auto r6  = reduce_component(g, v[6], ScalarOp{});
-                auto r7  = reduce_component(g, v[7], ScalarOp{});
-                auto r8  = reduce_component(g, v[8], ScalarOp{});
-                auto r9  = reduce_component(g, v[9], ScalarOp{});
-                auto r10 = reduce_component(g, v[10], ScalarOp{});
-                auto r11 = reduce_component(g, v[11], ScalarOp{});
-                auto r12 = reduce_component(g, v[12], ScalarOp{});
-                auto r13 = reduce_component(g, v[13], ScalarOp{});
-                auto r14 = reduce_component(g, v[14], ScalarOp{});
-                auto r15 = reduce_component(g, v[15], ScalarOp{});
-                return {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15};
+            if constexpr (std::is_same_v<T, Tscal>) {
+                // T is a pure scalar type - reduce directly
+                return reduce_component(g, v, op);
             } else {
-                static_assert(shambase::always_false_v<decltype(dim)>, "non-exhaustive visitor!");
+                // T is a vector type - reduce component-wise using index_sequence
+                return reduce_vector_impl(g, v, op, std::make_index_sequence<dim>{});
             }
         }
 

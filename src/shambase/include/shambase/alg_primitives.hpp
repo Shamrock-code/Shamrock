@@ -21,7 +21,16 @@
 
 namespace shambase {
 
-    /// simple insertion sort between those indexes
+    /**
+     * @brief Simple insertion sort on pointer range
+     *
+     * @tparam T Element type
+     * @tparam Comp Comparator type
+     * @param data Pointer to data array
+     * @param start Starting index (inclusive)
+     * @param end Ending index (exclusive)
+     * @param comp Comparison function
+     */
     template<class T, class Comp>
     inline void ptr_insert_sort(T *data, u32 start, u32 end, Comp &&comp) {
         for (u32 i = start + 1; i < end; ++i) {
@@ -54,6 +63,18 @@ namespace shambase {
         inline static void Sort(K *keys, const u8 *segment_boundary, Comp comp) {}
     };
 
+    /**
+     * @brief Odd-even transpose sort with segment boundaries
+     *
+     * Sorts array while respecting segment boundaries where comparisons are disabled.
+     *
+     * @tparam T Element type
+     * @tparam ArrSize Compile-time array size
+     * @tparam Comp Comparator type
+     * @param data Pointer to data array
+     * @param segment_boundary Flags indicating segment boundaries (1 = boundary, 0 = no boundary)
+     * @param comp Comparison function
+     */
     template<class T, int ArrSize, class Comp>
     inline void odd_even_transpose_sort_segment_flags(
         T *data, const u8 *segment_boundary, Comp comp) {

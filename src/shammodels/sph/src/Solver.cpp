@@ -1678,7 +1678,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // Here we will add self grav to the external forces indep of vel (this will be moved into a
     // sperate module later)
-    if(solver_config.self_grav_config.is_sg_on()) {
+    if (solver_config.self_grav_config.is_sg_on()) {
 
         auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
 

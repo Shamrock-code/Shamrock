@@ -187,14 +187,13 @@ namespace logformatter {
             shambase::term_colors::bold());
     }
 
-
     /**
      * @brief Log formatter for style 3, full details + time
      *
      * @param args The arguments for the log formatter
      * @return std::string The formatted log
      */
-     std::string style4_formatter_full(const logger::ReformatArgs &args) {
+    std::string style4_formatter_full(const logger::ReformatArgs &args) {
 
         u32 tty_width = shamcmdopt::get_tty_columns();
 
@@ -293,7 +292,7 @@ namespace shamsys {
         } else if (SHAMLOGFORMATTER == "3") {
             logger::change_formaters(
                 logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
-        }else if (SHAMLOGFORMATTER == "4") {
+        } else if (SHAMLOGFORMATTER == "4") {
             logger::change_formaters(
                 logformatter::style4_formatter_full, logformatter::style4_formatter_simple);
         } else {

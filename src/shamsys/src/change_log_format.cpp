@@ -189,7 +189,7 @@ namespace logformatter {
 
     /**
      * @brief Log formatter for style 3, full details + time
-     *
+     * @brief Log formatter for style 4, full details + time
      * @param args The arguments for the log formatter
      * @return std::string The formatted log
      */

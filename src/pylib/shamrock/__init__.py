@@ -5,4 +5,3 @@ except ImportError:
         from shamrock import *
     except ImportError:
         from pyshamrock import *
-    

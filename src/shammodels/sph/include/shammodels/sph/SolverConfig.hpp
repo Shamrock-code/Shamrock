@@ -509,6 +509,11 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    inline bool is_eos_tillotson() {
+        using T = typename EOSConfig::Tillotson;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /**
      * @brief Set the EOS configuration to an isothermal equation of state
      *
@@ -556,6 +561,34 @@ struct shammodels::sph::SolverConfig {
      */
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a Tillotson equation of state
+     *
+     * @param rho0 Density at zero-pressure
+     * @param E0 Tillotson parameter, ~ vaporization energy
+     * @param A Bulk modulus
+     * @param B Tillotson parameter
+     * @param a Tillotson parameter (often 0.5)
+     * @param b Tillotson parameter (often 0.5)
+     * @param alpha Tillotson parameter
+     * @param beta Tillotson parameter
+     * @param u_iv Energy at incipient vaporization
+     * @param u_cv Energy at complete vaporization
+     */
+    inline void set_eos_tillotson(
+        Tscal rho0,
+        Tscal E0,
+        Tscal A,
+        Tscal B,
+        Tscal a,
+        Tscal b,
+        Tscal alpha,
+        Tscal beta,
+        Tscal u_iv,
+        Tscal u_cv) {
+        eos_config.set_tillotson(rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

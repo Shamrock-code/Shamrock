@@ -66,6 +66,9 @@ namespace shammodels {
         using LocallyIsothermalFA2014
             = shamphys::EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal>;
 
+        /// Tillotson equation of state configuration
+        using Tillotson = shamphys::EOS_Config_Tillotson<Tscal>;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<
             Isothermal,
@@ -73,7 +76,8 @@ namespace shammodels {
             Polytropic,
             LocallyIsothermal,
             LocallyIsothermalLP07,
-            LocallyIsothermalFA2014>;
+            LocallyIsothermalFA2014,
+            Tillotson>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -121,6 +125,20 @@ namespace shammodels {
 
         inline void set_locally_isothermalFA2014(Tscal h_over_r) {
             config = LocallyIsothermalFA2014{h_over_r};
+        }
+
+        inline void set_tillotson(
+            Tscal rho0,
+            Tscal E0,
+            Tscal A,
+            Tscal B,
+            Tscal a,
+            Tscal b,
+            Tscal alpha,
+            Tscal beta,
+            Tscal u_iv,
+            Tscal u_cv) {
+            config = Tillotson{rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv};
         }
 
         /**

@@ -15,7 +15,7 @@
  */
 
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
-#include "shamalgs/memory/memory.hpp"
+#include "shamalgs/memory.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/math/density.hpp"

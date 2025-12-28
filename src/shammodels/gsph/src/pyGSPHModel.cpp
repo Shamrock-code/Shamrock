@@ -85,9 +85,9 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 )==")
         // Reconstruction config
         .def(
-            "set_reconstruct_first_order",
+            "set_reconstruct_piecewise_constant",
             [](TConfig &self) {
-                self.set_reconstruct_first_order();
+                self.set_reconstruct_piecewise_constant();
             },
             R"==(
     Set first-order piecewise constant reconstruction.
@@ -96,24 +96,15 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Good for very strong shocks or initial testing.
 )==")
         .def(
-            "set_reconstruct_second_order",
-            [](TConfig &self, Tscal mach_threshold) {
-                self.set_reconstruct_second_order(mach_threshold);
+            "set_reconstruct_muscl",
+            [](TConfig &self) {
+                self.set_reconstruct_muscl();
             },
-            py::arg("mach_threshold") = Tscal{1.1},
             R"==(
-    Set second-order reconstruction (Inutsuka 2002).
+    Set second-order MUSCL reconstruction with Van Leer limiter.
 
-    Uses computed gradients with monotonicity constraint.
-    At shock fronts (Mach > mach_threshold), velocity gradients
-    are set to zero to maintain stability.
-
-    Parameters
-    ----------
-    mach_threshold : float, optional
-        Mach number threshold for monotonicity constraint.
-        When relative velocity > c_s / mach_threshold, use first-order.
-        Default: 1.1
+    Uses computed gradients with slope limiter for monotonicity.
+    Better accuracy at smooth regions while maintaining stability at shocks.
 )==")
         // EOS config
         .def(

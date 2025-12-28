@@ -128,11 +128,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
     // Boundary condition selection - similar to SPH solver
     // Note: Wall boundaries use Periodic with dynamic wall particles
     if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-        storage.ghost_handler.set(GhostHandle{scheduler(), BCFree{}, storage.patch_rank_owner});
+        storage.ghost_handler.set(
+            GhostHandle{
+                scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCPeriodic *c
         = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-        storage.ghost_handler.set(GhostHandle{scheduler(), BCPeriodic{}, storage.patch_rank_owner});
+        storage.ghost_handler.set(
+            GhostHandle{
+                scheduler(), BCPeriodic{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCShearingPeriodic *c
         = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
@@ -142,7 +146,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
                 scheduler(),
                 BCShearingPeriodic{
                     c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                storage.patch_rank_owner});
+                storage.patch_rank_owner,
+                storage.xyzh_ghost_layout});
     } else {
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
@@ -578,6 +583,11 @@ void shammodels::gsph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::init_ghost_layout() {
     StackEntry stack_loc{};
+
+    // Initialize xyzh_ghost_layout for BasicSPHGhostHandler (position + smoothing length)
+    storage.xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+    storage.xyzh_ghost_layout->template add_field<Tvec>("xyz", 1);
+    storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
 
     // Reset first in case it was set from a previous timestep
     storage.ghost_layout.reset();

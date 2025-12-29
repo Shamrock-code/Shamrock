@@ -443,11 +443,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                             logger::warn_ln(
                                 "SPHSetup", "gen_step is ignored when using old setup"));
                     }
-                    if (bool(insert_step)) {
-                        ON_RANK_0(
-                            logger::warn_ln(
-                                "SPHSetup", "insert_step is ignored when using old setup"));
-                    }
                     if (bool(msg_count_limit)) {
                         ON_RANK_0(
                             logger::warn_ln(

@@ -391,7 +391,16 @@ class PatchDataField {
             // buffer of booleans to store result of the condition
             sham::DeviceBuffer<u32> mask(obj_cnt, dev_sched);
 
-            return get_ids_where_recycle_buffer(mask, cd_true, args...);
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
         } else {
             return sham::DeviceBuffer<u32>(0, dev_sched);
         }

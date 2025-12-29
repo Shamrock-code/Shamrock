@@ -417,11 +417,16 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     auto inject_in_local_domains =
         [&sched, &inserter, &compute_load, &insert_step, &log_inject_status](
             shamrock::patch::PatchDataLayer &to_insert) {
+            __shamrock_stack_entry();
+
             bool has_been_limited = true;
 
             while (has_been_limited) {
                 has_been_limited = false;
                 using namespace shamrock::patch;
+
+                auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+                sham::DeviceBuffer<u32> mask_get_ids_where(0, dev_sched);
 
                 // inject in local domains first
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
@@ -430,7 +435,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
                     PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
 
-                    auto ids = xyz.get_ids_where(
+                    auto ids = xyz.get_ids_where_recycle_buffer(
+                        mask_get_ids_where,
                         [](auto access, u32 id, shammath::CoordRange<Tvec> patch_coord) {
                             Tvec tmp = access[id];
                             return patch_coord.contain_pos(tmp);
@@ -461,20 +467,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             }
         };
 
-    u32 step_count = 0;
-    while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
-
-        // assume that the sched is synchronized and that there is at least a patch.
-        // TODO actually check that
-
-        using namespace shamrock::patch;
-
-        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto get_index_per_ranks = [&]() {
+        __shamrock_stack_entry();
 
         SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
         sptree.attach_buf();
-
-        inject_in_local_domains(to_insert);
 
         // find where each particle should be inserted
         PatchDataField<Tvec> &pos_field = to_insert.get_field<Tvec>(0);
@@ -506,6 +503,23 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             throw shambase::make_except_with_loc<std::runtime_error>(
                 "a new id could not be computed");
         }
+
+        return index_per_ranks;
+    };
+
+    u32 step_count = 0;
+    while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
+
+        // assume that the sched is synchronized and that there is at least a patch.
+        // TODO actually check that
+
+        using namespace shamrock::patch;
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        inject_in_local_domains(to_insert);
+
+        std::unordered_map<i32, std::vector<u32>> index_per_ranks = get_index_per_ranks();
 
         // allgather the list of messages
         // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))

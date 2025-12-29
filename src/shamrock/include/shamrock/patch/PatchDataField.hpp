@@ -341,6 +341,34 @@ class PatchDataField {
         }
     }
 
+    template<class Lambdacd, class... Args>
+    inline sham::DeviceBuffer<u32> get_ids_where_recycle_buffer(
+        sham::DeviceBuffer<u32> &mask, Lambdacd &&cd_true, Args... args) const {
+        StackEntry stack_loc{};
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto obj_cnt = get_obj_cnt();
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            mask.resize(obj_cnt);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
+        }
+    }
+
     /**
      * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
      * sycl::buffer of the found index
@@ -363,16 +391,7 @@ class PatchDataField {
             // buffer of booleans to store result of the condition
             sham::DeviceBuffer<u32> mask(obj_cnt, dev_sched);
 
-            sham::kernel_call(
-                q,
-                sham::MultiRef{buf},
-                sham::MultiRef{mask},
-                obj_cnt,
-                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
-                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
-                });
-
-            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+            return get_ids_where_recycle_buffer(mask, cd_true, args...);
         } else {
             return sham::DeviceBuffer<u32>(0, dev_sched);
         }

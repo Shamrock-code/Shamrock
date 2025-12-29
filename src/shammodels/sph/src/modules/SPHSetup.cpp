@@ -727,6 +727,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         setup_log.value().dump_state();
     }
 
+    shamcomm::mpi::Barrier(MPI_COMM_WORLD);
     time_part_inject.end();
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(

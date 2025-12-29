@@ -762,7 +762,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             f64 sum_time_rank_getter = std::accumulate(
                 time_rank_getter_all_ranks.begin(), time_rank_getter_all_ranks.end(), 0.0);
-            f64 sum_max_time_rank_getter = *std::max_element(
+            f64 max_time_rank_getter = *std::max_element(
                 max_time_rank_getter_all_ranks.begin(), max_time_rank_getter_all_ranks.end());
             f64 sum_mpi
                 = std::accumulate(mpi_timer_all_ranks.begin(), mpi_timer_all_ranks.end(), 0.0);
@@ -809,7 +809,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                      shambase::format(
                          "{:.2f}s / {:.2f}s",
                          sum_time_rank_getter / shamcomm::world_size(),
-                         sum_max_time_rank_getter),
+                         max_time_rank_getter),
                      shambase::format("{:.2f}s", sum_mpi / shamcomm::world_size()),
                      shambase::format(
                          "{:>.1f}% {:<.1f}%",

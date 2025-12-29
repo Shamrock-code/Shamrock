@@ -198,7 +198,7 @@ def print_setup_logs(filepath, name_png_prefix):
         )
 
         plt.tight_layout()
-        plt.savefig(folder + f"/{name_png_prefix}_{step_idx:05d}.png")
+        plt.savefig(os.path.join(folder, f"{name_png_prefix}_{step_idx:05d}.png"))
         plt.close()
 
 

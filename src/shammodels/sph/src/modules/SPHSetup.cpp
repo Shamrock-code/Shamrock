@@ -238,6 +238,7 @@ template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     SetupNodePtr setup,
     bool part_reordering,
+    std::optional<u32> gen_count_per_step,
     std::optional<u32> insert_count_per_step,
     std::optional<u64> max_msg_count_per_rank_per_step,
     std::optional<u64> max_data_count_per_rank_per_step,
@@ -260,6 +261,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     u32 insert_step = sched.crit_patch_split * 8;
     if (bool(insert_count_per_step)) {
         insert_step = insert_count_per_step.value();
+    }
+
+    u32 gen_step = sched.crit_patch_split;
+    if (bool(gen_count_per_step)) {
+        gen_step = gen_count_per_step.value();
     }
 
     u64 msg_limit = 16;
@@ -298,7 +304,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         shambase::Timer timer_gen;
         timer_gen.start();
 
-        shamrock::patch::PatchDataLayer tmp = setup->next_n(insert_step);
+        shamrock::patch::PatchDataLayer tmp = setup->next_n(gen_step);
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles

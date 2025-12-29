@@ -52,6 +52,7 @@ namespace shammodels::sph::modules {
         void apply_setup_new(
             SetupNodePtr setup,
             bool part_reordering,
+            std::optional<u32> gen_count_per_step               = std::nullopt,
             std::optional<u32> insert_count_per_step            = std::nullopt,
             std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
             std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,

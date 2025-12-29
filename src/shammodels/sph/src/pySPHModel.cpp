@@ -422,25 +422,59 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,
                bool part_reordering,
+               std::optional<u32> gen_step,
                std::optional<u32> insert_step,
                std::optional<u64> msg_count_limit,
                std::optional<u64> msg_size_limit,
-               bool do_setup_log) {
-                return self.apply_setup_new(
-                    setup,
-                    part_reordering,
-                    insert_step,
-                    msg_count_limit,
-                    msg_size_limit,
-                    do_setup_log);
+               bool do_setup_log,
+               bool use_new_setup) {
+                if (use_new_setup) {
+                    return self.apply_setup_new(
+                        setup,
+                        part_reordering,
+                        gen_step,
+                        insert_step,
+                        msg_count_limit,
+                        msg_size_limit,
+                        do_setup_log);
+                } else {
+                    if (bool(gen_step)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "gen_step is ignored when using old setup"));
+                    }
+                    if (bool(insert_step)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "insert_step is ignored when using old setup"));
+                    }
+                    if (bool(msg_count_limit)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "msg_count_limit is ignored when using old setup"));
+                    }
+                    if (bool(msg_size_limit)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "msg_size_limit is ignored when using old setup"));
+                    }
+                    if (bool(do_setup_log)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "do_setup_log is ignored when using old setup"));
+                    }
+                    return self.apply_setup(setup, part_reordering, insert_step);
+                }
             },
             py::arg("setup"),
             py::kw_only(),
             py::arg("part_reordering") = true,
+            py::arg("gen_step")        = std::nullopt,
             py::arg("insert_step")     = std::nullopt,
             py::arg("msg_count_limit") = std::nullopt,
             py::arg("msg_size_limit")  = std::nullopt,
-            py::arg("do_setup_log")    = false);
+            py::arg("do_setup_log")    = false,
+            py::arg("use_new_setup")   = true);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

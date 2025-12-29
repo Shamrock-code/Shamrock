@@ -61,7 +61,7 @@ part_vol = vol_b / N_target
 # lattice volume
 part_vol_lattice = 0.74 * part_vol
 
-dr = (part_vol_lattice / ((4.0 / 3.0) * 3.1416)) ** (1.0 / 3.0)
+dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
 
 pmass = -1
 

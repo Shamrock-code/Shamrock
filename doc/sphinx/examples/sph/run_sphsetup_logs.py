@@ -47,7 +47,7 @@ N_target = 1e6
 scheduler_split_val = int(1e6 / 16)
 scheduler_merge_val = int(1)
 
-# render exemple
+# render example
 """
 4 processes (at the end of the file)
 """
@@ -278,13 +278,13 @@ plt.show()
 
 
 # %%
-# Same as above but on an exemple with 4 processes
+# Same as above but on an example with 4 processes
 
 # %%
 # .. raw:: html
 #
 #   <details>
-#   <summary><a>Exemple data on same setup but 4 processes</a></summary>
+#   <summary><a>Example data on same setup but 4 processes</a></summary>
 #
 
 saved_data = [
@@ -1417,14 +1417,14 @@ print_setup_logs("setup_log_step.json", "setup_log_step_example")
 # %%
 # Make a gif out of it
 render_gif = True
-glob_str = os.path.join(folder, "setup_log_step_exemple_*.png")
+glob_str = os.path.join(folder, "setup_log_step_example_*.png")
 
 # If the animation is not returned only a static image will be shown in the doc
 ani = show_image_sequence(glob_str)
 
 # To save the animation using Pillow as a gif
 writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save(folder + "setup_log_step_exemple.gif", writer=writer)
+ani.save(folder + "setup_log_step_example.gif", writer=writer)
 
 
 # sphinx_gallery_thumbnail_number = 2

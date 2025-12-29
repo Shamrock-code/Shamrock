@@ -70,7 +70,7 @@ gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 setup.apply_setup(
     gen,
     gen_step=int(scheduler_split_val / 8),
-    insert_step=int(scheduler_split_val / 2),
+    insert_step=int(scheduler_split_val * 2),
     msg_count_limit=1024,
     rank_comm_size_limit=int(scheduler_split_val) * 2,
     max_msg_size=int(scheduler_split_val / 8),

@@ -17,6 +17,7 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/tabulate.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shambackends/DeviceBuffer.hpp"
@@ -385,6 +386,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             "SPH setup", "final particle count =", injected_parts, "begining injection ...");
     }
 
+    sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
+
     // injection part (holy shit this is hard)
 
     shambase::Timer time_part_inject;
@@ -513,6 +517,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         return index_per_ranks;
     };
 
+    f64 total_time_rank_getter = 0;
+    f64 max_time_rank_getter   = 0;
+
     u32 step_count = 0;
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
@@ -528,6 +535,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         f64 timer_get_index_per_ranks = 0;
         std::unordered_map<i32, std::vector<u32>> index_per_ranks
             = get_index_per_ranks(timer_get_index_per_ranks);
+        total_time_rank_getter += timer_get_index_per_ranks;
+        max_time_rank_getter = std::max(max_time_rank_getter, timer_get_index_per_ranks);
 
         // allgather the list of messages
         // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
@@ -695,10 +704,6 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         f64 worst_time_get_index_per_ranks
             = shamalgs::collective::allreduce_max<f64>(timer_get_index_per_ranks);
-        if (shamcomm::world_rank() == 0) {
-            logger::info_ln(
-                "SPH setup", "max(time index ranks getter) =", worst_time_get_index_per_ranks, "s");
-        }
 
         step_count++;
     }
@@ -711,6 +716,96 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
             "SPH setup", "the injection step took :", time_part_inject.elasped_sec(), "s");
+    }
+
+    sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
+
+    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
+    f64 t_dev_alloc
+        = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
+          + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+    f64 t_host_alloc = (mem_perf_infos_end.time_alloc_host - mem_perf_infos_start.time_alloc_host)
+                       + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
+
+    { // perf infos
+        std::vector<f64> time_rank_getter_all_ranks
+            = shamalgs::collective::gather(total_time_rank_getter);
+        std::vector<f64> max_time_rank_getter_all_ranks
+            = shamalgs::collective::gather(max_time_rank_getter);
+        std::vector<f64> mpi_timer_all_ranks = shamalgs::collective::gather(delta_mpi_timer);
+        std::vector<f64> alloc_time_device_all_ranks = shamalgs::collective::gather(t_dev_alloc);
+        std::vector<f64> alloc_time_host_all_ranks   = shamalgs::collective::gather(t_host_alloc);
+        std::vector<size_t> max_mem_device_all_ranks
+            = shamalgs::collective::gather(mem_perf_infos_end.max_allocated_byte_device);
+        std::vector<size_t> max_mem_host_all_ranks
+            = shamalgs::collective::gather(mem_perf_infos_end.max_allocated_byte_host);
+
+        if (shamcomm::world_rank() == 0) {
+            f64 time_part_inject_sec = time_part_inject.elasped_sec();
+            f64 sum_t                = time_part_inject_sec * shamcomm::world_size();
+
+            f64 sum_time_rank_getter = std::accumulate(
+                time_rank_getter_all_ranks.begin(), time_rank_getter_all_ranks.end(), 0.0);
+            f64 sum_max_time_rank_getter = *std::max_element(
+                max_time_rank_getter_all_ranks.begin(), max_time_rank_getter_all_ranks.end());
+            f64 sum_mpi
+                = std::accumulate(mpi_timer_all_ranks.begin(), mpi_timer_all_ranks.end(), 0.0);
+            f64 sum_alloc_device = std::accumulate(
+                alloc_time_device_all_ranks.begin(), alloc_time_device_all_ranks.end(), 0.0);
+            f64 sum_alloc_host = std::accumulate(
+                alloc_time_host_all_ranks.begin(), alloc_time_host_all_ranks.end(), 0.0);
+            size_t sum_mem_device_total = std::accumulate(
+                max_mem_device_all_ranks.begin(), max_mem_device_all_ranks.end(), 0_u64);
+            size_t sum_mem_host_total = std::accumulate(
+                max_mem_host_all_ranks.begin(), max_mem_host_all_ranks.end(), 0_u64);
+
+            static constexpr u32 cols_count = 6;
+
+            using Table = shambase::table<cols_count>;
+
+            Table table;
+
+            table.add_double_rule();
+            table.add_data(
+                {"rank", "rank get (sum/max)", "MPI", "alloc d% h%", "mem (max) d", "mem (max) h"},
+                Table::center);
+            table.add_double_rule();
+            for (u32 i = 0; i < shamcomm::world_size(); i++) {
+                table.add_data(
+                    {shambase::format("{:<4}", i),
+                     shambase::format(
+                         "{:.2f}s / {:.2f}s",
+                         time_rank_getter_all_ranks[i],
+                         max_time_rank_getter_all_ranks[i]),
+                     shambase::format("{:.2f}s", mpi_timer_all_ranks[i]),
+                     shambase::format(
+                         "{:>.1f}% {:<.1f}%",
+                         100 * (alloc_time_device_all_ranks[i] / time_part_inject_sec),
+                         100 * (alloc_time_host_all_ranks[i] / time_part_inject_sec)),
+                     shambase::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
+                     shambase::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i]))},
+                    Table::right);
+            }
+            if (shamcomm::world_size() > 1) {
+                table.add_rulled_data({"", "<avg> / <max>", "<avg>", "<avg>", "<sum>", "<sum>"});
+                table.add_data(
+                    {"all",
+                     shambase::format(
+                         "{:.2f}s / {:.2f}s",
+                         sum_time_rank_getter / shamcomm::world_size(),
+                         sum_max_time_rank_getter),
+                     shambase::format("{:.2f}s", sum_mpi / shamcomm::world_size()),
+                     shambase::format(
+                         "{:>.1f}% {:<.1f}%",
+                         100 * (sum_alloc_device / sum_t),
+                         100 * (sum_alloc_host / sum_t)),
+                     shambase::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
+                     shambase::format("{}", shambase::readable_sizeof(sum_mem_host_total))},
+                    Table::right);
+            }
+            table.add_rule();
+            logger::info_ln("SPH setup", "injection perf report:" + table.render());
+        }
     }
 
     if (part_reordering) {

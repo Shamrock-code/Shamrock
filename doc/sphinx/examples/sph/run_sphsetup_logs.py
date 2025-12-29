@@ -98,7 +98,7 @@ setup.apply_setup(
     gen,
     insert_step=int(scheduler_split_val / 4),
     msg_count_limit=32,
-    msg_size_limit=scheduler_split_val // 4,
+    rank_comm_size_limit=scheduler_split_val // 4,
     do_setup_log=True,
 )
 

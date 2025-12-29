@@ -56,6 +56,7 @@ namespace shammodels::sph::modules {
             std::optional<u32> insert_count_per_step            = std::nullopt,
             std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
             std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,
+            std::optional<u64> max_msg_size                     = std::nullopt,
             bool do_setup_log                                   = false);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(

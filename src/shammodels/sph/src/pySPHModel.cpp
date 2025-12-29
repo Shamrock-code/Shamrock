@@ -426,6 +426,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::optional<u32> insert_step,
                std::optional<u64> msg_count_limit,
                std::optional<u64> msg_size_limit,
+               std::optional<u64> max_msg_size,
                bool do_setup_log,
                bool use_new_setup) {
                 if (use_new_setup) {
@@ -436,6 +437,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         insert_step,
                         msg_count_limit,
                         msg_size_limit,
+                        max_msg_size,
                         do_setup_log);
                 } else {
                     if (bool(gen_step)) {
@@ -453,6 +455,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                             logger::warn_ln(
                                 "SPHSetup", "msg_size_limit is ignored when using old setup"));
                     }
+                    if (bool(max_msg_size)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "max_msg_size is ignored when using old setup"));
+                    }
                     if (bool(do_setup_log)) {
                         ON_RANK_0(
                             logger::warn_ln(
@@ -463,13 +470,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering") = true,
-            py::arg("gen_step")        = std::nullopt,
-            py::arg("insert_step")     = std::nullopt,
-            py::arg("msg_count_limit") = std::nullopt,
-            py::arg("msg_size_limit")  = std::nullopt,
-            py::arg("do_setup_log")    = false,
-            py::arg("use_new_setup")   = true);
+            py::arg("part_reordering")      = true,
+            py::arg("gen_step")             = std::nullopt,
+            py::arg("insert_step")          = std::nullopt,
+            py::arg("msg_count_limit")      = std::nullopt,
+            py::arg("rank_comm_size_limit") = std::nullopt,
+            py::arg("max_msg_size")         = std::nullopt,
+            py::arg("do_setup_log")         = false,
+            py::arg("use_new_setup")        = true);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

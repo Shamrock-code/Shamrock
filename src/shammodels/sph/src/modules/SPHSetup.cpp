@@ -243,6 +243,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     std::optional<u32> insert_count_per_step,
     std::optional<u64> max_msg_count_per_rank_per_step,
     std::optional<u64> max_data_count_per_rank_per_step,
+    std::optional<u64> max_msg_size,
     bool do_setup_log) {
 
     __shamrock_stack_entry();
@@ -276,6 +277,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     u64 data_count_limit = 2 * insert_step;
     if (bool(max_data_count_per_rank_per_step)) {
         data_count_limit = max_data_count_per_rank_per_step.value();
+    }
+    u64 max_message_size = insert_step;
+    if (bool(max_msg_size)) {
+        max_message_size = max_msg_size.value();
     }
 
     auto compute_load = [&]() {
@@ -589,8 +594,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         std::vector<std::tuple<u32, u32, u64>> rank_msg_list;
 
-        bool was_count_limited = false;
-        bool was_size_limited  = false;
+        bool was_count_limited    = false;
+        bool was_size_limited     = false;
+        bool was_msg_size_limited = false;
 
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
@@ -605,20 +611,24 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             bool can_send_recv = msg_count_limit_not_reached && recv_size_limit_not_reached;
 
+            u64 msg_size         = std::min(indices_size, max_message_size);
+            msg_size             = std::min(msg_size, data_count_limit);
+            was_msg_size_limited = was_msg_size_limited || (msg_size < indices_size);
+
             if (can_send_recv) {
                 if (sender_rank == shamcomm::world_rank()
                     || receiver_rank == shamcomm::world_rank()) {
-                    if (indices_size > 0) {
+                    if (msg_size > 0) {
                         rank_msg_list.push_back(
-                            std::make_tuple(sender_rank, receiver_rank, indices_size));
+                            std::make_tuple(sender_rank, receiver_rank, msg_size));
                     }
                 }
             }
 
             msg_count_rank[receiver_rank] += 1;
             msg_count_rank[sender_rank] += 1;
-            comm_size_rank[receiver_rank] += indices_size;
-            comm_size_rank[sender_rank] += indices_size;
+            comm_size_rank[receiver_rank] += msg_size;
+            comm_size_rank[sender_rank] += msg_size;
         }
 
         // logger::raw_ln(
@@ -640,8 +650,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 sham::DeviceBuffer _tmp = sham::DeviceBuffer<u32>(idx_to_extract.size(), dev_sched);
                 _tmp.copy_from_stdvec(idx_to_extract);
 
-                if (_tmp.get_size() > data_count_limit) {
-                    _tmp.resize(data_count_limit);
+                if (_tmp.get_size() > indices_size) {
+                    _tmp.resize(indices_size);
                 }
 
                 PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
@@ -687,6 +697,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             = !shamalgs::collective::are_all_rank_true(!was_count_limited, MPI_COMM_WORLD);
         was_size_limited
             = !shamalgs::collective::are_all_rank_true(!was_size_limited, MPI_COMM_WORLD);
+        was_msg_size_limited
+            = !shamalgs::collective::are_all_rank_true(!was_msg_size_limited, MPI_COMM_WORLD);
         bool was_sync_limited
             = !shamalgs::collective::are_all_rank_true(!sync_limited, MPI_COMM_WORLD);
 
@@ -695,6 +707,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             log_suffix += " (msg count limited)";
         }
         if (was_size_limited) {
+            log_suffix += " (total msg size limited)";
+        }
+        if (was_msg_size_limited) {
             log_suffix += " (msg size limited)";
         }
         if (was_sync_limited) {

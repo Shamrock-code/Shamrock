@@ -72,7 +72,7 @@ setup.apply_setup(
     gen_step=int(scheduler_split_val / 8),
     insert_step=int(scheduler_split_val / 2),
     msg_count_limit=1024,
-    rank_comm_size_limit=int(scheduler_split_val) * 4,
+    rank_comm_size_limit=int(scheduler_split_val) * 2,
     max_msg_size=int(scheduler_split_val / 2),
     do_setup_log=False,
 )

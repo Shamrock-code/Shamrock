@@ -1412,7 +1412,7 @@ with open("setup_log_step.json", "w") as file:
 # %%
 # Make the plots
 
-print_setup_logs("setup_log_step.json", "setup_log_step_exemple")
+print_setup_logs("setup_log_step.json", "setup_log_step_example")
 
 # %%
 # Make a gif out of it

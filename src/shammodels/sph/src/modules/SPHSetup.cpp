@@ -260,25 +260,25 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
     shamrock::DataInserterUtility inserter(sched);
 
-    u32 insert_step = sched.crit_patch_split * 8;
+    u32 insert_step = sched.crit_patch_split * 2;
     if (bool(insert_count_per_step)) {
         insert_step = insert_count_per_step.value();
     }
 
-    u32 gen_step = sched.crit_patch_split;
+    u32 gen_step = std::max(sched.crit_patch_split / 8, 1_u64);
     if (bool(gen_count_per_step)) {
         gen_step = gen_count_per_step.value();
     }
 
-    u64 msg_limit = 16;
+    u64 msg_limit = 1024;
     if (bool(max_msg_count_per_rank_per_step)) {
         msg_limit = max_msg_count_per_rank_per_step.value();
     }
-    u64 data_count_limit = 2 * insert_step;
+    u64 data_count_limit = insert_step;
     if (bool(max_data_count_per_rank_per_step)) {
         data_count_limit = max_data_count_per_rank_per_step.value();
     }
-    u64 max_message_size = insert_step;
+    u64 max_message_size = std::max(insert_step / 16, 1_u32);
     if (bool(max_msg_size)) {
         max_message_size = max_msg_size.value();
     }

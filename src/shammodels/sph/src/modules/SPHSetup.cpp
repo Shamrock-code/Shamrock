@@ -421,12 +421,12 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             bool has_been_limited = true;
 
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+            sham::DeviceBuffer<u32> mask_get_ids_where(0, dev_sched);
+
             while (has_been_limited) {
                 has_been_limited = false;
                 using namespace shamrock::patch;
-
-                auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-                sham::DeviceBuffer<u32> mask_get_ids_where(0, dev_sched);
 
                 // inject in local domains first
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
@@ -467,8 +467,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             }
         };
 
-    auto get_index_per_ranks = [&]() {
+    auto get_index_per_ranks = [&](f64 &timer_result) {
         __shamrock_stack_entry();
+
+        shambase::Timer time_get_index_per_ranks;
+        time_get_index_per_ranks.start();
 
         SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
         sptree.attach_buf();
@@ -504,6 +507,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 "a new id could not be computed");
         }
 
+        time_get_index_per_ranks.end();
+        timer_result = time_get_index_per_ranks.elasped_sec();
+
         return index_per_ranks;
     };
 
@@ -519,7 +525,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         inject_in_local_domains(to_insert);
 
-        std::unordered_map<i32, std::vector<u32>> index_per_ranks = get_index_per_ranks();
+        f64 timer_get_index_per_ranks = 0;
+        std::unordered_map<i32, std::vector<u32>> index_per_ranks
+            = get_index_per_ranks(timer_get_index_per_ranks);
 
         // allgather the list of messages
         // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
@@ -684,6 +692,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             log_suffix += " (sync limited)";
         }
         log_inject_status(" <- global loop ->" + log_suffix);
+
+        f64 worst_time_get_index_per_ranks
+            = shamalgs::collective::allreduce_max<f64>(timer_get_index_per_ranks);
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln(
+                "SPH setup", "max(time index ranks getter) =", worst_time_get_index_per_ranks, "s");
+        }
 
         step_count++;
     }

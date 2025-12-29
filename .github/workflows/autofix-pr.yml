@@ -1,0 +1,88 @@
+name: autofix-pr
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autofix-pr:
+    name: "Auto-fix and create PR if needed"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GHACTION_PAT }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '>=3.10'
+
+      - name: Run pre-commit
+        id: precommit
+        continue-on-error: true
+        uses: pre-commit/action@v3.0.1
+
+      - name: Run author update script
+        id: author-update
+        continue-on-error: true
+        run: |
+          python3 buildbot/update_authors.py
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          if [[ -n $(git status --porcelain) ]]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+            echo "Changes detected:"
+            git status --short
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+            echo "No changes detected"
+          fi
+
+      - name: Create Pull Request
+        if: steps.check-changes.outputs.changes == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GHACTION_PAT }}
+          commit-message: "[autofix] automatic fix after main branch workflow fail"
+          branch: "actions/autofix"
+          delete-branch: true
+          title: "[autofix] automatic fix after main branch workflow fail"
+          labels: |
+            autofix.ci
+            trigger-ci
+          body: |
+            ## Auto-generated fixes
+
+            This PR contains automatic fixes from pre-commit hooks and author updates.
+
+            **Triggered by**: ${{ github.event_name }} on `${{ github.ref_name }}`
+            **Commit**: ${{ github.sha }}
+
+            ### Changes:
+            - Pre-commit hook fixes
+            - Author information updates
+
+            Please review the changes before merging.
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Autofix PR Workflow Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.check-changes.outputs.changes }}" == "true" ]]; then
+            echo "✅ Changes detected and PR created" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No changes needed" >> $GITHUB_STEP_SUMMARY
+          fi

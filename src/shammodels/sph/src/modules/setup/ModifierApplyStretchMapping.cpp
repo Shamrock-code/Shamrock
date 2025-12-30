@@ -44,11 +44,11 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
     sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tscal> &buf_hpart
         = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("hpart"));
-    sham::DeviceBuffer<u32> buf_mask(obj_cnt, dev_sched);
+    // sham::DeviceBuffer<u32> buf_mask(obj_cnt, dev_sched);
 
     auto acc_xyz   = buf_xyz.copy_to_stdvec();
     auto acc_hpart = buf_hpart.copy_to_stdvec();
-    auto acc_mask  = buf_mask.copy_to_stdvec();
+    // auto acc_mask  = buf_mask.copy_to_stdvec();
 
     Tscal npart = 0;
 
@@ -57,7 +57,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
     for (i32 id_a = 0; id_a < obj_cnt; ++id_a) {
         Tvec &xyz_a    = acc_xyz[id_a];
         Tscal &hpart_a = acc_hpart[id_a];
-        auto &mask_a   = acc_mask[id_a];
+        // auto &mask_a   = acc_mask[id_a];
 
         bool outside_boundaries = false;
         auto &a_from_pos        = smap_inputdata.a_from_pos;
@@ -66,11 +66,11 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
             outside_boundaries = true;
         };
 
-        mask_a = outside_boundaries;
+        // mask_a = outside_boundaries;
         if (!outside_boundaries) {
             npart += 1;
             // TODO not sure if that will be the total nb of particles or the nb of particles per
-            //  patch
+            // patch
             xyz_a   = stretchpart(xyz_a, smap_inputdata);
             hpart_a = h_rho_stretched(xyz_a, smap_inputdata, hfact);
             std::cout << "\rProgression : " << npart << " " << obj_cnt << std::flush;
@@ -80,21 +80,21 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMa
 
     buf_xyz.copy_from_stdvec(acc_xyz);
     buf_hpart.copy_from_stdvec(acc_hpart);
-    buf_mask.copy_from_stdvec(acc_mask);
+    // buf_mask.copy_from_stdvec(acc_mask);
 
-    auto part_to_remove = shamalgs::stream_compact(
-        dev_sched,
-        buf_mask,
-        obj_cnt); // TODO, maybe add the possibility to not kill these particles (crop=False ?)
+    // auto part_to_remove = shamalgs::stream_compact(
+    //     dev_sched,
+    //     buf_mask,
+    //     obj_cnt); // TODO, maybe add the possibility to not kill these particles (crop=False ?)
 
     shamlog_debug_ln("ModifierApplyStretchMapping", npart, "particles have been stretched");
 
-    { // killing
-        u32 bsize = part_to_remove.get_size();
-        if (bsize > 0) {
-            tmp.remove_ids(part_to_remove, bsize);
-        }
-    }
+    // { // killing
+    //     u32 bsize = part_to_remove.get_size();
+    //     if (bsize > 0) {
+    //         tmp.remove_ids(part_to_remove, bsize);
+    //     }
+    // }
 
     solver_config.gpart_mass = mtot / npart;
     Tscal n13                = sycl::rootn(npart, 3);

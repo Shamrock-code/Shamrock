@@ -185,13 +185,15 @@ namespace shammodels::sph::modules {
                           // cartesian position
             Tscal integral_profile;
 
-            Tscal lx = sham::abs(boxmin.x() - boxmax.x());
-            Tscal ly = sham::abs(boxmin.y() - boxmax.y());
-            Tscal lz = sham::abs(boxmin.z() - boxmax.z());
+            Tscal lx   = sham::abs(boxmin.x() - boxmax.x());
+            Tscal ly   = sham::abs(boxmin.y() - boxmax.y());
+            Tscal lz   = sham::abs(boxmin.z() - boxmax.z());
+            Tscal lmin = sycl::min(lx, ly);
+            lmin       = sycl::min(lmin, lz);
 
             if (system == "spherical") {
                 x0min   = 0; // There's a particle at r=0 because the HCP is centered on (0,0,0)
-                x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
+                x0max   = lmin / 2.;
                 x1min   = 0;
                 x1max   = pi;
                 x2min   = 0;
@@ -226,7 +228,7 @@ namespace shammodels::sph::modules {
                 }
             } else if (system == "cylindrical") {
                 x0min   = 0;
-                x0max   = sham::abs((boxmax - boxmin).x()) / 2.;
+                x0max   = lmin / 2.;
                 x1min   = 0;
                 x1max   = 2. * pi;
                 x2min   = -lz / 2.;

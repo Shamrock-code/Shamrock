@@ -961,7 +961,10 @@ namespace sham {
          *
          * @param new_size The new size of the buffer.
          */
-        inline void resize(size_t new_size, bool keep_data = true) {
+        * @param new_size The new size of the buffer.
+        * @param keep_data If `true`, the content of the buffer is preserved up to the minimum of the old and new sizes. If `false`, the content may be discarded if a reallocation occurs.
+        */
+       inline void resize(size_t new_size, bool keep_data = true) {
 
             auto dev_sched = hold.get_dev_scheduler_ptr();
 

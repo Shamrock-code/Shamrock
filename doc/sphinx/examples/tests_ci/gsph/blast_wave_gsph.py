@@ -102,46 +102,47 @@ def compute_L2_errors(ctx, sod, t, x_min, x_max):
     return err_rho, (err_vx, err_vy, err_vz), err_P
 
 
-rho, v, P = compute_L2_errors(ctx, sod, t_target, -0.5, 0.5)
-vx, vy, vz = v
+if shamrock.sys.world_rank() == 0:
+    rho, v, P = compute_L2_errors(ctx, sod, t_target, -0.5, 0.5)
+    vx, vy, vz = v
 
-print("current errors :")
-print(f"err_rho = {rho}")
-print(f"err_vx = {vx}")
-print(f"err_vy = {vy}")
-print(f"err_vz = {vz}")
-print(f"err_P = {P}")
+    print("current errors :")
+    print(f"err_rho = {rho}")
+    print(f"err_vx = {vx}")
+    print(f"err_vy = {vy}")
+    print(f"err_vz = {vz}")
+    print(f"err_P = {P}")
 
-# Expected L2 error values (calibrated from CI run with M4 kernel)
-expect_rho = 10.688658207003348
-expect_vx = 1.0420471749025182
-expect_vy = 0.11766417324542999
-expect_vz = 0.0027436730451881886
-expect_P = 1.6660643954434153
+    # Expected L2 error values (calibrated from CI run with M4 kernel)
+    expect_rho = 10.688658207003348
+    expect_vx = 1.0420471749025182
+    expect_vy = 0.11766417324542999
+    expect_vz = 0.0027436730451881886
+    expect_P = 1.6660643954434153
 
-tol = 1e-8
+    tol = 1e-8
 
-test_pass = True
-err_log = ""
+    test_pass = True
+    err_log = ""
 
-error_checks = {
-    "rho": (rho, expect_rho),
-    "vx": (vx, expect_vx),
-    "vy": (vy, expect_vy),
-    "vz": (vz, expect_vz),
-    "P": (P, expect_P),
-}
+    error_checks = {
+        "rho": (rho, expect_rho),
+        "vx": (vx, expect_vx),
+        "vy": (vy, expect_vy),
+        "vz": (vz, expect_vz),
+        "P": (P, expect_P),
+    }
 
-for name, (value, expected) in error_checks.items():
-    if abs(value - expected) > tol * expected:
-        err_log += f"error on {name} is outside of tolerances:\n"
-        err_log += f"  expected error = {expected} +- {tol*expected}\n"
-        err_log += f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
-        test_pass = False
+    for name, (value, expected) in error_checks.items():
+        if abs(value - expected) > tol * expected:
+            err_log += f"error on {name} is outside of tolerances:\n"
+            err_log += f"  expected error = {expected} +- {tol*expected}\n"
+            err_log += f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
+            test_pass = False
 
-if test_pass:
-    print("\n" + "=" * 50)
-    print("GSPH Extreme Blast Wave Test: PASSED")
-    print("=" * 50)
-else:
-    exit("Test did not pass L2 margins : \n" + err_log)
+    if test_pass:
+        print("\n" + "=" * 50)
+        print("GSPH Extreme Blast Wave Test: PASSED")
+        print("=" * 50)
+    else:
+        exit("Test did not pass L2 margins : \n" + err_log)

@@ -114,3 +114,42 @@ metadata = {
 with open(os.path.join(base_dir, f"{LATTICE}_sph_m4", "metadata.json"), "w") as f:
     json.dump(metadata, f, indent=2)
 print(f"Done! {len(times)} files in {output_dir}")
+
+# Generate GIF animation
+try:
+    import glob
+    import io
+
+    import imageio
+    import matplotlib.pyplot as plt
+    import pyvista as pv
+    from PIL import Image
+
+    print("\nGenerating GIF animation...")
+    vtk_files = sorted(glob.glob(os.path.join(output_dir, "pairing_*.vtk")))
+    frames = []
+    for idx, vf in enumerate(vtk_files):
+        mesh = pv.read(vf)
+        pos = np.array(mesh.points)
+        fig, ax = plt.subplots(figsize=(8, 8), dpi=100)
+        color = "blue" if LATTICE == "square" else "red"
+        ax.scatter(pos[:, 0], pos[:, 1], s=3, alpha=0.6, c=color)
+        ax.set(xlim=(-0.6, 0.6), ylim=(-0.6, 0.6), aspect="equal", xlabel="x", ylabel="y")
+        t = times[idx]["time"]
+        ax.set_title(f"SPH Pairing Instability ({LATTICE.upper()})\nt = {t:.3f}")
+        ax.grid(True, alpha=0.3)
+        with io.BytesIO() as buf:
+            fig.savefig(buf, format="png", bbox_inches="tight")
+            buf.seek(0)
+            frames.append(np.array(Image.open(buf)))
+        plt.close(fig)
+        if (idx + 1) % 10 == 0:
+            print(f"  Frame {idx + 1}/{len(vtk_files)}")
+
+    gif_dir = os.path.join(base_dir, "gifs")
+    os.makedirs(gif_dir, exist_ok=True)
+    gif_path = os.path.join(gif_dir, f"pairing_{LATTICE}_sph_m4.gif")
+    imageio.mimsave(gif_path, frames, fps=10, loop=0)
+    print(f"GIF saved: {gif_path}")
+except ImportError as e:
+    print(f"Skipping GIF generation (missing dependency: {e})")

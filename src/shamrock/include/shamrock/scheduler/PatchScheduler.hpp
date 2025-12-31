@@ -28,6 +28,7 @@
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <nlohmann/json.hpp>
+#include <deque>
 #include <unordered_set>
 #include <fstream>
 #include <functional>
@@ -64,7 +65,8 @@ class PatchScheduler {
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr;
+
+    std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -77,10 +79,10 @@ class PatchScheduler {
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
     ///< (owned_patch_id = patch_list.build_local())
 
-    inline shamrock::patch::PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+    inline shamrock::patch::PatchDataLayerLayout &pdl(u32 layer_idx = 0) { return shambase::get_check_ref(pdl_ptr_list.at(layer_idx)); }
 
-    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr() const {
-        return pdl_ptr;
+    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr(u32 layer_idx = 0) const {
+        return pdl_ptr_list.at(layer_idx);
     }
 
     /**
@@ -96,7 +98,7 @@ class PatchScheduler {
     void free_mpi_required_types();
 
     PatchScheduler(
-        const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+        const std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
         u64 crit_split,
         u64 crit_merge);
 

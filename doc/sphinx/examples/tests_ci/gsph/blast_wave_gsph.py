@@ -60,6 +60,7 @@ model.evolve_until(t_target)
 
 sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=P_R)
 
+data = ctx.collect_data()
 
 def compute_L2_errors(ctx, sod, t, x_min, x_max):
     """Compute L2 errors using ctx.collect_data() (no pyvista dependency)."""

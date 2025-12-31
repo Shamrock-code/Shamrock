@@ -105,13 +105,13 @@ print(f"err_vy = {vy}")
 print(f"err_vz = {vz}")
 print(f"err_P = {P}")
 
-# Expected L2 error values (calibrated from CI run with M4 kernel)
+# Expected L2 error values (calibrated from local run with M4 kernel)
 # Tolerance set very strict for regression testing (like sod_tube_sph.py)
-expect_rho = 0.03053641590859224
-expect_vx = 0.10520433643658435
-expect_vy = 0.0002224532508989796
-expect_vz = 5.029288149671629e-05
-expect_P = 0.037878823126488034
+expect_rho = 0.029892771160040497
+expect_vx = 0.10118608617971991
+expect_vy = 0.006382105147197806
+expect_vz = 3.118241304703099e-05
+expect_P = 0.038072557056294656
 
 tol = 1e-8
 

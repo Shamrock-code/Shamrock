@@ -123,9 +123,7 @@ ax1 = fig.add_subplot(
 
 rmax = bsize
 tabx = np.linspace(0, rmax)
-tabrho = np.sinc(
-    tabx / (rmax)
-)  # the profile that we want! (without the normalization factor)
+tabrho = np.sinc(tabx / (rmax))  # the profile that we want! (without the normalization factor)
 
 if shamrock.sys.world_rank() == 0:
     plot_lattice(ax0, model_hcp, ctx_hcp)
@@ -200,9 +198,7 @@ stretched_hcp = setup.make_modifier_stretch_mapping(
     tabrho=tabrho,
     mtot=totmass,
 )
-cropped_stretched_hcp = setup.make_modifier_filter(
-    parent=stretched_hcp, filter=is_in_sphere
-)
+cropped_stretched_hcp = setup.make_modifier_filter(parent=stretched_hcp, filter=is_in_sphere)
 setup.apply_setup(cropped_stretched_hcp)
 model_hcp_smap_sphere.evolve_once_override_time(0.0, 0.0)
 

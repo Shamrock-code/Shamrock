@@ -66,14 +66,13 @@ class PatchScheduler {
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
     std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list;
-    std::deque<shamrock::scheduler::SchedulerPatchData> patch_data_list; ///< handle the data of the patches of the scheduler for every layer
+    std::deque<SchedulerPatchData> patch_data_list; ///< handle the data of the patches of the scheduler for every layer
+    SchedulerPatchData patch_data; ///< first layer patch data (legacy) patch_data_list.at(0)
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
 
     SchedulerPatchList patch_list; ///< handle the list of the patches of the scheduler
-
-    SchedulerPatchData patch_data;
 
     PatchTree patch_tree;          ///< handle the tree structure of the patches
 

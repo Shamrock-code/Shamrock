@@ -211,11 +211,15 @@ PatchScheduler::PatchScheduler(
     const std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
     u64 crit_split,
     u64 crit_merge)
-    : pdl_ptr_list(pdl_ptr_list) {
-
-    for (auto & pdl_ptr : pdl_ptr_list) {
+    : pdl_ptr_list(pdl_ptr_list),
+      patch_data_list{SchedulerPatchData(
+            pdl_ptr_list.at(0),
+            {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}})},
+      patch_data(patch_data_list.at(0)) // patch_data is kept for legacy reasons
+    {
+    for (u32 layer_idx = 1; layer_idx < pdl_ptr_list.size(); layer_idx++) {
         patch_data_list.push_back(SchedulerPatchData(
-            pdl_ptr,
+            pdl_ptr_list.at(layer_idx),
             {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}));
     }
 

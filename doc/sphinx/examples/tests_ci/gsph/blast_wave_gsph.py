@@ -63,7 +63,6 @@ sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=
 
 def compute_L2_errors(ctx, sod, t, x_min, x_max):
     """Compute L2 errors using ctx.collect_data() (no pyvista dependency)."""
-    data = ctx.collect_data()
     points = np.array(data["xyz"])
     velocities = np.array(data["vxyz"])
     hpart = np.array(data["hpart"])

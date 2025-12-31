@@ -65,16 +65,15 @@ class PatchScheduler {
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
-
     std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list;
-    std::deque<shamrock::scheduler::SchedulerPatchData> patch_data_list;
+    std::deque<shamrock::scheduler::SchedulerPatchData> patch_data_list; ///< handle the data of the patches of the scheduler for every layer
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
 
     SchedulerPatchList patch_list; ///< handle the list of the patches of the scheduler
 
-    SchedulerPatchData patch_data; ///< handle the data of the patches of the scheduler
+    SchedulerPatchData patch_data;
 
     PatchTree patch_tree;          ///< handle the tree structure of the patches
 
@@ -118,10 +117,10 @@ class PatchScheduler {
     }
 
     template<class vectype>
-    std::tuple<vectype, vectype> get_box_tranform();
+    std::tuple<vectype, vectype> get_box_tranform(u32 layer_idx = 0);
 
     template<class vectype>
-    std::tuple<vectype, vectype> get_box_volume();
+    std::tuple<vectype, vectype> get_box_volume(u32 layer_idx = 0);
 
     bool should_resize_box(bool node_in);
 
@@ -145,7 +144,8 @@ class PatchScheduler {
                 );
             }
 
-        patch_data.sim_box.set_bounding_box<vectype>({bmin, bmax});
+            patch_data_list.at(layer_idx).sim_box.set_bounding_box<vectype>({bmin, bmax});
+        }
 
         shamlog_debug_ln("PatchScheduler", "box resized to :", bmin, bmax);
     }
@@ -173,7 +173,7 @@ class PatchScheduler {
         set_coord_domain_bound(a, b);
     }
 
-    std::string format_patch_coord(shamrock::patch::Patch p);
+    std::string format_patch_coord(shamrock::patch::Patch p, u32 layer_idx = 0);
 
     void check_patchdata_locality_corectness();
 
@@ -205,7 +205,7 @@ class PatchScheduler {
     void add_root_patch();
 
     [[deprecated]]
-    void sync_build_LB(bool global_patch_sync, bool balance_load);
+    void sync_build_LB(bool global_patch_sync, bool balance_load, u32 layer_idx = 0);
 
     template<class vec>
     inline shamrock::patch::PatchCoordTransform<vec> get_patch_transform() {
@@ -232,9 +232,9 @@ class PatchScheduler {
      * @param fct
      */
     template<class Function>
-    inline void for_each_patch_data(Function &&fct) {
+    inline void for_each_patch_data(Function &&fct, u32 layer_idx = 0) {
 
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+        patch_data_list.at(layer_idx).for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
@@ -245,9 +245,9 @@ class PatchScheduler {
     }
 
     template<class Function>
-    inline void for_each_patch(Function &&fct) {
+    inline void for_each_patch(Function &&fct, u32 layer_idx = 0) {
 
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+        patch_data_list.at(layer_idx).for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx[patch_id]];
 
@@ -275,17 +275,17 @@ class PatchScheduler {
     }
 
     inline void for_each_local_patchdata(
-        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
+        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct, u32 layer_idx = 0) {
         for (shamrock::patch::Patch p : patch_list.local) {
             if (!p.is_err_mode()) {
-                fct(p, patch_data.get_pdat(p.id_patch));
+                fct(p, patch_data_list.at(layer_idx).get_pdat(p.id_patch));
             }
         }
     }
 
     inline void for_each_local_patch_nonempty(
-        std::function<void(const shamrock::patch::Patch &)> fct) {
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+        std::function<void(const shamrock::patch::Patch &)> fct, u32 layer_idx = 0) {
+        patch_data_list.at(layer_idx).for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
@@ -302,8 +302,8 @@ class PatchScheduler {
     }
 
     inline void for_each_patchdata_nonempty(
-        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
-        patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct, u32 layer_idx = 0) {
+        patch_data_list.at(layer_idx).for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
             shamrock::patch::Patch &cur_p
                 = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
 
@@ -315,13 +315,13 @@ class PatchScheduler {
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct, u32 layer_idx = 0) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
         for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
-        });
+        }, layer_idx);
 
         return ret;
     }
@@ -352,26 +352,26 @@ class PatchScheduler {
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata_fetch_simple(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct, u32 layer_idx = 0) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
         for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
-        });
+        }, layer_idx);
 
         return distrib_data_local_to_all_simple(ret);
     }
 
     template<class T>
     inline shambase::DistributedData<T> map_owned_patchdata_fetch_load_store(
-        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct) {
+        std::function<T(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &pdat)> fct, u32 layer_idx = 0) {
         shambase::DistributedData<T> ret;
 
         using namespace shamrock::patch;
         for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             ret.add_obj(id_patch, fct(cur_p, pdat));
-        });
+        }, layer_idx);
 
         return distrib_data_local_to_all_load_store(ret);
     }
@@ -388,13 +388,13 @@ class PatchScheduler {
         return shamrock::patch::PatchField<T>(map_owned_patchdata_fetch_load_store(fct));
     }
 
-    inline u64 get_rank_count() {
+    inline u64 get_rank_count(u32 layer_idx = 0) {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
         u64 num_obj = 0; // TODO get_rank_count() in scheduler
         for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
             num_obj += pdat.get_obj_cnt();
-        });
+        }, layer_idx);
 
         return num_obj;
     }
@@ -406,7 +406,7 @@ class PatchScheduler {
     }
 
     template<class T>
-    inline std::unique_ptr<sycl::buffer<T>> rankgather_field(u32 field_idx) {
+    inline std::unique_ptr<sycl::buffer<T>> rankgather_field(u32 field_idx, u32 layer_idx = 0) {
         StackEntry stack_loc{};
         std::unique_ptr<sycl::buffer<T>> ret;
 
@@ -435,7 +435,7 @@ class PatchScheduler {
 
                     ptr += pdat.get_obj_cnt() * nvar;
                 }
-            });
+            }, layer_idx);
         }
 
         return ret;
@@ -464,7 +464,7 @@ class PatchScheduler {
     // }
 
     template<class Function, class Pfield>
-    inline void compute_patch_field(Pfield &field, MPI_Datatype &dtype, Function &&lambda) {
+    inline void compute_patch_field(Pfield &field, MPI_Datatype &dtype, Function &&lambda, u32 layer_idx = 0) {
         field.local_nodes_value.resize(patch_list.local.size());
 
         for (u64 idx = 0; idx < patch_list.local.size(); idx++) {
@@ -475,7 +475,7 @@ class PatchScheduler {
                 field.local_nodes_value[idx] = lambda(
                     shamsys::instance::get_compute_queue(),
                     cur_p,
-                    patch_data.owned_data.get(cur_p.id_patch));
+                    patch_data_list.at(layer_idx).owned_data.get(cur_p.id_patch));
             }
         }
 
@@ -501,9 +501,9 @@ class PatchScheduler {
      * @param coords coordinates of the patch
      * @return u64 the id of the made patch
      */
-    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coords);
+    std::vector<u64> add_root_patches(std::vector<shamrock::patch::PatchCoord<3>> coords, u32 layer_idx = 0);
 
-    shamrock::patch::SimulationBoxInfo &get_sim_box() { return patch_data.sim_box; }
+    shamrock::patch::SimulationBoxInfo &get_sim_box() { return patch_data_list.at(0).sim_box; }
 
     nlohmann::json serialize_patch_metadata();
 

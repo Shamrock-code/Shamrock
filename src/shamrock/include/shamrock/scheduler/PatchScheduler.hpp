@@ -139,10 +139,9 @@ class PatchScheduler {
                     std::string("the main field is not of the correct type to call this function\n")
                     + "fct called : " + __PRETTY_FUNCTION__
                     + shambase::format("current patch data layout of index {} : ", layer_idx)
-                    + pdl().get_description_str()
+                    + pdl(layer_idx).get_description_str()
                 );
             }
-
             patch_data_list.at(layer_idx).sim_box.set_bounding_box<vectype>({bmin, bmax});
         }
 

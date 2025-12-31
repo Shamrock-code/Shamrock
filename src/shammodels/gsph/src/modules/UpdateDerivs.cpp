@@ -35,13 +35,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversal.hpp"
 
-// Named constants for numerical stability (used in derivative calculations)
-namespace {
-    constexpr f64 MAX_ACCELERATION_CLAMP = 1e6;  // Maximum allowed acceleration magnitude
-    constexpr f64 MAX_DUDT_CLAMP         = 1e6;  // Maximum allowed du/dt magnitude
-    constexpr f64 P_STAR_MAX_RATIO       = 10.0; // Max ratio of p_star to average pressure
-} // namespace
-
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     StackEntry stack_loc{};
@@ -93,8 +86,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
     shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
-    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after
-    // compute_eos_fields!)
+    // Get pressure and soundspeed from storage (includes ghosts)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
@@ -110,7 +102,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        // CRITICAL: Use pressure and soundspeed from storage (sized for local + ghost!)
         sham::DeviceBuffer<Tscal> &buf_pressure
             = pressure_field.get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs = soundspeed_field.get_field(cur_p.id_patch).get_buf();
@@ -127,13 +118,12 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
         // Get buffer accessors
-        auto xyz         = buf_xyz.get_read_access(depends_list);
-        auto axyz        = buf_axyz.get_write_access(depends_list);
-        auto vxyz        = buf_vxyz.get_read_access(depends_list);
-        auto hpart       = buf_hpart.get_read_access(depends_list);
-        auto omega_acc   = buf_omega.get_read_access(depends_list);
-        auto density_acc = buf_density.get_read_access(depends_list);
-        // Use pressure and soundspeed from storage (includes ghosts!)
+        auto xyz          = buf_xyz.get_read_access(depends_list);
+        auto axyz         = buf_axyz.get_write_access(depends_list);
+        auto vxyz         = buf_vxyz.get_read_access(depends_list);
+        auto hpart        = buf_hpart.get_read_access(depends_list);
+        auto omega_acc    = buf_omega.get_read_access(depends_list);
+        auto density_acc  = buf_density.get_read_access(depends_list);
         auto pressure_acc = buf_pressure.get_read_access(depends_list);
         auto cs_acc       = buf_cs.get_read_access(depends_list);
         auto ploop_ptrs   = pcache.get_read_access(depends_list);
@@ -173,15 +163,14 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                 const Tvec vxyz_a   = vxyz[id_a];
                 const Tscal omega_a = omega_acc[id_a];
 
-                // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                // Use SPH-summation density
                 const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Use pressure and soundspeed from storage (already computed for all particles
-                // including ghosts)
+                // Use pressure and soundspeed from storage
                 const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
                 const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
 
-                // Loop over neighbors using shamrock's neighbor cache
+                // Loop over neighbors
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
                     if (id_a == id_b)
                         return; // Skip self
@@ -200,13 +189,14 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     const Tvec vxyz_b   = vxyz[id_b];
                     const Tscal omega_b = omega_acc[id_b];
 
-                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    // Use SPH-summation density
                     const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
 
-                    // Use pressure from storage (includes ghosts!)
-                    const Tscal P_b = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+                    // Use pressure and soundspeed from storage
+                    const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+                    const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
 
-                    // Unit vector from a to b (handles rab = 0 gracefully)
+                    // Unit vector from a to b
                     const Tscal rab_inv  = sham::inv_sat_positive(rab);
                     const Tvec r_ab_unit = dr * rab_inv;
 
@@ -214,37 +204,26 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
                     const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                    // Solve 1D Riemann problem using iterative solver from header
-                    // IMPORTANT: Convention follows reference (g_fluid_force.cpp):
-                    //   - r_ab_unit points from b to a (neighbor to current)
-                    //   - Along this axis, b is at "left" (lower s), a is at "right" (higher s)
-                    //   - Left state = neighbor b, Right state = current a
+                    // Solve 1D Riemann problem using iterative solver
+                    // Convention: Left state = neighbor b, Right state = current a
                     auto riemann_result = riemann::iterative_solver<Tscal>(
                         u_b_proj,
                         rho_b,
-                        P_b, // Left = neighbor (at lower s along r_ab_unit)
+                        P_b, // Left = neighbor
                         u_a_proj,
                         rho_a,
-                        P_a, // Right = current (at higher s along r_ab_unit)
+                        P_a, // Right = current
                         gamma,
                         tol,
                         max_iter);
-                    Tscal p_star = riemann_result.p_star;
-                    Tscal v_star = riemann_result.v_star;
-
-                    // Limit p_star to prevent excessive shock forces
-                    // Maximum p_star is limited to a multiple of the average pressure
-                    const Tscal p_avg = Tscal(0.5) * (P_a + P_b);
-                    const Tscal p_star_max
-                        = Tscal(P_STAR_MAX_RATIO) * sycl::max(p_avg, sycl::max(P_a, P_b));
-                    p_star = sycl::min(p_star, p_star_max);
+                    const Tscal p_star = riemann_result.p_star;
+                    const Tscal v_star = riemann_result.v_star;
 
                     // Kernel gradients
                     const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
-                    // Use forces.hpp for GSPH force contribution
-                    // This uses sph_pressure_symetric with p_star and gsph_energy_rate
+                    // GSPH force contribution
                     shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
                         pmass,
                         p_star,
@@ -260,17 +239,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                         sum_axyz,
                         sum_du_a);
                 });
-
-                // Clamp acceleration to prevent numerical blow-up at shock fronts
-                const Tscal max_acc = Tscal(MAX_ACCELERATION_CLAMP);
-                Tscal acc_mag       = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
-                if (acc_mag > max_acc) {
-                    sum_axyz *= max_acc / acc_mag;
-                }
-
-                // Clamp du/dt to prevent energy blow-up
-                const Tscal max_dudt = Tscal(MAX_DUDT_CLAMP);
-                sum_du_a             = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
 
                 // Write accumulated derivatives
                 axyz[id_a] = sum_axyz;
@@ -333,8 +301,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
     shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
 
-    // CRITICAL: Get pressure and soundspeed from storage (includes ghosts after
-    // compute_eos_fields!)
+    // Get pressure and soundspeed from storage (includes ghosts)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
@@ -348,7 +315,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
-        // CRITICAL: Use pressure and soundspeed from storage (sized for local + ghost!)
         sham::DeviceBuffer<Tscal> &buf_pressure
             = pressure_field.get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs = soundspeed_field.get_field(cur_p.id_patch).get_buf();
@@ -359,16 +325,15 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         sham::EventList depends_list;
 
-        // Get density from merged ghost data (SPH summation density)
+        // Get density from merged ghost data
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-        auto xyz         = buf_xyz.get_read_access(depends_list);
-        auto axyz        = buf_axyz.get_write_access(depends_list);
-        auto vxyz        = buf_vxyz.get_read_access(depends_list);
-        auto hpart       = buf_hpart.get_read_access(depends_list);
-        auto omega_acc   = buf_omega.get_read_access(depends_list);
-        auto density_acc = buf_density.get_read_access(depends_list);
-        // Use pressure and soundspeed from storage (includes ghosts!)
+        auto xyz          = buf_xyz.get_read_access(depends_list);
+        auto axyz         = buf_axyz.get_write_access(depends_list);
+        auto vxyz         = buf_vxyz.get_read_access(depends_list);
+        auto hpart        = buf_hpart.get_read_access(depends_list);
+        auto omega_acc    = buf_omega.get_read_access(depends_list);
+        auto density_acc  = buf_density.get_read_access(depends_list);
         auto pressure_acc = buf_pressure.get_read_access(depends_list);
         auto cs_acc       = buf_cs.get_read_access(depends_list);
         auto ploop_ptrs   = pcache.get_read_access(depends_list);
@@ -402,11 +367,10 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                 const Tvec vxyz_a   = vxyz[id_a];
                 const Tscal omega_a = omega_acc[id_a];
 
-                // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                // Use SPH-summation density
                 const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
 
-                // Use pressure and soundspeed from storage (already computed for all particles
-                // including ghosts)
+                // Use pressure and soundspeed from storage
                 const Tscal P_a  = sycl::max(pressure_acc[id_a], Tscal(1e-30));
                 const Tscal cs_a = sycl::max(cs_acc[id_a], Tscal(1e-10));
 
@@ -426,22 +390,22 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                     const Tvec vxyz_b   = vxyz[id_b];
                     const Tscal omega_b = omega_acc[id_b];
 
-                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                    // Use SPH-summation density
                     const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
 
-                    // Use pressure and soundspeed from storage (includes ghosts!)
+                    // Use pressure and soundspeed from storage
                     const Tscal P_b  = sycl::max(pressure_acc[id_b], Tscal(1e-30));
                     const Tscal cs_b = sycl::max(cs_acc[id_b], Tscal(1e-10));
 
                     const Tscal rab_inv  = sham::inv_sat_positive(rab);
                     const Tvec r_ab_unit = dr * rab_inv;
 
+                    // Project velocities onto pair axis for 1D Riemann problem
                     const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
                     const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                    // Use HLLC approximate Riemann solver from header (faster than iterative)
-                    // IMPORTANT: Convention follows reference (g_fluid_force.cpp):
-                    //   - Left state = neighbor b, Right state = current a
+                    // Use HLLC approximate Riemann solver
+                    // Convention: Left state = neighbor b, Right state = current a
                     auto riemann_result = riemann::hllc_solver<Tscal>(
                         u_b_proj,
                         rho_b,
@@ -450,20 +414,13 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                         rho_a,
                         P_a, // Right = current
                         gamma);
-                    Tscal p_star = riemann_result.p_star;
-                    Tscal v_star = riemann_result.v_star;
-
-                    // Limit p_star to prevent excessive shock forces
-                    const Tscal p_avg = Tscal(0.5) * (P_a + P_b);
-                    const Tscal p_star_max
-                        = Tscal(P_STAR_MAX_RATIO) * sycl::max(p_avg, sycl::max(P_a, P_b));
-                    p_star = sycl::min(p_star, p_star_max);
+                    const Tscal p_star = riemann_result.p_star;
+                    const Tscal v_star = riemann_result.v_star;
 
                     const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
                     const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
 
-                    // Use forces.hpp for GSPH force contribution
-                    // This uses sph_pressure_symetric with p_star and gsph_energy_rate
+                    // GSPH force contribution
                     shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
                         pmass,
                         p_star,
@@ -479,17 +436,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                         sum_axyz,
                         sum_du_a);
                 });
-
-                // Clamp acceleration to prevent numerical blow-up at shock fronts
-                const Tscal max_acc = Tscal(MAX_ACCELERATION_CLAMP);
-                Tscal acc_mag       = sycl::sqrt(sycl::dot(sum_axyz, sum_axyz));
-                if (acc_mag > max_acc) {
-                    sum_axyz *= max_acc / acc_mag;
-                }
-
-                // Clamp du/dt to prevent energy blow-up
-                const Tscal max_dudt = Tscal(MAX_DUDT_CLAMP);
-                sum_du_a             = sycl::clamp(sum_du_a, -max_dudt, max_dudt);
 
                 axyz[id_a] = sum_axyz;
                 if (duint_acc != nullptr) {

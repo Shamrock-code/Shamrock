@@ -96,17 +96,6 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Sets all gradients to zero. Most diffusive but most stable.
     Good for very strong shocks or initial testing.
 )==")
-        .def(
-            "set_reconstruct_muscl",
-            [](TConfig &self) {
-                self.set_reconstruct_muscl();
-            },
-            R"==(
-    Set second-order MUSCL reconstruction with Van Leer limiter.
-
-    Uses computed gradients with slope limiter for monotonicity.
-    Better accuracy at smooth regions while maintaining stability at shocks.
-)==")
         // EOS config
         .def(
             "set_eos_adiabatic",
@@ -471,7 +460,7 @@ Register_pymod(pygsphmodel) {
         py::kw_only(),
         py::arg("context"),
         py::arg("vector_type") = "f64_3",
-        py::arg("sph_kernel")  = "C4",
+        py::arg("sph_kernel")  = "M4",
         R"==(
     Create a GSPH (Godunov SPH) model.
 
@@ -485,7 +474,8 @@ Register_pymod(pygsphmodel) {
     vector_type : str
         Vector type, e.g., "f64_3" for 3D double precision (default: "f64_3")
     sph_kernel : str
-        SPH kernel type: "C4" (Wendland, default), "M4" (cubic spline), "M6", "M8", "C2", "C6"
+        SPH kernel type: "M4" (cubic spline, default), "M6", "M8" (quintic spline),
+        "C2", "C4", "C6" (Wendland kernels)
 
     Returns
     -------
@@ -495,7 +485,7 @@ Register_pymod(pygsphmodel) {
     Examples
     --------
     >>> ctx = shamrock.ShamrockCtx()
-    >>> model = shamrock.get_Model_GSPH(context=ctx)  # Uses C4 kernel by default
+    >>> model = shamrock.get_Model_GSPH(context=ctx)  # Uses M4 kernel by default
     >>> config = model.gen_default_config()
     >>> config.set_riemann_hllc()
     >>> config.set_eos_adiabatic(1.4)

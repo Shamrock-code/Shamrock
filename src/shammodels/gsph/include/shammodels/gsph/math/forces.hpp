@@ -41,11 +41,13 @@ namespace shammodels::gsph {
     /**
      * @brief Compute GSPH energy equation contribution
      *
-     * Following Cha & Whitworth (2003) Eq. 11:
-     *   du_a/dt = sum_b m_b * p*_ab * (v*_ab - v_a) dot nabla W_ab(h_a) / (rho_a^2 * Omega_a)
+     * Following Cha & Whitworth (2003), the energy equation uses the same
+     * symmetric force as the momentum equation:
+     *   f_ab = m_b * p* * (nabla_W_a / (rho_a^2 * Omega_a) + nabla_W_b / (rho_b^2 * Omega_b))
+     *   du_a/dt = -f_ab dot (v* - v_a)
      *
-     * where v*_ab is the interface velocity from the Riemann solver.
-     * This ensures proper energy conservation in shocks.
+     * This ensures proper energy conservation in shocks by using the same
+     * force that appears in the momentum equation.
      *
      * @tparam Tvec Vector type
      * @tparam Tscal Scalar type
@@ -53,10 +55,13 @@ namespace shammodels::gsph {
      * @param p_star Interface pressure from Riemann solver
      * @param v_star Interface velocity (scalar, in direction of r_ab)
      * @param rho_a_sq Density squared of particle a
+     * @param rho_b_sq Density squared of particle b
      * @param omega_a Grad-h correction factor for particle a
+     * @param omega_b Grad-h correction factor for particle b
      * @param v_a Velocity of particle a
      * @param r_ab_unit Unit vector from a to b
      * @param nabla_W_a Kernel gradient at r_ab with smoothing length h_a
+     * @param nabla_W_b Kernel gradient at r_ab with smoothing length h_b
      * @return Energy rate contribution from this pair
      */
     template<class Tvec, class Tscal>
@@ -65,19 +70,27 @@ namespace shammodels::gsph {
         Tscal p_star,
         Tscal v_star,
         Tscal rho_a_sq,
+        Tscal rho_b_sq,
         Tscal omega_a,
+        Tscal omega_b,
         Tvec v_a,
         Tvec r_ab_unit,
-        Tvec nabla_W_a) {
+        Tvec nabla_W_a,
+        Tvec nabla_W_b) {
 
         // Interface velocity vector (in direction of pair axis)
         Tvec v_star_vec = v_star * r_ab_unit;
 
-        // Energy flux: p* * (v* - v_a) dot nabla W
-        // Use sham::inv_sat_zero() for safe division when rho_a_sq * omega_a is zero
-        Tscal sub_fact_a   = rho_a_sq * omega_a;
-        const Tscal factor = p_star * sham::inv_sat_zero(sub_fact_a);
-        return m_b * factor * sycl::dot(v_star_vec - v_a, nabla_W_a);
+        // Compute symmetric force (same as momentum equation)
+        // f = m_b * p* * (nabla_W_a / (rho_a^2 * Omega_a) + nabla_W_b / (rho_b^2 * Omega_b))
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b_sq * omega_b;
+        Tvec f           = m_b * p_star
+                 * (nabla_W_a * sham::inv_sat_zero(sub_fact_a)
+                    + nabla_W_b * sham::inv_sat_zero(sub_fact_b));
+
+        // Energy rate: -f dot (v* - v_a)
+        return -sycl::dot(f, v_star_vec - v_a);
     }
 
     /**
@@ -130,9 +143,19 @@ namespace shammodels::gsph {
         dv_dt += shamrock::sph::sph_pressure_symetric<Tvec, Tscal>(
             m_b, rho_a_sq, rho_b_sq, p_star, p_star, omega_a, omega_b, nabla_W_a, nabla_W_b);
 
-        // Energy rate
+        // Energy rate (uses symmetric force, same as momentum equation)
         du_dt += gsph_energy_rate<Tvec, Tscal>(
-            m_b, p_star, v_star, rho_a_sq, omega_a, v_a, r_ab_unit, nabla_W_a);
+            m_b,
+            p_star,
+            v_star,
+            rho_a_sq,
+            rho_b_sq,
+            omega_a,
+            omega_b,
+            v_a,
+            r_ab_unit,
+            nabla_W_a,
+            nabla_W_b);
     }
 
     // Note: For velocity projection onto pair axis, use sycl::dot(v, r_ab_unit) directly.

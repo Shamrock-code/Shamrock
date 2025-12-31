@@ -130,6 +130,17 @@ namespace shammodels::gsph {
         void compute_eos_fields();
         void reset_eos_fields();
 
+        /**
+         * @brief Compute gradients for MUSCL reconstruction
+         *
+         * Computes density, pressure, and velocity gradients for each particle
+         * using SPH kernel gradient summation. Only called when MUSCL reconstruction
+         * is enabled (reconstruct_config.is_muscl() == true).
+         *
+         * Reference: Cha & Whitworth (2003)
+         */
+        void compute_gradients();
+
         void prepare_corrector();
 
         /**

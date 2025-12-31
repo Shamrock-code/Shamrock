@@ -115,10 +115,17 @@ namespace shammodels::gsph {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> pressure;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> soundspeed;
 
-        /// Minimum h/v_sig for CFL timestep calculation (signal velocity from Riemann solver)
-        /// v_sig = c_i + c_j - 3.0 * (v_ij · r_ij) / r  (Monaghan convention)
-        /// This accounts for relative particle motion in the CFL condition.
-        Tscal h_per_v_sig = std::numeric_limits<Tscal>::max();
+        /// Gradient fields for MUSCL reconstruction (2nd order)
+        /// These are computed when ReconstructConfig::is_muscl() is true
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_density;  ///< ∇ρ
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure; ///< ∇P
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vx;       ///< ∇v_x
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< ∇v_y
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< ∇v_z
+
+        /// Minimum h/c_s for CFL timestep calculation
+        /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s
+        Tscal h_per_cs_min = std::numeric_limits<Tscal>::max();
 
         /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;

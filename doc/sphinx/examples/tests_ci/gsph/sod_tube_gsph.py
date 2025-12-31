@@ -57,10 +57,10 @@ model.evolve_until(t_target)
 
 sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=P_R)
 
+data = ctx.collect_data()
 
-def compute_L2_errors(ctx, sod, t, x_min, x_max):
+def compute_L2_errors(data, sod, t, x_min, x_max):
     """Compute L2 errors using ctx.collect_data() (no pyvista dependency)."""
-    data = ctx.collect_data()
     points = np.array(data["xyz"])
     velocities = np.array(data["vxyz"])
     hpart = np.array(data["hpart"])
@@ -94,48 +94,46 @@ def compute_L2_errors(ctx, sod, t, x_min, x_max):
     err_P = np.sqrt(np.mean((P_f - P_ana) ** 2)) / np.mean(P_ana)
     return err_rho, (err_vx, err_vy, err_vz), err_P
 
-
-rho, v, P = compute_L2_errors(ctx, sod, t_target, -0.5, 0.5)
-vx, vy, vz = v
-
-print("current errors :")
-print(f"err_rho = {rho}")
-print(f"err_vx = {vx}")
-print(f"err_vy = {vy}")
-print(f"err_vz = {vz}")
-print(f"err_P = {P}")
-
-# Expected L2 error values (calibrated from local run with M4 kernel)
-# Tolerance set very strict for regression testing (like sod_tube_sph.py)
-expect_rho = 0.029892771160040497
-expect_vx = 0.10118608617971991
-expect_vy = 0.006382105147197806
-expect_vz = 3.118241304703099e-05
-expect_P = 0.038072557056294656
-
-tol = 1e-8
-
-test_pass = True
-err_log = ""
-
-error_checks = {
-    "rho": (rho, expect_rho),
-    "vx": (vx, expect_vx),
-    "vy": (vy, expect_vy),
-    "vz": (vz, expect_vz),
-    "P": (P, expect_P),
-}
-
-for name, (value, expected) in error_checks.items():
-    if abs(value - expected) > tol * expected:
-        err_log += f"error on {name} is outside of tolerances:\n"
-        err_log += f"  expected error = {expected} +- {tol*expected}\n"
-        err_log += f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
-        test_pass = False
-
-if test_pass:
-    print("\n" + "=" * 50)
-    print("GSPH Sod Shock Tube Test: PASSED")
-    print("=" * 50)
-else:
-    exit("Test did not pass L2 margins : \n" + err_log)
+if shamrock.sys.world_rank() == 0:
+    rho, v, P = compute_L2_errors(ctx, sod, t_target, -0.5, 0.5)
+    vx, vy, vz = v
+    
+    print("current errors :")
+    print(f"err_rho = {rho}")
+    print(f"err_vx = {vx}")
+    print(f"err_vy = {vy}")
+    print(f"err_vz = {vz}")
+    print(f"err_P = {P}")
+    
+    # Expected L2 error values (calibrated from local run with M4 kernel)
+    # Tolerance set very strict for regression testing (like sod_tube_sph.py)
+    expect_rho = 0.029892771160040497
+    expect_vx = 0.10118608617971991
+    expect_vy = 0.006382105147197806
+    expect_vz = 3.118241304703099e-05
+    expect_P = 0.038072557056294656
+    
+    tol = 1e-8
+    
+    test_pass = True
+    err_log = ""
+    
+    error_checks = {
+        "rho": (rho, expect_rho),
+        "vx": (vx, expect_vx),
+        "vy": (vy, expect_vy),
+        "vz": (vz, expect_vz),
+        "P": (P, expect_P),
+    }
+    
+    for name, (value, expected) in error_checks.items():
+        if abs(value - expected) > tol * expected:
+            err_log += f"error on {name} is outside of tolerances:\n"
+            err_log += f"  expected error = {expected} +- {tol*expected}\n"
+            err_log += f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
+            test_pass = False
+    
+    if test_pass:
+        print("\n" + "=" * 50)
+        print("GSPH Sod Shock Tube Test: PASSED")
+        print("=" * 50)

@@ -212,9 +212,13 @@ PatchScheduler::PatchScheduler(
     u64 crit_split,
     u64 crit_merge)
     : pdl_ptr_list(pdl_ptr_list),
-      patch_data(
-          pdl_ptr_list.at(0), // @astodo should be a list
-          {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
+      patch_data(pdl_ptr_list.at(0), {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
+
+    for (auto & pdl_ptr : pdl_ptr_list) {
+        patch_data_list.push_back(SchedulerPatchData(
+            pdl_ptr,
+            {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}));
+    }
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;

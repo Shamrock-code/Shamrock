@@ -67,12 +67,15 @@ class PatchScheduler {
 
 
     std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list;
+    std::deque<shamrock::scheduler::SchedulerPatchData> patch_data_list;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
 
     SchedulerPatchList patch_list; ///< handle the list of the patches of the scheduler
+
     SchedulerPatchData patch_data; ///< handle the data of the patches of the scheduler
+
     PatchTree patch_tree;          ///< handle the tree structure of the patches
 
     // using unordered set is not an issue since we use the find command after

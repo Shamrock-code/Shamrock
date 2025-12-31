@@ -132,12 +132,15 @@ class PatchScheduler {
     template<class vectype>
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
-        if (!pdl().check_main_field_type<vectype>()) {
-            std::invalid_argument(
-                std::string("the main field is not of the correct type to call this function\n")
-                + "fct called : " + __PRETTY_FUNCTION__
-                + "current patch data layout : " + pdl().get_description_str());
-        }
+        for (u32 layer_idx = 0; layer_idx < pdl_ptr_list.size(); layer_idx++) {
+            if (!pdl(layer_idx).check_main_field_type<vectype>()) {
+                std::invalid_argument(
+                    std::string("the main field is not of the correct type to call this function\n")
+                    + "fct called : " + __PRETTY_FUNCTION__
+                    + shambase::format("current patch data layout of index {} : ", layer_idx)
+                    + pdl().get_description_str()
+                );
+            }
 
         patch_data.sim_box.set_bounding_box<vectype>({bmin, bmax});
 

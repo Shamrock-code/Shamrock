@@ -90,7 +90,7 @@ class ShamrockCtx {
 
     inline void pdata_layout_print(u32 layer_idx = 0) {
         if (!pdl_list.at(layer_idx)) {
-            throw ShamAPIException("patch data layout is not initialized");
+            throw ShamAPIException(shambase::format("patch data layout of index {} is not initialized", layer_idx));
         }
         std::cout << pdl_list.at(layer_idx)->get_description_str() << std::endl;
     }
@@ -105,9 +105,9 @@ class ShamrockCtx {
 
     inline void init_sched(u64 crit_split, u64 crit_merge) {
 
-        for (u32 idx_layer = 0; idx_layer < pdl_list.size(); idx_layer++) {
-            if (!pdl_list.at(idx_layer)) {
-                throw ShamAPIException(shambase::format("patch data layout of index {} is not initialized", idx_layer));
+        for (u32 layer_idx = 0; layer_idx < pdl_list.size(); layer_idx++) {
+            if (!pdl_list.at(layer_idx)) {
+                throw ShamAPIException(shambase::format("patch data layout of index {} is not initialized", layer_idx));
             }
         }
 

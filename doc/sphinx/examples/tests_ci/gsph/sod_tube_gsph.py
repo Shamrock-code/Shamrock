@@ -97,7 +97,7 @@ def compute_L2_errors(data, sod, t, x_min, x_max):
 
 
 if shamrock.sys.world_rank() == 0:
-    rho, v, P = compute_L2_errors(ctx, sod, t_target, -0.5, 0.5)
+    rho, v, P = compute_L2_errors(data, sod, t_target, -0.5, 0.5)
     vx, vy, vz = v
 
     print("current errors :")

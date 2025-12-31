@@ -62,6 +62,7 @@ sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=
 
 data = ctx.collect_data()
 
+
 def compute_L2_errors(data, sod, t, x_min, x_max):
     """Compute L2 errors using ctx.collect_data() (no pyvista dependency)."""
     points = np.array(data["xyz"])
@@ -137,7 +138,9 @@ if shamrock.sys.world_rank() == 0:
         if abs(value - expected) > tol * expected:
             err_log += f"error on {name} is outside of tolerances:\n"
             err_log += f"  expected error = {expected} +- {tol*expected}\n"
-            err_log += f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
+            err_log += (
+                f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
+            )
             test_pass = False
 
     if test_pass:

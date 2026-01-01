@@ -14,14 +14,18 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/popen.hpp"
 #include "shambase/print.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
+#include "shamcmdopt/env.hpp"
 #include <pybind11/embed.h>
 #include <cstdlib>
+#include <filesystem>
 #include <optional>
+#include <sstream>
 #include <string>
 
 /**
@@ -33,6 +37,9 @@ extern const char *configure_time_py_sys_path();
 
 /// @brief path of the python executable that was used to configure sys.path
 extern const char *configure_time_py_executable();
+
+/// @brief Path to shamrock utils lib a config time
+extern const char *configure_time_pylib_path();
 
 /**
  * @brief Script to run ipython
@@ -81,7 +88,73 @@ if not cur_path.startswith(sysprefix):
 
 )";
 
+// env var to set the path to the pylib
+std::optional<std::string> pylib_path_env_var = shamcmdopt::getenv_str("SHAMROCK_PYLIB_PATH");
+
 namespace shambindings {
+
+    std::optional<std::string> get_binary_path() {
+
+        // first try /proc/self/exe
+        try {
+            return std::filesystem::read_symlink("/proc/self/exe");
+        } catch (const std::filesystem::filesystem_error &e) {
+            return std::nullopt;
+        }
+
+        // then try sys.executable from python because why not XD
+        try {
+            py::module_ sys        = py::module_::import("sys");
+            std::string executable = sys.attr("executable").cast<std::string>();
+            return executable;
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+    }
+
+    std::string locate_pylib_path(bool do_print) {
+
+        auto get_binary_dir = []() -> std::filesystem::path {
+            auto bpath = get_binary_path();
+            if (bpath.has_value()) {
+                return std::filesystem::path(bpath.value()).parent_path();
+            }
+            return std::filesystem::path(".");
+        };
+
+        // Get the path to the current binary
+        std::filesystem::path binary_dir = get_binary_dir();
+
+        std::filesystem::path pyshamrock_path_relative1 = binary_dir / ".." / "pylib";
+        std::filesystem::path pyshamrock_path_relative2 = binary_dir / ".." / "src" / "pylib";
+
+        std::vector<std::string> possible_paths
+            = {"pyshamrock",
+               pyshamrock_path_relative1,
+               pyshamrock_path_relative2,
+               std::string(configure_time_pylib_path())};
+
+        if (pylib_path_env_var.has_value()) {
+            possible_paths.push_back(pylib_path_env_var.value());
+        }
+
+        std::string ret = std::string(configure_time_pylib_path());
+
+        for (const auto &path : possible_paths) {
+            if (std::filesystem::is_directory(path.c_str())) {
+                ret = path;
+                break;
+            } else {
+                shambase::println("pylib path " + path + " does not exist, skipping");
+            }
+        }
+
+        if (do_print) {
+            shambase::println("using pylib path : " + ret);
+        }
+
+        return ret;
+    }
 
     void setpypath(std::string path) { runtime_set_pypath = path; }
 
@@ -107,12 +180,34 @@ namespace shambindings {
         std::string modify_path = std::string("paths = ") + get_pypath() + "\n";
         modify_path += R"(import sys;sys.path = paths)";
         py::exec(modify_path);
+
+        std::string pylib_path      = locate_pylib_path(do_print);
+        std::string modify_path_lib = std::string("sys.path.insert(0, \"") + pylib_path + "\")\n";
+        py::exec(modify_path_lib);
     }
 
-    void start_ipython(bool do_print) {
+    void set_sys_argv(int argc, char *argv[]) {
+        std::vector<std::string> sys_argv;
+        for (int i = 0; i < argc; i++) {
+            sys_argv.push_back(argv[i]);
+        }
+        std::stringstream ss;
+        ss << "[";
+        for (const auto &arg : sys_argv) {
+            ss << "\"" << arg << "\", ";
+        }
+        ss << "]";
+
+        std::string cmd = "import sys; sys.argv = " + ss.str();
+
+        py::exec(cmd);
+    }
+
+    void start_ipython(bool do_print, int argc, char *argv[]) {
 
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("--------------------------------------------");
@@ -127,9 +222,10 @@ namespace shambindings {
         }
     }
 
-    void run_py_file(std::string file_path, bool do_print) {
+    void run_py_file(std::string file_path, bool do_print, int argc, char *argv[]) {
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("-----------------------------------");

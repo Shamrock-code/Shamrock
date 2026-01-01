@@ -606,7 +606,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_ghost_layout() {
 
     // Reset first in case it was set from a previous timestep
     storage.ghost_layout.reset();
-    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
@@ -632,7 +632,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const bool has_uint = solver_config.has_field_uint();
     const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
 
-    auto ghost_layout_ptr                               = storage.ghost_layout.get();
+    auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");

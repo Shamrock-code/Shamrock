@@ -17,6 +17,8 @@
  */
 
 #include "shambase/narrowing.hpp"
+#include "shambase/time.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <vector>
 
@@ -62,13 +64,59 @@ namespace shamalgs::collective {
             std::vector<MPI_Status> st_lst(rqs.size());
             shamcomm::mpi::Waitall(
                 shambase::narrow_or_throw<i32>(rqs.size()), rqs.data(), st_lst.data());
-            ready_count = rqs.size();
-            is_ready.assign(rqs.size(), true);
         }
+
+        size_t remain_count_no_test() { return rqs.size() - ready_count; }
 
         size_t remain_count() {
             test_ready();
             return rqs.size() - ready_count;
+        }
+
+        void report_timeout() const {
+            std::string err_msg = "";
+            for (size_t i = 0; i < rqs.size(); i++) {
+                if (!is_ready[i]) {
+                    err_msg += shambase::format("request {} is not ready\n", i);
+                }
+            }
+            std::string msg = shambase::format("timeout : \n{}", err_msg);
+            throw shambase::make_except_with_loc<std::runtime_error>(msg);
+        }
+
+        // spin lock until the number of in-flight requests is less than max_in_flight
+        void spin_lock_partial_wait(size_t max_in_flight, f64 timeout, f64 print_freq) {
+
+            if (rqs.size() < max_in_flight) {
+                return;
+            }
+
+            f64 last_print_time = 0;
+            size_t in_flight    = remain_count();
+
+            if (in_flight < max_in_flight) {
+                return;
+            }
+
+            shambase::Timer twait;
+            twait.start();
+            do {
+                twait.end();
+                if (twait.elasped_sec() > timeout) {
+                    report_timeout();
+                }
+
+                if (twait.elasped_sec() - last_print_time > print_freq) {
+                    logger::warn_ln(
+                        "SparseComm",
+                        "too many messages in flight :",
+                        in_flight,
+                        "/",
+                        max_in_flight);
+                    last_print_time = twait.elasped_sec();
+                }
+                in_flight = remain_count();
+            } while (in_flight >= max_in_flight);
         }
     };
 

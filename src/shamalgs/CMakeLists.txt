@@ -42,6 +42,7 @@ set(Sources
         src/primitives/gen_buffer_index.cpp
         src/primitives/segmented_sort_in_place.cpp
         src/primitives/append_subset_to.cpp
+        src/collective/sparse_exchange.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)

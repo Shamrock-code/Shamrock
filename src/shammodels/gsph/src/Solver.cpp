@@ -605,7 +605,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_ghost_layout() {
     storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
 
     // Reset first in case it was set from a previous timestep
-    storage.ghost_layout.reset();
     storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout

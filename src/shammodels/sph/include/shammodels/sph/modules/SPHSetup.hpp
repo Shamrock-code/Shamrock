@@ -62,6 +62,9 @@ namespace shammodels::sph::modules {
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
             Tscal dr, std::pair<Tvec, Tvec> box);
 
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
+            Tscal dr, std::pair<Tvec, Tvec> box);
+
         std::shared_ptr<ISPHSetupNode> make_generator_disc_mc(
             Tscal part_mass,
             Tscal disc_mass,

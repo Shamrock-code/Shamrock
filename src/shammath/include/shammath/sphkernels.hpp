@@ -1181,7 +1181,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 1.4;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 3. / 4.;
@@ -1263,7 +1263,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 1.6;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 27. / 32.;
@@ -1360,7 +1360,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 2.2;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 15. / 16.;

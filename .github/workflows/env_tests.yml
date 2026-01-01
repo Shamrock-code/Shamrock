@@ -286,7 +286,6 @@ jobs:
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
-          cd build
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 /tmp/test_rscript.py
@@ -294,7 +293,6 @@ jobs:
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
-          cd build
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
@@ -303,7 +301,7 @@ jobs:
         if: matrix.runtestpy
         run: |
           cd build
-          pip uninstall shamrock
+          pip uninstall -y shamrock
 
       - name: Try pip install editable Shamrock
         if: matrix.runtestpy
@@ -314,7 +312,6 @@ jobs:
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
-          cd build
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 /tmp/test_rscript.py
@@ -322,7 +319,6 @@ jobs:
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
-          cd build
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py

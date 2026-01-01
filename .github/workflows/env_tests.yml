@@ -237,7 +237,7 @@ jobs:
         run: |
           cat > /tmp/test_rscript.py << 'EOF'
           import shamrock
-          print("Shamrock module location:", shamrock.__file__)
+          #print("Shamrock module location:", shamrock.__file__)
           print("Shamrock version:", shamrock.version_string())
           print("Git info:", shamrock.get_git_info())
           shamrock.change_loglevel(125)

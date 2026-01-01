@@ -26,7 +26,7 @@ jobs:
             runtest: yes
             label: "ubuntu 20"
             upload_doc: false
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
           - clang: 18
             backend: omp
             arch: none

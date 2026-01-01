@@ -25,41 +25,41 @@ jobs:
           ##########################################################################################
           - machine: debian-generic.acpp
             args: --backend omp
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15
+            imagename: Ubuntu 22 LLVM 15
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend generic
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15
+            imagename: Ubuntu 22 LLVM 15
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend cuda.explicit-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend cuda.integrated-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           - machine: debian-generic.acpp
             args: --backend hip --arch gfx906
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15rocm543
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15rocm543
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 ROCM 5.4.3
+            imagename: Ubuntu 22 LLVM 15 ROCM 5.4.3
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
 
           ##########################################################################################

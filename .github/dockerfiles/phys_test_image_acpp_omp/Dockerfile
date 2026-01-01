@@ -1,4 +1,4 @@
-FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu22
 
 ARG CLANGVERSION=18
 

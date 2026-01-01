@@ -48,12 +48,12 @@ jobs:
             "include": [
               {
                 "machine": "ci.intel-llvm.cuda",
-                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda12dpcpp",
+                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
                 "runtest": false
               },
               {
                 "machine": "ci.intel-llvm.rocm",
-                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543dpcpp",
+                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
                 "runtest": false
               },
               {

@@ -391,7 +391,7 @@ class PatchDataField {
             // buffer of booleans to store result of the condition
             sham::DeviceBuffer<u32> mask(obj_cnt, dev_sched);
 
-            sham::kernel_call(
+sham::kernel_call(
                 q,
                 sham::MultiRef{buf},
                 sham::MultiRef{mask},

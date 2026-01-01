@@ -437,6 +437,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 has_been_limited = false;
                 using namespace shamrock::patch;
 
+                auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+                sham::DeviceBuffer<u32> mask_get_ids_where(0, dev_sched);
+
                 // inject in local domains first
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
                 sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
@@ -686,7 +689,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
                 return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-            });
+            },
+            comm_cache);
 
         // insert the data into the data to be inserted
         recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {

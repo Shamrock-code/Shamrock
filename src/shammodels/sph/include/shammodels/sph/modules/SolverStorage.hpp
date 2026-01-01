@@ -54,6 +54,10 @@ namespace shammodels::sph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
+        std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node;
+        std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<Tscal>> exchange_gz_alpha;
+        std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_positions;
+
         shamrock::solvergraph::SolverGraph solver_graph;
         std::shared_ptr<shamrock::solvergraph::OperationSequence> solver_sequence;
 

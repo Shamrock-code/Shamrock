@@ -1,8 +1,8 @@
 """
-Test the pairing instability in SPH
+Cubic lattice reorganisation in SPH
 ===================================
 
-In SPH, normally the scheme should avoid this issue, this test is a way to explore that.
+The cubic lattice is not stable in SPH, this test is a way to explore that.
 """
 
 # sphinx_gallery_multi_image = "single"

@@ -327,6 +327,7 @@ jobs:
         if: matrix.runtestpy
         run: |
           . venv/bin/activate
+          ls ./venv/bin/
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py

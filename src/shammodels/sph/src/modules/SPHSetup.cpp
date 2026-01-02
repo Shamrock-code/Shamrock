@@ -29,6 +29,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
+#include "shammodels/sph/modules/setup/GeneratorLatticeCubic.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
@@ -45,6 +46,12 @@ template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
     SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_cubic(Tscal dr, std::pair<Tvec, Tvec> box) {
+    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeCubic<Tvec>(context, dr, box));
 }
 
 template<class Tvec, template<class> class SPHKernel>

@@ -8,7 +8,6 @@ Smoothed Particle Hydrodynamics (SPH) solver based on the implementation in the 
 - **Contributors**: 
   - Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
   - David Fang (david.fang@ikmail.com)
-  - Guo Yansong (guo.yansong.ngy@gmail.com)
 
 ## Status
 - **Development Status**: Active

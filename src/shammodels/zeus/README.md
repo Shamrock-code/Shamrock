@@ -11,4 +11,3 @@ Hydrodynamics solver using the Lax–Friedrichs scheme with artificial viscosity
 
 ## References
 - Stone & Norman (1992). ZEUS-2D: A radiation magnetohydrodynamics code for astrophysical flows in two space dimensions.
-

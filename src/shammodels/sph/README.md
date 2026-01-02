@@ -5,7 +5,7 @@ Smoothed Particle Hydrodynamics (SPH) solver based on the implementation in the 
 
 ## Maintainers
 - **Primary Maintainer**: Timothée David--Cléris (tim.shamrock@proton.me)
-- **Contributors**: 
+- **Contributors**:
   - Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
   - David Fang (david.fang@ikmail.com)
 
@@ -16,4 +16,3 @@ Smoothed Particle Hydrodynamics (SPH) solver based on the implementation in the 
 - Price et al. (2018). Phantom: A Smoothed Particle Hydrodynamics and Magnetohydrodynamics Code for Astrophysics. PASA.
 - Monaghan (1992). Smoothed Particle Hydrodynamics. Annual Review of Astronomy and Astrophysics.
 - Price (2012). Smoothed particle hydrodynamics and magnetohydrodynamics. Journal of Computational Physics.
-

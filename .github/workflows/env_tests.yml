@@ -305,26 +305,29 @@ jobs:
 
       # global editable install does not work in the image => --user
       - name: Try pip install editable Shamrock
+        shell: bash # In docker container github action default to sh
         if: matrix.runtestpy
         run: |
-          export PYTHONUSERBASE=$(pwd)/pipuserbase
+          python -m venv venv
+          . venv/bin/activate
+          pip install -U pip setuptools
           cd build
           pip install --verbose --user -e .
 
       - name: Try shamrock startup (pip install)
+        shell: bash # In docker container github action default to sh
         if: matrix.runtestpy
         run: |
-          export PYTHONUSERBASE=$(pwd)/pipuserbase
+          . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 /tmp/test_rscript.py
 
       - name: Try shamrock startup (pip install)
+        shell: bash # In docker container github action default to sh
         if: matrix.runtestpy
         run: |
-          export PYTHONUSERBASE=$(pwd)/pipuserbase
-          export PATH=$(pwd)/pipuserbase/bin:$PATH
-          export LD_LIBRARY_PATH=$(pwd)/pipuserbase/lib:$LD_LIBRARY_PATH
+          . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py

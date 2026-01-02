@@ -307,12 +307,14 @@ jobs:
       - name: Try pip install editable Shamrock
         if: matrix.runtestpy
         run: |
+          export PYTHONUSERBASE=$(pwd)/pipuserbase
           cd build
           pip install --verbose --user -e .
 
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
+          export PYTHONUSERBASE=$(pwd)/pipuserbase
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 /tmp/test_rscript.py
@@ -320,6 +322,9 @@ jobs:
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy
         run: |
+          export PYTHONUSERBASE=$(pwd)/pipuserbase
+          export PATH=$(pwd)/pipuserbase/bin:$PATH
+          export LD_LIBRARY_PATH=$(pwd)/pipuserbase/lib:$LD_LIBRARY_PATH
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py

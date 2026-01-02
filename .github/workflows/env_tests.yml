@@ -128,6 +128,8 @@ jobs:
       - name : Install ubuntu dependencies
         if: matrix.machine == 'debian-generic.acpp'
         run: |
+          echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections
+          echo 'tzdata tzdata/Zones/Europe select Paris' | debconf-set-selections
           export DEBIAN_FRONTEND=noninteractive
           sudo apt remove -y texlive-full
           sudo apt-get install -y \

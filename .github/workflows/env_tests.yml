@@ -128,6 +128,7 @@ jobs:
       - name : Install ubuntu dependencies
         if: matrix.machine == 'debian-generic.acpp'
         run: |
+          export DEBIAN_FRONTEND=noninteractive
           sudo apt remove -y texlive-full
           sudo apt-get install -y \
             texlive-latex-base \

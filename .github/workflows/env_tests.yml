@@ -307,7 +307,7 @@ jobs:
         if: matrix.runtestpy
         run: |
           cd build
-          pip install --verbose -e .
+          pip install --verbose --user -e .
 
       - name: Try shamrock startup (pip install)
         if: matrix.runtestpy

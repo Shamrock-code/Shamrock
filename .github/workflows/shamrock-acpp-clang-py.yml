@@ -80,8 +80,7 @@ jobs:
       # if ubuntu container
       - name : Install ubuntu dependencies
         run: |
-          echo 'tzdata tzdata/Areas select Europe' | debconf-set-selections
-          echo 'tzdata tzdata/Zones/Europe select Paris' | debconf-set-selections
+          sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
           export DEBIAN_FRONTEND=noninteractive
           sudo apt remove -y texlive-full
           sudo apt-get install -y \

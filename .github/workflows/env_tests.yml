@@ -303,6 +303,7 @@ jobs:
           cd build
           pip uninstall -y shamrock
 
+      # global editable install does not work in the image => --user
       - name: Try pip install editable Shamrock
         if: matrix.runtestpy
         run: |

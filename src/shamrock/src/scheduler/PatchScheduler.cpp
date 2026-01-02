@@ -711,7 +711,7 @@ void PatchScheduler::check_patchdata_locality_corectness() {
     }
 }
 
-void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
+void PatchScheduler::split_patches(std::unordered_set<u64> split_rq, u32 layer_idx) {
     StackEntry stack_loc{};
     for (u64 tree_id : split_rq) {
 
@@ -745,7 +745,7 @@ void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
             = patch_list.global[idx_p7].id_patch;
 
         try {
-            patch_data_list.at(0).split_patchdata(
+            patch_data_list.at(layer_idx).split_patchdata(
                 old_patch_id,
                 {patch_list.global[idx_p0],
                  patch_list.global[idx_p1],
@@ -772,7 +772,7 @@ void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
     }
 }
 
-inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
+inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq, u32 layer_idx) {
     StackEntry stack_loc{};
     for (u64 tree_id : merge_rq) {
 
@@ -795,7 +795,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
 
         if (patch_list.global[patch_list.id_patch_to_global_idx[patch_id0]].node_owner_id
             == shamcomm::world_rank()) {
-            patch_data_list.at(0).merge_patchdata(
+            patch_data_list.at(layer_idx).merge_patchdata(
                 patch_id0,
                 {patch_id0,
                  patch_id1,
@@ -955,12 +955,12 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
 }
 
 std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::gather_data(
-    u32 rank) {
+    u32 rank, u32 layer_idx) {
 
     using namespace shamrock::patch;
 
     auto plist = this->patch_list.global;
-    auto pdata = this->patch_data_list.at(0).owned_data;
+    auto pdata = this->patch_data_list.at(layer_idx).owned_data;
 
     auto serializer = [](shamrock::patch::PatchDataLayer &pdat) {
         shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());

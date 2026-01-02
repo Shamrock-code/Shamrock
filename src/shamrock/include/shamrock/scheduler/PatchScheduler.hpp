@@ -178,7 +178,7 @@ class PatchScheduler {
     [[deprecated]]
     void dump_local_patches(std::string filename);
 
-    std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gather_data(u32 rank);
+    std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> gather_data(u32 rank, u32 layer_idx = 0);
 
     /**
      * @brief add patch to the scheduler
@@ -506,8 +506,8 @@ class PatchScheduler {
     nlohmann::json serialize_patch_metadata();
 
     private:
-    void split_patches(std::unordered_set<u64> split_rq);
-    void merge_patches(std::unordered_set<u64> merge_rq);
+    void split_patches(std::unordered_set<u64> split_rq, u32 layer_idx = 0);
+    void merge_patches(std::unordered_set<u64> merge_rq, u32 layer_idx = 0);
 
     void set_patch_pack_values(std::unordered_set<u64> merge_rq);
 };

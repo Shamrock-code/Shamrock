@@ -480,14 +480,14 @@ class PatchScheduler {
         field.build_global(dtype);
     }
 
-    inline auto get_node_set_edge_patchdata_layer_refs() {
+    inline auto get_node_set_edge_patchdata_layer_refs(u32 layer_idx = 0) {
         shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::PatchDataLayerRefs> node_set_edge(
             [&](shamrock::solvergraph::PatchDataLayerRefs &edge) {
                 edge.free_alloc();
                 using namespace shamrock::patch;
                 for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     edge.patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
-                });
+                }, layer_idx);
             });
 
         return std::make_shared<decltype(node_set_edge)>(std::move(node_set_edge));

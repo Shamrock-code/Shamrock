@@ -982,9 +982,9 @@ std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::ga
     for (u32 i = 0; i < plist.size(); i++) {
         auto &cpatch = plist[i];
         if (cpatch.node_owner_id == shamcomm::world_rank()) {
-            auto &patchdata = pdata.get(cpatch.id_patch);
+            auto &patch_data = pdata.get(cpatch.id_patch);
 
-            sham::DeviceBuffer<u8> tmp = serializer(patchdata);
+            sham::DeviceBuffer<u8> tmp = serializer(patch_data);
 
             send_payloads.push_back(
                 Message{

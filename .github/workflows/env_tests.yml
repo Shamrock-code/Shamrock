@@ -303,7 +303,6 @@ jobs:
           cd build
           pip uninstall -y shamrock
 
-      # global editable install does not work in the image => --user
       - name: Try pip install editable Shamrock
         shell: bash # In docker container github action default to sh
         if: matrix.runtestpy
@@ -312,7 +311,7 @@ jobs:
           . venv/bin/activate
           pip install -U pip setuptools
           cd build
-          pip install --verbose --user -e .
+          pip install --verbose -e .
 
       - name: Try shamrock startup (pip install)
         shell: bash # In docker container github action default to sh

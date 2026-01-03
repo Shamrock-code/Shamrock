@@ -127,6 +127,44 @@ namespace shammodels::gsph {
         /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s
         Tscal h_per_cs_min = std::numeric_limits<Tscal>::max();
 
+        //////////////////////////////////////////////////////////////////////
+        // SR-GSPH fields (Special Relativistic mode)
+        //////////////////////////////////////////////////////////////////////
+
+        /// Lorentz factor γ = 1/√(1-v²)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> gamma_lorentz;
+
+        /// Relativistic enthalpy H = 1 + u + P/n
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> enthalpy;
+
+        /// Lab-frame baryon density N = γn
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> N_density;
+
+        /// Particle volume V = ν/N (volume-based formulation)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> particle_volume;
+
+        /// Conserved momentum S = γHv (integrated directly in SR mode)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> S_momentum;
+
+        /// Conserved energy e = γH - P/(Nc²) (integrated directly in SR mode)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> e_energy;
+
+        /// Momentum derivative dS/dt (per baryon)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dS_momentum;
+
+        /// Energy derivative de/dt (per baryon)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> de_energy;
+
+        /// Baryon number per particle ν (constant, set from mass/initial conditions)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> nu_baryon;
+
+        /// Flag: has SR been initialized (prim2cons done)?
+        bool sr_initialized = false;
+
+        /// Old SR derivatives for predictor-corrector
+        Component<shamrock::ComputeField<Tvec>> old_dS;
+        Component<shamrock::ComputeField<Tscal>> old_de;
+
         /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;

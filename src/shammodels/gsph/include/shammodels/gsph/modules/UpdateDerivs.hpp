@@ -88,6 +88,17 @@ namespace shammodels::gsph::modules {
          * @brief Update derivatives using HLLC approximate Riemann solver
          */
         void update_derivs_hllc(HLLC cfg);
+
+        /**
+         * @brief Update derivatives using SR-GSPH (Special Relativistic)
+         *
+         * Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
+         * Uses:
+         * - Exact relativistic Riemann solver (Newton-Raphson)
+         * - Volume-based formulation V = ν/N
+         * - Conserved momentum S = γHv and energy e = γH - P/(Nc²)
+         */
+        void update_derivs_sr();
     };
 
 } // namespace shammodels::gsph::modules

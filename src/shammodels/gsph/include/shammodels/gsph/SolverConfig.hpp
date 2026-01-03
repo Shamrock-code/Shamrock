@@ -37,6 +37,7 @@
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/gsph/config/ReconstructConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
+#include "shammodels/gsph/config/SRConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -267,6 +268,25 @@ struct shammodels::gsph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Special Relativity Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using SRConfig = SRConfig<Tvec>;
+    SRConfig sr_config;
+
+    inline void set_sr(Tscal c_speed = Tscal{1.0}) {
+        typename SRConfig::SR sr{};
+        sr.c_speed = c_speed;
+        sr_config.set(sr);
+    }
+
+    inline bool is_sr_enabled() const { return sr_config.is_sr_enabled(); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Special Relativity Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -305,6 +325,7 @@ struct shammodels::gsph::SolverConfig {
         riemann_config.print_status();
         reconstruct_config.print_status();
         eos_config.print_status();
+        sr_config.print_status();
         logger::raw_ln("--------------------------------------");
     }
 
@@ -383,6 +404,7 @@ namespace shammodels::gsph {
             {"reconstruct_config", p.reconstruct_config},
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
+            {"sr_config", p.sr_config},
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
             {"htol_up_coarse_cycle", p.htol_up_coarse_cycle},
@@ -420,6 +442,9 @@ namespace shammodels::gsph {
         j.at("reconstruct_config").get_to(p.reconstruct_config);
         j.at("eos_config").get_to(p.eos_config);
         j.at("boundary_config").get_to(p.boundary_config);
+        if (j.contains("sr_config")) {
+            j.at("sr_config").get_to(p.sr_config);
+        }
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);
         j.at("use_two_stage_search").get_to(p.use_two_stage_search);
         j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);

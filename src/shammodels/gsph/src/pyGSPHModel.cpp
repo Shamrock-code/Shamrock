@@ -139,6 +139,32 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::arg("Racc"))
         // Units
         .def("set_units", &TConfig::set_units)
+        // Special Relativity
+        .def(
+            "set_sr",
+            [](TConfig &self, Tscal c_speed) {
+                self.set_sr(c_speed);
+            },
+            py::arg("c_speed") = Tscal{1.0},
+            R"==(
+    Enable Special Relativistic mode (SR-GSPH).
+
+    Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
+    "Special Relativistic Godunov SPH"
+
+    Parameters
+    ----------
+    c_speed : float
+        Speed of light (default: 1.0 for natural units where c=1)
+
+    Notes
+    -----
+    SR-GSPH uses:
+    - Canonical conserved variables: S = γHv (momentum), e = γH - P/(Nc²) (energy)
+    - Volume-based density: N = ν/V_p instead of kernel sum
+    - Primitive recovery via quartic solver for Lorentz factor γ
+    - Exact Riemann solver with Newton-Raphson iteration
+)==")
         // CFL
         .def(
             "set_cfl_cour",

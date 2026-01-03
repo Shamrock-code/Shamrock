@@ -37,6 +37,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
+#include "shammodels/gsph/math/sr/primitive_recovery.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
@@ -1663,9 +1664,24 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // 7. CFL: compute next timestep
     // =========================================================================
 
-    // STEP 1: PREDICTOR - move particles using OLD accelerations
+    const bool is_sr = solver_config.is_sr_enabled();
+
+    // STEP 1: PREDICTOR - move particles using OLD accelerations/derivatives
     // (On first iteration, accelerations are zero, so this is just position drift)
-    do_predictor_leapfrog(dt);
+    if (is_sr) {
+        // SR mode: use conserved variable integration
+        // Initialize SR fields on first timestep (prim2cons)
+        sr_init_fields();
+
+        // SR Predictor: S += dS*dt/2; e += de*dt/2; cons2prim; x += v*dt
+        // Skip on first timestep (dt=0) since nothing changes and density_field not yet computed
+        if (dt > Tscal{0}) {
+            sr_do_predictor(dt);
+        }
+    } else {
+        // Newtonian mode: use leapfrog
+        do_predictor_leapfrog(dt);
+    }
 
     // STEP 2: BOUNDARY - apply boundary conditions to NEW positions
     // Build serial patch tree first (needed for boundary application)
@@ -1713,15 +1729,30 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Following SPH pattern: EOS is computed on merged_patchdata_ghost
     compute_eos_fields();
 
-    // STEP 5: FORCES - compute accelerations using FRESH EOS
-    // Save old accelerations for corrector
-    prepare_corrector();
+    // SR-GSPH: Initialize conserved variables from primitives on first timestep
+    // Must happen AFTER EOS is computed (need P, ρ) but BEFORE forces
+    if (is_sr && !storage.sr_initialized) {
+        sr_init_conserved();
+    }
+
+    // STEP 5: FORCES - compute accelerations/derivatives using FRESH EOS
+    if (!is_sr) {
+        // Newtonian mode: save old accelerations for corrector
+        prepare_corrector();
+    }
 
     // Update derivatives using GSPH Riemann solver
+    // For SR mode, this stores dS/dt and de/dt to dedicated fields
     update_derivs();
 
-    // STEP 6: CORRECTOR - refine velocities
-    apply_corrector(dt, Npart_all);
+    // STEP 6: CORRECTOR - refine velocities/conserved variables
+    if (is_sr) {
+        // SR mode: S += dS*dt/2; e += de*dt/2; cons2prim
+        sr_apply_corrector(dt);
+    } else {
+        // Newtonian mode: v += a*dt/2
+        apply_corrector(dt, Npart_all);
+    }
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();
@@ -1758,6 +1789,342 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     log.tcompute = tstep.elasped_sec();
 
     return log;
+}
+
+// =========================================================================
+// SR-GSPH integration methods
+// =========================================================================
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::sr_init_fields() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    // Create sizes by iterating over non-empty patches (same pattern as compute_omega)
+    std::shared_ptr<Indexes<u32>> sizes = std::make_shared<Indexes<u32>>("sr_sizes", "N");
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+    });
+
+    // Initialize S_momentum field (nvar=1 for vector type)
+    if (!storage.S_momentum) {
+        storage.S_momentum = std::make_shared<Field<Tvec>>(1, "S_momentum", "S");
+    }
+    storage.S_momentum->ensure_sizes(sizes->indexes);
+
+    // Initialize e_energy field (nvar=1 for scalar)
+    if (!storage.e_energy) {
+        storage.e_energy = std::make_shared<Field<Tscal>>(1, "e_energy", "e");
+    }
+    storage.e_energy->ensure_sizes(sizes->indexes);
+
+    // Initialize dS_momentum field (derivatives)
+    if (!storage.dS_momentum) {
+        storage.dS_momentum = std::make_shared<Field<Tvec>>(1, "dS_momentum", "\\dot{S}");
+    }
+    storage.dS_momentum->ensure_sizes(sizes->indexes);
+
+    // Initialize de_energy field (derivatives)
+    if (!storage.de_energy) {
+        storage.de_energy = std::make_shared<Field<Tscal>>(1, "de_energy", "\\dot{e}");
+    }
+    storage.de_energy->ensure_sizes(sizes->indexes);
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::sr_init_conserved() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    if (storage.sr_initialized) {
+        return;
+    }
+
+    // Initialize SR fields if not done
+    sr_init_fields();
+
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+
+    const Tscal c_speed   = solver_config.sr_config.get_c_speed();
+    const Tscal gamma_eos = solver_config.get_eos_gamma();
+    const Tscal pmass     = solver_config.gpart_mass;
+
+    shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
+    shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
+    shamrock::solvergraph::Field<Tscal> &density_field  = shambase::get_check_ref(storage.density);
+    shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+        sham::DeviceBuffer<Tvec> &buf_S    = S_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_e   = e_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho = density_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_P   = pressure_field.get_buf(cur_p.id_patch);
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        sham::kernel_call(
+            dev_sched->get_queue(),
+            sham::MultiRef{buf_vxyz, buf_rho, buf_P},
+            sham::MultiRef{buf_S, buf_e},
+            cnt,
+            [c_speed, gamma_eos, pmass](
+                u32 i, const Tvec *vxyz, const Tscal *rho_sph, const Tscal *P, Tvec *S, Tscal *e) {
+                const Tscal c2 = c_speed * c_speed;
+
+                // Lorentz factor
+                const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
+                const Tscal gamma_lor
+                    = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+
+                // SPH density is lab-frame N = ν·ΣW (uses lab-frame positions)
+                // Convert to rest-frame density: n = N / γ
+                const Tscal N_lab = sycl::fmax(rho_sph[i], Tscal{1e-30});
+                const Tscal n     = N_lab / gamma_lor;
+
+                // Internal energy per unit mass (uses rest-frame density n)
+                const Tscal u_int = P[i] / ((gamma_eos - Tscal{1}) * n);
+
+                // Specific enthalpy: H = 1 + u/c² + P/(nc²)
+                const Tscal H = Tscal{1} + u_int / c2 + P[i] / (n * c2);
+
+                // Canonical momentum: S = γHv
+                S[i] = vxyz[i] * (gamma_lor * H);
+
+                // Canonical energy: e = γH - P/(Nc²) (uses lab-frame N)
+                e[i] = gamma_lor * H - P[i] / (N_lab * c2);
+            });
+    });
+
+    storage.sr_initialized = true;
+
+    if (shamcomm::world_rank() == 0) {
+        shamcomm::logs::raw_ln("SR-GSPH: Initialized conserved variables (S, e) from primitives");
+    }
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::sr_do_predictor(Tscal dt) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+
+    const Tscal half_dt   = dt / Tscal{2};
+    const Tscal c_speed   = solver_config.sr_config.get_c_speed();
+    const Tscal gamma_eos = solver_config.get_eos_gamma();
+
+    shamrock::solvergraph::Field<Tvec> &S_field   = shambase::get_check_ref(storage.S_momentum);
+    shamrock::solvergraph::Field<Tscal> &e_field  = shambase::get_check_ref(storage.e_energy);
+    shamrock::solvergraph::Field<Tvec> &dS_field  = shambase::get_check_ref(storage.dS_momentum);
+    shamrock::solvergraph::Field<Tscal> &de_field = shambase::get_check_ref(storage.de_energy);
+    shamrock::solvergraph::Field<Tscal> &density_field = shambase::get_check_ref(storage.density);
+
+    // Step 1: S += dS * dt/2, e += de * dt/2
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        sham::DeviceBuffer<Tvec> &buf_S   = S_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_e  = e_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_dS  = dS_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_de = de_field.get_buf(cur_p.id_patch);
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        sham::kernel_call(
+            dev_sched->get_queue(),
+            sham::MultiRef{buf_dS, buf_de},
+            sham::MultiRef{buf_S, buf_e},
+            cnt,
+            [half_dt](u32 i, const Tvec *dS, const Tscal *de, Tvec *S, Tscal *e) {
+                S[i] += dS[i] * half_dt;
+                e[i] += de[i] * half_dt;
+            });
+    });
+
+    // Step 2: Primitive recovery (cons2prim) to get v
+    sr_cons2prim();
+
+    // Step 3: Position drift: x += v * dt
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        auto &xyz_field  = pdat.get_field<Tvec>(ixyz);
+        auto &vxyz_field = pdat.get_field<Tvec>(ivxyz);
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        sham::kernel_call(
+            dev_sched->get_queue(),
+            sham::MultiRef{vxyz_field.get_buf()},
+            sham::MultiRef{xyz_field.get_buf()},
+            cnt,
+            [dt](u32 i, const Tvec *vxyz, Tvec *xyz) {
+                xyz[i] += vxyz[i] * dt;
+            });
+    });
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::sr_apply_corrector(Tscal dt) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    const Tscal half_dt = dt / Tscal{2};
+
+    shamrock::solvergraph::Field<Tvec> &S_field   = shambase::get_check_ref(storage.S_momentum);
+    shamrock::solvergraph::Field<Tscal> &e_field  = shambase::get_check_ref(storage.e_energy);
+    shamrock::solvergraph::Field<Tvec> &dS_field  = shambase::get_check_ref(storage.dS_momentum);
+    shamrock::solvergraph::Field<Tscal> &de_field = shambase::get_check_ref(storage.de_energy);
+
+    // S += dS * dt/2, e += de * dt/2 (second half-step)
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        sham::DeviceBuffer<Tvec> &buf_S   = S_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_e  = e_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tvec> &buf_dS  = dS_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_de = de_field.get_buf(cur_p.id_patch);
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        sham::kernel_call(
+            dev_sched->get_queue(),
+            sham::MultiRef{buf_dS, buf_de},
+            sham::MultiRef{buf_S, buf_e},
+            cnt,
+            [half_dt](u32 i, const Tvec *dS, const Tscal *de, Tvec *S, Tscal *e) {
+                S[i] += dS[i] * half_dt;
+                e[i] += de[i] * half_dt;
+            });
+    });
+
+    // Primitive recovery to update v, P, ρ for next step
+    sr_cons2prim();
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::sr_cons2prim() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock::patch;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const bool has_uint       = solver_config.has_field_uint();
+    const u32 iuint           = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+
+    const Tscal c_speed   = solver_config.sr_config.get_c_speed();
+    const Tscal gamma_eos = solver_config.get_eos_gamma();
+    const Tscal pmass     = solver_config.gpart_mass;
+
+    shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
+    shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
+    shamrock::solvergraph::Field<Tscal> &density_field  = shambase::get_check_ref(storage.density);
+    shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
+        sham::DeviceBuffer<Tvec> &buf_S    = S_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_e   = e_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_rho = density_field.get_buf(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_P   = pressure_field.get_buf(cur_p.id_patch);
+
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+        // Also update uint field if available (for post-processing access)
+        if (has_uint) {
+            sham::DeviceBuffer<Tscal> &buf_uint = pdat.get_field_buf_ref<Tscal>(iuint);
+
+            sham::kernel_call(
+                dev_sched->get_queue(),
+                sham::MultiRef{buf_S, buf_e, buf_rho},
+                sham::MultiRef{buf_vxyz, buf_P, buf_uint},
+                cnt,
+                [c_speed, gamma_eos](
+                    u32 i,
+                    const Tvec *S,
+                    const Tscal *e,
+                    const Tscal *rho_sph,
+                    Tvec *vxyz,
+                    Tscal *P,
+                    Tscal *uint_out) {
+                    // Get momentum magnitude and direction
+                    const Tscal S_mag = sycl::sqrt(sycl::dot(S[i], S[i]));
+                    const Tvec S_dir  = (S_mag > Tscal{1e-15}) ? S[i] / S_mag : Tvec{1, 0, 0};
+
+                    // SPH density summation gives lab-frame density N = ν·ΣW
+                    const Tscal N = sycl::fmax(rho_sph[i], Tscal{1e-30});
+
+                    // Primitive recovery takes lab-frame N and converts to n = N/γ internally
+                    sr::SRPrimitiveVars<Tscal> prim = sr::conserved_to_primitive<Tscal>(
+                        S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
+
+                    // Reconstruct velocity vector
+                    vxyz[i] = S_dir * prim.vel_normal * c_speed;
+
+                    // Update pressure
+                    P[i] = sycl::fmax(prim.pressure, Tscal{1e-10});
+
+                    // Update uint for post-processing compatibility with test scripts
+                    // Test computes: P = (γ-1) * ρ_sph * u, where ρ_sph is lab-frame N
+                    // So we need: u = P / ((γ-1) * N) to ensure P = (γ-1) * N * u = P
+                    uint_out[i] = P[i] / ((gamma_eos - Tscal{1}) * N);
+                });
+        } else {
+            sham::kernel_call(
+                dev_sched->get_queue(),
+                sham::MultiRef{buf_S, buf_e, buf_rho},
+                sham::MultiRef{buf_vxyz, buf_P},
+                cnt,
+                [c_speed, gamma_eos](
+                    u32 i,
+                    const Tvec *S,
+                    const Tscal *e,
+                    const Tscal *rho_sph,
+                    Tvec *vxyz,
+                    Tscal *P) {
+                    // Get momentum magnitude and direction
+                    const Tscal S_mag = sycl::sqrt(sycl::dot(S[i], S[i]));
+                    const Tvec S_dir  = (S_mag > Tscal{1e-15}) ? S[i] / S_mag : Tvec{1, 0, 0};
+
+                    // SPH density summation gives lab-frame density N = ν·ΣW
+                    const Tscal N = sycl::fmax(rho_sph[i], Tscal{1e-30});
+
+                    // Primitive recovery takes lab-frame N and converts to n = N/γ internally
+                    sr::SRPrimitiveVars<Tscal> prim = sr::conserved_to_primitive<Tscal>(
+                        S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
+
+                    // Reconstruct velocity vector
+                    vxyz[i] = S_dir * prim.vel_normal * c_speed;
+
+                    // Update pressure
+                    P[i] = sycl::fmax(prim.pressure, Tscal{1e-10});
+                });
+        }
+    });
 }
 
 // Template instantiations

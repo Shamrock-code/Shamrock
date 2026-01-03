@@ -165,6 +165,52 @@ namespace shammodels::gsph {
 
         bool apply_corrector(Tscal dt, u64 Npart_all);
 
+        // =========================================================================
+        // SR-GSPH integration methods (Special Relativistic mode)
+        // =========================================================================
+
+        /**
+         * @brief Initialize SR conserved variables from primitives (prim2cons)
+         *
+         * Called on first timestep when SR is enabled. Converts (v, P, ρ) to (S, e).
+         * Sets storage.sr_initialized = true after completion.
+         */
+        void sr_init_conserved();
+
+        /**
+         * @brief Initialize SR fields (S_momentum, e_energy, dS_momentum, de_energy)
+         *
+         * Must be called before SR integration can proceed.
+         */
+        void sr_init_fields();
+
+        /**
+         * @brief SR predictor step: advance S and e by half timestep
+         *
+         * S += dS * dt/2
+         * e += de * dt/2
+         * Then runs cons2prim to recover v for position integration.
+         * Position: x += v * dt
+         */
+        void sr_do_predictor(Tscal dt);
+
+        /**
+         * @brief SR corrector step: advance S and e by half timestep
+         *
+         * S += dS * dt/2
+         * e += de * dt/2
+         * Then runs cons2prim to recover v, P, ρ for next step.
+         */
+        void sr_apply_corrector(Tscal dt);
+
+        /**
+         * @brief Convert conserved to primitive variables (cons2prim)
+         *
+         * Uses Newton-Raphson to solve for Lorentz factor, then recovers v, P, ρ.
+         * Updates vxyz, pressure, density in particle data.
+         */
+        void sr_cons2prim();
+
         void update_sync_load_values();
 
         Solver(ShamrockCtx &context) : context(context) {}

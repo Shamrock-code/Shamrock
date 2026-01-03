@@ -186,7 +186,7 @@ jobs:
           echo " Old configuration: "
           ccache -p
           echo " New configuration: "
-          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion; %compiler% --acpp-version'
           ccache -p
           echo " ----- ccache configuration done ----- "
 

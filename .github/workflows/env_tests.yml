@@ -164,6 +164,7 @@ jobs:
       #### End Checkout part ####
 
       - uses: hendrikmuhs/ccache-action@v1.2
+        if: matrix.machine == 'debian-generic.acpp'
         with:
           key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}
 

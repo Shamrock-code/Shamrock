@@ -119,6 +119,17 @@ jobs:
         with:
           key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}
 
+      - name: Configure ccache
+        shell: bash
+        run: |
+          echo " ----- ccache configuration ----- "
+          echo " Old configuration: "
+          ccache -p
+          echo " New configuration: "
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -p
+          echo " ----- ccache configuration done ----- "
+
       - name: Setup env
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build --
 

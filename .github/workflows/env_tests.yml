@@ -186,7 +186,7 @@ jobs:
           echo " Old configuration: "
           ccache -p
           echo " New configuration: "
-          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion; %compiler% --acpp-version'
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
           ccache -p
           echo " ----- ccache configuration done ----- "
 
@@ -215,6 +215,25 @@ jobs:
           cd build
           export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate && shammake install
+
+      - name: Debug ccache files
+        if: matrix.machine == 'macos-generic.acpp'
+        shell: bash
+        run: |
+          cd build
+          echo "===== Listing ccache debug directory ====="
+          ls -la ccache-debug/ 2>/dev/null || echo "No ccache-debug directory found"
+          echo ""
+          echo "===== Ccache debug files content ====="
+          if [ -d "ccache-debug" ]; then
+            for file in ccache-debug/*.ccache-*; do
+              if [ -f "$file" ]; then
+                echo "==== File: $file ===="
+                cat "$file"
+                echo ""
+              fi
+            done
+          fi
 
       - name: Pull reference files
         run: |

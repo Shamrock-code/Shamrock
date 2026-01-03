@@ -109,9 +109,11 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
-      - name: Apt update
+      - name: Install ccache
+        if: matrix.container == 'intel/oneapi'
         run: |
-          sudo apt update
+          apt update
+          apt install -y ccache
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:

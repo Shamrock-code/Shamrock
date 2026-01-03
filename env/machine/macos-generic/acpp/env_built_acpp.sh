@@ -1,5 +1,12 @@
 # Everything before this line will be provided by the new-env script
 
+if which ccache &> /dev/null; then
+    export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    echo " ----- ccache found, using it ----- "
+else
+    export CCACHE_CMAKE_ARG=""
+fi
+
 # List of required packages
 required_packages=("cmake" "libomp" "boost" "open-mpi" "adaptivecpp")
 
@@ -19,10 +26,14 @@ echo "All required packages are installed."
 ACPP_ROOT=`brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//"`
 echo " ------------- Environment activated ------------- "
 
+export CCACHE_DEBUG=1
+export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
+
 function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
+        ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="acpp" \

@@ -109,6 +109,10 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}
+
       - name: Setup env
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build --
 

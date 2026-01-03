@@ -163,13 +163,16 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      - name: Install ccache
+        if: matrix.machine == 'archlinux.acpp'
+        run: |
+          sudo pacman -Sy --noconfirm ccache
+
       - uses: hendrikmuhs/ccache-action@v1.2
-        if: matrix.machine == 'debian-generic.acpp'
         with:
           key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}
 
       - name: Configure ccache
-        if: matrix.machine == 'debian-generic.acpp'
         shell: bash
         run: |
           echo " ----- ccache configuration ----- "

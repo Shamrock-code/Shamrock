@@ -31,6 +31,7 @@ jobs:
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: omp
 
           - machine: debian-generic.acpp
             args: --backend generic
@@ -40,6 +41,7 @@ jobs:
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: generic
 
           - machine: debian-generic.acpp
             args: --backend cuda.explicit-multipass --arch sm_80
@@ -47,6 +49,7 @@ jobs:
             runson: ubuntu-latest
             imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: cuda.explicit-multipass
 
           - machine: debian-generic.acpp
             args: --backend cuda.integrated-multipass --arch sm_80
@@ -54,6 +57,7 @@ jobs:
             runson: ubuntu-latest
             imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: cuda.integrated-multipass
 
           - machine: debian-generic.acpp
             args: --backend hip --arch gfx906
@@ -61,6 +65,7 @@ jobs:
             runson: ubuntu-latest
             imagename: Ubuntu 22 LLVM 15 ROCM 5.4.3
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: hip
 
           ##########################################################################################
           # Arch Linux
@@ -73,6 +78,7 @@ jobs:
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: generic
 
           ##########################################################################################
           # MacOS
@@ -170,7 +176,8 @@ jobs:
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}
+          key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
+          verbose: 2
 
       - name: Configure ccache
         shell: bash

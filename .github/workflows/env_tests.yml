@@ -179,7 +179,7 @@ jobs:
           echo " Old configuration: "
           ccache -p
           echo " New configuration: "
-          #ccache --set-config compiler_check=content
+          ccache --set-config compiler_check=content
           ccache -p
           echo " ----- ccache configuration done ----- "
 

@@ -128,10 +128,7 @@ cfg.set_reconstruct_piecewise_constant()  # First order (diffusive but stable)
 # The x-domain is large enough that shocks don't wrap around by t=0.4
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma_eos)
-# IMPORTANT: Disable iterative smoothing length!
-# Reference implementation skips h iteration on first timestep to preserve initial h.
-# Since we set h explicitly (h = dr), we don't want shamrock to change it.
-cfg.set_sr(c_speed=c_speed, iterative_sml=False)
+cfg.set_sr(c_speed=c_speed)
 
 cfg.print_status()
 model.set_solver_config(cfg)

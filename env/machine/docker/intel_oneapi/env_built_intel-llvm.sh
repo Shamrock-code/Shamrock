@@ -1,6 +1,11 @@
 # Everything before this line will be provided by the new-env script
 
 if which ccache &> /dev/null; then
+    # to debug
+    #export CCACHE_DEBUG=1
+    #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
+
+    export CCACHE_COMPILERTYPE=clang
     export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     echo " ----- ccache found, using it ----- "
 else

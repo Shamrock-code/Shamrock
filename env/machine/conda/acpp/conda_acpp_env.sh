@@ -1,5 +1,18 @@
 # Everything before this line will be provided by the new-env script
 
+# Check if the activation failed
+if ! conda info --envs | grep -q "shamrock_dev_environment"; then
+    echo " -- Shamrock dev environment not found."
+    echo " --------- Creating environment from environment.yml... --------- "
+    conda env create -f ./environment.yml
+    echo " --------------------- Environment created ---------------------- "
+fi
+
+# Try to activate the conda environment
+echo " --------- Activating conda environment --------- "
+conda activate shamrock_dev_environment
+echo " ------------- Environment activated ------------ "
+
 if which ccache &> /dev/null; then
     # to debug
     #export CCACHE_DEBUG=1
@@ -15,18 +28,6 @@ fi
 export CMAKE_GENERATOR="Ninja"
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
-# Check if the activation failed
-if ! conda info --envs | grep -q "shamrock_dev_environment"; then
-    echo " -- Shamrock dev environment not found."
-    echo " --------- Creating environment from environment.yml... --------- "
-    conda env create -f ./environment.yml
-    echo " --------------------- Environment created ---------------------- "
-fi
-
-# Try to activate the conda environment
-echo " --------- Activating conda environment --------- "
-conda activate shamrock_dev_environment
-echo " ------------- Environment activated ------------ "
 
 #enfore the use of the correct clang++ as the installation of acpp register a buggy compiler
 export ACPP_CPU_CXX=$(which clang++)

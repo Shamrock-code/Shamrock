@@ -396,7 +396,7 @@ namespace {
         Tvec r_ab_unit    = Tvec{1, 0, 0};
 
         // Solve Riemann problem
-        auto riemann = riemann::hllc_solver<Tscal>(u_L, rho_L, P_L, u_R, rho_R, P_R, gamma);
+        auto riemann = riemann::hll_solver<Tscal>(u_L, rho_L, P_L, u_R, rho_R, P_R, gamma);
 
         // Compute forces
         Tvec dv_L  = Tvec{0, 0, 0};

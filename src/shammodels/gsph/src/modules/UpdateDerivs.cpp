@@ -413,9 +413,9 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
                     const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
                     const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                    // Use HLLC approximate Riemann solver
+                    // Use HLL approximate Riemann solver
                     // Convention: Left state = neighbor b, Right state = current a
-                    auto riemann_result = riemann::hllc_solver<Tscal>(
+                    auto riemann_result = riemann::hll_solver<Tscal>(
                         u_b_proj,
                         rho_b,
                         P_b, // Left = neighbor

@@ -173,8 +173,9 @@ namespace shammodels::gsph::riemann {
     /**
      * @brief HLL approximate Riemann solver
      *
-     * Harten-Lax-van Leer approximate solver following the reference implementation.
-     * Uses Roe-averaged wave speeds for better wave speed estimates.
+     * Harten-Lax-van Leer (1983) 2-wave approximate solver.
+     * Uses only S_L and S_R wave speeds (no contact wave S*).
+     * Note: This is HLL, not HLLC. HLLC would require the contact wave.
      *
      * @tparam Tscal Scalar type (f32 or f64)
      * @param u_L Left state velocity
@@ -187,7 +188,7 @@ namespace shammodels::gsph::riemann {
      * @return RiemannResult with p_star and v_star
      */
     template<class Tscal>
-    inline RiemannResult<Tscal> hllc_solver(
+    inline RiemannResult<Tscal> hll_solver(
         Tscal u_L, Tscal rho_L, Tscal p_L, Tscal u_R, Tscal rho_R, Tscal p_R, Tscal gamma) {
 
         RiemannResult<Tscal> result;

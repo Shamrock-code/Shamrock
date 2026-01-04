@@ -119,12 +119,15 @@ def sr_wave_curve(P, P_state, rho_state, v_state, gamma, is_left):
     if P > P_state:
         v_star, _ = sr_shock_velocity(P, P_state, rho_state, v_state, gamma, is_left)
     else:
-        v_star, _ = sr_rarefaction_velocity(P, P_state, rho_state, v_state, gamma, is_left)
+        v_star, _ = sr_rarefaction_velocity(
+            P, P_state, rho_state, v_state, gamma, is_left
+        )
     return v_star
 
 
 def sr_solve_riemann(P_L, rho_L, v_L, P_R, rho_R, v_R, gamma):
     """Solve the SR Riemann problem to find P* and v*."""
+
     def residual(P):
         v_L_star = sr_wave_curve(P, P_L, rho_L, v_L, gamma, True)
         v_R_star = sr_wave_curve(P, P_R, rho_R, v_R, gamma, False)
@@ -286,7 +289,7 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="TGauss3")
 cfg = model.gen_default_config()
-cfg.set_riemann_hllc()
+cfg.set_riemann_hll()
 cfg.set_reconstruct_piecewise_constant()
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
@@ -314,7 +317,7 @@ hfact = model.get_hfact()
 model.set_cfl_cour(0.2)
 model.set_cfl_force(0.2)
 
-t_target = 0.16
+t_target = 0.4
 print(f"Running SR-GSPH Strong Shock (TGauss3, HLL, t={t_target})...")
 model.evolve_until(t_target)
 

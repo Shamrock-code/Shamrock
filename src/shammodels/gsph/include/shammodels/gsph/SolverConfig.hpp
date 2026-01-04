@@ -155,7 +155,7 @@ struct shammodels::gsph::SolverConfig {
         riemann_config.set_iterative(tol, max_iter);
     }
 
-    inline void set_riemann_hllc() { riemann_config.set_hllc(); }
+    inline void set_riemann_hll() { riemann_config.set_hll(); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Riemann Solver Config (END)

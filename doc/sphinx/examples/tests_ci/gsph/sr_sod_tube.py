@@ -57,8 +57,11 @@ def sr_shock_velocity(P_star, P_a, rho_a, v_a, gamma, is_left):
 
     term = j**2 + N_a**2 * (1.0 - v_a**2)
     denom_Vs = N_a**2 + j**2
-    V_s = (N_a**2 * v_a - j * np.sqrt(term)) / denom_Vs if is_left else (
-        N_a**2 * v_a + j * np.sqrt(term)) / denom_Vs
+    V_s = (
+        (N_a**2 * v_a - j * np.sqrt(term)) / denom_Vs
+        if is_left
+        else (N_a**2 * v_a + j * np.sqrt(term)) / denom_Vs
+    )
 
     gamma_s = 1.0 / np.sqrt(max(1.0 - V_s**2, 1e-10))
     j_signed = -j if is_left else j
@@ -103,12 +106,15 @@ def sr_wave_curve(P, P_state, rho_state, v_state, gamma, is_left):
     if P > P_state:
         v_star, _ = sr_shock_velocity(P, P_state, rho_state, v_state, gamma, is_left)
     else:
-        v_star, _ = sr_rarefaction_velocity(P, P_state, rho_state, v_state, gamma, is_left)
+        v_star, _ = sr_rarefaction_velocity(
+            P, P_state, rho_state, v_state, gamma, is_left
+        )
     return v_star
 
 
 def sr_solve_riemann(P_L, rho_L, v_L, P_R, rho_R, v_R, gamma):
     """Solve the SR Riemann problem using Brent's method."""
+
     def residual(P):
         v_L_star = sr_wave_curve(P, P_L, rho_L, v_L, gamma, True)
         v_R_star = sr_wave_curve(P, P_R, rho_R, v_R, gamma, False)
@@ -144,7 +150,9 @@ def sr_sample_solution(x, t, x0, P_L, rho_L, v_L, P_R, rho_R, v_R, gamma, star_s
 
     xi = (x - x0) / t
     h_L, h_R = sr_enthalpy(P_L, rho_L, gamma), sr_enthalpy(P_R, rho_R, gamma)
-    cs_L, cs_R = sr_sound_speed(P_L, rho_L, h_L, gamma), sr_sound_speed(P_R, rho_R, h_R, gamma)
+    cs_L, cs_R = sr_sound_speed(P_L, rho_L, h_L, gamma), sr_sound_speed(
+        P_R, rho_R, h_R, gamma
+    )
     h_L_star = sr_enthalpy(P_star, rho_L_star, gamma)
     cs_L_star = sr_sound_speed(P_star, rho_L_star, h_L_star, gamma)
 
@@ -155,7 +163,9 @@ def sr_sample_solution(x, t, x0, P_L, rho_L, v_L, P_R, rho_R, v_R, gamma, star_s
         j2 = -(P_star - P_L) / (h_L_star / rho_L_star - h_L / rho_L)
         j = np.sqrt(max(j2, 0))
         term = j**2 + N_L**2 * (1.0 - v_L**2)
-        lambda_L_head = lambda_L_tail = (N_L**2 * v_L - j * np.sqrt(term)) / (N_L**2 + j**2)
+        lambda_L_head = lambda_L_tail = (N_L**2 * v_L - j * np.sqrt(term)) / (
+            N_L**2 + j**2
+        )
     else:
         lambda_L_head = sr_characteristic_speed(v_L, cs_L, -1)
         lambda_L_tail = sr_characteristic_speed(v_star, cs_L_star, -1)
@@ -169,7 +179,9 @@ def sr_sample_solution(x, t, x0, P_L, rho_L, v_L, P_R, rho_R, v_R, gamma, star_s
         j2 = -(P_star - P_R) / (h_R_star / rho_R_star - h_R / rho_R)
         j = np.sqrt(max(j2, 0))
         term = j**2 + N_R**2 * (1.0 - v_R**2)
-        lambda_R_head = lambda_R_tail = (N_R**2 * v_R + j * np.sqrt(term)) / (N_R**2 + j**2)
+        lambda_R_head = lambda_R_tail = (N_R**2 * v_R + j * np.sqrt(term)) / (
+            N_R**2 + j**2
+        )
     else:
         lambda_R_head = sr_characteristic_speed(v_star, cs_R_star, +1)
         lambda_R_tail = sr_characteristic_speed(v_R, cs_R, +1)
@@ -204,7 +216,7 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="TGauss3")
 cfg = model.gen_default_config()
-cfg.set_riemann_hllc()
+cfg.set_riemann_hll()
 cfg.set_reconstruct_piecewise_constant()
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
@@ -231,7 +243,7 @@ hfact = model.get_hfact()
 model.set_cfl_cour(0.3)
 model.set_cfl_force(0.3)
 
-t_target = 0.35
+t_target = 0.4
 print(f"SR-GSPH Sod Shock Tube Test (TGauss3, t={t_target})")
 model.evolve_until(t_target)
 
@@ -249,7 +261,9 @@ P_sim = (gamma - 1) * rho_sim * uint_data
 x, vx, vy, vz = points[:, 0], velocities[:, 0], velocities[:, 1], velocities[:, 2]
 
 # Compute exact solution
-P_star, v_star, rho_L_star, rho_R_star = sr_solve_riemann(P_L, n_L, 0.0, P_R, n_R, 0.0, gamma)
+P_star, v_star, rho_L_star, rho_R_star = sr_solve_riemann(
+    P_L, n_L, 0.0, P_R, n_R, 0.0, gamma
+)
 star_state = (P_star, v_star, rho_L_star, rho_R_star)
 
 # Sample exact solution at particle positions
@@ -258,9 +272,30 @@ mask = (x >= x_min) & (x <= x_max)
 x_f, rho_f, vx_f, P_f = x[mask], rho_sim[mask], vx[mask], P_sim[mask]
 vy_f, vz_f = vy[mask], vz[mask]
 
-rho_ana = np.array([sr_sample_solution(xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state)[0] for xi in x_f])
-vx_ana = np.array([sr_sample_solution(xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state)[1] for xi in x_f])
-P_ana = np.array([sr_sample_solution(xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state)[2] for xi in x_f])
+rho_ana = np.array(
+    [
+        sr_sample_solution(
+            xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state
+        )[0]
+        for xi in x_f
+    ]
+)
+vx_ana = np.array(
+    [
+        sr_sample_solution(
+            xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state
+        )[1]
+        for xi in x_f
+    ]
+)
+P_ana = np.array(
+    [
+        sr_sample_solution(
+            xi, t_target, 0.0, P_L, n_L, 0.0, P_R, n_R, 0.0, gamma, star_state
+        )[2]
+        for xi in x_f
+    ]
+)
 
 # Compute L2 errors
 err_rho = np.sqrt(np.mean((rho_f - rho_ana) ** 2)) / np.mean(rho_ana)
@@ -269,16 +304,18 @@ err_vy = np.sqrt(np.mean(vy_f**2))
 err_vz = np.sqrt(np.mean(vz_f**2))
 err_P = np.sqrt(np.mean((P_f - P_ana) ** 2)) / np.mean(P_ana)
 
-print(f"L2 errors: rho={err_rho:.6e}, vx={err_vx:.6e}, vy={err_vy:.6e}, vz={err_vz:.6e}, P={err_P:.6e}")
+print(
+    f"L2 errors: rho={err_rho:.6e}, vx={err_vx:.6e}, vy={err_vy:.6e}, vz={err_vz:.6e}, P={err_P:.6e}"
+)
 
 # =============================================================================
 # Regression test with strict tolerances
 # =============================================================================
-expect_rho = 0.07809276428847693
-expect_vx = 0.2612706508406261
-expect_vy = 0.006372838006455638
-expect_vz = 3.074476756310515e-05
-expect_P = 0.11168691133096803
+expect_rho = 0.2331247
+expect_vx = 0.4112091
+expect_vy = 0.001167533
+expect_vz = 8.164793e-05
+expect_P = 0.3264808
 tol = 1e-8
 
 test_pass = True

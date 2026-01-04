@@ -74,15 +74,16 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         Maximum number of iterations (default: 20)
 )==")
         .def(
-            "set_riemann_hllc",
+            "set_riemann_hll",
             [](TConfig &self) {
-                self.set_riemann_hllc();
+                self.set_riemann_hll();
             },
             R"==(
-    Set HLLC approximate Riemann solver.
+    Set HLL approximate Riemann solver.
 
-    Fast approximate Riemann solver that captures contact discontinuities.
-    Recommended for general use - good balance of accuracy and speed.
+    Harten-Lax-van Leer (1983) 2-wave approximate Riemann solver.
+    Uses only S_L and S_R wave speeds (no contact wave S*).
+    Fast and robust for shock problems.
 )==")
         // Reconstruction config
         .def(

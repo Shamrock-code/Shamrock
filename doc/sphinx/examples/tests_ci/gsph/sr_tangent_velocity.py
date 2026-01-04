@@ -33,7 +33,7 @@ vx_L, vx_R = 0.0, 0.0
 vt_L, vt_R = 0.9, 0.9
 
 N_per_side = 400
-t_target = 0.1
+t_target = 0.4
 
 
 def compute_lorentz_factor(vx, vt, c=1.0):
@@ -81,7 +81,7 @@ ctx.pdata_layout_new()
 model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="TGauss3")
 cfg = model.gen_default_config()
 
-cfg.set_riemann_hllc()
+cfg.set_riemann_hll()
 cfg.set_reconstruct_piecewise_constant()
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma_eos)
@@ -102,11 +102,17 @@ model.add_cube_hcp_3d(dr, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 model.set_field_in_box("uint", "f64", u_L, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
 model.set_field_in_box("uint", "f64", u_R, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
-model.set_field_in_box("vxyz", "f64_3", (vx_L, vt_L, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
-model.set_field_in_box("vxyz", "f64_3", (vx_R, vt_R, 0.0), (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
+model.set_field_in_box(
+    "vxyz", "f64_3", (vx_L, vt_L, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2)
+)
+model.set_field_in_box(
+    "vxyz", "f64_3", (vx_R, vt_R, 0.0), (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2)
+)
 
 h_init = dr
-model.set_field_in_box("hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
+model.set_field_in_box(
+    "hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2)
+)
 
 vol_total = 2 * xs * ys * zs
 totmass = gamma_L * n_L * vol_total

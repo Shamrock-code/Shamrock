@@ -88,24 +88,28 @@ jobs:
             imagename: MacOS-14
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos14
 
           - machine: macos-generic.acpp
             runson: macos-15
             imagename: MacOS-15
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos15
 
           - machine: macos-generic.acpp
             runson: macos-15-intel
             imagename: MacOS-15 (intel)
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos15-intel
 
           - machine: macos-generic.acpp
             runson: macos-26
             imagename: MacOS-26
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos26
 
     timeout-minutes: 120
     steps:
@@ -176,7 +180,7 @@ jobs:
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
-          key: ${{ github.job }}-${{matrix.container}}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
+          key: ${{ github.job }}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
           verbose: 2
 
       - name: Configure ccache

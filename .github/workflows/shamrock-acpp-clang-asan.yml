@@ -68,6 +68,23 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
+      
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-asan-acpp
+          verbose: 2
+
+      - name: Configure ccache
+        shell: bash
+        run: |
+          echo " ----- ccache configuration ----- "
+          echo " Old configuration: "
+          ccache -p
+          echo " ----- New configuration:   ----- "
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -p
+          echo " ----- ccache configuration done ----- "
+
 
       - name: configure Shamrock
         run: |

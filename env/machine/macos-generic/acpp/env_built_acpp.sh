@@ -31,9 +31,6 @@ echo "All required packages are installed."
 ACPP_ROOT=`brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//"`
 echo " ------------- Environment activated ------------- "
 
-export CCACHE_DEBUG=1
-export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
-
 function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \

@@ -52,8 +52,8 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
     // Standard Newtonian GSPH
     if (Iterative *v = std::get_if<Iterative>(&cfg_riemann.config)) {
         update_derivs_iterative(*v);
-    } else if (HLLC *v = std::get_if<HLLC>(&cfg_riemann.config)) {
-        update_derivs_hllc(*v);
+    } else if (HLL *v = std::get_if<HLL>(&cfg_riemann.config)) {
+        update_derivs_hll(*v);
     } else {
         shambase::throw_unimplemented("Riemann solver type not supported by UpdateDerivs");
     }
@@ -278,7 +278,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hllc(HLLC cfg) {
+void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll(HLL cfg) {
 
     StackEntry stack_loc{};
 
@@ -363,7 +363,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs HLLC", [=](u64 gid) {
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs HLL", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
                 using namespace shamrock::sph;

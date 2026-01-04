@@ -77,7 +77,7 @@ namespace shammodels::gsph::modules {
 
         using Cfg_Riemann = typename Config::RiemannConfig;
         using Iterative   = typename Cfg_Riemann::Iterative;
-        using HLLC        = typename Cfg_Riemann::HLLC;
+        using HLL         = typename Cfg_Riemann::HLL;
 
         /**
          * @brief Update derivatives using iterative Riemann solver (van Leer 1997)
@@ -85,9 +85,9 @@ namespace shammodels::gsph::modules {
         void update_derivs_iterative(Iterative cfg);
 
         /**
-         * @brief Update derivatives using HLLC approximate Riemann solver
+         * @brief Update derivatives using HLL approximate Riemann solver
          */
-        void update_derivs_hllc(HLLC cfg);
+        void update_derivs_hll(HLL cfg);
 
         /**
          * @brief Update derivatives using SR-GSPH (Special Relativistic)

@@ -450,6 +450,8 @@ Register_pymod(pygsphmodel) {
         mgsph, "GSPHModel_f64_3_C4_SolverConfig", "GSPHModel_f64_3_C4");
     add_gsph_instance<f64_3, shammath::C6>(
         mgsph, "GSPHModel_f64_3_C6_SolverConfig", "GSPHModel_f64_3_C6");
+    add_gsph_instance<f64_3, shammath::TGauss3>(
+        mgsph, "GSPHModel_f64_3_TGauss3_SolverConfig", "GSPHModel_f64_3_TGauss3");
 
     using VariantGSPHModelBind = std::variant<
         std::unique_ptr<Model<f64_3, shammath::M4>>,
@@ -457,7 +459,8 @@ Register_pymod(pygsphmodel) {
         std::unique_ptr<Model<f64_3, shammath::M8>>,
         std::unique_ptr<Model<f64_3, shammath::C2>>,
         std::unique_ptr<Model<f64_3, shammath::C4>>,
-        std::unique_ptr<Model<f64_3, shammath::C6>>>;
+        std::unique_ptr<Model<f64_3, shammath::C6>>,
+        std::unique_ptr<Model<f64_3, shammath::TGauss3>>>;
 
     m.def(
         "get_Model_GSPH",
@@ -476,6 +479,8 @@ Register_pymod(pygsphmodel) {
                 ret = std::make_unique<Model<f64_3, shammath::C4>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "C6") {
                 ret = std::make_unique<Model<f64_3, shammath::C6>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "TGauss3") {
+                ret = std::make_unique<Model<f64_3, shammath::TGauss3>>(ctx);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");

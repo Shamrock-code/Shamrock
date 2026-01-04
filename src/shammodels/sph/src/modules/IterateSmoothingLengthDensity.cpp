@@ -170,3 +170,6 @@ template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, sh
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C2<f64>>;
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C4<f64>>;
 template class shammodels::sph::modules::IterateSmoothingLengthDensity<f64_3, shammath::C6<f64>>;
+
+template class shammodels::sph::modules::
+    IterateSmoothingLengthDensity<f64_3, shammath::TGauss3<f64>>;

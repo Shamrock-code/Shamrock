@@ -1461,6 +1461,35 @@ namespace shammath::details {
         }
     };
 
+    /**
+     * @brief Truncated Gaussian kernel with support R=3h
+     *
+     * W(q) = exp(-q^2) for q < 3, 0 otherwise
+     */
+    template<class Tscal>
+    class KernelDefTGauss3 {
+        public:
+        inline static constexpr Tscal Rkern   = 3;
+        inline static constexpr Tscal hfactd  = 1.5;
+        inline static constexpr Tscal norm_1d = 0.5641895835477563;
+        inline static constexpr Tscal norm_2d
+            = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765902);
+        inline static constexpr Tscal norm_3d = 0.17958712212516656;
+
+        inline static Tscal f(Tscal q) { return (q < Tscal{3}) ? sycl::exp(-q * q) : Tscal{0}; }
+
+        inline static Tscal df(Tscal q) {
+            return (q < Tscal{3}) ? -Tscal{2} * q * sycl::exp(-q * q) : Tscal{0};
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < Tscal{3}) {
+                return (Tscal{4} * q * q - Tscal{2}) * sycl::exp(-q * q);
+            }
+            return Tscal{0};
+        }
+    };
+
     template<class Tscal>
     class KernelDefM4DoubleHump {
         public:
@@ -2332,6 +2361,12 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
     /**
+     * @brief Truncated Gaussian kernel (R=3h)
+     */
+    template<class flt_type>
+    using TGauss3 = SPHKernelGen<flt_type, details::KernelDefTGauss3<flt_type>>;
+
+    /**
      * @brief The M4DoubleHump SPH kernel
      * \todo add graph
      *
@@ -2447,6 +2482,11 @@ namespace shambase {
     template<class flt_type>
     struct TypeNameInfo<shammath::C6<flt_type>> {
         inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::TGauss3<flt_type>> {
+        inline static const std::string name = "TGauss3<" + get_type_name<flt_type>() + ">";
     };
 
     template<class flt_type>

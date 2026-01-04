@@ -708,3 +708,6 @@ template class shammodels::gsph::modules::UpdateDerivs<f64_3, M8>;
 template class shammodels::gsph::modules::UpdateDerivs<f64_3, C2>;
 template class shammodels::gsph::modules::UpdateDerivs<f64_3, C4>;
 template class shammodels::gsph::modules::UpdateDerivs<f64_3, C6>;
+
+// Truncated Gaussian kernel (TGauss3) - for SR-GSPH
+template class shammodels::gsph::modules::UpdateDerivs<f64_3, TGauss3>;

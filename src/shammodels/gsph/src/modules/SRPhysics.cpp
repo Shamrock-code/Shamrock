@@ -13,10 +13,9 @@
  * @brief Implementation of SR-GSPH physics module
  */
 
-#include "shammodels/gsph/modules/SRPhysics.hpp"
-
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shammodels/gsph/modules/SRPhysics.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
@@ -82,8 +81,10 @@ namespace shammodels::gsph::modules {
 
         shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
         shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
-        shamrock::solvergraph::Field<Tscal> &density_field  = shambase::get_check_ref(storage.density);
-        shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
+        shamrock::solvergraph::Field<Tscal> &density_field
+            = shambase::get_check_ref(storage.density);
+        shamrock::solvergraph::Field<Tscal> &pressure_field
+            = shambase::get_check_ref(storage.pressure);
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 cnt = pdat.get_obj_cnt();
@@ -104,7 +105,12 @@ namespace shammodels::gsph::modules {
                 sham::MultiRef{buf_S, buf_e},
                 cnt,
                 [c_speed, gamma_eos, pmass](
-                    u32 i, const Tvec *vxyz, const Tscal *rho_sph, const Tscal *P, Tvec *S, Tscal *e) {
+                    u32 i,
+                    const Tvec *vxyz,
+                    const Tscal *rho_sph,
+                    const Tscal *P,
+                    Tvec *S,
+                    Tscal *e) {
                     const Tscal c2 = c_speed * c_speed;
 
                     const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
@@ -125,7 +131,8 @@ namespace shammodels::gsph::modules {
         storage.sr_initialized = true;
 
         if (shamcomm::world_rank() == 0) {
-            shamcomm::logs::raw_ln("SR-GSPH: Initialized conserved variables (S, e) from primitives");
+            shamcomm::logs::raw_ln(
+                "SR-GSPH: Initialized conserved variables (S, e) from primitives");
         }
     }
 
@@ -143,11 +150,12 @@ namespace shammodels::gsph::modules {
         const Tscal c_speed   = solver_config.sr_config.get_c_speed();
         const Tscal gamma_eos = solver_config.get_eos_gamma();
 
-        shamrock::solvergraph::Field<Tvec> &S_field   = shambase::get_check_ref(storage.S_momentum);
-        shamrock::solvergraph::Field<Tscal> &e_field  = shambase::get_check_ref(storage.e_energy);
-        shamrock::solvergraph::Field<Tvec> &dS_field  = shambase::get_check_ref(storage.dS_momentum);
+        shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
+        shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
+        shamrock::solvergraph::Field<Tvec> &dS_field = shambase::get_check_ref(storage.dS_momentum);
         shamrock::solvergraph::Field<Tscal> &de_field = shambase::get_check_ref(storage.de_energy);
-        shamrock::solvergraph::Field<Tscal> &density_field = shambase::get_check_ref(storage.density);
+        shamrock::solvergraph::Field<Tscal> &density_field
+            = shambase::get_check_ref(storage.density);
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 cnt = pdat.get_obj_cnt();
@@ -189,7 +197,9 @@ namespace shammodels::gsph::modules {
                 sham::MultiRef{vxyz_field.get_buf()},
                 sham::MultiRef{xyz_field.get_buf()},
                 cnt,
-                [dt](u32 i, const Tvec *vxyz, Tvec *xyz) { xyz[i] += vxyz[i] * dt; });
+                [dt](u32 i, const Tvec *vxyz, Tvec *xyz) {
+                    xyz[i] += vxyz[i] * dt;
+                });
         });
     }
 
@@ -201,9 +211,9 @@ namespace shammodels::gsph::modules {
 
         const Tscal half_dt = dt / Tscal{2};
 
-        shamrock::solvergraph::Field<Tvec> &S_field   = shambase::get_check_ref(storage.S_momentum);
-        shamrock::solvergraph::Field<Tscal> &e_field  = shambase::get_check_ref(storage.e_energy);
-        shamrock::solvergraph::Field<Tvec> &dS_field  = shambase::get_check_ref(storage.dS_momentum);
+        shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
+        shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
+        shamrock::solvergraph::Field<Tvec> &dS_field = shambase::get_check_ref(storage.dS_momentum);
         shamrock::solvergraph::Field<Tscal> &de_field = shambase::get_check_ref(storage.de_energy);
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -250,8 +260,10 @@ namespace shammodels::gsph::modules {
 
         shamrock::solvergraph::Field<Tvec> &S_field  = shambase::get_check_ref(storage.S_momentum);
         shamrock::solvergraph::Field<Tscal> &e_field = shambase::get_check_ref(storage.e_energy);
-        shamrock::solvergraph::Field<Tscal> &density_field  = shambase::get_check_ref(storage.density);
-        shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
+        shamrock::solvergraph::Field<Tscal> &density_field
+            = shambase::get_check_ref(storage.density);
+        shamrock::solvergraph::Field<Tscal> &pressure_field
+            = shambase::get_check_ref(storage.pressure);
 
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 cnt = pdat.get_obj_cnt();
@@ -332,5 +344,6 @@ namespace shammodels::gsph::modules {
     template class SRPhysics<sycl::vec<double, 3>, C2>;
     template class SRPhysics<sycl::vec<double, 3>, C4>;
     template class SRPhysics<sycl::vec<double, 3>, C6>;
+    template class SRPhysics<sycl::vec<double, 3>, TGauss3>;
 
 } // namespace shammodels::gsph::modules

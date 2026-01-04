@@ -641,11 +641,13 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
                         v_x_star,
                         v_t_star);
 
-                    // Kernel gradients (pointing from b to a, i.e., along dr)
-                    const Tscal dW_a    = Kernel::dW_3d(rab, h_a);
-                    const Tscal dW_b    = Kernel::dW_3d(rab, h_b);
-                    const Tvec grad_W_a = n_ij * dW_a;
-                    const Tvec grad_W_b = n_ij * dW_b;
+                    // Kernel gradients with √2h (Kitajima Eq. 24, GSPH convolution)
+                    // The √2 factor arises from the convolution integral in GSPH
+                    constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
+                    const Tscal dW_a      = Kernel::dW_3d(rab, sqrt2 * h_a);
+                    const Tscal dW_b      = Kernel::dW_3d(rab, sqrt2 * h_b);
+                    const Tvec grad_W_a   = n_ij * dW_a;
+                    const Tvec grad_W_b   = n_ij * dW_b;
 
                     // SR force computation (Kitajima Eq. 58-59)
                     // dS/dt = -P* V²ij (∇W_i + ∇W_j)

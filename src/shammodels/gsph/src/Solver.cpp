@@ -1088,6 +1088,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
     const bool has_uint = solver_config.has_field_uint();
+    const bool is_sr    = solver_config.is_sr_enabled();
+    const Tscal c_speed = is_sr ? solver_config.sr_config.get_c_speed() : Tscal{1};
+    const Tscal c2      = c_speed * c_speed;
 
     // Get ghost layout field indices
     shamrock::patch::PatchDataLayerLayout &ghost_layout
@@ -1139,19 +1142,26 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                 rho       = sycl::max(rho, Tscal(1e-30));
 
                 if (has_uint && uint_ptr != nullptr) {
-                    // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
-                    // P = (γ - 1) * ρ * u
+                    // Adiabatic EOS: P = (γ - 1) * ρ * u
                     Tscal u = uint_ptr[i];
                     u       = sycl::max(u, Tscal(1e-30));
                     Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
-                    // Sound speed from internal energy (reference: solver.cpp line 2661)
-                    // c = sqrt(γ * (γ - 1) * u)
-                    Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
+                    Tscal cs;
+                    if (is_sr) {
+                        // Relativistic sound speed: cs² = (γ-1)(H-1)/H
+                        // where H = 1 + u/c² + P/(ρc²) is the specific enthalpy
+                        const Tscal H   = Tscal{1} + u / c2 + P / (rho * c2);
+                        const Tscal cs2 = (gamma - Tscal{1}) * (H - Tscal{1}) / H;
+                        cs              = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
+                    } else {
+                        // Newtonian sound speed: c = sqrt(γ * (γ - 1) * u)
+                        cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
+                    }
 
                     // Clamp to reasonable values
                     P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                    cs = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
+                    cs = sycl::clamp(cs, Tscal(1e-10), c_speed); // cs ≤ c for SR
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;

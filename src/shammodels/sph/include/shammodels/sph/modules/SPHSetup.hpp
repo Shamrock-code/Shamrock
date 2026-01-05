@@ -49,7 +49,20 @@ namespace shammodels::sph::modules {
             bool part_reordering,
             std::optional<u32> insert_step = std::nullopt);
 
+        void apply_setup_new(
+            SetupNodePtr setup,
+            bool part_reordering,
+            std::optional<u32> gen_count_per_step               = std::nullopt,
+            std::optional<u32> insert_count_per_step            = std::nullopt,
+            std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
+            std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,
+            std::optional<u64> max_msg_size                     = std::nullopt,
+            bool do_setup_log                                   = false);
+
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
+            Tscal dr, std::pair<Tvec, Tvec> box);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
             Tscal dr, std::pair<Tvec, Tvec> box);
 
         std::shared_ptr<ISPHSetupNode> make_generator_disc_mc(

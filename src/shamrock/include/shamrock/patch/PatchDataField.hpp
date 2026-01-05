@@ -11,6 +11,7 @@
 
 /**
  * @file PatchDataField.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -281,14 +282,14 @@ class PatchDataField {
      * @return std::vector<u32>
      */
     template<class Lambdacd, class... Args>
-    inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args... args) {
+    inline std::vector<u32> get_ids_vec_where(Lambdacd &&cd_true, Args &&...args) {
         StackEntry stack_loc{};
         std::vector<u32> idx_cd{};
         if (get_obj_cnt() > 0) {
             auto acc = buf.copy_to_stdvec();
 
             for (u32 i = 0; i < get_obj_cnt(); i++) {
-                if (cd_true(acc, i * nvar, args...)) {
+                if (std::forward<Lambdacd>(cd_true)(acc, i * nvar, std::forward<Args>(args)...)) {
                     idx_cd.push_back(i);
                 }
             }
@@ -337,6 +338,34 @@ class PatchDataField {
                 shamsys::instance::get_compute_queue(), mask, get_obj_cnt());
         } else {
             return {std::nullopt, 0};
+        }
+    }
+
+    template<class Lambdacd, class... Args>
+    inline sham::DeviceBuffer<u32> get_ids_where_recycle_buffer(
+        sham::DeviceBuffer<u32> &mask, Lambdacd &&cd_true, Args... args) const {
+        StackEntry stack_loc{};
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto obj_cnt = get_obj_cnt();
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            mask.resize(obj_cnt);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
         }
     }
 
@@ -406,6 +435,7 @@ class PatchDataField {
     void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "");
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
+    void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to);
 
     bool check_field_match(PatchDataField<T> &f2);
 

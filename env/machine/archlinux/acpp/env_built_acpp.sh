@@ -1,13 +1,23 @@
 # Everything before this line will be provided by the new-env script
 
+if which ccache &> /dev/null; then
+    # to debug
+    #export CCACHE_DEBUG=1
+    #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
 
+    export CCACHE_COMPILERTYPE=clang
+    export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    echo " ----- ccache found, using it ----- "
+else
+    export CCACHE_CMAKE_ARG=""
+fi
 
 # Arch linux check required packages
 echo " ---------- Activating sham environment ---------- "
 echo "Checking required packages..."
 
-local missing_packages=()
-local all_packages=(
+missing_packages=()
+all_packages=(
     "base-devel"
     "git"
     "python"
@@ -52,6 +62,7 @@ export LLVM_INSTALL_DIR=/usr/lib/llvm19
 function setupcompiler {
     clone_acpp || return
     cmake -S ${ACPP_GIT_DIR} -B ${ACPP_BUILD_DIR} \
+        ${CCACHE_CMAKE_ARG} \
         -DCMAKE_INSTALL_PREFIX=${ACPP_INSTALL_DIR} \
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
@@ -71,6 +82,7 @@ function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
+        ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \

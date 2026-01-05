@@ -165,14 +165,38 @@ namespace shamphys {
         T soundspeed;
     };
 
+    /**
+     * @brief Fermi Gas EoS
+     *
+     * mu_e is the mean molecular weight
+     *
+     * Sound speed:
+     * \f[
+     * c_s =
+     * \sqrt{\frac{8\alpha\beta}{3\mu_e^{\frac13}\rho^{\frac23}}\frac{\tilde{p}_F^4}{\sqrt{1+\tilde{p}_F^2}}}
+     * \f] where:
+     * \f[
+     * \begin{cases}
+     * \tilde{p}_F &= \frac{1}{\mu_e^{\frac13}}\alpha \rho^{1/3} \\
+     * \alpha &= \frac{1}{\me c}h\left(\frac{3}{8\pi m_{\mathrm{p}}}\right)^{\frac13} \\
+     * \beta &= \frac{\pi m_\mathrm{e}^4c^5}{3h^3}
+     * \end{cases}
+     * \f]
+     *
+     * Pressure:
+     * \f[
+     * P =  \beta
+     * \left(\left[\tilde{p}_F\sqrt{\tilde{p}_F^2+1}(2\tilde{p}_F^2-3)+3\mathop{arcsinh}(\tilde{p}_F)\right]
+     * \f]
+     */
     template<class T>
     struct EOS_Fermi {
 
         static constexpr PressureAndCs<T> pressure_and_soundspeed(T mu_e, T rho) {
-            // rho has to be SI !!!!
+            // rho has to be SI !
 
             constexpr T ALPHA
-                = 0.10064082802851738e-2;            //(3/(8pi))**(1./3) * h / (mp^(1/3) m_e c) SI
+                = 0.10064082802851738e-2; // = (3/(8pi))**(1./3) * h / (mp^(1/3) m_e c) SI
             constexpr T BETA = 6002.332181706928e18; // = (pi/3) * m_e^4c^5/h^3 SI
 
             //\tilde p_F = Fermi momentum divided by m_e*c

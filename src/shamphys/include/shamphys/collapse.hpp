@@ -12,7 +12,7 @@
 /**
  * @file collapse.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Functions for gravitational collapse calculations.
  */
 
 #include "shambackends/math.hpp"

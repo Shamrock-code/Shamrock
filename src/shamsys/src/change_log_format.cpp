@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/stacktrace.hpp"
 #include "shambase/term_colors.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
@@ -187,6 +188,73 @@ namespace logformatter {
     }
 
     /**
+     * @brief Log formatter for style 3, full details + time
+     * @brief Log formatter for style 4, full details + time
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style4_formatter_full(const logger::ReformatArgs &args) {
+
+        u32 tty_width = shamcmdopt::get_tty_columns();
+
+        std::string ansi_reset = shambase::term_colors::reset();
+        std::string ansi_faint = shambase::term_colors::faint();
+
+        std::string lineend = shambase::format(
+            "{5:} [{3:}][rank={6:}][{7:.2f}s]{2:}",
+            args.color,
+            args.level_name,
+            ansi_reset,
+            args.module_name,
+            args.content,
+            ansi_faint,
+            shamcomm::world_rank(),
+            shambase::details::get_wtime());
+
+        std::string log = shambase::format(
+            "{0:}{1:}{2:}: {4:}",
+            args.color,
+            args.level_name,
+            ansi_reset,
+            args.module_name,
+            args.content,
+            ansi_faint,
+            shamcomm::world_rank());
+
+        std::string log_line1, log_line2;
+        size_t first_nl = log.find_first_of('\n');
+        if (first_nl != std::string::npos) {
+            log_line1 = log.substr(0, first_nl);
+            log_line2 = log.substr(first_nl);
+        } else {
+            log_line1 = log;
+            log_line2 = "";
+        }
+
+        u32 ansi_count = ansi_reset.size() * 2 + ansi_faint.size() + args.color.size();
+
+        return shambase::format("{:<{}}", log_line1, tty_width - lineend.size() + ansi_count - 1)
+               + lineend + log_line2;
+    }
+
+    /**
+     * @brief Log formatter for style 3, simple details + time
+     * @brief Log formatter for style 4, simple details
+     * @param args The arguments for the log formatter
+     * @return std::string The formatted log
+     */
+    std::string style4_formatter_simple(const logger::ReformatArgs &args) {
+        return shambase::format(
+            "{5:}{3:}{2:}: {4:}",
+            args.color,
+            args.level_name,
+            shambase::term_colors::reset(),
+            args.module_name,
+            args.content,
+            shambase::term_colors::bold());
+    }
+
+    /**
      * @brief The callback called when an exception is thrown
      *
      * This callback is called with the formatted exception message as argument.
@@ -201,7 +269,7 @@ namespace logformatter {
 } // namespace logformatter
 
 std::string SHAMLOGFORMATTER = shamcmdopt::getenv_str_default_register(
-    "SHAMLOGFORMATTER", "3", "Change the log formatter (values :0-3) [default: 3]");
+    "SHAMLOGFORMATTER", "3", "Change the log formatter (values :0-4) [default: 3]");
 
 std::string SHAMLOG_ERR_ON_EXCEPT = shamcmdopt::getenv_str_default_register(
     "SHAMLOG_ERR_ON_EXCEPT", "1", "Enable logging of exceptions (default to 1)");
@@ -224,6 +292,9 @@ namespace shamsys {
         } else if (SHAMLOGFORMATTER == "3") {
             logger::change_formaters(
                 logformatter::style3_formatter_full, logformatter::style3_formatter_simple);
+        } else if (SHAMLOGFORMATTER == "4") {
+            logger::change_formaters(
+                logformatter::style4_formatter_full, logformatter::style4_formatter_simple);
         } else {
             logger::err_ln("Log", "Unknown formatter");
             shambase::throw_unimplemented("Unknown formatter");

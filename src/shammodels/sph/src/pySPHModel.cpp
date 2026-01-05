@@ -183,6 +183,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("opening_angle"),
             py::arg("reduction_level") = 3)
         .def(
+            "set_self_gravity_fmm",
+            [](TConfig &self, u32 order, f64 opening_angle, u32 reduction_level) {
+                self.self_grav_config.set_fmm(order, opening_angle, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
             "set_softening_plummer",
             [](TConfig &self, f64 epsilon) {
                 self.self_grav_config.set_softening_plummer(epsilon);
@@ -314,6 +323,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_generator_lattice_cubic",
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
+                return self.make_generator_lattice_cubic(dr, {box_min, box_max});
+            })
+        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
@@ -413,13 +427,62 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr setup,
                bool part_reordering,
-               std::optional<u32> insert_step) {
-                return self.apply_setup(setup, part_reordering, insert_step);
+               std::optional<u32> gen_step,
+               std::optional<u32> insert_step,
+               std::optional<u64> msg_count_limit,
+               std::optional<u64> msg_size_limit,
+               std::optional<u64> max_msg_size,
+               bool do_setup_log,
+               bool use_new_setup) {
+                if (use_new_setup) {
+                    return self.apply_setup_new(
+                        setup,
+                        part_reordering,
+                        gen_step,
+                        insert_step,
+                        msg_count_limit,
+                        msg_size_limit,
+                        max_msg_size,
+                        do_setup_log);
+                } else {
+                    if (bool(gen_step)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "gen_step is ignored when using old setup"));
+                    }
+                    if (bool(msg_count_limit)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "msg_count_limit is ignored when using old setup"));
+                    }
+                    if (bool(msg_size_limit)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "msg_size_limit is ignored when using old setup"));
+                    }
+                    if (bool(max_msg_size)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "max_msg_size is ignored when using old setup"));
+                    }
+                    if (bool(do_setup_log)) {
+                        ON_RANK_0(
+                            logger::warn_ln(
+                                "SPHSetup", "do_setup_log is ignored when using old setup"));
+                    }
+                    return self.apply_setup(setup, part_reordering, insert_step);
+                }
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering") = true,
-            py::arg("insert_step")     = std::nullopt);
+            py::arg("part_reordering")      = true,
+            py::arg("gen_step")             = std::nullopt,
+            py::arg("insert_step")          = std::nullopt,
+            py::arg("msg_count_limit")      = std::nullopt,
+            py::arg("rank_comm_size_limit") = std::nullopt,
+            py::arg("max_msg_size")         = std::nullopt,
+            py::arg("do_setup_log")         = false,
+            py::arg("use_new_setup")        = true);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -449,6 +512,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("get_particle_mass", &T::get_particle_mass)
         .def("rho_h", &T::rho_h)
         .def("get_hfact", &T::get_hfact)
+        .def(
+            "get_solver_tex",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
+            })
+        .def(
+            "get_solver_dot_graph",
+            [](T &self) {
+                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
+            })
         .def(
             "get_box_dim_fcc_3d",
             [](T &self, f64 dr, u32 xcnt, u32 ycnt, u32 zcnt) {

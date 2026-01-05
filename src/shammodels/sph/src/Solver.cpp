@@ -33,6 +33,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/ForwardEuler.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
@@ -63,6 +64,7 @@
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGFMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
@@ -79,6 +81,8 @@
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
+#include "shamrock/solvergraph/GetObjCntFromLayer.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
@@ -86,6 +90,7 @@
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -96,6 +101,344 @@
 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
+
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    bool has_B_field                           = solver_config.has_field_B_on_rho();
+    bool has_psi_field                         = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
+
+    using namespace shamrock::solvergraph;
+
+    SolverGraph &solver_graph = storage.solver_graph;
+
+    solver_graph.register_edge(
+        "scheduler_patchdata", PatchDataLayerRefs("patchdatas", "\\mathbb{U}_{\\rm patch}"));
+    solver_graph.register_edge("part_counts", Indexes<u32>("Npart_patch", "N_{\\rm part}_p"));
+
+    solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));
+    solver_graph.register_edge("dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
+
+    solver_graph.register_edge("xyz", FieldRefs<Tvec>("xyz", "\\mathbf{r}"));
+    solver_graph.register_edge("vxyz", FieldRefs<Tvec>("vxyz", "\\mathbf{v}"));
+    solver_graph.register_edge("axyz", FieldRefs<Tvec>("axyz", "\\mathbf{a}"));
+    solver_graph.register_edge("uint", FieldRefs<Tscal>("uint", "u_{\\rm int}"));
+    solver_graph.register_edge("duint", FieldRefs<Tscal>("duint", "du_{\\rm int}"));
+    solver_graph.register_edge("hpart", FieldRefs<Tscal>("hpart", "h_{\\rm part}"));
+
+    if (has_B_field) {
+        solver_graph.register_edge("B/rho", FieldRefs<Tvec>("B/rho", "B_{\\rho}"));
+        solver_graph.register_edge("dB/rho", FieldRefs<Tvec>("dB/rho", "dB_{\\rho}"));
+    }
+    if (has_psi_field) {
+        solver_graph.register_edge("psi/ch", FieldRefs<Tscal>("psi/ch", "\\psi_{\\rm ch}"));
+        solver_graph.register_edge("dpsi/ch", FieldRefs<Tscal>("dpsi/ch", "d\\psi_{\\rm ch}"));
+    }
+    if (has_epsilon_field) {
+        solver_graph.register_edge("epsilon", FieldRefs<Tscal>("epsilon", "\\epsilon"));
+        solver_graph.register_edge("dtepsilon", FieldRefs<Tscal>("dtepsilon", "d\\epsilon"));
+    }
+    if (has_deltav_field) {
+        solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
+        solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // attach fields to scheduler
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> attach_field_sequence;
+
+        {
+            auto set_scheduler_patchdata = solver_graph.register_node(
+                "set_scheduler_patchdata",
+                NodeSetEdge<PatchDataLayerRefs>([&](PatchDataLayerRefs &scheduler_patchdata) {
+                    scheduler_patchdata.free_alloc();
+                    scheduler().for_each_patchdata_nonempty(
+                        [&](const shamrock::patch::Patch &p,
+                            shamrock::patch::PatchDataLayer &pdat) {
+                            scheduler_patchdata.patchdatas.add_obj(p.id_patch, std::ref(pdat));
+                        });
+                }));
+            shambase::get_check_ref(set_scheduler_patchdata)
+                .set_edges(solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"));
+            attach_field_sequence.push_back(set_scheduler_patchdata);
+        }
+
+        {
+            auto attach_part_counts
+                = solver_graph.register_node("attach_part_counts", GetObjCntFromLayer{});
+            shambase::get_check_ref(attach_part_counts)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"));
+            attach_field_sequence.push_back(attach_part_counts);
+        }
+
+        {
+            auto attach_xyz
+                = solver_graph.register_node("attach_xyz", GetFieldRefFromLayer<Tvec>(pdl, "xyz"));
+            shambase::get_check_ref(attach_xyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
+            attach_field_sequence.push_back(attach_xyz);
+        }
+
+        {
+            auto attach_vxyz = solver_graph.register_node(
+                "attach_vxyz", GetFieldRefFromLayer<Tvec>(pdl, "vxyz"));
+            shambase::get_check_ref(attach_vxyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"));
+            attach_field_sequence.push_back(attach_vxyz);
+        }
+
+        {
+            auto attach_axyz = solver_graph.register_node(
+                "attach_axyz", GetFieldRefFromLayer<Tvec>(pdl, "axyz"));
+            shambase::get_check_ref(attach_axyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"));
+            attach_field_sequence.push_back(attach_axyz);
+        }
+
+        {
+            auto attach_uint = solver_graph.register_node(
+                "attach_uint", GetFieldRefFromLayer<Tscal>(pdl, "uint"));
+            shambase::get_check_ref(attach_uint)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("uint"));
+            attach_field_sequence.push_back(attach_uint);
+        }
+
+        {
+            auto attach_duint = solver_graph.register_node(
+                "attach_duint", GetFieldRefFromLayer<Tscal>(pdl, "duint"));
+            shambase::get_check_ref(attach_duint)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint"));
+            attach_field_sequence.push_back(attach_duint);
+        }
+
+        {
+            auto attach_hpart = solver_graph.register_node(
+                "attach_hpart", GetFieldRefFromLayer<Tscal>(pdl, "hpart"));
+            shambase::get_check_ref(attach_hpart)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("hpart"));
+            attach_field_sequence.push_back(attach_hpart);
+        }
+
+        if (has_B_field) {
+            auto attach_B_on_rho = solver_graph.register_node(
+                "attach_B_on_rho", GetFieldRefFromLayer<Tvec>(pdl, "B/rho"));
+            shambase::get_check_ref(attach_B_on_rho)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("B/rho"));
+            attach_field_sequence.push_back(attach_B_on_rho);
+        }
+
+        if (has_B_field) {
+            auto attach_dB_on_rho = solver_graph.register_node(
+                "attach_dB_on_rho", GetFieldRefFromLayer<Tvec>(pdl, "dB/rho"));
+            shambase::get_check_ref(attach_dB_on_rho)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("dB/rho"));
+            attach_field_sequence.push_back(attach_dB_on_rho);
+        }
+
+        if (has_psi_field) {
+            auto attach_psi_on_ch = solver_graph.register_node(
+                "attach_psi_on_ch", GetFieldRefFromLayer<Tscal>(pdl, "psi/ch"));
+            shambase::get_check_ref(attach_psi_on_ch)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("psi/ch"));
+            attach_field_sequence.push_back(attach_psi_on_ch);
+        }
+
+        if (has_psi_field) {
+            auto attach_dpsi_on_ch = solver_graph.register_node(
+                "attach_dpsi_on_ch", GetFieldRefFromLayer<Tscal>(pdl, "dpsi/ch"));
+            shambase::get_check_ref(attach_dpsi_on_ch)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("dpsi/ch"));
+            attach_field_sequence.push_back(attach_dpsi_on_ch);
+        }
+
+        if (has_epsilon_field) {
+            auto attach_epsilon = solver_graph.register_node(
+                "attach_epsilon", GetFieldRefFromLayer<Tscal>(pdl, "epsilon"));
+            shambase::get_check_ref(attach_epsilon)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("epsilon"));
+            attach_field_sequence.push_back(attach_epsilon);
+        }
+
+        if (has_epsilon_field) {
+            auto attach_dtepsilon = solver_graph.register_node(
+                "attach_dtepsilon", GetFieldRefFromLayer<Tscal>(pdl, "dtepsilon"));
+            shambase::get_check_ref(attach_dtepsilon)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("dtepsilon"));
+            attach_field_sequence.push_back(attach_dtepsilon);
+        }
+
+        if (has_deltav_field) {
+            auto attach_deltav = solver_graph.register_node(
+                "attach_deltav", GetFieldRefFromLayer<Tvec>(pdl, "deltav"));
+            shambase::get_check_ref(attach_deltav)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("deltav"));
+            attach_field_sequence.push_back(attach_deltav);
+        }
+
+        if (has_deltav_field) {
+            auto attach_dtdeltav = solver_graph.register_node(
+                "attach_dtdeltav", GetFieldRefFromLayer<Tvec>(pdl, "dtdeltav"));
+            shambase::get_check_ref(attach_dtdeltav)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("dtdeltav"));
+            attach_field_sequence.push_back(attach_dtdeltav);
+        }
+
+        solver_graph.register_node(
+            "attach fields to scheduler",
+            OperationSequence("attach fields", std::move(attach_field_sequence)));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // leapfrog predictor
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    {
+
+        auto make_half_step_sequence = [&](std::string prefix) {
+            std::vector<std::shared_ptr<shamrock::solvergraph::INode>> half_step_sequence;
+
+            {
+                auto half_step_vxyz = solver_graph.register_node(
+                    prefix + "_vxyz", shammodels::common::modules::ForwardEuler<Tvec>{});
+                shambase::get_check_ref(half_step_vxyz)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"));
+                half_step_sequence.push_back(half_step_vxyz);
+            }
+
+            {
+                auto half_step_uint = solver_graph.register_node(
+                    prefix + "_uint", shammodels::common::modules::ForwardEuler<Tscal>{});
+                shambase::get_check_ref(half_step_uint)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("uint"));
+                half_step_sequence.push_back(half_step_uint);
+            }
+
+            if (has_B_field) {
+                auto half_step_B_on_rho = solver_graph.register_node(
+                    prefix + "_B_on_rho", shammodels::common::modules::ForwardEuler<Tvec>{});
+                shambase::get_check_ref(half_step_B_on_rho)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("dB/rho"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("B/rho"));
+                half_step_sequence.push_back(half_step_B_on_rho);
+            }
+
+            if (has_psi_field) {
+                auto half_step_psi_on_ch = solver_graph.register_node(
+                    prefix + "_psi_on_ch", shammodels::common::modules::ForwardEuler<Tscal>{});
+                shambase::get_check_ref(half_step_psi_on_ch)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("dpsi/ch"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("psi/ch"));
+                half_step_sequence.push_back(half_step_psi_on_ch);
+            }
+
+            if (has_epsilon_field) {
+                auto half_step_epsilon = solver_graph.register_node(
+                    prefix + "_epsilon", shammodels::common::modules::ForwardEuler<Tscal>{});
+                shambase::get_check_ref(half_step_epsilon)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("dtepsilon"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("epsilon"));
+                half_step_sequence.push_back(half_step_epsilon);
+            }
+
+            if (has_deltav_field) {
+                auto half_step_deltav = solver_graph.register_node(
+                    prefix + "_deltav", shammodels::common::modules::ForwardEuler<Tvec>{});
+                shambase::get_check_ref(half_step_deltav)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("dtdeltav"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tvec>>("deltav"));
+                half_step_sequence.push_back(half_step_deltav);
+            }
+
+            return OperationSequence("half step", std::move(half_step_sequence));
+        };
+
+        solver_graph.register_node("half_step1", make_half_step_sequence("half_step1"));
+        solver_graph.register_node("half_step2", make_half_step_sequence("half_step2"));
+
+        {
+            auto full_step_xyz = solver_graph.register_node(
+                "full_step_xyz", shammodels::common::modules::ForwardEuler<Tvec>{});
+            shambase::get_check_ref(full_step_xyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
+        }
+
+        {
+            auto leapfrog_predictor = solver_graph.register_node(
+                "leapfrog predictor",
+                OperationSequence(
+                    "leapfrog predictor",
+                    {
+                        solver_graph.get_node_ptr_base("half_step1"),
+                        solver_graph.get_node_ptr_base("full_step_xyz"),
+                        solver_graph.get_node_ptr_base("half_step2"),
+                    }));
+        }
+    }
+
+    storage.solver_sequence = solver_graph.register_node(
+        "time_step",
+        OperationSequence(
+            "time step",
+            {
+                solver_graph.get_node_ptr_base("attach fields to scheduler"),
+                solver_graph.get_node_ptr_base("leapfrog predictor"),
+            }));
 
     storage.part_counts
         = std::make_shared<shamrock::solvergraph::Indexes<u32>>("part_counts", "N_{\\rm part}");
@@ -738,12 +1081,16 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
-    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout.get());
+        = shambase::get_check_ref(storage.ghost_layout);
 
     solver_config.set_ghost_layout(ghost_layout);
+
+    storage.xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+    storage.xyzh_ghost_layout->template add_field<Tvec>("xyz", 1);
+    storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -868,7 +1215,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
 
-    auto ghost_layout_ptr                               = storage.ghost_layout.get();
+    auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1282,9 +1629,29 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
-    do_predictor_leapfrog(dt);
-
     sink_update.predictor_step(dt);
+
+    {
+        // begining of SolverGraph migration
+
+        using namespace shamrock::solvergraph;
+
+        SolverGraph &solver_graph = storage.solver_graph;
+
+        // change the graph inputs
+        {
+            solver_graph.get_edge_ref<IDataEdge<Tscal>>("dt").data      = dt;
+            solver_graph.get_edge_ref<IDataEdge<Tscal>>("dt_half").data = dt / 2.0;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////
+        // Solver evaluation
+        ////////////////////////////////////////////////////////////////////////////////////////
+
+        shambase::get_check_ref(storage.solver_sequence).evaluate();
+    }
+
+    // do_predictor_leapfrog(dt);
 
     part_killing_step();
 
@@ -1311,7 +1678,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // Here we will add self grav to the external forces indep of vel (this will be moved into a
     // sperate module later)
-    {
+    if (solver_config.self_grav_config.is_sg_on()) {
 
         auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
 
@@ -1414,6 +1781,29 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             case 3 : run_sg_mm(std::integral_constant<u32, 3>{}); break;
             case 4 : run_sg_mm(std::integral_constant<u32, 4>{}); break;
             case 5 : run_sg_mm(std::integral_constant<u32, 5>{}); break;
+            default: shambase::throw_unimplemented();
+            }
+
+        } else if (solver_config.self_grav_config.is_fmm()) {
+
+            SelfGravConfig::FMM &mm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::FMM>(&solver_config.self_grav_config.config));
+
+            auto run_sg_fmm = [&](auto mm_order_tag) {
+                constexpr u32 order = decltype(mm_order_tag)::value;
+                modules::SGFMMPlummer<Tvec, order> self_gravity_mm_node(
+                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            };
+
+            switch (mm_config.order) {
+            case 1 : run_sg_fmm(std::integral_constant<u32, 1>{}); break;
+            case 2 : run_sg_fmm(std::integral_constant<u32, 2>{}); break;
+            case 3 : run_sg_fmm(std::integral_constant<u32, 3>{}); break;
+            case 4 : run_sg_fmm(std::integral_constant<u32, 4>{}); break;
+            case 5 : run_sg_fmm(std::integral_constant<u32, 5>{}); break;
             default: shambase::throw_unimplemented();
             }
 
@@ -2117,6 +2507,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+    f64 t_host_alloc = (mem_perf_infos_end.time_alloc_host - mem_perf_infos_start.time_alloc_host)
+                       + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count();
     f64 rate       = f64(rank_count) / tstep.elasped_sec();
@@ -2132,7 +2524,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         tstep.elasped_sec(),
         delta_mpi_timer,
         t_dev_alloc,
-        mem_perf_infos_end.max_allocated_byte_device);
+        t_host_alloc,
+        mem_perf_infos_end.max_allocated_byte_device,
+        mem_perf_infos_end.max_allocated_byte_host);
 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("sph::Model", log_step);

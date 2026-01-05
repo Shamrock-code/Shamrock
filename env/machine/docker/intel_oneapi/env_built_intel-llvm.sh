@@ -1,5 +1,17 @@
 # Everything before this line will be provided by the new-env script
 
+if which ccache &> /dev/null; then
+    # to debug
+    #export CCACHE_DEBUG=1
+    #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
+
+    export CCACHE_COMPILERTYPE=clang
+    export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    echo " ----- ccache found, using it ----- "
+else
+    export CCACHE_CMAKE_ARG=""
+fi
+
 # test if python3-dev installed
 # dpkg -l python3-dev
 if ! dpkg -l python3.*-dev &> /dev/null; then
@@ -12,6 +24,7 @@ function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
+        ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=IntelLLVM \
         -DINTEL_LLVM_PATH=$(dirname $(which icpx))/.. \

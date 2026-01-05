@@ -960,8 +960,10 @@ namespace sham {
          * @brief Resizes the buffer to a given size.
          *
          * @param new_size The new size of the buffer.
+         * @param keep_data If `true`, the content of the  buffer is preserved up to the minimum of
+         * the old and new sizes. If `false`, the content may be discarded if a reallocation occurs.
          */
-        inline void resize(u32 new_size) {
+        inline void resize(size_t new_size, bool keep_data = true) {
 
             auto dev_sched = hold.get_dev_scheduler_ptr();
 
@@ -978,7 +980,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, get_size());
+                if (keep_data) {
+                    new_buf.copy_from(*this, get_size());
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -994,7 +998,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, new_size);
+                if (keep_data) {
+                    new_buf.copy_from(*this, new_size);
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -1005,10 +1011,13 @@ namespace sham {
             }
         }
 
+        /// same as resize but data will not be copied if reallocation is needed
+        inline void resize_discard_data(size_t new_size) { resize(new_size, false); }
+
         /**
-         * @brief Alias for resize(0).
+         * @brief Alias for resize_discard_data(0).
          */
-        inline void free_alloc() { resize(0); }
+        inline void free_alloc() { resize_discard_data(0); }
 
         /**
          * @brief Expand the buffer by `add_sz` elements.

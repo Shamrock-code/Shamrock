@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file AMRGridRefinementHandler.cpp
+ * @file AMRGridRefinementHandler_old.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Sewanou Leodasce (lsewanou@pxe.cbp.ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
@@ -701,11 +701,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                                    .get_buf(id_patch)
                                    .get_write_access(depends_list);
             press = shambase::get_check_ref(storage.press)
-                                   .get_buf(id_patch)
-                                   .get_write_access(depends_list);
+                        .get_buf(id_patch)
+                        .get_write_access(depends_list);
             vel = shambase::get_check_ref(storage.vel)
-                                   .get_buf(id_patch)
-                                   .get_write_access(depends_list);
+                      .get_buf(id_patch)
+                      .get_write_access(depends_list);
         }
 
         void finalize(
@@ -753,15 +753,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get(id_patch)
                 .get()
                 .complete_event_state(resulting_events);
-            
-            shambase::get_check_ref(storage.press)
-                                   .get_buf(id_patch)
-                                   .complete_event_state(resulting_events);
 
-           shambase::get_check_ref(storage.vel)
-                                   .get_buf(id_patch)
-                                   .complete_event_state(resulting_events);
-            
+            shambase::get_check_ref(storage.press)
+                .get_buf(id_patch)
+                .complete_event_state(resulting_events);
+
+            shambase::get_check_ref(storage.vel)
+                .get_buf(id_patch)
+                .complete_event_state(resulting_events);
         }
 
         void apply_refine(
@@ -824,243 +823,274 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 old_rho_block[loc_id]     = acc.rho[old_cell_idx];
                 old_rho_vel_block[loc_id] = acc.rho_vel[old_cell_idx];
                 old_rhoE_block[loc_id]    = acc.rhoE[old_cell_idx];
-                old_vel_block[loc_id] = acc.vel[old_cell_idx];
-                old_press_block[loc_id]    = acc.press[old_cell_idx];
+                old_vel_block[loc_id]     = acc.vel[old_cell_idx];
+                old_press_block[loc_id]   = acc.press[old_cell_idx];
             }
 
             for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
 
-/*
+                /*
 
 
-                // local integer coordinate in the block ( 0 -> (0,0,0) ; 1 -> (1,0,0); 2 -> (0,1,0)
-                //
-                auto [lx, ly, lz] = get_coord_ref(loc_id);
+                                // local integer coordinate in the block ( 0 -> (0,0,0) ; 1 ->
+                   (1,0,0); 2 -> (0,1,0)
+                                //
+                                auto [lx, ly, lz] = get_coord_ref(loc_id);
 
-                // global child id of the cell in the refined block
-                u32 old_cell_idx = cur_idx * AMRBlock::block_size + loc_id;
+                                // global child id of the cell in the refined block
+                                u32 old_cell_idx = cur_idx * AMRBlock::block_size + loc_id;
 
-                // cell size in the refined block
-                Tscal delta_cell = cell_size[cur_idx];
-                Tscal c_offset   = delta_cell / 4;
+                                // cell size in the refined block
+                                Tscal delta_cell = cell_size[cur_idx];
+                                Tscal c_offset   = delta_cell / 4;
 
-                Tscal rho_block    = old_rho_block[loc_id];
-                Tvec rho_vel_block = old_rho_vel_block[loc_id];
-                Tscal rhoE_block   = old_rhoE_block[loc_id];
-                Tvec vel_block = old_vel_block[loc_id];
-                Tscal press_block   = old_press_block[loc_id];
+                                Tscal rho_block    = old_rho_block[loc_id];
+                                Tvec rho_vel_block = old_rho_vel_block[loc_id];
+                                Tscal rhoE_block   = old_rhoE_block[loc_id];
+                                Tvec vel_block = old_vel_block[loc_id];
+                                Tscal press_block   = old_press_block[loc_id];
 
-                // logger::raw_ln("id ", old_cell_idx, "rho_block ", rho_block);
+                                // logger::raw_ln("id ", old_cell_idx, "rho_block ", rho_block);
 
-                // for old_cell_idx in the refined block fill fields for each of its eight child
-                // cells
-                //              . . . . .
-                //   (1,0) <--  . x . x . -->(1,1)
-                //              . . X . .
-                //   (0,0) <--  . x . x . -->(0,1)
-                //              . . . . .
-                //
+                                // for old_cell_idx in the refined block fill fields for each of its
+                   eight child
+                                // cells
+                                //              . . . . .
+                                //   (1,0) <--  . x . x . -->(1,1)
+                                //              . . X . .
+                                //   (0,0) <--  . x . x . -->(0,1)
+                                //              . . . . .
+                                //
 
-                std::array<f64_3, AMRBlock::block_size> child_center_offsets;
-                child_center_offsets[0] = {-c_offset, -c_offset, -c_offset}; // 0 : (0,0,0)
-                child_center_offsets[1] = {c_offset, -c_offset, -c_offset};  // 1 : (1,0,0)
-                child_center_offsets[2] = {-c_offset, c_offset, -c_offset};  // 2 : (0,1,0)
-                child_center_offsets[3] = {c_offset, c_offset, -c_offset};   // 3 : (1,1,0)
+                                std::array<f64_3, AMRBlock::block_size> child_center_offsets;
+                                child_center_offsets[0] = {-c_offset, -c_offset, -c_offset}; // 0 :
+                   (0,0,0) child_center_offsets[1] = {c_offset, -c_offset, -c_offset};  // 1 :
+                   (1,0,0) child_center_offsets[2] = {-c_offset, c_offset, -c_offset};  // 2 :
+                   (0,1,0) child_center_offsets[3] = {c_offset, c_offset, -c_offset};   // 3 :
+                   (1,1,0)
 
-                child_center_offsets[4] = {-c_offset, -c_offset, c_offset}; // 4 : (0,0,1)
-                child_center_offsets[5] = {c_offset, -c_offset, c_offset};  // 5 : (1,0,1)
-                child_center_offsets[6] = {-c_offset, c_offset, c_offset};  // 6 : (0,1,1)
-                child_center_offsets[7] = {c_offset, c_offset, c_offset};   // 7 : (1,1,1)
+                                child_center_offsets[4] = {-c_offset, -c_offset, c_offset}; // 4 :
+                   (0,0,1) child_center_offsets[5] = {c_offset, -c_offset, c_offset};  // 5 :
+                   (1,0,1) child_center_offsets[6] = {-c_offset, c_offset, c_offset};  // 6 :
+                   (0,1,1) child_center_offsets[7] = {c_offset, c_offset, c_offset};   // 7 :
+                   (1,1,1)
 
-                constexp
-                static_assert(AMRBlock::get_coord(0) == std::array<u32, dim>{0,0,0} , "");
-                
-
-                // // limited slopes of the refined cells
-                // // TODO : generalize to other slope limiter modes and arbitrary nvar
-                auto result_rho = get_3d_grad<Tscal, Tvec, Minmod>(
-                    old_cell_idx,
-                    delta_cell,
-                    cell_graph_xp,
-                    cell_graph_xm,
-                    cell_graph_yp,
-                    cell_graph_ym,
-                    cell_graph_zp,
-                    cell_graph_zm,
-                    [=](u32 id) {
-                        return acc.rho[id];
-                    });
-                // logger::raw_ln("rho_grad ", old_cell_idx, result_rho[0], result_rho[1],
-                // result_rho[2],"\n");
-
-                // auto result_rhoe = get_3d_grad<Tscal, Tvec, Minmod>(
-                //     old_cell_idx,
-                //     delta_cell,
-                //     cell_graph_xp,
-                //     cell_graph_xm,
-                //     cell_graph_yp,
-                //     cell_graph_ym,
-                //     cell_graph_zp,
-                //     cell_graph_zm,
-                //     [=](u32 id) {
-                //         return acc.rhoE[id];
-                //     });
-
-                
-                auto result_press = get_3d_grad<Tscal, Tvec, Minmod>(
-                    old_cell_idx,
-                    delta_cell,
-                    cell_graph_xp,
-                    cell_graph_xm,
-                    cell_graph_yp,
-                    cell_graph_ym,
-                    cell_graph_zp,
-                    cell_graph_zm,
-                    [=](u32 id) {
-                        return acc.press[id];
-                    });
-                // logger::raw_ln("rhoe_grad ", old_cell_idx, result_rhoe[0], result_rhoe[1],
-                // result_rhoe[2],"\n");
-
-                // auto result_rhov = get_3d_grad<Tvec, Tvec, Minmod>(
-                //     old_cell_idx,
-                //     delta_cell,
-                //     cell_graph_xp,
-                //     cell_graph_xm,
-                //     cell_graph_yp,
-                //     cell_graph_ym,
-                //     cell_graph_zp,
-                //     cell_graph_zm,
-                //     [=](u32 id) {
-                //         return acc.rho_vel[id];
-                //     });
-                
-                auto result_vel = get_3d_grad<Tvec, Tvec, Minmod>(
-                    old_cell_idx,
-                    delta_cell,
-                    cell_graph_xp,
-                    cell_graph_xm,
-                    cell_graph_yp,
-                    cell_graph_ym,
-                    cell_graph_zp,
-                    cell_graph_zm,
-                    [=](u32 id) {
-                        return acc.vel[id];
-                    });
-                // logger::raw_ln("rhov_grad [x] ", old_cell_idx, result_rhov[0][0],
-                // result_rhov[0][1], result_rhov[0][2],   "\n"); logger::raw_ln("rhov_grad [y] ",
-                // old_cell_idx, result_rhov[1][0], result_rhov[1][1], result_rhov[1][2],   "\n");
-                // logger::raw_ln("rhov_grad [z] ", old_cell_idx, result_rhov[2][0],
-                // result_rhov[2][1], result_rhov[2][2],   "\n");
-
-                shammath::ConsState<Tvec> mean_cons_var{0., 0, {0., 0., 0.}};
-                Tscal rho_interpolate   = 0;
-                Tvec rhovel_interpolate = {0., 0., 0.};
-                Tscal rhoe_interpolate  = 0.0;
-                Tvec vel_interpolate = {0., 0., 0.};
-                Tscal press_interpolate  = 0.0;
-
-                Tscal check_rho = 0, check_rhoe = 0;
-                Tvec check_rhov  = {0., 0., 0.};
-
-                Tscal rho_interp = 0, rhoe_interp = 0;
-                Tvec rhov_interp = {0., 0., 0.};
-
-                Tscal  press_interp = 0;
-                Tvec v_interp = {0., 0., 0.};
-
-                Tscal mean_rho = 0, mean_rhoe = 0;
-                Tvec mean_rhov = {0., 0., 0.};
-
-                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
-
-                    auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
-
-                    // global coordinate in the patch for the (subdiv_lid + 1)-th child of
-                    // old_cell_idx
-                    std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 + sz};
-
-                    // global id in the patch for the (subdiv_lid + 1)-th child of old_cell_idx
-                    u32 new_cell_idx = get_gid_write(glid);
-
-                    // linear interpolation
-                    Tscal rho_dx    = result_rho[0] * child_center_offsets[subdiv_lid][0];
-                    // Tscal rhoe_dx   = result_rhoe[0] * child_center_offsets[subdiv_lid][0];
-                    // Tvec rho_vel_dx = result_rhov[0] * child_center_offsets[subdiv_lid][0];
-
-                    Tscal press_dx   = result_press[0] * child_center_offsets[subdiv_lid][0];
-                    Tvec vel_dx = result_vel[0] * child_center_offsets[subdiv_lid][0];
-
-                    Tscal rho_dy    = result_rho[1] * child_center_offsets[subdiv_lid][1];
-
-                    // Tscal rhoe_dy   = result_rhoe[1] * child_center_offsets[subdiv_lid][1];
-                    // Tvec rho_vel_dy = result_rhov[1] * child_center_offsets[subdiv_lid][1];
+                                constexp
+                                static_assert(AMRBlock::get_coord(0) == std::array<u32, dim>{0,0,0}
+                   , "");
 
 
-                    Tscal press_dy   = result_press[1] * child_center_offsets[subdiv_lid][1];
-                    Tvec vel_dy = result_vel[1] * child_center_offsets[subdiv_lid][1];
+                                // // limited slopes of the refined cells
+                                // // TODO : generalize to other slope limiter modes and arbitrary
+                   nvar auto result_rho = get_3d_grad<Tscal, Tvec, Minmod>( old_cell_idx,
+                                    delta_cell,
+                                    cell_graph_xp,
+                                    cell_graph_xm,
+                                    cell_graph_yp,
+                                    cell_graph_ym,
+                                    cell_graph_zp,
+                                    cell_graph_zm,
+                                    [=](u32 id) {
+                                        return acc.rho[id];
+                                    });
+                                // logger::raw_ln("rho_grad ", old_cell_idx, result_rho[0],
+                   result_rho[1],
+                                // result_rho[2],"\n");
 
-                    Tscal rho_dz    = result_rho[2] * child_center_offsets[subdiv_lid][2];
-                    // Tscal rhoe_dz   = result_rhoe[2] * child_center_offsets[subdiv_lid][2];
-                    // Tvec rho_vel_dz = result_rhov[2] * child_center_offsets[subdiv_lid][2];
+                                // auto result_rhoe = get_3d_grad<Tscal, Tvec, Minmod>(
+                                //     old_cell_idx,
+                                //     delta_cell,
+                                //     cell_graph_xp,
+                                //     cell_graph_xm,
+                                //     cell_graph_yp,
+                                //     cell_graph_ym,
+                                //     cell_graph_zp,
+                                //     cell_graph_zm,
+                                //     [=](u32 id) {
+                                //         return acc.rhoE[id];
+                                //     });
 
-                    Tscal press_dz   = result_press[2] * child_center_offsets[subdiv_lid][2];
-                    Tvec vel_dz = result_vel[2] * child_center_offsets[subdiv_lid][2];
 
-                    rho_interp  = rho_block + (rho_dx + rho_dy + rho_dz);
+                                auto result_press = get_3d_grad<Tscal, Tvec, Minmod>(
+                                    old_cell_idx,
+                                    delta_cell,
+                                    cell_graph_xp,
+                                    cell_graph_xm,
+                                    cell_graph_yp,
+                                    cell_graph_ym,
+                                    cell_graph_zp,
+                                    cell_graph_zm,
+                                    [=](u32 id) {
+                                        return acc.press[id];
+                                    });
+                                // logger::raw_ln("rhoe_grad ", old_cell_idx, result_rhoe[0],
+                   result_rhoe[1],
+                                // result_rhoe[2],"\n");
 
-                    // rhoe_interp = rhoE_block + (rhoe_dx + rhoe_dy + rhoe_dz);
-                    // rhov_interp = rho_vel_block + (rho_vel_dx + rho_vel_dy + rho_vel_dz);
+                                // auto result_rhov = get_3d_grad<Tvec, Tvec, Minmod>(
+                                //     old_cell_idx,
+                                //     delta_cell,
+                                //     cell_graph_xp,
+                                //     cell_graph_xm,
+                                //     cell_graph_yp,
+                                //     cell_graph_ym,
+                                //     cell_graph_zp,
+                                //     cell_graph_zm,
+                                //     [=](u32 id) {
+                                //         return acc.rho_vel[id];
+                                //     });
 
-                    press_interp = press_block + (press_dx + press_dy + press_dz);
-                    v_interp = vel_block + (vel_dx + vel_dy + vel_dz);
+                                auto result_vel = get_3d_grad<Tvec, Tvec, Minmod>(
+                                    old_cell_idx,
+                                    delta_cell,
+                                    cell_graph_xp,
+                                    cell_graph_xm,
+                                    cell_graph_yp,
+                                    cell_graph_ym,
+                                    cell_graph_zp,
+                                    cell_graph_zm,
+                                    [=](u32 id) {
+                                        return acc.vel[id];
+                                    });
+                                // logger::raw_ln("rhov_grad [x] ", old_cell_idx, result_rhov[0][0],
+                                // result_rhov[0][1], result_rhov[0][2],   "\n");
+                   logger::raw_ln("rhov_grad [y] ",
+                                // old_cell_idx, result_rhov[1][0], result_rhov[1][1],
+                   result_rhov[1][2],   "\n");
+                                // logger::raw_ln("rhov_grad [z] ", old_cell_idx, result_rhov[2][0],
+                                // result_rhov[2][1], result_rhov[2][2],   "\n");
 
-                    // logger::raw_ln("rho_interp ", rho_interp, rho_block, rho_dx, rho_dy, rho_dz);
+                                shammath::ConsState<Tvec> mean_cons_var{0., 0, {0., 0., 0.}};
+                                Tscal rho_interpolate   = 0;
+                                Tvec rhovel_interpolate = {0., 0., 0.};
+                                Tscal rhoe_interpolate  = 0.0;
+                                Tvec vel_interpolate = {0., 0., 0.};
+                                Tscal press_interpolate  = 0.0;
 
-                    // compute mean quatities
-                    mean_rho += rho_interp;
-                    mean_rhoe += rhoe_interp;
-                    mean_rhov += rhov_interp;
+                                Tscal check_rho = 0, check_rhoe = 0;
+                                Tvec check_rhov  = {0., 0., 0.};
 
-                    // acc.rho[new_cell_idx]     = rho_block;
-                    // acc.rho_vel[new_cell_idx] = rho_vel_block;
-                    // acc.rhoE[new_cell_idx]    = rhoE_block;
-                }
+                                Tscal rho_interp = 0, rhoe_interp = 0;
+                                Tvec rhov_interp = {0., 0., 0.};
 
-                // average
-                mean_rho *= (1. / 8.);
-                mean_rhoe *= (1. / 8.);
-                mean_rhov *= (1. / 8.);
+                                Tscal  press_interp = 0;
+                                Tvec v_interp = {0., 0., 0.};
 
-                // apply correction
-                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
+                                Tscal mean_rho = 0, mean_rhoe = 0;
+                                Tvec mean_rhov = {0., 0., 0.};
 
-                    auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
+                                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
 
-                    // global coordinate in the patch for the (subdiv_lid + 1)-th child of
-                    // old_cell_idx
-                    std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 + sz};
+                                    auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
 
-                    // global id in the patch for the (subdiv_lid + 1)-th child of old_cell_idx
-                    u32 new_cell_idx = get_gid_write(glid);
+                                    // global coordinate in the patch for the (subdiv_lid + 1)-th
+                   child of
+                                    // old_cell_idx
+                                    std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 +
+                   sz};
 
-                    acc.rho[new_cell_idx]     = rho_interp + (rho_block - mean_rho);
-                    acc.rho_vel[new_cell_idx] = rhov_interp + (rho_vel_block - mean_rhov);
-                    acc.rhoE[new_cell_idx]    = rhoe_interp + (rhoe_interp - mean_rhoe);
+                                    // global id in the patch for the (subdiv_lid + 1)-th child of
+                   old_cell_idx u32 new_cell_idx = get_gid_write(glid);
 
-                    // check_rho += rho_interp + (rho_block - mean_rho);
-                    // check_rhov += rhov_interp + (rho_vel_block - mean_rhov);
-                    // check_rhoe += rhoe_interp + (rhoE_block - mean_rhoe);
-                }
+                                    // linear interpolation
+                                    Tscal rho_dx    = result_rho[0] *
+                   child_center_offsets[subdiv_lid][0];
+                                    // Tscal rhoe_dx   = result_rhoe[0] *
+                   child_center_offsets[subdiv_lid][0];
+                                    // Tvec rho_vel_dx = result_rhov[0] *
+                   child_center_offsets[subdiv_lid][0];
 
-                // logger::raw_ln("check mass conservation ", check_rho/8, rho_block);
-                // logger::raw_ln("check total energy conservation ", check_rhoe/8, rhoE_block);
-                // logger::raw_ln("check momemtum(x) conservation ", check_rhov[0]/8,
-                // rho_vel_block[0]); logger::raw_ln("check momemtum(y) conservation ",
-                // check_rhov[1]/8, rho_vel_block[1]); logger::raw_ln("check momemtum(z)
-                // conservation ", check_rhov[2]/8, rho_vel_block[2]);
+                                    Tscal press_dx   = result_press[0] *
+                   child_center_offsets[subdiv_lid][0]; Tvec vel_dx = result_vel[0] *
+                   child_center_offsets[subdiv_lid][0];
 
-*/
+                                    Tscal rho_dy    = result_rho[1] *
+                   child_center_offsets[subdiv_lid][1];
+
+                                    // Tscal rhoe_dy   = result_rhoe[1] *
+                   child_center_offsets[subdiv_lid][1];
+                                    // Tvec rho_vel_dy = result_rhov[1] *
+                   child_center_offsets[subdiv_lid][1];
+
+
+                                    Tscal press_dy   = result_press[1] *
+                   child_center_offsets[subdiv_lid][1]; Tvec vel_dy = result_vel[1] *
+                   child_center_offsets[subdiv_lid][1];
+
+                                    Tscal rho_dz    = result_rho[2] *
+                   child_center_offsets[subdiv_lid][2];
+                                    // Tscal rhoe_dz   = result_rhoe[2] *
+                   child_center_offsets[subdiv_lid][2];
+                                    // Tvec rho_vel_dz = result_rhov[2] *
+                   child_center_offsets[subdiv_lid][2];
+
+                                    Tscal press_dz   = result_press[2] *
+                   child_center_offsets[subdiv_lid][2]; Tvec vel_dz = result_vel[2] *
+                   child_center_offsets[subdiv_lid][2];
+
+                                    rho_interp  = rho_block + (rho_dx + rho_dy + rho_dz);
+
+                                    // rhoe_interp = rhoE_block + (rhoe_dx + rhoe_dy + rhoe_dz);
+                                    // rhov_interp = rho_vel_block + (rho_vel_dx + rho_vel_dy +
+                   rho_vel_dz);
+
+                                    press_interp = press_block + (press_dx + press_dy + press_dz);
+                                    v_interp = vel_block + (vel_dx + vel_dy + vel_dz);
+
+                                    // logger::raw_ln("rho_interp ", rho_interp, rho_block, rho_dx,
+                   rho_dy, rho_dz);
+
+                                    // compute mean quatities
+                                    mean_rho += rho_interp;
+                                    mean_rhoe += rhoe_interp;
+                                    mean_rhov += rhov_interp;
+
+                                    // acc.rho[new_cell_idx]     = rho_block;
+                                    // acc.rho_vel[new_cell_idx] = rho_vel_block;
+                                    // acc.rhoE[new_cell_idx]    = rhoE_block;
+                                }
+
+                                // average
+                                mean_rho *= (1. / 8.);
+                                mean_rhoe *= (1. / 8.);
+                                mean_rhov *= (1. / 8.);
+
+                                // apply correction
+                                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
+
+                                    auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
+
+                                    // global coordinate in the patch for the (subdiv_lid + 1)-th
+                   child of
+                                    // old_cell_idx
+                                    std::array<u32, 3> glid = {lx * 2 + sx, ly * 2 + sy, lz * 2 +
+                   sz};
+
+                                    // global id in the patch for the (subdiv_lid + 1)-th child of
+                   old_cell_idx u32 new_cell_idx = get_gid_write(glid);
+
+                                    acc.rho[new_cell_idx]     = rho_interp + (rho_block - mean_rho);
+                                    acc.rho_vel[new_cell_idx] = rhov_interp + (rho_vel_block -
+                   mean_rhov); acc.rhoE[new_cell_idx]    = rhoe_interp + (rhoe_interp - mean_rhoe);
+
+                                    // check_rho += rho_interp + (rho_block - mean_rho);
+                                    // check_rhov += rhov_interp + (rho_vel_block - mean_rhov);
+                                    // check_rhoe += rhoe_interp + (rhoE_block - mean_rhoe);
+                                }
+
+                                // logger::raw_ln("check mass conservation ", check_rho/8,
+                   rho_block);
+                                // logger::raw_ln("check total energy conservation ", check_rhoe/8,
+                   rhoE_block);
+                                // logger::raw_ln("check momemtum(x) conservation ",
+                   check_rhov[0]/8,
+                                // rho_vel_block[0]); logger::raw_ln("check momemtum(y) conservation
+                   ",
+                                // check_rhov[1]/8, rho_vel_block[1]); logger::raw_ln("check
+                   momemtum(z)
+                                // conservation ", check_rhov[2]/8, rho_vel_block[2]);
+
+                */
 
                 auto [lx, ly, lz] = get_coord_ref(loc_id);
                 u32 old_cell_idx  = cur_idx * AMRBlock::block_size + loc_id;
@@ -1318,7 +1348,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const TgridVec *block_high_bound;
         const Tscal *block_rho;
         const f64 *block_pressure;
-    
+
         Tscal error_min;
         Tscal error_max;
         u64 p_id;
@@ -1338,7 +1368,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             shamrock::patch::PatchDataLayer &pdat,
             Tscal err_min,
             Tscal err_max)
-            :  error_min(err_min), error_max(err_max),
+            : error_min(err_min), error_max(err_max),
               cell_graph_xp(
                   shambase::get_check_ref(storage.cell_graph_edge)
                       .get_refs_dir(Direction_::xp)
@@ -1381,7 +1411,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             block_rho        = pdat.get_field<f64>(2).get_buf().get_write_access(depend_list);
             // block_rho_vel    = pdat.get_field<f64_3>(3).get_buf().get_write_access(depend_list);
             // block_rhoE       = pdat.get_field<f64>(4).get_buf().get_write_access(depend_list);
-             block_pressure   = shambase::get_check_ref(storage.press)
+            block_pressure = shambase::get_check_ref(storage.press)
                                  .get_buf(id_patch)
                                  .get_read_access(depend_list);
         }
@@ -1431,7 +1461,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get()
                 .complete_event_state(resulting_events);
 
-            
             shambase::get_check_ref(storage.press)
                 .get_buf(id_patch)
                 .complete_event_state(resulting_events);
@@ -1470,7 +1499,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             Tscal block_press_grad = shambase::VectorProperties<Tscal>::get_zero();
             for (u32 i = 0; i < AMRBlock::block_size; i++) {
-                    block_press_grad = sham::details::g_sycl_max(
+                block_press_grad = sham::details::g_sycl_max(
                     block_press_grad,
                     get_pseudo_grad<Tscal, Tvec>(
                         i + block_id * AMRBlock::block_size,
@@ -1485,14 +1514,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         }));
             }
 
-        Tscal error = sham::details::g_sycl_max(block_rho_grad, block_press_grad);
+            Tscal error     = sham::details::g_sycl_max(block_rho_grad, block_press_grad);
             should_refine   = false;
             should_derefine = false;
             if (error > error_max) {
-                should_refine   = true;
+                should_refine = true;
                 // should_derefine = false;
             } else if (error < 0.5 * error_max) {
-                should_refine   = false;
+                should_refine = false;
                 // should_derefine = true;
             }
 
@@ -1714,12 +1743,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             should_derefine = false;
             if (sham::details::g_sycl_max(block_press_grad, block_rho_grad)
                 > error_max * error_max) {
-                should_refine   = true;
+                should_refine = true;
                 // should_derefine = false;
             } else if (
                 sham::details::g_sycl_max(block_press_grad, block_rho_grad)
                 < 0.25 * error_max * error_max) {
-                should_refine   = false;
+                should_refine = false;
                 // should_derefine = true;
             }
 

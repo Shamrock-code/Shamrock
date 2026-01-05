@@ -32,7 +32,7 @@
 #include "shammodels/ramses/modules/InterpolationUtilities.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradientUtilities.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include <hipSYCL/sycl/handler.hpp>
+#include <shambackends/sycl.hpp>
 #include <functional>
 #include <stdexcept>
 
@@ -69,8 +69,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
         u64 id_patch = cur_p.id_patch;
-   
-
 
         // create the refine and derefine flags buffers
         u32 obj_cnt = pdat.get_obj_cnt();
@@ -177,7 +175,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         // add the results to the map
         derefine_list.add_obj(id_patch, OptIndexList{std::move(buf_derefine), len_derefine});
-        
     });
 
     logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks will be refined");
@@ -733,36 +730,42 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Tscal err_min,
             Tscal err_max)
             : error_min(err_min), error_max(err_max),
-              cell_graph_xp(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::xp)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)),
-              cell_graph_xm(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::xm)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)),
-              cell_graph_yp(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::yp)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)),
-              cell_graph_ym(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::ym)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)),
-              cell_graph_zp(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::zp)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)),
-              cell_graph_zm(shambase::get_check_ref(storage.cell_graph_edge)
-                                .get_refs_dir(Direction_::zm)
-                                .get(id_patch)
-                                .get()
-                                .get_read_access(depend_list)) {
+              cell_graph_xp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::xp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)),
+              cell_graph_xm(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::xm)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)),
+              cell_graph_yp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::yp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)),
+              cell_graph_ym(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::ym)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)),
+              cell_graph_zp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::zp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)),
+              cell_graph_zm(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction_::zm)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depend_list)) {
             block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depend_list);
             block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depend_list);
             p_id             = id_patch;

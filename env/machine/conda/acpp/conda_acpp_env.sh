@@ -1,8 +1,5 @@
 # Everything before this line will be provided by the new-env script
 
-export CMAKE_GENERATOR="Ninja"
-export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
-
 # Check if the activation failed
 if ! conda info --envs | grep -q "shamrock_dev_environment"; then
     echo " -- Shamrock dev environment not found."
@@ -16,6 +13,22 @@ echo " --------- Activating conda environment --------- "
 conda activate shamrock_dev_environment
 echo " ------------- Environment activated ------------ "
 
+if which ccache &> /dev/null; then
+    # to debug
+    #export CCACHE_DEBUG=1
+    #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
+
+    export CCACHE_COMPILERTYPE=clang
+    export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+    echo " ----- ccache found, using it ----- "
+else
+    export CCACHE_CMAKE_ARG=""
+fi
+
+export CMAKE_GENERATOR="Ninja"
+export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
+
+
 #enfore the use of the correct clang++ as the installation of acpp register a buggy compiler
 export ACPP_CPU_CXX=$(which clang++)
 
@@ -23,6 +36,7 @@ function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
+        ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="acpp" \

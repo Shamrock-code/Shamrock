@@ -18,6 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/RequestList.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -87,75 +88,34 @@ namespace {
         bool is_recv;
     };
 
-    struct RequestList {
+    auto report_unfinished_requests
+        = [](shamalgs::collective::RequestList &rqs, std::vector<rq_info> &rqs_infos) {
+              std::string err_msg = "";
+              for (u32 i = 0; i < rqs.size(); i++) {
+                  if (!rqs.is_event_ready(i)) {
 
-        std::vector<MPI_Request> rqs;
-        std::vector<bool> is_ready;
-
-        u32 ready_count = 0;
-
-        MPI_Request &new_request() {
-            rqs.push_back(MPI_Request{});
-            u32 rq_index = rqs.size() - 1;
-            auto &rq     = rqs[rq_index];
-            is_ready.push_back(false);
-            return rq;
-        }
-
-        void test_ready() {
-            for (u32 i = 0; i < rqs.size(); i++) {
-                if (!is_ready[i]) {
-                    MPI_Status st;
-                    int ready;
-                    shamcomm::mpi::Test(&rqs[i], &ready, MPI_STATUS_IGNORE);
-                    if (ready) {
-                        is_ready[i] = true;
-                        ready_count++;
-                    }
-                }
-            }
-        }
-
-        bool all_ready() { return ready_count == rqs.size(); }
-
-        void wait_all() {
-            std::vector<MPI_Status> st_lst(rqs.size());
-            shamcomm::mpi::Waitall(rqs.size(), rqs.data(), st_lst.data());
-        }
-
-        u32 remain_count() {
-            test_ready();
-            return rqs.size() - ready_count;
-        }
-    };
-
-    auto report_unfinished_requests = [](RequestList &rqs, std::vector<rq_info> &rqs_infos) {
-        std::string err_msg = "";
-        for (u32 i = 0; i < rqs.rqs.size(); i++) {
-            if (!rqs.is_ready[i]) {
-
-                if (rqs_infos[i].is_send) {
-                    err_msg += shambase::format(
-                        "communication timeout : send {} -> {} tag {} size {}\n",
-                        rqs_infos[i].sender,
-                        rqs_infos[i].receiver,
-                        rqs_infos[i].tag,
-                        rqs_infos[i].size);
-                } else {
-                    err_msg += shambase::format(
-                        "communication timeout : recv {} -> {} tag {} size {}\n",
-                        rqs_infos[i].sender,
-                        rqs_infos[i].receiver,
-                        rqs_infos[i].tag,
-                        rqs_infos[i].size);
-                }
-            }
-        }
-        std::string msg = shambase::format("communication timeout : \n{}", err_msg);
-        logger::err_ln("Sparse comm", msg);
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        shambase::throw_with_loc<std::runtime_error>(msg);
-    };
+                      if (rqs_infos[i].is_send) {
+                          err_msg += shambase::format(
+                              "communication timeout : send {} -> {} tag {} size {}\n",
+                              rqs_infos[i].sender,
+                              rqs_infos[i].receiver,
+                              rqs_infos[i].tag,
+                              rqs_infos[i].size);
+                      } else {
+                          err_msg += shambase::format(
+                              "communication timeout : recv {} -> {} tag {} size {}\n",
+                              rqs_infos[i].sender,
+                              rqs_infos[i].receiver,
+                              rqs_infos[i].tag,
+                              rqs_infos[i].size);
+                      }
+                  }
+              }
+              std::string msg = shambase::format("communication timeout : \n{}", err_msg);
+              logger::err_ln("Sparse comm", msg);
+              std::this_thread::sleep_for(std::chrono::seconds(2));
+              shambase::throw_with_loc<std::runtime_error>(msg);
+          };
 
     auto test_event_completions
         = [](std::vector<MPI_Request> &rqs, std::vector<rq_info> &rqs_infos) {
@@ -583,7 +543,7 @@ namespace shamalgs::collective {
             }
         }
 
-        test_event_completions(rqs.rqs, rqs_infos);
+        test_event_completions(rqs.requests(), rqs_infos);
 
         rqs.wait_all();
 

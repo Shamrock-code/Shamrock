@@ -24,6 +24,7 @@
 #include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"
@@ -128,8 +129,8 @@ namespace shammodels::basegodunov {
 
         using mode = std::variant<None, DensityBased>;
 
-        mode config = None{};
-
+        mode config        = None{};
+        bool do_refinement = false;
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
     };
@@ -244,6 +245,7 @@ struct shammodels::basegodunov::SolverConfig {
 
     /// AMR refinement mode
     AMRMode<Tvec, TgridVec> amr_mode = {};
+    inline bool do_amr_refinement() { return amr_mode.do_refinement; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -317,6 +319,10 @@ struct shammodels::basegodunov::SolverConfig {
                     "> 0",
                     npscal_gas_config.npscal_gas));
             }
+        }
+
+        if (do_amr_refinement()) {
+            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "AMR Refinement is experimental"));
         }
     }
 };

@@ -67,7 +67,7 @@ namespace {
 
             Tscal get_dt_rho(
                 Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
-                return -(  v[0] * grad_rho[0] + rho * dx_v[0] );
+                return -(v[0] * grad_rho[0] + rho * dx_v[0]);
                 // return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
             }
 
@@ -179,9 +179,9 @@ namespace {
                   dt_interp(dt_interp), acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
 
             Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
-                return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
+                // return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
 
-                // return -(v[0] * dx_v  + grad_P[0] / rho);
+                return -(v[0] * dx_v + grad_P[0] / rho);
             }
 
             std::array<Tvec, 2> get_link_field_val(u32 id_a, u32 id_b) const {
@@ -214,8 +214,10 @@ namespace {
                 Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp;
                 Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
 
-                vel_face_a [1] *= 0; vel_face_b[2]*=0;
-                vel_face_b [1] *= 0; vel_face_b[2]*=0; 
+                vel_face_a[1] *= 0;
+                vel_face_b[2] *= 0;
+                vel_face_b[1] *= 0;
+                vel_face_b[2] *= 0;
 
                 return {vel_face_a, vel_face_b};
             }
@@ -326,9 +328,8 @@ namespace {
                 // Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
                 // Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
 
-
-                Tscal P_face_a = P_a + grad_P_a[0]* shift_a[0]  + dtP_cell_a * dt_interp;
-                Tscal P_face_b = P_b + grad_P_b[0]* shift_b[0]  + dtP_cell_b * dt_interp;
+                Tscal P_face_a = P_a + grad_P_a[0] * shift_a[0] + dtP_cell_a * dt_interp;
+                Tscal P_face_b = P_b + grad_P_b[0] * shift_b[0] + dtP_cell_b * dt_interp;
 
                 return {P_face_a, P_face_b};
             }

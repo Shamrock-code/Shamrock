@@ -323,6 +323,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.make_generator_lattice_hcp(dr, {box_min, box_max});
             })
         .def(
+            "make_generator_lattice_cubic",
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
+                return self.make_generator_lattice_cubic(dr, {box_min, box_max});
+            })
+        .def(
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,

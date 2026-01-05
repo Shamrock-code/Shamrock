@@ -194,8 +194,11 @@ namespace {
                                     });
 
                                 field_dx[var_per_cell * cell_global_id + var_off_loc] = result[0];
-                                field_dy[var_per_cell * cell_global_id + var_off_loc] = result[1];
-                                field_dz[var_per_cell * cell_global_id + var_off_loc] = result[2];
+                                // field_dy[var_per_cell * cell_global_id + var_off_loc] = result[1];
+                                // field_dz[var_per_cell * cell_global_id + var_off_loc] = result[2];
+
+                                field_dy[var_per_cell * cell_global_id + var_off_loc] = 0 * result[1];
+                                field_dz[var_per_cell * cell_global_id + var_off_loc] = 0 * result[2];
                             });
                     });
 

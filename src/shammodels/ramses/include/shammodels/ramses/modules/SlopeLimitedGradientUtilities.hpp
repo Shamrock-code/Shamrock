@@ -300,7 +300,7 @@ namespace {
 
         using namespace sham;
         using namespace sham::details;
-
+/*
         auto grad_scalar = [&](T u_curr, T u_neigh) {
             T max = g_sycl_max(g_sycl_abs(u_curr), g_sycl_abs(u_neigh));
             max   = g_sycl_abs(u_curr - u_neigh) / max;
@@ -334,6 +334,40 @@ namespace {
             u_ym_dir,
             u_zp_dir,
             u_zm_dir);
+        */
+        auto get_avg_neigh = [&](auto &graph_links) -> T {
+            T acc   = shambase::VectorProperties<T>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+            // if(cnt > 1)
+                // logger::info_ln("cell [",cell_global_id,"] : ", cnt, "\t\n");
+            if (cnt == 1 || (cnt >1  && cnt != 4)){
+                return acc / cnt;
+            }
+            else return  0;
+            // return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+        };
+
+        auto epsilon = shambase::get_epsilon<T>();
+        T u_cur      = field_access(cell_global_id);
+        // T u_xp = 0;
+        // T u_xm = 0;
+        T u_xp       = get_avg_neigh(graph_iter_xp);
+        T u_xm       = get_avg_neigh(graph_iter_xm);
+        T u_yp       = get_avg_neigh(graph_iter_yp);
+        T u_ym       = get_avg_neigh(graph_iter_ym);
+        T u_zp       = get_avg_neigh(graph_iter_zp);
+        T u_zm       = get_avg_neigh(graph_iter_zm);
+
+        T x_scal =  2 * g_sycl_max(g_sycl_abs((u_cur - u_xm)/ (epsilon + u_cur + u_xm)), g_sycl_abs((u_cur - u_xp)/ (epsilon + u_cur + u_xp)));
+        T y_scal = 0.;
+        T z_scal = 0.; 
+        // T y_scal =  2 * g_sycl_max(g_sycl_abs((u_cur - u_ym)/ (epsilon + u_cur + u_ym)), g_sycl_abs((u_cur - u_yp)/ (epsilon + u_cur + u_yp)));
+        // T z_scal =  2 * g_sycl_max(g_sycl_abs((u_cur - u_zm)/ (epsilon + u_cur + u_zm)), g_sycl_abs((u_cur - u_zp)/ (epsilon + u_cur + u_zp)));
+
+        T res = g_sycl_max(x_scal, g_sycl_max(y_scal, z_scal));
+
         return res;
     }
 

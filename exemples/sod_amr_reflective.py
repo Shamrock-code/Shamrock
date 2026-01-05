@@ -14,9 +14,9 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 multx = 1
 multy = 1
 multz = 1
-max_amr_lev = 2
+max_amr_lev = 3
 cell_size = 1 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 16
+base = 8
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -24,11 +24,12 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+cfg.set_Csafe(0.3)
 cfg.set_boundary_condition("x", "reflective")
 cfg.set_boundary_condition("y", "reflective")
 cfg.set_boundary_condition("z", "reflective")
 cfg.set_riemann_solver_hllc()
-smooth_crit = 0.3
+smooth_crit = 0.3 // 0.05
 # cfg.set_amr_mode_slope_based(crit_smooth=smooth_crit)
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
@@ -36,14 +37,14 @@ mass_crit = 1e-6 * 5 * 2 * 2
 # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 
 
-err_min = 0.01
-err_max = 0.02
-# cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
+err_min = 0.05
+err_max = 0.05
+cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
 
 crit_refin = 0.1
 crit_coars = 0.2
-cfg.set_amr_mode_second_order_derivative_based(crit_min=crit_refin, crit_max=crit_coars)
+# cfg.set_amr_mode_second_order_derivative_based(crit_min=crit_refin, crit_max=crit_coars)
 model.set_solver_config(cfg)
 
 
@@ -142,10 +143,10 @@ dt = 0
 t = 0
 freq = 1
 dX0 = []
-for i in range(10000):
+for i in range(100000):
 
-    if i % freq == 0:
-        model.dump_vtk(f"test{i:04d}.vtk")
+    if ((i % freq == 0) ):
+        model.dump_vtk(f"test{i:04d}_ref_out.vtk")
     next_dt = model.evolve_once_override_time(t, dt)
     if i == 0:
         dic0 = convert_to_cell_coords(ctx.collect_data())
@@ -157,6 +158,7 @@ for i in range(10000):
     if t_target < t + next_dt:
         dt = t_target - t
     if t == t_target:
+        model.dump_vtk(f"test{i:04d}_ref_out.vtk")
         break
 
 # for i in range(1000):
@@ -244,15 +246,20 @@ if True:
     # plt.title(r"$m_{crit}=" + str(mass_crit) + "$")
     # plt.title(r"$smooth_{crit}=" + str(smooth_crit) + "$")
     # plt.title(f"err_min={err_min} --- err_max = {err_max} -- max_amr_lev ={max_amr_lev}")
+
     plt.title(f"crit_ref={crit_refin} --- crit_coars = {crit_coars} -- max_amr_lev ={max_amr_lev}")
-    # plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}-reflective_mass.pdf")
+   
+   # plt.savefig(f"sod_tube-mass-{mass_crit}-base-{base}-tf-{t_target}-reflective_mass.pdf")
+    
     # plt.savefig(f"sod_tube-mass-{smooth_crit}-base-{base}-tf-{t_target}-reflective_slope_based.pdf")
-    # plt.savefig(
-    #     f"sod_tube-err_min-{err_min}-err_max-{err_max}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_pseudo_gradient_based.pdf"
-    # )
+   
     plt.savefig(
-        f"sod_tube-crit_ref-{crit_refin}-crit_coars-{crit_coars}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_second_order_derivative_based_no_interpolation.pdf"
+        f"sod_tube-err_min-{err_min}-err_max-{err_max}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_pseudo_gradient_based.pdf"
     )
+
+    # plt.savefig(
+    #     f"sod_tube-crit_ref-{crit_refin}-crit_coars-{crit_coars}-base-{base}-max_amr-{max_amr_lev}-tf-{t_target}-reflective_second_order_derivative_based_no_interpolation.pdf"
+    # )
 
     plt.savefig("sod_tube.png")
     #######

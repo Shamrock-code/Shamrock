@@ -11,11 +11,11 @@ ctx.pdata_layout_new()
 model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
 
-multx = 1
+multx = 2
 multy = 1
 multz = 1
 
-cell_size = 1 << 2  # refinement is limited to cell_size = 2
+cell_size = 1 << 3  # refinement is limited to cell_size = 2
 base = 16
 
 cfg = model.gen_default_config()
@@ -24,8 +24,9 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+cfg.set_Csafe(0.8)
 # cfg.set_riemann_solver_rusanov()
-cfg.set_riemann_solver_hll()
+cfg.set_riemann_solver_hllc()
 
 # cfg.set_slope_lim_none()
 # cfg.set_slope_lim_vanleer_f()
@@ -34,8 +35,12 @@ cfg.set_riemann_solver_hll()
 cfg.set_slope_lim_minmod()
 cfg.set_face_time_interpolation(True)
 mass_crit = 1e-6 * 5 * 2 * 2
-cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+# cfg.set_amr_mode_density_based(crit_mass=mass_crit)
 model.set_solver_config(cfg)
+
+err_min = 0.05
+err_max = 0.05
+cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
 
 model.init_scheduler(int(1e7), 1)

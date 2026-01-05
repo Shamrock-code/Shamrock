@@ -78,7 +78,10 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
                 gamma);
 
             flux_rho_face[link_id]  = flux_dir.rho;
-            flux_rhov_face[link_id] = flux_dir.rhovel;
+            // flux_rhov_face[link_id] = flux_dir.rhovel;
+            flux_rhov_face[link_id][0] = flux_dir.rhovel[0];
+            flux_rhov_face[link_id][1] = 0;
+            flux_rhov_face[link_id][2] = 0;
             flux_rhoe_face[link_id] = flux_dir.rhoe;
         });
 }

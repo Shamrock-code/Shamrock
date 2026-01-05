@@ -27,7 +27,7 @@ gamma = 1.4
 
 # %%
 # Init model
-
+shamrock.enable_experimental_features()
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 

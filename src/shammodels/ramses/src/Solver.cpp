@@ -1534,8 +1534,31 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
+
+    {
+
+        
+            modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{AMRBlock::block_size, solver_config.eos_gamma};
+            node_ctp_after_updated.set_edges(
+                storage.block_counts_with_ghost,
+                storage.refs_rho,
+                storage.refs_rhov,
+                storage.refs_rhoe,
+                storage.vel,
+                storage.press); 
+            
+            node_ctp_after_updated.evaluate();
+        
+    }
+
+    // if(dt_input > 0)
+    // {
+    //     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+    //     refinement.update_refinement();
+    // }
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
     refinement.update_refinement();
+   
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();

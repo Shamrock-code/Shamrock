@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file orbits.hpp
+ * @file collapse.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

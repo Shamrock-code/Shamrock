@@ -15,18 +15,19 @@
  * @brief Force computation for Special Relativistic GSPH
  *
  * Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
- * Equations 58-59 for momentum and energy evolution.
+ * Equations 371-375 for momentum and energy evolution with variable smoothing length.
  *
- * Key formulas:
- *   dS_i/dt = -Σ_j P* V²ij (∇W_i + ∇W_j)
- *   de_i/dt = v* · dS_i/dt
+ * Key formulas (Kitajima Eq. 371-372):
+ *   ⟨νᵢṠᵢ⟩ = -Σⱼ P*ᵢⱼ V²ᵢⱼ,interp [∇ᵢW(xᵢ-xⱼ, √2hᵢ) - ∇ⱼW(xᵢ-xⱼ, √2hⱼ)]
+ *   ⟨νᵢėᵢ⟩ = -Σⱼ P*ᵢⱼ v*ᵢⱼ · V²ᵢⱼ,interp [∇ᵢW - ∇ⱼW]
  *
- * where:
- *   V²ij = 0.5*(V_i² + V_j²) (averaged volume factor)
- *   V = ν/N (volume per particle, ν = SPH baryon number, N = lab-frame density)
- *   ∇W = kernel gradient
- *   P* = interface pressure from Riemann solver
- *   v* = interface velocity from Riemann solver
+ * where (Kitajima Eq. 365):
+ *   V²ᵢⱼ,interp = (1/2)(V²ᵢⱼ(hᵢ) + V²ᵢⱼ(hⱼ))  - single interpolated volume
+ *   V = ν/N (volume per particle)
+ *   [∇ᵢW - ∇ⱼW] = antisymmetric gradient difference
+ *
+ * Note: This uses the INTERPOLATED V² formulation from the paper,
+ * NOT the separate V²Ω grad-h corrected form.
  */
 
 #include "shambackends/math.hpp"
@@ -36,31 +37,78 @@
 namespace shammodels::gsph::sr {
 
     /**
-     * @brief Compute SR force contribution for a particle pair
+     * @brief Compute SR force contribution for a particle pair (interpolated V² formula)
      *
-     * Averaged volume formulation (Kitajima et al. 2025, Eq. 58):
-     *   dS_i/dt += -P* * V²ij * (∇W_i + ∇W_j)
+     * Kitajima et al. (2025) Eq. 371 with variable smoothing length:
+     *   dS_i/dt += -P* * V²ᵢⱼ,interp * (∇W_i + ∇W_j)
      *
-     * where V²ij = 0.5 * (V_i² + V_j²) is the symmetric average.
+     * where V²ᵢⱼ,interp = 0.5 * (V_i² + V_j²) is the interpolated volume factor.
+     *
+     * Note: The gradient signs are such that ∇W_i and ∇W_j both point in
+     * the same direction (from j to i), so their sum gives the antisymmetric
+     * form [∇ᵢW - ∇ⱼW] from the paper (since ∇ⱼW points opposite to ∇ᵢW).
      *
      * @tparam Tscal Scalar type
      * @tparam Tvec Vector type
      * @param P_star Interface pressure from Riemann solver
      * @param V_i Volume of particle i (ν_i / N_i)
      * @param V_j Volume of particle j (ν_j / N_j)
+     * @param grad_W_i Kernel gradient for particle i (points from j to i)
+     * @param grad_W_j Kernel gradient for particle j (points from j to i)
+     * @return Force contribution to dS_i/dt
+     */
+    template<class Tscal, class Tvec>
+    inline Tvec sr_momentum_force(
+        Tscal P_star,
+        Tscal V_i,
+        Tscal V_j,
+        Tvec grad_W_i,
+        Tvec grad_W_j) {
+
+        // Kitajima Eq. 365: Interpolated volume factor
+        const Tscal V2_interp = Tscal{0.5} * (V_i * V_i + V_j * V_j);
+
+        // Kitajima Eq. 371: Force with interpolated V²
+        // F = -P* * V²_interp * (∇W_i + ∇W_j)
+        return (grad_W_i + grad_W_j) * (-P_star * V2_interp);
+    }
+
+    /**
+     * @brief Compute SR force contribution with grad-h correction
+     *
+     * Grad-h corrected force formula (Price 2012, Hopkins 2013):
+     *   dS_i/dt += -P* * (V_i²/Ω_i * ∇W_i + V_j²/Ω_j * ∇W_j)
+     *
+     * where Ω = 1 + (h/(3ρ)) * Σⱼ mⱼ ∂W/∂h is the grad-h correction factor.
+     * This accounts for spatial variation of h and ensures conservation.
+     *
+     * @tparam Tscal Scalar type
+     * @tparam Tvec Vector type
+     * @param P_star Interface pressure from Riemann solver
+     * @param V_i Volume of particle i
+     * @param V_j Volume of particle j
+     * @param omega_i Grad-h correction factor for particle i
+     * @param omega_j Grad-h correction factor for particle j
      * @param grad_W_i Kernel gradient for particle i
      * @param grad_W_j Kernel gradient for particle j
      * @return Force contribution to dS_i/dt
      */
     template<class Tscal, class Tvec>
     inline Tvec sr_momentum_force(
-        Tscal P_star, Tscal V_i, Tscal V_j, Tvec grad_W_i, Tvec grad_W_j) {
+        Tscal P_star,
+        Tscal V_i,
+        Tscal V_j,
+        Tscal omega_i,
+        Tscal omega_j,
+        Tvec grad_W_i,
+        Tvec grad_W_j) {
 
-        // Averaged volume factor (Kitajima Eq. 53): V²ij = 0.5 * (V_i² + V_j²)
-        const Tscal Vij2 = Tscal{0.5} * (V_i * V_i + V_j * V_j);
+        // Grad-h corrected force: F = -P* * (V_i²/Ω_i * ∇W_i + V_j²/Ω_j * ∇W_j)
+        // Using inv_sat_zero to handle omega = 0 case safely
+        const Tscal V2_omega_i = V_i * V_i * sham::inv_sat_zero(omega_i);
+        const Tscal V2_omega_j = V_j * V_j * sham::inv_sat_zero(omega_j);
 
-        // Force: F = -P* * V²ij * (∇W_i + ∇W_j)
-        return (grad_W_i + grad_W_j) * (-P_star * Vij2);
+        return -(grad_W_i * V2_omega_i + grad_W_j * V2_omega_j) * P_star;
     }
 
     /**
@@ -186,13 +234,11 @@ namespace shammodels::gsph::sr {
     }
 
     /**
-     * @brief Full SR force computation for a particle pair
+     * @brief Full SR force computation for a particle pair (interpolated V² formula)
      *
      * Computes both momentum and energy contributions in one call.
-     * This is the main entry point for SR-GSPH force computation.
-     *
-     * Uses averaged volume formulation (Kitajima et al. 2025, Eq. 58-59):
-     *   dS_i/dt = -P* * V²ij * (∇W_i + ∇W_j)
+     * Uses Kitajima et al. (2025) Eq. 371-372 with interpolated V²:
+     *   dS_i/dt = -P* * V²_interp * (∇W_i + ∇W_j)
      *   de_i/dt = v* · dS_i/dt
      *
      * @tparam Tscal Scalar type
@@ -225,8 +271,45 @@ namespace shammodels::gsph::sr {
         Tvec &dS_i,
         Tscal &de_i) {
 
-        // Compute momentum force using averaged volume
+        // Compute momentum force using Kitajima interpolated V² formula
         Tvec force = sr_momentum_force<Tscal, Tvec>(P_star, V_i, V_j, grad_W_i, grad_W_j);
+
+        // Reconstruct v* vector (use upwind direction for tangent)
+        Tvec v_t_dir = (v_x_star > Tscal{0}) ? v_t_dir_L : v_t_dir_R;
+        Tvec v_star  = n_ij * v_x_star + v_t_dir * v_t_star;
+
+        // Compute energy evolution
+        dS_i = force;
+        de_i = sr_energy_evolution<Tscal, Tvec>(v_star, force);
+    }
+
+    /**
+     * @brief Full SR force computation with grad-h correction
+     *
+     * Uses grad-h corrected force formula:
+     *   dS_i/dt = -P* * (V_i²/Ω_i * ∇W_i + V_j²/Ω_j * ∇W_j)
+     *   de_i/dt = v* · dS_i/dt
+     */
+    template<class Tscal, class Tvec>
+    inline void sr_pairwise_force(
+        Tscal P_star,
+        Tscal v_x_star,
+        Tscal v_t_star,
+        Tvec n_ij,
+        Tvec v_t_dir_L,
+        Tvec v_t_dir_R,
+        Tscal V_i,
+        Tscal V_j,
+        Tscal omega_i,
+        Tscal omega_j,
+        Tvec grad_W_i,
+        Tvec grad_W_j,
+        Tvec &dS_i,
+        Tscal &de_i) {
+
+        // Compute momentum force using grad-h corrected V²/Ω formula
+        Tvec force =
+            sr_momentum_force<Tscal, Tvec>(P_star, V_i, V_j, omega_i, omega_j, grad_W_i, grad_W_j);
 
         // Reconstruct v* vector (use upwind direction for tangent)
         Tvec v_t_dir = (v_x_star > Tscal{0}) ? v_t_dir_L : v_t_dir_R;
@@ -241,6 +324,7 @@ namespace shammodels::gsph::sr {
      * @brief Simplified SR force computation (no tangent velocity)
      *
      * For cases where tangent velocity is zero or not needed.
+     * Uses Kitajima interpolated V² formulation.
      *
      * @tparam Tscal Scalar type
      * @tparam Tvec Vector type
@@ -257,8 +341,37 @@ namespace shammodels::gsph::sr {
         Tvec &dS_i,
         Tscal &de_i) {
 
-        // Compute momentum force using averaged volume
+        // Compute momentum force using Kitajima interpolated V² formula
         Tvec force = sr_momentum_force<Tscal, Tvec>(P_star, V_i, V_j, grad_W_i, grad_W_j);
+
+        // v* is purely normal direction
+        Tvec v_star = n_ij * v_x_star;
+
+        // Compute energy evolution
+        dS_i = force;
+        de_i = sr_energy_evolution<Tscal, Tvec>(v_star, force);
+    }
+
+    /**
+     * @brief Simplified SR force computation with grad-h correction
+     */
+    template<class Tscal, class Tvec>
+    inline void sr_pairwise_force_simple(
+        Tscal P_star,
+        Tscal v_x_star,
+        Tvec n_ij,
+        Tscal V_i,
+        Tscal V_j,
+        Tscal omega_i,
+        Tscal omega_j,
+        Tvec grad_W_i,
+        Tvec grad_W_j,
+        Tvec &dS_i,
+        Tscal &de_i) {
+
+        // Compute momentum force using grad-h corrected V²/Ω formula
+        Tvec force =
+            sr_momentum_force<Tscal, Tvec>(P_star, V_i, V_j, omega_i, omega_j, grad_W_i, grad_W_j);
 
         // v* is purely normal direction
         Tvec v_star = n_ij * v_x_star;

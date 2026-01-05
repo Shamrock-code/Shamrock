@@ -182,6 +182,32 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
             })
+        .def(
+            "set_c_smooth",
+            [](TConfig &self, Tscal c_smooth) {
+                self.c_smooth = c_smooth;
+            },
+            R"(Set Kitajima C_smooth factor for smoother h variation.
+
+            C_smooth = 1.0 (default): Standard SPH behavior
+            C_smooth > 1.0: Makes h larger at discontinuities, reducing overshoot/undershoot
+            Recommended: 1.5-2.0 for strong shocks
+
+            Reference: Kitajima, Inutsuka, and Seno (2025) Eq. 233-237
+            )")
+        .def(
+            "set_use_grad_h",
+            [](TConfig &self, bool use_grad_h) {
+                self.use_grad_h = use_grad_h;
+            },
+            R"(Enable/disable grad-h correction in force computation.
+
+            False (default): Use Kitajima interpolated V² formula
+            True: Use V²/Ω grad-h corrected formula (Price 2012, Hopkins 2013)
+
+            The grad-h correction accounts for spatial variation of h and
+            improves momentum/energy conservation in variable-h SPH.
+            )")
         .def("to_json", [](TConfig &self) {
             return nlohmann::json{self}.dump(4);
         });
@@ -519,7 +545,7 @@ Register_pymod(pygsphmodel) {
     >>> ctx = shamrock.ShamrockCtx()
     >>> model = shamrock.get_Model_GSPH(context=ctx)  # Uses M4 kernel by default
     >>> config = model.gen_default_config()
-    >>> config.set_riemann_hllc()
+    >>> config.set_riemann_iterative()
     >>> config.set_eos_adiabatic(1.4)
     >>> model.set_solver_config(config)
 )==");

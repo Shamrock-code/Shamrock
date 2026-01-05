@@ -310,6 +310,18 @@ struct shammodels::gsph::SolverConfig {
     u32 h_iter_per_subcycles   = 50;   ///< Max iterations per subcycle
     u32 h_max_subcycles_count  = 100;  ///< Max subcycles before crash
 
+    /// C_smooth factor from Kitajima et al. (2025) Eq. 233-237
+    /// Makes h vary more smoothly across discontinuities.
+    /// C_smooth = 1.0 gives standard SPH behavior.
+    /// C_smooth > 1.0 increases h at discontinuities, reducing overshoot/undershoot.
+    /// Recommended: 1.5-2.0 for strong shocks.
+    Tscal c_smooth = 1.0;
+
+    /// Enable grad-h correction in force computation
+    /// Uses V²/Ω instead of interpolated V² (Price 2012, Hopkins 2013)
+    /// This accounts for spatial variation of h and ensures conservation.
+    bool use_grad_h = false;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -412,6 +424,8 @@ namespace shammodels::gsph {
             {"epsilon_h", p.epsilon_h},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
+            {"c_smooth", p.c_smooth},
+            {"use_grad_h", p.use_grad_h},
         };
     }
 
@@ -452,6 +466,12 @@ namespace shammodels::gsph {
         j.at("epsilon_h").get_to(p.epsilon_h);
         j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
         j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
+        if (j.contains("c_smooth")) {
+            j.at("c_smooth").get_to(p.c_smooth);
+        }
+        if (j.contains("use_grad_h")) {
+            j.at("use_grad_h").get_to(p.use_grad_h);
+        }
     }
 
 } // namespace shammodels::gsph

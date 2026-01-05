@@ -45,6 +45,19 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
     // Check if SR mode is enabled - use SR-specific update with exact Riemann solver
     if (solver_config.is_sr_enabled()) {
+        // SR-GSPH only supports exact Riemann solver - reject HLL/Roe
+        if (cfg_riemann.is_hll()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "SR-GSPH does not support HLL Riemann solver. "
+                "SR mode uses the exact Riemann solver from Pons et al. (2000). "
+                "Remove set_riemann_hll() or use set_riemann_iterative().");
+        }
+        if (cfg_riemann.is_roe()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "SR-GSPH does not support Roe Riemann solver. "
+                "SR mode uses the exact Riemann solver from Pons et al. (2000). "
+                "Remove set_riemann_roe() or use set_riemann_iterative().");
+        }
         update_derivs_sr();
         return;
     }
@@ -491,6 +504,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
     u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
+    u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>("omega");
 
     auto &merged_xyzh                                 = storage.merged_xyzh.get();
     shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
@@ -507,6 +521,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
     const Tscal c_speed   = solver_config.sr_config.get_c_speed();
     const Tscal gamma_eos = solver_config.get_eos_gamma();
     const Tscal pmass     = solver_config.gpart_mass;
+    const bool use_grad_h = solver_config.use_grad_h;
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -515,6 +530,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
             = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
         sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
             = pressure_field.get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_cs = soundspeed_field.get_field(cur_p.id_patch).get_buf();
@@ -534,6 +550,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
         auto xyz          = buf_xyz.get_read_access(depends_list);
         auto vxyz         = buf_vxyz.get_read_access(depends_list);
         auto hpart        = buf_hpart.get_read_access(depends_list);
+        auto omega_acc    = buf_omega.get_read_access(depends_list);
         auto density_acc  = buf_density.get_read_access(depends_list);
         auto pressure_acc = buf_pressure.get_read_access(depends_list);
         auto cs_acc       = buf_cs.get_read_access(depends_list);
@@ -543,7 +560,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
         auto dS_acc = buf_dS.get_write_access(depends_list);
         auto de_acc = buf_de.get_write_access(depends_list);
 
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+        auto e = q.submit(depends_list, [&, use_grad_h](sycl::handler &cgh) {
             const Tscal c2 = c_speed * c_speed;
 
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
@@ -556,9 +573,10 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
                 Tvec sum_dS  = {0, 0, 0}; // dS/dt accumulator (momentum)
                 Tscal sum_de = 0;         // de/dt accumulator (energy)
 
-                const Tscal h_a   = hpart[id_a];
-                const Tvec xyz_a  = xyz[id_a];
-                const Tvec vxyz_a = vxyz[id_a];
+                const Tscal h_a     = hpart[id_a];
+                const Tvec xyz_a    = xyz[id_a];
+                const Tvec vxyz_a   = vxyz[id_a];
+                const Tscal omega_a = omega_acc[id_a];
 
                 // SPH density summation gives lab-frame N = ν·ΣW (NOT rest-frame n)
                 const Tscal N_a = sycl::fmax(density_acc[id_a], Tscal{1e-30});
@@ -591,8 +609,9 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
                         return;
                     }
 
-                    const Tscal rab   = sycl::sqrt(rab2);
-                    const Tvec vxyz_b = vxyz[id_b];
+                    const Tscal rab     = sycl::sqrt(rab2);
+                    const Tvec vxyz_b   = vxyz[id_b];
+                    const Tscal omega_b = omega_acc[id_b];
 
                     // SPH density gives lab-frame N for particle b
                     const Tscal N_b = sycl::fmax(density_acc[id_b], Tscal{1e-30});
@@ -649,21 +668,48 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
                     const Tvec grad_W_a   = n_ij * dW_a;
                     const Tvec grad_W_b   = n_ij * dW_b;
 
-                    // SR force computation (Kitajima Eq. 58-59)
-                    // dS/dt = -P* V²ij (∇W_i + ∇W_j)
-                    // de/dt = v* · dS/dt
+                    // Tangent velocity unit vectors (normalized, zero if |v_t| too small)
+                    const Tscal v_t_mag_a_safe = sycl::fmax(v_t_mag_a, Tscal{1e-30});
+                    const Tscal v_t_mag_b_safe = sycl::fmax(v_t_mag_b, Tscal{1e-30});
+                    const Tvec v_t_dir_a       = v_t_vec_a / v_t_mag_a_safe;
+                    const Tvec v_t_dir_b       = v_t_vec_b / v_t_mag_b_safe;
+
+                    // SR force computation with tangent velocity
+                    // With grad-h: dS/dt = -P* (V_a²/Ω_a ∇W_a + V_b²/Ω_b ∇W_b)
+                    // Without:     dS/dt = -P* (V_a² + V_b²)/2 (∇W_a + ∇W_b)
                     Tvec dS_contrib;
                     Tscal de_contrib;
-                    sr::sr_pairwise_force_simple<Tscal, Tvec>(
-                        P_star,
-                        v_x_star,
-                        n_ij,
-                        V_a,
-                        V_b,
-                        grad_W_a,
-                        grad_W_b,
-                        dS_contrib,
-                        de_contrib);
+                    if (use_grad_h) {
+                        sr::sr_pairwise_force<Tscal, Tvec>(
+                            P_star,
+                            v_x_star,
+                            v_t_star,
+                            n_ij,
+                            v_t_dir_b,
+                            v_t_dir_a,
+                            V_a,
+                            V_b,
+                            omega_a,
+                            omega_b,
+                            grad_W_a,
+                            grad_W_b,
+                            dS_contrib,
+                            de_contrib);
+                    } else {
+                        sr::sr_pairwise_force<Tscal, Tvec>(
+                            P_star,
+                            v_x_star,
+                            v_t_star,
+                            n_ij,
+                            v_t_dir_b,
+                            v_t_dir_a,
+                            V_a,
+                            V_b,
+                            grad_W_a,
+                            grad_W_b,
+                            dS_contrib,
+                            de_contrib);
+                    }
 
                     sum_dS += dS_contrib;
                     sum_de += de_contrib;
@@ -685,6 +731,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_sr(
         buf_xyz.complete_event_state(e);
         buf_vxyz.complete_event_state(e);
         buf_hpart.complete_event_state(e);
+        buf_omega.complete_event_state(e);
         buf_density.complete_event_state(e);
         buf_pressure.complete_event_state(e);
         buf_cs.complete_event_state(e);

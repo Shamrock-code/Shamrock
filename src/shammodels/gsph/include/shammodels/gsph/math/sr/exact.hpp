@@ -497,27 +497,21 @@ namespace shammodels::gsph::sr {
             return result;
         }
 
-        // Check for superluminal velocities
-        const Tscal v2_L = v_x_L * v_x_L + v_t_L * v_t_L;
-        const Tscal v2_R = v_x_R * v_x_R + v_t_R * v_t_R;
-        if (v2_L >= Tscal{1} || v2_R >= Tscal{1}) {
-            // Fallback: acoustic approximation
-            const Tscal H_L = Tscal{1} + (gamma / (gamma - Tscal{1})) * P_L / n_L;
-            const Tscal H_R = Tscal{1} + (gamma / (gamma - Tscal{1})) * P_R / n_R;
-            const Tscal W_L = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_L, Tscal{0.01}));
-            const Tscal W_R = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_R, Tscal{0.01}));
-            const Tscal cs_L
-                = sycl::sqrt((gamma - Tscal{1}) * (H_L - Tscal{1}) / sycl::fmax(H_L, Tscal{1.01}));
-            const Tscal cs_R
-                = sycl::sqrt((gamma - Tscal{1}) * (H_R - Tscal{1}) / sycl::fmax(H_R, Tscal{1.01}));
-            const Tscal Z_L   = n_L * H_L * W_L * W_L * cs_L;
-            const Tscal Z_R   = n_R * H_R * W_R * W_R * cs_R;
-            const Tscal Z_sum = Z_L + Z_R;
-            result.P_star     = (Z_L * P_R + Z_R * P_L + Z_L * Z_R * (v_x_L - v_x_R)) / Z_sum;
-            result.v_x_star   = (Z_L * v_x_L + Z_R * v_x_R + P_L - P_R) / Z_sum;
-            result.v_t_star   = (result.v_x_star >= Tscal{0}) ? v_t_L : v_t_R;
-            result.converged  = true;
-            return result;
+        // Clamp superluminal velocities (like reference Python implementation)
+        Tscal v2_L = v_x_L * v_x_L + v_t_L * v_t_L;
+        Tscal v2_R = v_x_R * v_x_R + v_t_R * v_t_R;
+        constexpr Tscal v2_max = Tscal{0.99999999};
+        if (v2_L >= v2_max) {
+            const Tscal factor = sycl::sqrt(v2_max / v2_L);
+            v_x_L *= factor;
+            v_t_L *= factor;
+            v2_L = v2_max;
+        }
+        if (v2_R >= v2_max) {
+            const Tscal factor = sycl::sqrt(v2_max / v2_R);
+            v_x_R *= factor;
+            v_t_R *= factor;
+            v2_R = v2_max;
         }
 
         // Residual function: f(P) = v_x_L(P) - v_x_R(P)
@@ -570,23 +564,46 @@ namespace shammodels::gsph::sr {
             }
 
             if (!found) {
-                // Fallback: acoustic approximation
-                const Tscal H_L  = Tscal{1} + (gamma / (gamma - Tscal{1})) * P_L / n_L;
-                const Tscal H_R  = Tscal{1} + (gamma / (gamma - Tscal{1})) * P_R / n_R;
-                const Tscal W_L  = Tscal{1} / sycl::sqrt(Tscal{1} - v2_L);
-                const Tscal W_R  = Tscal{1} / sycl::sqrt(Tscal{1} - v2_R);
-                const Tscal cs_L = sycl::sqrt(
-                    (gamma - Tscal{1}) * (H_L - Tscal{1}) / sycl::fmax(H_L, Tscal{1.01}));
-                const Tscal cs_R = sycl::sqrt(
-                    (gamma - Tscal{1}) * (H_R - Tscal{1}) / sycl::fmax(H_R, Tscal{1.01}));
-                const Tscal Z_L   = n_L * H_L * W_L * W_L * cs_L;
-                const Tscal Z_R   = n_R * H_R * W_R * W_R * cs_R;
-                const Tscal Z_sum = Z_L + Z_R;
-                result.P_star     = (Z_L * P_R + Z_R * P_L + Z_L * Z_R * (v_x_L - v_x_R)) / Z_sum;
-                result.v_x_star   = (Z_L * v_x_L + Z_R * v_x_R + P_L - P_R) / Z_sum;
-                result.v_t_star   = (result.v_x_star >= Tscal{0}) ? v_t_L : v_t_R;
-                result.converged  = true;
-                return result;
+                // Extend bracket range further (like reference Python: p_min *= 0.01, p_max *= 100)
+                P_lo = P_min * Tscal{1e-8};
+                P_hi = P_max * Tscal{1e8};
+                f_lo = f(P_lo);
+                f_hi = f(P_hi);
+
+                // Final attempt: scan with finer resolution
+                if (f_lo * f_hi > Tscal{0}) {
+                    const Tscal log_P_lo_ext = sycl::log10(P_lo);
+                    const Tscal log_P_hi_ext = sycl::log10(P_hi);
+
+                    prev_P = P_lo;
+                    prev_f = f_lo;
+
+                    for (int i = 1; i <= 50 && !found; ++i) {
+                        const Tscal log_P
+                            = log_P_lo_ext + (log_P_hi_ext - log_P_lo_ext) * Tscal(i) / Tscal{50};
+                        const Tscal curr_P = sycl::pow(Tscal{10}, log_P);
+                        const Tscal curr_f = f(curr_P);
+
+                        if (prev_f * curr_f < Tscal{0}) {
+                            P_lo  = prev_P;
+                            P_hi  = curr_P;
+                            f_lo  = prev_f;
+                            f_hi  = curr_f;
+                            found = true;
+                        }
+                        prev_P = curr_P;
+                        prev_f = curr_f;
+                    }
+                }
+
+                // If still not found, use simple average pressure (NO acoustic fallback)
+                if (!found) {
+                    result.P_star    = Tscal{0.5} * (P_L + P_R);
+                    result.v_x_star  = Tscal{0.5} * (v_x_L + v_x_R);
+                    result.v_t_star  = (result.v_x_star >= Tscal{0}) ? v_t_L : v_t_R;
+                    result.converged = false; // Mark as NOT converged
+                    return result;
+                }
             }
         }
 

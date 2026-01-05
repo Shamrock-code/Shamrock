@@ -38,6 +38,7 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/math/sr/primitive_recovery.hpp"
+#include "shammodels/gsph/modules/SREOSComputation.hpp"
 #include "shammodels/gsph/modules/SRPhysics.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
@@ -933,11 +934,13 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     eps_h->set_refs(eps_h_refs);
 
     // Use SPH's IterateSmoothingLengthDensity module (reuse, no duplication)
+    // Pass c_smooth from Kitajima et al. for smoother h variation at discontinuities
     std::shared_ptr<sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>> smth_h_iter
         = std::make_shared<sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
             solver_config.gpart_mass,
             solver_config.htol_up_coarse_cycle,
-            solver_config.htol_up_fine_cycle);
+            solver_config.htol_up_fine_cycle,
+            solver_config.c_smooth);
 
     // SPH's module only iterates h, no density/omega outputs
     smth_h_iter->set_edges(sizes, storage.neigh_cache, pos_merged, hold, hnew, eps_h);
@@ -1079,45 +1082,41 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     StackEntry stack_loc{};
 
+    if (solver_config.is_sr_enabled()) {
+        // Dispatch to SR EOS module for relativistic computation
+        modules::SREOSComputation<Tvec, Kern>(context, solver_config, storage).compute_eos();
+        return;
+    }
+
+    // Newtonian EOS computation
     using namespace shamrock;
     using namespace shamrock::patch;
-
-    // GSPH EOS: Following reference implementation (g_pre_interaction.cpp)
-    // P = (γ - 1) * ρ * u  where ρ is from SPH summation
-    // c = sqrt(γ * (γ - 1) * u)  -- from internal energy, not from P/ρ
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
     const bool has_uint = solver_config.has_field_uint();
-    const bool is_sr    = solver_config.is_sr_enabled();
-    const Tscal c_speed = is_sr ? solver_config.sr_config.get_c_speed() : Tscal{1};
-    const Tscal c2      = c_speed * c_speed;
 
-    // Get ghost layout field indices
-    shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout.get());
-    u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
-    u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
+    PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 idensity_interf                = ghost_layout.get_field_idx<Tscal>("density");
+    u32 iuint_interf                   = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
 
-    shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
+    shamrock::solvergraph::Field<Tscal> &pressure_field
+        = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
 
-    // Size buffers to part_counts_with_ghost (includes ghosts!)
     shambase::DistributedData<u32> &counts_with_ghosts
         = shambase::get_check_ref(storage.part_counts_with_ghost).indexes;
 
     pressure_field.ensure_sizes(counts_with_ghosts);
     soundspeed_field.ensure_sizes(counts_with_ghosts);
 
-    // Iterate over merged_patchdata_ghost (includes local + ghost particles)
     storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
         u32 total_elements
             = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
         if (total_elements == 0)
             return;
 
-        // Use SPH-summation density from communicated ghost data
         sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
         auto &pressure_buf                     = pressure_field.get_field(id).get_buf();
         auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
@@ -1135,49 +1134,25 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         }
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
-                u32 i = (u32) gid;
-
-                // Use SPH-summation density (from compute_omega, communicated to ghosts)
-                Tscal rho = density[i];
-                rho       = sycl::max(rho, Tscal(1e-30));
+            shambase::parallel_for(cgh, total_elements, "compute_eos_newtonian", [=](u64 gid) {
+                u32 i       = (u32) gid;
+                Tscal rho   = sycl::max(density[i], Tscal(1e-30));
 
                 if (has_uint && uint_ptr != nullptr) {
-                    // Adiabatic EOS: P = (γ - 1) * ρ * u
-                    Tscal u = uint_ptr[i];
-                    u       = sycl::max(u, Tscal(1e-30));
-                    Tscal P = (gamma - Tscal(1.0)) * rho * u;
+                    Tscal u  = sycl::max(uint_ptr[i], Tscal(1e-30));
+                    Tscal P  = (gamma - Tscal{1}) * rho * u;
+                    Tscal cs = sycl::sqrt(gamma * (gamma - Tscal{1}) * u);
 
-                    Tscal cs;
-                    if (is_sr) {
-                        // Relativistic sound speed: cs² = (γ-1)(H-1)/H
-                        // where H = 1 + u/c² + P/(ρc²) is the specific enthalpy
-                        const Tscal H   = Tscal{1} + u / c2 + P / (rho * c2);
-                        const Tscal cs2 = (gamma - Tscal{1}) * (H - Tscal{1}) / H;
-                        cs              = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
-                    } else {
-                        // Newtonian sound speed: c = sqrt(γ * (γ - 1) * u)
-                        cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
-                    }
-
-                    // Clamp to reasonable values
-                    P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                    cs = sycl::clamp(cs, Tscal(1e-10), c_speed); // cs ≤ c for SR
-
-                    pressure[i]   = P;
-                    soundspeed[i] = cs;
+                    pressure[i]   = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
+                    soundspeed[i] = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
                 } else {
-                    // Isothermal case
-                    Tscal cs = Tscal(1.0);
-                    Tscal P  = cs * cs * rho;
-
-                    pressure[i]   = P;
+                    Tscal cs      = Tscal(1.0);
+                    pressure[i]   = cs * cs * rho;
                     soundspeed[i] = cs;
                 }
             });
         });
 
-        // Complete all buffer event states
         buf_density.complete_event_state(e);
         if (has_uint) {
             mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
@@ -1744,6 +1719,15 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Must happen AFTER EOS is computed (need P, ρ) but BEFORE forces
     if (is_sr && !storage.sr_initialized) {
         sr_init_conserved();
+    }
+
+    // SR-GSPH: Re-compute primitives from conserved variables using NEW density
+    // CRITICAL: The EOS computed P = (γ-1) * n * uint, but uint was computed with
+    // OLD density from the previous cons2prim. This gives wrong P when density changes.
+    // The correct P comes from solving the primitive recovery equations with NEW density.
+    // This call overwrites the wrong P from EOS with the correct P from cons2prim.
+    if (is_sr && storage.sr_initialized) {
+        sr_cons2prim();
     }
 
     // STEP 5: FORCES - compute accelerations/derivatives using FRESH EOS

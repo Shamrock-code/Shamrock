@@ -35,7 +35,6 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="TGauss3")
 cfg = model.gen_default_config()
-cfg.set_riemann_hll()
 cfg.set_reconstruct_piecewise_constant()
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)

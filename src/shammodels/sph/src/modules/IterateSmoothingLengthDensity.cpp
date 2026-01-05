@@ -56,7 +56,8 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
         thread_counts,
         [gpart_mass      = this->gpart_mass,
          h_evol_max      = this->h_evol_max,
-         h_evol_iter_max = this->h_evol_iter_max](
+         h_evol_iter_max = this->h_evol_iter_max,
+         c_smooth        = this->c_smooth](
             u32 id_a,
             auto ploop_ptrs,
             const Tvec *__restrict r,
@@ -92,8 +93,10 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
                     Tscal rab = sycl::sqrt(rab2);
 
-                    rho_sum += part_mass * SPHKernel::W_3d(rab, h_a);
-                    sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a);
+                    // Kitajima C_smooth: divide density sum by c_smooth
+                    // This makes h larger at discontinuities, reducing overshoot/undershoot
+                    rho_sum += part_mass * SPHKernel::W_3d(rab, h_a) / c_smooth;
+                    sumdWdh += part_mass * SPHKernel::dhW_3d(rab, h_a) / c_smooth;
                 });
 
                 using namespace shamrock::sph;

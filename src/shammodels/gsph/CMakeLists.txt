@@ -19,6 +19,7 @@ set(Sources
     src/pyGSPHModel.cpp
     src/modules/UpdateDerivs.cpp
     src/modules/SRPhysics.cpp
+    src/modules/SREOSComputation.cpp
     src/modules/io/VTKDump.cpp
 )
 

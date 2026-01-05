@@ -168,47 +168,73 @@ namespace shammodels::gsph::modules {
         const bool has_uint = solver_config.has_field_uint();
         const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
 
+        // Check if SR mode is enabled
+        const bool is_sr    = solver_config.is_sr_enabled();
+        const Tscal c_speed = is_sr ? solver_config.sr_config.get_c_speed() : Tscal{1};
+        const Tscal c2      = c_speed * c_speed;
+
         // Compute density field from smoothing length
+        // For SR: SPH gives lab-frame N, we output rest-frame n = N/γ
         ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             shamlog_debug_ln("gsph::vtk", "compute rho field for patch ", p.id_patch);
 
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
+            auto &buf_vxyz  = pdat.get_field<Tvec>(ivxyz).get_buf();
 
             auto sptr = shamsys::instance::get_compute_scheduler_ptr();
             auto &q   = sptr->get_queue();
 
             sham::EventList depends_list;
             const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
+            const Tvec *acc_v  = buf_vxyz.get_read_access(depends_list);
             auto acc_rho       = density.get_buf(p.id_patch).get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal part_mass = solver_config.gpart_mass;
+                const bool do_sr      = is_sr;
+                const Tscal c2_local  = c2;
 
                 cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                     u32 gid = (u32) item.get_id();
                     using namespace shamrock::sph;
-                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                    acc_rho[gid] = rho_ha;
+
+                    // SPH summation gives lab-frame density N (or non-relativistic ρ)
+                    Tscal N = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+
+                    if (do_sr) {
+                        // SR: Convert lab-frame N to rest-frame n = N/γ
+                        Tvec v         = acc_v[gid];
+                        Tscal v2       = sycl::dot(v, v) / c2_local;
+                        Tscal gamma_sq = Tscal{1} / sycl::fmax(Tscal{1} - v2, Tscal{1e-10});
+                        Tscal gamma    = sycl::sqrt(gamma_sq);
+                        acc_rho[gid]   = N / gamma; // Rest-frame density
+                    } else {
+                        acc_rho[gid] = N; // Non-relativistic density
+                    }
                 });
             });
 
             buf_hpart.complete_event_state(e);
+            buf_vxyz.complete_event_state(e);
             density.get_buf(p.id_patch).complete_event_state(e);
         });
 
         // Compute pressure field from EOS
+        // For SR: P = (γ_eos - 1) * n * ε where n is rest-frame density
         ComputeField<Tscal> pressure_field = utility.make_compute_field<Tscal>("P", 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
+            auto &buf_vxyz  = pdat.get_field<Tvec>(ivxyz).get_buf();
 
             auto sptr = shamsys::instance::get_compute_scheduler_ptr();
             auto &q   = sptr->get_queue();
 
             sham::EventList depends_list;
             const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
+            const Tvec *acc_v  = buf_vxyz.get_read_access(depends_list);
             auto acc_P         = pressure_field.get_buf(p.id_patch).get_write_access(depends_list);
 
             const Tscal *acc_u = nullptr;
@@ -218,25 +244,46 @@ namespace shammodels::gsph::modules {
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 const Tscal part_mass = solver_config.gpart_mass;
-                const Tscal gamma     = solver_config.get_eos_gamma();
+                const Tscal gamma_eos = solver_config.get_eos_gamma();
                 const bool do_uint    = has_uint;
+                const bool do_sr      = is_sr;
+                const Tscal c2_local  = c2;
 
                 cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                     u32 gid = (u32) item.get_id();
                     using namespace shamrock::sph;
-                    Tscal rho = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
 
-                    if (do_uint && acc_u != nullptr) {
-                        // Adiabatic EOS: P = (gamma - 1) * rho * u
-                        acc_P[gid] = (gamma - Tscal(1)) * rho * acc_u[gid];
+                    // SPH summation gives lab-frame density N
+                    Tscal N = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
+
+                    if (do_sr) {
+                        // SR: Convert to rest-frame density for EOS
+                        Tvec v       = acc_v[gid];
+                        Tscal v2     = sycl::dot(v, v) / c2_local;
+                        Tscal gamma  = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                        Tscal n_rest = N / gamma;
+
+                        if (do_uint && acc_u != nullptr) {
+                            // SR EOS: P = (γ_eos - 1) * n * ε
+                            acc_P[gid] = (gamma_eos - Tscal{1}) * n_rest * acc_u[gid];
+                        } else {
+                            // Isothermal fallback
+                            Tscal cs  = Tscal{0.1}; // Default sound speed
+                            acc_P[gid] = cs * cs * n_rest;
+                        }
                     } else {
-                        // Isothermal: use cs = 1 by default
-                        acc_P[gid] = rho; // P = cs^2 * rho with cs = 1
+                        // Non-relativistic formulas
+                        if (do_uint && acc_u != nullptr) {
+                            acc_P[gid] = (gamma_eos - Tscal{1}) * N * acc_u[gid];
+                        } else {
+                            acc_P[gid] = N; // P = cs^2 * rho with cs = 1
+                        }
                     }
                 });
             });
 
             buf_hpart.complete_event_state(e);
+            buf_vxyz.complete_event_state(e);
             pressure_field.get_buf(p.id_patch).complete_event_state(e);
             if (has_uint) {
                 pdat.get_field<Tscal>(iuint).get_buf().complete_event_state(e);

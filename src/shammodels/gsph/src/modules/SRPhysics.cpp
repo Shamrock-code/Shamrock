@@ -305,7 +305,10 @@ namespace shammodels::gsph::modules {
                         vxyz[i] = S_dir * prim.vel_normal * c_speed;
                         P[i]    = sycl::fmax(prim.pressure, Tscal{1e-10});
 
-                        uint_out[i] = P[i] / ((gamma_eos - Tscal{1}) * N);
+                        // Use REST-FRAME density n (not lab-frame N) for internal energy
+                        // prim.density is already the rest-frame density n = N/γ
+                        const Tscal n = sycl::fmax(prim.density, Tscal{1e-30});
+                        uint_out[i]   = P[i] / ((gamma_eos - Tscal{1}) * n);
                     });
             } else {
                 sham::kernel_call(

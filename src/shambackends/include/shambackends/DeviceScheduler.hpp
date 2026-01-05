@@ -59,11 +59,6 @@ namespace sham {
         void print_info();
 
         /**
-         * @brief Function to test that all the queues are working properly
-         */
-        void test();
-
-        /**
          * @brief Check if the context corresponding to the device scheduler should use direct
          * communication
          *
@@ -76,5 +71,7 @@ namespace sham {
     };
 
     using DeviceScheduler_ptr = std::shared_ptr<DeviceScheduler>;
+
+    void test_device_scheduler(DeviceScheduler_ptr dev_sched);
 
 } // namespace sham

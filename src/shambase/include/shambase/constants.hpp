@@ -11,6 +11,7 @@
 
 /**
  * @file constants.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Class holding the value of numerous constants
  * generated from the following source
@@ -40,6 +41,7 @@
         add("gamma_5_6", gamma(5/6))
         add("gamma_1", gamma(1))
         add("sqrt_2", 2**(1/2))
+        add("sqrt_pi", pi**(1/2))
         add("e", e)
   */
 
@@ -65,6 +67,7 @@ namespace shambase::constants {
     template<class T> constexpr T gamma_5_6 = 1.1287870299081257386;
     template<class T> constexpr T gamma_1 = 1;
     template<class T> constexpr T sqrt_2 = 1.4142135623730951455;
+    template<class T> constexpr T sqrt_pi = 1.7724538509055158819; // same as gamma_1_2
     template<class T> constexpr T e = 2.7182818284590450908;
     // clang-format on
 

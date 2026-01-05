@@ -24,6 +24,12 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for reordering particles to improve cache locality
+     * @tparam Tvec Vector type for positions
+     * @tparam Tmorton Morton code type
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, class Tmorton, template<class> class SPHKernel>
     class ParticleReordering {
         public:
@@ -41,6 +47,7 @@ namespace shammodels::sph::modules {
         ParticleReordering(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// @brief Reorders particles by Morton code for improved memory access patterns
         void reorder_particles();
 
         private:

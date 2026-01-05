@@ -52,6 +52,10 @@ jobs:
           - worldsize: 1
             testfile: sod_tube_sph.py
           - worldsize: 1
+            testfile: gsph/sod_tube_gsph.py
+          - worldsize: 2
+            testfile: gsph/sod_tube_gsph.py
+          - worldsize: 1
             testfile: comp_phantom_sedov_1patch.py
           - worldsize: 2
             testfile: comp_phantom_sedov_1patch.py
@@ -87,6 +91,8 @@ jobs:
             testfile: regression_godunov_soundwave_3d.py
           - worldsize: 1
             testfile: run_sg_compare_error_sph.py
+          - worldsize: 1
+            testfile: run_compare_shamrock_ph_disc.py
       fail-fast: false
 
 
@@ -100,6 +106,11 @@ jobs:
 
       - name: Load image
         run: docker load --input /tmp/ci-phys-test-image.tar
+
+      # if run_compare_shamrock_ph_disc.py install gfortran
+      - if: ${{ matrix.testfile == 'run_compare_shamrock_ph_disc.py' }}
+        run: |
+          sudo apt install -y gfortran
 
       - name: run test
         uses: addnab/docker-run-action@v3

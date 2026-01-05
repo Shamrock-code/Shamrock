@@ -11,11 +11,13 @@
 
 /**
  * @file fallbackReduction.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
+#include "shambase/numeric_limits.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 
@@ -33,7 +35,7 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     inline T _int_sum(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-        T accum;
+        T accum = T{};
 
         {
             sycl::host_accessor acc{buf1, sycl::read_only};
@@ -52,7 +54,7 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     inline T _int_min(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-        T accum;
+        T accum = shambase::get_max<T>();
 
         {
             sycl::host_accessor acc{buf1, sycl::read_only};
@@ -71,7 +73,7 @@ namespace shamalgs::reduction::details {
 
     template<class T>
     inline T _int_max(sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id) {
-        T accum;
+        T accum = shambase::get_min<T>();
 
         {
             sycl::host_accessor acc{buf1, sycl::read_only};

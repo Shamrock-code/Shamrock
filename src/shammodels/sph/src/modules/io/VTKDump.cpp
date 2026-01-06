@@ -111,6 +111,10 @@ namespace shammodels::sph::modules {
             fnum++;
         }
 
+        if (solver_config.compute_luminosity) {
+            fnum++;
+        }
+
         if (solver_config.dust_config.has_epsilon_field()) {
             const u32 ndust = solver_config.dust_config.get_dust_nvar();
             fnum += ndust;
@@ -156,6 +160,11 @@ namespace shammodels::sph::modules {
         if (solver_config.has_field_soundspeed()) {
             const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
             vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+        }
+
+        if (solver_config.compute_luminosity) {
+            const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
+            vtk_dump_add_field<Tscal>(scheduler(), writter, iluminosity, "luminosity");
         }
 
         vtk_dump_add_compute_field(scheduler(), writter, density, "rho");

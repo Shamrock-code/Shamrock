@@ -20,7 +20,6 @@
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
-#include <deque>
 #include <map>
 #include <memory>
 #include <tuple>
@@ -42,7 +41,7 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_list;
+    std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_list;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new() {

@@ -30,7 +30,6 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <ctime>
-#include <deque>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -208,7 +207,7 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
+    const std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
     u64 crit_split,
     u64 crit_merge)
     : pdl_ptr_list(pdl_ptr_list),

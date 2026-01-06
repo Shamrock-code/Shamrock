@@ -20,7 +20,7 @@
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
-#include <deque>
+#include <vector>
 #include <string>
 
 template<class flt>
@@ -32,7 +32,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
-    std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list {std::make_shared<shamrock::patch::PatchDataLayerLayout>()};
+    std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list {std::make_shared<shamrock::patch::PatchDataLayerLayout>()};
     auto &pdl = *pdl_ptr_list.at(0);
 
     pdl.add_field<f32_3>("xyz", 1);

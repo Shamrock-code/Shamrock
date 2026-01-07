@@ -13,14 +13,42 @@ project(Shammodels_gsph CXX C)
 
 # Sources: GSPH solver, Model, VTK I/O, and Python bindings
 set(Sources
+    # Core files
     src/SolverConfig.cpp
     src/Solver.cpp
     src/Model.cpp
     src/pyGSPHModel.cpp
-    src/modules/UpdateDerivs.cpp
-    src/modules/SRPhysics.cpp
-    src/modules/SREOSComputation.cpp
+
+    # Core abstractions (new architecture)
+    src/core/PhysicsModeFactory.cpp
+
+    # Physics modes (new architecture)
+    src/physics/newtonian/NewtonianMode.cpp
+    src/physics/newtonian/NewtonianForceKernel.cpp
+    src/physics/newtonian/NewtonianEOS.cpp
+    src/physics/newtonian/NewtonianTimestepper.cpp
+    src/physics/sr/SRMode.cpp
+    src/physics/sr/SRForceKernel.cpp
+    src/physics/sr/SREOS.cpp
+    src/physics/sr/SRTimestepper.cpp
+    src/physics/sr/SRPrimitiveRecovery.cpp
+
+    # I/O modules
     src/modules/io/VTKDump.cpp
+
+    # Smoothing length modules
+    src/modules/IterateSmoothingLengthVolume.cpp
+
+    # Tree and neighbor modules
+    src/modules/NeighbourCache.cpp
+    src/modules/BuildTrees.cpp
+
+    # Computation modules
+    src/modules/ComputeGradients.cpp
+    src/modules/ComputeOmega.cpp
+    src/modules/ComputeCFL.cpp
+    src/modules/GhostCommunicator.cpp
+    src/modules/BoundaryHandler.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

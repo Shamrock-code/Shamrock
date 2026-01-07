@@ -22,8 +22,9 @@
  * - Symmetry properties
  */
 
-#include "shammodels/gsph/math/forces.hpp"
-#include "shammodels/gsph/math/riemann/iterative.hpp"
+#include "shammodels/gsph/physics/newtonian/forces.hpp"
+#include "shammodels/gsph/physics/newtonian/riemann/HLL.hpp"
+#include "shammodels/gsph/physics/newtonian/riemann/Iterative.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shamtest/shamtest.hpp"
 #include <cmath>
@@ -31,7 +32,7 @@
 
 namespace {
 
-    using namespace shammodels::gsph;
+    using namespace shammodels::gsph::physics::newtonian;
 
     //==========================================================================
     // SCENARIO: SPH pressure force satisfies Newton's 3rd law
@@ -396,7 +397,7 @@ namespace {
         Tvec r_ab_unit    = Tvec{1, 0, 0};
 
         // Solve Riemann problem
-        auto riemann = riemann::hll_solver<Tscal>(u_L, rho_L, P_L, u_R, rho_R, P_R, gamma);
+        auto riemann = riemann::solve_hll<Tscal>(u_L, rho_L, P_L, u_R, rho_R, P_R, gamma);
 
         // Compute forces
         Tvec dv_L  = Tvec{0, 0, 0};

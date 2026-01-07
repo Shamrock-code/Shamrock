@@ -281,15 +281,44 @@ def sr_sample_solution_array(x_arr, t, x0, P_L, rho_L, v_L, P_R, rho_R, v_R, gam
     return rho, v, P, star_state
 
 
-def plot_kitajima_style(x_sim, P_sim, n_sim, vx_sim, h_sim, x_exact, P_exact, n_exact,
-                        vx_exact, h_exact, title, filename, xlim=(-0.5, 0.5)):
-    """Create Kitajima-style 4-panel plot (P, n, vx, h)."""
+def sr_enthalpy(rho, P, gamma, c=1.0):
+    """
+    Compute relativistic specific enthalpy H.
+
+    H = 1 + u/c² + P/(ρc²) = 1 + γP/((γ-1)ρc²)
+
+    For ideal gas EOS: u = P/((γ-1)ρ)
+
+    Args:
+        rho: Rest-frame density
+        P: Pressure
+        gamma: Adiabatic index
+        c: Speed of light (default 1.0 for natural units)
+
+    Returns:
+        H: Relativistic specific enthalpy
+    """
+    c2 = c * c
+    return 1.0 + gamma * P / ((gamma - 1.0) * rho * c2)
+
+
+def plot_kitajima_style(x_sim, P_sim, n_sim, vx_sim, H_sim, h_sim,
+                        x_exact, P_exact, n_exact, vx_exact, H_exact, h_exact,
+                        title, filename, xlim=(-0.5, 0.5)):
+    """Create Kitajima-style 5-panel plot (P, n, vx, H, h)."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    import time
 
-    fig, axes = plt.subplots(4, 1, figsize=(8, 10), sharex=True)
-    fig.subplots_adjust(hspace=0.05)
+    # Add timestamp to filename
+    timestamp = time.strftime("%H%M%S")
+    base, ext = filename.rsplit(".", 1)
+    filename = f"{base}_{timestamp}.{ext}"
+
+    # 5 panels with Kitajima-like aspect ratio (wider than tall per panel)
+    fig, axes = plt.subplots(5, 1, figsize=(8, 10), sharex=True)
+    fig.subplots_adjust(hspace=0.05, left=0.12, right=0.95, top=0.95, bottom=0.06)
 
     ax1 = axes[0]
     ax1.plot(x_exact, P_exact, "k-", linewidth=1.5, label="Exact")
@@ -310,10 +339,16 @@ def plot_kitajima_style(x_sim, P_sim, n_sim, vx_sim, h_sim, x_exact, P_exact, n_
     ax3.tick_params(labelbottom=False)
 
     ax4 = axes[3]
-    ax4.plot(x_exact, h_exact, "k-", linewidth=1.5)
-    ax4.scatter(x_sim, h_sim, s=2, c="#EE7733", marker="^", alpha=0.6)
-    ax4.set_ylabel(r"$h$", fontsize=14)
-    ax4.set_xlabel(r"$x$", fontsize=14)
+    ax4.plot(x_exact, H_exact, "k-", linewidth=1.5)
+    ax4.scatter(x_sim, H_sim, s=2, c="#EE7733", marker="^", alpha=0.6)
+    ax4.set_ylabel(r"$H$", fontsize=14)
+    ax4.tick_params(labelbottom=False)
+
+    ax5 = axes[4]
+    ax5.plot(x_exact, h_exact, "k-", linewidth=1.5)
+    ax5.scatter(x_sim, h_sim, s=2, c="#9933CC", marker="s", alpha=0.6)
+    ax5.set_ylabel(r"$h$", fontsize=14)
+    ax5.set_xlabel(r"$x$", fontsize=14)
 
     for ax in axes:
         ax.set_xlim(xlim)

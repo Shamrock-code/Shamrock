@@ -51,52 +51,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        // Riemann solver config
-        .def(
-            "set_riemann_iterative",
-            [](TConfig &self, Tscal tol, u32 max_iter) {
-                self.set_riemann_iterative(tol, max_iter);
-            },
-            py::kw_only(),
-            py::arg("tolerance") = Tscal{1e-6},
-            py::arg("max_iter")  = 20,
-            R"==(
-    Set iterative Riemann solver (van Leer 1997).
-
-    This is the most accurate but slower Riemann solver.
-    Uses Newton-Raphson iteration to find the pressure in the star region.
-
-    Parameters
-    ----------
-    tolerance : float
-        Convergence tolerance for Newton-Raphson iteration (default: 1e-6)
-    max_iter : int
-        Maximum number of iterations (default: 20)
-)==")
-        .def(
-            "set_riemann_hll",
-            [](TConfig &self) {
-                self.set_riemann_hll();
-            },
-            R"==(
-    Set HLL approximate Riemann solver.
-
-    Harten-Lax-van Leer (1983) 2-wave approximate Riemann solver.
-    Uses only S_L and S_R wave speeds (no contact wave S*).
-    Fast and robust for shock problems.
-)==")
-        // Reconstruction config
-        .def(
-            "set_reconstruct_piecewise_constant",
-            [](TConfig &self) {
-                self.set_reconstruct_piecewise_constant();
-            },
-            R"==(
-    Set first-order piecewise constant reconstruction.
-
-    Sets all gradients to zero. Most diffusive but most stable.
-    Good for very strong shocks or initial testing.
-)==")
+        // Note: Riemann solver and reconstruction config moved to physics-specific configs
+        // Use model.set_physics_newtonian() or model.set_physics_sr() to configure physics mode
         // EOS config
         .def(
             "set_eos_adiabatic",
@@ -140,32 +96,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::arg("Racc"))
         // Units
         .def("set_units", &TConfig::set_units)
-        // Special Relativity
-        .def(
-            "set_sr",
-            [](TConfig &self, Tscal c_speed) {
-                self.set_sr(c_speed);
-            },
-            py::arg("c_speed") = Tscal{1.0},
-            R"==(
-    Enable Special Relativistic mode (SR-GSPH).
-
-    Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
-    "Special Relativistic Godunov SPH"
-
-    Parameters
-    ----------
-    c_speed : float
-        Speed of light (default: 1.0 for natural units where c=1)
-
-    Notes
-    -----
-    SR-GSPH uses:
-    - Canonical conserved variables: S = γHv (momentum), e = γH - P/(Nc²) (energy)
-    - Volume-based density: N = ν/V_p instead of kernel sum
-    - Primitive recovery via quartic solver for Lorentz factor γ
-    - Exact Riemann solver with Newton-Raphson iteration
-)==")
+        // Physics mode selection moved to Model class (cfg.set_sr no longer available)
+        // Use model.set_physics_sr() instead
         // CFL
         .def(
             "set_cfl_cour",
@@ -187,27 +119,28 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal c_smooth) {
                 self.c_smooth = c_smooth;
             },
-            R"(Set Kitajima C_smooth factor for smoother h variation.
+            py::arg("c_smooth"),
+            R"==(
+    Set smoothing length expansion factor for neighbor search.
 
-            C_smooth = 1.0 (default): Standard SPH behavior
-            C_smooth > 1.0: Makes h larger at discontinuities, reducing overshoot/undershoot
-            Recommended: 1.5-2.0 for strong shocks
-
-            Reference: Kitajima, Inutsuka, and Seno (2025) Eq. 233-237
-            )")
+    Parameters
+    ----------
+    c_smooth : float
+        Multiplier for h tolerance (default: 1.2 for Newtonian, 2.0 for SR)
+)==")
         .def(
-            "set_use_grad_h",
-            [](TConfig &self, bool use_grad_h) {
-                self.use_grad_h = use_grad_h;
+            "set_reconstruct_piecewise_constant",
+            [](TConfig &self) {
+                // No-op: GSPH SR always uses piecewise constant
+                // For Newtonian, reconstruction is handled by physics mode
+                (void) self;
             },
-            R"(Enable/disable grad-h correction in force computation.
+            R"==(
+    Set piecewise constant (1st order) reconstruction.
 
-            False (default): Use Kitajima interpolated V² formula
-            True: Use V²/Ω grad-h corrected formula (Price 2012, Hopkins 2013)
-
-            The grad-h correction accounts for spatial variation of h and
-            improves momentum/energy conservation in variable-h SPH.
-            )")
+    Note: SR mode always uses piecewise constant reconstruction.
+    For Newtonian, use model.set_physics_newtonian() with options.
+)==")
         .def("to_json", [](TConfig &self) {
             return nlohmann::json{self}.dump(4);
         });
@@ -452,7 +385,62 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Example
     -------
     >>> model.dump("checkpoint.shamrock")
-)==");
+)==")
+        // Physics mode selection (owned by Solver, not SolverConfig)
+        .def(
+            "set_physics_sr",
+            [](T &self, Tscal c_speed) {
+                self.solver.set_physics_sr(c_speed);
+            },
+            py::arg("c_speed") = Tscal{1.0},
+            R"==(
+    Set Special Relativistic physics mode.
+
+    Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
+    Uses conserved variables (S, e) with primitive recovery.
+
+    Parameters
+    ----------
+    c_speed : float
+        Speed of light (default: 1.0 for natural units)
+)==")
+        .def(
+            "set_physics_newtonian",
+            [](T &self) {
+                self.solver.set_physics_newtonian();
+            },
+            R"==(
+    Set Newtonian physics mode (default).
+
+    Uses leapfrog time integration with direct velocity/acceleration.
+)==")
+        .def(
+            "set_physics_mhd",
+            [](T &self, Tscal resistivity) {
+                self.solver.set_physics_mhd(resistivity);
+            },
+            py::arg("resistivity") = Tscal{0.0},
+            R"==(
+    Set Magnetohydrodynamics physics mode (placeholder).
+
+    Parameters
+    ----------
+    resistivity : float
+        Ohmic resistivity (default: 0.0 for ideal MHD)
+)==")
+        .def(
+            "is_physics_newtonian",
+            [](T &self) {
+                return self.solver.is_physics_newtonian();
+            })
+        .def(
+            "is_physics_sr",
+            [](T &self) {
+                return self.solver.is_physics_sr();
+            })
+        .def("is_physics_mhd", [](T &self) {
+            return self.solver.is_physics_mhd();
+        });
 }
 
 using namespace shammodels::gsph;

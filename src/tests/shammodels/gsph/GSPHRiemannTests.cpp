@@ -21,14 +21,15 @@
  * - Solver consistency and convergence
  */
 
-#include "shammodels/gsph/math/riemann/iterative.hpp"
+#include "shammodels/gsph/physics/newtonian/riemann/HLL.hpp"
+#include "shammodels/gsph/physics/newtonian/riemann/Iterative.hpp"
 #include "shamtest/shamtest.hpp"
 #include <cmath>
 #include <vector>
 
 namespace {
 
-    using namespace shammodels::gsph::riemann;
+    using namespace shammodels::gsph::physics::newtonian::riemann;
 
     //==========================================================================
     // Helper: Exact Riemann solver reference values for standard test problems
@@ -71,7 +72,7 @@ namespace {
 
     void test_hll_standard_problems() {
         for (const auto &test : standard_tests) {
-            auto result = hll_solver<f64>(
+            auto result = solve_hll<f64>(
                 test.u_L, test.rho_L, test.p_L, test.u_R, test.rho_R, test.p_R, test.gamma);
 
             // Check p_star is in reasonable range
@@ -98,7 +99,7 @@ namespace {
                 continue;
             }
 
-            auto result = iterative_solver<f64>(
+            auto result = solve<f64>(
                 test.u_L,
                 test.rho_L,
                 test.p_L,
@@ -131,8 +132,8 @@ namespace {
         for (f64 rho : densities) {
             for (f64 p : pressures) {
                 for (f64 u : velocities) {
-                    auto hll_result  = hll_solver<f64>(u, rho, p, u, rho, p, gamma);
-                    auto iter_result = iterative_solver<f64>(u, rho, p, u, rho, p, gamma);
+                    auto hll_result  = solve_hll<f64>(u, rho, p, u, rho, p, gamma);
+                    auto iter_result = solve<f64>(u, rho, p, u, rho, p, gamma);
 
                     // Both should return the uniform state
                     REQUIRE_FLOAT_EQUAL_NAMED(
@@ -160,8 +161,8 @@ namespace {
 
         for (f64 speed : collision_speeds) {
             // Symmetric collision: left moving right (+speed), right moving left (-speed)
-            auto hll_result  = hll_solver<f64>(speed, rho, p, -speed, rho, p, gamma);
-            auto iter_result = iterative_solver<f64>(speed, rho, p, -speed, rho, p, gamma);
+            auto hll_result  = solve_hll<f64>(speed, rho, p, -speed, rho, p, gamma);
+            auto iter_result = solve<f64>(speed, rho, p, -speed, rho, p, gamma);
 
             // By symmetry, interface velocity should be zero
             REQUIRE_FLOAT_EQUAL_NAMED(
@@ -187,8 +188,8 @@ namespace {
 
         for (f64 speed : expansion_speeds) {
             // Symmetric expansion: left moving left (-speed), right moving right (+speed)
-            auto hll_result  = hll_solver<f64>(-speed, rho, p, speed, rho, p, gamma);
-            auto iter_result = iterative_solver<f64>(-speed, rho, p, speed, rho, p, gamma);
+            auto hll_result  = solve_hll<f64>(-speed, rho, p, speed, rho, p, gamma);
+            auto iter_result = solve<f64>(-speed, rho, p, speed, rho, p, gamma);
 
             // By symmetry, interface velocity should be zero
             REQUIRE_FLOAT_EQUAL_NAMED(
@@ -212,19 +213,19 @@ namespace {
 
         for (f64 tiny : tiny_values) {
             // Low density right state
-            auto result1 = hll_solver<f64>(0.0, 1.0, 1.0, 0.0, tiny, tiny, gamma);
+            auto result1 = solve_hll<f64>(0.0, 1.0, 1.0, 0.0, tiny, tiny, gamma);
             REQUIRE_NAMED("finite p_star (low rho_R)", std::isfinite(result1.p_star));
             REQUIRE_NAMED("finite v_star (low rho_R)", std::isfinite(result1.v_star));
             REQUIRE_NAMED("positive p_star (low rho_R)", result1.p_star > 0);
 
             // Low density left state
-            auto result2 = hll_solver<f64>(0.0, tiny, tiny, 0.0, 1.0, 1.0, gamma);
+            auto result2 = solve_hll<f64>(0.0, tiny, tiny, 0.0, 1.0, 1.0, gamma);
             REQUIRE_NAMED("finite p_star (low rho_L)", std::isfinite(result2.p_star));
             REQUIRE_NAMED("finite v_star (low rho_L)", std::isfinite(result2.v_star));
             REQUIRE_NAMED("positive p_star (low rho_L)", result2.p_star > 0);
 
             // Both low density
-            auto result3 = hll_solver<f64>(0.0, tiny, tiny, 0.0, tiny, tiny, gamma);
+            auto result3 = solve_hll<f64>(0.0, tiny, tiny, 0.0, tiny, tiny, gamma);
             REQUIRE_NAMED("finite p_star (both low)", std::isfinite(result3.p_star));
             REQUIRE_NAMED("finite v_star (both low)", std::isfinite(result3.v_star));
         }
@@ -240,7 +241,7 @@ namespace {
 
         for (f64 ratio : pressure_ratios) {
             // Strong shock: high pressure left, low pressure right
-            auto result = hll_solver<f64>(0.0, 1.0, ratio, 0.0, 1.0, 1.0, gamma);
+            auto result = solve_hll<f64>(0.0, 1.0, ratio, 0.0, 1.0, 1.0, gamma);
 
             // Interface pressure should be between the two
             REQUIRE_NAMED("p_star > p_R for strong shock", result.p_star > 1.0);
@@ -272,7 +273,7 @@ namespace {
             f64 u = mach * cs;
 
             // Supersonic co-flow (both moving same direction)
-            auto result = hll_solver<f64>(u, rho, p, u, rho, p, gamma);
+            auto result = solve_hll<f64>(u, rho, p, u, rho, p, gamma);
             REQUIRE_FLOAT_EQUAL_NAMED("v_star = u for supersonic co-flow", result.v_star, u, 0.01);
             REQUIRE_FLOAT_EQUAL_NAMED("p_star = p for supersonic co-flow", result.p_star, p, 1e-10);
         }
@@ -287,7 +288,7 @@ namespace {
 
         for (f64 gamma : gammas) {
             // Sod-like problem
-            auto result = hll_solver<f64>(0.0, 1.0, 1.0, 0.0, 0.125, 0.1, gamma);
+            auto result = solve_hll<f64>(0.0, 1.0, 1.0, 0.0, 0.125, 0.1, gamma);
 
             // Basic sanity checks
             REQUIRE_NAMED("p_star positive", result.p_star > 0);
@@ -333,7 +334,7 @@ namespace {
         const f64 expected_v_star = (c5 - c4) * c3;
         const f64 expected_p_star = (c1 * c5 - c2 * c4) * c3;
 
-        auto result = hll_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+        auto result = solve_hll<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
 
         REQUIRE_FLOAT_EQUAL_NAMED("v_star matches manual", result.v_star, expected_v_star, 1e-12);
         REQUIRE_FLOAT_EQUAL_NAMED("p_star matches manual", result.p_star, expected_p_star, 1e-12);
@@ -356,7 +357,7 @@ namespace {
 
         for (const auto &[u_L, rho_L, p_L, u_R, rho_R, p_R] : cases) {
             // Run with sufficient iterations for convergence
-            auto result = iterative_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma, 1e-8, 50);
+            auto result = solve<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma, 1e-8, 50);
 
             // Result should be valid
             REQUIRE_NAMED("converged result finite", std::isfinite(result.p_star));
@@ -380,8 +381,8 @@ namespace {
         };
 
         for (const auto &[u_L, rho_L, p_L, u_R, rho_R, p_R] : cases) {
-            auto hll_result  = hll_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
-            auto iter_result = iterative_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+            auto hll_result  = solve_hll<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+            auto iter_result = solve<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
 
             // Both should give similar answers for mild cases
             f64 p_diff = std::abs(hll_result.p_star - iter_result.p_star);

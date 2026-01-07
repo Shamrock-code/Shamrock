@@ -1465,12 +1465,14 @@ namespace shammath::details {
      * @brief Truncated Gaussian kernel with support R=3h
      *
      * W(q) = exp(-q^2) for q < 3, 0 otherwise
+     * Kitajima et al. 2025 uses η=1.0 and untruncated Gaussian
+     * R=3 gives exp(-9) ≈ 0.0001 truncation error
      */
     template<class Tscal>
     class KernelDefTGauss3 {
         public:
         inline static constexpr Tscal Rkern   = 3;
-        inline static constexpr Tscal hfactd  = 1.5;
+        inline static constexpr Tscal hfactd  = 1.0; // Kitajima uses η = 1.0
         inline static constexpr Tscal norm_1d = 0.5641895835477563;
         inline static constexpr Tscal norm_2d
             = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765902);

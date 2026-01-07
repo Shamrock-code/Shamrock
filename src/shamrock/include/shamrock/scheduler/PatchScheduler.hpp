@@ -43,6 +43,7 @@
 #include "shambackends/math.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
@@ -65,7 +66,7 @@ class PatchScheduler {
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
 
-    std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list;
+    shamrock::patch::PatchDataLayout llyt;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -78,10 +79,10 @@ class PatchScheduler {
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
     ///< (owned_patch_id = patch_list.build_local())
 
-    inline shamrock::patch::PatchDataLayerLayout &pdl(u32 layer_idx = 0) { return shambase::get_check_ref(pdl_ptr_list.at(layer_idx)); }
+    inline shamrock::patch::PatchDataLayerLayout &pdl(size_t layer_idx = 0) { return llyt.get_layer_layout_ptr(layer_idx); }
 
-    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr(u32 layer_idx = 0) const {
-        return pdl_ptr_list.at(layer_idx);
+    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr(size_t layer_idx = 0) const {
+        return llyt.get_layer_layout(layer_idx);
     }
 
     /**
@@ -97,7 +98,7 @@ class PatchScheduler {
     void free_mpi_required_types();
 
     PatchScheduler(
-        const std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
+        const shamrock::patch::PatchDataLayout llyt,
         u64 crit_split,
         u64 crit_merge);
 
@@ -132,13 +133,13 @@ class PatchScheduler {
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
         u32 layer_idx = 0;
-        for (const auto& pdl_ptr : pdl_ptr_list) {
-            if (!pdl_ptr->check_main_field_type<vectype>()) {
+        for (const auto& layer_layout : llyt.layer_layouts) {
+            if (!layer_layout->check_main_field_type<vectype>()) {
                 throw std::invalid_argument(
                     std::string("the main field is not of the correct type to call this function\n")
                     + "fct called : " + __PRETTY_FUNCTION__
                     + shambase::format("current patch data layout of index {} : ", layer_idx)
-                    + pdl_ptr->get_description_str()
+                    + layer_layout->get_description_str()
                 );
             }
             layer_idx++;

@@ -32,8 +32,9 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
-    std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> pdl_ptr_list {std::make_shared<shamrock::patch::PatchDataLayerLayout>()};
-    auto &pdl = *pdl_ptr_list.at(0);
+    shamrock::patch::PatchDataLayout llyt;
+    llyt.create_layers(1);
+    auto &pdl = llyt.get_layer_layout_ptr(0);
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);
@@ -44,7 +45,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
     auto id_v = pdl.get_field_idx<f32_3>("vxyz");
     auto id_a = pdl.get_field_idx<f32_3>("axyz");
 
-    PatchScheduler sched = PatchScheduler(pdl_ptr_list, Nesti / npatch, 1);
+    PatchScheduler sched = PatchScheduler(llyt, Nesti / npatch, 1);
     sched.init_mpi_required_types();
 
     auto setup = [&]() -> std::tuple<flt, f64> {

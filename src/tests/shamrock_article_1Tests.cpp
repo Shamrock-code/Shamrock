@@ -490,10 +490,12 @@ f64 amr_walk_perf(
     using namespace shamrock::scheduler;
 
     std::vector<std::shared_ptr<PatchDataLayerLayout>> layout_ptr_list {std::make_shared<PatchDataLayerLayout>()};
-    auto &layout                                     = *layout_ptr_list.at(0);
+    shamrock::patch::PatchDataLayout llyt;
+    llyt.create_layers(1);
+    auto &layout = llyt.get_layer_layout_ptr(0);
     layout.add_field<u64_3>("cell_min", 1);
     layout.add_field<u64_3>("cell_max", 1);
-    PatchScheduler sched(layout_ptr_list, 1e9, 1);
+    PatchScheduler sched(llyt, 1e9, 1);
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
 
     Grid grid(sched);

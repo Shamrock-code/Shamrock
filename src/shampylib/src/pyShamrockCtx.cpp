@@ -251,7 +251,7 @@ Register_pymod(pyshamrockctxinit) {
 
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())
-        .def("pdata_layout_new", &ShamrockCtx::pdata_layout_new)
+        .def("pdata_layout_new", &ShamrockCtx::pdata_layout_new, py::arg("nlayers") = 1)
         //.def("pdata_layout_do_double_prec_mode", &ShamrockCtx::pdata_layout_do_double_prec_mode)
         //.def("pdata_layout_do_single_prec_mode", &ShamrockCtx::pdata_layout_do_single_prec_mode)
         .def("pdata_layout_add_field", &ShamrockCtx::pdata_layout_add_field_t)
@@ -286,8 +286,8 @@ Register_pymod(pyshamrockctxinit) {
 
                 py::dict dic_out;
 
-                for (u32 layer_idx = 0; layer_idx < ctx.pdl_list.size(); layer_idx++) {
-                    for (auto fname : ctx.pdl_list.at(layer_idx)->get_field_names()) {
+                for (size_t layer_idx = 0; layer_idx < ctx.llyt.nlayers(); layer_idx++) {
+                    for (auto fname : ctx.llyt.get_layer_layout_ptr(layer_idx).get_field_names()) {
                         append_to_map<f32>(fname, data, dic_out);
                         append_to_map<f32_2>(fname, data, dic_out);
                         append_to_map<f32_3>(fname, data, dic_out);

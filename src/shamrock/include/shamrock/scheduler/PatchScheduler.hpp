@@ -132,7 +132,7 @@ class PatchScheduler {
     template<class vectype>
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
-        u32 layer_idx = 0;
+        size_t layer_idx = 0;
         for (const auto& layer_layout : pdl_ptr.layer_layouts) {
             if (!layer_layout->check_main_field_type<vectype>()) {
                 throw std::invalid_argument(

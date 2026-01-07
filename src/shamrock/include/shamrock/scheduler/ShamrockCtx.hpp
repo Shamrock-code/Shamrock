@@ -105,7 +105,7 @@ class ShamrockCtx {
 
     inline void init_sched(u64 crit_split, u64 crit_merge) {
 
-        for (u32 layer_idx = 0; layer_idx < pdl.nlayers(); layer_idx++) {
+        for (size_t layer_idx = 0; layer_idx < pdl.nlayers(); layer_idx++) {
             if (!pdl.get_layer_layout(layer_idx)) {
                 throw ShamAPIException(shambase::format("patch data layout of index {} is not initialized", layer_idx));
             }
@@ -147,7 +147,7 @@ class ShamrockCtx {
         return recv_data;
     }
 
-    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box, u32 layer_idx = 0) {
+    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box, size_t layer_idx = 0) {
 
         if (!pdl.get_layer_layout(layer_idx)) {
             throw ShamAPIException(shambase::format("patch data layout of index {} is not initialized", layer_idx));
@@ -169,7 +169,6 @@ class ShamrockCtx {
 
             sched->set_coord_domain_bound<f32_3>(vec0, vec1);
         } else if (pdl.get_layer_layout_ptr(layer_idx).check_main_field_type<f64_3>()) {
-
             sched->set_coord_domain_bound<f64_3>(a, b);
         } else {
             throw shambase::make_except_with_loc<std::runtime_error>(

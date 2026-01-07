@@ -207,12 +207,12 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const shamrock::patch::PatchDataLayout llyt,
+    const shamrock::patch::PatchDataLayout pdl_ptr,
     u64 crit_split,
     u64 crit_merge)
-    : llyt(llyt),
+    : pdl_ptr(pdl_ptr),
       patch_data(
-          llyt.get_layer_layout(0), // @astodo should be a list
+          pdl_ptr.get_layer_layout(0), // @astodo should be a list
           {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
 
     crit_patch_split = crit_split;

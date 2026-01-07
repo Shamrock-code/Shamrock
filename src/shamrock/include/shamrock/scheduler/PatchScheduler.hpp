@@ -66,7 +66,7 @@ class PatchScheduler {
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
 
-    shamrock::patch::PatchDataLayout llyt;
+    shamrock::patch::PatchDataLayout pdl_ptr;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -79,10 +79,10 @@ class PatchScheduler {
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
     ///< (owned_patch_id = patch_list.build_local())
 
-    inline shamrock::patch::PatchDataLayerLayout &pdl(size_t layer_idx = 0) { return llyt.get_layer_layout_ptr(layer_idx); }
+    inline shamrock::patch::PatchDataLayerLayout &pdl(size_t layer_idx = 0) { return pdl_ptr.get_layer_layout_ptr(layer_idx); }
 
     inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr(size_t layer_idx = 0) const {
-        return llyt.get_layer_layout(layer_idx);
+        return pdl_ptr.get_layer_layout(layer_idx);
     }
 
     /**
@@ -98,7 +98,7 @@ class PatchScheduler {
     void free_mpi_required_types();
 
     PatchScheduler(
-        const shamrock::patch::PatchDataLayout llyt,
+        const shamrock::patch::PatchDataLayout pdl_ptr,
         u64 crit_split,
         u64 crit_merge);
 
@@ -133,7 +133,7 @@ class PatchScheduler {
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
         u32 layer_idx = 0;
-        for (const auto& layer_layout : llyt.layer_layouts) {
+        for (const auto& layer_layout : pdl_ptr.layer_layouts) {
             if (!layer_layout->check_main_field_type<vectype>()) {
                 throw std::invalid_argument(
                     std::string("the main field is not of the correct type to call this function\n")

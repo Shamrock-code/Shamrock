@@ -33,10 +33,22 @@ namespace shammodels::gsph {
         constexpr const char *OMEGA = "omega"; ///< Grad-h correction factor Ω
         constexpr const char *PMASS = "pmass"; ///< Per-particle mass/baryon number
 
-        // Kinematics (XYZ, VXYZ, AXYZ) and energy (UINT, DUINT) are defined
-        // in physics-specific headers with appropriate semantic names:
-        // - NewtonianFieldNames.hpp: XYZ, VXYZ, AXYZ, UINT, DUINT
-        // - SRFieldNames.hpp: XYZ_LABFRAME, V_LABFRAME, etc.
+        // ═══════════════════════════════════════════════════════════════════════
+        // Kinematics (common strings used by PatchDataLayer)
+        // These are the actual strings stored in the data layer.
+        // Physics modes give these different semantic meaning:
+        // - Newtonian: position, velocity, acceleration (single frame)
+        // - SR: lab-frame position, lab-frame velocity, lab-frame acceleration
+        // ═══════════════════════════════════════════════════════════════════════
+        constexpr const char *XYZ  = "xyz";  ///< Position field name
+        constexpr const char *VXYZ = "vxyz"; ///< Velocity field name
+        constexpr const char *AXYZ = "axyz"; ///< Acceleration field name
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // Energy (common strings, physics gives meaning)
+        // ═══════════════════════════════════════════════════════════════════════
+        constexpr const char *UINT  = "uint";  ///< Specific internal energy
+        constexpr const char *DUINT = "duint"; ///< Time derivative of internal energy
 
     } // namespace fields
 

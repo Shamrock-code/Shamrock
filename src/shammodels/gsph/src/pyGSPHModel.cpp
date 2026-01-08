@@ -51,51 +51,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        // Riemann solver config
-        .def(
-            "set_riemann_iterative",
-            [](TConfig &self, Tscal tol, u32 max_iter) {
-                self.set_riemann_iterative(tol, max_iter);
-            },
-            py::kw_only(),
-            py::arg("tolerance") = Tscal{1e-6},
-            py::arg("max_iter")  = 20,
-            R"==(
-    Set iterative Riemann solver (van Leer 1997).
-
-    This is the most accurate but slower Riemann solver.
-    Uses Newton-Raphson iteration to find the pressure in the star region.
-
-    Parameters
-    ----------
-    tolerance : float
-        Convergence tolerance for Newton-Raphson iteration (default: 1e-6)
-    max_iter : int
-        Maximum number of iterations (default: 20)
-)==")
-        .def(
-            "set_riemann_hllc",
-            [](TConfig &self) {
-                self.set_riemann_hllc();
-            },
-            R"==(
-    Set HLLC approximate Riemann solver.
-
-    Fast approximate Riemann solver that captures contact discontinuities.
-    Recommended for general use - good balance of accuracy and speed.
-)==")
-        // Reconstruction config
-        .def(
-            "set_reconstruct_piecewise_constant",
-            [](TConfig &self) {
-                self.set_reconstruct_piecewise_constant();
-            },
-            R"==(
-    Set first-order piecewise constant reconstruction.
-
-    Sets all gradients to zero. Most diffusive but most stable.
-    Good for very strong shocks or initial testing.
-)==")
+        // Note: Riemann solver and reconstruction config moved to physics-specific configs
+        // Use model.set_physics_newtonian() or model.set_physics_sr() to configure physics mode
         // EOS config
         .def(
             "set_eos_adiabatic",
@@ -139,6 +96,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::arg("Racc"))
         // Units
         .def("set_units", &TConfig::set_units)
+        // Physics mode selection moved to Model class (cfg.set_sr no longer available)
+        // Use model.set_physics_sr() instead
         // CFL
         .def(
             "set_cfl_cour",
@@ -155,6 +114,33 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
             })
+        .def(
+            "set_c_smooth",
+            [](TConfig &self, Tscal c_smooth) {
+                self.c_smooth = c_smooth;
+            },
+            py::arg("c_smooth"),
+            R"==(
+    Set smoothing length expansion factor for neighbor search.
+
+    Parameters
+    ----------
+    c_smooth : float
+        Multiplier for h tolerance (default: 1.2 for Newtonian, 2.0 for SR)
+)==")
+        .def(
+            "set_reconstruct_piecewise_constant",
+            [](TConfig &self) {
+                // No-op: GSPH SR always uses piecewise constant
+                // For Newtonian, reconstruction is handled by physics mode
+                (void) self;
+            },
+            R"==(
+    Set piecewise constant (1st order) reconstruction.
+
+    Note: SR mode always uses piecewise constant reconstruction.
+    For Newtonian, use model.set_physics_newtonian() with options.
+)==")
         .def("to_json", [](TConfig &self) {
             return nlohmann::json{self}.dump(4);
         });
@@ -163,6 +149,85 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def(
+            "collect_physics_data",
+            [](T &self) {
+                // Collect computed physics fields from storage (pressure, density, etc.)
+                py::dict result;
+
+                auto &storage         = self.solver.storage;
+                PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
+
+                // Helper to collect a scalar field using scheduler pattern
+                auto collect_scalar = [&](const std::string &name,
+                                          std::shared_ptr<shamrock::solvergraph::Field<Tscal>>
+                                              field_ptr) {
+                    if (!field_ptr)
+                        return;
+
+                    std::vector<Tscal> all_data;
+                    auto &refs = field_ptr->get_refs();
+
+                    sched.for_each_patchdata_nonempty(
+                        [&](shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat) {
+                            if (!refs.has_key(cur_p.id_patch)) {
+                                return;
+                            }
+                            auto &pdf = refs.get(cur_p.id_patch).get();
+                            u32 cnt = pdat.get_obj_cnt(); // Use pdat count, not pdf count (pdf may
+                                                          // have ghosts)
+                            if (cnt == 0) {
+                                return;
+                            }
+
+                            // Copy only the first cnt elements (excluding ghosts)
+                            std::vector<Tscal> host_data = pdf.get_buf().copy_to_stdvec();
+                            if (host_data.size() >= cnt) {
+                                all_data.insert(
+                                    all_data.end(), host_data.begin(), host_data.begin() + cnt);
+                            } else {
+                                // Field size is smaller than particle count - inconsistent state
+                                shambase::throw_with_loc<std::runtime_error>(
+                                    "Field '" + name + "' size (" + std::to_string(host_data.size())
+                                    + ") is smaller than particle count (" + std::to_string(cnt)
+                                    + ") for patch " + std::to_string(cur_p.id_patch));
+                            }
+                        });
+
+                    if (!all_data.empty()) {
+                        result[name.c_str()] = py::array_t<Tscal>(all_data.size(), all_data.data());
+                    }
+                };
+
+                // Collect all scalar fields from storage
+                for (auto &[name, field_ptr] : storage.scalar_fields) {
+                    collect_scalar(name, field_ptr);
+                }
+
+                return result;
+            },
+            R"==(
+    Collect computed physics fields (pressure, density, soundspeed, etc.)
+
+    Returns
+    -------
+    dict
+        Dictionary containing numpy arrays for each physics field:
+        - "density": Mass/baryon density from kernel summation
+          (For SR: this is lab-frame N, use n = N/γ for rest-frame)
+        - "pressure": Pressure P
+        - "soundspeed": Sound speed cs
+
+    Notes
+    -----
+    These are the actual values computed by the solver, not post-processed.
+
+    Example
+    -------
+    >>> physics = model.collect_physics_data()
+    >>> rho = physics["density"]
+    >>> P = physics["pressure"]
+)==")
         .def("init_scheduler", &T::init_scheduler)
         .def("evolve_once", &T::evolve_once)
         .def(
@@ -399,7 +464,64 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Example
     -------
     >>> model.dump("checkpoint.shamrock")
-)==");
+)==")
+        // Physics mode selection (owned by Solver, not SolverConfig)
+        .def(
+            "set_physics_sr",
+            [](T &self, Tscal c_speed) {
+                self.solver.set_physics_sr(c_speed);
+            },
+            py::arg("c_speed") = Tscal{1.0},
+            R"==(
+    Set Special Relativistic physics mode.
+
+    Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
+    Uses conserved variables (S, e) with primitive recovery.
+    Volume-based h iteration: V = 1/W_sum, h = η × V^(1/d)
+    Density: N = ν × W_sum (baryon number × kernel sum)
+
+    Parameters
+    ----------
+    c_speed : float
+        Speed of light (default: 1.0 for natural units)
+)==")
+        .def(
+            "set_physics_newtonian",
+            [](T &self) {
+                self.solver.set_physics_newtonian();
+            },
+            R"==(
+    Set Newtonian physics mode (default).
+
+    Uses leapfrog time integration with direct velocity/acceleration.
+)==")
+        .def(
+            "set_physics_mhd",
+            [](T &self, Tscal resistivity) {
+                self.solver.set_physics_mhd(resistivity);
+            },
+            py::arg("resistivity") = Tscal{0.0},
+            R"==(
+    Set Magnetohydrodynamics physics mode (placeholder).
+
+    Parameters
+    ----------
+    resistivity : float
+        Ohmic resistivity (default: 0.0 for ideal MHD)
+)==")
+        .def(
+            "is_physics_newtonian",
+            [](T &self) {
+                return self.solver.is_physics_newtonian();
+            })
+        .def(
+            "is_physics_sr",
+            [](T &self) {
+                return self.solver.is_physics_sr();
+            })
+        .def("is_physics_mhd", [](T &self) {
+            return self.solver.is_physics_mhd();
+        });
 }
 
 using namespace shammodels::gsph;
@@ -424,6 +546,8 @@ Register_pymod(pygsphmodel) {
         mgsph, "GSPHModel_f64_3_C4_SolverConfig", "GSPHModel_f64_3_C4");
     add_gsph_instance<f64_3, shammath::C6>(
         mgsph, "GSPHModel_f64_3_C6_SolverConfig", "GSPHModel_f64_3_C6");
+    add_gsph_instance<f64_3, shammath::TGauss3>(
+        mgsph, "GSPHModel_f64_3_TGauss3_SolverConfig", "GSPHModel_f64_3_TGauss3");
 
     using VariantGSPHModelBind = std::variant<
         std::unique_ptr<Model<f64_3, shammath::M4>>,
@@ -431,7 +555,8 @@ Register_pymod(pygsphmodel) {
         std::unique_ptr<Model<f64_3, shammath::M8>>,
         std::unique_ptr<Model<f64_3, shammath::C2>>,
         std::unique_ptr<Model<f64_3, shammath::C4>>,
-        std::unique_ptr<Model<f64_3, shammath::C6>>>;
+        std::unique_ptr<Model<f64_3, shammath::C6>>,
+        std::unique_ptr<Model<f64_3, shammath::TGauss3>>>;
 
     m.def(
         "get_Model_GSPH",
@@ -450,6 +575,8 @@ Register_pymod(pygsphmodel) {
                 ret = std::make_unique<Model<f64_3, shammath::C4>>(ctx);
             } else if (vector_type == "f64_3" && kernel == "C6") {
                 ret = std::make_unique<Model<f64_3, shammath::C6>>(ctx);
+            } else if (vector_type == "f64_3" && kernel == "TGauss3") {
+                ret = std::make_unique<Model<f64_3, shammath::TGauss3>>(ctx);
             } else {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "unknown combination of representation and kernel");
@@ -487,7 +614,7 @@ Register_pymod(pygsphmodel) {
     >>> ctx = shamrock.ShamrockCtx()
     >>> model = shamrock.get_Model_GSPH(context=ctx)  # Uses M4 kernel by default
     >>> config = model.gen_default_config()
-    >>> config.set_riemann_hllc()
+    >>> config.set_riemann_iterative()
     >>> config.set_eos_adiabatic(1.4)
     >>> model.set_solver_config(config)
 )==");

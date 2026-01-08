@@ -316,8 +316,8 @@ namespace shammodels::gsph {
 
         inline SolverConfig gen_default_config() {
             SolverConfig cfg;
-            cfg.set_riemann_iterative();              // Default to iterative Riemann solver
-            cfg.set_reconstruct_piecewise_constant(); // Default to 1st order (piecewise constant)
+            // Only set shared settings here. Physics-specific settings (Riemann solver,
+            // reconstruction, c_smooth, etc.) are configured by the physics mode.
             cfg.set_eos_adiabatic(Tscal{1.4});
             cfg.set_boundary_periodic();
             return cfg;

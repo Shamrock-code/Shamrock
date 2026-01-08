@@ -9,6 +9,7 @@
 
 /**
  * @file BasicSPHGhosts.cpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -286,6 +287,16 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     if (BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
         sycl::host_accessor acc_tf{
             shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+
+        logger::info_ln(
+            "SPH Ghost DEBUG",
+            "Periodic BC: bsize =",
+            bsize,
+            "repetitions = (",
+            repetition_x,
+            repetition_y,
+            repetition_z,
+            ")");
 
         for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
             for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {

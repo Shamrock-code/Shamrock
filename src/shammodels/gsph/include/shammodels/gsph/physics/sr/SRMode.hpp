@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,7 +12,7 @@
 /**
  * @file SRMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief Special Relativistic physics mode for GSPH
  *
  * Implements SR-GSPH with conserved variable integration:
@@ -76,9 +76,7 @@ namespace shammodels::gsph::physics::sr {
             return {"density", "pressure", "velocity", "soundspeed", "lorentz_factor"};
         }
 
-        const char* get_density_field_name() const override {
-            return fields::N_LABFRAME;
-        }
+        const char *get_density_field_name() const override { return fields::N_LABFRAME; }
 
         // ════════════════════════════════════════════════════════════════════════
         // Layout Extension - SR-specific fields

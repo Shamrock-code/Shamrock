@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -93,10 +93,10 @@ namespace shammodels::gsph::physics::sr {
             if (cnt == 0)
                 return;
 
-            sham::DeviceBuffer<Tvec> &buf_vxyz   = pdat.get_field_buf_ref<Tvec>(ivxyz);
-            sham::DeviceBuffer<Tvec> &buf_S      = S_field.get_buf(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_e     = e_field.get_buf(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_P     = pressure_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tvec> &buf_vxyz        = pdat.get_field_buf_ref<Tvec>(ivxyz);
+            sham::DeviceBuffer<Tvec> &buf_S           = S_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_e          = e_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_P          = pressure_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_N_labframe = N_labframe_field.get_buf(cur_p.id_patch);
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -107,16 +107,11 @@ namespace shammodels::gsph::physics::sr {
                 sham::MultiRef{buf_S, buf_e},
                 cnt,
                 [c_speed, gamma_eos](
-                    u32 i,
-                    const Tvec *vxyz,
-                    const Tscal *N_in,
-                    const Tscal *P,
-                    Tvec *S,
-                    Tscal *e) {
+                    u32 i, const Tvec *vxyz, const Tscal *N_in, const Tscal *P, Tvec *S, Tscal *e) {
                     const Tscal c2 = c_speed * c_speed;
 
                     // Compute Lorentz factor
-                    const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
+                    const Tscal v2        = sycl::dot(vxyz[i], vxyz[i]) / c2;
                     const Tscal gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
 
                     // Lab-frame baryon density N (from kernel summation)
@@ -205,20 +200,20 @@ namespace shammodels::gsph::physics::sr {
             if (cnt == 0)
                 return;
 
-            sham::DeviceBuffer<Tvec> &buf_vxyz   = pdat.get_field_buf_ref<Tvec>(ivxyz);
-            sham::DeviceBuffer<Tscal> &buf_h     = pdat.get_field_buf_ref<Tscal>(ihpart);
-            sham::DeviceBuffer<Tscal> &buf_pmass = pdat.get_field_buf_ref<Tscal>(ipmass);
-            sham::DeviceBuffer<Tvec> &buf_S      = S_field.get_buf(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_e     = e_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tvec> &buf_vxyz        = pdat.get_field_buf_ref<Tvec>(ivxyz);
+            sham::DeviceBuffer<Tscal> &buf_h          = pdat.get_field_buf_ref<Tscal>(ihpart);
+            sham::DeviceBuffer<Tscal> &buf_pmass      = pdat.get_field_buf_ref<Tscal>(ipmass);
+            sham::DeviceBuffer<Tvec> &buf_S           = S_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_e          = e_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_N_labframe = N_labframe_field.get_buf(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_P     = pressure_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_P          = pressure_field.get_buf(cur_p.id_patch);
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
             // Copy N (lab-frame) from density buffer
             // NOTE: We do NOT overwrite density buffer - it must retain N for EOS and force kernel
             std::vector<Tscal> N_host = buf_N_labframe.copy_to_stdvec();
-            
+
             // Create temporary buffer with N values
             sham::DeviceBuffer<Tscal> buf_N(cnt, shamsys::instance::get_compute_scheduler_ptr());
             buf_N.copy_from_stdvec(N_host);
@@ -242,24 +237,24 @@ namespace shammodels::gsph::physics::sr {
                         Tscal *P,
                         Tscal *uint_out) {
                         // Decompose S into normal (x) and tangent (y,z) components
-                        const Tscal S_x = S[i].x();
+                        const Tscal S_x  = S[i].x();
                         const Tscal S_yz = sycl::sqrt(S[i].y() * S[i].y() + S[i].z() * S[i].z());
 
                         // Lab-frame baryon density N (from kernel summation)
                         const Tscal N_labframe = N_in[i];
 
                         // Pass both S_normal and S_tangent to recovery
-                        sr_math::Result<Tscal> prim
-                            = sr_math::recover<Tscal>(sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
+                        sr_math::Result<Tscal> prim = sr_math::recover<Tscal>(
+                            sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
 
                         // Reconstruct velocity vector
                         const Tscal sign_x = (S_x >= Tscal{0}) ? Tscal{1} : Tscal{-1};
-                        vxyz[i].x() = sign_x * prim.vel_normal * c_speed;
+                        vxyz[i].x()        = sign_x * prim.vel_normal * c_speed;
                         // Distribute tangent velocity in y,z according to S direction
                         if (S_yz > Tscal{1e-15}) {
                             const Tscal vt_scale = prim.vel_tangent * c_speed / S_yz;
-                            vxyz[i].y() = S[i].y() * vt_scale;
-                            vxyz[i].z() = S[i].z() * vt_scale;
+                            vxyz[i].y()          = S[i].y() * vt_scale;
+                            vxyz[i].z()          = S[i].z() * vt_scale;
                         } else {
                             vxyz[i].y() = Tscal{0};
                             vxyz[i].z() = Tscal{0};
@@ -284,24 +279,24 @@ namespace shammodels::gsph::physics::sr {
                         Tvec *vxyz,
                         Tscal *P) {
                         // Decompose S into normal (x) and tangent (y,z) components
-                        const Tscal S_x = S[i].x();
+                        const Tscal S_x  = S[i].x();
                         const Tscal S_yz = sycl::sqrt(S[i].y() * S[i].y() + S[i].z() * S[i].z());
 
                         // Lab-frame baryon density N (from kernel summation)
                         const Tscal N_labframe = N_in[i];
 
                         // Pass both S_normal and S_tangent to recovery
-                        sr_math::Result<Tscal> prim
-                            = sr_math::recover<Tscal>(sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
+                        sr_math::Result<Tscal> prim = sr_math::recover<Tscal>(
+                            sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
 
                         // Reconstruct velocity vector
                         const Tscal sign_x = (S_x >= Tscal{0}) ? Tscal{1} : Tscal{-1};
-                        vxyz[i].x() = sign_x * prim.vel_normal * c_speed;
+                        vxyz[i].x()        = sign_x * prim.vel_normal * c_speed;
                         // Distribute tangent velocity in y,z according to S direction
                         if (S_yz > Tscal{1e-15}) {
                             const Tscal vt_scale = prim.vel_tangent * c_speed / S_yz;
-                            vxyz[i].y() = S[i].y() * vt_scale;
-                            vxyz[i].z() = S[i].z() * vt_scale;
+                            vxyz[i].y()          = S[i].y() * vt_scale;
+                            vxyz[i].z()          = S[i].z() * vt_scale;
                         } else {
                             vxyz[i].y() = Tscal{0};
                             vxyz[i].z() = Tscal{0};

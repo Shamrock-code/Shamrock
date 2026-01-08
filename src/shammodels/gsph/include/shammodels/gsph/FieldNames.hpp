@@ -1,18 +1,23 @@
 // -------------------------------------------------------//
-// SHAMROCK code - Copyright (c) 2021-2025 Timothée David--Cléris
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
 // -------------------------------------------------------//
+
+#pragma once
 
 /**
  * @file FieldNames.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @brief Common field name constants shared by all GSPH physics modes
  *
  * Physics-specific field names are defined in:
  * - physics/newtonian/NewtonianFieldNames.hpp
  * - physics/sr/SRFieldNames.hpp
  */
-
-#pragma once
 
 namespace shammodels::gsph {
 

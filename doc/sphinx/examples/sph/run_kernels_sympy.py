@@ -744,7 +744,6 @@ def m4shift16():
 def tgauss3():
     R = 3
     f = Piecewise(
-        (exp(0.0), q == 0),
         (exp(-q * q), q < R),
         (0, True),
     )

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -35,8 +35,8 @@ namespace shammodels::gsph::physics::newtonian {
         const bool has_uint = config.has_field_uint();
 
         PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
-        u32 idensity_interf                = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
-        u32 iuint_interf = has_uint ? ghost_layout.get_field_idx<Tscal>(fields::UINT) : 0;
+        u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
+        u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>(fields::UINT) : 0;
 
         shamrock::solvergraph::Field<Tscal> &pressure_field
             = shambase::get_check_ref(storage.pressure);
@@ -63,7 +63,7 @@ namespace shammodels::gsph::physics::newtonian {
             sham::DeviceQueue &q = dev_sched->get_queue();
             sham::EventList depends_list;
 
-            auto density = buf_density.get_read_access(depends_list);
+            auto density    = buf_density.get_read_access(depends_list);
             auto pressure   = pressure_buf.get_write_access(depends_list);
             auto soundspeed = soundspeed_buf.get_write_access(depends_list);
 

@@ -107,7 +107,7 @@ class ShamrockCtx {
 
     inline void init_sched(u64 crit_split, u64 crit_merge) {
 
-        for (size_t layer_idx = 0; layer_idx < pdl.nlayers(); layer_idx++) {
+        for (size_t layer_idx = 0; layer_idx < pdl.get_layer_count(); layer_idx++) {
             if (!pdl.get_layer_layout(layer_idx)) {
                 throw ShamAPIException(
                     shambase::format(

@@ -286,7 +286,7 @@ Register_pymod(pyshamrockctxinit) {
 
                 py::dict dic_out;
 
-                for (size_t layer_idx = 0; layer_idx < ctx.pdl.nlayers(); layer_idx++) {
+                for (size_t layer_idx = 0; layer_idx < ctx.pdl.get_layer_count(); layer_idx++) {
                     for (auto fname : ctx.pdl.get_layer_layout_ptr(layer_idx).get_field_names()) {
                         append_to_map<f32>(fname, data, dic_out);
                         append_to_map<f32_2>(fname, data, dic_out);

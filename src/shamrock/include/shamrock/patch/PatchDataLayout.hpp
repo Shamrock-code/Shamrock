@@ -29,7 +29,7 @@ namespace shamrock::patch {
     class PatchDataLayout {
         public:
         std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> layer_layouts;
-        size_t nlayers() const { return layer_layouts.size(); }
+        size_t get_layer_count() const { return layer_layouts.size(); }
 
         inline std::shared_ptr<PatchDataLayerLayout> &get_layer_layout_ref(size_t idx = 0) {
             return shambase::get_check_ref(&layer_layouts.at(idx));

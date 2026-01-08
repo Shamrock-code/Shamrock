@@ -1476,24 +1476,59 @@ namespace shammath::details {
         inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
 
         /// 1D norm of the kernel
-        inline static constexpr Tscal norm_1d = 0.5641895835477563;
+        inline static constexpr Tscal norm_1d = 0.564202047051383;
         /// 2D norm of the kernel (accounts for truncation at q=3)
-        inline static constexpr Tscal norm_2d
-            = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765901959895);
+        inline static constexpr Tscal norm_2d = 0.318349173592935;
         /// 3D norm of the kernel
-        inline static constexpr Tscal norm_3d = 0.17958712212516656;
+        inline static constexpr Tscal norm_3d = 0.179666148218087;
 
-        inline static Tscal f(Tscal q) { return (q < Tscal{3}) ? sycl::exp(-q * q) : Tscal{0}; }
+        inline static Tscal f(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return sycl::exp(-t1);
+            } else
+                return 0;
+        }
 
         inline static Tscal df(Tscal q) {
-            return (q < Tscal{3}) ? -Tscal{2} * q * sycl::exp(-q * q) : Tscal{0};
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return -2 * q * sycl::exp(-t1);
+            } else
+                return 0;
         }
 
         inline static Tscal ddf(Tscal q) {
-            if (q < Tscal{3}) {
-                return (Tscal{4} * q * q - Tscal{2}) * sycl::exp(-q * q);
-            }
-            return Tscal{0};
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return 4 * t1 * sycl::exp(-t1) - 2 * sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            if (q == 0) {
+                return -6.282409900511787;
+            } else if (q < 3) {
+                return 2 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9})
+                       - sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / q;
+            } else
+                return (-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{3})
+                        + 6 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9}))
+                       / q;
+        }
+
+        inline static Tscal phi_tilde_3d_prime(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q == 0) {
+                return 0;
+            } else if (q < 3) {
+                return -2 * shambase::constants::pi<Tscal> * sycl::exp(-t1) / q
+                       + sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / t1;
+            } else
+                return -(-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{3})
+                         + 6 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9}))
+                       / t1;
         }
     };
 
@@ -1511,24 +1546,60 @@ namespace shammath::details {
         inline static constexpr Tscal Rkern  = 5;   ///< Compact support radius of the kernel
         inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
 
-        /// 1D norm of the kernel (truncation negligible at R=5)
-        inline static constexpr Tscal norm_1d = 0.5641895835477563;
-        /// 2D norm of the kernel (truncation negligible at R=5)
-        inline static constexpr Tscal norm_2d = 1.0 / shambase::constants::pi<Tscal>;
-        /// 3D norm of the kernel (truncation negligible at R=5)
-        inline static constexpr Tscal norm_3d = 0.17958712212516656;
+        /// 1D norm of the kernel
+        inline static constexpr Tscal norm_1d = 0.564189583548624;
+        /// 2D norm of the kernel
+        inline static constexpr Tscal norm_2d = 0.318309886188211;
+        /// 3D norm of the kernel
+        inline static constexpr Tscal norm_3d = 0.179587122139514;
 
-        inline static Tscal f(Tscal q) { return (q < Tscal{5}) ? sycl::exp(-q * q) : Tscal{0}; }
+        inline static Tscal f(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return exp(-t1);
+            } else
+                return 0;
+        }
 
         inline static Tscal df(Tscal q) {
-            return (q < Tscal{5}) ? -Tscal{2} * q * sycl::exp(-q * q) : Tscal{0};
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return -2 * q * exp(-t1);
+            } else
+                return 0;
         }
 
         inline static Tscal ddf(Tscal q) {
-            if (q < Tscal{5}) {
-                return (Tscal{4} * q * q - Tscal{2}) * sycl::exp(-q * q);
-            }
-            return Tscal{0};
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return 4 * t1 * exp(-t1) - 2 * exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            if (q == 0) {
+                return -6.283185307092326;
+            } else if (q < 5) {
+                return 2 * shambase::constants::pi<Tscal> * exp(-25)
+                       - pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(q) / q;
+            } else
+                return (-pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(5)
+                        + 10 * shambase::constants::pi<Tscal> * exp(-25))
+                       / q;
+        }
+
+        inline static Tscal phi_tilde_3d_prime(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q == 0) {
+                return 0;
+            } else if (q < 5) {
+                return -2 * shambase::constants::pi<Tscal> * exp(-t1) / q
+                       + pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(q) / t1;
+            } else
+                return -(-pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(5)
+                         + 10 * shambase::constants::pi<Tscal> * exp(-25))
+                       / t1;
         }
     };
 

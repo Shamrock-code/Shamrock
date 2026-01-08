@@ -405,11 +405,48 @@ def test_kernel(ret, tolerance=1e-12):
     shamrock_phi_tilde_3d = [shamrock_phi_tilde_3d(x) for x in q_arr]
     shamrock_phi_tilde_3d_prime = [shamrock_phi_tilde_3d_prime(x) for x in q_arr]
 
-    sympy_f = [f(x) for x in q_arr]
-    sympy_df = [df(x) for x in q_arr]
-    sympy_ddf = [ddf(x) for x in q_arr]
-    sympy_phi_tilde_3d = [phi_tilde_3d(x) for x in q_arr]
-    sympy_phi_tilde_3d_prime = [phi_tilde_3d_prime(x) for x in q_arr]
+    try:
+        sympy_f = [f(x) for x in q_arr]
+        sympy_df = [df(x) for x in q_arr]
+        sympy_ddf = [ddf(x) for x in q_arr]
+        sympy_phi_tilde_3d = [phi_tilde_3d(x) for x in q_arr]
+        sympy_phi_tilde_3d_prime = [phi_tilde_3d_prime(x) for x in q_arr]
+    except ZeroDivisionError:
+        # This can happen for some kernels at q=0
+        print("ZeroDivisionError: using limits towards 0")
+        q_arr_no_zero = q_arr[1:]
+
+        # Compute the limits as q approaches 0
+        limit_f = float(limit(f_expr, q, 0))
+        limit_df = float(limit(df_expr, q, 0))
+        limit_ddf = float(limit(ddf_expr, q, 0))
+        limit_phi_tilde_3d = float(limit(phi_tilde_3d_expr, q, 0))
+        limit_phi_tilde_3d_prime = float(limit(phi_tilde_3d_prime_expr, q, 0))
+
+        print(f"limit_f = {limit_f} | shamrock_f[0] = {shamrock_f[0]}")
+        print(f"limit_df = {limit_df} | shamrock_df[0] = {shamrock_df[0]}")
+        print(f"limit_ddf = {limit_ddf} | shamrock_ddf[0] = {shamrock_ddf[0]}")
+        print(
+            f"limit_phi_tilde_3d = {limit_phi_tilde_3d} | shamrock_phi_tilde_3d[0] = {shamrock_phi_tilde_3d[0]}"
+        )
+        print(
+            f"limit_phi_tilde_3d_prime = {limit_phi_tilde_3d_prime} | shamrock_phi_tilde_3d_prime[0] = {shamrock_phi_tilde_3d_prime[0]}"
+        )
+
+        assert abs(limit_f - shamrock_f[0]) < tolerance
+        assert abs(limit_df - shamrock_df[0]) < tolerance
+        assert abs(limit_ddf - shamrock_ddf[0]) < tolerance
+        assert abs(limit_phi_tilde_3d - shamrock_phi_tilde_3d[0]) < tolerance
+        assert abs(limit_phi_tilde_3d_prime - shamrock_phi_tilde_3d_prime[0]) < tolerance
+
+        # Compute values for q > 0 and insert limits at the beginning
+        sympy_f = [limit_f] + [f(x) for x in q_arr_no_zero]
+        sympy_df = [limit_df] + [df(x) for x in q_arr_no_zero]
+        sympy_ddf = [limit_ddf] + [ddf(x) for x in q_arr_no_zero]
+        sympy_phi_tilde_3d = [limit_phi_tilde_3d] + [phi_tilde_3d(x) for x in q_arr_no_zero]
+        sympy_phi_tilde_3d_prime = [limit_phi_tilde_3d_prime] + [
+            phi_tilde_3d_prime(x) for x in q_arr_no_zero
+        ]
 
     # compute the absolute error
     abs_err_f = np.max(np.abs(np.array(shamrock_f) - np.array(sympy_f)))
@@ -700,6 +737,30 @@ def m4shift16():
     # For q >= 1.875: return M4((q - 1.875) * 16)
     f_shifted = shift_scale_kernel(f, shift_val=sympify(15) / 8, scale_val=16)
     return (R, f_shifted, "M4Shift16")
+
+
+# %%
+# TGauss3 kernel (gaussian until q=3)
+def tgauss3():
+    R = 3
+    f = Piecewise(
+        (exp(0.0), q == 0),
+        (exp(-q * q), q < R),
+        (0, True),
+    )
+    return (R, f, "TGauss3")
+
+
+# %%
+# TGauss5 kernel
+def tgauss5():
+    R = 5
+    f = Piecewise(
+        (exp(0.0), q == 0),
+        (exp(-q * q), q < R),
+        (0, True),
+    )
+    return (R, f, "TGauss5")
 
 
 # %%
@@ -1056,6 +1117,39 @@ test_result_m4shift16 = test_kernel(ret)
 
 
 # %%
+# TGauss3 Kernel
+# ^^^^^^^^^^^^^^
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(tgauss3)
+# %%
+print_kernel_info(ret)
+# %%
+print_kernel_cpp_code(ret)
+# %%
+# Test the kernel
+test_result_tgauss3 = test_kernel(ret)
+
+
+# %%
+# TGauss5 Kernel
+# ^^^^^^^^^^^^^^
+
+# %%
+# Generate c++ code for the kernel
+ret = kernel_to_shamrock(tgauss5)
+# %%
+print_kernel_info(ret)
+# %%
+print_kernel_cpp_code(ret)
+
+# %%
+# Test the kernel
+test_result_tgauss5 = test_kernel(ret)
+
+
+# %%
 # Plot the kernels
 # ^^^^^^^^^^^^^^^^
 
@@ -1192,5 +1286,14 @@ plot_kernel_result(axes, test_result_m4shift2, "m4shift2")
 plot_kernel_result(axes, test_result_m4shift4, "m4shift4")
 plot_kernel_result(axes, test_result_m4shift8, "m4shift8")
 plot_kernel_result(axes, test_result_m4shift16, "m4shift16")
+finalize_kernel_plot(axes)
+plt.show()
+
+# %%
+# TGauss kernels
+
+axes = create_kernel_plot_figure(fig_sz)
+plot_kernel_result(axes, test_result_tgauss3, "tgauss3")
+plot_kernel_result(axes, test_result_tgauss5, "tgauss5")
 finalize_kernel_plot(axes)
 plt.show()

@@ -80,34 +80,33 @@ namespace shammodels::gsph::physics::sr {
                 shambase::parallel_for(cgh, total_elements, "sr_compute_eos", [=](u64 gid) {
                     u32 i = (u32) gid;
 
+                    // density field contains lab-frame N from compute_omega_sr()
+                    // We need rest-frame n = N / gamma
                     Tscal N_lab = density[i];
-                    N_lab       = sycl::max(N_lab, Tscal(1e-30));
+
+                    // Compute Lorentz factor from velocity
+                    Tvec v_i         = vxyz[i];
+                    Tscal v2         = sycl::dot(v_i, v_i) / c2;
+                    Tscal gamma_lor  = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+
+                    // Rest-frame density: n = N / gamma
+                    Tscal n = N_lab / gamma_lor;
 
                     if (has_uint && uint_ptr != nullptr) {
                         Tscal u = uint_ptr[i];
-                        u       = sycl::max(u, Tscal(1e-30));
 
-                        const Tvec v   = vxyz[i];
-                        const Tscal v2 = sycl::dot(v, v) / c2;
-                        const Tscal gam
-                            = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
-
-                        const Tscal n = N_lab / gam;
-
+                        // P = (gamma_eos - 1) * n * u for adiabatic EOS
                         Tscal P = (gamma - Tscal{1}) * n * u;
 
                         const Tscal H   = Tscal{1} + u / c2 + P / (n * c2);
                         const Tscal cs2 = (gamma - Tscal{1}) * (H - Tscal{1}) / H;
                         Tscal cs        = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
 
-                        P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                        cs = sycl::clamp(cs, Tscal(1e-10), c_speed);
-
                         pressure[i]   = P;
                         soundspeed[i] = cs;
                     } else {
                         Tscal cs = c_speed * Tscal{0.1};
-                        Tscal P  = cs * cs * N_lab;
+                        Tscal P  = cs * cs * n;
 
                         pressure[i]   = P;
                         soundspeed[i] = cs;
@@ -173,7 +172,7 @@ namespace shammodels::gsph::physics::sr {
 
                     Tvec v       = acc_v[gid];
                     Tscal v2     = sycl::dot(v, v) / (c * c);
-                    Tscal gamma  = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    Tscal gamma  = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
                     acc_rho[gid] = N / gamma;
                 });
             });
@@ -246,7 +245,7 @@ namespace shammodels::gsph::physics::sr {
 
                     Tvec v       = acc_v[gid];
                     Tscal v2     = sycl::dot(v, v) / (c * c);
-                    Tscal gamma  = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    Tscal gamma  = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
                     Tscal n_rest = N / gamma;
 
                     if (has_uint && acc_u != nullptr) {

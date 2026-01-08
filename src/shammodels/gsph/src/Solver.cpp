@@ -326,6 +326,87 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 
+    // DEBUG: Detect overlapping particles from ghosts
+    {
+        u64 total_real       = 0;
+        u64 total_with_ghost = 0;
+        u64 overlap_count    = 0;
+        Tscal min_dist       = Tscal(1e30);
+
+        storage.merged_xyzh.get().for_each([&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+            u32 real_cnt = scheduler().patch_data.get_pdat(id).get_obj_cnt();
+            u32 tot_cnt  = mpdat.get_obj_cnt();
+            u32 ghost_cnt = tot_cnt - real_cnt;
+
+            total_real += real_cnt;
+            total_with_ghost += tot_cnt;
+
+            // Check for overlapping particles (distances smaller than expected)
+            auto pos_vec = mpdat.get_field<Tvec>(0).copy_to_stdvec();
+            auto h_vec   = mpdat.get_field<Tscal>(1).copy_to_stdvec();
+
+            // Check each real particle against ghosts for overlap
+            for (u32 i = 0; i < real_cnt; ++i) {
+                for (u32 j = real_cnt; j < tot_cnt; ++j) {
+                    Tvec dr   = pos_vec[i] - pos_vec[j];
+                    Tscal dist = sycl::length(dr);
+                    Tscal h_avg = (h_vec[i] + h_vec[j]) / Tscal(2);
+
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                    }
+
+                    // If distance < 0.1 * h, consider overlapping (nearly identical position)
+                    if (dist < h_avg * Tscal(0.1)) {
+                        overlap_count++;
+                        if (overlap_count <= 5) {
+                            logger::warn_ln(
+                                "Ghost DEBUG",
+                                "OVERLAP: particle",
+                                i,
+                                "pos =",
+                                pos_vec[i],
+                                "vs ghost",
+                                j,
+                                "pos =",
+                                pos_vec[j],
+                                "dist =",
+                                dist,
+                                "h_avg =",
+                                h_avg);
+                        }
+                    }
+                }
+            }
+        });
+
+        Tscal global_min_dist = shamalgs::collective::allreduce_min(min_dist);
+        u64 global_overlap = shamalgs::collective::allreduce_sum(overlap_count);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln(
+                "Ghost DEBUG",
+                "Merged positions: real =",
+                total_real,
+                "total (with ghosts) =",
+                total_with_ghost,
+                "ghosts =",
+                total_with_ghost - total_real,
+                "min_real_ghost_dist =",
+                global_min_dist,
+                "overlap_count =",
+                global_overlap);
+        }
+
+        if (global_overlap > 0) {
+            logger::warn_ln(
+                "Ghost DEBUG",
+                "WARNING: Found",
+                global_overlap,
+                "overlapping particle pairs! This will cause h to become very small -> force explosion!");
+        }
+    }
+
     // Set element counts
     shambase::get_check_ref(storage.part_counts).indexes
         = storage.merged_xyzh.get().template map<u32>(

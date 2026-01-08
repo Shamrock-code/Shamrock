@@ -49,6 +49,7 @@ namespace shammodels::gsph::physics::sr {
         u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");
         u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
         u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>("omega");
+        u32 iuint_interf    = ghost_layout.get_field_idx<Tscal>("uint");
 
         // Per-particle baryon number (ν) for volume-based h (Kitajima)
         const bool has_pmass = config_.has_field_pmass();
@@ -83,6 +84,7 @@ namespace shammodels::gsph::physics::sr {
             sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
             sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
             sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+            sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
             sham::DeviceBuffer<Tscal> &buf_pressure
                 = pressure_field.get_field(cur_p.id_patch).get_buf();
             sham::DeviceBuffer<Tscal> &buf_cs
@@ -112,7 +114,8 @@ namespace shammodels::gsph::physics::sr {
             auto hpart        = buf_hpart.get_read_access(depends_list);
             auto omega_acc    = buf_omega.get_read_access(depends_list);
             auto density_acc  = buf_density.get_read_access(depends_list);
-            auto pressure_acc = buf_pressure.get_read_access(depends_list);
+            auto uint_acc     = buf_uint.get_read_access(depends_list);  // uint from merged ghost data
+            auto pressure_acc = buf_pressure.get_read_access(depends_list);  // pressure (real particles only)
             auto cs_acc       = buf_cs.get_read_access(depends_list);
             auto ploop_ptrs   = pcache.get_read_access(depends_list);
 
@@ -124,7 +127,10 @@ namespace shammodels::gsph::physics::sr {
             auto dS_acc = buf_dS.get_write_access(depends_list);
             auto de_acc = buf_de.get_write_access(depends_list);
 
-            auto e = q.submit(depends_list, [&, use_grad_h, has_pmass, hfact](sycl::handler &cgh) {
+            // Number of real particles in this patch
+            const u32 n_real = pdat.get_obj_cnt();
+
+            auto e = q.submit(depends_list, [&, use_grad_h, has_pmass, hfact, n_real](sycl::handler &cgh) {
                 const Tscal c2 = c_speed * c_speed;
 
                 tree::ObjectCacheIterator particle_looper(ploop_ptrs);
@@ -148,24 +154,27 @@ namespace shammodels::gsph::physics::sr {
 
                         // Kitajima volume-based N: N = pmass × (hfact/h)³
                         const Tscal h_ratio_a = hfact / h_a;
-                        const Tscal N_a
-                            = sycl::fmax(nu_a * h_ratio_a * h_ratio_a * h_ratio_a, Tscal{1e-30});
-                        const Tscal P_a = sycl::fmax(pressure_acc[id_a], Tscal{1e-30});
+                        const Tscal N_a = nu_a * h_ratio_a * h_ratio_a * h_ratio_a;
 
                         // Compute Lorentz factor
                         const Tscal v2_a = sycl::dot(vxyz_a, vxyz_a) / c2;
-                        const Tscal gamma_a
-                            = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_a, Tscal{1e-10}));
+                        const Tscal gamma_a = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_a, Tscal{1e-10}));
 
                         // Convert lab-frame N to rest-frame n = N/γ for thermodynamics
                         const Tscal n_a = N_a / gamma_a;
 
+                        // Compute pressure from uint (for consistency with ghosts)
+                        // For real particles, read uint from merged buffer (same as patchdata)
+                        const Tscal u_a = uint_acc[id_a];
+                        const Tscal P_a = (gamma_eos - Tscal{1}) * n_a * u_a;
+
                         // Specific enthalpy: H = 1 + u/c² + P/(nc²) (uses rest-frame n)
-                        const Tscal u_a = P_a / ((gamma_eos - Tscal{1}) * n_a);
                         const Tscal H_a = Tscal{1} + u_a / c2 + P_a / (n_a * c2);
 
-                        // Volume: V = ν/N (uses lab-frame N and per-particle baryon number)
-                        const Tscal V_a = nu_a / sycl::fmax(N_a, Tscal{1e-30});
+                        // Particle volume: V_p = h³/hfact³ (independent of ν!)
+                        // Kitajima Eq. 221: V_p = 1/W_sum ≈ h³/hfact³
+                        const Tscal h_a_hfact = h_a / hfact;
+                        const Tscal V_a       = h_a_hfact * h_a_hfact * h_a_hfact;
 
                         particle_looper.for_each_object(id_a, [&](u32 id_b) {
                             if (id_a == id_b)
@@ -186,26 +195,31 @@ namespace shammodels::gsph::physics::sr {
                             // Kitajima volume-based N: N = pmass × (hfact/h)³
                             const Tscal nu_b      = has_pmass ? pmass_acc[id_b] : pmass;
                             const Tscal h_ratio_b = hfact / h_b;
-                            const Tscal N_b       = sycl::fmax(
-                                nu_b * h_ratio_b * h_ratio_b * h_ratio_b, Tscal{1e-30});
-                            const Tscal P_b = sycl::fmax(pressure_acc[id_b], Tscal{1e-30});
+                            const Tscal N_b = nu_b * h_ratio_b * h_ratio_b * h_ratio_b;
 
                             // Relativistic quantities for particle b
                             const Tscal v2_b = sycl::dot(vxyz_b, vxyz_b) / c2;
-                            const Tscal gamma_b
-                                = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_b, Tscal{1e-10}));
+                            const Tscal gamma_b = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2_b, Tscal{1e-10}));
 
                             // Convert lab-frame N to rest-frame n = N/γ
                             const Tscal n_b = N_b / gamma_b;
-                            const Tscal u_b = P_b / ((gamma_eos - Tscal{1}) * n_b);
+
+                            // Compute pressure from uint (works for both real particles and ghosts!)
+                            // Ghost particles have uint from merged ghost data
+                            const Tscal u_b = uint_acc[id_b];
+                            const Tscal P_b = (gamma_eos - Tscal{1}) * n_b * u_b;
+
                             const Tscal H_b = Tscal{1} + u_b / c2 + P_b / (n_b * c2);
 
-                            // Volume: V = ν/N (per-particle baryon number for Kitajima)
-                            const Tscal V_b = nu_b / sycl::fmax(N_b, Tscal{1e-30});
+                            // Particle volume: V_p = h³/hfact³ (independent of ν!)
+                            const Tscal h_b_hfact = h_b / hfact;
+                            const Tscal V_b       = h_b_hfact * h_b_hfact * h_b_hfact;
 
-                            // Unit vector from a to b
+                            // Unit vector from a to b (matching reference convention)
+                            // Reference: n_ij = -r_ij/|r_ij| where r_ij = pos[i] - pos[j]
+                            // So n_ij points from current (i) to neighbor (j)
                             const Tscal rab_inv = sham::inv_sat_positive(rab);
-                            const Tvec n_ij     = dr * rab_inv;
+                            const Tvec n_ij     = -dr * rab_inv; // Negate to point from a to b
 
                             // Project velocities onto pair axis
                             const Tscal v_x_a = sycl::dot(vxyz_a, n_ij);
@@ -219,27 +233,32 @@ namespace shammodels::gsph::physics::sr {
 
                             // Solve exact SR Riemann problem
                             // Riemann solver uses REST-FRAME density n (not lab-frame N)
-                            // Convention: Left = b (neighbor), Right = a (current)
+                            // Convention: Left = a (current), Right = b (neighbor)
+                            // This matches reference where n_ij points from Left to Right
                             auto riemann_result = ::shammodels::gsph::physics::sr::riemann::solve(
-                                v_x_b,
-                                v_t_mag_b,
-                                n_b,
-                                P_b, // Left state (rest-frame n)
                                 v_x_a,
                                 v_t_mag_a,
                                 n_a,
-                                P_a, // Right state (rest-frame n)
+                                P_a, // Left state (rest-frame n)
+                                v_x_b,
+                                v_t_mag_b,
+                                n_b,
+                                P_b, // Right state (rest-frame n)
                                 gamma_eos);
-                            const Tscal P_star   = riemann_result.P_star;
-                            const Tscal v_x_star = riemann_result.v_x_star;
-                            const Tscal v_t_star = riemann_result.v_t_star;
+
+                            // Use Riemann solver output directly
+                            Tscal P_star   = riemann_result.P_star;
+                            Tscal v_x_star = riemann_result.v_x_star;
+                            Tscal v_t_star = riemann_result.v_t_star;
 
                             // Kernel gradients with √2h (Kitajima Eq. 24, GSPH convolution)
+                            // Note: Use -n_ij to maintain gradient convention
+                            // ∇_a W = dW * (x_a - x_b)/|r| = dW * (-n_ij) since n_ij points from a to b
                             constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
                             const Tscal dW_a      = Kernel::dW_3d(rab, sqrt2 * h_a);
                             const Tscal dW_b      = Kernel::dW_3d(rab, sqrt2 * h_b);
-                            const Tvec grad_W_a   = n_ij * dW_a;
-                            const Tvec grad_W_b   = n_ij * dW_b;
+                            const Tvec grad_W_a   = -n_ij * dW_a;
+                            const Tvec grad_W_b   = -n_ij * dW_b;
 
                             // Tangent velocity unit vectors
                             const Tscal v_t_mag_a_safe = sycl::fmax(v_t_mag_a, Tscal{1e-30});
@@ -247,41 +266,27 @@ namespace shammodels::gsph::physics::sr {
                             const Tvec v_t_dir_a       = v_t_vec_a / v_t_mag_a_safe;
                             const Tvec v_t_dir_b       = v_t_vec_b / v_t_mag_b_safe;
 
-                            // SR force computation (Kitajima et al. 2025 Eq. 371-372)
+                            // SR force computation (Kitajima Eq. 371-374)
+                            // Pass V_a and V_b for V²_interp = (V_a² + V_b²)/2
+                            // v_t_dir_L = v_t_dir_a (Left = a), v_t_dir_R = v_t_dir_b (Right = b)
                             Tvec dS_contrib;
                             Tscal de_contrib;
-                            if (use_grad_h) {
-                                ::shammodels::gsph::physics::sr::sr_pairwise_force<Tscal, Tvec>(
-                                    P_star,
-                                    v_x_star,
-                                    v_t_star,
-                                    n_ij,
-                                    v_t_dir_b,
-                                    v_t_dir_a,
-                                    V_a,
-                                    V_b,
-                                    omega_a,
-                                    omega_b,
-                                    grad_W_a,
-                                    grad_W_b,
-                                    dS_contrib,
-                                    de_contrib);
-                            } else {
-                                ::shammodels::gsph::physics::sr::sr_pairwise_force<Tscal, Tvec>(
-                                    P_star,
-                                    v_x_star,
-                                    v_t_star,
-                                    n_ij,
-                                    v_t_dir_b,
-                                    v_t_dir_a,
-                                    V_a,
-                                    V_b,
-                                    grad_W_a,
-                                    grad_W_b,
-                                    dS_contrib,
-                                    de_contrib);
-                            }
+                            ::shammodels::gsph::physics::sr::sr_pairwise_force<Tscal, Tvec>(
+                                P_star,
+                                v_x_star,
+                                v_t_star,
+                                n_ij,
+                                v_t_dir_a,
+                                v_t_dir_b,
+                                V_a,
+                                V_b,
+                                grad_W_a,
+                                grad_W_b,
+                                dS_contrib,
+                                de_contrib);
 
+                            // Kitajima Eq. 371: <νᵢ dSᵢ/dt> = -Σⱼ P* V² [∇ᵢW - ∇ⱼW]
+                            // NOTE: No νⱼ factor in the sum! This is per-baryon rate.
                             sum_dS += dS_contrib;
                             sum_de += de_contrib;
                         });
@@ -292,8 +297,9 @@ namespace shammodels::gsph::physics::sr {
                         //   Ṡᵢ = (-Σⱼ P* V² ∇W) / νᵢ
 
                         // Store dS/dt and de/dt (normalized by per-particle baryon number)
-                        dS_acc[id_a] = sum_dS / nu_a;
-                        de_acc[id_a] = sum_de / nu_a;
+                        const Tscal nu_a_safe = sycl::fmax(nu_a, Tscal{1e-30});
+                        dS_acc[id_a] = sum_dS / nu_a_safe;
+                        de_acc[id_a] = sum_de / nu_a_safe;
                     });
             });
 

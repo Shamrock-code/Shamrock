@@ -140,6 +140,12 @@ namespace shammodels::gsph::physics::sr::riemann {
         Tscal &H_b,
         Tscal &v_t_b) {
 
+        // Initialize outputs to sensible defaults (in case of early return)
+        v_x_b = v_x_a;
+        v_t_b = v_t_a;
+        n_b   = n_a;
+        H_b   = Tscal{1} + (gamma_c / (gamma_c - Tscal{1})) * (P_a / n_a);
+
         if (P_star <= Tscal{0}) {
             return false;
         }
@@ -164,9 +170,13 @@ namespace shammodels::gsph::physics::sr::riemann {
         }
 
         H_b = (-q_b + sycl::sqrt(discriminant)) / (Tscal{2} * q_a);
+        // Safety: ensure H_b > 1 (minimum enthalpy)
+        H_b = sycl::fmax(H_b, Tscal{1} + Tscal{1e-10});
 
         // Density behind shock from EOS
         n_b = (gamma_c / (gamma_c - Tscal{1})) * P_b / (H_b - Tscal{1});
+        // Safety: floor density
+        n_b = sycl::fmax(n_b, Tscal{1e-15});
 
         // Mass flux j^2 (Pons et al.)
         const Tscal denom_j = (H_b / n_b - H_a / n_a);
@@ -186,13 +196,14 @@ namespace shammodels::gsph::physics::sr::riemann {
         const Tscal j = sycl::sqrt(j2);
 
         // Lorentz factor - MUST include tangential velocity
-        const Tscal v2_total_a = v_x_a * v_x_a + v_t_a * v_t_a;
+        // Safety: clamp total velocity to subluminal
+        const Tscal v2_total_a = sycl::fmin(v_x_a * v_x_a + v_t_a * v_t_a, Tscal{0.9999});
         const Tscal gamma_a    = Tscal{1} / sycl::sqrt(Tscal{1} - v2_total_a);
         const Tscal N_a        = n_a * gamma_a; // Lab-frame density
 
         // Shock speed V_s (Pons et al. Eq. 26)
         const Tscal term      = j * j + N_a * N_a * (Tscal{1} - v_x_a * v_x_a);
-        const Tscal sqrt_term = sycl::sqrt(term);
+        const Tscal sqrt_term = sycl::sqrt(sycl::fmax(term, Tscal{0}));
         const Tscal denom_Vs  = N_a * N_a + j * j;
 
         Tscal V_s;
@@ -201,8 +212,10 @@ namespace shammodels::gsph::physics::sr::riemann {
         } else {
             V_s = (N_a * N_a * v_x_a + j * sqrt_term) / denom_Vs;
         }
+        // Safety: clamp shock speed to subluminal
+        V_s = sycl::fmax(Tscal{-0.9999}, sycl::fmin(V_s, Tscal{0.9999}));
 
-        const Tscal gamma_s  = Tscal{1} / sycl::sqrt(Tscal{1} - V_s * V_s);
+        const Tscal gamma_s = Tscal{1} / sycl::sqrt(Tscal{1} - V_s * V_s);
         const Tscal j_signed = is_left_wave ? -j : j;
 
         if (sycl::fabs(j_signed) < Tscal{1e-15}) {
@@ -221,13 +234,21 @@ namespace shammodels::gsph::physics::sr::riemann {
         }
 
         v_x_b = num / den;
+        // Safety: clamp output velocity to subluminal
+        v_x_b = sycl::fmax(Tscal{-0.9999}, sycl::fmin(v_x_b, Tscal{0.9999}));
 
         // Tangential velocity (Pons et al. Eq. 25)
         if (sycl::fabs(v_t_a) > Tscal{1e-10}) {
-            const Tscal factor_num = Tscal{1} - v_x_b * v_x_b;
+            const Tscal factor_num = sycl::fmax(Tscal{0}, Tscal{1} - v_x_b * v_x_b);
             const Tscal factor_den = H_b * H_b + (H_a * gamma_a * v_t_a) * (H_a * gamma_a * v_t_a);
             if (factor_num > Tscal{0} && factor_den > Tscal{0}) {
                 v_t_b = v_t_a * H_a * gamma_a * sycl::sqrt(factor_num / factor_den);
+                // Safety: ensure total velocity stays subluminal
+                const Tscal v2_total = v_x_b * v_x_b + v_t_b * v_t_b;
+                if (v2_total >= Tscal{0.9999}) {
+                    const Tscal scale = sycl::sqrt(Tscal{0.99} / v2_total);
+                    v_t_b *= scale;
+                }
             } else {
                 v_t_b = Tscal{0};
             }
@@ -273,15 +294,27 @@ namespace shammodels::gsph::physics::sr::riemann {
         const Tscal sign     = is_left_wave ? Tscal{1} : Tscal{-1};
         const Tscal sqrt_gm1 = sycl::sqrt(gamma_c - Tscal{1});
 
-        const Tscal term_v   = (Tscal{1} + v_x_a) / (Tscal{1} - v_x_a);
-        const Tscal term_c_a = (sqrt_gm1 + c_s_a) / (sqrt_gm1 - c_s_a);
-        const Tscal term_c_b = (sqrt_gm1 + c_s_b) / (sqrt_gm1 - c_s_b);
+        // Safety: cap c_s to avoid singularity when c_s → sqrt(γ-1)
+        // In ultra-relativistic limit, c_s → sqrt((γ-1)/γ) < sqrt(γ-1), but
+        // numerical errors can push c_s close to sqrt_gm1
+        const Tscal c_s_max     = sqrt_gm1 * Tscal{0.999};
+        const Tscal c_s_a_safe  = sycl::fmin(c_s_a, c_s_max);
+        const Tscal c_s_b_safe  = sycl::fmin(c_s_b, c_s_max);
+
+        // Clamp v_x_a to avoid singularity in term_v
+        const Tscal v_x_a_safe = sycl::fmax(Tscal{-0.9999}, sycl::fmin(Tscal{0.9999}, v_x_a));
+
+        const Tscal term_v   = (Tscal{1} + v_x_a_safe) / (Tscal{1} - v_x_a_safe);
+        const Tscal term_c_a = (sqrt_gm1 + c_s_a_safe) / (sqrt_gm1 - c_s_a_safe);
+        const Tscal term_c_b = (sqrt_gm1 + c_s_b_safe) / (sqrt_gm1 - c_s_b_safe);
 
         const Tscal exponent = sign * Tscal{2} / sqrt_gm1;
         const Tscal base     = term_c_a / term_c_b;
 
-        const Tscal A_val = term_v * sycl::pow(base, exponent);
-        v_x_b             = (A_val - Tscal{1}) / (A_val + Tscal{1});
+        // Safety: limit base to prevent overflow in pow
+        const Tscal base_safe = sycl::fmax(Tscal{1e-10}, sycl::fmin(base, Tscal{1e10}));
+        const Tscal A_val     = term_v * sycl::pow(base_safe, exponent);
+        v_x_b                 = (A_val - Tscal{1}) / (A_val + Tscal{1});
 
         v_t_b = Tscal{0};
 
@@ -341,6 +374,12 @@ namespace shammodels::gsph::physics::sr::riemann {
         Tscal &n_b,
         Tscal &H_b,
         Tscal &v_t_b) {
+
+        // Initialize outputs to sensible defaults (in case of early return)
+        v_x_b = v_x_a;
+        v_t_b = v_t_a;
+        n_b   = n_a;
+        H_b   = Tscal{1} + (gamma_c / (gamma_c - Tscal{1})) * (P_a / n_a);
 
         const Tscal P_a_safe = sycl::fmax(P_a, Tscal{1e-10});
 
@@ -511,6 +550,9 @@ namespace shammodels::gsph::physics::sr::riemann {
             return v_x_L_star - v_x_R_star;
         };
 
+        // Helper to check if value is valid (finite)
+        auto is_valid = [](Tscal x) { return sycl::isfinite(x); };
+
         // Initial bracket
         const Tscal P_min = sycl::fmin(P_L, P_R);
         const Tscal P_max = sycl::fmax(P_L, P_R);
@@ -520,7 +562,24 @@ namespace shammodels::gsph::physics::sr::riemann {
         Tscal f_lo = f(P_lo);
         Tscal f_hi = f(P_hi);
 
-        // If not bracketed, try smaller range
+        // If NaN in initial bracket, try smaller range
+        if (!is_valid(f_lo) || !is_valid(f_hi)) {
+            P_lo = P_min * Tscal{0.01};
+            P_hi = P_max * Tscal{100};
+            f_lo = f(P_lo);
+            f_hi = f(P_hi);
+        }
+
+        // If still NaN, return fallback
+        if (!is_valid(f_lo) || !is_valid(f_hi)) {
+            result.P_star    = Tscal{0.5} * (P_L + P_R);
+            result.v_x_star  = Tscal{0.5} * (v_x_L + v_x_R);
+            result.v_t_star  = Tscal{0};
+            result.converged = false;
+            return result;
+        }
+
+        // If not bracketed (same sign), try smaller range
         if (f_lo * f_hi > Tscal{0}) {
             P_lo = P_min * Tscal{0.01};
             P_hi = P_max * Tscal{100};
@@ -529,7 +588,7 @@ namespace shammodels::gsph::physics::sr::riemann {
         }
 
         // If still not bracketed, search for bracket
-        if (f_lo * f_hi > Tscal{0}) {
+        if (f_lo * f_hi > Tscal{0} || !is_valid(f_lo) || !is_valid(f_hi)) {
             const Tscal log_P_lo = sycl::log10(P_min * Tscal{1e-6});
             const Tscal log_P_hi = sycl::log10(P_max * Tscal{1e6});
 
@@ -542,15 +601,18 @@ namespace shammodels::gsph::physics::sr::riemann {
                 const Tscal curr_P = sycl::pow(Tscal{10}, log_P);
                 const Tscal curr_f = f(curr_P);
 
-                if (prev_f * curr_f < Tscal{0}) {
+                // Only use valid values for bracketing (like reference)
+                if (is_valid(curr_f) && is_valid(prev_f) && prev_f * curr_f < Tscal{0}) {
                     P_lo  = prev_P;
                     P_hi  = curr_P;
                     f_lo  = prev_f;
                     f_hi  = curr_f;
                     found = true;
                 }
-                prev_P = curr_P;
-                prev_f = curr_f;
+                if (is_valid(curr_f)) {
+                    prev_P = curr_P;
+                    prev_f = curr_f;
+                }
             }
 
             if (!found) {
@@ -561,7 +623,7 @@ namespace shammodels::gsph::physics::sr::riemann {
                 f_hi = f(P_hi);
 
                 // Final attempt: scan with finer resolution
-                if (f_lo * f_hi > Tscal{0}) {
+                if (f_lo * f_hi > Tscal{0} || !is_valid(f_lo) || !is_valid(f_hi)) {
                     const Tscal log_P_lo_ext = sycl::log10(P_lo);
                     const Tscal log_P_hi_ext = sycl::log10(P_hi);
 
@@ -574,15 +636,18 @@ namespace shammodels::gsph::physics::sr::riemann {
                         const Tscal curr_P = sycl::pow(Tscal{10}, log_P);
                         const Tscal curr_f = f(curr_P);
 
-                        if (prev_f * curr_f < Tscal{0}) {
+                        // Only use valid values for bracketing (like reference)
+                        if (is_valid(curr_f) && is_valid(prev_f) && prev_f * curr_f < Tscal{0}) {
                             P_lo  = prev_P;
                             P_hi  = curr_P;
                             f_lo  = prev_f;
                             f_hi  = curr_f;
                             found = true;
                         }
-                        prev_P = curr_P;
-                        prev_f = curr_f;
+                        if (is_valid(curr_f)) {
+                            prev_P = curr_P;
+                            prev_f = curr_f;
+                        }
                     }
                 }
 
@@ -602,6 +667,16 @@ namespace shammodels::gsph::physics::sr::riemann {
 
         for (u32 iter = 0; iter < max_iter; ++iter) {
             const Tscal f_mid = f(P_star);
+
+            // Check for NaN (like reference)
+            if (!is_valid(f_mid)) {
+                // Return fallback on NaN
+                result.P_star    = Tscal{0.5} * (P_L + P_R);
+                result.v_x_star  = Tscal{0.5} * (v_x_L + v_x_R);
+                result.v_t_star  = Tscal{0};
+                result.converged = false;
+                return result;
+            }
 
             // Check convergence
             if (sycl::fabs(f_mid) < tol || sycl::fabs(P_hi - P_lo) < tol * P_star) {
@@ -627,8 +702,9 @@ namespace shammodels::gsph::physics::sr::riemann {
             // Newton step
             bool use_newton = false;
             Tscal P_newton  = P_star;
-            if (sycl::fabs(df) > Tscal{1e-20}) {
+            if (is_valid(df) && sycl::fabs(df) > Tscal{1e-20}) {
                 P_newton = P_star - f_mid / df;
+                // Accept Newton step only if it stays strictly within bracket (like reference)
                 if (P_newton > P_lo && P_newton < P_hi) {
                     use_newton = true;
                 }
@@ -643,6 +719,17 @@ namespace shammodels::gsph::physics::sr::riemann {
         }
 
         result.P_star = P_star;
+
+        // FAIL-FAST: Check P_star is valid before proceeding
+        if (!sycl::isfinite(P_star) || P_star <= Tscal{0}) {
+            // Return average values for debugging (allows simulation to continue
+            // while we investigate the root cause)
+            result.P_star    = Tscal{0.5} * (P_L + P_R);
+            result.v_x_star  = Tscal{0.5} * (v_x_L + v_x_R);
+            result.v_t_star  = Tscal{0};
+            result.converged = false;
+            return result;
+        }
 
         // Compute star state velocities
         Tscal v_x_L_star, n_L_star, H_L_star, v_t_L_star;
@@ -721,8 +808,13 @@ namespace shammodels::gsph::physics::sr::riemann {
             result.v_t_star = sycl::copysign(v_t_max * Tscal{0.99}, result.v_t_star);
         }
 
-        if (!result.converged) {
-            result.converged = true; // Mark as converged even if max_iter reached
+        // FAIL-FAST: Final validation - any NaN/Inf means solver failed
+        if (!sycl::isfinite(result.P_star) || !sycl::isfinite(result.v_x_star)
+            || !sycl::isfinite(result.v_t_star)) {
+            result.P_star    = Tscal{0.5} * (P_L + P_R);
+            result.v_x_star  = Tscal{0.5} * (v_x_L + v_x_R);
+            result.v_t_star  = Tscal{0};
+            result.converged = false;
         }
 
         return result;

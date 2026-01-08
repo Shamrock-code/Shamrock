@@ -147,6 +147,15 @@ namespace shammodels::gsph::physics::sr::recovery {
 
         Result<Tscal> prim;
 
+        // FAIL FAST: Check inputs
+        if (!sycl::isfinite(S_normal_mag) || !sycl::isfinite(e) || !sycl::isfinite(N)) {
+            printf("RECOVERY FAIL: Invalid input S=%.6e e=%.6e N=%.6e\n",
+                   (double)S_normal_mag, (double)e, (double)N);
+        }
+        if (N <= Tscal{0}) {
+            printf("RECOVERY FAIL: N=%.6e <= 0\n", (double)N);
+        }
+
         const Tscal X       = gamma_eos / (gamma_eos - Tscal{1});
         const Tscal c2      = c_speed * c_speed;
         const Tscal S_t_abs = sycl::fabs(S_t);
@@ -157,40 +166,34 @@ namespace shammodels::gsph::physics::sr::recovery {
 
         // Compute H from gamma
         Tscal denom_H = X * gamma_lor * gamma_lor - Tscal{1};
-        Tscal H       = (denom_H > Tscal{1e-10}) ? (X * e * gamma_lor - Tscal{1}) / denom_H
-                                                 : Tscal{1} + Tscal{1e-8};
-        H             = sycl::fmax(H, Tscal{1} + Tscal{1e-8});
+        Tscal H       = (X * e * gamma_lor - Tscal{1}) / denom_H;
 
         // Extract velocities from S = gamma*H*v and S_t = gamma*H*v_t
         Tscal gamma_H = gamma_lor * H;
-        Tscal v_x     = (gamma_H > Tscal{1e-10}) ? S_normal_mag / gamma_H : Tscal{0};
-        Tscal v_t     = (gamma_H > Tscal{1e-10}) ? S_t / gamma_H : Tscal{0};
+        Tscal v_x     = S_normal_mag / gamma_H;
+        Tscal v_t     = S_t / gamma_H;
 
         // Iterative refinement for consistency with gamma constraint
         for (u32 iter = 0; iter < 10; ++iter) {
             Tscal v2 = v_x * v_x + v_t * v_t;
 
-            // Clamp to subluminal
-            if (v2 >= Tscal{0.9999}) {
-                const Tscal scale = sycl::sqrt(Tscal{0.99} / v2);
-                v_x *= scale;
-                v_t *= scale;
-                v2 = v_x * v_x + v_t * v_t;
+            // FAIL FAST: Detect superluminal velocity
+            if (v2 >= Tscal{1}) {
+                printf("RECOVERY FAIL: Superluminal v^2=%.6e at iter %u (S=%.6e e=%.6e N=%.6e)\n",
+                       (double)v2, iter, (double)S_normal_mag, (double)e, (double)N);
+                // Force break - let NaN propagate
+                break;
             }
 
             // Update gamma and H
             const Tscal gamma_new = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
             denom_H               = X * gamma_new * gamma_new - Tscal{1};
-            if (denom_H < Tscal{1e-10}) {
-                denom_H = Tscal{1e-10};
-            }
-            const Tscal H_new
-                = sycl::fmax((X * e * gamma_new - Tscal{1}) / denom_H, Tscal{1} + Tscal{1e-8});
+            const Tscal H_new     = (X * e * gamma_new - Tscal{1}) / denom_H;
 
             // Re-extract velocities
-            gamma_H             = gamma_new * H_new;
-            const Tscal v_x_new = S_normal_mag / gamma_H;
-            const Tscal v_t_new = S_t / gamma_H;
+            gamma_H       = gamma_new * H_new;
+            Tscal v_x_new = S_normal_mag / gamma_H;
+            Tscal v_t_new = S_t / gamma_H;
 
             // Check convergence
             if (sycl::fabs(gamma_new - gamma_lor) / gamma_lor < Tscal{1e-8}
@@ -208,21 +211,35 @@ namespace shammodels::gsph::physics::sr::recovery {
             v_t       = v_t_new;
         }
 
+        // Final velocity consistency check
+        Tscal v2_final = v_x * v_x + v_t * v_t;
+        if (v2_final >= Tscal{1}) {
+            printf("RECOVERY FAIL: Final v^2=%.6e >= 1 (S=%.6e e=%.6e N=%.6e)\n",
+                   (double)v2_final, (double)S_normal_mag, (double)e, (double)N);
+        }
+        // Compute gamma from final velocity
+        gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2_final);
+
         prim.gamma_lor   = gamma_lor;
         prim.vel_normal  = v_x;
         prim.vel_tangent = v_t;
         prim.enthalpy    = H;
 
-        // Rest-frame density: convert from lab-frame N to rest-frame n = N / gamma
-        prim.density = N / sycl::fmax(gamma_lor, Tscal{1});
+        // Rest-frame density: n = N / gamma
+        prim.density = N / gamma_lor;
 
         // Pressure: P = n(H-1)(gamma_c-1)/gamma_c
         prim.pressure = prim.density * (H - Tscal{1}) * (gamma_eos - Tscal{1}) / gamma_eos;
-        prim.pressure = sycl::fmax(prim.pressure, Tscal{1e-6});
+
+        // FAIL FAST: Check output validity
+        if (!sycl::isfinite(prim.pressure) || prim.pressure <= Tscal{0}) {
+            printf("RECOVERY FAIL: Invalid output P=%.6e (n=%.6e H=%.6e)\n",
+                   (double)prim.pressure, (double)prim.density, (double)H);
+        }
 
         // Sound speed: c_s^2 = (gamma_c-1)(H-1)/H
         const Tscal cs2  = (gamma_eos - Tscal{1}) * (H - Tscal{1}) / H;
-        prim.sound_speed = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
+        prim.sound_speed = sycl::sqrt(cs2) * c_speed;
 
         return prim;
     }

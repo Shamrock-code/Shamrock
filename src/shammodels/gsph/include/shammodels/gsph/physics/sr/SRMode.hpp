@@ -93,9 +93,11 @@ namespace shammodels::gsph::physics::sr {
         // ════════════════════════════════════════════════════════════════════════
 
         SRCfg sr_config_{}; ///< SR-specific configuration
-        bool sr_initialized_ = false;
+        bool sr_initialized_        = false;
+        bool first_real_step_done_  = false; ///< Track if first step with dt>0 completed
 
         void init_conserved(Storage &storage, const Config &config, PatchScheduler &scheduler);
+        void clear_derivatives(Storage &storage, const Config &config, PatchScheduler &scheduler);
         void do_predictor(
             Storage &storage, const Config &config, PatchScheduler &scheduler, Tscal dt);
         bool apply_corrector(
@@ -104,6 +106,13 @@ namespace shammodels::gsph::physics::sr {
         void compute_forces(Storage &storage, const Config &config, PatchScheduler &scheduler);
         void compute_eos(Storage &storage, const Config &config, PatchScheduler &scheduler);
         void recover_primitives(Storage &storage, const Config &config, PatchScheduler &scheduler);
+        void update_acceleration_for_cfl(
+            Storage &storage, const Config &config, PatchScheduler &scheduler);
+        void check_derivatives_for_nan(
+            Storage &storage,
+            const Config &config,
+            PatchScheduler &scheduler,
+            const std::string &context);
     };
 
 } // namespace shammodels::gsph::physics::sr

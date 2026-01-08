@@ -149,6 +149,78 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def(
+            "collect_physics_data",
+            [](T &self) {
+                // Collect computed physics fields from storage (pressure, density, etc.)
+                py::dict result;
+
+                auto &storage = self.solver.storage;
+                PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
+
+                // Helper to collect a scalar field using scheduler pattern
+                auto collect_scalar = [&](const std::string &name,
+                                          std::shared_ptr<shamrock::solvergraph::Field<Tscal>> field_ptr) {
+                    if (!field_ptr)
+                        return;
+
+                    std::vector<Tscal> all_data;
+                    auto &refs = field_ptr->get_refs();
+
+                    sched.for_each_patchdata_nonempty([&](shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat) {
+                        if (!refs.has_key(cur_p.id_patch)) {
+                            return;
+                        }
+                        auto &pdf = refs.get(cur_p.id_patch).get();
+                        u32 cnt = pdat.get_obj_cnt();  // Use pdat count, not pdf count (pdf may have ghosts)
+                        if (cnt == 0) {
+                            return;
+                        }
+
+                        // Copy only the first cnt elements (excluding ghosts)
+                        std::vector<Tscal> host_data = pdf.get_buf().copy_to_stdvec();
+                        if (host_data.size() >= cnt) {
+                            all_data.insert(all_data.end(), host_data.begin(), host_data.begin() + cnt);
+                        } else {
+                            all_data.insert(all_data.end(), host_data.begin(), host_data.end());
+                        }
+                    });
+
+                    if (!all_data.empty()) {
+                        result[name.c_str()] = py::array_t<Tscal>(all_data.size(), all_data.data());
+                    }
+                };
+
+                // Collect all scalar fields from storage
+                for (auto &[name, field_ptr] : storage.scalar_fields) {
+                    collect_scalar(name, field_ptr);
+                }
+
+                return result;
+            },
+            R"==(
+    Collect computed physics fields (pressure, density, soundspeed, etc.)
+
+    Returns
+    -------
+    dict
+        Dictionary containing numpy arrays for each physics field:
+        - "density": Number density N (lab frame, from kernel sum)
+        - "pressure": Pressure P
+        - "soundspeed": Sound speed cs
+        - "lorentz_factor": Lorentz factor γ (SR mode only)
+
+    Notes
+    -----
+    These are the actual values computed by the solver, not post-processed.
+    For SR: density = N_lab = ν × Σ W(r, h) (Kitajima Eq. 221)
+
+    Example
+    -------
+    >>> physics = model.collect_physics_data()
+    >>> n_lab = physics["density"]
+    >>> P = physics["pressure"]
+)==")
         .def("init_scheduler", &T::init_scheduler)
         .def("evolve_once", &T::evolve_once)
         .def(
@@ -398,6 +470,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     Based on Kitajima, Inutsuka, and Seno (2025) - arXiv:2510.18251v1
     Uses conserved variables (S, e) with primitive recovery.
+    Volume-based h iteration: V = 1/W_sum, h = η × V^(1/d)
+    Density: N = ν × W_sum (baryon number × kernel sum)
 
     Parameters
     ----------

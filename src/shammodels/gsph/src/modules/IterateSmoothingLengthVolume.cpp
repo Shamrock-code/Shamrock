@@ -85,9 +85,14 @@ void IterateSmoothingLengthVolume<Tvec, SPHKernel>::_impl_evaluate_internal() {
                 // V_p* = [Σ_j W(r_ij, C_smooth × h_i)]^(-1)
                 // h_i = η × V_p*^(1/dim)
                 // This is implicitly coupled, so we iterate until convergence.
-                Tscal W_sum = 0;
+                // IMPORTANT: Σ_j includes self (j=i), so add self-contribution W(0, h)
+                Tscal W_sum = SPHKernel::W_3d(Tscal(0), h_smooth); // Self-contribution
 
                 particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    // Skip self (already counted above)
+                    if (id_a == id_b)
+                        return;
+
                     Tvec dr    = xyz_a - r[id_b];
                     Tscal rab2 = sycl::dot(dr, dr);
 
@@ -109,9 +114,11 @@ void IterateSmoothingLengthVolume<Tvec, SPHKernel>::_impl_evaluate_internal() {
                 Tscal hfact = SPHKernel::hfactd;
                 Tscal new_h_val;
 
-                // Safety: if W_sum is too small, keep current h
-                if (W_sum < Tscal(1e-30)) {
-                    new_h_val = h_a;
+                // FAIL FAST: Check for invalid W_sum
+                if (!sycl::isfinite(W_sum) || W_sum <= Tscal{0}) {
+                    printf("H_ITER FAIL: particle %u has invalid W_sum=%.6e (h=%.6e)\\n",
+                           id_a, (double)W_sum, (double)h_a);
+                    new_h_val = h_a;  // Keep old value to continue and expose more errors
                 } else if constexpr (dim == 3) {
                     new_h_val = hfact / sycl::cbrt(W_sum);
                 } else if constexpr (dim == 2) {
@@ -120,9 +127,11 @@ void IterateSmoothingLengthVolume<Tvec, SPHKernel>::_impl_evaluate_internal() {
                     new_h_val = hfact / W_sum;
                 }
 
-                // Safety: ensure h is finite and positive
+                // FAIL FAST: Check for invalid new_h
                 if (!sycl::isfinite(new_h_val) || new_h_val <= Tscal(0)) {
-                    new_h_val = h_a;
+                    printf("H_ITER FAIL: particle %u computed invalid h=%.6e (W_sum=%.6e)\\n",
+                           id_a, (double)new_h_val, (double)W_sum);
+                    new_h_val = h_a;  // Keep old value to continue and expose more errors
                 }
 
                 // Per-iteration clamping (like standard SPH iteration)

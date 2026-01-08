@@ -120,13 +120,11 @@ namespace shammodels::gsph::physics::sr {
 
                     // Compute Lorentz factor
                     const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
-                    const Tscal gamma_lor
-                        = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    const Tscal gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
 
                     // Kitajima volume-based N: N = pmass × (hfact/h)³
                     const Tscal h_ratio = hfact / h[i];
-                    const Tscal N_lab
-                        = sycl::fmax(pmass[i] * h_ratio * h_ratio * h_ratio, Tscal{1e-30});
+                    const Tscal N_lab = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                     // Lab-frame N to rest-frame n
                     const Tscal n = N_lab / gamma_lor;
@@ -142,6 +140,9 @@ namespace shammodels::gsph::physics::sr {
                     e[i] = gamma_lor * H - P[i] / (N_lab * c2);
                 });
         });
+
+        // dS and de were already zero-initialized above, so predictor on next timestep
+        // won't apply stale values from forces computed before CFL was established
 
         storage.sr_initialized = true;
 
@@ -243,21 +244,19 @@ namespace shammodels::gsph::physics::sr {
 
                         // Kitajima volume-based N: N = pmass × (hfact/h)³
                         const Tscal h_ratio = hfact / h[i];
-                        const Tscal N
-                            = sycl::fmax(pmass[i] * h_ratio * h_ratio * h_ratio, Tscal{1e-30});
+                        const Tscal N = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                         sr_math::Result<Tscal> prim
                             = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
 
                         vxyz[i] = S_dir * prim.vel_normal * c_speed;
-                        P[i]    = sycl::fmax(prim.pressure, Tscal{1e-10});
+                        P[i]    = prim.pressure;
 
                         // Output rest-frame density n for VTK
-                        const Tscal n = sycl::fmax(prim.density, Tscal{1e-30});
-                        rho_out[i]    = n;
+                        rho_out[i] = prim.density;
 
                         // uint for compatibility: P = (γ-1) * n * u => u = P / ((γ-1) * n)
-                        uint_out[i] = P[i] / ((gamma_eos - Tscal{1}) * n);
+                        uint_out[i] = P[i] / ((gamma_eos - Tscal{1}) * prim.density);
                     });
             } else {
                 sham::kernel_call(
@@ -279,17 +278,16 @@ namespace shammodels::gsph::physics::sr {
 
                         // Kitajima volume-based N: N = pmass × (hfact/h)³
                         const Tscal h_ratio = hfact / h[i];
-                        const Tscal N
-                            = sycl::fmax(pmass[i] * h_ratio * h_ratio * h_ratio, Tscal{1e-30});
+                        const Tscal N = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                         sr_math::Result<Tscal> prim
                             = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
 
                         vxyz[i] = S_dir * prim.vel_normal * c_speed;
-                        P[i]    = sycl::fmax(prim.pressure, Tscal{1e-10});
+                        P[i]    = prim.pressure;
 
                         // Output rest-frame density n for VTK
-                        rho_out[i] = sycl::fmax(prim.density, Tscal{1e-30});
+                        rho_out[i] = prim.density;
                     });
             }
         });

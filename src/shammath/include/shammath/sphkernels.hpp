@@ -1501,7 +1501,7 @@ namespace shammath::details {
         inline static Tscal ddf(Tscal q) {
             Tscal t1 = sham::pow_constexpr<2>(q);
             if (q < 3) {
-                return 4 * t1 * sycl::exp(-t1) - 2 * sycl::exp(-t1);
+                return (4 * t1 - 2) * sycl::exp(-t1);
             } else
                 return 0;
         }
@@ -1556,7 +1556,7 @@ namespace shammath::details {
         inline static Tscal f(Tscal q) {
             Tscal t1 = sham::pow_constexpr<2>(q);
             if (q < 5) {
-                return exp(-t1);
+                return sycl::exp(-t1);
             } else
                 return 0;
         }
@@ -1564,7 +1564,7 @@ namespace shammath::details {
         inline static Tscal df(Tscal q) {
             Tscal t1 = sham::pow_constexpr<2>(q);
             if (q < 5) {
-                return -2 * q * exp(-t1);
+                return -2 * q * sycl::exp(-t1);
             } else
                 return 0;
         }
@@ -1572,7 +1572,7 @@ namespace shammath::details {
         inline static Tscal ddf(Tscal q) {
             Tscal t1 = sham::pow_constexpr<2>(q);
             if (q < 5) {
-                return 4 * t1 * exp(-t1) - 2 * exp(-t1);
+                return (4 * t1 - 2) * sycl::exp(-t1);
             } else
                 return 0;
         }
@@ -1581,11 +1581,11 @@ namespace shammath::details {
             if (q == 0) {
                 return -6.283185307092326;
             } else if (q < 5) {
-                return 2 * shambase::constants::pi<Tscal> * exp(-25)
-                       - pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(q) / q;
+                return 2 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25})
+                       - sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / q;
             } else
-                return (-pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(5)
-                        + 10 * shambase::constants::pi<Tscal> * exp(-25))
+                return (-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{5})
+                        + 10 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25}))
                        / q;
         }
 
@@ -1594,11 +1594,11 @@ namespace shammath::details {
             if (q == 0) {
                 return 0;
             } else if (q < 5) {
-                return -2 * shambase::constants::pi<Tscal> * exp(-t1) / q
-                       + pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(q) / t1;
+                return -2 * shambase::constants::pi<Tscal> * sycl::exp(-t1) / q
+                       + sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / t1;
             } else
-                return -(-pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * erf(5)
-                         + 10 * shambase::constants::pi<Tscal> * exp(-25))
+                return -(-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{5})
+                         + 10 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25}))
                        / t1;
         }
     };

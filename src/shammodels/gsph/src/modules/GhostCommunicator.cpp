@@ -49,16 +49,19 @@ namespace shammodels::gsph::modules {
         u32 ivxyz_interf  = ghost_layout.template get_field_idx<Tvec>(fields::VXYZ);
         u32 iomega_interf = ghost_layout.template get_field_idx<Tscal>(fields::OMEGA);
         // SSOT: Use physics-mode-specific density field name from config
-        u32 idensity_interf = ghost_layout.template get_field_idx<Tscal>(
-            solver_config.density_ghost_field_name);
-        u32 iuint_interf  = has_uint ? ghost_layout.template get_field_idx<Tscal>(fields::UINT) : 0;
-        u32 ipmass_interf = has_pmass ? ghost_layout.template get_field_idx<Tscal>(fields::PMASS) : 0;
+        u32 idensity_interf
+            = ghost_layout.template get_field_idx<Tscal>(solver_config.density_ghost_field_name);
+        u32 iuint_interf = has_uint ? ghost_layout.template get_field_idx<Tscal>(fields::UINT) : 0;
+        u32 ipmass_interf
+            = has_pmass ? ghost_layout.template get_field_idx<Tscal>(fields::PMASS) : 0;
 
         const bool has_grads = solver_config.requires_gradients();
         u32 igrad_d_interf
-            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_DENSITY) : 0;
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_DENSITY)
+                        : 0;
         u32 igrad_p_interf
-            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_PRESSURE) : 0;
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_PRESSURE)
+                        : 0;
         u32 igrad_vx_interf
             = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_VX) : 0;
         u32 igrad_vy_interf

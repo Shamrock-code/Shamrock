@@ -41,14 +41,16 @@ namespace shammodels::gsph::physics::sr {
 
         // ═══════════════════════════════════════════════════════════════════════
         // Lab-frame quantities (computational frame)
+        // These use the same storage strings as Newtonian, but have different
+        // physical meaning (lab-frame in SR vs single frame in Newtonian)
         // ═══════════════════════════════════════════════════════════════════════
 
-        /// Lab-frame position
-        constexpr const char *XYZ = "xyz";
-        /// Lab-frame velocity
-        constexpr const char *VXYZ = "vxyz";
-        /// Lab-frame acceleration
-        constexpr const char *AXYZ = "axyz";
+        /// Lab-frame position (same string as Newtonian xyz)
+        using shammodels::gsph::fields::XYZ;
+        /// Lab-frame velocity (same string as Newtonian vxyz)
+        using shammodels::gsph::fields::VXYZ;
+        /// Lab-frame acceleration (same string as Newtonian axyz)
+        using shammodels::gsph::fields::AXYZ;
 
         /**
          * @brief Lab-frame baryon density N
@@ -68,9 +70,9 @@ namespace shammodels::gsph::physics::sr {
         using shammodels::gsph::computed_fields::PRESSURE;
         /// Rest-frame sound speed (same storage string, SR semantics)
         using shammodels::gsph::computed_fields::SOUNDSPEED;
-        /// Rest-frame specific internal energy
-        constexpr const char *UINT  = "uint";
-        constexpr const char *DUINT = "duint";
+        /// Rest-frame specific internal energy (same storage string, SR semantics)
+        using shammodels::gsph::fields::DUINT;
+        using shammodels::gsph::fields::UINT;
 
         // ═══════════════════════════════════════════════════════════════════════
         // Lorentz factor and SR-specific quantities

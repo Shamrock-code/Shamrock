@@ -59,7 +59,7 @@ namespace shammodels::gsph::modules {
                     }
                     auto &pdf = refs.get(cur_p.id_patch).get();
                     // Use real particle count from pdat, not pdf which may include ghosts
-                    u32 cnt   = pdat.get_obj_cnt();
+                    u32 cnt = pdat.get_obj_cnt();
                     if (cnt == 0) {
                         return;
                     }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,7 +10,7 @@
 /**
  * @file SRMode.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implementation of Special Relativistic physics mode for GSPH
  *
  * Owns the complete timestep sequence with SR-specific steps:
@@ -237,7 +237,7 @@ namespace shammodels::gsph::physics::sr {
         }
 
         // Register SR fields in field maps for physics-agnostic VTK output
-        storage.scalar_fields[fields::N_LABFRAME] = storage.density;
+        storage.scalar_fields[fields::N_LABFRAME]     = storage.density;
         storage.scalar_fields[fields::LORENTZ_FACTOR] = storage.gamma_lorentz;
     }
 
@@ -394,7 +394,8 @@ namespace shammodels::gsph::physics::sr {
         vol_iter->set_edges(sizes, storage.neigh_cache, pos_merged, hold, hnew, eps_h);
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("is_converged", "converged");
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>(
+                "is_converged", "converged");
 
         shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
             vol_iter, config.epsilon_h, config.h_iter_per_subcycles, false);
@@ -406,10 +407,10 @@ namespace shammodels::gsph::physics::sr {
             // Check for particles needing cache rebuild (eps < 0)
             u64 cnt_unconverged = 0;
             scheduler.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                auto res = _epsilon_h.get_field(p.id_patch).get_ids_buf_where(
-                    [](auto access, u32 id) {
-                        return access[id] < Tscal(0);
-                    });
+                auto res
+                    = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
+                          return access[id] < Tscal(0);
+                      });
                 cnt_unconverged += std::get<1>(res);
             });
             u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);
@@ -443,7 +444,7 @@ namespace shammodels::gsph::physics::sr {
             auto &buf_hpart = pdat.template get_field_buf_ref<Tscal>(ihpart);
             auto &buf_vxyz  = pdat.template get_field_buf_ref<Tvec>(ivxyz);
 
-            auto &N_field = N_labframe_field.get_field(p.id_patch);
+            auto &N_field    = N_labframe_field.get_field(p.id_patch);
             auto &omeg_field = omega_field.get_field(p.id_patch);
 
             sham::DeviceQueue &q = dev_sched->get_queue();
@@ -471,15 +472,15 @@ namespace shammodels::gsph::physics::sr {
                     u32 id_a = (u32) gid;
 
                     Tvec xyz_labframe_a = xyz_labframe_acc[id_a];
-                    Tscal h_a  = h_acc[id_a];
-                    Tscal dint = h_a * h_a * Rkern * Rkern;
+                    Tscal h_a           = h_acc[id_a];
+                    Tscal dint          = h_a * h_a * Rkern * Rkern;
 
                     // Initialize with self-contribution (r=0)
                     // Kitajima Eq. 221: W_sum = Σ_j W(r_ij, h_i) includes self
-                    Tscal W_self      = Kernel::W_3d(Tscal(0), h_a);
-                    Tscal dW_dh_self  = Kernel::dhW_3d(Tscal(0), h_a);
-                    Tscal rho_sum     = has_pmass ? W_self : pmass * W_self;
-                    Tscal sumdWdh     = has_pmass ? dW_dh_self : pmass * dW_dh_self;
+                    Tscal W_self     = Kernel::W_3d(Tscal(0), h_a);
+                    Tscal dW_dh_self = Kernel::dhW_3d(Tscal(0), h_a);
+                    Tscal rho_sum    = has_pmass ? W_self : pmass * W_self;
+                    Tscal sumdWdh    = has_pmass ? dW_dh_self : pmass * dW_dh_self;
 
                     particle_looper.for_each_object(id_a, [&](u32 id_b) {
                         // Skip self (already counted above)
@@ -514,8 +515,9 @@ namespace shammodels::gsph::physics::sr {
 
                     // Store LAB-FRAME N directly from kernel summation
                     // This is the fundamental quantity: N = ν × ΣW (Kitajima Eq. 221)
-                    // Consumers (SREOS, primitive recovery) will convert to rest-frame n = N/γ as needed
-                    Tscal N_labframe = sycl::max(rho_sum, Tscal(1e-30));
+                    // Consumers (SREOS, primitive recovery) will convert to rest-frame n = N/γ as
+                    // needed
+                    Tscal N_labframe     = sycl::max(rho_sum, Tscal(1e-30));
                     N_labframe_acc[id_a] = N_labframe;
 
                     Tscal omega_val = Tscal(1);
@@ -663,8 +665,12 @@ namespace shammodels::gsph::physics::sr {
 
                     shamcomm::logs::err_ln(
                         "SR",
-                        "NaN detected in primitive recovery at particle ", i,
-                        "\n  Conserved: S_mag=", S_mag, ", e=", e_host[i],
+                        "NaN detected in primitive recovery at particle ",
+                        i,
+                        "\n  Conserved: S_mag=",
+                        S_mag,
+                        ", e=",
+                        e_host[i],
                         "\n  This usually means the timestep is too large or the initial ",
                         "conditions produce unphysical conserved variables.",
                         "\n  Try reducing CFL or checking initial setup.");
@@ -729,25 +735,24 @@ namespace shammodels::gsph::physics::sr {
             sham::DeviceBuffer<Tvec> &buf_dS   = dS_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field_buf_ref<Tvec>(iaxyz);
             sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
-            sham::DeviceBuffer<Tscal> &buf_P
-                = pressure_field.get_field(cur_p.id_patch).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_P   = pressure_field.get_field(cur_p.id_patch).get_buf();
             sham::DeviceBuffer<Tscal> &buf_N_labframe
                 = N_labframe_field.get_field(cur_p.id_patch).get_buf();
 
             sham::EventList depends_list;
-            auto dS_acc             = buf_dS.get_read_access(depends_list);
-            auto v_labframe_acc     = buf_vxyz.get_read_access(depends_list);
-            auto P_restframe_acc    = buf_P.get_read_access(depends_list);
-            auto N_labframe_acc     = buf_N_labframe.get_read_access(depends_list);
-            auto axyz_acc           = buf_axyz.get_write_access(depends_list);
+            auto dS_acc          = buf_dS.get_read_access(depends_list);
+            auto v_labframe_acc  = buf_vxyz.get_read_access(depends_list);
+            auto P_restframe_acc = buf_P.get_read_access(depends_list);
+            auto N_labframe_acc  = buf_N_labframe.get_read_access(depends_list);
+            auto axyz_acc        = buf_axyz.get_write_access(depends_list);
 
             auto e = dev_sched->get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cnt, "SR-CFL-axyz", [=](u64 gid) {
                     u32 i = (u32) gid;
 
                     // Compute Lorentz factor from lab-frame velocity
-                    const Tvec v_labframe   = v_labframe_acc[i];
-                    const Tscal v2 = sycl::dot(v_labframe, v_labframe) / c2;
+                    const Tvec v_labframe = v_labframe_acc[i];
+                    const Tscal v2        = sycl::dot(v_labframe, v_labframe) / c2;
                     const Tscal gamma_lor
                         = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
 
@@ -755,7 +760,7 @@ namespace shammodels::gsph::physics::sr {
                     const Tscal P_restframe = sycl::fmax(P_restframe_acc[i], Tscal{1e-30});
                     const Tscal N_labframe  = sycl::fmax(N_labframe_acc[i], Tscal{1e-30});
                     const Tscal n_restframe = N_labframe / gamma_lor;
-                    
+
                     // Specific enthalpy H = 1 + u/c² + P/(nc²) using rest-frame quantities
                     const Tscal u_restframe = P_restframe / ((gamma_eos - Tscal{1}) * n_restframe);
                     const Tscal H = Tscal{1} + u_restframe / c2 + P_restframe / (n_restframe * c2);
@@ -792,8 +797,7 @@ namespace shammodels::gsph::physics::sr {
 
         shamrock::solvergraph::Field<Tvec> &dS_field  = *storage.dS_momentum;
         shamrock::solvergraph::Field<Tscal> &de_field = *storage.de_energy;
-        shamrock::solvergraph::Field<Tscal> &P_field
-            = shambase::get_check_ref(storage.pressure);
+        shamrock::solvergraph::Field<Tscal> &P_field  = shambase::get_check_ref(storage.pressure);
 
         bool has_nan = false;
         scheduler.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -841,14 +845,35 @@ namespace shammodels::gsph::physics::sr {
 
                     shamcomm::logs::err_ln(
                         "SR",
-                        "NaN/Inf detected in derivatives ", context, " at particle ", i,
-                        "\n  dS = (", dS_host[i][0], ", ", dS_host[i][1], ", ", dS_host[i][2],
-                        ") |dS|=", dS_mag,
-                        "\n  de = ", de_host[i],
-                        "\n  xyz = (", xyz_host[i][0], ", ", xyz_host[i][1], ", ", xyz_host[i][2],
+                        "NaN/Inf detected in derivatives ",
+                        context,
+                        " at particle ",
+                        i,
+                        "\n  dS = (",
+                        dS_host[i][0],
+                        ", ",
+                        dS_host[i][1],
+                        ", ",
+                        dS_host[i][2],
+                        ") |dS|=",
+                        dS_mag,
+                        "\n  de = ",
+                        de_host[i],
+                        "\n  xyz = (",
+                        xyz_host[i][0],
+                        ", ",
+                        xyz_host[i][1],
+                        ", ",
+                        xyz_host[i][2],
                         ")",
-                        "\n  |v| = ", v_mag, ", h = ", h_host[i], ", pmass = ", pmass_val,
-                        ", P = ", P_host[i],
+                        "\n  |v| = ",
+                        v_mag,
+                        ", h = ",
+                        h_host[i],
+                        ", pmass = ",
+                        pmass_val,
+                        ", P = ",
+                        P_host[i],
                         "\n  Likely causes: Riemann solver divergence, extreme pressure ratio, "
                         "or particles too close.");
 

@@ -12,7 +12,9 @@ Initial conditions:
 """
 import sys
 from pathlib import Path
+
 import numpy as np
+
 import shamrock
 
 THIS_DIR = Path(__file__).parent
@@ -66,7 +68,9 @@ hfact = model.get_hfact()
 model.add_cube_hcp_3d(dr, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half))
 
 # Set uniform internal energy and density
-model.set_field_in_box("uint", "f64", u0, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half))
+model.set_field_in_box(
+    "uint", "f64", u0, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half)
+)
 
 init_data = ctx.collect_data()
 xyz_init = np.array(init_data["xyz"])
@@ -75,20 +79,28 @@ N_total = len(xyz_init)
 V_per_particle = (2 * xs_half) * (2 * ys_half) * (2 * zs_half) / N_total
 nu0 = n0 * V_per_particle
 
-model.set_field_in_box("pmass", "f64", nu0, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half))
+model.set_field_in_box(
+    "pmass", "f64", nu0, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half)
+)
 
 totmass = n0 * (2 * xs_half) * (2 * ys_half) * (2 * zs_half)
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-h_init = hfact * V_per_particle**(1/3)
-model.set_field_in_box("hpart", "f64", h_init, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half))
+h_init = hfact * V_per_particle ** (1 / 3)
+model.set_field_in_box(
+    "hpart", "f64", h_init, (-xs_half, -ys_half, -zs_half), (xs_half, ys_half, zs_half)
+)
 
 # Set shear velocity: upper layer (+v), lower layer (-v), with perturbation
 # v_x = +v_shear if y > 0 else -v_shear
 # v_y = A0 * sin(2π x / λ) near interface
-model.set_field_in_box("vxyz", "f64_3", (+v_shear, 0.0, 0.0), (-xs_half, 0.0, -zs_half), (xs_half, ys_half, zs_half))
-model.set_field_in_box("vxyz", "f64_3", (-v_shear, 0.0, 0.0), (-xs_half, -ys_half, -zs_half), (xs_half, 0.0, zs_half))
+model.set_field_in_box(
+    "vxyz", "f64_3", (+v_shear, 0.0, 0.0), (-xs_half, 0.0, -zs_half), (xs_half, ys_half, zs_half)
+)
+model.set_field_in_box(
+    "vxyz", "f64_3", (-v_shear, 0.0, 0.0), (-xs_half, -ys_half, -zs_half), (xs_half, 0.0, zs_half)
+)
 
 # Add perturbation near interface (|y| < 0.05)
 # This requires per-particle velocity modification
@@ -131,7 +143,7 @@ P_sim = np.array(physics["pressure"])
 interface_mask = np.abs(y) < 0.1
 vy_amp = np.max(np.abs(vy[interface_mask])) if np.any(interface_mask) else 0
 
-print(f"\nResults:")
+print("\nResults:")
 print(f"  P range: [{np.min(P_sim):.4f}, {np.max(P_sim):.4f}]")
 print(f"  n range: [{np.min(n_sim):.4f}, {np.max(n_sim):.4f}]")
 print(f"  vy amplitude at interface: {vy_amp:.4f}")
@@ -139,24 +151,25 @@ print(f"  vy amplitude at interface: {vy_amp:.4f}")
 # Generate simple scatter plot
 try:
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(8, 4))
 
     # Color by initial y position (upper=red, lower=blue)
-    colors = np.where(y > 0, 'red', 'blue')
+    colors = np.where(y > 0, "red", "blue")
     ax.scatter(x, y, c=colors, s=0.5, alpha=0.5)
 
     ax.set_xlim(-xs_half, xs_half)
     ax.set_ylim(-ys_half, ys_half)
-    ax.set_xlabel(r'$x$', fontsize=12)
-    ax.set_ylabel(r'$y$', fontsize=12)
-    ax.set_aspect('equal')
-    ax.set_title(f'KH Instability t={t_target}')
+    ax.set_xlabel(r"$x$", fontsize=12)
+    ax.set_ylabel(r"$y$", fontsize=12)
+    ax.set_aspect("equal")
+    ax.set_title(f"KH Instability t={t_target}")
 
     filepath = Path("sr_kh_problem7.png").resolve()
-    plt.savefig(str(filepath), dpi=150, bbox_inches='tight')
+    plt.savefig(str(filepath), dpi=150, bbox_inches="tight")
     plt.close()
     print(f"✓ Plot saved: {filepath}")
 except ImportError:

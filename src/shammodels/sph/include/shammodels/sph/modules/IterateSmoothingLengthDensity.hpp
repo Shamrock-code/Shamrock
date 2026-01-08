@@ -11,6 +11,7 @@
 
 /**
  * @file IterateSmoothingLengthDensity.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
  * the SPH density sum.

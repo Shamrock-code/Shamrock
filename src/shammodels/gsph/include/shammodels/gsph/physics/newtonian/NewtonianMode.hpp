@@ -12,7 +12,7 @@
 /**
  * @file NewtonianMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me)
+ * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
  * @brief Newtonian (non-relativistic) physics mode for GSPH
  *
  * Implements standard GSPH with leapfrog (kick-drift-kick) time stepping.

@@ -9,15 +9,27 @@ arXiv:2510.18251v1 figure style.
 import numpy as np
 
 
-def plot_kitajima_4panel(x_sim, P_sim, n_sim, vx_sim, h_sim,
-                         x_exact, P_exact, n_exact, vx_exact,
-                         filename, title=None, h0=None):
+def plot_kitajima_4panel(
+    x_sim,
+    P_sim,
+    n_sim,
+    vx_sim,
+    h_sim,
+    x_exact,
+    P_exact,
+    n_exact,
+    vx_exact,
+    filename,
+    title=None,
+    h0=None,
+):
     """Create Kitajima-style 4-panel plot (P, n, vx, h/h0) matching paper figures.
-    
+
     Args:
         h0: Initial smoothing length for normalization. If None, uses median(h_sim).
     """
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -58,6 +70,7 @@ def plot_kitajima_4panel(x_sim, P_sim, n_sim, vx_sim, h_sim,
         fig.suptitle(title, fontsize=10, y=0.98)
 
     from pathlib import Path
+
     abs_path = Path(filename).resolve()
     plt.savefig(str(abs_path), dpi=150, bbox_inches="tight")
     print(f"✓ Plot saved: {abs_path}")
@@ -65,11 +78,12 @@ def plot_kitajima_4panel(x_sim, P_sim, n_sim, vx_sim, h_sim,
     return str(abs_path)
 
 
-def plot_kitajima_3panel(x_sim, P_sim, n_sim, vx_sim,
-                         x_exact, P_exact, n_exact, vx_exact,
-                         filename, title=None):
+def plot_kitajima_3panel(
+    x_sim, P_sim, n_sim, vx_sim, x_exact, P_exact, n_exact, vx_exact, filename, title=None
+):
     """Create Kitajima-style 3-panel plot (P, n, vx) without h."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -100,6 +114,7 @@ def plot_kitajima_3panel(x_sim, P_sim, n_sim, vx_sim,
         fig.suptitle(title, fontsize=10, y=0.98)
 
     from pathlib import Path
+
     abs_path = Path(filename).resolve()
     plt.savefig(str(abs_path), dpi=150, bbox_inches="tight")
     print(f"✓ Plot saved: {abs_path}")
@@ -114,7 +129,7 @@ def compute_L2_errors(x_sim, y_sim, x_exact, y_exact, x_min=-0.5, x_max=0.5):
     y_f = y_sim[mask]
 
     if len(x_f) == 0:
-        return float('inf')
+        return float("inf")
 
     y_interp = np.interp(x_f, x_exact, y_exact)
     y_norm = np.mean(np.abs(y_interp)) + 1e-10

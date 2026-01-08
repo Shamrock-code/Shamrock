@@ -161,8 +161,8 @@ namespace shammodels::gsph::modules {
 
         // DEBUG: Print h statistics after iteration to detect anomalies
         {
-            Tscal local_min_h = Tscal(1e30);
-            Tscal local_max_h = Tscal(0);
+            Tscal local_min_h    = Tscal(1e30);
+            Tscal local_max_h    = Tscal(0);
             u64 local_cnt_tiny_h = 0;
 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
@@ -177,8 +177,8 @@ namespace shammodels::gsph::modules {
                 }
             });
 
-            Tscal global_min_h = shamalgs::collective::allreduce_min(local_min_h);
-            Tscal global_max_h = shamalgs::collective::allreduce_max(local_max_h);
+            Tscal global_min_h  = shamalgs::collective::allreduce_min(local_min_h);
+            Tscal global_max_h  = shamalgs::collective::allreduce_max(local_max_h);
             u64 global_cnt_tiny = shamalgs::collective::allreduce_sum(local_cnt_tiny_h);
 
             if (shamcomm::world_rank() == 0) {
@@ -312,8 +312,10 @@ namespace shammodels::gsph::modules {
 
                     // FAIL FAST: Check for invalid density
                     if (!sycl::isfinite(rho_sum) || rho_sum <= Tscal{0}) {
-                        printf("OMEGA FAIL: particle %u has invalid rho_sum=%.6e\\n",
-                               id_a, (double)rho_sum);
+                        printf(
+                            "OMEGA FAIL: particle %u has invalid rho_sum=%.6e\\n",
+                            id_a,
+                            (double) rho_sum);
                     }
                     density_acc[id_a] = rho_sum;
 
@@ -322,8 +324,13 @@ namespace shammodels::gsph::modules {
                         omega_val = Tscal(1) + h_a / (Tscal(dim) * rho_sum) * sumdWdh;
                         // FAIL FAST: Check for invalid omega
                         if (!sycl::isfinite(omega_val) || omega_val <= Tscal{0}) {
-                            printf("OMEGA FAIL: particle %u has invalid omega=%.6e (rho=%.6e sumdWdh=%.6e)\\n",
-                                   id_a, (double)omega_val, (double)rho_sum, (double)sumdWdh);
+                            printf(
+                                "OMEGA FAIL: particle %u has invalid omega=%.6e (rho=%.6e "
+                                "sumdWdh=%.6e)\\n",
+                                id_a,
+                                (double) omega_val,
+                                (double) rho_sum,
+                                (double) sumdWdh);
                         }
                     }
                     omega_acc[id_a] = omega_val;

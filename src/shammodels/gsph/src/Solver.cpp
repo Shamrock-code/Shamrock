@@ -334,8 +334,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
         Tscal min_dist       = Tscal(1e30);
 
         storage.merged_xyzh.get().for_each([&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-            u32 real_cnt = scheduler().patch_data.get_pdat(id).get_obj_cnt();
-            u32 tot_cnt  = mpdat.get_obj_cnt();
+            u32 real_cnt  = scheduler().patch_data.get_pdat(id).get_obj_cnt();
+            u32 tot_cnt   = mpdat.get_obj_cnt();
             u32 ghost_cnt = tot_cnt - real_cnt;
 
             total_real += real_cnt;
@@ -348,8 +348,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
             // Check each real particle against ghosts for overlap
             for (u32 i = 0; i < real_cnt; ++i) {
                 for (u32 j = real_cnt; j < tot_cnt; ++j) {
-                    Tvec dr   = pos_vec[i] - pos_vec[j];
-                    Tscal dist = sycl::length(dr);
+                    Tvec dr     = pos_vec[i] - pos_vec[j];
+                    Tscal dist  = sycl::length(dr);
                     Tscal h_avg = (h_vec[i] + h_vec[j]) / Tscal(2);
 
                     if (dist < min_dist) {
@@ -381,7 +381,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
         });
 
         Tscal global_min_dist = shamalgs::collective::allreduce_min(min_dist);
-        u64 global_overlap = shamalgs::collective::allreduce_sum(overlap_count);
+        u64 global_overlap    = shamalgs::collective::allreduce_sum(overlap_count);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
@@ -403,7 +403,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
                 "Ghost DEBUG",
                 "WARNING: Found",
                 global_overlap,
-                "overlapping particle pairs! This will cause h to become very small -> force explosion!");
+                "overlapping particle pairs! This will cause h to become very small -> force "
+                "explosion!");
         }
     }
 

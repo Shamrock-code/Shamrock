@@ -12,7 +12,7 @@
 /**
  * @file SRMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me)
+ * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
  * @brief Special Relativistic physics mode for GSPH
  *
  * Implements SR-GSPH with conserved variable integration:
@@ -93,8 +93,8 @@ namespace shammodels::gsph::physics::sr {
         // ════════════════════════════════════════════════════════════════════════
 
         SRCfg sr_config_{}; ///< SR-specific configuration
-        bool sr_initialized_        = false;
-        bool first_real_step_done_  = false; ///< Track if first step with dt>0 completed
+        bool sr_initialized_       = false;
+        bool first_real_step_done_ = false; ///< Track if first step with dt>0 completed
 
         void init_conserved(Storage &storage, const Config &config, PatchScheduler &scheduler);
         void clear_derivatives(Storage &storage, const Config &config, PatchScheduler &scheduler);

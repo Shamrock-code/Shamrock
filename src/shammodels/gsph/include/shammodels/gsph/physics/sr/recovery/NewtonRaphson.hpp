@@ -149,11 +149,14 @@ namespace shammodels::gsph::physics::sr::recovery {
 
         // FAIL FAST: Check inputs
         if (!sycl::isfinite(S_normal_mag) || !sycl::isfinite(e) || !sycl::isfinite(N)) {
-            printf("RECOVERY FAIL: Invalid input S=%.6e e=%.6e N=%.6e\n",
-                   (double)S_normal_mag, (double)e, (double)N);
+            printf(
+                "RECOVERY FAIL: Invalid input S=%.6e e=%.6e N=%.6e\n",
+                (double) S_normal_mag,
+                (double) e,
+                (double) N);
         }
         if (N <= Tscal{0}) {
-            printf("RECOVERY FAIL: N=%.6e <= 0\n", (double)N);
+            printf("RECOVERY FAIL: N=%.6e <= 0\n", (double) N);
         }
 
         const Tscal X       = gamma_eos / (gamma_eos - Tscal{1});
@@ -179,8 +182,13 @@ namespace shammodels::gsph::physics::sr::recovery {
 
             // FAIL FAST: Detect superluminal velocity
             if (v2 >= Tscal{1}) {
-                printf("RECOVERY FAIL: Superluminal v^2=%.6e at iter %u (S=%.6e e=%.6e N=%.6e)\n",
-                       (double)v2, iter, (double)S_normal_mag, (double)e, (double)N);
+                printf(
+                    "RECOVERY FAIL: Superluminal v^2=%.6e at iter %u (S=%.6e e=%.6e N=%.6e)\n",
+                    (double) v2,
+                    iter,
+                    (double) S_normal_mag,
+                    (double) e,
+                    (double) N);
                 // Force break - let NaN propagate
                 break;
             }
@@ -214,8 +222,12 @@ namespace shammodels::gsph::physics::sr::recovery {
         // Final velocity consistency check
         Tscal v2_final = v_x * v_x + v_t * v_t;
         if (v2_final >= Tscal{1}) {
-            printf("RECOVERY FAIL: Final v^2=%.6e >= 1 (S=%.6e e=%.6e N=%.6e)\n",
-                   (double)v2_final, (double)S_normal_mag, (double)e, (double)N);
+            printf(
+                "RECOVERY FAIL: Final v^2=%.6e >= 1 (S=%.6e e=%.6e N=%.6e)\n",
+                (double) v2_final,
+                (double) S_normal_mag,
+                (double) e,
+                (double) N);
         }
         // Compute gamma from final velocity
         gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2_final);
@@ -233,8 +245,11 @@ namespace shammodels::gsph::physics::sr::recovery {
 
         // FAIL FAST: Check output validity
         if (!sycl::isfinite(prim.pressure) || prim.pressure <= Tscal{0}) {
-            printf("RECOVERY FAIL: Invalid output P=%.6e (n=%.6e H=%.6e)\n",
-                   (double)prim.pressure, (double)prim.density, (double)H);
+            printf(
+                "RECOVERY FAIL: Invalid output P=%.6e (n=%.6e H=%.6e)\n",
+                (double) prim.pressure,
+                (double) prim.density,
+                (double) H);
         }
 
         // Sound speed: c_s^2 = (gamma_c-1)(H-1)/H

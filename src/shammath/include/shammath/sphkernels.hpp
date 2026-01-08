@@ -1473,7 +1473,7 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefTGauss3 {
         public:
-        inline static constexpr Tscal Rkern  = 3; ///< Compact support radius of the kernel
+        inline static constexpr Tscal Rkern  = 3;   ///< Compact support radius of the kernel
         inline static constexpr Tscal hfactd = 1.0; ///< default hfact (Kitajima uses η = 1.0)
 
         /// 1D norm of the kernel
@@ -1509,7 +1509,7 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefTGauss5 {
         public:
-        inline static constexpr Tscal Rkern  = 5; ///< Compact support radius of the kernel
+        inline static constexpr Tscal Rkern  = 5;   ///< Compact support radius of the kernel
         inline static constexpr Tscal hfactd = 1.0; ///< default hfact
 
         /// 1D norm of the kernel (truncation negligible at R=5)

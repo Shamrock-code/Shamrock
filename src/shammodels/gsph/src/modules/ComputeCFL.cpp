@@ -68,25 +68,32 @@ namespace shammodels::gsph::modules {
                 shambase::parallel_for(cgh, cnt, "gsph_compute_cfl_dt", [=](u64 gid) {
                     u32 i = (u32) gid;
 
-                    Tscal h_i   = hpart[i];
-                    Tscal cs_i  = cs[i];
+                    Tscal h_i  = hpart[i];
+                    Tscal cs_i = cs[i];
 
                     // FAIL FAST: Detect bad storage values
                     if (!sycl::isfinite(h_i) || h_i <= Tscal(0)) {
-                        printf("CFL ERROR: particle %u has invalid h=%.6e\n", i, (double)h_i);
+                        printf("CFL ERROR: particle %u has invalid h=%.6e\n", i, (double) h_i);
                     }
                     if (!sycl::isfinite(cs_i) || cs_i <= Tscal(0)) {
-                        printf("CFL ERROR: particle %u has invalid cs=%.6e (h=%.6e)\n", 
-                               i, (double)cs_i, (double)h_i);
+                        printf(
+                            "CFL ERROR: particle %u has invalid cs=%.6e (h=%.6e)\n",
+                            i,
+                            (double) cs_i,
+                            (double) h_i);
                     }
 
                     // CFL: Only use Courant condition (h/cs)
                     Tscal dt_min = C_cour * h_i / cs_i;
 
                     if (!sycl::isfinite(dt_min) || dt_min <= Tscal(0)) {
-                        printf("CFL ERROR: particle %u has invalid dt=%.6e (h=%.6e, cs=%.6e)\n",
-                               i, (double)dt_min, (double)h_i, (double)cs_i);
-                        dt_min = Tscal(1e-10);  // Continue to expose more errors
+                        printf(
+                            "CFL ERROR: particle %u has invalid dt=%.6e (h=%.6e, cs=%.6e)\n",
+                            i,
+                            (double) dt_min,
+                            (double) h_i,
+                            (double) cs_i);
+                        dt_min = Tscal(1e-10); // Continue to expose more errors
                     }
 
                     cfl_dt_acc[i] = dt_min;
@@ -103,16 +110,16 @@ namespace shammodels::gsph::modules {
 
         if (!std::isfinite(rank_dt) || rank_dt <= Tscal(0)) {
             shambase::throw_with_loc<std::runtime_error>(
-                "CFL FAIL: rank_dt is invalid (" + std::to_string(rank_dt) + 
-                "). Check h and cs fields for NaN/Inf/zero values.");
+                "CFL FAIL: rank_dt is invalid (" + std::to_string(rank_dt)
+                + "). Check h and cs fields for NaN/Inf/zero values.");
         }
 
         Tscal global_min_dt = shamalgs::collective::allreduce_min(rank_dt);
 
         if (!std::isfinite(global_min_dt) || global_min_dt <= Tscal(0)) {
             shambase::throw_with_loc<std::runtime_error>(
-                "CFL FAIL: global_min_dt is invalid (" + std::to_string(global_min_dt) + 
-                "). Storage fields may contain NaN/Inf values.");
+                "CFL FAIL: global_min_dt is invalid (" + std::to_string(global_min_dt)
+                + "). Storage fields may contain NaN/Inf values.");
         }
 
         return global_min_dt;

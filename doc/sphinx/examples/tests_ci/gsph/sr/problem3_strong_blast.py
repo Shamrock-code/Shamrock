@@ -7,7 +7,7 @@ CI test matching arXiv:2510.18251v1 Figure 5
 Initial conditions:
     Left:  (P, n, v^x, v^t) = (1000, 1, 0, 0)
     Right: (P, n, v^x, v^t) = (0.01, 1, 0, 0)
-    
+
 Kitajima setup:
     - 900 particles each side
     - t = 0.16, γ = 5/3
@@ -16,7 +16,9 @@ Kitajima setup:
 
 import sys
 from pathlib import Path
+
 import numpy as np
+
 import shamrock
 
 # Add this directory to path for local imports
@@ -25,10 +27,9 @@ sys.path.insert(0, str(THIS_DIR))
 
 SRRP_PATH = THIS_DIR.parent.parent.parent.parent.parent.parent.parent / "docs/papers/sg-gsph/srrp"
 sys.path.insert(0, str(SRRP_PATH))
+from kitajima_plotting import compute_L2_errors, plot_kitajima_4panel
 from srrp.Solver import Solver
 from srrp.State import State
-
-from kitajima_plotting import plot_kitajima_4panel, compute_L2_errors
 
 # Kitajima Problem 3 parameters
 gamma = 5.0 / 3.0
@@ -93,7 +94,7 @@ totmass = n_L * xs * ys * zs + n_R * xs * ys * zs
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-h_init = hfact * V_per_particle**(1/3)
+h_init = hfact * V_per_particle ** (1 / 3)
 model.set_field_in_box("hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Smaller timesteps for strong shock
@@ -140,9 +141,19 @@ err_vx = compute_L2_errors(x, vx, x_exact, vx_exact)
 print(f"\nL2 errors: rho={err_n:.6e}, vx={err_vx:.6e}, P={err_P:.6e}")
 
 # Plot
-plot_kitajima_4panel(x, P_sim, n_sim, vx, hpart,
-                     x_exact, P_exact, n_exact, vx_exact,
-                     "sr_strong_blast_problem3.png", f"SR Strong Blast Wave (t={t_target})")
+plot_kitajima_4panel(
+    x,
+    P_sim,
+    n_sim,
+    vx,
+    hpart,
+    x_exact,
+    P_exact,
+    n_exact,
+    vx_exact,
+    "sr_strong_blast_problem3.png",
+    f"SR Strong Blast Wave (t={t_target})",
+)
 
 # Regression test - very lenient for extreme P ratio 100000:1
 # This test mainly checks simulation doesn't crash
@@ -151,9 +162,9 @@ expect_vx = 1.2
 expect_P = 0.3
 tol = 0.5
 
-test_pass = (err_n < expect_n * (1 + tol) and
-             err_vx < expect_vx * (1 + tol) and
-             err_P < expect_P * (1 + tol))
+test_pass = (
+    err_n < expect_n * (1 + tol) and err_vx < expect_vx * (1 + tol) and err_P < expect_P * (1 + tol)
+)
 
 if test_pass:
     print("\n" + "=" * 50)

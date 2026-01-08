@@ -85,9 +85,10 @@ namespace shammodels::gsph::physics::sr {
                     Tscal N_lab = density[i];
 
                     // Compute Lorentz factor from velocity
-                    Tvec v_i         = vxyz[i];
-                    Tscal v2         = sycl::dot(v_i, v_i) / c2;
-                    Tscal gamma_lor  = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    Tvec v_i = vxyz[i];
+                    Tscal v2 = sycl::dot(v_i, v_i) / c2;
+                    Tscal gamma_lor
+                        = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
 
                     // Rest-frame density: n = N / gamma
                     Tscal n = N_lab / gamma_lor;

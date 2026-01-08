@@ -12,7 +12,7 @@
 /**
  * @file forces.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Newtonian GSPH force computation using Riemann solver results
  *

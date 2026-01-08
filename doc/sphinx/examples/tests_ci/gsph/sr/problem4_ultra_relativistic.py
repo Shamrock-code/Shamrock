@@ -15,7 +15,9 @@ Kitajima setup:
 
 import sys
 from pathlib import Path
+
 import numpy as np
+
 import shamrock
 
 THIS_DIR = Path(__file__).parent
@@ -65,7 +67,9 @@ model.set_field_in_box("uint", "f64", u_L, (-xs, -ys / 2, -zs / 2), (0, ys / 2, 
 model.set_field_in_box("uint", "f64", u_R, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 # Set velocity on left side
-model.set_field_in_box("vxyz", "f64_3", (v_L, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
+model.set_field_in_box(
+    "vxyz", "f64_3", (v_L, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2)
+)
 
 init_data = ctx.collect_data()
 xyz_init = np.array(init_data["xyz"])
@@ -83,7 +87,7 @@ totmass = n_L * xs * ys * zs + n_R * xs * ys * zs
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-h_init = hfact * V_per_particle**(1/3)
+h_init = hfact * V_per_particle ** (1 / 3)
 model.set_field_in_box("hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.set_cfl_cour(0.15)
@@ -115,7 +119,7 @@ gamma_lor = 1.0 / np.sqrt(np.maximum(1.0 - v2, 1e-10))
 gamma_max = np.max(gamma_lor)
 v_max = np.max(np.abs(vx))
 
-print(f"\nResults:")
+print("\nResults:")
 print(f"  γ_max = {gamma_max:.4f} (expected ~7 from initial v=0.99)")
 print(f"  |v|_max = {v_max:.6f}")
 print(f"  P range: [{np.min(P_sim):.4e}, {np.max(P_sim):.4e}]")
@@ -128,10 +132,19 @@ n_ref = np.ones_like(x_ref)  # Initial density
 vx_ref = np.zeros_like(x_ref)
 
 # Plot
-plot_kitajima_4panel(x, P_sim, n_sim, vx, hpart,
-                     x_ref, P_ref, n_ref, vx_ref,
-                     "sr_ultra_relativistic_problem4.png",
-                     f"SR Ultra-Relativistic Shock (t={t_target}, v_L={v_L})")
+plot_kitajima_4panel(
+    x,
+    P_sim,
+    n_sim,
+    vx,
+    hpart,
+    x_ref,
+    P_ref,
+    n_ref,
+    vx_ref,
+    "sr_ultra_relativistic_problem4.png",
+    f"SR Ultra-Relativistic Shock (t={t_target}, v_L={v_L})",
+)
 
 # Regression test
 test_pass = True
@@ -147,7 +160,7 @@ if gamma_max < 2.0:
 
 if np.min(P_sim) <= 0 or np.max(P_sim) <= 0:
     test_pass = False
-    errors.append(f"Invalid pressure range")
+    errors.append("Invalid pressure range")
 
 if test_pass:
     print("\n" + "=" * 50)

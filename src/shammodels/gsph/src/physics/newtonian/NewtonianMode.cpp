@@ -10,7 +10,7 @@
 /**
  * @file NewtonianMode.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me)
+ * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
  * @brief Implementation of Newtonian physics mode for GSPH
  *
  * Owns the complete timestep sequence:

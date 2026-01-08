@@ -7,7 +7,7 @@ CI test matching arXiv:2510.18251v1 Figure 4
 Initial conditions:
     Left:  (P, n, v^x, v^t) = (40/3, 10, 0, 0)
     Right: (P, n, v^x, v^t) = (1e-6, 1, 0, 0)
-    
+
 Kitajima setup:
     - Equal baryon: 5000 left, 500 right (10:1 ratio = n_L/n_R)
     - Different baryon: 2750 vs 2750 (volume-based for right side)
@@ -16,7 +16,9 @@ Kitajima setup:
 
 import sys
 from pathlib import Path
+
 import numpy as np
+
 import shamrock
 
 # Add this directory to path for local imports
@@ -25,10 +27,9 @@ sys.path.insert(0, str(THIS_DIR))
 
 SRRP_PATH = THIS_DIR.parent.parent.parent.parent.parent.parent.parent / "docs/papers/sg-gsph/srrp"
 sys.path.insert(0, str(SRRP_PATH))
+from kitajima_plotting import compute_L2_errors, plot_kitajima_4panel
 from srrp.Solver import Solver
 from srrp.State import State
-
-from kitajima_plotting import plot_kitajima_4panel, compute_L2_errors
 
 # Kitajima Problem 2 parameters
 gamma = 5.0 / 3.0
@@ -93,7 +94,7 @@ totmass = n_L * xs * ys * zs + n_R * xs * ys * zs
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-h_init = hfact * V_per_particle**(1/3)
+h_init = hfact * V_per_particle ** (1 / 3)
 model.set_field_in_box("hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.set_cfl_cour(0.3)
@@ -138,9 +139,19 @@ err_vx = compute_L2_errors(x, vx, x_exact, vx_exact)
 print(f"\nL2 errors: rho={err_n:.6e}, vx={err_vx:.6e}, P={err_P:.6e}")
 
 # Plot
-plot_kitajima_4panel(x, P_sim, n_sim, vx, hpart,
-                     x_exact, P_exact, n_exact, vx_exact,
-                     "sr_blast_problem2.png", f"SR Blast Wave (t={t_target})")
+plot_kitajima_4panel(
+    x,
+    P_sim,
+    n_sim,
+    vx,
+    hpart,
+    x_exact,
+    P_exact,
+    n_exact,
+    vx_exact,
+    "sr_blast_problem2.png",
+    f"SR Blast Wave (t={t_target})",
+)
 
 # Regression test - tolerances tuned for extreme pressure ratio
 expect_n = 0.35
@@ -148,9 +159,9 @@ expect_vx = 0.35
 expect_P = 0.35
 tol = 0.5
 
-test_pass = (err_n < expect_n * (1 + tol) and
-             err_vx < expect_vx * (1 + tol) and
-             err_P < expect_P * (1 + tol))
+test_pass = (
+    err_n < expect_n * (1 + tol) and err_vx < expect_vx * (1 + tol) and err_P < expect_P * (1 + tol)
+)
 
 if test_pass:
     print("\n" + "=" * 50)

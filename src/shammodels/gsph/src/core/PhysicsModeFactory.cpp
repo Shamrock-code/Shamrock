@@ -10,7 +10,7 @@
 /**
  * @file PhysicsModeFactory.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Implementation of PhysicsMode factory
  *
@@ -19,8 +19,8 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shammodels/gsph/core/PhysicsModeFactory.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/gsph/core/PhysicsModeFactory.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianMode.hpp"
 #include "shammodels/gsph/physics/sr/SRMode.hpp"
 

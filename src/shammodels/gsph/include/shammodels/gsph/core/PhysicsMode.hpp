@@ -12,7 +12,7 @@
 /**
  * @file PhysicsMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me)
+ * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
  * @brief Minimal abstract interface for GSPH physics modes
  *
  * Each physics domain (Newtonian, SR, GR, MHD, Solid) implements this interface.

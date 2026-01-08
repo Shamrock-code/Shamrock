@@ -119,12 +119,12 @@ namespace shammodels::gsph::physics::sr {
                     const Tscal c2 = c_speed * c_speed;
 
                     // Compute Lorentz factor
-                    const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
+                    const Tscal v2        = sycl::dot(vxyz[i], vxyz[i]) / c2;
                     const Tscal gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
 
                     // Kitajima volume-based N: N = pmass × (hfact/h)³
                     const Tscal h_ratio = hfact / h[i];
-                    const Tscal N_lab = pmass[i] * h_ratio * h_ratio * h_ratio;
+                    const Tscal N_lab   = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                     // Lab-frame N to rest-frame n
                     const Tscal n = N_lab / gamma_lor;
@@ -244,7 +244,7 @@ namespace shammodels::gsph::physics::sr {
 
                         // Kitajima volume-based N: N = pmass × (hfact/h)³
                         const Tscal h_ratio = hfact / h[i];
-                        const Tscal N = pmass[i] * h_ratio * h_ratio * h_ratio;
+                        const Tscal N       = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                         sr_math::Result<Tscal> prim
                             = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
@@ -278,7 +278,7 @@ namespace shammodels::gsph::physics::sr {
 
                         // Kitajima volume-based N: N = pmass × (hfact/h)³
                         const Tscal h_ratio = hfact / h[i];
-                        const Tscal N = pmass[i] * h_ratio * h_ratio * h_ratio;
+                        const Tscal N       = pmass[i] * h_ratio * h_ratio * h_ratio;
 
                         sr_math::Result<Tscal> prim
                             = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);

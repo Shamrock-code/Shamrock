@@ -10,7 +10,9 @@ Initial conditions:
 """
 import sys
 from pathlib import Path
+
 import numpy as np
+
 import shamrock
 
 THIS_DIR = Path(__file__).parent
@@ -74,7 +76,7 @@ totmass = n_L * xs * ys * zs + n_R * xs * ys * zs
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-h_init = hfact * V_per_particle**(1/3)
+h_init = hfact * V_per_particle ** (1 / 3)
 model.set_field_in_box("hpart", "f64", h_init, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.set_cfl_cour(0.3)
@@ -104,16 +106,26 @@ P_ref = np.where(x_ref < 0, P_L, P_R)
 n_ref = np.where(x_ref < 0, n_L, n_R)
 vx_ref = np.zeros_like(x_ref)
 
-print(f"\nResults:")
+print("\nResults:")
 print(f"  P range: [{np.min(P_sim):.4f}, {np.max(P_sim):.4f}]")
 print(f"  n range: [{np.min(n_sim):.4f}, {np.max(n_sim):.4f}]")
 print(f"  vx range: [{np.min(vx):.4f}, {np.max(vx):.4f}]")
 
 # Plot
-plot_kitajima_4panel(x, P_sim, n_sim, vx, hpart,
-                     x_ref, P_ref, n_ref, vx_ref,
-                     "sr_2d_sod_problem6.png",
-                     f"SR 2D Sod (t={t_target})", h0=h_init)
+plot_kitajima_4panel(
+    x,
+    P_sim,
+    n_sim,
+    vx,
+    hpart,
+    x_ref,
+    P_ref,
+    n_ref,
+    vx_ref,
+    "sr_2d_sod_problem6.png",
+    f"SR 2D Sod (t={t_target})",
+    h0=h_init,
+)
 
 # Basic validation
 test_pass = True

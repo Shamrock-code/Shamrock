@@ -215,7 +215,7 @@ namespace shammodels::gsph::physics::sr::riemann {
         // Safety: clamp shock speed to subluminal
         V_s = sycl::fmax(Tscal{-0.9999}, sycl::fmin(V_s, Tscal{0.9999}));
 
-        const Tscal gamma_s = Tscal{1} / sycl::sqrt(Tscal{1} - V_s * V_s);
+        const Tscal gamma_s  = Tscal{1} / sycl::sqrt(Tscal{1} - V_s * V_s);
         const Tscal j_signed = is_left_wave ? -j : j;
 
         if (sycl::fabs(j_signed) < Tscal{1e-15}) {
@@ -297,9 +297,9 @@ namespace shammodels::gsph::physics::sr::riemann {
         // Safety: cap c_s to avoid singularity when c_s → sqrt(γ-1)
         // In ultra-relativistic limit, c_s → sqrt((γ-1)/γ) < sqrt(γ-1), but
         // numerical errors can push c_s close to sqrt_gm1
-        const Tscal c_s_max     = sqrt_gm1 * Tscal{0.999};
-        const Tscal c_s_a_safe  = sycl::fmin(c_s_a, c_s_max);
-        const Tscal c_s_b_safe  = sycl::fmin(c_s_b, c_s_max);
+        const Tscal c_s_max    = sqrt_gm1 * Tscal{0.999};
+        const Tscal c_s_a_safe = sycl::fmin(c_s_a, c_s_max);
+        const Tscal c_s_b_safe = sycl::fmin(c_s_b, c_s_max);
 
         // Clamp v_x_a to avoid singularity in term_v
         const Tscal v_x_a_safe = sycl::fmax(Tscal{-0.9999}, sycl::fmin(Tscal{0.9999}, v_x_a));
@@ -551,7 +551,9 @@ namespace shammodels::gsph::physics::sr::riemann {
         };
 
         // Helper to check if value is valid (finite)
-        auto is_valid = [](Tscal x) { return sycl::isfinite(x); };
+        auto is_valid = [](Tscal x) {
+            return sycl::isfinite(x);
+        };
 
         // Initial bracket
         const Tscal P_min = sycl::fmin(P_L, P_R);

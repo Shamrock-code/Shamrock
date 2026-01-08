@@ -14,9 +14,9 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shammodels/gsph/modules/IterateSmoothingLengthVolume.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/gsph/modules/IterateSmoothingLengthVolume.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 
@@ -116,9 +116,12 @@ void IterateSmoothingLengthVolume<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
                 // FAIL FAST: Check for invalid W_sum
                 if (!sycl::isfinite(W_sum) || W_sum <= Tscal{0}) {
-                    printf("H_ITER FAIL: particle %u has invalid W_sum=%.6e (h=%.6e)\\n",
-                           id_a, (double)W_sum, (double)h_a);
-                    new_h_val = h_a;  // Keep old value to continue and expose more errors
+                    printf(
+                        "H_ITER FAIL: particle %u has invalid W_sum=%.6e (h=%.6e)\\n",
+                        id_a,
+                        (double) W_sum,
+                        (double) h_a);
+                    new_h_val = h_a; // Keep old value to continue and expose more errors
                 } else if constexpr (dim == 3) {
                     new_h_val = hfact / sycl::cbrt(W_sum);
                 } else if constexpr (dim == 2) {
@@ -129,9 +132,12 @@ void IterateSmoothingLengthVolume<Tvec, SPHKernel>::_impl_evaluate_internal() {
 
                 // FAIL FAST: Check for invalid new_h
                 if (!sycl::isfinite(new_h_val) || new_h_val <= Tscal(0)) {
-                    printf("H_ITER FAIL: particle %u computed invalid h=%.6e (W_sum=%.6e)\\n",
-                           id_a, (double)new_h_val, (double)W_sum);
-                    new_h_val = h_a;  // Keep old value to continue and expose more errors
+                    printf(
+                        "H_ITER FAIL: particle %u computed invalid h=%.6e (W_sum=%.6e)\\n",
+                        id_a,
+                        (double) new_h_val,
+                        (double) W_sum);
+                    new_h_val = h_a; // Keep old value to continue and expose more errors
                 }
 
                 // Per-iteration clamping (like standard SPH iteration)

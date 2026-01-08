@@ -11,6 +11,7 @@
 
 /**
  * @file IterateSmoothingLengthDensity.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Declares the IterateSmoothingLengthDensity module for iterating smoothing length based on
  * the SPH density sum.
@@ -33,10 +34,13 @@ namespace shammodels::sph::modules {
         Tscal gpart_mass;
         Tscal h_evol_max;
         Tscal h_evol_iter_max;
+        Tscal c_smooth; ///< Kitajima C_smooth factor (1.0 = standard SPH)
 
         public:
-        IterateSmoothingLengthDensity(Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max)
-            : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max) {}
+        IterateSmoothingLengthDensity(
+            Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max, Tscal c_smooth = Tscal{1})
+            : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
+              c_smooth(c_smooth) {}
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;

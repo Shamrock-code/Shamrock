@@ -159,45 +159,49 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                 PatchScheduler &sched = shambase::get_check_ref(self.ctx.sched);
 
                 // Helper to collect a scalar field using scheduler pattern
-                auto collect_scalar = [&](const std::string &name,
-                                          std::shared_ptr<shamrock::solvergraph::Field<Tscal>>
-                                              field_ptr) {
-                    if (!field_ptr)
-                        return;
+                auto collect_scalar =
+                    [&](const std::string &name,
+                        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> field_ptr) {
+                        if (!field_ptr)
+                            return;
 
-                    std::vector<Tscal> all_data;
-                    auto &refs = field_ptr->get_refs();
+                        std::vector<Tscal> all_data;
+                        auto &refs = field_ptr->get_refs();
 
-                    sched.for_each_patchdata_nonempty(
-                        [&](shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat) {
-                            if (!refs.has_key(cur_p.id_patch)) {
-                                return;
-                            }
-                            auto &pdf = refs.get(cur_p.id_patch).get();
-                            u32 cnt = pdat.get_obj_cnt(); // Use pdat count, not pdf count (pdf may
-                                                          // have ghosts)
-                            if (cnt == 0) {
-                                return;
-                            }
+                        sched.for_each_patchdata_nonempty(
+                            [&](shamrock::patch::Patch cur_p,
+                                shamrock::patch::PatchDataLayer &pdat) {
+                                if (!refs.has_key(cur_p.id_patch)) {
+                                    return;
+                                }
+                                auto &pdf = refs.get(cur_p.id_patch).get();
+                                u32 cnt = pdat.get_obj_cnt(); // Use pdat count, not pdf count (pdf
+                                                              // may have ghosts)
+                                if (cnt == 0) {
+                                    return;
+                                }
 
-                            // Copy only the first cnt elements (excluding ghosts)
-                            std::vector<Tscal> host_data = pdf.get_buf().copy_to_stdvec();
-                            if (host_data.size() >= cnt) {
-                                all_data.insert(
-                                    all_data.end(), host_data.begin(), host_data.begin() + cnt);
-                            } else {
-                                // Field size is smaller than particle count - inconsistent state
-                                shambase::throw_with_loc<std::runtime_error>(
-                                    "Field '" + name + "' size (" + std::to_string(host_data.size())
-                                    + ") is smaller than particle count (" + std::to_string(cnt)
-                                    + ") for patch " + std::to_string(cur_p.id_patch));
-                            }
-                        });
+                                // Copy only the first cnt elements (excluding ghosts)
+                                std::vector<Tscal> host_data = pdf.get_buf().copy_to_stdvec();
+                                if (host_data.size() >= cnt) {
+                                    all_data.insert(
+                                        all_data.end(), host_data.begin(), host_data.begin() + cnt);
+                                } else {
+                                    // Field size is smaller than particle count - inconsistent
+                                    // state
+                                    shambase::throw_with_loc<std::runtime_error>(
+                                        "Field '" + name + "' size ("
+                                        + std::to_string(host_data.size())
+                                        + ") is smaller than particle count (" + std::to_string(cnt)
+                                        + ") for patch " + std::to_string(cur_p.id_patch));
+                                }
+                            });
 
-                    if (!all_data.empty()) {
-                        result[name.c_str()] = py::array_t<Tscal>(all_data.size(), all_data.data());
-                    }
-                };
+                        if (!all_data.empty()) {
+                            result[name.c_str()]
+                                = py::array_t<Tscal>(all_data.size(), all_data.data());
+                        }
+                    };
 
                 // Collect all scalar fields from storage
                 for (auto &[name, field_ptr] : storage.scalar_fields) {

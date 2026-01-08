@@ -105,10 +105,12 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     // Register computed field edges (physics-agnostic only)
     // Note: density field is registered by physics mode via init_fields()
-    storage.omega = solver_graph.register_edge(fields::OMEGA, Field<Tscal>(1, fields::OMEGA, "\\Omega"));
-    storage.pressure = solver_graph.register_edge(computed_fields::PRESSURE, Field<Tscal>(1, computed_fields::PRESSURE, "P"));
-    storage.soundspeed
-        = solver_graph.register_edge(computed_fields::SOUNDSPEED, Field<Tscal>(1, computed_fields::SOUNDSPEED, "c_s"));
+    storage.omega
+        = solver_graph.register_edge(fields::OMEGA, Field<Tscal>(1, fields::OMEGA, "\\Omega"));
+    storage.pressure = solver_graph.register_edge(
+        computed_fields::PRESSURE, Field<Tscal>(1, computed_fields::PRESSURE, "P"));
+    storage.soundspeed = solver_graph.register_edge(
+        computed_fields::SOUNDSPEED, Field<Tscal>(1, computed_fields::SOUNDSPEED, "c_s"));
 
     // Register common fields in field maps for physics-agnostic VTK output
     // Note: density field is registered by physics mode via init_fields()
@@ -117,15 +119,17 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     // Register gradient fields for MUSCL reconstruction
     storage.grad_density = solver_graph.register_edge(
-        computed_fields::GRAD_DENSITY, Field<Tvec>(1, computed_fields::GRAD_DENSITY, "\\nabla\\rho"));
-    storage.grad_pressure
-        = solver_graph.register_edge(computed_fields::GRAD_PRESSURE, Field<Tvec>(1, computed_fields::GRAD_PRESSURE, "\\nabla P"));
-    storage.grad_vx
-        = solver_graph.register_edge(computed_fields::GRAD_VX, Field<Tvec>(1, computed_fields::GRAD_VX, "\\nabla v_x"));
-    storage.grad_vy
-        = solver_graph.register_edge(computed_fields::GRAD_VY, Field<Tvec>(1, computed_fields::GRAD_VY, "\\nabla v_y"));
-    storage.grad_vz
-        = solver_graph.register_edge(computed_fields::GRAD_VZ, Field<Tvec>(1, computed_fields::GRAD_VZ, "\\nabla v_z"));
+        computed_fields::GRAD_DENSITY,
+        Field<Tvec>(1, computed_fields::GRAD_DENSITY, "\\nabla\\rho"));
+    storage.grad_pressure = solver_graph.register_edge(
+        computed_fields::GRAD_PRESSURE,
+        Field<Tvec>(1, computed_fields::GRAD_PRESSURE, "\\nabla P"));
+    storage.grad_vx = solver_graph.register_edge(
+        computed_fields::GRAD_VX, Field<Tvec>(1, computed_fields::GRAD_VX, "\\nabla v_x"));
+    storage.grad_vy = solver_graph.register_edge(
+        computed_fields::GRAD_VY, Field<Tvec>(1, computed_fields::GRAD_VY, "\\nabla v_y"));
+    storage.grad_vz = solver_graph.register_edge(
+        computed_fields::GRAD_VZ, Field<Tvec>(1, computed_fields::GRAD_VZ, "\\nabla v_z"));
 
     // Register timestep edges for node communication
     solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));

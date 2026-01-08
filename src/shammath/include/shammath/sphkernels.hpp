@@ -1460,6 +1460,77 @@ namespace shammath::details {
         }
     };
 
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=3h
+     *
+     * W(q) = exp(-q^2) for q < 3, 0 otherwise
+     *
+     * This kernel provides smooth derivatives and is well-suited for
+     * relativistic SPH simulations where gradient accuracy is important.
+     */
+    template<class Tscal>
+    class KernelDefTGauss3 {
+        public:
+        inline static constexpr Tscal Rkern  = 3;   ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+
+        /// 1D norm of the kernel
+        inline static constexpr Tscal norm_1d = 0.5641895835477563;
+        /// 2D norm of the kernel (accounts for truncation at q=3)
+        inline static constexpr Tscal norm_2d
+            = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765901959895);
+        /// 3D norm of the kernel
+        inline static constexpr Tscal norm_3d = 0.17958712212516656;
+
+        inline static Tscal f(Tscal q) { return (q < Tscal{3}) ? sycl::exp(-q * q) : Tscal{0}; }
+
+        inline static Tscal df(Tscal q) {
+            return (q < Tscal{3}) ? -Tscal{2} * q * sycl::exp(-q * q) : Tscal{0};
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < Tscal{3}) {
+                return (Tscal{4} * q * q - Tscal{2}) * sycl::exp(-q * q);
+            }
+            return Tscal{0};
+        }
+    };
+
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=5h
+     *
+     * W(q) = exp(-q^2) for q < 5, 0 otherwise
+     *
+     * Extended support version of TGauss3. Provides even smoother behavior
+     * at the cost of more neighbor interactions.
+     */
+    template<class Tscal>
+    class KernelDefTGauss5 {
+        public:
+        inline static constexpr Tscal Rkern  = 5;   ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+
+        /// 1D norm of the kernel (truncation negligible at R=5)
+        inline static constexpr Tscal norm_1d = 0.5641895835477563;
+        /// 2D norm of the kernel (truncation negligible at R=5)
+        inline static constexpr Tscal norm_2d = 1.0 / shambase::constants::pi<Tscal>;
+        /// 3D norm of the kernel (truncation negligible at R=5)
+        inline static constexpr Tscal norm_3d = 0.17958712212516656;
+
+        inline static Tscal f(Tscal q) { return (q < Tscal{5}) ? sycl::exp(-q * q) : Tscal{0}; }
+
+        inline static Tscal df(Tscal q) {
+            return (q < Tscal{5}) ? -Tscal{2} * q * sycl::exp(-q * q) : Tscal{0};
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            if (q < Tscal{5}) {
+                return (Tscal{4} * q * q - Tscal{2}) * sycl::exp(-q * q);
+            }
+            return Tscal{0};
+        }
+    };
+
     template<class Tscal>
     class KernelDefM4DoubleHump {
         public:
@@ -2331,6 +2402,22 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
     /**
+     * @brief Truncated Gaussian kernel with compact support R=3h
+     *
+     * @tparam flt_type the floating point representation to use
+     */
+    template<class flt_type>
+    using TGauss3 = SPHKernelGen<flt_type, details::KernelDefTGauss3<flt_type>>;
+
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=5h
+     *
+     * @tparam flt_type the floating point representation to use
+     */
+    template<class flt_type>
+    using TGauss5 = SPHKernelGen<flt_type, details::KernelDefTGauss5<flt_type>>;
+
+    /**
      * @brief The M4DoubleHump SPH kernel
      * \todo add graph
      *
@@ -2446,6 +2533,16 @@ namespace shambase {
     template<class flt_type>
     struct TypeNameInfo<shammath::C6<flt_type>> {
         inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::TGauss3<flt_type>> {
+        inline static const std::string name = "TGauss3<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::TGauss5<flt_type>> {
+        inline static const std::string name = "TGauss5<" + get_type_name<flt_type>() + ">";
     };
 
     template<class flt_type>

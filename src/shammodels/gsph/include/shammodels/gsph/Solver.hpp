@@ -28,7 +28,11 @@
 #include "shambase/exception.hpp"
 #include "SolverConfig.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/gsph/core/PhysicsMode.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
+#include "shammodels/gsph/physics/mhd/MHDConfig.hpp"
+#include "shammodels/gsph/physics/newtonian/NewtonianConfig.hpp"
+#include "shammodels/gsph/physics/sr/SRConfig.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/SolverLog.hpp"
@@ -41,7 +45,6 @@
 #include "shamtree/TreeTraversalCache.hpp"
 #include <memory>
 #include <stdexcept>
-#include <variant>
 
 namespace shammodels::gsph {
 
@@ -61,6 +64,9 @@ namespace shammodels::gsph {
      *
      * Implements the Godunov SPH method using Riemann solvers at particle
      * interfaces instead of artificial viscosity.
+     *
+     * Physics mode is selected via set_physics_*() methods. Each mode owns
+     * its own configuration - no central PhysicsConfig variant.
      *
      * @tparam Tvec Vector type (e.g., f64_3)
      * @tparam SPHKernel Kernel type (e.g., M4, M6, C2, C4, C6)
@@ -86,7 +92,19 @@ namespace shammodels::gsph {
         Config solver_config;
         sph::SolverLog solve_logs;
 
-        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
+        /// Physics mode - handles physics-specific time stepping
+        /// Each mode owns its own config (NewtonianConfig, SRConfig, MHDConfig)
+        std::unique_ptr<core::PhysicsMode<Tvec, SPHKernel>> physics_mode;
+
+        inline void init_required_fields() {
+            solver_config.set_layout(context.get_pdl_write());
+            // Physics mode extends layout with physics-specific fields
+            if (physics_mode) {
+                physics_mode->extend_layout(context.get_pdl_write());
+                // Update config with physics mode requirements
+                solver_config.set_use_pmass_field(physics_mode->uses_pmass_field());
+            }
+        }
 
         // Serial patch tree control
         void gen_serial_patch_tree();
@@ -106,68 +124,54 @@ namespace shammodels::gsph {
 
         // Tree operations
         using RTree = typename Config::RTree;
-        void build_merged_pos_trees();
         void clear_merged_pos_trees();
-
-        void compute_presteps_rint();
         void reset_presteps_rint();
 
-        void start_neighbors_cache();
         void reset_neighbors_cache();
-
-        void gsph_prestep(Tscal time_val, Tscal dt);
-
-        void apply_position_boundary(Tscal time_val);
-
-        void do_predictor_leapfrog(Tscal dt);
 
         void init_ghost_layout();
 
-        void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 
-        void compute_omega();
-        void compute_eos_fields();
-        void reset_eos_fields();
-
-        /**
-         * @brief Compute gradients for MUSCL reconstruction
-         *
-         * Computes density, pressure, and velocity gradients for each particle
-         * using SPH kernel gradient summation. Only called when MUSCL reconstruction
-         * is enabled (reconstruct_config.is_muscl() == true).
-         *
-         * Reference: Cha & Whitworth (2003)
-         */
-        void compute_gradients();
-
-        void prepare_corrector();
-
-        /**
-         * @brief Update derivatives using GSPH Riemann solver
-         *
-         * This is the core GSPH step: for each particle pair, solve
-         * the 1D Riemann problem and compute forces from the interface
-         * pressure p*.
-         */
-        void update_derivs();
-
-        /**
-         * @brief Compute CFL timestep constraint
-         *
-         * Computes timestep from:
-         * - Courant condition: dt_cour = C_cour * h / vsig
-         * - Force condition: dt_force = C_force * sqrt(h / |a|)
-         *
-         * @return Minimum CFL timestep across all particles
-         */
-        Tscal compute_dt_cfl();
-
-        bool apply_corrector(Tscal dt, u64 Npart_all);
+        void copy_density_to_patchdata();
 
         void update_sync_load_values();
 
         Solver(ShamrockCtx &context) : context(context) {}
+
+        // ════════════════════════════════════════════════════════════════════════
+        // Physics mode selection - each mode owns its config
+        // Config structs are in physics/{newtonian,sr,mhd}/ subfolders
+        // ════════════════════════════════════════════════════════════════════════
+
+        /**
+         * @brief Set Newtonian physics mode (default)
+         * @param use_grad_h Enable grad-h correction (Price 2012)
+         */
+        void set_physics_newtonian(bool use_grad_h = false);
+
+        /**
+         * @brief Set Special Relativistic physics mode
+         * @param c_speed Speed of light (default: 1.0 for natural units)
+         */
+        void set_physics_sr(Tscal c_speed = Tscal{1.0});
+
+        /**
+         * @brief Set MHD physics mode (placeholder)
+         * @param resistivity Ohmic resistivity (0 = ideal MHD)
+         */
+        void set_physics_mhd(Tscal resistivity = Tscal{0.0});
+
+        bool is_physics_newtonian() const;
+        bool is_physics_sr() const;
+        bool is_physics_mhd() const;
+
+        /**
+         * @brief Initialize physics mode if not already set (defaults to Newtonian)
+         *
+         * Called lazily on first evolve to allow config to be set before physics init.
+         */
+        void init_physics_mode();
 
         void init_solver_graph();
 

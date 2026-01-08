@@ -39,6 +39,11 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
         pdl.add_field<Tscal>("uint", 1);
         pdl.add_field<Tscal>("duint", 1);
     }
+
+    // Density field for direct output (computed by SPH summation)
+    pdl.add_field<Tscal>("rho", 1);
+
+    // Physics-specific fields are added via PhysicsMode::extend_layout()
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -54,13 +59,17 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
     // Omega (grad-h correction)
     ghost_layout.add_field<Tscal>("omega", 1);
 
-    // Density (computed via SPH summation)
-    ghost_layout.add_field<Tscal>("density", 1);
+    // NOTE: Density field is added by PhysicsMode::extend_ghost_layout()
+    // - Newtonian: adds "density" (mass density ρ)
+    // - SR: adds "N_labframe" (lab-frame baryon density N)
+    // This ensures each physics mode uses its correct field name.
 
     // Internal energy (for adiabatic EOS)
     if (has_field_uint()) {
         ghost_layout.add_field<Tscal>("uint", 1);
     }
+
+    // Physics-specific ghost fields are added via PhysicsMode::extend_ghost_layout()
 }
 
 // Explicit template instantiations
@@ -71,3 +80,4 @@ template class shammodels::gsph::SolverConfig<f64_3, M8>;
 template class shammodels::gsph::SolverConfig<f64_3, C2>;
 template class shammodels::gsph::SolverConfig<f64_3, C4>;
 template class shammodels::gsph::SolverConfig<f64_3, C6>;
+template class shammodels::gsph::SolverConfig<f64_3, TGauss3>;

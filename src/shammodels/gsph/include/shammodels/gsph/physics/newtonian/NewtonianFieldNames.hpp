@@ -27,17 +27,19 @@ namespace shammodels::gsph::physics::newtonian {
      */
     namespace fields {
 
-        // Import common SPH fields
-        using shammodels::gsph::fields::DUINT;
+        // Import common SPH kernel fields
         using shammodels::gsph::fields::HPART;
         using shammodels::gsph::fields::OMEGA;
         using shammodels::gsph::fields::PMASS;
-        using shammodels::gsph::fields::UINT;
 
         // Position and kinematics (single frame)
         constexpr const char *XYZ  = "xyz";  ///< Position
         constexpr const char *VXYZ = "vxyz"; ///< Velocity
         constexpr const char *AXYZ = "axyz"; ///< Acceleration
+
+        // Energy (single frame)
+        constexpr const char *UINT  = "uint";  ///< Specific internal energy
+        constexpr const char *DUINT = "duint"; ///< Time derivative of internal energy
 
         // Density (SPH kernel summation: ρ = m × Σ W)
         constexpr const char *DENSITY = "density";

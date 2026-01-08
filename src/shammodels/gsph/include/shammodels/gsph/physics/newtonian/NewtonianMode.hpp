@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,7 +12,7 @@
 /**
  * @file NewtonianMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief Newtonian (non-relativistic) physics mode for GSPH
  *
  * Implements standard GSPH with leapfrog (kick-drift-kick) time stepping.
@@ -66,9 +66,7 @@ namespace shammodels::gsph::physics::newtonian {
             return "Newtonian GSPH with leapfrog integration";
         }
 
-        const char* get_density_field_name() const override {
-            return fields::DENSITY;
-        }
+        const char *get_density_field_name() const override { return fields::DENSITY; }
 
         // ════════════════════════════════════════════════════════════════════════
         // Layout Extension - Newtonian-specific fields

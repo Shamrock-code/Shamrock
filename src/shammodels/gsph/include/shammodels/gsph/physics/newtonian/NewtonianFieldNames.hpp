@@ -1,17 +1,22 @@
 // -------------------------------------------------------//
-// SHAMROCK code - Copyright (c) 2021-2025 Timothée David--Cléris
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
 // -------------------------------------------------------//
+
+#pragma once
 
 /**
  * @file NewtonianFieldNames.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @brief Field name constants for Newtonian GSPH physics
  *
  * For Newtonian physics, there is no frame distinction - all quantities
  * are in the single inertial frame. No suffixes needed.
  */
-
-#pragma once
 
 #include "shammodels/gsph/FieldNames.hpp"
 

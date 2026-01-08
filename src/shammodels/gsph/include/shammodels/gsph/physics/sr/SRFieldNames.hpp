@@ -1,10 +1,17 @@
 // -------------------------------------------------------//
-// SHAMROCK code - Copyright (c) 2021-2025 Timothée David--Cléris
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
 // -------------------------------------------------------//
+
+#pragma once
 
 /**
  * @file SRFieldNames.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @brief Field name constants for Special Relativistic GSPH physics
  *
  * Physics naming convention (Kitajima et al. 2025):
@@ -15,8 +22,6 @@
  *
  * Key relation: n_restframe = N_labframe / gamma_lor
  */
-
-#pragma once
 
 #include "shammodels/gsph/FieldNames.hpp"
 

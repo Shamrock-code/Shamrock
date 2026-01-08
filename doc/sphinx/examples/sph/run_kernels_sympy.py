@@ -755,7 +755,6 @@ def tgauss3():
 def tgauss5():
     R = 5
     f = Piecewise(
-        (exp(0.0), q == 0),
         (exp(-q * q), q < R),
         (0, True),
     )

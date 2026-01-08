@@ -311,3 +311,4 @@ template class shammodels::gsph::Model<f64_3, shammath::M8>;
 template class shammodels::gsph::Model<f64_3, shammath::C2>;
 template class shammodels::gsph::Model<f64_3, shammath::C4>;
 template class shammodels::gsph::Model<f64_3, shammath::C6>;
+template class shammodels::gsph::Model<f64_3, shammath::TGauss3>;

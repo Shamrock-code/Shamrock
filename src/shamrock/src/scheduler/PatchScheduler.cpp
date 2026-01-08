@@ -207,9 +207,7 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const shamrock::patch::PatchDataLayout pdl_ptr,
-    u64 crit_split,
-    u64 crit_merge)
+    const shamrock::patch::PatchDataLayout pdl_ptr, u64 crit_split, u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
           pdl_ptr.get_layer_layout(0), // @astodo should be a list

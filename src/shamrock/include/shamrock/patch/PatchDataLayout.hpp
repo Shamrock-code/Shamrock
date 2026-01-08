@@ -11,7 +11,8 @@
 
 /**
  * @file PatchDataLayout.hpp
- * @author
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
 
@@ -30,15 +31,15 @@ namespace shamrock::patch {
         std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> layer_layouts;
         size_t nlayers() const { return layer_layouts.size(); }
 
-        inline std::shared_ptr<PatchDataLayerLayout> & get_layer_layout_ref(size_t idx = 0) {
-            return shambase::get_check_ref(& layer_layouts.at(idx));
+        inline std::shared_ptr<PatchDataLayerLayout> &get_layer_layout_ref(size_t idx = 0) {
+            return shambase::get_check_ref(&layer_layouts.at(idx));
         }
 
-        inline const std::shared_ptr<PatchDataLayerLayout> & get_layer_layout(size_t idx = 0) const {
+        inline const std::shared_ptr<PatchDataLayerLayout> &get_layer_layout(size_t idx = 0) const {
             return layer_layouts.at(idx);
         }
 
-        inline PatchDataLayerLayout & get_layer_layout_ptr(size_t idx = 0) {
+        inline PatchDataLayerLayout &get_layer_layout_ptr(size_t idx = 0) {
             return *layer_layouts.at(idx);
         }
 
@@ -47,6 +48,5 @@ namespace shamrock::patch {
                 layer_layouts.push_back(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
             }
         }
-
     };
 } // namespace shamrock::patch

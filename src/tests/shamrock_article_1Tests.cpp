@@ -489,7 +489,8 @@ f64 amr_walk_perf(
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    std::vector<std::shared_ptr<PatchDataLayerLayout>> layout_ptr_list {std::make_shared<PatchDataLayerLayout>()};
+    std::vector<std::shared_ptr<PatchDataLayerLayout>> layout_ptr_list{
+        std::make_shared<PatchDataLayerLayout>()};
     shamrock::patch::PatchDataLayout pdl_ptr;
     pdl_ptr.create_layers(1);
     auto &layout = pdl_ptr.get_layer_layout_ptr(0);

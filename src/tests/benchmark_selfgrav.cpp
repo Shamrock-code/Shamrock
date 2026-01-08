@@ -20,8 +20,8 @@
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
-#include <vector>
 #include <string>
+#include <vector>
 
 template<class flt>
 std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {

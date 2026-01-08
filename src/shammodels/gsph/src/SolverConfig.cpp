@@ -59,8 +59,10 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_ghost_layout(
     // Omega (grad-h correction)
     ghost_layout.add_field<Tscal>("omega", 1);
 
-    // Density (computed via SPH summation)
-    ghost_layout.add_field<Tscal>("density", 1);
+    // NOTE: Density field is added by PhysicsMode::extend_ghost_layout()
+    // - Newtonian: adds "density" (mass density ρ)
+    // - SR: adds "N_labframe" (lab-frame baryon density N)
+    // This ensures each physics mode uses its correct field name.
 
     // Internal energy (for adiabatic EOS)
     if (has_field_uint()) {

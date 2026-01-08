@@ -74,20 +74,19 @@ namespace shammodels::gsph::physics::sr {
         });
 
         // Compute S and e from initial primitives (v, P)
-        // Kitajima volume-based approach: N = pmass × (hfact/h)³
+        // Use density buffer which contains N from kernel summation (compute_omega_sr)
         PatchDataLayerLayout &pdl = scheduler.pdl();
         const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
-        const u32 ipmass          = pdl.get_field_idx<Tscal>("pmass");
 
         const Tscal c_speed   = config.c_speed;
         const Tscal gamma_eos = config.get_eos_gamma();
-        const Tscal hfact     = SPHKernel<Tscal>::hfactd;
 
         shamrock::solvergraph::Field<Tvec> &S_field  = *storage.S_momentum;
         shamrock::solvergraph::Field<Tscal> &e_field = *storage.e_energy;
         shamrock::solvergraph::Field<Tscal> &pressure_field
             = shambase::get_check_ref(storage.pressure);
+        shamrock::solvergraph::Field<Tscal> &N_labframe_field
+            = shambase::get_check_ref(storage.density);
 
         scheduler.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             u32 cnt = pdat.get_obj_cnt();
@@ -95,49 +94,46 @@ namespace shammodels::gsph::physics::sr {
                 return;
 
             sham::DeviceBuffer<Tvec> &buf_vxyz   = pdat.get_field_buf_ref<Tvec>(ivxyz);
-            sham::DeviceBuffer<Tscal> &buf_h     = pdat.get_field_buf_ref<Tscal>(ihpart);
-            sham::DeviceBuffer<Tscal> &buf_pmass = pdat.get_field_buf_ref<Tscal>(ipmass);
             sham::DeviceBuffer<Tvec> &buf_S      = S_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_e     = e_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_P     = pressure_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_N_labframe = N_labframe_field.get_buf(cur_p.id_patch);
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
             sham::kernel_call(
                 dev_sched->get_queue(),
-                sham::MultiRef{buf_vxyz, buf_h, buf_pmass, buf_P},
+                sham::MultiRef{buf_vxyz, buf_N_labframe, buf_P},
                 sham::MultiRef{buf_S, buf_e},
                 cnt,
-                [c_speed, gamma_eos, hfact](
+                [c_speed, gamma_eos](
                     u32 i,
                     const Tvec *vxyz,
-                    const Tscal *h,
-                    const Tscal *pmass,
+                    const Tscal *N_in,
                     const Tscal *P,
                     Tvec *S,
                     Tscal *e) {
                     const Tscal c2 = c_speed * c_speed;
 
                     // Compute Lorentz factor
-                    const Tscal v2        = sycl::dot(vxyz[i], vxyz[i]) / c2;
+                    const Tscal v2 = sycl::dot(vxyz[i], vxyz[i]) / c2;
                     const Tscal gamma_lor = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
 
-                    // Kitajima volume-based N: N = pmass × (hfact/h)³
-                    const Tscal h_ratio = hfact / h[i];
-                    const Tscal N_lab   = pmass[i] * h_ratio * h_ratio * h_ratio;
+                    // Lab-frame baryon density N (from kernel summation)
+                    const Tscal N_labframe = N_in[i];
 
-                    // Lab-frame N to rest-frame n
-                    const Tscal n = N_lab / gamma_lor;
+                    // Rest-frame density: n = N/γ
+                    const Tscal n_restframe = N_labframe / gamma_lor;
 
                     // Internal energy per unit mass (from EOS: P = (γ-1) × n × u)
-                    const Tscal u_int = P[i] / ((gamma_eos - Tscal{1}) * n);
+                    const Tscal u_int = P[i] / ((gamma_eos - Tscal{1}) * n_restframe);
 
                     // Specific enthalpy: H = 1 + u/c² + P/(nc²)
-                    const Tscal H = Tscal{1} + u_int / c2 + P[i] / (n * c2);
+                    const Tscal H = Tscal{1} + u_int / c2 + P[i] / (n_restframe * c2);
 
                     // Conserved variables
                     S[i] = vxyz[i] * (gamma_lor * H);
-                    e[i] = gamma_lor * H - P[i] / (N_lab * c2);
+                    e[i] = gamma_lor * H - P[i] / (N_labframe * c2);
                 });
         });
 
@@ -199,7 +195,7 @@ namespace shammodels::gsph::physics::sr {
 
         shamrock::solvergraph::Field<Tvec> &S_field  = *storage.S_momentum;
         shamrock::solvergraph::Field<Tscal> &e_field = *storage.e_energy;
-        shamrock::solvergraph::Field<Tscal> &density_field
+        shamrock::solvergraph::Field<Tscal> &N_labframe_field
             = shambase::get_check_ref(storage.density);
         shamrock::solvergraph::Field<Tscal> &pressure_field
             = shambase::get_check_ref(storage.pressure);
@@ -214,46 +210,62 @@ namespace shammodels::gsph::physics::sr {
             sham::DeviceBuffer<Tscal> &buf_pmass = pdat.get_field_buf_ref<Tscal>(ipmass);
             sham::DeviceBuffer<Tvec> &buf_S      = S_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_e     = e_field.get_buf(cur_p.id_patch);
-            sham::DeviceBuffer<Tscal> &buf_rho   = density_field.get_buf(cur_p.id_patch);
+            sham::DeviceBuffer<Tscal> &buf_N_labframe = N_labframe_field.get_buf(cur_p.id_patch);
             sham::DeviceBuffer<Tscal> &buf_P     = pressure_field.get_buf(cur_p.id_patch);
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-            // Kitajima: compute N from h, then recover primitives
-            // Also write recovered rest-frame density n to density_field for output
+            // Copy N (lab-frame) from density buffer
+            // NOTE: We do NOT overwrite density buffer - it must retain N for EOS and force kernel
+            std::vector<Tscal> N_host = buf_N_labframe.copy_to_stdvec();
+            
+            // Create temporary buffer with N values
+            sham::DeviceBuffer<Tscal> buf_N(cnt, shamsys::instance::get_compute_scheduler_ptr());
+            buf_N.copy_from_stdvec(N_host);
+
+            // Kitajima: read N from temp buffer, recover primitives
+            // Do NOT write n back to density buffer - it must keep N for next timestep
             if (has_uint) {
                 sham::DeviceBuffer<Tscal> &buf_uint = pdat.get_field_buf_ref<Tscal>(iuint);
 
                 sham::kernel_call(
                     dev_sched->get_queue(),
-                    sham::MultiRef{buf_S, buf_e, buf_h, buf_pmass},
-                    sham::MultiRef{buf_vxyz, buf_P, buf_uint, buf_rho},
+                    sham::MultiRef{buf_S, buf_e, buf_N},
+                    sham::MultiRef{buf_vxyz, buf_P, buf_uint},
                     cnt,
-                    [c_speed, gamma_eos, hfact](
+                    [c_speed, gamma_eos](
                         u32 i,
                         const Tvec *S,
                         const Tscal *e,
-                        const Tscal *h,
-                        const Tscal *pmass,
+                        const Tscal *N_in,
                         Tvec *vxyz,
                         Tscal *P,
-                        Tscal *uint_out,
-                        Tscal *rho_out) {
-                        const Tscal S_mag = sycl::sqrt(sycl::dot(S[i], S[i]));
-                        const Tvec S_dir  = (S_mag > Tscal{1e-15}) ? S[i] / S_mag : Tvec{1, 0, 0};
+                        Tscal *uint_out) {
+                        // Decompose S into normal (x) and tangent (y,z) components
+                        const Tscal S_x = S[i].x();
+                        const Tscal S_yz = sycl::sqrt(S[i].y() * S[i].y() + S[i].z() * S[i].z());
 
-                        // Kitajima volume-based N: N = pmass × (hfact/h)³
-                        const Tscal h_ratio = hfact / h[i];
-                        const Tscal N       = pmass[i] * h_ratio * h_ratio * h_ratio;
+                        // Lab-frame baryon density N (from kernel summation)
+                        const Tscal N_labframe = N_in[i];
 
+                        // Pass both S_normal and S_tangent to recovery
                         sr_math::Result<Tscal> prim
-                            = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
+                            = sr_math::recover<Tscal>(sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
 
-                        vxyz[i] = S_dir * prim.vel_normal * c_speed;
-                        P[i]    = prim.pressure;
+                        // Reconstruct velocity vector
+                        const Tscal sign_x = (S_x >= Tscal{0}) ? Tscal{1} : Tscal{-1};
+                        vxyz[i].x() = sign_x * prim.vel_normal * c_speed;
+                        // Distribute tangent velocity in y,z according to S direction
+                        if (S_yz > Tscal{1e-15}) {
+                            const Tscal vt_scale = prim.vel_tangent * c_speed / S_yz;
+                            vxyz[i].y() = S[i].y() * vt_scale;
+                            vxyz[i].z() = S[i].z() * vt_scale;
+                        } else {
+                            vxyz[i].y() = Tscal{0};
+                            vxyz[i].z() = Tscal{0};
+                        }
 
-                        // Output rest-frame density n for VTK
-                        rho_out[i] = prim.density;
+                        P[i] = prim.pressure;
 
                         // uint for compatibility: P = (γ-1) * n * u => u = P / ((γ-1) * n)
                         uint_out[i] = P[i] / ((gamma_eos - Tscal{1}) * prim.density);
@@ -261,33 +273,41 @@ namespace shammodels::gsph::physics::sr {
             } else {
                 sham::kernel_call(
                     dev_sched->get_queue(),
-                    sham::MultiRef{buf_S, buf_e, buf_h, buf_pmass},
-                    sham::MultiRef{buf_vxyz, buf_P, buf_rho},
+                    sham::MultiRef{buf_S, buf_e, buf_N},
+                    sham::MultiRef{buf_vxyz, buf_P},
                     cnt,
-                    [c_speed, gamma_eos, hfact](
+                    [c_speed, gamma_eos](
                         u32 i,
                         const Tvec *S,
                         const Tscal *e,
-                        const Tscal *h,
-                        const Tscal *pmass,
+                        const Tscal *N_in,
                         Tvec *vxyz,
-                        Tscal *P,
-                        Tscal *rho_out) {
-                        const Tscal S_mag = sycl::sqrt(sycl::dot(S[i], S[i]));
-                        const Tvec S_dir  = (S_mag > Tscal{1e-15}) ? S[i] / S_mag : Tvec{1, 0, 0};
+                        Tscal *P) {
+                        // Decompose S into normal (x) and tangent (y,z) components
+                        const Tscal S_x = S[i].x();
+                        const Tscal S_yz = sycl::sqrt(S[i].y() * S[i].y() + S[i].z() * S[i].z());
 
-                        // Kitajima volume-based N: N = pmass × (hfact/h)³
-                        const Tscal h_ratio = hfact / h[i];
-                        const Tscal N       = pmass[i] * h_ratio * h_ratio * h_ratio;
+                        // Lab-frame baryon density N (from kernel summation)
+                        const Tscal N_labframe = N_in[i];
 
+                        // Pass both S_normal and S_tangent to recovery
                         sr_math::Result<Tscal> prim
-                            = sr_math::recover<Tscal>(S_mag, Tscal{0}, e[i], N, gamma_eos, c_speed);
+                            = sr_math::recover<Tscal>(sycl::fabs(S_x), S_yz, e[i], N_labframe, gamma_eos, c_speed);
 
-                        vxyz[i] = S_dir * prim.vel_normal * c_speed;
-                        P[i]    = prim.pressure;
+                        // Reconstruct velocity vector
+                        const Tscal sign_x = (S_x >= Tscal{0}) ? Tscal{1} : Tscal{-1};
+                        vxyz[i].x() = sign_x * prim.vel_normal * c_speed;
+                        // Distribute tangent velocity in y,z according to S direction
+                        if (S_yz > Tscal{1e-15}) {
+                            const Tscal vt_scale = prim.vel_tangent * c_speed / S_yz;
+                            vxyz[i].y() = S[i].y() * vt_scale;
+                            vxyz[i].z() = S[i].z() * vt_scale;
+                        } else {
+                            vxyz[i].y() = Tscal{0};
+                            vxyz[i].z() = Tscal{0};
+                        }
 
-                        // Output rest-frame density n for VTK
-                        rho_out[i] = prim.density;
+                        P[i] = prim.pressure;
                     });
             }
         });

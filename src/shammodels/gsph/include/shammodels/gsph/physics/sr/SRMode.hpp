@@ -27,6 +27,7 @@
 
 #include "shammodels/gsph/core/PhysicsMode.hpp"
 #include "shammodels/gsph/physics/sr/SRConfig.hpp"
+#include "shammodels/gsph/physics/sr/SRFieldNames.hpp"
 
 namespace shammodels::gsph::physics::sr {
 
@@ -73,6 +74,10 @@ namespace shammodels::gsph::physics::sr {
         std::vector<std::string> get_output_field_names() const override {
             // SR outputs rest-frame density (stored directly, no transformation)
             return {"density", "pressure", "velocity", "soundspeed", "lorentz_factor"};
+        }
+
+        const char* get_density_field_name() const override {
+            return fields::N_LABFRAME;
         }
 
         // ════════════════════════════════════════════════════════════════════════

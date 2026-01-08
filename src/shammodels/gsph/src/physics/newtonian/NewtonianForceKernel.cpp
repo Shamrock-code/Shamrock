@@ -20,6 +20,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shammodels/gsph/FieldNames.hpp"
 #include "shambackends/math.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianForceKernel.hpp"
@@ -38,24 +39,25 @@ namespace shammodels::gsph::physics::newtonian {
 
         using namespace shamrock;
         using namespace shamrock::patch;
+        using namespace shammodels::gsph;
         using Kernel = SPHKernel<Tscal>;
 
         PatchDataLayerLayout &pdl = scheduler_.pdl();
 
-        const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-        const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");
-        const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
+        const u32 ixyz   = pdl.get_field_idx<Tvec>(fields::XYZ);
+        const u32 ivxyz  = pdl.get_field_idx<Tvec>(fields::VXYZ);
+        const u32 iaxyz  = pdl.get_field_idx<Tvec>(fields::AXYZ);
+        const u32 ihpart = pdl.get_field_idx<Tscal>(fields::HPART);
 
         const bool has_uint = config_.has_field_uint();
-        const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>("duint") : 0;
+        const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>(fields::DUINT) : 0;
 
         shamrock::patch::PatchDataLayerLayout &ghost_layout
             = shambase::get_check_ref(storage_.ghost_layout.get());
-        u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>("hpart");
-        u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");
-        u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>("omega");
-        u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
+        u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>(fields::HPART);
+        u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>(fields::VXYZ);
+        u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>(fields::OMEGA);
+        u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
 
         auto &merged_xyzh                                 = storage_.merged_xyzh.get();
         shambase::DistributedData<PatchDataLayer> &mpdats = storage_.merged_patchdata_ghost.get();
@@ -88,15 +90,15 @@ namespace shammodels::gsph::physics::newtonian {
             sham::DeviceBuffer<Tscal> &buf_density
                 = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-            auto xyz          = buf_xyz.get_read_access(depends_list);
-            auto axyz         = buf_axyz.get_write_access(depends_list);
-            auto vxyz         = buf_vxyz.get_read_access(depends_list);
-            auto hpart        = buf_hpart.get_read_access(depends_list);
-            auto omega_acc    = buf_omega.get_read_access(depends_list);
-            auto density_acc  = buf_density.get_read_access(depends_list);
-            auto pressure_acc = buf_pressure.get_read_access(depends_list);
-            auto cs_acc       = buf_cs.get_read_access(depends_list);
-            auto ploop_ptrs   = pcache.get_read_access(depends_list);
+            auto xyz            = buf_xyz.get_read_access(depends_list);
+            auto axyz           = buf_axyz.get_write_access(depends_list);
+            auto vxyz           = buf_vxyz.get_read_access(depends_list);
+            auto hpart          = buf_hpart.get_read_access(depends_list);
+            auto omega_acc      = buf_omega.get_read_access(depends_list);
+            auto density_acc = buf_density.get_read_access(depends_list);
+            auto pressure_acc   = buf_pressure.get_read_access(depends_list);
+            auto cs_acc         = buf_cs.get_read_access(depends_list);
+            auto ploop_ptrs     = pcache.get_read_access(depends_list);
 
             sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
             Tscal *duint_acc                         = nullptr;
@@ -221,20 +223,21 @@ namespace shammodels::gsph::physics::newtonian {
 
         using namespace shamrock;
         using namespace shamrock::patch;
+        using namespace shammodels::gsph;
         using Kernel = SPHKernel<Tscal>;
 
         PatchDataLayerLayout &pdl = scheduler_.pdl();
 
-        const u32 iaxyz     = pdl.get_field_idx<Tvec>("axyz");
+        const u32 iaxyz     = pdl.get_field_idx<Tvec>(fields::AXYZ);
         const bool has_uint = config_.has_field_uint();
-        const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>("duint") : 0;
+        const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>(fields::DUINT) : 0;
 
         shamrock::patch::PatchDataLayerLayout &ghost_layout
             = shambase::get_check_ref(storage_.ghost_layout.get());
-        u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>("hpart");
-        u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");
-        u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>("omega");
-        u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
+        u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>(fields::HPART);
+        u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>(fields::VXYZ);
+        u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>(fields::OMEGA);
+        u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
 
         auto &merged_xyzh                                 = storage_.merged_xyzh.get();
         shambase::DistributedData<PatchDataLayer> &mpdats = storage_.merged_patchdata_ghost.get();
@@ -267,15 +270,15 @@ namespace shammodels::gsph::physics::newtonian {
             sham::DeviceBuffer<Tscal> &buf_density
                 = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
 
-            auto xyz          = buf_xyz.get_read_access(depends_list);
-            auto axyz         = buf_axyz.get_write_access(depends_list);
-            auto vxyz         = buf_vxyz.get_read_access(depends_list);
-            auto hpart        = buf_hpart.get_read_access(depends_list);
-            auto omega_acc    = buf_omega.get_read_access(depends_list);
-            auto density_acc  = buf_density.get_read_access(depends_list);
-            auto pressure_acc = buf_pressure.get_read_access(depends_list);
-            auto cs_acc       = buf_cs.get_read_access(depends_list);
-            auto ploop_ptrs   = pcache.get_read_access(depends_list);
+            auto xyz            = buf_xyz.get_read_access(depends_list);
+            auto axyz           = buf_axyz.get_write_access(depends_list);
+            auto vxyz           = buf_vxyz.get_read_access(depends_list);
+            auto hpart          = buf_hpart.get_read_access(depends_list);
+            auto omega_acc      = buf_omega.get_read_access(depends_list);
+            auto density_acc = buf_density.get_read_access(depends_list);
+            auto pressure_acc   = buf_pressure.get_read_access(depends_list);
+            auto cs_acc         = buf_cs.get_read_access(depends_list);
+            auto ploop_ptrs     = pcache.get_read_access(depends_list);
 
             sham::DeviceBuffer<Tscal> *buf_duint_ptr = nullptr;
             Tscal *duint_acc                         = nullptr;

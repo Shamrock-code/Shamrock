@@ -209,20 +209,19 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     -------
     dict
         Dictionary containing numpy arrays for each physics field:
-        - "density": Number density N (lab frame, from kernel sum)
+        - "density": Mass/baryon density from kernel summation
+          (For SR: this is lab-frame N, use n = N/γ for rest-frame)
         - "pressure": Pressure P
         - "soundspeed": Sound speed cs
-        - "lorentz_factor": Lorentz factor γ (SR mode only)
 
     Notes
     -----
     These are the actual values computed by the solver, not post-processed.
-    For SR: density = N_lab = ν × Σ W(r, h) (Kitajima Eq. 221)
 
     Example
     -------
     >>> physics = model.collect_physics_data()
-    >>> n_lab = physics["density"]
+    >>> rho = physics["density"]
     >>> P = physics["pressure"]
 )==")
         .def("init_scheduler", &T::init_scheduler)

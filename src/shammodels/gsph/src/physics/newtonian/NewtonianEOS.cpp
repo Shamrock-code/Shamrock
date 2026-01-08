@@ -14,6 +14,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shammodels/gsph/FieldNames.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianEOS.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -27,14 +28,15 @@ namespace shammodels::gsph::physics::newtonian {
 
         StackEntry stack_loc{};
         using namespace shamrock::patch;
+        using namespace shammodels::gsph;
 
         auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
         const Tscal gamma   = config.get_eos_gamma();
         const bool has_uint = config.has_field_uint();
 
         PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
-        u32 idensity_interf                = ghost_layout.get_field_idx<Tscal>("density");
-        u32 iuint_interf = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
+        u32 idensity_interf                = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
+        u32 iuint_interf = has_uint ? ghost_layout.get_field_idx<Tscal>(fields::UINT) : 0;
 
         shamrock::solvergraph::Field<Tscal> &pressure_field
             = shambase::get_check_ref(storage.pressure);
@@ -61,7 +63,7 @@ namespace shammodels::gsph::physics::newtonian {
             sham::DeviceQueue &q = dev_sched->get_queue();
             sham::EventList depends_list;
 
-            auto density    = buf_density.get_read_access(depends_list);
+            auto density = buf_density.get_read_access(depends_list);
             auto pressure   = pressure_buf.get_write_access(depends_list);
             auto soundspeed = soundspeed_buf.get_write_access(depends_list);
 
@@ -109,7 +111,7 @@ namespace shammodels::gsph::physics::newtonian {
         using namespace shamrock::patch;
 
         PatchDataLayerLayout &pdl = scheduler.pdl();
-        const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+        const u32 ihpart          = pdl.get_field_idx<Tscal>(fields::HPART);
 
         const bool has_pmass  = config.has_field_pmass();
         const u32 ipmass      = has_pmass ? pdl.get_field_idx<Tscal>("pmass") : 0;

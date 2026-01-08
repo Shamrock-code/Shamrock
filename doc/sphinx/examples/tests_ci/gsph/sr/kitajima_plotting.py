@@ -135,3 +135,83 @@ def compute_L2_errors(x_sim, y_sim, x_exact, y_exact, x_min=-0.5, x_max=0.5):
     y_norm = np.mean(np.abs(y_interp)) + 1e-10
     err = np.sqrt(np.mean((y_f - y_interp) ** 2)) / y_norm
     return err
+
+
+def plot_tangent_velocity_grid(results_list, filename):
+    """
+    Create Kitajima-style 3x3 grid plot for tangential velocity tests.
+    Matches arXiv:2510.18251v1 Figure 7.
+    
+    Args:
+        results_list: List of dicts with keys:
+            'v_t': tangential velocity value
+            'x_sim', 'P_sim', 'n_sim', 'vx_sim', 'vy_sim': simulation data
+            'x_exact', 'P_exact', 'n_exact', 'vx_exact', 'vt_exact': exact solution
+        filename: Output filename
+    """
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    
+    n_rows = len(results_list)
+    fig, axes = plt.subplots(n_rows, 3, figsize=(9, 3 * n_rows))
+    if n_rows == 1:
+        axes = axes.reshape(1, -1)
+    
+    fig.subplots_adjust(hspace=0.15, wspace=0.25, left=0.08, right=0.97, top=0.95, bottom=0.08)
+    
+    for i, res in enumerate(results_list):
+        v_t = res['v_t']
+        x_sim = res['x_sim']
+        P_sim = res['P_sim']
+        n_sim = res['n_sim']
+        vx_sim = res['vx_sim']
+        vy_sim = res['vy_sim']  # tangential velocity
+        x_exact = res['x_exact']
+        P_exact = res['P_exact']
+        n_exact = res['n_exact']
+        vx_exact = res['vx_exact']
+        vt_exact = res['vt_exact']
+        
+        # Column 0: P/1000 (green) and n/5 (dark red)
+        ax0 = axes[i, 0]
+        ax0.plot(x_exact, P_exact / 1000, 'g-', linewidth=1.5, label=r'$P/1000$')
+        ax0.plot(x_exact, n_exact / 5, color='darkred', linewidth=1.5, label=r'$n/5$')
+        ax0.scatter(x_sim, P_sim / 1000, s=8, c='green', marker='v', alpha=0.6)
+        ax0.scatter(x_sim, n_sim / 5, s=8, c='darkred', marker='^', alpha=0.6)
+        ax0.set_xlim(-0.5, 0.5)
+        ax0.set_ylim(0, 1.2)
+        ax0.set_ylabel(r'$P/1000$', color='green', fontsize=11)
+        ax0.tick_params(direction='in')
+        # Add n/5 label on left
+        ax0.text(-0.45, 0.25, r'$n/5$', color='darkred', fontsize=11)
+        ax0.text(-0.45, 0.95, r'$P/1000$', color='green', fontsize=11)
+        
+        # Column 1: v^x
+        ax1 = axes[i, 1]
+        ax1.plot(x_exact, vx_exact, 'navy', linewidth=1.5)
+        ax1.scatter(x_sim, vx_sim, s=8, c='navy', marker='x', alpha=0.6)
+        ax1.set_xlim(-0.5, 0.5)
+        ax1.set_ylabel(r'$v^x$', fontsize=11)
+        ax1.tick_params(direction='in')
+        
+        # Column 2: v^t (tangential velocity)
+        ax2 = axes[i, 2]
+        ax2.plot(x_exact, vt_exact, 'deepskyblue', linewidth=1.5)
+        ax2.scatter(x_sim, vy_sim, s=8, c='deepskyblue', marker='x', alpha=0.6)
+        ax2.set_xlim(-0.5, 0.5)
+        ax2.set_ylabel(r'$v^t$', fontsize=11)
+        ax2.tick_params(direction='in')
+        
+        # Only bottom row gets x-labels
+        if i == n_rows - 1:
+            ax0.set_xlabel(r'$x$', fontsize=11)
+            ax1.set_xlabel(r'$x$', fontsize=11)
+            ax2.set_xlabel(r'$x$', fontsize=11)
+    
+    from pathlib import Path
+    abs_path = Path(filename).resolve()
+    plt.savefig(str(abs_path), dpi=150, bbox_inches='tight')
+    print(f"✓ Plot saved: {abs_path}")
+    plt.close(fig)
+    return str(abs_path)

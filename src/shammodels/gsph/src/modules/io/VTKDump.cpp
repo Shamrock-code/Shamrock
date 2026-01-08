@@ -21,6 +21,7 @@
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shamalgs/memory.hpp"
 #include "shammodels/common/io/VTKDumpUtils.hpp"
+#include "shammodels/gsph/FieldNames.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/Field.hpp"
@@ -92,12 +93,12 @@ namespace shammodels::gsph::modules {
         shamrock::SchedulerUtility utility(scheduler());
 
         PatchDataLayerLayout &pdl = scheduler().pdl();
-        const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-        const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+        const u32 ivxyz           = pdl.get_field_idx<Tvec>(fields::VXYZ);
+        const u32 iaxyz           = pdl.get_field_idx<Tvec>(fields::AXYZ);
+        const u32 ihpart          = pdl.get_field_idx<Tscal>(fields::HPART);
 
         const bool has_uint = solver_config.has_field_uint();
-        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(fields::UINT) : 0;
 
         // ════════════════════════════════════════════════════════════════════════
         // Count fields to write

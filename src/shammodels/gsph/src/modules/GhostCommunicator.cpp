@@ -15,6 +15,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "shammodels/gsph/FieldNames.hpp"
 #include "shammodels/gsph/modules/GhostCommunicator.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -33,32 +34,37 @@ namespace shammodels::gsph::modules {
         using namespace shamrock::patch;
 
         PatchDataLayerLayout &pdl = scheduler().pdl();
-        const u32 ixyz            = pdl.template get_field_idx<Tvec>("xyz");
-        const u32 ivxyz           = pdl.template get_field_idx<Tvec>("vxyz");
-        const u32 ihpart          = pdl.template get_field_idx<Tscal>("hpart");
+        const u32 ixyz            = pdl.template get_field_idx<Tvec>(fields::XYZ);
+        const u32 ivxyz           = pdl.template get_field_idx<Tvec>(fields::VXYZ);
+        const u32 ihpart          = pdl.template get_field_idx<Tscal>(fields::HPART);
 
         const bool has_uint  = solver_config.has_field_uint();
-        const u32 iuint      = has_uint ? pdl.template get_field_idx<Tscal>("uint") : 0;
+        const u32 iuint      = has_uint ? pdl.template get_field_idx<Tscal>(fields::UINT) : 0;
         const bool has_pmass = solver_config.has_field_pmass();
-        const u32 ipmass     = has_pmass ? pdl.template get_field_idx<Tscal>("pmass") : 0;
+        const u32 ipmass     = has_pmass ? pdl.template get_field_idx<Tscal>(fields::PMASS) : 0;
 
         auto ghost_layout_ptr              = storage.ghost_layout.get();
         PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
-        u32 ihpart_interf                  = ghost_layout.template get_field_idx<Tscal>("hpart");
-        u32 ivxyz_interf                   = ghost_layout.template get_field_idx<Tvec>("vxyz");
-        u32 iomega_interf                  = ghost_layout.template get_field_idx<Tscal>("omega");
-        u32 idensity_interf                = ghost_layout.template get_field_idx<Tscal>("density");
-        u32 iuint_interf  = has_uint ? ghost_layout.template get_field_idx<Tscal>("uint") : 0;
-        u32 ipmass_interf = has_pmass ? ghost_layout.template get_field_idx<Tscal>("pmass") : 0;
+        u32 ihpart_interf = ghost_layout.template get_field_idx<Tscal>(fields::HPART);
+        u32 ivxyz_interf  = ghost_layout.template get_field_idx<Tvec>(fields::VXYZ);
+        u32 iomega_interf = ghost_layout.template get_field_idx<Tscal>(fields::OMEGA);
+        // SSOT: Use physics-mode-specific density field name from config
+        u32 idensity_interf = ghost_layout.template get_field_idx<Tscal>(
+            solver_config.density_ghost_field_name);
+        u32 iuint_interf  = has_uint ? ghost_layout.template get_field_idx<Tscal>(fields::UINT) : 0;
+        u32 ipmass_interf = has_pmass ? ghost_layout.template get_field_idx<Tscal>(fields::PMASS) : 0;
 
         const bool has_grads = solver_config.requires_gradients();
         u32 igrad_d_interf
-            = has_grads ? ghost_layout.template get_field_idx<Tvec>("grad_density") : 0;
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_DENSITY) : 0;
         u32 igrad_p_interf
-            = has_grads ? ghost_layout.template get_field_idx<Tvec>("grad_pressure") : 0;
-        u32 igrad_vx_interf = has_grads ? ghost_layout.template get_field_idx<Tvec>("grad_vx") : 0;
-        u32 igrad_vy_interf = has_grads ? ghost_layout.template get_field_idx<Tvec>("grad_vy") : 0;
-        u32 igrad_vz_interf = has_grads ? ghost_layout.template get_field_idx<Tvec>("grad_vz") : 0;
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_PRESSURE) : 0;
+        u32 igrad_vx_interf
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_VX) : 0;
+        u32 igrad_vy_interf
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_VY) : 0;
+        u32 igrad_vz_interf
+            = has_grads ? ghost_layout.template get_field_idx<Tvec>(computed_fields::GRAD_VZ) : 0;
 
         using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 

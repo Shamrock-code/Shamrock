@@ -34,6 +34,7 @@
 #include "shambase/memory.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/gsph/FieldNames.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -58,13 +59,13 @@ namespace shammodels::gsph::core {
     struct CommonParticleState {
         using Tscal = shambase::VecComponent<Tvec>;
 
-        Tvec xyz;       ///< Position
-        Tvec vxyz;      ///< Velocity
-        Tscal hpart;    ///< Smoothing length
-        Tscal omega;    ///< Grad-h correction factor Ω
-        Tscal density;  ///< Density (SPH summation or lab-frame N)
-        Tscal pressure; ///< Pressure
-        Tscal cs;       ///< Sound speed
+        Tvec xyz;         ///< Position (lab-frame)
+        Tvec vxyz;        ///< Velocity (lab-frame)
+        Tscal hpart;      ///< Smoothing length
+        Tscal omega;      ///< Grad-h correction factor Ω
+        Tscal density; ///< Lab-frame baryon density N (kernel summation)
+        Tscal pressure;   ///< Pressure (rest-frame)
+        Tscal cs;         ///< Sound speed (rest-frame)
     };
 
     /**
@@ -230,19 +231,20 @@ namespace shammodels::gsph::core {
         };
 
         void setup_common_fields() {
+            using namespace shammodels::gsph;
             PatchDataLayerLayout &pdl = sched_.pdl();
 
-            ixyz_   = pdl.get_field_idx<Tvec>("xyz");
-            ivxyz_  = pdl.get_field_idx<Tvec>("vxyz");
-            ihpart_ = pdl.get_field_idx<Tscal>("hpart");
+            ixyz_   = pdl.get_field_idx<Tvec>(fields::XYZ);
+            ivxyz_  = pdl.get_field_idx<Tvec>(fields::VXYZ);
+            ihpart_ = pdl.get_field_idx<Tscal>(fields::HPART);
 
             // Ghost layout indices
             PatchDataLayerLayout &ghost_layout
                 = shambase::get_check_ref(storage_.ghost_layout.get());
-            ihpart_interf_   = ghost_layout.get_field_idx<Tscal>("hpart");
-            ivxyz_interf_    = ghost_layout.get_field_idx<Tvec>("vxyz");
-            iomega_interf_   = ghost_layout.get_field_idx<Tscal>("omega");
-            idensity_interf_ = ghost_layout.get_field_idx<Tscal>("density");
+            ihpart_interf_      = ghost_layout.get_field_idx<Tscal>(fields::HPART);
+            ivxyz_interf_       = ghost_layout.get_field_idx<Tvec>(fields::VXYZ);
+            iomega_interf_      = ghost_layout.get_field_idx<Tscal>(fields::OMEGA);
+            idensity_interf_ = ghost_layout.get_field_idx<Tscal>(computed_fields::DENSITY);
         }
 
         CommonBuffers acquire_common_buffers(
@@ -250,10 +252,10 @@ namespace shammodels::gsph::core {
             auto &merged_xyzh = storage_.merged_xyzh.get();
 
             CommonBuffers bufs;
-            bufs.buf_xyz     = &merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
-            bufs.buf_vxyz    = &mpdat.get_field_buf_ref<Tvec>(ivxyz_interf_);
-            bufs.buf_hpart   = &mpdat.get_field_buf_ref<Tscal>(ihpart_interf_);
-            bufs.buf_omega   = &mpdat.get_field_buf_ref<Tscal>(iomega_interf_);
+            bufs.buf_xyz        = &merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
+            bufs.buf_vxyz       = &mpdat.get_field_buf_ref<Tvec>(ivxyz_interf_);
+            bufs.buf_hpart      = &mpdat.get_field_buf_ref<Tscal>(ihpart_interf_);
+            bufs.buf_omega      = &mpdat.get_field_buf_ref<Tscal>(iomega_interf_);
             bufs.buf_density = &mpdat.get_field_buf_ref<Tscal>(idensity_interf_);
 
             auto &pressure_field = shambase::get_check_ref(storage_.pressure);
@@ -290,12 +292,12 @@ namespace shammodels::gsph::core {
         Storage &storage_;
 
         // Common field indices
-        u32 ixyz_            = 0;
-        u32 ivxyz_           = 0;
-        u32 ihpart_          = 0;
-        u32 ihpart_interf_   = 0;
-        u32 ivxyz_interf_    = 0;
-        u32 iomega_interf_   = 0;
+        u32 ixyz_               = 0;
+        u32 ivxyz_              = 0;
+        u32 ihpart_             = 0;
+        u32 ihpart_interf_      = 0;
+        u32 ivxyz_interf_       = 0;
+        u32 iomega_interf_      = 0;
         u32 idensity_interf_ = 0;
     };
 

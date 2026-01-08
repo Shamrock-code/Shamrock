@@ -129,7 +129,7 @@ def run_tangent_test(v_t, save_suffix=""):
     vx = velocities[:, 0]
 
     # Direct values from solver
-    n_sim = np.array(physics["density"])
+    n_sim = np.array(physics["N_labframe"])
     P_sim = np.array(physics["pressure"])
 
     # Compute lorentz factor from velocity

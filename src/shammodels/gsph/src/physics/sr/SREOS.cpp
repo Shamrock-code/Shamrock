@@ -15,6 +15,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shammodels/gsph/physics/sr/SREOS.hpp"
+#include "shammodels/gsph/physics/sr/SRFieldNames.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -28,16 +29,16 @@ namespace shammodels::gsph::physics::sr {
         StackEntry stack_loc{};
         using namespace shamrock::patch;
 
-        auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
-        const Tscal gamma   = config.get_eos_gamma();
-        const bool has_uint = config.has_field_uint();
+        auto dev_sched        = shamsys::instance::get_compute_scheduler_ptr();
+        const Tscal gamma_eos = config.get_eos_gamma();
+        const bool has_uint   = config.has_field_uint();
         const Tscal c_speed = config.c_speed;
         const Tscal c2      = c_speed * c_speed;
 
         PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(storage.ghost_layout.get());
-        u32 idensity_interf                = ghost_layout.get_field_idx<Tscal>("density");
-        u32 iuint_interf = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
-        u32 ivxyz_interf = ghost_layout.get_field_idx<Tvec>("vxyz");
+        u32 iN_labframe_interf = ghost_layout.get_field_idx<Tscal>(fields::N_LABFRAME);
+        u32 iuint_interf       = has_uint ? ghost_layout.get_field_idx<Tscal>(fields::UINT) : 0;
+        u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>(fields::VXYZ);
 
         shamrock::solvergraph::Field<Tscal> &pressure_field
             = shambase::get_check_ref(storage.pressure);
@@ -56,8 +57,9 @@ namespace shammodels::gsph::physics::sr {
             if (total_elements == 0)
                 return;
 
-            sham::DeviceBuffer<Tscal> &buf_density
-                = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
+            // Lab-frame baryon density N (from kernel summation)
+            sham::DeviceBuffer<Tscal> &buf_N
+                = mpdat.get_field_buf_ref<Tscal>(iN_labframe_interf);
             sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
             auto &pressure_buf                 = pressure_field.get_field(id).get_buf();
             auto &soundspeed_buf               = soundspeed_field.get_field(id).get_buf();
@@ -65,14 +67,14 @@ namespace shammodels::gsph::physics::sr {
             sham::DeviceQueue &q = dev_sched->get_queue();
             sham::EventList depends_list;
 
-            auto density    = buf_density.get_read_access(depends_list);
-            auto vxyz       = buf_vxyz.get_read_access(depends_list);
-            auto pressure   = pressure_buf.get_write_access(depends_list);
-            auto soundspeed = soundspeed_buf.get_write_access(depends_list);
+            auto N_labframe_acc      = buf_N.get_read_access(depends_list);
+            auto v_labframe_acc      = buf_vxyz.get_read_access(depends_list);
+            auto P_restframe_acc     = pressure_buf.get_write_access(depends_list);
+            auto cs_restframe_acc    = soundspeed_buf.get_write_access(depends_list);
 
-            const Tscal *uint_ptr = nullptr;
+            const Tscal *u_restframe_ptr = nullptr;
             if (has_uint) {
-                uint_ptr
+                u_restframe_ptr
                     = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
             }
 
@@ -80,42 +82,39 @@ namespace shammodels::gsph::physics::sr {
                 shambase::parallel_for(cgh, total_elements, "sr_compute_eos", [=](u64 gid) {
                     u32 i = (u32) gid;
 
-                    // density field contains lab-frame N from compute_omega_sr()
-                    // We need rest-frame n = N / gamma
-                    Tscal N_lab = density[i];
+                    // Lab-frame baryon density N (from kernel summation)
+                    Tscal N_labframe = N_labframe_acc[i];
+                    
+                    // Compute Lorentz factor γ from lab-frame velocity
+                    Tvec v_labframe = v_labframe_acc[i];
+                    Tscal v2 = sycl::dot(v_labframe, v_labframe) / (c_speed * c_speed);
+                    Tscal gamma_lor = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    
+                    // Rest-frame density: n = N/γ
+                    Tscal n_restframe = N_labframe / gamma_lor;
 
-                    // Compute Lorentz factor from velocity
-                    Tvec v_i = vxyz[i];
-                    Tscal v2 = sycl::dot(v_i, v_i) / c2;
-                    Tscal gamma_lor
-                        = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+                    if (has_uint && u_restframe_ptr != nullptr) {
+                        Tscal u_restframe = u_restframe_ptr[i];
 
-                    // Rest-frame density: n = N / gamma
-                    Tscal n = N_lab / gamma_lor;
+                        Tscal P_restframe = (gamma_eos - Tscal{1}) * n_restframe * u_restframe;
 
-                    if (has_uint && uint_ptr != nullptr) {
-                        Tscal u = uint_ptr[i];
+                        const Tscal H   = Tscal{1} + u_restframe / c2 + P_restframe / (n_restframe * c2);
+                        const Tscal cs2 = (gamma_eos - Tscal{1}) * (H - Tscal{1}) / H;
+                        Tscal cs_restframe = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
 
-                        // P = (gamma_eos - 1) * n * u for adiabatic EOS
-                        Tscal P = (gamma - Tscal{1}) * n * u;
-
-                        const Tscal H   = Tscal{1} + u / c2 + P / (n * c2);
-                        const Tscal cs2 = (gamma - Tscal{1}) * (H - Tscal{1}) / H;
-                        Tscal cs        = sycl::sqrt(sycl::fmax(cs2, Tscal{0})) * c_speed;
-
-                        pressure[i]   = P;
-                        soundspeed[i] = cs;
+                        P_restframe_acc[i]  = P_restframe;
+                        cs_restframe_acc[i] = cs_restframe;
                     } else {
-                        Tscal cs = c_speed * Tscal{0.1};
-                        Tscal P  = cs * cs * n;
+                        Tscal cs_restframe = c_speed * Tscal{0.1};
+                        Tscal P_restframe  = cs_restframe * cs_restframe * n_restframe;
 
-                        pressure[i]   = P;
-                        soundspeed[i] = cs;
+                        P_restframe_acc[i]  = P_restframe;
+                        cs_restframe_acc[i] = cs_restframe;
                     }
                 });
             });
 
-            buf_density.complete_event_state(e);
+            buf_N.complete_event_state(e);
             buf_vxyz.complete_event_state(e);
             if (has_uint) {
                 mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
@@ -168,13 +167,13 @@ namespace shammodels::gsph::physics::sr {
                     u32 gid = (u32) item.get_id();
                     using namespace shamrock::sph;
 
-                    Tscal m = has_pmass ? acc_pmass[gid] : part_mass;
-                    Tscal N = rho_h(m, acc_h[gid], Kernel::hfactd);
+                    Tscal m          = has_pmass ? acc_pmass[gid] : part_mass;
+                    Tscal N_labframe = rho_h(m, acc_h[gid], Kernel::hfactd);
 
-                    Tvec v       = acc_v[gid];
-                    Tscal v2     = sycl::dot(v, v) / (c * c);
-                    Tscal gamma  = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
-                    acc_rho[gid] = N / gamma;
+                    Tvec v           = acc_v[gid];
+                    Tscal v2         = sycl::dot(v, v) / (c * c);
+                    Tscal gamma_lor  = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
+                    acc_rho[gid]     = N_labframe / gamma_lor;
                 });
             });
 
@@ -241,19 +240,19 @@ namespace shammodels::gsph::physics::sr {
                     u32 gid = (u32) item.get_id();
                     using namespace shamrock::sph;
 
-                    Tscal m = has_pmass ? acc_pmass[gid] : part_mass;
-                    Tscal N = rho_h(m, acc_h[gid], Kernel::hfactd);
+                    Tscal m           = has_pmass ? acc_pmass[gid] : part_mass;
+                    Tscal N_labframe  = rho_h(m, acc_h[gid], Kernel::hfactd);
 
-                    Tvec v       = acc_v[gid];
-                    Tscal v2     = sycl::dot(v, v) / (c * c);
-                    Tscal gamma  = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
-                    Tscal n_rest = N / gamma;
+                    Tvec v            = acc_v[gid];
+                    Tscal v2          = sycl::dot(v, v) / (c * c);
+                    Tscal gamma_lor   = Tscal{1} / sycl::sqrt(Tscal{1} - v2);
+                    Tscal n_restframe = N_labframe / gamma_lor;
 
                     if (has_uint && acc_u != nullptr) {
-                        acc_P[gid] = (gamma_eos - Tscal{1}) * n_rest * acc_u[gid];
+                        acc_P[gid] = (gamma_eos - Tscal{1}) * n_restframe * acc_u[gid];
                     } else {
                         Tscal cs   = Tscal{0.1};
-                        acc_P[gid] = cs * cs * n_rest;
+                        acc_P[gid] = cs * cs * n_restframe;
                     }
                 });
             });

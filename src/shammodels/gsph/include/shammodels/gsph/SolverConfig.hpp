@@ -202,6 +202,11 @@ struct shammodels::gsph::SolverConfig {
     u32 sr_max_iter = 100;          ///< Newton-Raphson max iterations (SR only)
     bool use_grad_h = false;        ///< Enable grad-h correction
 
+    /// Ghost layout density field name (SSOT: set by PhysicsMode)
+    /// - Newtonian: "density" (mass density ρ)
+    /// - SR: "N_labframe" (lab-frame baryon density N)
+    std::string density_ghost_field_name = "density";
+
     // ════════════════════════════════════════════════════════════════════════
     // Utilities
     // ════════════════════════════════════════════════════════════════════════

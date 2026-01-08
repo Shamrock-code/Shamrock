@@ -23,6 +23,7 @@
  */
 
 #include "shammodels/gsph/core/PhysicsMode.hpp"
+#include "shammodels/gsph/physics/newtonian/NewtonianFieldNames.hpp"
 #include "shammodels/gsph/physics/newtonian/riemann/RiemannBase.hpp"
 
 namespace shammodels::gsph::physics::newtonian {
@@ -63,6 +64,19 @@ namespace shammodels::gsph::physics::newtonian {
 
         std::string_view description() const override {
             return "Newtonian GSPH with leapfrog integration";
+        }
+
+        const char* get_density_field_name() const override {
+            return fields::DENSITY;
+        }
+
+        // ════════════════════════════════════════════════════════════════════════
+        // Layout Extension - Newtonian-specific fields
+        // ════════════════════════════════════════════════════════════════════════
+
+        void extend_ghost_layout(shamrock::patch::PatchDataLayerLayout &ghost_layout) override {
+            // Mass density field ρ (Newtonian's fundamental density)
+            ghost_layout.add_field<Tscal>(fields::DENSITY, 1);
         }
 
         private:

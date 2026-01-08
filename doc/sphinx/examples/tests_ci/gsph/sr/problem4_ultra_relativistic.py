@@ -108,13 +108,15 @@ hpart = np.array(data["hpart"])
 x = points[:, 0]
 vx = velocities[:, 0]
 
-# Direct values from solver
-n_sim = np.array(physics["density"])
-P_sim = np.array(physics["pressure"])
-
-# Compute lorentz factor from velocity
+# Compute Lorentz factor from velocity (c=1)
 v2 = np.sum(velocities**2, axis=1)
 gamma_lor = 1.0 / np.sqrt(np.maximum(1.0 - v2, 1e-10))
+
+# physics["N_labframe"] contains LAB-FRAME N from kernel summation
+# Convert to REST-FRAME n = N/γ for comparison
+N_sim = np.array(physics["N_labframe"])
+n_sim = N_sim / gamma_lor
+P_sim = np.array(physics["pressure"])
 
 gamma_max = np.max(gamma_lor)
 v_max = np.max(np.abs(vx))

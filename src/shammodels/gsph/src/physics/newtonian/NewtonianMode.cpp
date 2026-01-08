@@ -22,6 +22,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianEOS.hpp"
+#include "shammodels/gsph/physics/newtonian/NewtonianFieldNames.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianForceKernel.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianMode.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianTimestepper.hpp"
@@ -119,8 +120,21 @@ namespace shammodels::gsph::physics::newtonian {
 
     template<class Tvec, template<class> class SPHKernel>
     void NewtonianMode<Tvec, SPHKernel>::init_fields(Storage &storage, Config &config) {
-        // Newtonian mode uses axyz, duint which are already in PatchDataLayout
-        // No additional solvergraph fields needed
+        using namespace shamrock::solvergraph;
+        SolverGraph &solver_graph = storage.solver_graph;
+
+        // Newtonian mode currently uses piecewise constant (no gradient reconstruction)
+        // so disable gradient communication in ghost layout
+        config.set_use_gradients(false);
+
+        // Register Newtonian density field
+        if (!storage.density) {
+            storage.density = solver_graph.register_edge(
+                fields::DENSITY, Field<Tscal>(1, fields::DENSITY, "\\rho"));
+        }
+
+        // Register in scalar_fields for VTK output
+        storage.scalar_fields[fields::DENSITY] = storage.density;
     }
 
     // ════════════════════════════════════════════════════════════════════════════

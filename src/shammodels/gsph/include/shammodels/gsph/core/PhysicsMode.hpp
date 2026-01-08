@@ -27,8 +27,11 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
+#include "shambase/memory.hpp"
+#include "shammodels/gsph/modules/SolverStorage.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include <string_view>
 #include <functional>
 #include <string>
@@ -38,9 +41,6 @@
 namespace shammodels::gsph {
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;
-
-    template<class Tvec, class TgridVec>
-    struct SolverStorage;
 } // namespace shammodels::gsph
 
 namespace shammodels::gsph::core {
@@ -167,6 +167,27 @@ namespace shammodels::gsph::core {
          */
         virtual std::vector<std::string> get_output_field_names() const {
             return {"density", "pressure", "velocity", "soundspeed"};
+        }
+
+        /**
+         * @brief Get the physics-specific name for the density field
+         *
+         * Newtonian: "density" (mass density ρ)
+         * SR: "N_labframe" (lab-frame baryon density N)
+         */
+        virtual const char* get_density_field_name() const = 0;
+
+        /**
+         * @brief Get reference to the physics-specific density field
+         *
+         * Newtonian: storage.density (mass density ρ)
+         * SR: storage.density (which aliases N_labframe in SR mode)
+         *
+         * This allows physics-agnostic modules (ComputeOmega, ComputeGradients)
+         * to access the correct density field without knowing the physics.
+         */
+        virtual shamrock::solvergraph::Field<Tscal>& get_density_field(Storage &storage) const {
+            return shambase::get_check_ref(storage.density);
         }
 
         // ════════════════════════════════════════════════════════════════════════

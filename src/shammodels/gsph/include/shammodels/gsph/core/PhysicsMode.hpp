@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothee David--Cleris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -12,7 +12,7 @@
 /**
  * @file PhysicsMode.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothee David--Cleris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief Minimal abstract interface for GSPH physics modes
  *
  * Each physics domain (Newtonian, SR, GR, MHD, Solid) implements this interface.
@@ -175,7 +175,7 @@ namespace shammodels::gsph::core {
          * Newtonian: "density" (mass density ρ)
          * SR: "N_labframe" (lab-frame baryon density N)
          */
-        virtual const char* get_density_field_name() const = 0;
+        virtual const char *get_density_field_name() const = 0;
 
         /**
          * @brief Get reference to the physics-specific density field
@@ -186,7 +186,7 @@ namespace shammodels::gsph::core {
          * This allows physics-agnostic modules (ComputeOmega, ComputeGradients)
          * to access the correct density field without knowing the physics.
          */
-        virtual shamrock::solvergraph::Field<Tscal>& get_density_field(Storage &storage) const {
+        virtual shamrock::solvergraph::Field<Tscal> &get_density_field(Storage &storage) const {
             return shambase::get_check_ref(storage.density);
         }
 

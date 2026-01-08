@@ -21,6 +21,7 @@
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeStructureWalker.hpp"
 #include "tests/shamrock/tree/TreeTests.hpp"
+#include <vector>
 
 auto get_Nmax = []() -> f64 {
     return 1e8 * 1;
@@ -488,12 +489,14 @@ f64 amr_walk_perf(
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    std::shared_ptr<PatchDataLayerLayout> layout_ptr = std::make_shared<PatchDataLayerLayout>();
-    auto &layout                                     = *layout_ptr;
+    std::vector<std::shared_ptr<PatchDataLayerLayout>> layout_ptr_list{
+        std::make_shared<PatchDataLayerLayout>()};
+    shamrock::patch::PatchDataLayout pdl_ptr;
+    pdl_ptr.create_layers(1);
+    auto &layout = pdl_ptr.get_layer_layout_ptr(0);
     layout.add_field<u64_3>("cell_min", 1);
     layout.add_field<u64_3>("cell_max", 1);
-    PatchScheduler sched(layout_ptr, 1e9, 1);
-
+    PatchScheduler sched(pdl_ptr, 1e9, 1);
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
 
     Grid grid(sched);

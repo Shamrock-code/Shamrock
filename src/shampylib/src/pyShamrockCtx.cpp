@@ -9,6 +9,7 @@
 
 /**
  * @file pyShamrockCtx.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -251,7 +252,7 @@ Register_pymod(pyshamrockctxinit) {
 
     py::class_<ShamrockCtx>(m, "Context")
         .def(py::init<>())
-        .def("pdata_layout_new", &ShamrockCtx::pdata_layout_new)
+        .def("pdata_layout_new", &ShamrockCtx::pdata_layout_new, py::arg("nlayers") = 1)
         //.def("pdata_layout_do_double_prec_mode", &ShamrockCtx::pdata_layout_do_double_prec_mode)
         //.def("pdata_layout_do_single_prec_mode", &ShamrockCtx::pdata_layout_do_single_prec_mode)
         .def("pdata_layout_add_field", &ShamrockCtx::pdata_layout_add_field_t)
@@ -286,26 +287,27 @@ Register_pymod(pyshamrockctxinit) {
 
                 py::dict dic_out;
 
-                for (auto fname : ctx.pdl->get_field_names()) {
-                    append_to_map<f32>(fname, data, dic_out);
-                    append_to_map<f32_2>(fname, data, dic_out);
-                    append_to_map<f32_3>(fname, data, dic_out);
-                    append_to_map<f32_4>(fname, data, dic_out);
-                    append_to_map<f32_8>(fname, data, dic_out);
-                    append_to_map<f32_16>(fname, data, dic_out);
-                    append_to_map<f64>(fname, data, dic_out);
-                    append_to_map<f64_2>(fname, data, dic_out);
-                    append_to_map<f64_3>(fname, data, dic_out);
-                    append_to_map<f64_4>(fname, data, dic_out);
-                    append_to_map<f64_8>(fname, data, dic_out);
-                    append_to_map<f64_16>(fname, data, dic_out);
-                    append_to_map<u32>(fname, data, dic_out);
-                    append_to_map<u64>(fname, data, dic_out);
-                    append_to_map<u32_3>(fname, data, dic_out);
-                    append_to_map<u64_3>(fname, data, dic_out);
-                    append_to_map<i64_3>(fname, data, dic_out);
+                for (size_t layer_idx = 0; layer_idx < ctx.pdl.get_layer_count(); layer_idx++) {
+                    for (auto fname : ctx.pdl.get_layer_layout_ptr(layer_idx).get_field_names()) {
+                        append_to_map<f32>(fname, data, dic_out);
+                        append_to_map<f32_2>(fname, data, dic_out);
+                        append_to_map<f32_3>(fname, data, dic_out);
+                        append_to_map<f32_4>(fname, data, dic_out);
+                        append_to_map<f32_8>(fname, data, dic_out);
+                        append_to_map<f32_16>(fname, data, dic_out);
+                        append_to_map<f64>(fname, data, dic_out);
+                        append_to_map<f64_2>(fname, data, dic_out);
+                        append_to_map<f64_3>(fname, data, dic_out);
+                        append_to_map<f64_4>(fname, data, dic_out);
+                        append_to_map<f64_8>(fname, data, dic_out);
+                        append_to_map<f64_16>(fname, data, dic_out);
+                        append_to_map<u32>(fname, data, dic_out);
+                        append_to_map<u64>(fname, data, dic_out);
+                        append_to_map<u32_3>(fname, data, dic_out);
+                        append_to_map<u64_3>(fname, data, dic_out);
+                        append_to_map<i64_3>(fname, data, dic_out);
+                    }
                 }
-
                 return dic_out;
             })
         .def("get_patch_list_global", &ShamrockCtx::get_patch_list_global);

@@ -13,8 +13,8 @@
  * @file forces.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief GSPH force computation using Riemann solver results
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @brief Newtonian GSPH force computation using Riemann solver results
  *
  * Implements the Godunov SPH (GSPH) force formulation following Cha & Whitworth (2003).
  * The key difference from standard SPH is that the interface pressure p* comes from
@@ -27,12 +27,12 @@
  *   Riemann Solver"
  */
 
+#include "riemann/Iterative.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
-#include "shammodels/gsph/math/riemann/iterative.hpp"
 #include "shammodels/sph/math/forces.hpp"
 
-namespace shammodels::gsph {
+namespace shammodels::gsph::physics::newtonian {
 
     // Note: For GSPH acceleration, use shamrock::sph::sph_pressure_symetric() with p_star
     // as both P_a and P_b. This provides proper handling of zero denominators via
@@ -161,4 +161,4 @@ namespace shammodels::gsph {
     // Note: For velocity projection onto pair axis, use sycl::dot(v, r_ab_unit) directly.
     // For density from smoothing length, use shamrock::sph::rho_h() from density.hpp.
 
-} // namespace shammodels::gsph
+} // namespace shammodels::gsph::physics::newtonian

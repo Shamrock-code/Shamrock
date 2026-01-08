@@ -10,11 +10,11 @@
 #pragma once
 
 /**
- * @file iterative.hpp
+ * @file Iterative.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Iterative Riemann solver for GSPH (van Leer 1997)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @brief Iterative Riemann solver for Newtonian GSPH (van Leer 1997)
  *
  * Implements the van Leer (1997) iterative Riemann solver for ideal gas.
  * Uses Newton-Raphson iteration to find the exact solution (p*, v*) at
@@ -27,20 +27,9 @@
 
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shammodels/gsph/physics/newtonian/riemann/RiemannBase.hpp"
 
-namespace shammodels::gsph::riemann {
-
-    /**
-     * @brief Result of Riemann solver
-     *
-     * Contains the interface pressure (p*) and velocity (v*) computed
-     * by solving the Riemann problem between left and right states.
-     */
-    template<class Tscal>
-    struct RiemannResult {
-        Tscal p_star; ///< Interface pressure
-        Tscal v_star; ///< Interface velocity (normal component)
-    };
+namespace shammodels::gsph::physics::newtonian::riemann {
 
     /**
      * @brief Iterative Riemann solver (van Leer 1997)
@@ -63,10 +52,10 @@ namespace shammodels::gsph::riemann {
      * @param gamma Adiabatic index
      * @param tol Convergence tolerance (default: 1e-6)
      * @param max_iter Maximum iterations (default: 20)
-     * @return RiemannResult with p_star and v_star
+     * @return Result with p_star and v_star
      */
     template<class Tscal>
-    inline RiemannResult<Tscal> iterative_solver(
+    inline Result<Tscal> solve(
         Tscal u_L,
         Tscal rho_L,
         Tscal p_L,
@@ -77,7 +66,7 @@ namespace shammodels::gsph::riemann {
         Tscal tol    = Tscal{1.0e-6},
         u32 max_iter = 20) {
 
-        RiemannResult<Tscal> result;
+        Result<Tscal> result;
 
         // Safety check for non-physical values
         const Tscal smallp   = Tscal{1.0e-25};
@@ -170,63 +159,4 @@ namespace shammodels::gsph::riemann {
         return result;
     }
 
-    /**
-     * @brief HLL approximate Riemann solver
-     *
-     * Harten-Lax-van Leer approximate solver following the reference implementation.
-     * Uses Roe-averaged wave speeds for better wave speed estimates.
-     *
-     * @tparam Tscal Scalar type (f32 or f64)
-     * @param u_L Left state velocity
-     * @param rho_L Left state density
-     * @param p_L Left state pressure
-     * @param u_R Right state velocity
-     * @param rho_R Right state density
-     * @param p_R Right state pressure
-     * @param gamma Adiabatic index
-     * @return RiemannResult with p_star and v_star
-     */
-    template<class Tscal>
-    inline RiemannResult<Tscal> hllc_solver(
-        Tscal u_L, Tscal rho_L, Tscal p_L, Tscal u_R, Tscal rho_R, Tscal p_R, Tscal gamma) {
-
-        RiemannResult<Tscal> result;
-        const Tscal smallval = Tscal{1.0e-25};
-
-        // Compute Eulerian sound speeds
-        const Tscal c_L = sycl::sqrt(gamma * p_L / sycl::fmax(rho_L, smallval));
-        const Tscal c_R = sycl::sqrt(gamma * p_R / sycl::fmax(rho_R, smallval));
-
-        // Roe averages for wave speed estimates
-        const Tscal sqrt_rho_L = sycl::sqrt(rho_L);
-        const Tscal sqrt_rho_R = sycl::sqrt(rho_R);
-        const Tscal roe_inv    = Tscal{1} / (sqrt_rho_L + sqrt_rho_R + smallval);
-
-        const Tscal u_roe = (sqrt_rho_L * u_L + sqrt_rho_R * u_R) * roe_inv;
-        const Tscal c_roe = (sqrt_rho_L * c_L + sqrt_rho_R * c_R) * roe_inv;
-
-        // Wave speed estimates (following reference implementation)
-        const Tscal S_L = sycl::fmin(u_L - c_L, u_roe - c_roe);
-        const Tscal S_R = sycl::fmax(u_R + c_R, u_roe + c_roe);
-
-        // HLL flux formula (following reference g_fluid_force.cpp hll_solver)
-        // c1 = rho_L * (S_L - u_L)
-        // c2 = rho_R * (S_R - u_R)
-        // c3 = 1 / (c1 - c2)
-        // c4 = p_L - u_L * c1
-        // c5 = p_R - u_R * c2
-        // v* = (c5 - c4) * c3
-        // p* = (c1 * c5 - c2 * c4) * c3
-        const Tscal c1 = rho_L * (S_L - u_L);
-        const Tscal c2 = rho_R * (S_R - u_R);
-        const Tscal c3 = Tscal{1} / (c1 - c2 + smallval);
-        const Tscal c4 = p_L - u_L * c1;
-        const Tscal c5 = p_R - u_R * c2;
-
-        result.v_star = (c5 - c4) * c3;
-        result.p_star = sycl::fmax(smallval, (c1 * c5 - c2 * c4) * c3);
-
-        return result;
-    }
-
-} // namespace shammodels::gsph::riemann
+} // namespace shammodels::gsph::physics::newtonian::riemann

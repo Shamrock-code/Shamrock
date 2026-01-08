@@ -13,17 +13,14 @@
  * @file SolverConfig.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Configuration for the Godunov SPH (GSPH) solver
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @brief Shared configuration for the GSPH solver
  *
- * This file contains the main configuration structure for the GSPH solver.
- * GSPH uses Riemann solvers at particle interfaces instead of artificial viscosity.
+ * Contains settings shared by ALL physics modes (Newtonian, SR, MHD).
+ * Physics-specific settings are in physics/{newtonian,sr,mhd}/ subfolders.
  *
- * References:
- * - Cha, S.-H. & Whitworth, A.P. (2003) "Implementations and tests of Godunov-type
- *   particle hydrodynamics"
- * - Inutsuka, S. (2002) "Reformulation of Smoothed Particle Hydrodynamics with
- *   Riemann Solver"
+ * What belongs here: EOS, CFL, boundaries, tree params, units
+ * What does NOT belong here: Riemann solver (Newtonian), c_smooth (SR), etc.
  */
 
 #include "shambase/exception.hpp"
@@ -35,9 +32,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
-#include "shammodels/gsph/config/ReconstructConfig.hpp"
-#include "shammodels/gsph/config/RiemannConfig.hpp"
-#include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
+#include "shammodels/sph/config/BCConfig.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -46,37 +41,20 @@
 #include <nlohmann/json.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
-#include <variant>
 #include <vector>
 
 namespace shammodels::gsph {
 
-    /**
-     * @brief The configuration for a GSPH solver
-     *
-     * @tparam Tvec the type of the vector used to represent the particles
-     * @tparam SPHKernel the type of the SPH kernel
-     */
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;
 
-    /**
-     * @brief Solver status variables for GSPH
-     *
-     * @tparam Tvec the type of the vector used to represent the particles
-     */
     template<class Tvec>
     struct SolverStatusVar;
 
-    /**
-     * @brief The configuration for the CFL condition in GSPH
-     *
-     * @tparam Tscal the type of the scalar used to represent the quantities
-     */
     template<class Tscal>
     struct CFLConfig {
-        Tscal cfl_cour  = 0.3;  ///< CFL condition for the courant factor
-        Tscal cfl_force = 0.25; ///< CFL condition for the force
+        Tscal cfl_cour  = 0.3;
+        Tscal cfl_force = 0.25;
     };
 
 } // namespace shammodels::gsph
@@ -85,8 +63,8 @@ template<class Tvec>
 struct shammodels::gsph::SolverStatusVar {
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time = 0; ///< Current time
-    Tscal dt   = 0; ///< Current time step
+    Tscal time = 0;
+    Tscal dt   = 0;
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -101,13 +79,13 @@ struct shammodels::gsph::SolverConfig {
 
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
+    Tscal gpart_mass{0}; ///< Particle mass (must be set before use)
 
-    CFLConfig<Tscal> cfl_config; ///< CFL configuration
+    CFLConfig<Tscal> cfl_config;
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Units Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // Units Config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
     std::optional<shamunits::UnitSystem<Tscal>> unit_sys = {};
 
@@ -123,13 +101,9 @@ struct shammodels::gsph::SolverConfig {
         }
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Units Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // Time state (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
     using SolverStatusVar = SolverStatusVar<Tvec>;
     SolverStatusVar time_state;
@@ -139,52 +113,9 @@ struct shammodels::gsph::SolverConfig {
     inline Tscal get_time() const { return time_state.time; }
     inline Tscal get_dt() const { return time_state.dt; }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Riemann Solver Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    using RiemannConfig = RiemannConfig<Tvec>;
-    RiemannConfig riemann_config;
-
-    inline void set_riemann_iterative(Tscal tol = Tscal{1e-6}, u32 max_iter = 20) {
-        riemann_config.set_iterative(tol, max_iter);
-    }
-
-    inline void set_riemann_hllc() { riemann_config.set_hllc(); }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Riemann Solver Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Reconstruction Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    using ReconstructConfig = ReconstructConfig<Tvec>;
-    ReconstructConfig reconstruct_config;
-
-    inline void set_reconstruct_piecewise_constant() {
-        reconstruct_config.set_piecewise_constant();
-    }
-
-    inline void set_reconstruct_muscl(
-        typename ReconstructConfig::Limiter limiter = ReconstructConfig::Limiter::VanLeer) {
-        reconstruct_config.set_muscl(limiter);
-    }
-
-    inline bool requires_gradients() const { return reconstruct_config.requires_gradients(); }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Reconstruction Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // EOS Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // EOS Config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
     using EOSConfig = shammodels::EOSConfig<Tvec>;
     EOSConfig eos_config;
@@ -199,11 +130,6 @@ struct shammodels::gsph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    /**
-     * @brief Get the adiabatic index (gamma) from the EOS config
-     *
-     * @return The adiabatic index from Adiabatic or Polytropic EOS, or 1.4 as default
-     */
     inline Tscal get_eos_gamma() const {
         using Adiabatic  = typename EOSConfig::Adiabatic;
         using Polytropic = typename EOSConfig::Polytropic;
@@ -212,48 +138,29 @@ struct shammodels::gsph::SolverConfig {
         } else if (const auto *eos = std::get_if<Polytropic>(&eos_config.config)) {
             return eos->gamma;
         }
-        return Tscal{1.4}; // Default for non-gamma EOS types
+        return Tscal{1.4};
     }
 
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
-
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // EOS Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // Boundary Config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Boundary Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    using BCConfig = shammodels::sph::BCConfig<Tvec>; // Reuse from SPH
+    using BCConfig = shammodels::sph::BCConfig<Tvec>;
     BCConfig boundary_config;
 
     inline void set_boundary_free() { boundary_config.set_free(); }
     inline void set_boundary_periodic() { boundary_config.set_periodic(); }
 
-    /**
-     * @brief Set shearing periodic boundary conditions
-     *
-     * Implements shearing box boundaries (Stone 2010) for simulations
-     * of differentially rotating systems (e.g., accretion disks).
-     *
-     * @param shear_base Base vector for shear periodicity count
-     * @param shear_dir Direction of the shear velocity shift
-     * @param speed Shear velocity magnitude
-     */
     inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
         boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Boundary Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // External Force Config
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // External Force Config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
     using ExtForceConfig = shammodels::ExtForceConfig<Tvec>;
     ExtForceConfig ext_force_config{};
@@ -262,13 +169,9 @@ struct shammodels::gsph::SolverConfig {
         ext_force_config.add_point_mass(central_mass, Racc);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // External Force Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Tree config
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // Tree config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
     u32 tree_reduction_level  = 3;
     bool use_two_stage_search = true;
@@ -276,25 +179,49 @@ struct shammodels::gsph::SolverConfig {
     inline void set_tree_reduction_level(u32 level) { tree_reduction_level = level; }
     inline void set_two_stage_search(bool enable) { use_two_stage_search = enable; }
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Tree config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // h-iteration config (shared by all physics modes)
+    // ════════════════════════════════════════════════════════════════════════
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver behavior config
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    Tscal htol_up_coarse_cycle = 2.0;
+    Tscal htol_up_fine_cycle   = 2.0;
+    Tscal epsilon_h            = 1e-6;
+    u32 h_iter_per_subcycles   = 50;
+    u32 h_max_subcycles_count  = 100;
 
-    Tscal htol_up_coarse_cycle = 1.1;  ///< Factor for neighbors search
-    Tscal htol_up_fine_cycle   = 1.1;  ///< Max smoothing length evolution per subcycle
-    Tscal epsilon_h            = 1e-6; ///< Convergence criteria for smoothing length
-    u32 h_iter_per_subcycles   = 50;   ///< Max iterations per subcycle
-    u32 h_max_subcycles_count  = 100;  ///< Max subcycles before crash
+    /// Smoothing length multiplier for h iteration tolerance (SR uses larger values)
+    Tscal c_smooth = Tscal{1.2};
 
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver behavior config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
+    // ════════════════════════════════════════════════════════════════════════
+    // Physics-mode specific (temporary until full decoupling)
+    // These are set by the physics mode and used by force kernels
+    // ════════════════════════════════════════════════════════════════════════
+
+    Tscal c_speed   = Tscal{1.0};   ///< Speed of light (SR only, c=1 natural units)
+    Tscal sr_tol    = Tscal{1e-10}; ///< Newton-Raphson tolerance (SR only)
+    u32 sr_max_iter = 100;          ///< Newton-Raphson max iterations (SR only)
+    bool use_grad_h = false;        ///< Enable grad-h correction
+
+    // ════════════════════════════════════════════════════════════════════════
+    // Utilities
+    // ════════════════════════════════════════════════════════════════════════
 
     inline bool has_field_uint() const { return is_eos_adiabatic(); }
+
+    /// Whether this physics mode uses MUSCL (2nd order) reconstruction
+    /// Set to false for piecewise constant (1st order) - default true for Newtonian
+    bool use_gradients = true;
+
+    inline bool requires_gradients() const { return use_gradients; }
+    inline void set_use_gradients(bool val) { use_gradients = val; }
+
+    /// Per-particle mass field (used by SR mode with volume-based density)
+    /// Set by physics mode when it adds the pmass field to the layout
+    bool use_pmass_field = false;
+
+    inline bool has_field_pmass() const { return use_pmass_field; }
+
+    inline void set_use_pmass_field(bool val) { use_pmass_field = val; }
 
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
@@ -302,22 +229,17 @@ struct shammodels::gsph::SolverConfig {
         }
         logger::raw_ln("----- GSPH Solver configuration -----");
         logger::raw_ln("gpart_mass  =", gpart_mass);
-        riemann_config.print_status();
-        reconstruct_config.print_status();
         eos_config.print_status();
         logger::raw_ln("--------------------------------------");
     }
 
     inline void check_config() const {
-        // Validate configuration (gpart_mass checked later at runtime)
-        // Only check gamma for adiabatic EOS types
         if (is_eos_adiabatic() && get_eos_gamma() <= 1) {
             shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for adiabatic gas");
         }
     }
 
     inline void check_config_runtime() const {
-        // Validate configuration for runtime (called before simulation starts)
         if (gpart_mass <= 0) {
             shambase::throw_with_loc<std::runtime_error>(
                 "gpart_mass must be positive. Call set_particle_mass() before evolving.");
@@ -379,8 +301,6 @@ namespace shammodels::gsph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", junit},
             {"time_state", p.time_state},
-            {"riemann_config", p.riemann_config},
-            {"reconstruct_config", p.reconstruct_config},
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
             {"tree_reduction_level", p.tree_reduction_level},
@@ -416,8 +336,6 @@ namespace shammodels::gsph {
         j.at("cfl_config").get_to(p.cfl_config);
         from_json_optional(j.at("unit_sys"), p.unit_sys);
         j.at("time_state").get_to(p.time_state);
-        j.at("riemann_config").get_to(p.riemann_config);
-        j.at("reconstruct_config").get_to(p.reconstruct_config);
         j.at("eos_config").get_to(p.eos_config);
         j.at("boundary_config").get_to(p.boundary_config);
         j.at("tree_reduction_level").get_to(p.tree_reduction_level);

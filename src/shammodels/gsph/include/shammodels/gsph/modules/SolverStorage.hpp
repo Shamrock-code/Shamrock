@@ -13,7 +13,7 @@
  * @file SolverStorage.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief Storage for GSPH solver runtime data
  *
  * This file contains the storage structure for GSPH solver runtime data,
@@ -35,12 +35,15 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <unordered_map>
 #include <memory>
+#include <string>
 
 namespace shammodels::gsph {
 
@@ -69,6 +72,30 @@ namespace shammodels::gsph {
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
+
+        //////////////////////////////////////////////////////////////////////
+        // Solver Graph (SSOT registry for edges and nodes)
+        //////////////////////////////////////////////////////////////////////
+
+        /// Central registry for all solver edges and nodes
+        shamrock::solvergraph::SolverGraph solver_graph;
+
+        //////////////////////////////////////////////////////////////////////
+        // Field Maps (physics-agnostic field registry)
+        //////////////////////////////////////////////////////////////////////
+
+        /// Scalar fields registered by name (physics modes register their fields here)
+        /// VTKDump looks up fields by name without knowing the physics
+        std::unordered_map<std::string, std::shared_ptr<shamrock::solvergraph::Field<Tscal>>>
+            scalar_fields;
+
+        /// Vector fields registered by name
+        std::unordered_map<std::string, std::shared_ptr<shamrock::solvergraph::Field<Tvec>>>
+            vector_fields;
+
+        //////////////////////////////////////////////////////////////////////
+        // Field edges (registered in solver_graph)
+        //////////////////////////////////////////////////////////////////////
 
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
@@ -104,7 +131,7 @@ namespace shammodels::gsph {
 
         /// Ghost data layout and merged data
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
-        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
+        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;
 
@@ -126,6 +153,47 @@ namespace shammodels::gsph {
         /// Minimum h/c_s for CFL timestep calculation
         /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s
         Tscal h_per_cs_min = std::numeric_limits<Tscal>::max();
+
+        //////////////////////////////////////////////////////////////////////
+        // SR-GSPH fields (Special Relativistic mode)
+        //////////////////////////////////////////////////////////////////////
+
+        /// Lorentz factor γ = 1/√(1-v²)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> gamma_lorentz;
+
+        /// Relativistic enthalpy H = 1 + u + P/n
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> enthalpy;
+
+        /// Lab-frame baryon density N = γn
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> N_density;
+
+        /// Particle volume V = ν/N (volume-based formulation)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> particle_volume;
+
+        /// Conserved momentum S = γHv (integrated directly in SR mode)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> S_momentum;
+
+        /// Conserved energy e = γH - P/(Nc²) (integrated directly in SR mode)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> e_energy;
+
+        /// Momentum derivative dS/dt (per baryon)
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dS_momentum;
+
+        /// Energy derivative de/dt (per baryon)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> de_energy;
+
+        /// Baryon number per particle ν (constant, set from mass/initial conditions)
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> nu_baryon;
+
+        /// Flag: has physics mode initialized its fields?
+        bool physics_fields_initialized = false;
+
+        /// Flag: has SR been initialized (prim2cons done)?
+        bool sr_initialized = false;
+
+        /// Old SR derivatives for predictor-corrector
+        Component<shamrock::ComputeField<Tvec>> old_dS;
+        Component<shamrock::ComputeField<Tscal>> old_de;
 
         /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;

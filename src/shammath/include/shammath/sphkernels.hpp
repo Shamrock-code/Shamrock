@@ -11,6 +11,7 @@
 
 /**
  * @file sphkernels.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief sph kernels
  */
@@ -1467,18 +1468,19 @@ namespace shammath::details {
      *
      * This kernel provides smooth derivatives and is well-suited for
      * relativistic SPH simulations where gradient accuracy is important.
+     * Kitajima et al. 2025 uses η=1.0. R=3 gives exp(-9) ≈ 0.0001 truncation error.
      */
     template<class Tscal>
     class KernelDefTGauss3 {
         public:
-        inline static constexpr Tscal Rkern  = 3;   ///< Compact support radius of the kernel
-        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+        inline static constexpr Tscal Rkern  = 3; ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.0; ///< default hfact (Kitajima uses η = 1.0)
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 0.5641895835477563;
         /// 2D norm of the kernel (accounts for truncation at q=3)
         inline static constexpr Tscal norm_2d
-            = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765901959895);
+            = 1.0 / (shambase::constants::pi<Tscal> * 0.9998765902);
         /// 3D norm of the kernel
         inline static constexpr Tscal norm_3d = 0.17958712212516656;
 
@@ -1507,8 +1509,8 @@ namespace shammath::details {
     template<class Tscal>
     class KernelDefTGauss5 {
         public:
-        inline static constexpr Tscal Rkern  = 5;   ///< Compact support radius of the kernel
-        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+        inline static constexpr Tscal Rkern  = 5; ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.0; ///< default hfact
 
         /// 1D norm of the kernel (truncation negligible at R=5)
         inline static constexpr Tscal norm_1d = 0.5641895835477563;

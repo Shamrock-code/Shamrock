@@ -25,7 +25,6 @@ namespace shamrock::patch {
     /**
      * @brief PatchDataLayerLayout container class
      */
-
     class PatchDataLayout {
         public:
         std::vector<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> layer_layouts;

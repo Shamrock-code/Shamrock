@@ -51,8 +51,52 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
-        // Note: Riemann solver and reconstruction config moved to physics-specific configs
-        // Use model.set_physics_newtonian() or model.set_physics_sr() to configure physics mode
+        // Riemann solver config (primarily for Newtonian mode)
+        .def(
+            "set_riemann_hllc",
+            [](TConfig &self) {
+                self.set_riemann_hllc();
+            },
+            R"==(
+    Set HLLC approximate Riemann solver.
+
+    HLLC (Harten-Lax-van Leer-Contact) is a 3-wave approximate solver
+    that includes the contact discontinuity. More accurate than HLL
+    for contact discontinuities like material interfaces.
+
+    Reference: Toro, Spruce & Speares (1994)
+)==")
+        .def(
+            "set_riemann_iterative",
+            [](TConfig &self, Tscal tol, u32 max_iter) {
+                self.set_riemann_iterative(tol, max_iter);
+            },
+            py::arg("tol") = Tscal{1e-6},
+            py::arg("max_iter") = 20,
+            R"==(
+    Set iterative (van Leer 1997) Riemann solver.
+
+    Uses Newton-Raphson iteration to solve for exact p* and v*.
+    Most robust solver, suitable for general use.
+
+    Parameters
+    ----------
+    tol : float, optional
+        Convergence tolerance (default: 1e-6)
+    max_iter : int, optional
+        Maximum iterations (default: 20)
+)==")
+        .def(
+            "set_riemann_hll",
+            [](TConfig &self) {
+                self.set_riemann_hll();
+            },
+            R"==(
+    Set HLL approximate Riemann solver.
+
+    HLL (Harten-Lax-van Leer) is a 2-wave approximate solver.
+    Faster than iterative but less accurate for contact discontinuities.
+)==")
         // EOS config
         .def(
             "set_eos_adiabatic",

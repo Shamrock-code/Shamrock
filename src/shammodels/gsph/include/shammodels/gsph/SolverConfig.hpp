@@ -32,6 +32,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/gsph/physics/newtonian/RiemannConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -170,6 +171,21 @@ struct shammodels::gsph::SolverConfig {
     }
 
     // ════════════════════════════════════════════════════════════════════════
+    // Riemann Solver Config (primarily for Newtonian mode)
+    // ════════════════════════════════════════════════════════════════════════
+
+    using RiemannConfig = gsph::RiemannConfig<Tvec>;
+    RiemannConfig riemann_config;
+
+    inline void set_riemann_iterative(Tscal tol = Tscal{1e-6}, u32 max_iter = 20) {
+        riemann_config.set_iterative(tol, max_iter);
+    }
+
+    inline void set_riemann_hllc() { riemann_config.set_hllc(); }
+
+    inline void set_riemann_hll() { riemann_config.set_hll(); }
+
+    // ════════════════════════════════════════════════════════════════════════
     // Tree config (shared by all physics modes)
     // ════════════════════════════════════════════════════════════════════════
 
@@ -189,8 +205,8 @@ struct shammodels::gsph::SolverConfig {
     u32 h_iter_per_subcycles   = 50;
     u32 h_max_subcycles_count  = 100;
 
-    /// Smoothing length multiplier for h iteration tolerance (SR uses larger values)
-    Tscal c_smooth = Tscal{1.2};
+    /// Smoothing length multiplier for h iteration (1.0 = standard SPH, SR uses larger values)
+    Tscal c_smooth = Tscal{1.0};
 
     // ════════════════════════════════════════════════════════════════════════
     // Physics-mode specific (temporary until full decoupling)

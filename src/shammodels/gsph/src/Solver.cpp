@@ -523,7 +523,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     };
 
     // Note: compute_omega callback is no longer used - each physics mode has its own
-    // h-iteration/density implementation (NewtonianMode::compute_omega_newtonian, SRMode::compute_omega_sr)
+    // h-iteration/density implementation (NewtonianMode::compute_omega_newtonian,
+    // SRMode::compute_omega_sr)
 
     callbacks.init_ghost_layout = [this]() {
         storage.solver_graph.get_node_ptr_base("init_ghost_layout")->evaluate();

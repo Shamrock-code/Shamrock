@@ -37,9 +37,9 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
-#include "shamtree/TreeTraversalCache.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include "shamtree/TreeTraversalCache.hpp"
 
 namespace shammodels::gsph::physics::newtonian {
 
@@ -188,7 +188,7 @@ namespace shammodels::gsph::physics::newtonian {
         StackEntry stack_loc{};
 
         // Dispatch based on Riemann solver config
-        using RiemannCfg = typename Config::RiemannConfig;
+        using RiemannCfg        = typename Config::RiemannConfig;
         const auto &riemann_cfg = config.riemann_config;
 
         if (const auto *v = std::get_if<typename RiemannCfg::Iterative>(&riemann_cfg.config)) {
@@ -425,42 +425,41 @@ namespace shammodels::gsph::physics::newtonian {
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
-                shambase::parallel_for(
-                    cgh, cnt, "newtonian_compute_density_omega", [=](u64 gid) {
-                        u32 id_a = (u32) gid;
+                shambase::parallel_for(cgh, cnt, "newtonian_compute_density_omega", [=](u64 gid) {
+                    u32 id_a = (u32) gid;
 
-                        Tvec xyz_a = xyz_acc[id_a];
-                        Tscal h_a  = h_acc[id_a];
-                        Tscal dint = h_a * h_a * Rkern * Rkern;
+                    Tvec xyz_a = xyz_acc[id_a];
+                    Tscal h_a  = h_acc[id_a];
+                    Tscal dint = h_a * h_a * Rkern * Rkern;
 
-                        Tscal rho_sum = Tscal(0);
-                        Tscal sumdWdh = Tscal(0);
+                    Tscal rho_sum = Tscal(0);
+                    Tscal sumdWdh = Tscal(0);
 
-                        particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                            Tvec dr    = xyz_a - xyz_acc[id_b];
-                            Tscal rab2 = sycl::dot(dr, dr);
+                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                        Tvec dr    = xyz_a - xyz_acc[id_b];
+                        Tscal rab2 = sycl::dot(dr, dr);
 
-                            if (rab2 > dint) {
-                                return;
-                            }
+                        if (rab2 > dint) {
+                            return;
+                        }
 
-                            Tscal rab = sycl::sqrt(rab2);
+                        Tscal rab = sycl::sqrt(rab2);
 
-                            // Standard mass-based SPH density (NO c_smooth)
-                            Tscal m_b = has_pmass ? pmass_acc[id_b] : pmass;
-                            rho_sum += m_b * Kernel::W_3d(rab, h_a);
-                            sumdWdh += m_b * Kernel::dhW_3d(rab, h_a);
-                        });
-
-                        // Clamp density to avoid numerical issues
-                        rho_sum = sycl::fmax(rho_sum, Tscal{1e-30});
-
-                        // Omega = 1 + (h/3rho) * d(rho)/dh
-                        Tscal omega_val = Tscal(1) + (h_a / (Tscal(3) * rho_sum)) * sumdWdh;
-
-                        density_acc[id_a] = rho_sum;
-                        omega_acc[id_a]   = omega_val;
+                        // Standard mass-based SPH density (NO c_smooth)
+                        Tscal m_b = has_pmass ? pmass_acc[id_b] : pmass;
+                        rho_sum += m_b * Kernel::W_3d(rab, h_a);
+                        sumdWdh += m_b * Kernel::dhW_3d(rab, h_a);
                     });
+
+                    // Clamp density to avoid numerical issues
+                    rho_sum = sycl::fmax(rho_sum, Tscal{1e-30});
+
+                    // Omega = 1 + (h/3rho) * d(rho)/dh
+                    Tscal omega_val = Tscal(1) + (h_a / (Tscal(3) * rho_sum)) * sumdWdh;
+
+                    density_acc[id_a] = rho_sum;
+                    omega_acc[id_a]   = omega_val;
+                });
             });
 
             pcache.complete_event_state(e);

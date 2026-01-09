@@ -255,9 +255,6 @@ namespace shammodels::gsph::physics::sr {
                                 const Tvec v_t_dir_a       = v_t_vec_a / v_t_mag_a_safe;
                                 const Tvec v_t_dir_b       = v_t_vec_b / v_t_mag_b_safe;
 
-                                // Per-particle baryon number for neighbor
-                                const Tscal nu_b = has_pmass ? pmass_acc[id_b] : pmass;
-
                                 // SR force computation (Kitajima Eq. 371-374)
                                 // Pass V_a and V_b for V²_interp = (V_a² + V_b²)/2
                                 // v_t_dir_L = v_t_dir_a (Left = a), v_t_dir_R = v_t_dir_b (Right =
@@ -278,11 +275,10 @@ namespace shammodels::gsph::physics::sr {
                                     dS_contrib,
                                     de_contrib);
 
-                                // Kitajima Eq. 371: <νᵢ dSᵢ/dt> = -Σⱼ νⱼ P* V² [∇ᵢW - ∇ⱼW]
-                                // Each pairwise contribution is multiplied by νⱼ (neighbor baryon
-                                // number)
-                                sum_dS += nu_b * dS_contrib;
-                                sum_de += nu_b * de_contrib;
+                                // Kitajima Eq. 371: <νᵢ dSᵢ/dt> = -Σⱼ P* V² [∇ᵢW - ∇ⱼW]
+                                // NOTE: No νⱼ factor in the sum! This is per-baryon rate.
+                                sum_dS += dS_contrib;
+                                sum_de += de_contrib;
                             });
 
                             // Kitajima Eq. 371: νᵢṠᵢ = -Σⱼ P* V² [∇ᵢW - ∇ⱼW]

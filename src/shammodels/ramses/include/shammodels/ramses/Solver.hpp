@@ -76,7 +76,6 @@ namespace shammodels::basegodunov {
                 context.pdata_layout_add_field<Tscal>("mass_particles", AMRBlock::block_size);
                 context.pdata_layout_add_field<Tscal>("rho_pic", AMRBlock::block_size);
             }
-
         }
 
         Solver(ShamrockCtx &context) : context(context) {}

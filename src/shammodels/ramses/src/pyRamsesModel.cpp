@@ -205,9 +205,11 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
                 })
-            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
-                self.npscal_gas_config.npscal_gas = npscal_gas;
-            })
+            .def(
+                "set_npscal_gas",
+                [](TConfig &self, u32 npscal_gas) {
+                    self.npscal_gas_config.npscal_gas = npscal_gas;
+                })
             .def("set_pic", [](TConfig &self) {
                 self.pic_config.enabled = true;
             });

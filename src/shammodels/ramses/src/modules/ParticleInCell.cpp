@@ -9,7 +9,8 @@
 
 /**
  * @file ParticleInCell.cpp
- * @author
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  */
 
@@ -26,7 +27,8 @@ namespace {
         using Tscal = shambase::VecComponent<Tvec>;
 
         inline static void kernel(
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_mass_particles,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
+                &spans_mass_particles,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho_pic,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size) {
@@ -42,11 +44,7 @@ namespace {
                 sham::DDMultiRef{spans_mass_particles},
                 sham::DDMultiRef{spans_rho_pic},
                 cell_counts,
-                [](
-                    u32 i,
-                    const Tscal *__restrict mass_particles,
-                    Tscal *__restrict rho_pic) {
-
+                [](u32 i, const Tscal *__restrict mass_particles, Tscal *__restrict rho_pic) {
                     /*
 
                     PIC KERNELS IN PROGRESS
@@ -76,9 +74,9 @@ namespace shammodels::basegodunov::modules {
 
     template<class Tvec>
     std::string NodePIC<Tvec>::_impl_get_tex() const {
-        auto block_count = get_ro_edge_base(0).get_tex_symbol();
+        auto block_count    = get_ro_edge_base(0).get_tex_symbol();
         auto mass_particles = get_ro_edge_base(1).get_tex_symbol();
-        auto rho_pic = get_rw_edge_base(0).get_tex_symbol();
+        auto rho_pic        = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
             // TODO: Add TeX description here

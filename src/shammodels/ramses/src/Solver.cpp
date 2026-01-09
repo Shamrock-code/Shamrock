@@ -662,10 +662,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     // will be filled by NodePIC
     if (solver_config.is_pic_enabled()) {
-        storage.refs_mass_particles
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("mass_particles", "m_{particles}");
-        storage.rho_pic
-            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
+        storage.refs_mass_particles = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
+            "mass_particles", "m_{particles}");
+        storage.rho_pic = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho_pic", "\\rho_{pic}");
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -864,10 +864,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         if (solver_config.is_pic_enabled()) { // attach spans to PIC field with ghosts (temporary)
             shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_mass_particles
-                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(storage.ghost_layout, "mass_particles");
-            attach_mass_particles.set_edges(storage.merged_patchdata_ghost, storage.refs_mass_particles);
+                = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(
+                    storage.ghost_layout, "mass_particles");
+            attach_mass_particles.set_edges(
+                storage.merged_patchdata_ghost, storage.refs_mass_particles);
             solver_sequence.push_back(
-                std::make_shared<decltype(attach_mass_particles)>(std::move(attach_mass_particles)));
+                std::make_shared<decltype(attach_mass_particles)>(
+                    std::move(attach_mass_particles)));
         }
     }
 
@@ -947,18 +950,13 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         {
             modules::NodePIC<Tvec> node{AMRBlock::block_size};
             node.set_edges(
-                storage.block_counts_with_ghost,
-                storage.refs_mass_particles,
-                storage.rho_pic);
+                storage.block_counts_with_ghost, storage.refs_mass_particles, storage.rho_pic);
 
             pic_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
         }
 
-        shamrock::solvergraph::OperationSequence seq(
-            "Particle in Cell", std::move(pic_sequence));
-        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq))
-        );
-
+        shamrock::solvergraph::OperationSequence seq("Particle in Cell", std::move(pic_sequence));
+        solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
     { // Build ConsToPrim node
@@ -1397,8 +1395,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
     if (true) {
-        // logger::raw_ln(" -- tex:\n" + shambase::get_check_ref(storage.solver_sequence).get_tex());
-        // logger::raw_ln(
+        // logger::raw_ln(" -- tex:\n" +
+        // shambase::get_check_ref(storage.solver_sequence).get_tex()); logger::raw_ln(
         //     " -- dot:\n" + shambase::get_check_ref(storage.solver_sequence).get_dot_graph());
 
         if (shamcomm::world_rank() == 0) {

@@ -25,7 +25,6 @@
 #include "shammodels/gsph/FieldNames.hpp"
 #include "shammodels/gsph/physics/newtonian/NewtonianForceKernel.hpp"
 #include "shammodels/gsph/physics/newtonian/forces.hpp"
-#include "shammodels/gsph/math/riemann/iterative.hpp"  // for hllc_solver
 #include "shammodels/gsph/physics/newtonian/riemann/HLL.hpp"
 #include "shammodels/gsph/physics/newtonian/riemann/Iterative.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -505,8 +504,8 @@ namespace shammodels::gsph::physics::newtonian {
                             const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
                             const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
 
-                            // Use HLLC approximate Riemann solver
-                            auto riemann_result = ::shammodels::gsph::riemann::hllc_solver<Tscal>(
+                            // Use HLL approximate Riemann solver
+                            auto riemann_result = ::shammodels::gsph::physics::newtonian::riemann::solve_hll<Tscal>(
                                 u_b_proj,
                                 rho_b,
                                 P_b,

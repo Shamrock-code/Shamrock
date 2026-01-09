@@ -90,6 +90,18 @@ namespace shammodels::gsph::physics::newtonian {
         void compute_forces(Storage &storage, const Config &config, PatchScheduler &scheduler);
         void compute_eos(Storage &storage, const Config &config, PatchScheduler &scheduler);
 
+        /**
+         * @brief Newtonian-specific h-iteration and density computation
+         *
+         * Uses standard mass-based SPH:
+         *   ρ = Σ m W(r_ij, h_i)      - Mass density
+         *   h chosen so ρ_sum = ρ_h   - Standard SPH h-iteration (no c_smooth)
+         *
+         * @return true if h converged, false if needs more subcycles
+         */
+        bool compute_omega_newtonian(
+            Storage &storage, const Config &config, PatchScheduler &scheduler);
+
         void compute_forces_iterative(
             Storage &storage,
             const Config &config,
@@ -101,6 +113,12 @@ namespace shammodels::gsph::physics::newtonian {
             const Config &config,
             PatchScheduler &scheduler,
             const riemann::HLLConfig &riemann_config);
+
+        void compute_forces_hllc(
+            Storage &storage,
+            const Config &config,
+            PatchScheduler &scheduler,
+            const riemann::HLLCConfig &riemann_config);
     };
 
 } // namespace shammodels::gsph::physics::newtonian

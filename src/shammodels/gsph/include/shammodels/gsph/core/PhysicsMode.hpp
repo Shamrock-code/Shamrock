@@ -58,13 +58,14 @@ namespace shammodels::gsph::core {
     struct SolverCallbacks {
         // Tree and neighbor operations
         std::function<void()> gen_serial_patch_tree;
-        std::function<void(Tscal)> gen_ghost_handler; ///< Takes time value
+        std::function<void(Tscal)> apply_position_boundary; ///< Apply boundary conditions
+        std::function<void(Tscal)> gen_ghost_handler;       ///< Takes time value
         std::function<void()> build_ghost_cache;
         std::function<void()> merge_position_ghost;
         std::function<void()> build_trees;
         std::function<void()> compute_presteps;
         std::function<void()> start_neighbors;
-        std::function<bool()> compute_omega; ///< Returns h_converged
+        // Note: compute_omega is removed - each physics mode implements its own h-iteration
 
         // Ghost communication
         std::function<void()> init_ghost_layout;

@@ -198,9 +198,12 @@ namespace shammodels::gsph::physics::sr {
         // SSOT: Set the density ghost field name for this physics mode
         config.density_ghost_field_name = fields::N_LABFRAME;
 
-        using namespace shamrock::solvergraph;
+        // Transfer SR-specific settings to shared config
+        // c_smooth is critical for SR's volume-based h-iteration (Kitajima Eq. 232-233)
+        config.c_smooth = sr_config_.c_smooth;
+        config.c_speed  = sr_config_.c_speed;
 
-        // c_speed already set from sr_config_ in constructor
+        using namespace shamrock::solvergraph;
 
         SolverGraph &solver_graph = storage.solver_graph;
 

@@ -108,6 +108,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
+    using SolverEOS_Machida06               = typename SolverConfigEOS::Machida06;
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -389,6 +390,58 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             buf_xyz.complete_event_state(e);
         });
 
+    } else if (
+        SolverEOS_Machida06 *eos_config
+        = std::get_if<SolverEOS_Machida06>(&solver_config.eos_config.config)) {
+
+        using EOS = shamphys::EOS_Machida06<Tscal>;
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+            auto &mfield = storage.merged_xyzh.get().get(id);
+
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
+
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+            auto rho_getter                     = rho_getter_gen(mpdat);
+
+            Tscal rho_c1 = eos_config->rho_c1;
+            Tscal rho_c2 = eos_config->rho_c2;
+            Tscal rho_c3 = eos_config->rho_c3;
+            Tscal cs     = eos_config->cs;
+            Tscal mu     = eos_config->mu;
+            Tscal mh     = eos_config->mh;
+            Tscal kb     = eos_config->kb;
+
+            u32 total_elements
+                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{rho_getter, buf_uint, buf_xyz},
+                sham::MultiRef{buf_P, buf_cs},
+                total_elements,
+                [rho_c1, rho_c2, rho_c3, cs0 = cs, mu, mh, kb](
+                    u32 i,
+                    auto rho,
+                    const Tscal *__restrict U,
+                    const Tvec *__restrict xyz,
+                    Tscal *__restrict P,
+                    Tscal *__restrict cs) {
+                    using namespace shamrock::sph;
+
+                    Tscal rho_a = rho(i);
+
+                    Tscal P_a  = EOS::pressure(cs0, rho_a, rho_c1, rho_c2, rho_c3);
+                    Tscal cs_a = EOS::soundspeed(P_a, rho_a, rho_c1, rho_c2, rho_c3);
+
+                    P[i]  = P_a;
+                    cs[i] = cs_a;
+                });
+        });
     } else {
         shambase::throw_unimplemented();
     }

@@ -61,7 +61,7 @@ namespace shammodels {
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
-
+        using Machida06     = typename EOSConfig<Tvec>::Machida06;
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
         } else if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
@@ -86,6 +86,17 @@ namespace shammodels {
                 {"Tvec", type_id},
                 {"eos_type", "locally_isothermal_fa2014"},
                 {"h_over_r", eos_config->h_over_r}};
+        } else if (const Machida06 *eos_config = std::get_if<Machida06>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "machida06"},
+                {"rho_c1", eos_config->rho_c1},
+                {"rho_c2", eos_config->rho_c2},
+                {"rho_c3", eos_config->rho_c3},
+                {"cs", eos_config->cs},
+                {"mu", eos_config->mu},
+                {"mh", eos_config->mh},
+                {"kb", eos_config->kb}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
         }
@@ -138,7 +149,7 @@ namespace shammodels {
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
-
+        using Machida06     = typename EOSConfig<Tvec>::Machida06;
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
         } else if (eos_type == "adiabatic") {
@@ -152,6 +163,15 @@ namespace shammodels {
                 j.at("cs0").get<Tscal>(), j.at("q").get<Tscal>(), j.at("r0").get<Tscal>()};
         } else if (eos_type == "locally_isothermal_fa2014") {
             p.config = LocIsoTFA2014{j.at("h_over_r").get<Tscal>()};
+        } else if (eos_type == "machida06") {
+            p.config = Machida06{
+                j.at("rho_c1").get<Tscal>(),
+                j.at("rho_c2").get<Tscal>(),
+                j.at("rho_c3").get<Tscal>(),
+                j.at("cs").get<Tscal>(),
+                j.at("mu").get<Tscal>(),
+                j.at("mh").get<Tscal>(),
+                j.at("kb").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("wtf !");
         }

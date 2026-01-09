@@ -517,11 +517,16 @@ namespace shammodels::gsph::physics::sr {
                         sumdWdh *= nu_a;
                     }
 
-                    // Store LAB-FRAME N directly from kernel summation
-                    // This is the fundamental quantity: N = ν × ΣW (Kitajima Eq. 221)
-                    // Consumers (SREOS, primitive recovery) will convert to rest-frame n = N/γ as
-                    // needed
-                    Tscal N_labframe     = sycl::max(rho_sum, Tscal(1e-30));
+                    // Compute Lorentz factor from velocity
+                    Tvec v_a          = v_labframe_acc[id_a];
+                    Tscal v2          = sycl::dot(v_a, v_a) / c2;
+                    Tscal gamma_lor_a = Tscal{1} / sycl::sqrt(sycl::fmax(Tscal{1} - v2, Tscal{1e-10}));
+
+                    // The kernel summation ρ = ν × ΣW gives the density based on particle
+                    // positions in the lab frame. For moving particles, the true lab-frame
+                    // baryon density is N = γ × ρ due to Lorentz contraction.
+                    // Consumers (SREOS) will divide by γ to get rest-frame n = N/γ = ρ.
+                    Tscal N_labframe     = sycl::max(rho_sum * gamma_lor_a, Tscal(1e-30));
                     N_labframe_acc[id_a] = N_labframe;
 
                     Tscal omega_val = Tscal(1);

@@ -26,7 +26,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shammodels/gsph/modules/IterateSmoothingLengthVolume.hpp"
+#include "shammodels/gsph/physics/sr/SRIterateSmoothingLength.hpp"
 #include "shammodels/gsph/physics/sr/SREOS.hpp"
 #include "shammodels/gsph/physics/sr/SRFieldNames.hpp"
 #include "shammodels/gsph/physics/sr/SRForceKernel.hpp"
@@ -73,6 +73,7 @@ namespace shammodels::gsph::physics::sr {
         // STEP 2: BOUNDARY CONDITIONS
         // ═══════════════════════════════════════════════════════════════════════
         callbacks.gen_serial_patch_tree();
+        callbacks.apply_position_boundary(t_current + dt);
 
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 3: H-ITERATION LOOP (tree build + density/omega)
@@ -389,7 +390,7 @@ namespace shammodels::gsph::physics::sr {
         eps_h->set_refs(eps_h_refs);
 
         // Volume-based h iteration for SR (Kitajima et al. 2025)
-        auto vol_iter = std::make_shared<gsph::modules::IterateSmoothingLengthVolume<Tvec, Kernel>>(
+        auto vol_iter = std::make_shared<sr::SRIterateSmoothingLength<Tvec, Kernel>>(
             pmass, config.htol_up_coarse_cycle, config.htol_up_fine_cycle, config.c_smooth);
         vol_iter->set_edges(sizes, storage.neigh_cache, pos_merged, hold, hnew, eps_h);
 

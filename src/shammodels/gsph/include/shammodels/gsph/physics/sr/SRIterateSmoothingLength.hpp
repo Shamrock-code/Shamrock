@@ -10,18 +10,20 @@
 #pragma once
 
 /**
- * @file IterateSmoothingLengthVolume.hpp
+ * @file SRIterateSmoothingLength.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @brief Volume-based smoothing length iteration (Kitajima et al. 2025)
+ * @brief SR-specific volume-based smoothing length iteration (Kitajima et al. 2025)
  *
- * This module implements the volume-based approach for computing smoothing length h.
+ * This module implements the volume-based approach for computing smoothing length h
+ * used in Special Relativistic GSPH.
+ *
  * Unlike standard SPH where h is a Lagrangian particle property, this approach treats
- * h as a field quantity computed from local density.
+ * h as a field quantity computed from local density:
  *
  * Key differences from standard SPH:
- * 1. Uses neighbor-averaged h in kernel: W(r_ij, (h_i + h_j)/2)
- * 2. Computes h directly from density: h = hfact * (m/ρ)^(1/dim)
- * 3. No Newton iteration needed
+ * 1. Uses Kitajima C_smooth factor: W(r_ij, C_smooth * h_i)
+ * 2. Computes h directly from volume: h = hfact * V^(1/dim)
+ * 3. No Newton iteration needed - pure volume-based iteration
  *
  * This gives smooth monotonic h variation across discontinuities, matching
  * Kitajima, Inutsuka & Seno (2025) arXiv:2510.18251.
@@ -34,20 +36,20 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include <memory>
 
-namespace shammodels::gsph::modules {
+namespace shammodels::gsph::physics::sr {
 
     template<class Tvec, class SPHKernel>
-    class IterateSmoothingLengthVolume : public shamrock::solvergraph::INode {
+    class SRIterateSmoothingLength : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal gpart_mass;
         Tscal h_evol_max;      ///< Max total h evolution per subcycle
-        Tscal h_evol_iter_max; ///< Max h evolution per iteration (unused in volume-based)
+        Tscal h_evol_iter_max; ///< Max h evolution per iteration
         Tscal c_smooth;        ///< Kitajima C_smooth factor
 
         public:
-        IterateSmoothingLengthVolume(
+        SRIterateSmoothingLength(
             Tscal gpart_mass, Tscal h_evol_max, Tscal h_evol_iter_max, Tscal c_smooth = Tscal{1})
             : gpart_mass(gpart_mass), h_evol_max(h_evol_max), h_evol_iter_max(h_evol_iter_max),
               c_smooth(c_smooth) {}
@@ -85,9 +87,9 @@ namespace shammodels::gsph::modules {
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const {
-            return "IterateSmoothingLengthVolume";
+            return "SRIterateSmoothingLength";
         };
 
         virtual std::string _impl_get_tex() const;
     };
-} // namespace shammodels::gsph::modules
+} // namespace shammodels::gsph::physics::sr

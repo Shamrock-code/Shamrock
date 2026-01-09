@@ -20,12 +20,12 @@
  *
  * Design principles:
  * - PhysicsMode owns the entire timestep via evolve_timestep()
- * - No query methods (requires_X) - mode just does what it needs
+ * - Mode evaluates solvergraph nodes directly from storage.solver_graph
+ * - Branching happens at init time (node registration), not at runtime
  * - No output transformations - mode stores output-ready values
  * - Declarative I/O - mode declares which fields to export
  */
 
-#include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
@@ -33,7 +33,6 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include <string_view>
-#include <functional>
 #include <string>
 #include <vector>
 
@@ -46,49 +45,6 @@ namespace shammodels::gsph {
 namespace shammodels::gsph::core {
 
     using ::PatchScheduler;
-
-    /**
-     * @brief Callbacks for shared Solver operations
-     *
-     * Passed to PhysicsMode::evolve_timestep() to allow physics modes to
-     * invoke shared operations (tree building, ghost handling, etc.)
-     * without creating circular dependencies.
-     */
-    template<class Tscal>
-    struct SolverCallbacks {
-        // Tree and neighbor operations
-        std::function<void()> gen_serial_patch_tree;
-        std::function<void(Tscal)> apply_position_boundary; ///< Apply boundary conditions
-        std::function<void(Tscal)> gen_ghost_handler;       ///< Takes time value
-        std::function<void()> build_ghost_cache;
-        std::function<void()> merge_position_ghost;
-        std::function<void()> build_trees;
-        std::function<void()> compute_presteps;
-        std::function<void()> start_neighbors;
-        // Note: compute_omega is removed - each physics mode implements its own h-iteration
-
-        // Ghost communication
-        std::function<void()> init_ghost_layout;
-        std::function<void()> communicate_ghosts;
-
-        // Gradient computation
-        std::function<void()> compute_gradients;
-
-        // Density copy
-        std::function<void()> copy_density;
-
-        // CFL computation
-        std::function<Tscal()> compute_cfl; ///< Returns dt_next
-
-        // Cache reset for h-iteration
-        std::function<void()> reset_for_h_iteration;
-
-        // Cleanup
-        std::function<void()> cleanup;
-
-        // Config access
-        u32 h_max_subcycles = 10;
-    };
 
     /**
      * @brief Abstract base class for physics mode implementations
@@ -115,27 +71,22 @@ namespace shammodels::gsph::core {
         /**
          * @brief Execute a complete physics timestep
          *
-         * Each mode implements its own sequence:
+         * Each mode implements its own sequence by evaluating solvergraph nodes:
          * - Newtonian: predictor → tree → omega → gradients → eos → forces → corrector
          * - SR: predictor → tree → omega → gradients → eos → forces → recovery → corrector
          * - MHD: ... → forces → divergence_clean → corrector
          *
-         * Mode calls shared operations via callbacks. This avoids combinatorial
-         * query methods (requires_X) - mode just does what it needs.
+         * Mode evaluates nodes via storage.solver_graph.get_node_ptr_base("name")->evaluate().
+         * Branching happens at init time (node registration), not at runtime.
          *
-         * @param storage Solver storage
+         * @param storage Solver storage (contains solver_graph with registered nodes)
          * @param config Solver configuration
          * @param scheduler Patch scheduler
          * @param dt Timestep size
-         * @param callbacks Callbacks for shared operations
          * @return dt_next computed CFL timestep for next iteration
          */
         virtual Tscal evolve_timestep(
-            Storage &storage,
-            const Config &config,
-            PatchScheduler &scheduler,
-            Tscal dt,
-            const SolverCallbacks<Tscal> &callbacks)
+            Storage &storage, const Config &config, PatchScheduler &scheduler, Tscal dt)
             = 0;
 
         /**

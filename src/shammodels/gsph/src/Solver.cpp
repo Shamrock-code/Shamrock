@@ -225,8 +225,62 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
             storage.ghost_layout.reset();
         }));
 
-    // NOTE: PhysicsMode::evolve_timestep() composes operations via SolverCallbacks.
-    // No operation sequences needed here - mode owns the timestep flow.
+    // ═══════════════════════════════════════════════════════════════════════════
+    // SOLVER METHOD NODES - Wrap Solver methods for PhysicsMode to call via graph
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // Serial patch tree generation
+    solver_graph.register_node(
+        "gen_serial_patch_tree",
+        FunctorNode("SerialTree", "Generate serial patch tree for ghost handling", [this]() {
+            gen_serial_patch_tree();
+        }));
+
+    // Boundary condition application
+    solver_graph.register_node(
+        "apply_boundary",
+        FunctorNode("Boundary", "Apply position boundary conditions", [this]() {
+            Tscal t = solver_config.get_time() + solver_config.get_dt();
+            modules::BoundaryHandler<Tvec, Kern>(context, solver_config, storage)
+                .apply_position_boundary(t);
+        }));
+
+    // Ghost handler generation
+    solver_graph.register_node(
+        "gen_ghost_handler",
+        FunctorNode("GhostHandler", "Generate ghost particle handler", [this]() {
+            Tscal t = solver_config.get_time() + solver_config.get_dt();
+            gen_ghost_handler(t);
+        }));
+
+    // Ghost cache building
+    solver_graph.register_node(
+        "build_ghost_cache",
+        FunctorNode("GhostCache", "Build ghost particle cache", [this]() {
+            build_ghost_cache();
+        }));
+
+    // Position ghost merging
+    solver_graph.register_node(
+        "merge_position_ghost",
+        FunctorNode("MergeGhosts", "Merge position and h ghost data", [this]() {
+            merge_position_ghost();
+        }));
+
+    // H-iteration reset (for subcycles)
+    solver_graph.register_node(
+        "reset_for_h_iteration",
+        FunctorNode("ResetH", "Reset caches for h-iteration subcycle", [this]() {
+            reset_neighbors_cache();
+            reset_presteps_rint();
+            clear_merged_pos_trees();
+            storage.merged_xyzh.reset();
+            clear_ghost_cache();
+            reset_ghost_handler();
+        }));
+
+    // NOTE: PhysicsMode::evolve_timestep() evaluates nodes directly via storage.solver_graph.
+    // Branching happens at init time (node registration), not at runtime.
 }
 
 template<class Tvec, template<class> class Kern>
@@ -482,89 +536,12 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // ═══════════════════════════════════════════════════════════════════════════
     // PHYSICS MODE OWNS THE TIMESTEP
     // ═══════════════════════════════════════════════════════════════════════════
-    // Create callbacks for shared operations that PhysicsMode can invoke.
-    // This allows each mode to define its own timestep sequence while
-    // reusing common operations (tree build, ghost handling, etc.)
+    // PhysicsMode evaluates solvergraph nodes directly via storage.solver_graph.
+    // Branching happens at init time (node registration), not at runtime.
     // ═══════════════════════════════════════════════════════════════════════════
 
-    core::SolverCallbacks<Tscal> callbacks;
-
-    callbacks.gen_serial_patch_tree = [this]() {
-        gen_serial_patch_tree();
-    };
-
-    callbacks.apply_position_boundary = [this](Tscal t) {
-        modules::BoundaryHandler<Tvec, Kern>(context, solver_config, storage)
-            .apply_position_boundary(t);
-    };
-
-    callbacks.gen_ghost_handler = [this](Tscal t) {
-        gen_ghost_handler(t);
-    };
-
-    callbacks.build_ghost_cache = [this]() {
-        build_ghost_cache();
-    };
-
-    callbacks.merge_position_ghost = [this]() {
-        merge_position_ghost();
-    };
-
-    callbacks.build_trees = [this]() {
-        storage.solver_graph.get_node_ptr_base("build_trees")->evaluate();
-    };
-
-    callbacks.compute_presteps = [this]() {
-        storage.solver_graph.get_node_ptr_base("compute_presteps")->evaluate();
-    };
-
-    callbacks.start_neighbors = [this]() {
-        storage.solver_graph.get_node_ptr_base("start_neighbors")->evaluate();
-    };
-
-    // Note: compute_omega callback is no longer used - each physics mode has its own
-    // h-iteration/density implementation (NewtonianMode::compute_omega_newtonian,
-    // SRMode::compute_omega_sr)
-
-    callbacks.init_ghost_layout = [this]() {
-        storage.solver_graph.get_node_ptr_base("init_ghost_layout")->evaluate();
-    };
-
-    callbacks.communicate_ghosts = [this]() {
-        storage.solver_graph.get_node_ptr_base("communicate_ghosts")->evaluate();
-    };
-
-    callbacks.compute_gradients = [this]() {
-        storage.solver_graph.get_node_ptr_base("compute_gradients")->evaluate();
-    };
-
-    callbacks.copy_density = [this]() {
-        storage.solver_graph.get_node_ptr_base("copy_density")->evaluate();
-    };
-
-    callbacks.compute_cfl = [this]() -> Tscal {
-        storage.solver_graph.get_node_ptr_base("compute_dt")->evaluate();
-        return storage.solver_graph.template get_edge_ref<IDataEdge<Tscal>>("dt_next").data;
-    };
-
-    callbacks.reset_for_h_iteration = [this]() {
-        reset_neighbors_cache();
-        reset_presteps_rint();
-        clear_merged_pos_trees();
-        storage.merged_xyzh.reset();
-        clear_ghost_cache();
-        reset_ghost_handler();
-    };
-
-    callbacks.cleanup = [this]() {
-        storage.solver_graph.get_node_ptr_base("cleanup")->evaluate();
-    };
-
-    callbacks.h_max_subcycles = solver_config.h_max_subcycles_count;
-
-    // Execute the physics timestep - mode owns the sequence
-    Tscal dt_next
-        = physics_mode->evolve_timestep(storage, solver_config, scheduler(), dt, callbacks);
+    // Execute the physics timestep - mode evaluates nodes from storage.solver_graph
+    Tscal dt_next = physics_mode->evolve_timestep(storage, solver_config, scheduler(), dt);
 
     // Update time
     solver_config.set_time(t_current + dt);

@@ -86,7 +86,10 @@ struct RhoGetterMonofluid {
         return accessed{h, epsilon, nvar_dust, pmass, hfact};
     }
 
-    void complete_event_state(sycl::event e) { buf_h.complete_event_state(e); }
+    void complete_event_state(sycl::event e) {
+        buf_h.complete_event_state(e);
+        buf_epsilon.complete_event_state(e);
+    }
 };
 
 template<class Tvec, template<class> class SPHKernel>

@@ -39,6 +39,7 @@
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
@@ -53,15 +54,18 @@ namespace shammodels::gsph::physics::sr {
 
     template<class Tvec, template<class> class SPHKernel>
     typename SRMode<Tvec, SPHKernel>::Tscal SRMode<Tvec, SPHKernel>::evolve_timestep(
-        Storage &storage,
-        const Config &config,
-        PatchScheduler &scheduler,
-        Tscal dt,
-        const core::SolverCallbacks<Tscal> &callbacks) {
+        Storage &storage, const Config &config, PatchScheduler &scheduler, Tscal dt) {
+        using namespace shamrock::solvergraph;
 
         StackEntry stack_loc{};
 
-        Tscal t_current = config.get_time();
+        // Access solvergraph for node evaluation
+        auto &graph = storage.solver_graph;
+
+        // Helper to evaluate a node by name
+        auto eval = [&graph](const char *name) {
+            graph.get_node_ptr_base(name)->evaluate();
+        };
 
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 1: PREDICTOR (S += dS*dt/2, e += de*dt/2, x += v*dt)
@@ -72,24 +76,24 @@ namespace shammodels::gsph::physics::sr {
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 2: BOUNDARY CONDITIONS
         // ═══════════════════════════════════════════════════════════════════════
-        callbacks.gen_serial_patch_tree();
-        callbacks.apply_position_boundary(t_current + dt);
+        eval("gen_serial_patch_tree");
+        eval("apply_boundary");
 
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 3: H-ITERATION LOOP (tree build + density/omega)
         // ═══════════════════════════════════════════════════════════════════════
         u32 hstep_cnt    = 0;
-        u32 hstep_max    = callbacks.h_max_subcycles;
+        u32 hstep_max    = config.h_max_subcycles_count;
         bool h_converged = false;
 
         for (; hstep_cnt < hstep_max && !h_converged; hstep_cnt++) {
-            callbacks.gen_ghost_handler(t_current + dt);
-            callbacks.build_ghost_cache();
-            callbacks.merge_position_ghost();
-            callbacks.build_trees();
-            callbacks.compute_presteps();
+            eval("gen_ghost_handler");
+            eval("build_ghost_cache");
+            eval("merge_position_ghost");
+            eval("build_trees");
+            eval("compute_presteps");
             // SR uses c_smooth in solver_config which the standard neighbor cache respects
-            callbacks.start_neighbors();
+            eval("start_neighbors");
             // SR-specific: omega/density with volume-based h
             h_converged = compute_omega_sr(storage, config, scheduler);
 
@@ -97,7 +101,7 @@ namespace shammodels::gsph::physics::sr {
                 if (shamcomm::world_rank() == 0) {
                     shamcomm::logs::info_ln("SR", "h subcycle ", hstep_cnt + 1);
                 }
-                callbacks.reset_for_h_iteration();
+                eval("reset_for_h_iteration");
             }
         }
 
@@ -109,8 +113,8 @@ namespace shammodels::gsph::physics::sr {
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 4: PHYSICS SEQUENCE (SR-specific: includes primitive recovery)
         // ═══════════════════════════════════════════════════════════════════════
-        callbacks.compute_gradients();
-        callbacks.init_ghost_layout();
+        eval("compute_gradients");
+        eval("init_ghost_layout");
 
         // SR-GSPH: Initialize conserved variables from primitives on first timestep
         // Must happen BEFORE recover_primitives (which needs valid S, e)
@@ -120,7 +124,7 @@ namespace shammodels::gsph::physics::sr {
             // init_conserved reads pressure from EOS, so compute EOS first
             // We do a preliminary ghost comm with initial uint, compute EOS,
             // then init_conserved, then recover_primitives updates uint for real
-            callbacks.communicate_ghosts();
+            eval("communicate_ghosts");
             compute_eos(storage, config, scheduler);
             init_conserved(storage, config, scheduler);
         }
@@ -132,11 +136,11 @@ namespace shammodels::gsph::physics::sr {
         // Re-communicate ghosts with updated uint (from recover_primitives)
         // Skip on first timestep since we just did it above
         if (!first_timestep) {
-            callbacks.communicate_ghosts();
+            eval("communicate_ghosts");
             compute_eos(storage, config, scheduler);
         }
 
-        callbacks.copy_density();
+        eval("copy_density");
 
         prepare_corrector(storage, config, scheduler);
         compute_forces(storage, config, scheduler);
@@ -174,12 +178,13 @@ namespace shammodels::gsph::physics::sr {
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 6: CFL TIMESTEP
         // ═══════════════════════════════════════════════════════════════════════
-        Tscal dt_next = callbacks.compute_cfl();
+        eval("compute_dt");
+        Tscal dt_next = graph.template get_edge_ref<IDataEdge<Tscal>>("dt_next").data;
 
         // ═══════════════════════════════════════════════════════════════════════
         // STEP 7: CLEANUP
         // ═══════════════════════════════════════════════════════════════════════
-        callbacks.cleanup();
+        eval("cleanup");
 
         return dt_next;
     }

@@ -32,12 +32,10 @@ set(Sources
     src/physics/sr/SREOS.cpp
     src/physics/sr/SRTimestepper.cpp
     src/physics/sr/SRPrimitiveRecovery.cpp
+    src/physics/sr/SRIterateSmoothingLength.cpp
 
     # I/O modules
     src/modules/io/VTKDump.cpp
-
-    # Smoothing length modules
-    src/modules/IterateSmoothingLengthVolume.cpp
 
     # Tree and neighbor modules
     src/modules/NeighbourCache.cpp
@@ -45,7 +43,6 @@ set(Sources
 
     # Computation modules
     src/modules/ComputeGradients.cpp
-    src/modules/ComputeOmega.cpp
     src/modules/ComputeCFL.cpp
     src/modules/GhostCommunicator.cpp
     src/modules/BoundaryHandler.cpp

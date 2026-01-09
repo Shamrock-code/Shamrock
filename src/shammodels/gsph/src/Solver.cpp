@@ -43,7 +43,6 @@
 #include "shammodels/gsph/modules/BuildTrees.hpp"
 #include "shammodels/gsph/modules/ComputeCFL.hpp"
 #include "shammodels/gsph/modules/ComputeGradients.hpp"
-#include "shammodels/gsph/modules/ComputeOmega.hpp"
 #include "shammodels/gsph/modules/FunctorNode.hpp"
 #include "shammodels/gsph/modules/GhostCommunicator.hpp"
 #include "shammodels/gsph/modules/NeighbourCache.hpp"
@@ -166,16 +165,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     solver_graph.register_node(
         "start_neighbors", FunctorNode("Neighbors", "Build neighbor cache", [this]() {
             modules::NeighbourCache<Tvec, Kern>(context, solver_config, storage).build_cache();
-        }));
-
-    // Omega/density computation (sets h_converged edge)
-    solver_graph.register_node(
-        "compute_omega",
-        FunctorNode("Omega", "Compute $\\Omega$ (grad-h correction) and density", [this]() {
-            bool converged
-                = modules::ComputeOmega<Tvec, Kern>(context, solver_config, storage).compute();
-            storage.solver_graph.template get_edge_ref<IDataEdge<bool>>("h_converged").data
-                = converged;
         }));
 
     // Gradients (MUSCL)
@@ -504,6 +493,11 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
         gen_serial_patch_tree();
     };
 
+    callbacks.apply_position_boundary = [this](Tscal t) {
+        modules::BoundaryHandler<Tvec, Kern>(context, solver_config, storage)
+            .apply_position_boundary(t);
+    };
+
     callbacks.gen_ghost_handler = [this](Tscal t) {
         gen_ghost_handler(t);
     };
@@ -528,10 +522,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
         storage.solver_graph.get_node_ptr_base("start_neighbors")->evaluate();
     };
 
-    callbacks.compute_omega = [this]() -> bool {
-        storage.solver_graph.get_node_ptr_base("compute_omega")->evaluate();
-        return storage.solver_graph.template get_edge_ref<IDataEdge<bool>>("h_converged").data;
-    };
+    // Note: compute_omega callback is no longer used - each physics mode has its own
+    // h-iteration/density implementation (NewtonianMode::compute_omega_newtonian, SRMode::compute_omega_sr)
 
     callbacks.init_ghost_layout = [this]() {
         storage.solver_graph.get_node_ptr_base("init_ghost_layout")->evaluate();

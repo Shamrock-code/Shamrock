@@ -38,12 +38,7 @@ namespace shammodels::gsph::physics::sr {
         using namespace shamrock::patch;
         using Kernel = SPHKernel<Tscal>;
 
-        PatchDataLayerLayout &pdl = scheduler_.pdl();
-
-        const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
-        const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");
-
+        // Get ghost layout for reading particle data (ghosts included)
         shamrock::patch::PatchDataLayerLayout &ghost_layout
             = shambase::get_check_ref(storage_.ghost_layout.get());
         u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>(fields::HPART);
@@ -54,16 +49,10 @@ namespace shammodels::gsph::physics::sr {
 
         // Per-particle baryon number (ν) for volume-based h (Kitajima)
         const bool has_pmass = config_.has_field_pmass();
-        const u32 ipmass     = has_pmass ? pdl.get_field_idx<Tscal>("pmass") : 0;
         u32 ipmass_interf    = has_pmass ? ghost_layout.get_field_idx<Tscal>("pmass") : 0;
 
         auto &merged_xyzh                                 = storage_.merged_xyzh.get();
         shambase::DistributedData<PatchDataLayer> &mpdats = storage_.merged_patchdata_ghost.get();
-
-        shamrock::solvergraph::Field<Tscal> &pressure_field
-            = shambase::get_check_ref(storage_.pressure);
-        shamrock::solvergraph::Field<Tscal> &soundspeed_field
-            = shambase::get_check_ref(storage_.soundspeed);
 
         // Get SR conserved variable derivative fields from storage
         shamrock::solvergraph::Field<Tvec> &dS_field
@@ -86,10 +75,6 @@ namespace shammodels::gsph::physics::sr {
             sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
             sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
             sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
-            sham::DeviceBuffer<Tscal> &buf_pressure
-                = pressure_field.get_field(cur_p.id_patch).get_buf();
-            sham::DeviceBuffer<Tscal> &buf_cs
-                = soundspeed_field.get_field(cur_p.id_patch).get_buf();
 
             // Get SR derivative buffers from storage fields
             sham::DeviceBuffer<Tvec> &buf_dS  = dS_field.get_field(cur_p.id_patch).get_buf();
@@ -116,8 +101,6 @@ namespace shammodels::gsph::physics::sr {
             auto omega_acc        = buf_omega.get_read_access(depends_list);
             auto N_labframe_acc   = buf_N.get_read_access(depends_list);
             auto u_restframe_acc  = buf_uint.get_read_access(depends_list);
-            auto P_restframe_acc  = buf_pressure.get_read_access(depends_list);
-            auto cs_restframe_acc = buf_cs.get_read_access(depends_list);
             auto ploop_ptrs       = pcache.get_read_access(depends_list);
 
             // Per-particle pmass accessor (nullptr if not using volume-based h)
@@ -315,8 +298,7 @@ namespace shammodels::gsph::physics::sr {
             buf_hpart.complete_event_state(e);
             buf_omega.complete_event_state(e);
             buf_N.complete_event_state(e);
-            buf_pressure.complete_event_state(e);
-            buf_cs.complete_event_state(e);
+            buf_uint.complete_event_state(e);
             buf_dS.complete_event_state(e);
             buf_de.complete_event_state(e);
             if (has_pmass && buf_pmass_ptr) {

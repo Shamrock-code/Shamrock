@@ -23,9 +23,9 @@
 #include "shambackends/math.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/FieldNames.hpp"
+#include "shammodels/gsph/math/riemann/iterative.hpp" // for hllc_solver
 #include "shammodels/gsph/physics/newtonian/NewtonianForceKernel.hpp"
 #include "shammodels/gsph/physics/newtonian/forces.hpp"
-#include "shammodels/gsph/math/riemann/iterative.hpp"  // for hllc_solver
 #include "shammodels/gsph/physics/newtonian/riemann/HLL.hpp"
 #include "shammodels/gsph/physics/newtonian/riemann/Iterative.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -465,83 +465,76 @@ namespace shammodels::gsph::physics::newtonian {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                shambase::parallel_for(
-                    cgh, pdat.get_obj_cnt(), "GSPH derivs HLLC", [=](u64 gid) {
-                        u32 id_a = (u32) gid;
+                shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs HLLC", [=](u64 gid) {
+                    u32 id_a = (u32) gid;
 
-                        Tvec sum_axyz  = {0, 0, 0};
-                        Tscal sum_du_a = 0;
+                    Tvec sum_axyz  = {0, 0, 0};
+                    Tscal sum_du_a = 0;
 
-                        const Tscal h_a     = hpart[id_a];
-                        const Tvec xyz_a    = xyz[id_a];
-                        const Tvec vxyz_a   = vxyz[id_a];
-                        const Tscal omega_a = omega_acc[id_a];
+                    const Tscal h_a     = hpart[id_a];
+                    const Tvec xyz_a    = xyz[id_a];
+                    const Tvec vxyz_a   = vxyz[id_a];
+                    const Tscal omega_a = omega_acc[id_a];
 
-                        const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
-                        const Tscal P_a   = sycl::max(pressure_acc[id_a], Tscal(1e-30));
+                    const Tscal rho_a = sycl::max(density_acc[id_a], Tscal(1e-30));
+                    const Tscal P_a   = sycl::max(pressure_acc[id_a], Tscal(1e-30));
 
-                        particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                            if (id_a == id_b)
-                                return;
+                    particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                        if (id_a == id_b)
+                            return;
 
-                            const Tvec dr    = xyz_a - xyz[id_b];
-                            const Tscal rab2 = sycl::dot(dr, dr);
-                            const Tscal h_b  = hpart[id_b];
+                        const Tvec dr    = xyz_a - xyz[id_b];
+                        const Tscal rab2 = sycl::dot(dr, dr);
+                        const Tscal h_b  = hpart[id_b];
 
-                            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                                return;
-                            }
-
-                            const Tscal rab     = sycl::sqrt(rab2);
-                            const Tvec vxyz_b   = vxyz[id_b];
-                            const Tscal omega_b = omega_acc[id_b];
-
-                            const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
-                            const Tscal P_b   = sycl::max(pressure_acc[id_b], Tscal(1e-30));
-
-                            const Tscal rab_inv  = sham::inv_sat_positive(rab);
-                            const Tvec r_ab_unit = dr * rab_inv;
-
-                            const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
-                            const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
-
-                            // Use HLLC approximate Riemann solver
-                            auto riemann_result = ::shammodels::gsph::riemann::hllc_solver<Tscal>(
-                                u_b_proj,
-                                rho_b,
-                                P_b,
-                                u_a_proj,
-                                rho_a,
-                                P_a,
-                                gamma);
-                            const Tscal p_star = riemann_result.p_star;
-                            const Tscal v_star = riemann_result.v_star;
-
-                            const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-                            const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-                            ::shammodels::gsph::physics::newtonian::
-                                add_gsph_force_contribution<Tvec, Tscal>(
-                                    pmass,
-                                    p_star,
-                                    v_star,
-                                    rho_a,
-                                    rho_b,
-                                    omega_a,
-                                    omega_b,
-                                    Fab_a,
-                                    Fab_b,
-                                    r_ab_unit,
-                                    vxyz_a,
-                                    sum_axyz,
-                                    sum_du_a);
-                        });
-
-                        axyz[id_a] = sum_axyz;
-                        if (duint_acc != nullptr) {
-                            duint_acc[id_a] = sum_du_a;
+                        if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                            return;
                         }
+
+                        const Tscal rab     = sycl::sqrt(rab2);
+                        const Tvec vxyz_b   = vxyz[id_b];
+                        const Tscal omega_b = omega_acc[id_b];
+
+                        const Tscal rho_b = sycl::max(density_acc[id_b], Tscal(1e-30));
+                        const Tscal P_b   = sycl::max(pressure_acc[id_b], Tscal(1e-30));
+
+                        const Tscal rab_inv  = sham::inv_sat_positive(rab);
+                        const Tvec r_ab_unit = dr * rab_inv;
+
+                        const Tscal u_a_proj = sycl::dot(vxyz_a, r_ab_unit);
+                        const Tscal u_b_proj = sycl::dot(vxyz_b, r_ab_unit);
+
+                        // Use HLLC approximate Riemann solver
+                        auto riemann_result = ::shammodels::gsph::riemann::hllc_solver<Tscal>(
+                            u_b_proj, rho_b, P_b, u_a_proj, rho_a, P_a, gamma);
+                        const Tscal p_star = riemann_result.p_star;
+                        const Tscal v_star = riemann_result.v_star;
+
+                        const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+                        const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+                        ::shammodels::gsph::physics::newtonian::
+                            add_gsph_force_contribution<Tvec, Tscal>(
+                                pmass,
+                                p_star,
+                                v_star,
+                                rho_a,
+                                rho_b,
+                                omega_a,
+                                omega_b,
+                                Fab_a,
+                                Fab_b,
+                                r_ab_unit,
+                                vxyz_a,
+                                sum_axyz,
+                                sum_du_a);
                     });
+
+                    axyz[id_a] = sum_axyz;
+                    if (duint_acc != nullptr) {
+                        duint_acc[id_a] = sum_du_a;
+                    }
+                });
             });
 
             buf_xyz.complete_event_state(e);

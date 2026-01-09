@@ -71,7 +71,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal tol, u32 max_iter) {
                 self.set_riemann_iterative(tol, max_iter);
             },
-            py::arg("tol") = Tscal{1e-6},
+            py::arg("tol")      = Tscal{1e-6},
             py::arg("max_iter") = 20,
             R"==(
     Set iterative (van Leer 1997) Riemann solver.

@@ -1,12 +1,14 @@
 """
 Quick debug script to analyze tangent velocity behavior in SR Riemann solver.
 """
+
 import sys
-sys.path.insert(0, '/Users/guo/Downloads/sph-simulators/docs/papers/sg-gsph/srrp')
+
+sys.path.insert(0, "/Users/guo/Downloads/sph-simulators/docs/papers/sg-gsph/srrp")
+import matplotlib.pyplot as plt
+import numpy as np
 from srrp.Solver import Solver
 from srrp.State import State
-import numpy as np
-import matplotlib.pyplot as plt
 
 # Problem 5 parameters
 gamma = 5.0 / 3.0
@@ -36,22 +38,22 @@ for i, v_t in enumerate(v_t_cases):
     vt_exact = state_exact.vt
 
     # Plot
-    axes[i, 0].plot(x_exact, P_exact, 'k-', label='Exact')
-    axes[i, 0].set_ylabel(f'P (v_t={v_t})')
-    axes[i, 0].set_title('Pressure')
+    axes[i, 0].plot(x_exact, P_exact, "k-", label="Exact")
+    axes[i, 0].set_ylabel(f"P (v_t={v_t})")
+    axes[i, 0].set_title("Pressure")
     axes[i, 0].legend()
 
-    axes[i, 1].plot(x_exact, n_exact, 'k-', label='Exact')
-    axes[i, 1].set_ylabel(f'n (v_t={v_t})')
-    axes[i, 1].set_title('Density')
+    axes[i, 1].plot(x_exact, n_exact, "k-", label="Exact")
+    axes[i, 1].set_ylabel(f"n (v_t={v_t})")
+    axes[i, 1].set_title("Density")
 
-    axes[i, 2].plot(x_exact, vx_exact, 'k-', label='Exact')
-    axes[i, 2].set_ylabel(f'vx (v_t={v_t})')
-    axes[i, 2].set_title('Normal velocity')
+    axes[i, 2].plot(x_exact, vx_exact, "k-", label="Exact")
+    axes[i, 2].set_ylabel(f"vx (v_t={v_t})")
+    axes[i, 2].set_title("Normal velocity")
 
-    axes[i, 3].plot(x_exact, vt_exact, 'k-', label='Exact')
-    axes[i, 3].set_ylabel(f'vt (v_t={v_t})')
-    axes[i, 3].set_title('Tangent velocity')
+    axes[i, 3].plot(x_exact, vt_exact, "k-", label="Exact")
+    axes[i, 3].set_ylabel(f"vt (v_t={v_t})")
+    axes[i, 3].set_title("Tangent velocity")
 
     print(f"\nv_t = {v_t}:")
     print(f"  Star state: P*={wavefan.states[1].pressure:.6f}, v_x*={wavefan.states[1].vx:.6f}")
@@ -61,8 +63,8 @@ for i, v_t in enumerate(v_t_cases):
     print(f"  vt range: [{np.min(vt_exact):.4f}, {np.max(vt_exact):.4f}]")
 
 for ax in axes[-1, :]:
-    ax.set_xlabel('x')
+    ax.set_xlabel("x")
 
 plt.tight_layout()
-plt.savefig('tangent_velocity_exact.png', dpi=150)
+plt.savefig("tangent_velocity_exact.png", dpi=150)
 print("\nSaved tangent_velocity_exact.png")

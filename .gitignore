@@ -35,7 +35,3 @@ log_precommit_*
 .pyenv
 
 _to_trash
-
-# Temporary
-run
-compile_commands.json

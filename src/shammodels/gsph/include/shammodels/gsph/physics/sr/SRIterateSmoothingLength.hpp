@@ -86,9 +86,7 @@ namespace shammodels::gsph::physics::sr {
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const {
-            return "SRIterateSmoothingLength";
-        };
+        inline virtual std::string _impl_get_label() const { return "SRIterateSmoothingLength"; };
 
         virtual std::string _impl_get_tex() const;
     };

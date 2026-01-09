@@ -10,7 +10,7 @@
 /**
  * @file SRMode.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief Implementation of Special Relativistic physics mode for GSPH
  *
  * Owns the complete timestep sequence with SR-specific steps:

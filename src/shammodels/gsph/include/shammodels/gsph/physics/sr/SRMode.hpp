@@ -53,11 +53,7 @@ namespace shammodels::gsph::physics::sr {
         // ════════════════════════════════════════════════════════════════════════
 
         Tscal evolve_timestep(
-            Storage &storage,
-            const Config &config,
-            PatchScheduler &scheduler,
-            Tscal dt,
-            const core::SolverCallbacks<Tscal> &callbacks) override;
+            Storage &storage, const Config &config, PatchScheduler &scheduler, Tscal dt) override;
 
         void init_fields(Storage &storage, Config &config) override;
 

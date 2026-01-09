@@ -1,0 +1,119 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+/**
+ * @file ModifierApplyStretchMapping.cpp
+ * @author David Fang (david.fang@ikmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @brief
+ *
+ */
+
+#include "shammodels/sph/modules/setup/ModifierApplyStretchMapping.hpp"
+#include "shambackends/EventList.hpp"
+#include "shambackends/kernel_call.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <shambackends/sycl.hpp>
+#include <cstddef>
+
+template<class Tvec, template<class> class SPHKernel>
+shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyStretchMapping<
+    Tvec,
+    SPHKernel>::ModifierApplyStretchMapping<Tvec, SPHKernel>::next_n(u32 nmax) {
+
+    ShamrockCtx &ctx                    = context;
+    PatchScheduler &sched               = shambase::get_check_ref(ctx.sched);
+    shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);
+
+    // No objects to offset
+    if (tmp.get_obj_cnt() == 0) {
+        return tmp;
+    }
+
+    auto &pdl      = sched.pdl();
+    auto obj_cnt   = tmp.get_obj_cnt();
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
+    sham::DeviceBuffer<Tscal> &buf_hpart
+        = tmp.get_field_buf_ref<Tscal>(pdl.get_field_idx<Tscal>("hpart"));
+    // sham::DeviceBuffer<u32> buf_mask(obj_cnt, dev_sched);
+
+    auto acc_xyz   = buf_xyz.copy_to_stdvec();
+    auto acc_hpart = buf_hpart.copy_to_stdvec();
+    // auto acc_mask  = buf_mask.copy_to_stdvec();
+
+    Tscal npart = 0;
+
+    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+    for (i32 id_a = 0; id_a < obj_cnt; ++id_a) {
+        Tvec &xyz_a    = acc_xyz[id_a];
+        Tscal &hpart_a = acc_hpart[id_a];
+        // auto &mask_a   = acc_mask[id_a];
+
+        bool outside_boundaries = false;
+        auto &a_from_pos        = smap_inputdata.a_from_pos;
+        auto &ximax             = smap_inputdata.ximax;
+        if (a_from_pos(xyz_a - smap_inputdata.center) >= ximax) {
+            outside_boundaries = true;
+        };
+
+        // mask_a = outside_boundaries;
+        if (!outside_boundaries) {
+            npart += 1;
+            // TODO not sure if that will be the total nb of particles or the nb of particles per
+            // patch
+            xyz_a   = stretchpart(xyz_a, smap_inputdata);
+            hpart_a = h_rho_stretched(xyz_a, smap_inputdata, hfact);
+            std::cout << "\rProgression : " << npart << " " << obj_cnt << std::flush;
+        };
+        ;
+    };
+
+    buf_xyz.copy_from_stdvec(acc_xyz);
+    buf_hpart.copy_from_stdvec(acc_hpart);
+    // buf_mask.copy_from_stdvec(acc_mask);
+
+    // auto part_to_remove = shamalgs::stream_compact(
+    //     dev_sched,
+    //     buf_mask,
+    //     obj_cnt); // TODO, maybe add the possibility to not kill these particles (crop=False ?)
+
+    shamlog_debug_ln("ModifierApplyStretchMapping", npart, "particles have been stretched");
+
+    // { // killing
+    //     u32 bsize = part_to_remove.get_size();
+    //     if (bsize > 0) {
+    //         tmp.remove_ids(part_to_remove, bsize);
+    //     }
+    // }
+
+    solver_config.gpart_mass = mtot / npart;
+    Tscal n13                = sycl::rootn(npart, 3);
+    sham::kernel_call(
+        q,
+        sham::MultiRef{},
+        sham::MultiRef{buf_hpart},
+        tmp.get_obj_cnt(),
+        [n13](u32 i, Tscal *__restrict hpart) {
+            hpart[i] = hpart[i] / n13;
+        });
+
+    return tmp;
+}
+
+using namespace shammath;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, M4>;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, M6>;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, M8>;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, C2>;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, C4>;
+template class shammodels::sph::modules::ModifierApplyStretchMapping<f64_3, C6>;

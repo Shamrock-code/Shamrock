@@ -513,7 +513,9 @@ namespace shamalgs::collective {
             }
 
             // routine to limit the number of in-flight messages
+
             u64 in_flight_lim = SHAM_SPARSE_COMM_INFLIGHT_LIM;
+
             if (in_flight > in_flight_lim) {
 
                 f64 timeout    = 120; // seconds

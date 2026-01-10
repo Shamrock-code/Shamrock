@@ -102,6 +102,20 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+
+option(SHAMROCK_PATCH_LIB_RPATH "patch the lib RPATH to include the current directory and ../lib" OFF)
+if(SHAMROCK_PATCH_LIB_RPATH)
+    message("-- patching lib RPATH to include the current directory and ../lib")
+
+    # CMake wants to strip the RPATH from the shared libraries,
+    # but we need it for the install python bindings, as all .so will be in the same directory
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+    # search in current dir and ../lib for .so
+    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
+endif()
+
 add_subdirectory(src)
 
 ####################################################################################################

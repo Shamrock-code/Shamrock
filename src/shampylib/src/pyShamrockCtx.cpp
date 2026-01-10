@@ -286,26 +286,27 @@ Register_pymod(pyshamrockctxinit) {
 
                 py::dict dic_out;
 
-                for (auto fname : ctx.pdl->get_field_names()) {
-                    append_to_map<f32>(fname, data, dic_out);
-                    append_to_map<f32_2>(fname, data, dic_out);
-                    append_to_map<f32_3>(fname, data, dic_out);
-                    append_to_map<f32_4>(fname, data, dic_out);
-                    append_to_map<f32_8>(fname, data, dic_out);
-                    append_to_map<f32_16>(fname, data, dic_out);
-                    append_to_map<f64>(fname, data, dic_out);
-                    append_to_map<f64_2>(fname, data, dic_out);
-                    append_to_map<f64_3>(fname, data, dic_out);
-                    append_to_map<f64_4>(fname, data, dic_out);
-                    append_to_map<f64_8>(fname, data, dic_out);
-                    append_to_map<f64_16>(fname, data, dic_out);
-                    append_to_map<u32>(fname, data, dic_out);
-                    append_to_map<u64>(fname, data, dic_out);
-                    append_to_map<u32_3>(fname, data, dic_out);
-                    append_to_map<u64_3>(fname, data, dic_out);
-                    append_to_map<i64_3>(fname, data, dic_out);
+                for (u32 layer_idx = 0; layer_idx < ctx.pdl_list.size(); layer_idx++) {
+                    for (auto fname : ctx.pdl_list.at(layer_idx)->get_field_names()) {
+                        append_to_map<f32>(fname, data, dic_out);
+                        append_to_map<f32_2>(fname, data, dic_out);
+                        append_to_map<f32_3>(fname, data, dic_out);
+                        append_to_map<f32_4>(fname, data, dic_out);
+                        append_to_map<f32_8>(fname, data, dic_out);
+                        append_to_map<f32_16>(fname, data, dic_out);
+                        append_to_map<f64>(fname, data, dic_out);
+                        append_to_map<f64_2>(fname, data, dic_out);
+                        append_to_map<f64_3>(fname, data, dic_out);
+                        append_to_map<f64_4>(fname, data, dic_out);
+                        append_to_map<f64_8>(fname, data, dic_out);
+                        append_to_map<f64_16>(fname, data, dic_out);
+                        append_to_map<u32>(fname, data, dic_out);
+                        append_to_map<u64>(fname, data, dic_out);
+                        append_to_map<u32_3>(fname, data, dic_out);
+                        append_to_map<u64_3>(fname, data, dic_out);
+                        append_to_map<i64_3>(fname, data, dic_out);
+                    }
                 }
-
                 return dic_out;
             })
         .def("get_patch_list_global", &ShamrockCtx::get_patch_list_global);

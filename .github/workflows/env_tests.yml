@@ -86,28 +86,24 @@ jobs:
           - machine: macos-generic.acpp
             runson: macos-14
             imagename: MacOS-14
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos14
 
           - machine: macos-generic.acpp
             runson: macos-15
             imagename: MacOS-15
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15
 
           - machine: macos-generic.acpp
             runson: macos-15-intel
             imagename: MacOS-15 (intel)
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15-intel
 
           - machine: macos-generic.acpp
             runson: macos-26
             imagename: MacOS-26
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos26
 
@@ -243,7 +239,9 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
-          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ldd ./shamrock_test
+          ls
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 127 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         if: matrix.runtest

@@ -21,7 +21,24 @@ class ShamEnvExtension(Extension):
 
 
 class ShamEnvBuild(build_ext):
+
+    def init_editable_mode(self) -> bool:
+        # Detect editable mode
+        editable_mode = False
+
+        # Method 1: Check self.inplace (most reliable for build_ext)
+        if hasattr(self, "inplace") and self.inplace:
+            editable_mode = True
+
+        # Method 2: Check for editable_mode attribute (newer setuptools)
+        if hasattr(self, "editable_mode") and self.editable_mode:
+            editable_mode = True
+        return editable_mode
+
     def build_extension(self, ext: ShamEnvExtension) -> None:
+        editable_mode = self.init_editable_mode()
+        print(f"-- Editable mode: {editable_mode}")
+
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
         ext_fullpath = Path.cwd() / self.get_ext_fullpath(ext.name)  # type: ignore[no-untyped-call]
         extdir = ext_fullpath.parent.resolve()
@@ -50,51 +67,20 @@ class ShamEnvBuild(build_ext):
         print(f"### {activate_build_dir=}")
         print(f"### {cwd_is_build=}")
 
-        print("-- Activating env")
-        subprocess.run(
-            [
-                "bash",
-                "-c",
-                "source ./activate",
-            ],
-            check=True,
-        )
-
-        print("-- Configure")
-        subprocess.run(
-            [
-                "bash",
-                "-c",
-                "source ./activate && shamconfigure",
-            ],
-            check=True,
-        )
-
-        print("-- Compile")
-        subprocess.run(
-            [
-                "bash",
-                "-c",
-                "source ./activate && shammake shamrock shamrock_pylib",
-            ],
-            check=True,
-        )
-
         print("-- mkdir output dir")
         print(f" -> mkdir -p {extdir}")
         subprocess.run(["bash", "-c", f"mkdir -p {extdir}"], check=True)
 
-        print("-- Copy lib&exe to output dir")
-        subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
+        install_steps = [
+            "source ./activate",
+            "shamconfigure",
+            f"cmake . -DCMAKE_INSTALL_PREFIX={sys.prefix} -DCMAKE_INSTALL_PYTHONDIR={extdir} -DSHAMROCK_PATCH_LIB_RPATH=On",
+            "shammake install",
+        ]
 
-        if not cwd_is_build:
-            subprocess.run(
-                ["bash", "-c", f" cp -v {activate_build_dir}/*.so {activate_build_dir}/shamrock ."],
-                check=True,
-            )
-
-        subprocess.run(["bash", "-c", f"ls {activate_build_dir}"], check=True)
-        subprocess.run(["bash", "-c", f"cp -v {activate_build_dir}/*.so {extdir}"], check=True)
+        cmd = " && ".join(install_steps)
+        print(f"-- Run install: {cmd}")
+        subprocess.run(["bash", "-c", cmd], check=True)
 
 
 # The information here can also be placed in setup.cfg - better separation of

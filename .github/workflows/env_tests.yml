@@ -86,28 +86,24 @@ jobs:
           - machine: macos-generic.acpp
             runson: macos-14
             imagename: MacOS-14
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos14
 
           - machine: macos-generic.acpp
             runson: macos-15
             imagename: MacOS-15
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15
 
           - machine: macos-generic.acpp
             runson: macos-15-intel
             imagename: MacOS-15 (intel)
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15-intel
 
           - machine: macos-generic.acpp
             runson: macos-26
             imagename: MacOS-26
-            runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos26
 

@@ -139,13 +139,6 @@ if(CMAKE_INSTALL_PYTHONDIR)
   # Install the Python module shared library
   install(TARGETS shamrock_pylib
           LIBRARY DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")
-
-  if(SHAMROCK_USE_SHARED_LIB)
-    install(TARGETS ${as_subproject}
-        LIBRARY DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}"
-    )
-  endif()
-
 endif()
 
 ########################################################################################

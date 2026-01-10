@@ -246,6 +246,9 @@ namespace {
                field_access_rhoe(cell_global_id),
                field_access_rho_vel(cell_global_id)};
 
+        // logger::raw_ln("id_grad ", cell_global_id ,"global_id rho  grad  ",
+        // field_access_rho(cell_global_id));
+
         shammath::ConsState<Tvec> W_xp = get_avg_neigh(graph_iter_xp);
         shammath::ConsState<Tvec> W_xm = get_avg_neigh(graph_iter_xm);
         shammath::ConsState<Tvec> W_yp = get_avg_neigh(graph_iter_yp);
@@ -280,4 +283,214 @@ namespace {
 
         return {lim_slope_W_x, lim_slope_W_y, lim_slope_W_z};
     }
+
+    template<class T, class Tvec, class ACCField>
+    inline T get_pseudo_grad(
+        const u32 cell_global_id,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm,
+        ACCField &&field_access)
+
+    {
+
+        using namespace sham;
+        using namespace sham::details;
+        /*
+                auto grad_scalar = [&](T u_curr, T u_neigh) {
+                    T max = g_sycl_max(g_sycl_abs(u_curr), g_sycl_abs(u_neigh));
+                    max   = g_sycl_abs(u_curr - u_neigh) / max;
+                    return g_sycl_max(g_sycl_min(max, 1.0), 0.0);
+                };
+
+                auto get_amr_grad = [&](auto &graph_links) -> T {
+                    T acc   = shambase::VectorProperties<T>::get_zero();
+                    u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                        T u_cur_acc   = field_access(cell_global_id);
+                        T u_neigh_acc = field_access(id_b);
+                        acc           = g_sycl_max(acc, grad_scalar(u_cur_acc, u_neigh_acc));
+                    });
+
+                    return (cnt > 0) ? acc : shambase::VectorProperties<T>::get_zero();
+                };
+
+                T u_xp_dir = get_amr_grad(graph_iter_xp);
+                T u_xm_dir = get_amr_grad(graph_iter_xm);
+                T u_yp_dir = get_amr_grad(graph_iter_yp);
+                T u_ym_dir = get_amr_grad(graph_iter_ym);
+                T u_zp_dir = get_amr_grad(graph_iter_zp);
+                T u_zm_dir = get_amr_grad(graph_iter_zm);
+
+                T res = max_8points(
+                    shambase::VectorProperties<T>::get_zero(),
+                    shambase::VectorProperties<T>::get_zero(),
+                    u_xp_dir,
+                    u_xm_dir,
+                    u_yp_dir,
+                    u_ym_dir,
+                    u_zp_dir,
+                    u_zm_dir);
+                */
+        auto get_avg_neigh = [&](auto &graph_links) -> T {
+            T acc   = shambase::VectorProperties<T>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+            // if(cnt > 1)
+            // logger::info_ln("cell [",cell_global_id,"] : ", cnt, "\t\n");
+            if (cnt == 1 || (cnt > 1 && cnt != 4)) {
+                return acc / cnt;
+            } else
+                return 0;
+            // return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+        };
+
+        auto epsilon = shambase::get_epsilon<T>();
+        T u_cur      = field_access(cell_global_id);
+        // T u_xp = 0;
+        // T u_xm = 0;
+        T u_xp = get_avg_neigh(graph_iter_xp);
+        T u_xm = get_avg_neigh(graph_iter_xm);
+        T u_yp = get_avg_neigh(graph_iter_yp);
+        T u_ym = get_avg_neigh(graph_iter_ym);
+        T u_zp = get_avg_neigh(graph_iter_zp);
+        T u_zm = get_avg_neigh(graph_iter_zm);
+
+        T x_scal = 2
+                   * g_sycl_max(
+                       g_sycl_abs((u_cur - u_xm) / (epsilon + u_cur + u_xm)),
+                       g_sycl_abs((u_cur - u_xp) / (epsilon + u_cur + u_xp)));
+        T y_scal = 0.;
+        T z_scal = 0.;
+        // T y_scal =  2 * g_sycl_max(g_sycl_abs((u_cur - u_ym)/ (epsilon + u_cur + u_ym)),
+        // g_sycl_abs((u_cur - u_yp)/ (epsilon + u_cur + u_yp))); T z_scal =  2 *
+        // g_sycl_max(g_sycl_abs((u_cur - u_zm)/ (epsilon + u_cur + u_zm)), g_sycl_abs((u_cur -
+        // u_zp)/ (epsilon + u_cur + u_zp)));
+
+        T res = g_sycl_max(x_scal, g_sycl_max(y_scal, z_scal));
+
+        return res;
+    }
+
+    template<class T, class Tvec, class ACCField>
+    inline T modif_second_derivative(
+        const u32 cell_global_id,
+        // const shambase::VecComponent<Tvec> delta_cell,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm,
+        ACCField &&field_access) {
+        using namespace sham;
+        using namespace sham::details;
+
+        auto get_avg_neigh = [&](auto &graph_links) -> T {
+            T acc   = shambase::VectorProperties<T>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+        };
+
+        auto eps_ref = 0.01;
+        auto epsilon = shambase::get_epsilon<T>();
+        T u_cur      = field_access(cell_global_id);
+        T u_xp       = get_avg_neigh(graph_iter_xp);
+        T u_xm       = get_avg_neigh(graph_iter_xm);
+        T u_yp       = get_avg_neigh(graph_iter_yp);
+        T u_ym       = get_avg_neigh(graph_iter_ym);
+        T u_zp       = get_avg_neigh(graph_iter_zp);
+        T u_zm       = get_avg_neigh(graph_iter_zm);
+
+        T delta_u_xp = u_xp - u_cur;
+        T delta_u_xm = u_xm - u_cur;
+        T delta_u_yp = u_yp - u_cur;
+        T delta_u_ym = u_ym - u_cur;
+        T delta_u_zp = u_zp - u_cur;
+        T delta_u_zm = u_zm - u_cur;
+
+        T scalar_x = g_sycl_abs(u_xp) + g_sycl_abs(u_xm) + 2 * g_sycl_abs(u_cur);
+        T scalar_y = g_sycl_abs(u_yp) + g_sycl_abs(u_ym) + 2 * g_sycl_abs(u_cur);
+        T scalar_z = g_sycl_abs(u_zp) + g_sycl_abs(u_zm) + 2 * g_sycl_abs(u_cur);
+
+        T res_x
+            = g_sycl_abs(delta_u_xm + delta_u_xp)
+              / (g_sycl_abs(delta_u_xm) + g_sycl_abs(delta_u_xp) + eps_ref * scalar_x + epsilon);
+        T res_y
+            = g_sycl_abs(delta_u_ym + delta_u_yp)
+              / (g_sycl_abs(delta_u_ym) + g_sycl_abs(delta_u_yp) + eps_ref * scalar_y + epsilon);
+        T res_z
+            = g_sycl_abs(delta_u_zm + delta_u_zp)
+              / (g_sycl_abs(delta_u_zm) + g_sycl_abs(delta_u_zp) + eps_ref * scalar_z + epsilon);
+
+        // return g_sycl_max(res_x, g_sycl_max(res_y, res_z)) * delta_cell;
+        // return g_sycl_max(res_x, g_sycl_max(res_y, res_z));
+        return (res_x + res_y + res_z);
+    }
+
+    template<class T, class Tvec, class ACCField>
+    inline T get_Lohner(
+        const u32 cell_global_id,
+        // const shambase::VecComponent<Tvec> delta_cell,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm,
+        ACCField &&field_access) {
+        using namespace sham;
+        using namespace sham::details;
+
+        auto get_avg_neigh = [&](auto &graph_links) -> T {
+            T acc   = shambase::VectorProperties<T>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<T>::get_zero();
+        };
+
+        auto eps_ref = 0.01;
+        auto epsilon = shambase::get_epsilon<T>();
+        T u_cur      = field_access(cell_global_id);
+        T u_xp       = get_avg_neigh(graph_iter_xp);
+        T u_xm       = get_avg_neigh(graph_iter_xm);
+        T u_yp       = get_avg_neigh(graph_iter_yp);
+        T u_ym       = get_avg_neigh(graph_iter_ym);
+        T u_zp       = get_avg_neigh(graph_iter_zp);
+        T u_zm       = get_avg_neigh(graph_iter_zm);
+
+        T delta_u_xp = u_xp - u_cur;
+        T delta_u_xm = u_xm - u_cur;
+        T delta_u_yp = u_yp - u_cur;
+        T delta_u_ym = u_ym - u_cur;
+        T delta_u_zp = u_zp - u_cur;
+        T delta_u_zm = u_zm - u_cur;
+
+        T d_uxx = u_xm - 2 * u_cur + u_xp;
+        T d_uyy = u_ym - 2 * u_cur + u_yp;
+        T d_uzz = u_zm - 2 * u_cur + u_zp;
+
+        T num_  = d_uxx * d_uxx + d_uyy * d_uyy + d_uzz * d_uzz;
+        T den_x = g_sycl_abs(delta_u_xm) + g_sycl_abs(delta_u_xp);
+        T den_y = g_sycl_abs(delta_u_ym) + g_sycl_abs(delta_u_yp);
+        T den_z = g_sycl_abs(delta_u_zm) + g_sycl_abs(delta_u_zp);
+        T eps_  = eps_ref * g_sycl_abs(u_cur);
+
+        // T E = (num_) / (den_x * den_x + den_y * den_y + den_z * den_z + eps_ * eps_);
+        // E = sycl::sqrt(E);
+
+        T E = (d_uxx / (den_x + eps_)) * (d_uxx / (den_x + eps_))
+              + (d_uyy / (den_y + eps_)) * (d_uyy / (den_y + eps_))
+              + (d_uzz / (den_z + eps_)) * (d_uzz / (den_z + eps_));
+        // E = sycl::sqrt(E);
+
+        return E;
+    }
+
 } // namespace

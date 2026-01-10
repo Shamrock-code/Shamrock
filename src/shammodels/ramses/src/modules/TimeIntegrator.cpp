@@ -68,7 +68,10 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
                     const u32 cell_global_id = (u32) id_a;
 
                     rho[id_a] += dt * acc_dt_rho_patch[id_a];
-                    rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
+                    // rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
+                    rhov[id_a][0] += dt * acc_dt_rhov_patch[id_a][0];
+                    rhov[id_a][1] += 0;
+                    rhov[id_a][2] += 0;
                     rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
                 });
             });

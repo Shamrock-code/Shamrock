@@ -240,7 +240,8 @@ jobs:
         run: |
           cd build
           ldd ./shamrock_test
-          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          ls
+          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 127 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 2
         if: matrix.runtest

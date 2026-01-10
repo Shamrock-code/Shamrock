@@ -27,7 +27,7 @@
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -64,8 +64,8 @@ namespace shammodels::gsph {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        // Reuse SPH ghost handler - the mechanism is the same
-        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        // Use GSPH ghost handler with Newtonian field names
+        using GhostHandle      = gsph::GSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;

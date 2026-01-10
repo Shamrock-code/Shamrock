@@ -74,7 +74,7 @@ class ShamEnvBuild(build_ext):
         install_steps = [
             "source ./activate",
             "shamconfigure",
-            f"cmake . -DCMAKE_INSTALL_PREFIX={extdir} -DCMAKE_INSTALL_PYTHONDIR={extdir} -DSHAMROCK_PATCH_LIB_RPATH=On",
+            f"cmake . -DCMAKE_INSTALL_PREFIX={sys.prefix} -DCMAKE_INSTALL_PYTHONDIR={extdir} -DSHAMROCK_PATCH_LIB_RPATH=On",
             "shammake install",
         ]
 

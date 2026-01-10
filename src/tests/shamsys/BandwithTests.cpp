@@ -27,11 +27,10 @@ void bench_memcpy_sycl(
     using namespace shamsys::instance;
 
     u64 max_obj_cnt = max_byte_sz_cnt / sizeof(T);
+    f64 cnt_        = 1e2;
+    while (cnt_ < max_obj_cnt) {
 
-    for (f64 cnt_ = 1e2; cnt_ < max_obj_cnt; cnt_ *= 1.1) {
-
-        u64 cnt = cnt_;
-
+        u64 cnt   = u64(cnt_);
         auto ptr1 = sycl::malloc_device<T>(cnt, q1);
         auto ptr2 = sycl::malloc_device<T>(cnt, q2);
 
@@ -48,6 +47,8 @@ void bench_memcpy_sycl(
         sz.push_back(cnt * sizeof(T) / f64(1024 * 1024 * 1024));
         bandwidth_GBsm1.push_back(
             (f64(cnt * sizeof(T)) / (t.nanosec / 1e9)) / f64(1024 * 1024 * 1024));
+
+        cnt_ *= 1.1_f64;
     }
 
     auto &dset = shamtest::test_data().new_dataset(dset_name);
@@ -67,11 +68,10 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
     using namespace shamsys::instance;
 
     u64 max_obj_cnt = max_byte_sz_cnt / sizeof(T);
+    f64 cnt_        = 1e2;
+    while (cnt_ < max_obj_cnt) {
 
-    for (f64 cnt_ = 1e2; cnt_ < max_obj_cnt; cnt_ *= 1.1) {
-
-        u64 cnt = cnt_;
-
+        u64 cnt   = u64(cnt_);
         auto ptr1 = sycl::malloc_device<T>(cnt, q1);
         auto ptr2 = sycl::malloc_host<T>(cnt, q1);
 
@@ -88,6 +88,8 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
         sz.push_back(cnt * sizeof(T) / f64(1024 * 1024 * 1024));
         bandwidth_GBsm1.push_back(
             (f64(cnt * sizeof(T)) / (t.nanosec / 1e9)) / f64(1024 * 1024 * 1024));
+
+        cnt_ = cnt_ * 1.1_f64;
     }
 
     auto &dset = shamtest::test_data().new_dataset(dset_name);

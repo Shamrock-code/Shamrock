@@ -22,6 +22,21 @@ class ShamEnvExtension(Extension):
 
 class ShamEnvBuild(build_ext):
 
+    def is_editable_mode(self) -> bool:
+        # Detect editable mode
+        editable_mode = False
+
+        # Method 1: Check self.inplace (most reliable for build_ext)
+        if hasattr(self, "inplace") and self.inplace:
+            editable_mode = True
+
+        # Method 2: Check for editable_mode attribute (newer setuptools)
+        if hasattr(self, "editable_mode") and self.editable_mode:
+            editable_mode = True
+        return editable_mode
+
+    
+
     def get_extdir(self, ext: ShamEnvExtension):
 
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
@@ -31,6 +46,14 @@ class ShamEnvBuild(build_ext):
         return extdir.parent.resolve()
 
     def build_extension(self, ext: ShamEnvExtension) -> None:
+
+        if self.is_editable_mode():
+            raise Exception(
+                "Editable mode not supported for this config:\n"
+                "  -> both the executable and the pylib are called shamrock"
+                "  -> so there is a name conflict in editable mode since"
+                "  -> the pylib will be copied to a shamrock folder which is the executable ..."
+                )
 
         extdir = self.get_extdir(ext)
 

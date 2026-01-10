@@ -41,6 +41,9 @@ class ShamEnvBuild(build_ext):
         ext_fullpath = Path.cwd() / self.get_ext_fullpath(ext.name)  # type: ignore[no-untyped-call]
         extdir = ext_fullpath.parent.resolve()
 
+        # we get the parent since the package is named shamrock.shamrock
+        # in order for the .so to be shamrock/shamrock.cpython-313-x86_64-linux-gnu.so
+        # and the package is shamrock
         return extdir.parent.resolve()
 
     def build_extension(self, ext: ShamEnvExtension) -> None:
@@ -48,8 +51,8 @@ class ShamEnvBuild(build_ext):
         if self.is_editable_mode():
             raise Exception(
                 "Editable mode not supported for this config:\n"
-                "  -> both the executable and the pylib are called shamrock"
-                "  -> so there is a name conflict in editable mode since"
+                "  -> both the executable and the pylib are called shamrock\n"
+                "  -> so there is a name conflict in editable mode since\n"
                 "  -> the pylib will be copied to a shamrock folder which is the executable ..."
             )
 

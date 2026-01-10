@@ -53,6 +53,27 @@ namespace shammodels::gsph::fields {
         /// Density field name
         inline constexpr const char *density = "density";
 
+        /// Pressure field name (derived field)
+        inline constexpr const char *pressure = "pressure";
+
+        /// Sound speed field name (derived field)
+        inline constexpr const char *soundspeed = "soundspeed";
+
+        /// Density gradient field name
+        inline constexpr const char *grad_density = "grad_density";
+
+        /// Pressure gradient field name
+        inline constexpr const char *grad_pressure = "grad_pressure";
+
+        /// Velocity x-component gradient field name
+        inline constexpr const char *grad_vx = "grad_vx";
+
+        /// Velocity y-component gradient field name
+        inline constexpr const char *grad_vy = "grad_vy";
+
+        /// Velocity z-component gradient field name
+        inline constexpr const char *grad_vz = "grad_vz";
+
     } // namespace newtonian
 
 } // namespace shammodels::gsph::fields

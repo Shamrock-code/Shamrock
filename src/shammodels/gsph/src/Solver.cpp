@@ -87,24 +87,27 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
 
-    storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
-    storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
-    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
-    storage.soundspeed
-        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
+    storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, fields::newtonian::omega, "\\Omega");
+    storage.density = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, fields::newtonian::density, "\\rho");
+    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, fields::newtonian::pressure, "P");
+    storage.soundspeed = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, fields::newtonian::soundspeed, "c_s");
 
     // Initialize gradient fields for MUSCL reconstruction
     // These are only used when reconstruct_config.is_muscl() == true
-    storage.grad_density
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_density", "\\nabla\\rho");
-    storage.grad_pressure
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_pressure", "\\nabla P");
-    storage.grad_vx
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vx", "\\nabla v_x");
-    storage.grad_vy
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vy", "\\nabla v_y");
-    storage.grad_vz
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vz", "\\nabla v_z");
+    storage.grad_density = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, fields::newtonian::grad_density, "\\nabla\\rho");
+    storage.grad_pressure = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, fields::newtonian::grad_pressure, "\\nabla P");
+    storage.grad_vx = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, fields::newtonian::grad_vx, "\\nabla v_x");
+    storage.grad_vy = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, fields::newtonian::grad_vy, "\\nabla v_y");
+    storage.grad_vz = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, fields::newtonian::grad_vz, "\\nabla v_z");
 }
 
 template<class Tvec, template<class> class Kern>
@@ -641,11 +644,16 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Gradient field indices (for MUSCL reconstruction)
     const bool has_grads = solver_config.requires_gradients();
-    u32 igrad_d_interf   = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_density") : 0;
-    u32 igrad_p_interf   = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_pressure") : 0;
-    u32 igrad_vx_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vx") : 0;
-    u32 igrad_vy_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vy") : 0;
-    u32 igrad_vz_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vz") : 0;
+    u32 igrad_d_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(fields::newtonian::grad_density) : 0;
+    u32 igrad_p_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(fields::newtonian::grad_pressure) : 0;
+    u32 igrad_vx_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(fields::newtonian::grad_vx) : 0;
+    u32 igrad_vy_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(fields::newtonian::grad_vy) : 0;
+    u32 igrad_vz_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(fields::newtonian::grad_vz) : 0;
 
     using InterfaceBuildInfos = typename gsph::GSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 

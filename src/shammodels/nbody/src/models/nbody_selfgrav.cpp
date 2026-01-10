@@ -374,10 +374,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
     // Stepper stepper(sched,periodic_bc,htol_up_tol,htol_up_iter,gpart_mass);
 
-    const u32 ixyz      = sched.pdl().get_field_idx<vec3>("xyz");
-    const u32 ivxyz     = sched.pdl().get_field_idx<vec3>("vxyz");
-    const u32 iaxyz     = sched.pdl().get_field_idx<vec3>("axyz");
-    const u32 iaxyz_old = sched.pdl().get_field_idx<vec3>("axyz_old");
+    const u32 ixyz      = sched.pdl_old().get_field_idx<vec3>("xyz");
+    const u32 ivxyz     = sched.pdl_old().get_field_idx<vec3>("vxyz");
+    const u32 iaxyz     = sched.pdl_old().get_field_idx<vec3>("axyz");
+    const u32 iaxyz_old = sched.pdl_old().get_field_idx<vec3>("axyz_old");
 
     // const u32 ihpart    = sched.pdl.get_field_idx<flt>("hpart");
 
@@ -446,10 +446,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         };
 
     auto leapfrog_lambda = [&](flt old_time, bool do_force, bool do_corrector) -> flt {
-        const u32 ixyz      = sched.pdl().get_field_idx<vec3>("xyz");
-        const u32 ivxyz     = sched.pdl().get_field_idx<vec3>("vxyz");
-        const u32 iaxyz     = sched.pdl().get_field_idx<vec3>("axyz");
-        const u32 iaxyz_old = sched.pdl().get_field_idx<vec3>("axyz_old");
+        const u32 ixyz      = sched.pdl_old().get_field_idx<vec3>("xyz");
+        const u32 ivxyz     = sched.pdl_old().get_field_idx<vec3>("vxyz");
+        const u32 iaxyz     = sched.pdl_old().get_field_idx<vec3>("axyz");
+        const u32 iaxyz_old = sched.pdl_old().get_field_idx<vec3>("axyz_old");
 
         logger::info_ln(
             "NBodyleapfrog",

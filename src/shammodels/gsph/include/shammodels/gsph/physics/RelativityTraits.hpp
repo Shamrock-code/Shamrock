@@ -20,6 +20,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/gsph/physics/SpacetimeTraits.hpp"
+#include <type_traits>
 
 namespace shammodels::gsph::physics {
 
@@ -89,14 +90,19 @@ namespace shammodels::gsph::physics {
      *
      * @tparam Tvec Vector type
      * @tparam MatterT Matter model
+     * @tparam SpacetimeT Spacetime (must be MinkowskiSpacetime for SR)
      */
-    template<class Tvec, class MatterT>
+    template<class Tvec, class MatterT, class SpacetimeT = MinkowskiSpacetime<Tvec>>
     struct SRPhysics {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using Matter    = MatterT;
-        using Spacetime = MinkowskiSpacetime<Tvec>;
+        using Spacetime = SpacetimeT;
+
+        static_assert(
+            std::is_same_v<SpacetimeT, MinkowskiSpacetime<Tvec>>,
+            "SRPhysics requires MinkowskiSpacetime (flat spacetime)");
 
         static constexpr bool needs_primitive_recovery = true;
         static constexpr bool needs_lorentz_factor     = true;

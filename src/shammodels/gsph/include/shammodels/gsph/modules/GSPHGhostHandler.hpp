@@ -18,6 +18,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -184,12 +185,14 @@ namespace shammodels::gsph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ixyz   = sched.pdl().template get_field_idx<vec>(names::common::xyz);
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>(names::common::hpart);
 
             // Get field indices from xyzh_ghost_layout for accessing ghost data
-            const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");
-            const u32 ihpart_ghost = xyzh_ghost_layout->template get_field_idx<flt>("hpart");
+            const u32 ixyz_ghost
+                = xyzh_ghost_layout->template get_field_idx<vec>(names::common::xyz);
+            const u32 ihpart_ghost
+                = xyzh_ghost_layout->template get_field_idx<flt>(names::common::hpart);
 
             return build_interface_native<shamrock::patch::PatchDataLayer>(
                 builder,
@@ -300,12 +303,14 @@ namespace shammodels::gsph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ixyz   = sched.pdl().template get_field_idx<vec>(names::common::xyz);
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>(names::common::hpart);
 
             // Get field indices from xyzh_ghost_layout for accessing ghost data
-            const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");
-            const u32 ihpart_ghost = xyzh_ghost_layout->template get_field_idx<flt>("hpart");
+            const u32 ixyz_ghost
+                = xyzh_ghost_layout->template get_field_idx<vec>(names::common::xyz);
+            const u32 ihpart_ghost
+                = xyzh_ghost_layout->template get_field_idx<flt>(names::common::hpart);
 
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(

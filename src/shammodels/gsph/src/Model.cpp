@@ -26,6 +26,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Model.hpp"
+#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -165,16 +166,16 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
             tmp.fields_raz();
 
             {
-                u32 len = vec_acc.size();
-                PatchDataField<Tvec> &f
-                    = tmp.template get_field<Tvec>(sched.pdl().template get_field_idx<Tvec>("xyz"));
+                u32 len                 = vec_acc.size();
+                PatchDataField<Tvec> &f = tmp.template get_field<Tvec>(
+                    sched.pdl().template get_field_idx<Tvec>(names::common::xyz));
                 sycl::buffer<Tvec> buf(vec_acc.data(), len);
                 f.override(buf, len);
             }
 
             {
                 PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
-                    sched.pdl().template get_field_idx<Tscal>("hpart"));
+                    sched.pdl().template get_field_idx<Tscal>(names::common::hpart));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }
@@ -274,16 +275,16 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             tmp.fields_raz();
 
             {
-                u32 len = vec_acc.size();
-                PatchDataField<Tvec> &f
-                    = tmp.template get_field<Tvec>(sched.pdl().template get_field_idx<Tvec>("xyz"));
+                u32 len                 = vec_acc.size();
+                PatchDataField<Tvec> &f = tmp.template get_field<Tvec>(
+                    sched.pdl().template get_field_idx<Tvec>(names::common::xyz));
                 sycl::buffer<Tvec> buf(vec_acc.data(), len);
                 f.override(buf, len);
             }
 
             {
                 PatchDataField<Tscal> &f = tmp.template get_field<Tscal>(
-                    sched.pdl().template get_field_idx<Tscal>("hpart"));
+                    sched.pdl().template get_field_idx<Tscal>(names::common::hpart));
                 using Kernel = SPHKernel<Tscal>;
                 f.override(Kernel::hfactd * dr);
             }

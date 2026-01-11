@@ -80,38 +80,42 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     // Merged ghost spans
     storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-        edges::physics::newtonian::positions_with_ghosts, "\\mathbf{r}");
+        edges::newtonian::positions_with_ghosts, "\\mathbf{r}");
     storage.hpart_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-        edges::physics::newtonian::hpart_with_ghosts, "h");
+        edges::newtonian::hpart_with_ghosts, "h");
 
     storage.neigh_cache = std::make_shared<shammodels::sph::solvergraph::NeighCache>(
         edges::infra::neigh_cache, "neigh");
 
-    storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
-    storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
-    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
-    storage.soundspeed
-        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
+    storage.omega = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, names::newtonian::omega, "\\Omega");
+    storage.density = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, names::newtonian::density, "\\rho");
+    storage.pressure
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, names::newtonian::pressure, "P");
+    storage.soundspeed = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        1, names::newtonian::soundspeed, "c_s");
 
     // Initialize gradient fields for MUSCL reconstruction
     // These are only used when reconstruct_config.is_muscl() == true
-    storage.grad_density
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_density", "\\nabla\\rho");
-    storage.grad_pressure
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_pressure", "\\nabla P");
-    storage.grad_vx
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vx", "\\nabla v_x");
-    storage.grad_vy
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vy", "\\nabla v_y");
-    storage.grad_vz
-        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vz", "\\nabla v_z");
+    storage.grad_density = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, names::newtonian::grad_density, "\\nabla\\rho");
+    storage.grad_pressure = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, names::newtonian::grad_pressure, "\\nabla P");
+    storage.grad_vx = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, names::newtonian::grad_vx, "\\nabla v_x");
+    storage.grad_vy = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, names::newtonian::grad_vy, "\\nabla v_y");
+    storage.grad_vz = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+        1, names::newtonian::grad_vz, "\\nabla v_z");
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::vtk_do_dump(
     std::string filename, bool add_patch_world_id) {
 
-    modules::VTKDump<Tvec, Kern>(context, solver_config).do_dump(filename, add_patch_world_id);
+    modules::VTKDump<Tvec, Kern>(context, solver_config, storage)
+        .do_dump(filename, add_patch_world_id);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -194,8 +198,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
 
     // Get field indices from xyzh_ghost_layout
-    const u32 ixyz_ghost   = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
-    const u32 ihpart_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tscal>("hpart");
+    const u32 ixyz_ghost
+        = storage.xyzh_ghost_layout->template get_field_idx<Tvec>(names::common::xyz);
+    const u32 ihpart_ghost
+        = storage.xyzh_ghost_layout->template get_field_idx<Tscal>(names::common::hpart);
 
     // Set element counts
     shambase::get_check_ref(storage.part_counts).indexes
@@ -235,7 +241,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_merged_pos_trees() {
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
     // Get field index from xyzh_ghost_layout
-    const u32 ixyz_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
+    const u32 ixyz_ghost
+        = storage.xyzh_ghost_layout->template get_field_idx<Tvec>(names::common::xyz);
 
     shambase::DistributedData<RTree> trees = merged_xyzh.template map<RTree>(
         [&, ixyz_ghost](u64 id, shamrock::patch::PatchDataLayer &merged) {
@@ -504,8 +511,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
     shamrock::ReattributeDataUtility reatrib(sched);
 
     auto &pdl         = sched.pdl();
-    const u32 ixyz    = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz   = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 ixyz    = pdl.get_field_idx<Tvec>(names::common::xyz);
+    const u32 ivxyz   = pdl.get_field_idx<Tvec>(names::newtonian::vxyz);
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
 
     using SolverConfigBC           = typename Config::BCConfig;
@@ -537,7 +544,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
 
-    reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), "xyz");
+    reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), names::common::xyz);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -546,13 +553,13 @@ void shammodels::gsph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     using namespace shamrock::patch;
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 ixyz            = pdl.get_field_idx<Tvec>(names::common::xyz);
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>(names::newtonian::vxyz);
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>(names::newtonian::axyz);
 
     const bool has_uint = solver_config.has_field_uint();
-    const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
-    const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>("duint") : 0;
+    const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(names::newtonian::uint) : 0;
+    const u32 iduint    = has_uint ? pdl.get_field_idx<Tscal>(names::newtonian::duint) : 0;
 
     Tscal half_dt = dt / 2;
 
@@ -608,8 +615,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_ghost_layout() {
 
     // Initialize xyzh_ghost_layout for BasicSPHGhostHandler (position + smoothing length)
     storage.xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
-    storage.xyzh_ghost_layout->template add_field<Tvec>("xyz", 1);
-    storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
+    storage.xyzh_ghost_layout->template add_field<Tvec>(names::common::xyz, 1);
+    storage.xyzh_ghost_layout->template add_field<Tscal>(names::common::hpart, 1);
 
     // Reset first in case it was set from a previous timestep
     storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
@@ -631,28 +638,33 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     using namespace shamrock::patch;
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ixyz            = pdl.get_field_idx<Tvec>(names::common::xyz);
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>(names::newtonian::vxyz);
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(names::common::hpart);
 
     const bool has_uint = solver_config.has_field_uint();
-    const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+    const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(names::newtonian::uint) : 0;
 
     auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
-    u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>("hpart");
-    u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>("vxyz");
-    u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>("omega");
-    u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
-    u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
+    u32 ihpart_interf   = ghost_layout.get_field_idx<Tscal>(names::common::hpart);
+    u32 ivxyz_interf    = ghost_layout.get_field_idx<Tvec>(names::newtonian::vxyz);
+    u32 iomega_interf   = ghost_layout.get_field_idx<Tscal>(names::newtonian::omega);
+    u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(names::newtonian::density);
+    u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>(names::newtonian::uint) : 0;
 
     // Gradient field indices (for MUSCL reconstruction)
     const bool has_grads = solver_config.requires_gradients();
-    u32 igrad_d_interf   = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_density") : 0;
-    u32 igrad_p_interf   = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_pressure") : 0;
-    u32 igrad_vx_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vx") : 0;
-    u32 igrad_vy_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vy") : 0;
-    u32 igrad_vz_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vz") : 0;
+    u32 igrad_d_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(names::newtonian::grad_density) : 0;
+    u32 igrad_p_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(names::newtonian::grad_pressure) : 0;
+    u32 igrad_vx_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(names::newtonian::grad_vx) : 0;
+    u32 igrad_vy_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(names::newtonian::grad_vy) : 0;
+    u32 igrad_vz_interf
+        = has_grads ? ghost_layout.get_field_idx<Tvec>(names::newtonian::grad_vz) : 0;
 
     using InterfaceBuildInfos = typename gsph::GSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -829,7 +841,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
 
     // Get patchdata layout for hpart field
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(names::common::hpart);
 
     // =========================================================================
     // OUTER-LOOP SMOOTHING LENGTH ITERATION (FIX FOR CACHE CONSISTENCY BUG)
@@ -853,24 +865,26 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Position spans (from merged xyzh)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos_merged
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-            edges::physics::newtonian::pos_merged, "r");
+            edges::newtonian::pos_merged, "r");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> pos_refs = {};
 
     // Old h spans (from merged xyzh - read only during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::physics::newtonian::h_old, "h^{old}");
+            edges::newtonian::h_old, "h^{old}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
 
     // New h spans (local patchdata - written during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::physics::newtonian::h_new, "h^{new}");
+            edges::newtonian::h_new, "h^{new}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
 
     // Get field indices from xyzh_ghost_layout for merged data access
-    const u32 ixyz_ghost   = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
-    const u32 ihpart_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tscal>("hpart");
+    const u32 ixyz_ghost
+        = storage.xyzh_ghost_layout->template get_field_idx<Tvec>(names::common::xyz);
+    const u32 ihpart_ghost
+        = storage.xyzh_ghost_layout->template get_field_idx<Tscal>(names::common::hpart);
 
     // Populate field references
     scheduler().for_each_patchdata_nonempty(
@@ -937,7 +951,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Create epsilon field references
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::physics::newtonian::eps_h, "\\epsilon_h");
+            edges::newtonian::eps_h, "\\epsilon_h");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = _epsilon_h.get_field(p.id_patch);
@@ -1106,8 +1120,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     // Get ghost layout field indices
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
-    u32 idensity_interf = ghost_layout.get_field_idx<Tscal>("density");
-    u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>("uint") : 0;
+    u32 idensity_interf = ghost_layout.get_field_idx<Tscal>(names::newtonian::density);
+    u32 iuint_interf    = has_uint ? ghost_layout.get_field_idx<Tscal>(names::newtonian::uint) : 0;
 
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
@@ -1213,10 +1227,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
-    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(names::common::hpart);
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>(names::newtonian::vxyz);
     const bool has_uint       = solver_config.has_field_uint();
-    const u32 iuint           = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+    const u32 iuint           = has_uint ? pdl.get_field_idx<Tscal>(names::newtonian::uint) : 0;
 
     // Get gradient fields from storage
     shamrock::solvergraph::Field<Tvec> &grad_density_field
@@ -1385,7 +1399,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::prepare_corrector() {
     shamrock::SchedulerUtility utility(scheduler());
     shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 iaxyz = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz = pdl.get_field_idx<Tvec>(names::newtonian::axyz);
 
     // Create compute field to store old acceleration
     auto old_axyz = utility.make_compute_field<Tvec>("old_axyz", 1);
@@ -1416,7 +1430,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::prepare_corrector() {
     storage.old_axyz.set(std::move(old_axyz));
 
     if (solver_config.has_field_uint()) {
-        const u32 iduint = pdl.get_field_idx<Tscal>("duint");
+        const u32 iduint = pdl.get_field_idx<Tscal>(names::newtonian::duint);
         auto old_duint   = utility.make_compute_field<Tscal>("old_duint", 1);
 
         scheduler().for_each_patchdata_nonempty(
@@ -1461,8 +1475,8 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
     PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
-    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(names::common::hpart);
+    const u32 iaxyz           = pdl.get_field_idx<Tvec>(names::newtonian::axyz);
 
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
@@ -1560,8 +1574,8 @@ bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_a
 
     shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
 
-    const u32 ivxyz = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz = pdl.get_field_idx<Tvec>("axyz");
+    const u32 ivxyz = pdl.get_field_idx<Tvec>(names::newtonian::vxyz);
+    const u32 iaxyz = pdl.get_field_idx<Tvec>(names::newtonian::axyz);
 
     Tscal half_dt = Tscal{0.5} * dt;
 
@@ -1589,8 +1603,8 @@ bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_a
         });
 
     if (solver_config.has_field_uint()) {
-        const u32 iuint  = pdl.get_field_idx<Tscal>("uint");
-        const u32 iduint = pdl.get_field_idx<Tscal>("duint");
+        const u32 iuint  = pdl.get_field_idx<Tscal>(names::newtonian::uint);
+        const u32 iduint = pdl.get_field_idx<Tscal>(names::newtonian::duint);
 
         scheduler().for_each_patchdata_nonempty(
             [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {

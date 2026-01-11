@@ -20,6 +20,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
+#include "shammodels/gsph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
 namespace shammodels::gsph::modules {
@@ -31,13 +32,15 @@ namespace shammodels::gsph::modules {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config = SolverConfig<Tvec, SPHKernel>;
+        using Config  = SolverConfig<Tvec, SPHKernel>;
+        using Storage = SolverStorage<Tvec, u32>;
 
         ShamrockCtx &context;
         Config &solver_config;
+        Storage &storage;
 
-        VTKDump(ShamrockCtx &context, Config &solver_config)
-            : context(context), solver_config(solver_config) {}
+        VTKDump(ShamrockCtx &context, Config &solver_config, Storage &storage)
+            : context(context), solver_config(solver_config), storage(storage) {}
 
         void do_dump(std::string filename, bool add_patch_world_id);
 

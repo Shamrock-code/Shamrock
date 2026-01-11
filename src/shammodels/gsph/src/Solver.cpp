@@ -73,7 +73,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
         edges::part_counts, "N_{\\rm part}");
 
     storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
-        edges::infra::part_counts_with_ghost, "N_{\\rm part, with ghost}");
+        edges::part_counts_with_ghost, "N_{\\rm part, with ghost}");
 
     storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>(
         edges::patch_rank_owner, "rank");

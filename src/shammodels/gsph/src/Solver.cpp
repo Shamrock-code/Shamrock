@@ -84,8 +84,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.hpart_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
         edges::physics::newtonian::hpart_with_ghosts, "h");
 
-    storage.neigh_cache = std::make_shared<shammodels::sph::solvergraph::NeighCache>(
-        edges::neigh_cache, "neigh");
+    storage.neigh_cache
+        = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
 
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");

@@ -145,6 +145,12 @@ namespace shammodels::gsph {
                 fct) {
             StackEntry stack_loc{};
 
+            // Validate that builder and mod have matching sizes
+            if (builder.get_element_count() != mod.get_element_count()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "builder and mod must have the same number of elements");
+            }
+
             struct Args {
                 u64 sender;
                 u64 receiver;

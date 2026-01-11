@@ -16,7 +16,9 @@
 #include "shambase/exception.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
+#include <cmath>
 #include <functional>
+#include <limits>
 #include <vector>
 
 template<class T>
@@ -78,16 +80,18 @@ inline void for_each_patch_shift(
 
                 i32 d = dx + dy + dz;
 
-                i32 df = -int(d * shearinfo.shear_value / sz);
+                // Guard against division by zero when sz is negligible
+                i32 df = (std::abs(sz) > std::numeric_limits<T>::epsilon())
+                             ? -int(d * shearinfo.shear_value / sz)
+                             : 0;
 
                 i32_3 off_d
                     = {shearinfo.shear_dir.x() * df,
                        shearinfo.shear_dir.y() * df,
                        shearinfo.shear_dir.z() * df};
 
-                list_possible.resize(list_possible.size() + 1);
-                list_possible[list_possible.size() - 1]
-                    = i32_3{xoff + off_d.x(), yoff + off_d.y(), zoff + off_d.z()};
+                list_possible.push_back(
+                    i32_3{xoff + off_d.x(), yoff + off_d.y(), zoff + off_d.z()});
             }
         }
     }

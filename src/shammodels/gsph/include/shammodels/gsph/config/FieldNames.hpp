@@ -29,7 +29,7 @@ namespace shammodels::gsph::names {
     // Common fields - used by ALL physics modes
     // ========================================================================
     namespace common {
-        inline constexpr const char *xyz = "xyz"; ///< Position field (3D coordinates)
+        inline constexpr const char *xyz   = "xyz";   ///< Position field (3D coordinates)
         inline constexpr const char *hpart = "hpart"; ///< Smoothing length field
     } // namespace common
 
@@ -70,10 +70,10 @@ namespace shammodels::gsph::names {
 
         /// Gradient of velocity x-component \nabla v_x (for MUSCL reconstruction)
         inline constexpr const char *grad_vx = "grad_vx";
-        
+
         /// Gradient of velocity y-component \nabla v_y (for MUSCL reconstruction)
         inline constexpr const char *grad_vy = "grad_vy";
-        
+
         /// Gradient of velocity z-component \nabla v_z (for MUSCL reconstruction)
         inline constexpr const char *grad_vz = "grad_vz";
     } // namespace newtonian

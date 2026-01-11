@@ -21,7 +21,6 @@ class ShamEnvExtension(Extension):
 
 
 class ShamEnvBuild(build_ext):
-
     def is_editable_mode(self) -> bool:
         # Detect editable mode
         editable_mode = False
@@ -36,7 +35,6 @@ class ShamEnvBuild(build_ext):
         return editable_mode
 
     def get_extdir(self, ext: ShamEnvExtension):
-
         # Must be in this form due to bug in .resolve() only fixed in Python 3.10+
         ext_fullpath = Path.cwd() / self.get_ext_fullpath(ext.name)  # type: ignore[no-untyped-call]
         extdir = ext_fullpath.parent.resolve()
@@ -47,7 +45,6 @@ class ShamEnvBuild(build_ext):
         return extdir.parent.resolve()
 
     def build_extension(self, ext: ShamEnvExtension) -> None:
-
         if self.is_editable_mode():
             raise Exception(
                 "Editable mode not supported for this config:\n"

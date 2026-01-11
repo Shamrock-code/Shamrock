@@ -349,20 +349,3 @@ jobs:
         run: |
           . venv/bin/activate
           pip uninstall -y shamrock
-
-      - name: Try pip install editable Shamrock
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
-        run: |
-          . venv/bin/activate
-          cd build
-          pip install --verbose -e .
-
-      - name: Try shamrock startup (pip install)
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
-        run: |
-          . venv/bin/activate
-          ACPP_VISIBILITY_MASK=omp \
-          ACPP_DEBUG_LEVEL=3 \
-          python3 /tmp/test_rscript.py

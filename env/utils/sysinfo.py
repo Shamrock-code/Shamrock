@@ -70,7 +70,6 @@ def should_limit_comp_cores():
 
 
 def select_generator(args, buildtype):
-
     limit_cores, cores = should_limit_comp_cores()
 
     gen = "make"

@@ -79,14 +79,6 @@ repos:
     types_or: [c++, c, cuda]
     log_file: log_precommit_clang-format
 
-
-- repo: https://github.com/psf/black-pre-commit-mirror
-  rev: 25.12.0
-  hooks:
-  - id: black
-    args: [--line-length=100]
-    log_file: log_precommit_black
-
 - repo: https://github.com/astral-sh/ruff-pre-commit
   rev: v0.14.10
   hooks:
@@ -95,7 +87,12 @@ repos:
         - --extend-select=BLE,I,NPY,PLE
         - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
         - --fix
-      log_file: log_precommit_ruff
+      log_file: log_precommit_ruff_check
+
+    - id: ruff-format
+      args:
+        - --line-length=100
+      log_file: log_precommit_ruff_format
 
 #- repo: https://github.com/johnor/pre-commit-lizard
 #  rev: 'v1.17.10'

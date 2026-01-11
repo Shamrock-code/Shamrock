@@ -34,9 +34,8 @@ def is_not_in_blacklist(a):
 def apply_mailmap(authors):
     ret = []
     for a in authors:
-
         try:
-            cmd = f'git check-mailmap "{a['author']} <{a['email']}>"'
+            cmd = f'git check-mailmap "{a["author"]} <{a["email"]}>"'
             output = subprocess.check_output(cmd, shell=True).decode()
 
             match = re.search(r"(.*) <(.*)>", output)
@@ -160,7 +159,6 @@ def print_diff(before, after, beforename, aftername):
 
 
 def autocorect(source, filename, path):
-
     l_start = 0
     l_end = 0
     i = 0
@@ -202,11 +200,9 @@ def autocorect(source, filename, path):
 
 
 def run_autocorect():
-
     errors = []
 
     for fname in file_list:
-
         if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
             continue
 

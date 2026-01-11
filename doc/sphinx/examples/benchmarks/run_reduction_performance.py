@@ -48,7 +48,6 @@ def benchmark_f64(N, nb_repeat=10):
 # %%
 # Run the performance test for all parameters
 def run_performance_sweep():
-
     # Define parameter ranges
     # logspace as array
     particle_counts = np.logspace(2, 7, 20).astype(int).tolist()

@@ -76,7 +76,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
         edges::infra::part_counts_with_ghost, "N_{\\rm part, with ghost}");
 
     storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>(
-        edges::infra::patch_rank_owner, "rank");
+        edges::patch_rank_owner, "rank");
 
     // Merged ghost spans
     storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(

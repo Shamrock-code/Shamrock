@@ -84,33 +84,6 @@ namespace shammodels::gsph::names {
 
     } // namespace newtonian
 
-    // ========================================================================
-    // Special Relativity physics fields (for future SR implementation)
-    // ========================================================================
-    namespace sr {
-
-        /// 4-velocity spatial components u^i
-        inline constexpr const char *ux = "ux";
-
-        /// Lorentz factor γ = u^0
-        inline constexpr const char *lorentz = "lorentz";
-
-        /// Rest frame density ρ_0
-        inline constexpr const char *rho_rest = "rho_rest";
-
-        /// Lab frame density ρ = γρ_0
-        inline constexpr const char *rho_lab = "rho_lab";
-
-        /// Specific enthalpy h = 1 + ε + P/ρ
-        inline constexpr const char *enthalpy = "enthalpy";
-
-        /// Specific internal energy ε
-        inline constexpr const char *eps = "eps";
-
-        /// Time derivative of specific internal energy dε/dt
-        inline constexpr const char *deps = "deps";
-
-    } // namespace sr
 
 } // namespace shammodels::gsph::names
 

@@ -79,7 +79,7 @@ namespace shammodels::gsph::names {
         /// Gradient of velocity y-component ∇v_y (for MUSCL reconstruction)
         inline constexpr const char *grad_vy = "grad_vy";
 
-        /// Gradient of velocity z-component ∇v_z (for MUSCL reconstruction)
+        /// Gradient of velocity z-component \nabla v_z (for MUSCL reconstruction)
         inline constexpr const char *grad_vz = "grad_vz";
 
     } // namespace newtonian

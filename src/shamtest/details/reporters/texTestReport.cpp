@@ -24,6 +24,8 @@
 #include <string>
 #include <vector>
 
+// start allow utf-8
+
 /// Tex report template to be used
 std::string tex_template = R"==(
 
@@ -86,6 +88,7 @@ hyperfigures=false]
 
 
 )==";
+// end allow utf-8
 
 /// Footer of the document
 std::string tex_template_end = R"(

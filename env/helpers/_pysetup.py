@@ -76,6 +76,8 @@ class ShamEnvBuild(build_ext):
         subprocess.run(["bash", "-c", cmd], check=True)
 
 
+# start allow utf-8
+
 # The information here can also be placed in setup.cfg - better separation of
 # logic and declaration, and simpler if you include description/version in a file.
 setup(
@@ -92,3 +94,5 @@ setup(
     extras_require={},
     python_requires=">=3.7",
 )
+
+# end allow utf-8

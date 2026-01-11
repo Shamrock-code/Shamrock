@@ -116,7 +116,7 @@ min_hpart = np.min(dat["hpart"])
 max_hpart = np.max(dat["hpart"])
 mean_hpart = np.mean(dat["hpart"])
 
-print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart-min_hpart}")
+print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart - min_hpart}")
 
 assert np.abs(max_hpart - min_hpart) < 1e-15, "hpart delta is too large"
 

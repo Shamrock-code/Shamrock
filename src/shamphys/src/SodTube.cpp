@@ -50,7 +50,7 @@ f64 shamphys::SodTube::solve_P_4() {
         return shammath::derivative_upwind<f64>(P_4, 1e-6, shock_tube_function);
     };
 
-    return shammath::newtown_rhaphson<f64>(shock_tube_function, df, 1e-6, P_1);
+    return shammath::newton_rhaphson<f64>(shock_tube_function, df, 1e-6, P_1);
 }
 
 auto shamphys::SodTube::get_value(f64 t, f64 x) -> field_val {

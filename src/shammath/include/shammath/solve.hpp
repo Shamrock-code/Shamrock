@@ -22,9 +22,9 @@
 namespace shammath {
 
     template<class T>
-    float newtown_rhaphson(std::function<T(T)> &&f, std::function<T(T)> &&df, T epsilon_c, T x_0) {
+    float newton_rhaphson(std::function<T(T)> &&f, std::function<T(T)> &&df, T epsilon_c, T x_0) {
 
-        auto iterate_newtown = [](T f, T df, T xk) -> T {
+        auto iterate_newton = [](T f, T df, T xk) -> T {
             return xk - (f / df);
         };
 
@@ -32,7 +32,7 @@ namespace shammath {
         T epsilon = 100000;
 
         while (epsilon > epsilon_c) {
-            T xkp1 = iterate_newtown(f(xk), df(xk), xk);
+            T xkp1 = iterate_newton(f(xk), df(xk), xk);
 
             epsilon = std::fabs(xk - xkp1);
 

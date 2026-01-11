@@ -121,7 +121,6 @@ def ghost_intersect(part, box_to_intersect):
 
 
 def plot_paving_function(pav_func, pav_func_name):
-
     box_to_intersect = shamrock.math.AABB_f64_3((0.0, 0.0, 0.0), (box_size_x, box_size_y, 0.0))
 
     def get_indices():
@@ -134,7 +133,6 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.figure()
 
     for i, j in get_indices():
-
         box_to_intersect_inv_mapped = pav_func.f_aabb_inv(box_to_intersect, i, j, 0)
 
         add_rect_aabb(box_to_intersect_inv_mapped)
@@ -151,7 +149,6 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.figure()
 
     for i, j in get_indices():
-
         box_to_intersect_inv_mapped = pav_func.f_aabb_inv(box_to_intersect, i, j, 0)
 
         add_rect_aabb(box_to_intersect_inv_mapped)
@@ -169,7 +166,6 @@ def plot_paving_function(pav_func, pav_func_name):
     plt.figure()
 
     for i, j in get_indices():
-
         box_to_intersect_inv_mapped = pav_func.f_aabb_inv(box_to_intersect, i, j, 0)
         box_to_intersect_mapped = pav_func.f_aabb(box_to_intersect, i, j, 0)
 
@@ -263,7 +259,6 @@ plot_paving_function(
 
 
 def test_paving_index_intersecting(pav_func, pav_func_name):
-
     radius_int = 3.5
     box_to_intersect = shamrock.math.AABB_f64_3(
         (box_size_x / 2 - radius_int, box_size_y / 2 - radius_int, box_size_z / 2 - radius_int),
@@ -284,7 +279,6 @@ def test_paving_index_intersecting(pav_func, pav_func_name):
     plt.figure()
 
     for i, j in get_indices():
-
         domain_mapped = pav_func.f_aabb(domain, i, j, 0)
 
         if [i, j, 0] in indices:

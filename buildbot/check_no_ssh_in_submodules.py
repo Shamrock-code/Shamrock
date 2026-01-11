@@ -10,7 +10,6 @@ check_line = R"""No ssh in git submodules remote"""
 
 
 def check_no_ssh_in_submodules():
-
     offenses = []
 
     with open(os.path.join(abs_proj_dir, ".gitmodules")) as file:

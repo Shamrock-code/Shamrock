@@ -333,7 +333,6 @@ def kernel_to_shamrock(kernel_gen):
 
 
 def test_kernel(ret, tolerance=1e-12):
-
     R = ret["R"]
     name = ret["name"]
     norm_1d = ret["norm_1d"]

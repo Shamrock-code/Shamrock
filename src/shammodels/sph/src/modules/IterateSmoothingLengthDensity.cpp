@@ -98,7 +98,7 @@ void IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_evaluate_internal() {
                 using namespace shamrock::sph;
 
                 Tscal rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                Tscal new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                Tscal new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                 if (new_h < h_a * h_max_evol_m)
                     new_h = h_max_evol_m * h_a;

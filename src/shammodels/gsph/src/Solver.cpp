@@ -70,7 +70,7 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     storage.part_counts = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
-        edges::infra::part_counts, "N_{\\rm part}");
+        edges::part_counts, "N_{\\rm part}");
 
     storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
         edges::infra::part_counts_with_ghost, "N_{\\rm part, with ghost}");

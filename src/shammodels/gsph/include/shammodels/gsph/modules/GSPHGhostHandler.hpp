@@ -18,7 +18,6 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -185,12 +184,17 @@ namespace shammodels::gsph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>(fields::newtonian::xyz);
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>(fields::newtonian::hpart);
+            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+
+            // Get field indices from xyzh_ghost_layout for accessing ghost data
+            const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");
+            const u32 ihpart_ghost = xyzh_ghost_layout->template get_field_idx<flt>("hpart");
 
             return build_interface_native<shamrock::patch::PatchDataLayer>(
                 builder,
-                [&](u64 sender,
+                [&, ixyz_ghost, ihpart_ghost](
+                    u64 sender,
                     u64 /*receiver*/,
                     InterfaceBuildInfos binfo,
                     sham::DeviceBuffer<u32> &buf_idx,
@@ -202,11 +206,11 @@ namespace shammodels::gsph {
                     shamrock::patch::PatchDataLayer ret(xyzh_ghost_layout);
 
                     sender_pdat.get_field<vec>(ixyz).append_subset_to(
-                        buf_idx, cnt, ret.get_field<vec>(0));
+                        buf_idx, cnt, ret.get_field<vec>(ixyz_ghost));
                     sender_pdat.get_field<flt>(ihpart).append_subset_to(
-                        buf_idx, cnt, ret.get_field<flt>(1));
+                        buf_idx, cnt, ret.get_field<flt>(ihpart_ghost));
 
-                    ret.get_field<vec>(0).apply_offset(binfo.offset);
+                    ret.get_field<vec>(ixyz_ghost).apply_offset(binfo.offset);
 
                     return ret;
                 });
@@ -296,8 +300,12 @@ namespace shammodels::gsph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>(fields::newtonian::xyz);
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>(fields::newtonian::hpart);
+            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
+            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+
+            // Get field indices from xyzh_ghost_layout for accessing ghost data
+            const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");
+            const u32 ihpart_ghost = xyzh_ghost_layout->template get_field_idx<flt>("hpart");
 
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
@@ -308,8 +316,8 @@ namespace shammodels::gsph {
 
                     shamrock::patch::PatchDataLayer ret(xyzh_ghost_layout);
 
-                    ret.get_field<vec>(0).insert(pos);
-                    ret.get_field<flt>(1).insert(hpart);
+                    ret.get_field<vec>(ixyz_ghost).insert(pos);
+                    ret.get_field<flt>(ihpart_ghost).insert(hpart);
                     ret.check_field_obj_cnt_match();
 
                     return ret;

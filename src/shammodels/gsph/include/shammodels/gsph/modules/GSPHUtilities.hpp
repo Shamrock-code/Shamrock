@@ -18,7 +18,6 @@
  * the centralized field name constants from FieldNames.hpp.
  */
 
-#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -64,7 +63,7 @@ namespace shammodels::gsph {
 
             using namespace shamrock::patch;
 
-            const u32 ihpart = sched.pdl().template get_field_idx<Tscal>(fields::newtonian::hpart);
+            const u32 ihpart = sched.pdl().template get_field_idx<Tscal>("hpart");
 
             PatchField<Tscal> interactR_patch = sched.map_owned_to_patch_field_simple<Tscal>(
                 [&](const Patch p, PatchDataLayer &pdat) -> Tscal {

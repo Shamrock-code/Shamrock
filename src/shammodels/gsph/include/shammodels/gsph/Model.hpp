@@ -35,7 +35,6 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Solver.hpp"
-#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -154,8 +153,8 @@ namespace shammodels::gsph {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-                    PatchDataField<Tvec> &xyz = pdat.template get_field<Tvec>(
-                        sched.pdl().get_field_idx<Tvec>(fields::newtonian::xyz));
+                    PatchDataField<Tvec> &xyz
+                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
@@ -210,8 +209,8 @@ namespace shammodels::gsph {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-                    PatchDataField<Tvec> &xyz = pdat.template get_field<Tvec>(
-                        sched.pdl().get_field_idx<Tvec>(fields::newtonian::xyz));
+                    PatchDataField<Tvec> &xyz
+                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
@@ -268,8 +267,8 @@ namespace shammodels::gsph {
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-                    PatchDataField<Tvec> &xyz = pdat.template get_field<Tvec>(
-                        sched.pdl().get_field_idx<Tvec>(fields::newtonian::xyz));
+                    PatchDataField<Tvec> &xyz
+                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
                         = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));

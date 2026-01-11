@@ -12,68 +12,77 @@
 /**
  * @file FieldNames.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
- * @brief Constants for physics field names in GSPH solver
+ * @brief Constants for solvergraph edge names in GSPH solver
  *
- * This file defines string constants for all physics field names used in the GSPH solver.
- * Newtonian physics uses standard names for consistency with other SPH methods.
- * SR physics will use frame-specific names (e.g., uint_rest, uint_lab).
+ * This file defines string constants for solvergraph edge names used in the GSPH solver.
+ * Physics field names (xyz, vxyz, hpart, etc.) use standard strings directly,
+ * matching the convention used by other SPH methods.
  */
 
-namespace shammodels::gsph::fields {
+namespace shammodels::gsph::edges {
 
     /**
-     * @brief Newtonian physics field names
+     * @brief Infrastructure solvergraph edges
      *
-     * Standard field names for Newtonian (non-relativistic) physics.
-     * These match the naming convention used by other SPH methods.
+     * These edges handle computational infrastructure: particle counting,
+     * MPI distribution, neighbor finding, etc. They are physics-independent.
      */
-    namespace newtonian {
+    namespace infra {
 
-        /// Position field name
-        inline constexpr const char *xyz = "xyz";
+        /// Particle counts per patch
+        inline constexpr const char *part_counts = "part_counts";
 
-        /// Velocity field name
-        inline constexpr const char *vxyz = "vxyz";
+        /// Particle counts including ghosts
+        inline constexpr const char *part_counts_with_ghost = "part_counts_with_ghost";
 
-        /// Acceleration field name
-        inline constexpr const char *axyz = "axyz";
+        /// Patch rank ownership
+        inline constexpr const char *patch_rank_owner = "patch_rank_owner";
 
-        /// Smoothing length field name
-        inline constexpr const char *hpart = "hpart";
+        /// Neighbor cache
+        inline constexpr const char *neigh_cache = "neigh_cache";
 
-        /// Internal energy field name
-        inline constexpr const char *uint = "uint";
+        /// Temporary sizes for h-iteration
+        inline constexpr const char *sizes = "sizes";
 
-        /// Internal energy time derivative field name
-        inline constexpr const char *duint = "duint";
+    } // namespace infra
 
-        /// Omega (grad-h correction) field name
-        inline constexpr const char *omega = "omega";
+    /**
+     * @brief Physics solvergraph edges
+     *
+     * These edges reference physics fields. Each physics mode (Newtonian, SR)
+     * has its own sub-namespace with appropriate field references.
+     */
+    namespace physics {
 
-        /// Density field name
-        inline constexpr const char *density = "density";
+        /**
+         * @brief Newtonian physics solvergraph edges
+         *
+         * These edges reference Newtonian physics fields (xyz, hpart, etc.).
+         */
+        namespace newtonian {
 
-        /// Pressure field name (derived field)
-        inline constexpr const char *pressure = "pressure";
+            /// Position references with ghosts
+            inline constexpr const char *positions_with_ghosts = "part_pos";
 
-        /// Sound speed field name (derived field)
-        inline constexpr const char *soundspeed = "soundspeed";
+            /// Smoothing length references with ghosts
+            inline constexpr const char *hpart_with_ghosts = "h_part";
 
-        /// Density gradient field name
-        inline constexpr const char *grad_density = "grad_density";
+            /// Position merged references (for h-iteration)
+            inline constexpr const char *pos_merged = "pos";
 
-        /// Pressure gradient field name
-        inline constexpr const char *grad_pressure = "grad_pressure";
+            /// Old smoothing length references (for h-iteration)
+            inline constexpr const char *h_old = "h_old";
 
-        /// Velocity x-component gradient field name
-        inline constexpr const char *grad_vx = "grad_vx";
+            /// New smoothing length references (for h-iteration)
+            inline constexpr const char *h_new = "h_new";
 
-        /// Velocity y-component gradient field name
-        inline constexpr const char *grad_vy = "grad_vy";
+            /// Epsilon h references (for h-iteration convergence)
+            inline constexpr const char *eps_h = "eps_h";
 
-        /// Velocity z-component gradient field name
-        inline constexpr const char *grad_vz = "grad_vz";
+        } // namespace newtonian
 
-    } // namespace newtonian
+        // Future: namespace sr { /* SR physics edges */ }
 
-} // namespace shammodels::gsph::fields
+    } // namespace physics
+
+} // namespace shammodels::gsph::edges

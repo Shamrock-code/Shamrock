@@ -109,10 +109,6 @@ namespace shammodels::gsph::edges {
         inline constexpr const char *sizes = "sizes";
 
 
-    /**
-     * @brief Newtonian physics solvergraph edges
-     */
-    namespace newtonian {
 
         /// Position references with ghosts
         inline constexpr const char *positions_with_ghosts = "part_pos";

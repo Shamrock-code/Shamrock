@@ -29,13 +29,8 @@ namespace shammodels::gsph::names {
     // Common fields - used by ALL physics modes
     // ========================================================================
     namespace common {
-
-        /// Position field (3D coordinates)
-        inline constexpr const char *xyz = "xyz";
-
-        /// Smoothing length field
-        inline constexpr const char *hpart = "hpart";
-
+        inline constexpr const char *xyz = "xyz"; ///< Position field (3D coordinates)
+        inline constexpr const char *hpart = "hpart"; ///< Smoothing length field
     } // namespace common
 
     // ========================================================================

@@ -937,7 +937,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Create epsilon field references
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::physics::newtonian::eps_h, "\\epsilon_h");
+            edges::newtonian::eps_h, "\\epsilon_h");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = _epsilon_h.get_field(p.id_patch);

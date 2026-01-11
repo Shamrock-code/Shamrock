@@ -99,8 +99,8 @@ void wrapper_bench_key_sort(std::string name) {
     logger::info_ln("ShamrockTest", "testing :", name);
 
     std::vector<f64> test_sz;
-    for (f64 i = 16; i < lim_bench; i *= 2) {
-        test_sz.push_back(i);
+    for (u32 i = 16; i < lim_bench; i *= 2) {
+        test_sz.push_back(f64(i));
     }
 
     auto &res = shamtest::test_data().new_dataset(name);

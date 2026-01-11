@@ -41,7 +41,6 @@ then after the run is done (or while it is running), one can run the following t
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # The runscript is the actual simulation with on the fly analysis & rolling dumps
 
-
 import glob
 import json
 import os  # for makedirs
@@ -375,7 +374,6 @@ def save_analysis_data(filename, key, value, ianalysis):
 
 
 def analysis(ianalysis):
-
     ext = rout * 1.5
     nx = 1024
     ny = 1024
@@ -435,7 +433,6 @@ idump = 0
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     if ttarg >= t_start:
         model.evolve_until(ttarg)
 
@@ -474,7 +471,6 @@ import matplotlib.pyplot as plt
 
 
 def plot_rho_integ(metadata, arr_rho, iplot):
-
     ext = metadata["extent"]
 
     dpi = 200
@@ -536,9 +532,7 @@ import matplotlib.animation as animation
 
 
 def show_image_sequence(glob_str, render_gif):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))

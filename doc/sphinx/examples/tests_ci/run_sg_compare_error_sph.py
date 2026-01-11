@@ -184,7 +184,6 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
 
 # Compare the SG method to the reference and the one without SG and return error metrics
 def compare_sg_methods(setup_func, setup_name, tols):
-
     def sg_case_none(cfg):
         cfg.set_self_gravity_none()
 
@@ -344,7 +343,6 @@ def compare_sg_methods(setup_func, setup_name, tols):
 
 # Plot the 3D delta of the SG method
 def plot3d_delta_sg(delta_sg_norm, xyz, case_name, method_name):
-
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     dat = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=delta_sg_norm, s=1, cmap="viridis")
@@ -363,7 +361,6 @@ def plot3d_delta_sg(delta_sg_norm, xyz, case_name, method_name):
 
 
 def setup_cube_hcp(model, cfg):
-
     si = shamrock.UnitSystem()
     sicte = shamrock.Constants(si)
     codeu = shamrock.UnitSystem(

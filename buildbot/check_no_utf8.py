@@ -42,7 +42,6 @@ def main(files):
 
         allow_utf8 = False
         for lineno, line in enumerate(data.splitlines(), 1):
-
             if "@author" in line.decode("utf-8"):
                 continue
             if "Copyright" in line.decode("utf-8"):

@@ -23,7 +23,6 @@ def compute_integ_3d(q, W):
 
 
 def plot_test_sph_kernel(q, f, df, W, dW, title, ax):
-
     integral_result = compute_integ_3d(q, W)
     assert np.abs(integral_result - 1) < 1e-6, (
         "3D integration of 4\pi q^2 W(q) is not 1, kernel: " + title

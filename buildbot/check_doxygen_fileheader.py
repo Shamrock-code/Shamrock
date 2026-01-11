@@ -13,7 +13,6 @@ missing_doxygenfilehead = []
 
 
 def has_header(filedata, filename):
-
     has_file_tag = ("@file " + filename) in filedata
     has_author_tag = ("@author ") in filedata
 
@@ -21,7 +20,6 @@ def has_header(filedata, filename):
 
 
 for fname in file_list:
-
     if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
         continue
 
@@ -47,7 +45,6 @@ import re
 
 
 def autocorect(source, filename):
-
     do_replace = not (("@file " + filename) in source) and (" * @file " in source)
 
     source = re.sub(r" \* @file (.+)\n", r" * @file " + filename + "\n", source)
@@ -56,9 +53,7 @@ def autocorect(source, filename):
 
 
 def run_autocorect():
-
     for fname in file_list:
-
         if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
             continue
 

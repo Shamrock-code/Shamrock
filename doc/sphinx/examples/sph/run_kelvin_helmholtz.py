@@ -168,7 +168,6 @@ import matplotlib.pyplot as plt
 
 
 def plot_state(iplot):
-
     pixel_x = 1080
     pixel_y = 1080
     radius = 0.5
@@ -281,9 +280,7 @@ import matplotlib.animation as animation
 
 
 def show_image_sequence(glob_str):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))

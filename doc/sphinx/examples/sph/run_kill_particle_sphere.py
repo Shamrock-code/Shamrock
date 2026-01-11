@@ -109,7 +109,6 @@ import numpy as np
 
 
 def plot_state(iplot):
-
     pos = ctx.collect_data()["xyz"]
 
     if shamrock.sys.world_rank() == 0:
@@ -145,7 +144,6 @@ ax = fig.add_subplot(111, projection="3d")
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     model.evolve_until(ttarg)
 
     # if do_plots:
@@ -163,9 +161,7 @@ import matplotlib.animation as animation
 
 
 def show_image_sequence(glob_str):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))

@@ -120,7 +120,7 @@ model.set_particle_mass(pmass)
 tot_u = pmass * model.get_sum("uint", "f64")
 # print("total u :",tot_u)
 
-print(f"v_shear = {shear_speed} | dv = {MM-mm}")
+print(f"v_shear = {shear_speed} | dv = {MM - mm}")
 
 
 model.set_cfl_cour(0.3)
@@ -163,7 +163,6 @@ model.timestep()
 
 dt_stop = 0.02
 for i in range(20):
-
     t_target = i * dt_stop
     # skip if the model is already past the target
     if model.get_time() > t_target:
@@ -182,9 +181,7 @@ import matplotlib.animation as animation
 
 
 def show_image_sequence(glob_str):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))

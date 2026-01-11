@@ -63,7 +63,6 @@ def benchmark_dtt(N, theta_crit, compression_level, ordered_result, nb_repeat=10
 # %%
 # Run the performance test for all parameters
 def run_performance_sweep(compression_level, threshold_run, ordered_result):
-
     # Define parameter ranges
     # logspace as array
     particle_counts = np.logspace(2, 7, 10).astype(int).tolist()
@@ -167,7 +166,7 @@ def create_checkerboard_plot(
     # Set ticks and labels
     ax.set_xticks(range(len(particle_counts)))
     ax.set_yticks(range(len(theta_crits)))
-    ax.set_xticklabels([f"{N//1000}k" if N >= 1000 else str(N) for N in particle_counts])
+    ax.set_xticklabels([f"{N // 1000}k" if N >= 1000 else str(N) for N in particle_counts])
     ax.set_yticklabels([f"{theta:.1f}" for theta in theta_crits])
 
     # Add labels
@@ -289,7 +288,6 @@ largest_refalg_value = np.nanmax(results[ref_key]["results_min"])
 i = 0
 # iterate over the results
 for k, v in results.items():
-
     # Get the results for this algorithm
     particle_counts = v["particle_counts"]
     theta_crits = v["theta_crits"]

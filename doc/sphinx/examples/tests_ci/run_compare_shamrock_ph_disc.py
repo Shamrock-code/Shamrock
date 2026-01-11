@@ -179,7 +179,6 @@ def run_phantom_disc():
 
 
 def run_shamrock_disc():
-
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
     model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
@@ -261,7 +260,6 @@ def positions_to_rays(positions):
 
 
 def compute_avg_sigma_profile(model, ntheta, r):
-
     theta = np.linspace(0, 2 * np.pi, ntheta)
 
     r_grid, theta_grid = np.meshgrid(r, theta)
@@ -306,7 +304,6 @@ def get_profiles(model):
 
 
 def plot_profile(ph_dump, suffix_label):
-
     dump = shamrock.load_phantom_dump(ph_dump)
 
     dump.print_state()

@@ -34,7 +34,7 @@
     X1(candela, cd)                                                                                \
     /*derived units*/                                                                              \
     X1(Hertz, Hz)    /* hertz : frequency (s-1) */                                                 \
-    X1(Newtown, N)   /* (kg.m.s-2)*/                                                               \
+    X1(Newton, N)    /* (kg.m.s-2)*/                                                               \
     X1(Pascal, Pa)   /* (kg.m-1.s-2) = (N/m2)*/                                                    \
     X1(Joule, J)     /* (kg.m2.s-2) = (N.m = Pa.m3)*/                                              \
     X1(Watt, W)      /* (kg.m2.s-3) = (J/s)*/                                                      \

@@ -89,7 +89,9 @@ def write_file(fname, source):
 
 def make_check_pr_report():
     rep = ""
+    # start allow utf-8
     rep += "## ❌ Check license headers"
+    # end allow utf-8
     rep += """
 
 The pre-commit checks have found some missing or ill formed license header.

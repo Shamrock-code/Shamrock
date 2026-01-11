@@ -30,7 +30,7 @@ namespace shamrock::sph {
     }
 
     template<class flt, i32 dim = 3>
-    inline flt newtown_iterate_new_h(flt rho_ha, flt rho_sum, flt sumdWdh, flt h_a) {
+    inline flt newton_iterate_new_h(flt rho_ha, flt rho_sum, flt sumdWdh, flt h_a) {
         flt f_iter  = rho_sum - rho_ha;
         flt df_iter = sumdWdh + dim * rho_ha / h_a;
 

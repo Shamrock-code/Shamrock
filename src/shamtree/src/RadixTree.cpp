@@ -333,6 +333,7 @@ void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> &buf_field) {
     sycl::host_accessor rchild_flag{*tree_struct.buf_rchild_flag};
     sycl::host_accessor lchild_flag{*tree_struct.buf_lchild_flag};
 
+    // start allow utf-8
     auto printer = [&]() {
         auto get_print_step
             = [&](u32 gid, std::string prefix, bool is_left, auto &step_ref) -> std::string {
@@ -365,6 +366,7 @@ void RadixTree<u_morton, vec3>::print_tree_field(sycl::buffer<T> &buf_field) {
 
         logger::raw_ln(get_print_step(0, "", false, get_print_step));
     };
+    // end allow utf-8
 
     printer();
 }

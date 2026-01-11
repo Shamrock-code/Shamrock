@@ -211,7 +211,7 @@ def make_plot(model, iplot):
 
     ax.bar(bin_centers, normalized_counts, width=bin_edges[1] - bin_edges[0], align="center")
     ax.set_xlabel("distances / hmean")
-    ax.set_ylabel("counts / (r² * number of particles)")
+    ax.set_ylabel("counts / (r^2 * number of particles)")
     ax.set_xlim(0, 3)
     ax.set_ylim(0, 1.5)
 

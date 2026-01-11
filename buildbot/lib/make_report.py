@@ -2,6 +2,7 @@ import json
 import math
 from enum import Enum
 
+# start allow utf-8
 Tex_template = r"""
 
 \documentclass{article}
@@ -13,8 +14,8 @@ Tex_template = r"""
 \usepackage{fancyhdr} % entêtes et pieds de pages personnalisés
 
 \pagestyle{fancy}
-\fancyhead[L]{\scriptsize \textsc{Test suite report}} % À changer
-\fancyhead[R]{\scriptsize \textsc{\textsc{SHAMROCK}}} % À changer
+\fancyhead[L]{\scriptsize \textsc{Test suite report}}
+\fancyhead[R]{\scriptsize \textsc{\textsc{SHAMROCK}}}
 \fancyfoot[C]{ \thepage}
 
 
@@ -68,6 +69,7 @@ hyperfigures=false]
 %%content%%
 \end{document}
 """
+# end allow utf-8
 
 
 class ReportFormat(Enum):

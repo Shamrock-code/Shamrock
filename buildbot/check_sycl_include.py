@@ -72,8 +72,9 @@ for fname in file_list:
 
 def make_check_pr_report():
     rep = ""
-
+    # start allow utf-8
     rep += "## ❌ Check SYCL `#include`"
+    # end allow utf-8
     rep += """
 
 The pre-commit checks have found some #include of non-standard SYCL headers

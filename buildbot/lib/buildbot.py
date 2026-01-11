@@ -4,6 +4,7 @@ import subprocess
 from enum import Enum
 from pathlib import Path
 
+# start allow utf-8
 title_wide = """
   █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████
  ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░
@@ -29,7 +30,7 @@ title_small = """
 ╚═╗╠═╣╠═╣║║║╠╦╝║ ║║  ╠╩╗
 ╚═╝╩ ╩╩ ╩╩ ╩╩╚═╚═╝╚═╝╩ ╩
 """
-
+# end allow utf-8
 
 abs_proj_dir = os.path.abspath(os.path.join(__file__, "../../.."))
 abs_src_dir = os.path.join(abs_proj_dir, "src")

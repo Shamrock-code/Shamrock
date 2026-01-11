@@ -96,7 +96,9 @@ def write_file(fname, source):
 
 def make_check_pr_report():
     rep = ""
+    # start allow utf-8
     rep += "## ❌ Check doxygen headers"
+    # end allow utf-8
     rep += """
 
 The pre-commit checks have found some files without or with a wrong doxygen file header

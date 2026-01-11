@@ -55,7 +55,7 @@ inline void write_back_merge_patches(
         if (merge_pdat.at(id_patch).or_element_cnt == 0)
             std::cout << " empty => skipping" << std::endl;
 
-        shamlog_debug_sycl_ln("Merged Patch", "patch : n°", id_patch, "-> write back merge buf");
+        shamlog_debug_sycl_ln("Merged Patch", "patch : n", id_patch, "-> write back merge buf");
 
         merge_pdat.at(id_patch).write_back(pdat);
     });
@@ -118,7 +118,7 @@ inline void make_merge_patches(
         f32_3 min_box = std::get<0>(tmp_box);
         f32_3 max_box = std::get<1>(tmp_box);
 
-        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge buf");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n",id_patch , "-> making merge buf");
 
         u32 len_main = pdat_buf.element_count;
 
@@ -250,7 +250,7 @@ inline void make_merge_patches(
             shamsys::instance::get_compute_queue(),
             [&](u64 patch_id, u64 interf_patch_id, PatchDataBuffer & interfpdat, std::tuple<f32_3,f32_3> box){
 
-                //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
+                //std::cout <<  "patch : n"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
 
                 min_box = sycl::min(std::get<0>(box),min_box);
                 max_box = sycl::max(std::get<1>(box),max_box);
@@ -303,7 +303,7 @@ inline void write_back_merge_patches(
         if(merge_pdat_buf.at(id_patch).or_element_cnt == 0) std::cout << " empty => skipping" << std::endl;
 
 
-        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> write back merge buf");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n",id_patch , "-> write back merge buf");
 
     #define X(arg)                                                                                 \
         for (u32 idx = 0; idx < pdat_buf.pdl.fields_##arg.size(); idx++) {                         \
@@ -343,7 +343,7 @@ inline void make_merge_patches_comp_field(
 
         auto compfield_buf = comp_field.get_sub_buf(id_patch);
 
-        shamlog_debug_sycl_ln("Merged Patch","patch : n°",id_patch , "-> making merge comp field");
+        shamlog_debug_sycl_ln("Merged Patch","patch : n",id_patch , "-> making merge comp field");
 
         u32 len_main = compfield_buf->size();// TODO remove ref to size
         merge_pdat_comp_field[id_patch].or_element_cnt = len_main;
@@ -379,7 +379,7 @@ inline void make_merge_patches_comp_field(
 
             if(pdat_ptr->size() > 0){
 
-                //std::cout <<  "patch : n°"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
+                //std::cout <<  "patch : n"<< id_patch << " -> interface : "<<interf_patch_id << " merging" << std::endl;
                 auto tmp_buf = pdat_ptr->get_sub_buf();
 
                 u32 len_int =  pdat_ptr->size();

@@ -1080,8 +1080,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     using namespace shamrock::patch;
 
     // GSPH EOS: Following reference implementation (g_pre_interaction.cpp)
-    // P = (γ - 1) * ρ * u  where ρ is from SPH summation
-    // c = sqrt(γ * (γ - 1) * u)  -- from internal energy, not from P/ρ
+    // P = (\gamma - 1) * \rho * u  where \rho is from SPH summation
+    // c = sqrt(\gamma * (\gamma - 1) * u)  -- from internal energy, not from P/\rho
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
@@ -1138,13 +1138,13 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                 if (has_uint && uint_ptr != nullptr) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
-                    // P = (γ - 1) * ρ * u
+                    // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
                     u       = sycl::max(u, Tscal(1e-30));
                     Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
                     // Sound speed from internal energy (reference: solver.cpp line 2661)
-                    // c = sqrt(γ * (γ - 1) * u)
+                    // c = sqrt(\gamma * (\gamma - 1) * u)
                     Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
 
                     // Clamp to reasonable values
@@ -1229,9 +1229,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
     static constexpr Tscal Rkern = Kernel::Rkern;
 
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
-    // grad_d = Σ_j m_j ∇W_ij
-    // grad_p = (grad_d * u_i + du) * (γ - 1)  where du = Σ_j m_j (u_j - u_i) ∇W_ij
-    // grad_v = Σ_j m_j (v_j - v_i) ∇W_ij / ρ_i
+    // grad_d = \sigma_j m_j \nabla W_ij
+    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
+    // grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         u32 cnt = pdat.get_obj_cnt();
         if (cnt == 0)
@@ -1310,7 +1310,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
                     Tscal rab = sycl::sqrt(rab2);
 
-                    // Kernel gradient: ∇W = (dW/dr) * (r/|r|)
+                    // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
                     Tscal dWdr = Kernel::dW_3d(rab, h_a);
                     Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
 
@@ -1331,7 +1331,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
                 // Store density gradient
                 grad_d_acc[id_a] = grad_d;
 
-                // Compute pressure gradient: ∇P = (∇ρ * u + du) * (γ - 1)
+                // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
                 // (reference: g_pre_interaction.cpp line 143)
                 Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
                 grad_p_acc[id_a] = grad_p;

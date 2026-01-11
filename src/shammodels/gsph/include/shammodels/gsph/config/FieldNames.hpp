@@ -140,15 +140,5 @@ namespace shammodels::gsph::edges {
         /// Epsilon h references (for h-iteration convergence)
         inline constexpr const char *eps_h = "eps_h";
 
-    } // namespace newtonian
-
-    /**
-     * @brief Special Relativity physics solvergraph edges (for future SR implementation)
-     */
-    namespace sr {
-
-        // Future SR-specific edges will be added here
-
-    } // namespace sr
 
 } // namespace shammodels::gsph::edges

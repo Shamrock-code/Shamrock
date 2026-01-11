@@ -108,7 +108,6 @@ namespace shammodels::gsph::edges {
         /// Temporary sizes for h-iteration
         inline constexpr const char *sizes = "sizes";
 
-    } // namespace infra
 
     /**
      * @brief Newtonian physics solvergraph edges

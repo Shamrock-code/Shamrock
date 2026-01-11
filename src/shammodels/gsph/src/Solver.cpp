@@ -859,7 +859,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Old h spans (from merged xyzh - read only during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::newtonian::h_old, "h^{old}");
+            edges::h_old, "h^{old}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
 
     // New h spans (local patchdata - written during iteration)

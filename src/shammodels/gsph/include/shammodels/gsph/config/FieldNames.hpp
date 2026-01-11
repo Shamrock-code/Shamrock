@@ -92,13 +92,6 @@ namespace shammodels::gsph::names {
 // ============================================================================
 namespace shammodels::gsph::edges {
 
-    /**
-     * @brief Infrastructure solvergraph edges
-     *
-     * These edges handle computational infrastructure: particle counting,
-     * MPI distribution, neighbor finding, etc. They are physics-independent.
-     */
-    namespace infra {
 
         /// Particle counts per patch
         inline constexpr const char *part_counts = "part_counts";

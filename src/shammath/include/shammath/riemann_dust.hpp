@@ -190,7 +190,7 @@ namespace shammath {
         return 0.5 * ((fL + fR) - S * (cR - cL));
     }
 
-    // Huang & Bai, 2022 ,A Multiﬂuid Dust Module in Athena++: Algorithms and Numerical Tests
+    // Huang & Bai, 2022 ,A Multifluid Dust Module in Athena++: Algorithms and Numerical Tests
     // Equation (32)
     template<class Tcons>
     inline constexpr auto huang_bai_flux_x(Tcons cL, Tcons cR) {

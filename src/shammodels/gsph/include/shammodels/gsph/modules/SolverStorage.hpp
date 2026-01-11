@@ -117,11 +117,11 @@ namespace shammodels::gsph {
 
         /// Gradient fields for MUSCL reconstruction (2nd order)
         /// These are computed when ReconstructConfig::is_muscl() is true
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_density;  ///< ∇ρ
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure; ///< ∇P
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vx;       ///< ∇v_x
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< ∇v_y
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< ∇v_z
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_density;  ///< \nabla \rho
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure; ///< \nabla P
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vx;       ///< \nabla v_x
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< \nabla v_y
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< \nabla v_z
 
         /// Minimum h/c_s for CFL timestep calculation
         /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s

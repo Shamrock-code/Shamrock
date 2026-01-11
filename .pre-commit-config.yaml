@@ -140,6 +140,14 @@ repos:
       language: python
       pass_filenames: false
 
+    - id: check_no_utf8
+      name: "No UTF-8 in files (except for authors)"
+      entry: python buildbot/check_no_utf8.py
+      language: python
+      pass_filenames: true
+      files: \.(cpp|hpp|py|cmake|txt)$
+
+
     # - id: update_authors
     #   name: "Update authors"
     #   entry: python buildbot/update_authors.py

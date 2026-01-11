@@ -38,7 +38,7 @@ namespace shamalgs::primitives {
      * of all elements from index 0 to i-1. The first element is set to 0 (the
      * identity for addition).
      *
-     * The operation transforms: [a, b, c, d] → [0, a, a+b, a+b+c]
+     * The operation transforms: [a, b, c, d] -> [0, a, a+b, a+b+c]
      *
      * @tparam T Element type - must support addition and assignment
      * @param buf1 Device buffer to scan in-place (modified by this operation)

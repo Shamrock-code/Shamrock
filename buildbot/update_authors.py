@@ -60,6 +60,8 @@ def get_author_list_from_blame(path):
     try:
         output = subprocess.check_output(R"git log " + path, shell=True).decode()
         for l in output.split("\n"):
+            # start allow utf-8
+
             # if we get an answer like
             # Author: Timothée David--Cléris <tim.shamrock@proton.me>
             # extract the author name and email
@@ -74,6 +76,8 @@ def get_author_list_from_blame(path):
                 app = {"author": match.group(1), "email": match.group(2)}
                 if not app in coauthors:
                     coauthors.append(app)
+
+            # end allow utf-8
 
         # print(authors, coauthors)
 
@@ -246,12 +250,14 @@ if missing_doxygenfilehead:
     print("--------------------------------")
 
     # Write markdown report
+    # start allow utf-8
     report = "## ❌ Authorship update required\n\n"
     report += (
         "The following files had their author headers updated by the author update script.\n\n"
     )
     report += "Please run the script again (`python3 buildbot/update_authors.py`) and commit these changes.\n\n"
     report += "**Note:** The list below is only partial. Only the first 10 files are shown.\n\n"
+    # end allow utf-8
     for fname in missing_doxygenfilehead[:10]:
         report += f"- `{fname}`\n"
     with open("log_precommit_check-Authorship-update", "w") as f:

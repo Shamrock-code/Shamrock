@@ -284,7 +284,7 @@ namespace impl {
                             using namespace shamrock::sph;
 
                             f32 rho_ha = rho_h(part_mass, h_a, Kernel::hfactd);
-                            f32 new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                            f32 new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                             if (new_h < h_a * h_max_evol_m)
                                 new_h = h_max_evol_m * h_a;

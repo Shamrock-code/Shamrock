@@ -73,7 +73,7 @@ namespace shammodels::gsph::names {
         /// Gradient of pressure ∇P (for MUSCL reconstruction)
         inline constexpr const char *grad_pressure = "grad_pressure";
 
-        /// Gradient of velocity x-component ∇v_x (for MUSCL reconstruction)
+        /// Gradient of velocity x-component \nabla v_x (for MUSCL reconstruction)
         inline constexpr const char *grad_vx = "grad_vx";
 
         /// Gradient of velocity y-component ∇v_y (for MUSCL reconstruction)

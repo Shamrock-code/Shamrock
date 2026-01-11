@@ -853,7 +853,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Position spans (from merged xyzh)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos_merged
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-            edges::physics::newtonian::pos_merged, "r");
+            edges::newtonian::pos_merged, "r");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> pos_refs = {};
 
     // Old h spans (from merged xyzh - read only during iteration)

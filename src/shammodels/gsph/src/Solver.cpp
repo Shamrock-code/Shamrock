@@ -818,7 +818,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
 
     // Create sizes directly from scheduler to ensure we have all patches
     std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
-        = std::make_shared<shamrock::solvergraph::Indexes<u32>>(edges::infra::sizes, "N");
+        = std::make_shared<shamrock::solvergraph::Indexes<u32>>(edges::sizes, "N");
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
     });

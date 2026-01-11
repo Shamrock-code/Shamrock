@@ -55,10 +55,10 @@ jobs:
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GHACTION_PAT }}
-          commit-message: "[autofix] automatic fix after main branch workflow fail"
+          commit-message: "[autofix] automatic fix: pre-commit hooks and author updates"
           branch: "actions/autofix"
           delete-branch: true
-          title: "[autofix] automatic fix after main branch workflow fail"
+          title: "[autofix] automatic fix: pre-commit hooks and author updates"
           labels: |
             autofix.ci
             trigger-ci

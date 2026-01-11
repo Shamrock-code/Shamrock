@@ -81,8 +81,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     // Merged ghost spans
     storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
         edges::positions_with_ghosts, "\\mathbf{r}");
-    storage.hpart_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-        edges::hpart_with_ghosts, "h");
+    storage.hpart_with_ghosts
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::hpart_with_ghosts, "h");
 
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
@@ -852,20 +852,17 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Create field references for the iteration module
     // Position spans (from merged xyzh)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos_merged
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-            edges::pos_merged, "r");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(edges::pos_merged, "r");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> pos_refs = {};
 
     // Old h spans (from merged xyzh - read only during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::h_old, "h^{old}");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_old, "h^{old}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
 
     // New h spans (local patchdata - written during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::h_new, "h^{new}");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_new, "h^{new}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
 
     // Get field indices from xyzh_ghost_layout for merged data access
@@ -936,8 +933,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
 
     // Create epsilon field references
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-            edges::eps_h, "\\epsilon_h");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::eps_h, "\\epsilon_h");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = _epsilon_h.get_field(p.id_patch);

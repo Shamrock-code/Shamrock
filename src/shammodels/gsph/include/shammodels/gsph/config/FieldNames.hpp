@@ -115,7 +115,7 @@ namespace shammodels::gsph::names {
 } // namespace shammodels::gsph::names
 
 // ============================================================================
-// Solvergraph edge names (graph node identifiers for data flow tracking)
+// Solvergraph edge names
 // ============================================================================
 namespace shammodels::gsph::edges {
 

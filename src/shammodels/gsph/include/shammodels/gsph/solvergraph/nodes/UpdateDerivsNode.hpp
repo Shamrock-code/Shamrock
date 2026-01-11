@@ -140,47 +140,6 @@ namespace shammodels::gsph::solvergraph {
         void _impl_evaluate_internal() override;
     };
 
-    // =========================================================================
-    // Extended UpdateDerivs nodes for different physics (STUBS)
-    // =========================================================================
-
-    /**
-     * @brief UpdateDerivs for MHD (STUB)
-     *
-     * Adds magnetic force contribution:
-     *   dv_a/dt += magnetic pressure + tension terms
-     *   dB_a/dt = induction equation terms
-     *
-     * @tparam Tvec Vector type
-     * @tparam SPHKernel SPH kernel template
-     */
-    template<class Tvec, template<class> class SPHKernel>
-    class UpdateDerivsMHDNode : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        public:
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &part_counts;
-            // Additional inputs for MHD: magnetic field, div B, etc.
-            shamrock::solvergraph::Field<Tvec> &acceleration;
-            shamrock::solvergraph::Field<Tscal> &energy_rate;
-            shamrock::solvergraph::Field<Tvec> &dBdt; // Induction equation
-        };
-
-        UpdateDerivsMHDNode() = default;
-
-        std::string _impl_get_label() const override { return "UpdateDerivs_MHD"; }
-
-        std::string _impl_get_tex() const override {
-            return "\\dot{v}, \\dot{u}, \\dot{B} \\leftarrow \\text{MHD}";
-        }
-
-        protected:
-        void _impl_evaluate_internal() override {
-            // STUB: MHD force computation not yet implemented
-        }
-    };
-
     /**
      * @brief UpdateDerivs for SR (STUB)
      *
@@ -198,7 +157,6 @@ namespace shammodels::gsph::solvergraph {
         public:
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &part_counts;
-            // SR-specific: Lorentz factor, enthalpy, etc.
             shamrock::solvergraph::Field<Tvec> &d_momentum_dt;
             shamrock::solvergraph::Field<Tscal> &d_energy_dt;
         };
@@ -212,40 +170,7 @@ namespace shammodels::gsph::solvergraph {
         }
 
         protected:
-        void _impl_evaluate_internal() override {
-            // STUB: SR force computation not yet implemented
-        }
-    };
-
-    /**
-     * @brief UpdateDerivs for GR (STUB)
-     *
-     * Adds geometric source terms from curved spacetime:
-     *   d(W v)/dt = ... + Christoffel terms
-     *
-     * @tparam Tvec Vector type
-     * @tparam SPHKernel SPH kernel template
-     * @tparam SpacetimeType Spacetime metric type
-     */
-    template<class Tvec, template<class> class SPHKernel, class SpacetimeType>
-    class UpdateDerivsGRNode : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        SpacetimeType spacetime;
-
-        public:
-        explicit UpdateDerivsGRNode(SpacetimeType spacetime) : spacetime(std::move(spacetime)) {}
-
-        std::string _impl_get_label() const override { return "UpdateDerivs_GR"; }
-
-        std::string _impl_get_tex() const override {
-            return "\\dot{S}, \\dot{E} \\leftarrow \\text{GR-GSPH}";
-        }
-
-        protected:
-        void _impl_evaluate_internal() override {
-            // STUB: GR force computation not yet implemented
-        }
+        void _impl_evaluate_internal() override {}
     };
 
 } // namespace shammodels::gsph::solvergraph

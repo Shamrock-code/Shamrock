@@ -80,9 +80,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     // Merged ghost spans
     storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
-        edges::physics::newtonian::positions_with_ghosts, "\\mathbf{r}");
+        edges::newtonian::positions_with_ghosts, "\\mathbf{r}");
     storage.hpart_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(
-        edges::physics::newtonian::hpart_with_ghosts, "h");
+        edges::newtonian::hpart_with_ghosts, "h");
 
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");

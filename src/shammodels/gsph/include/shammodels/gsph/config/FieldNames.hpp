@@ -84,7 +84,6 @@ namespace shammodels::gsph::names {
 
     } // namespace newtonian
 
-
 } // namespace shammodels::gsph::names
 
 // ============================================================================
@@ -92,41 +91,37 @@ namespace shammodels::gsph::names {
 // ============================================================================
 namespace shammodels::gsph::edges {
 
+    /// Particle counts per patch
+    inline constexpr const char *part_counts = "part_counts";
 
-        /// Particle counts per patch
-        inline constexpr const char *part_counts = "part_counts";
+    /// Particle counts including ghosts
+    inline constexpr const char *part_counts_with_ghost = "part_counts_with_ghost";
 
-        /// Particle counts including ghosts
-        inline constexpr const char *part_counts_with_ghost = "part_counts_with_ghost";
+    /// Patch rank ownership
+    inline constexpr const char *patch_rank_owner = "patch_rank_owner";
 
-        /// Patch rank ownership
-        inline constexpr const char *patch_rank_owner = "patch_rank_owner";
+    /// Neighbor cache
+    inline constexpr const char *neigh_cache = "neigh_cache";
 
-        /// Neighbor cache
-        inline constexpr const char *neigh_cache = "neigh_cache";
+    /// Temporary sizes for h-iteration
+    inline constexpr const char *sizes = "sizes";
 
-        /// Temporary sizes for h-iteration
-        inline constexpr const char *sizes = "sizes";
+    /// Position references with ghosts
+    inline constexpr const char *positions_with_ghosts = "part_pos";
 
+    /// Smoothing length references with ghosts
+    inline constexpr const char *hpart_with_ghosts = "h_part";
 
+    /// Position merged references (for h-iteration)
+    inline constexpr const char *pos_merged = "pos";
 
-        /// Position references with ghosts
-        inline constexpr const char *positions_with_ghosts = "part_pos";
+    /// Old smoothing length references (for h-iteration)
+    inline constexpr const char *h_old = "h_old";
 
-        /// Smoothing length references with ghosts
-        inline constexpr const char *hpart_with_ghosts = "h_part";
+    /// New smoothing length references (for h-iteration)
+    inline constexpr const char *h_new = "h_new";
 
-        /// Position merged references (for h-iteration)
-        inline constexpr const char *pos_merged = "pos";
-
-        /// Old smoothing length references (for h-iteration)
-        inline constexpr const char *h_old = "h_old";
-
-        /// New smoothing length references (for h-iteration)
-        inline constexpr const char *h_new = "h_new";
-
-        /// Epsilon h references (for h-iteration convergence)
-        inline constexpr const char *eps_h = "eps_h";
-
+    /// Epsilon h references (for h-iteration convergence)
+    inline constexpr const char *eps_h = "eps_h";
 
 } // namespace shammodels::gsph::edges

@@ -262,7 +262,6 @@ def run_sim(times, vg_num, vd_num):
     model.set_field_value_lambda_f64_3("rhovel_dust", b_rhovel_d_20_map, 19)
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -274,7 +273,6 @@ def run_sim(times, vg_num, vd_num):
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m

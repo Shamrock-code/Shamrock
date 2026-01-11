@@ -263,7 +263,7 @@ namespace shamsys::instance {
         shamlog_debug_ln(
             "Sys",
             shambase::format(
-                "[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",
+                "[{:03}]: \x1B[32mMPI_Init : node n {:03} | world size : {} | name = {}\033[0m",
                 shamcomm::world_rank(),
                 shamcomm::world_rank(),
                 shamcomm::world_size(),

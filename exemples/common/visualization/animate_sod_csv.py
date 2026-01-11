@@ -363,8 +363,7 @@ def main():
 
         # Add time label
         fig.suptitle(
-            f"{solver_name} Sod Shock Tube - t = {time:.4f}\n"
-            f"Comparison with Analytical Solution",
+            f"{solver_name} Sod Shock Tube - t = {time:.4f}\nComparison with Analytical Solution",
             fontsize=14,
             fontweight="bold",
         )

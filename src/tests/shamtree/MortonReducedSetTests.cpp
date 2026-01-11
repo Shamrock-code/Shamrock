@@ -84,7 +84,7 @@ TestStart(Unittest, "shamtree/MortonReducedSet", test_morton_reduced_set, 1) {
     // int cell ------------------------------------------ (7)    |   |     \        \            //
     // int cell --------------- (3) (4) --------------------      |   |      \        \           //
     // int cell --- (1)   (2) ---    ------- (5) (6) -------      |   |       \        \          //
-    //            /  |     |   \        /     |   |        \      |   |        \        \         //
+    //            /  |     |   \        /     |   |        \      |   |        \        \         //
     // leafs    (0) (1)   (2)   (3) (4)      (5) (6)       (7)   (8) (9)      (10)     (11)       //
 
     // reduc delete second code if collapse ok

@@ -14,7 +14,6 @@ def clone_acpp(folder):
 
 
 def get_acpp_target_env(args, version="git"):
-
     backend = "omp"
 
     backend_list = [
@@ -30,18 +29,15 @@ def get_acpp_target_env(args, version="git"):
     ]
 
     if not (args.backend == None):
-
         if args.backend in ["omp", "omp.accelerated", "omp.library-only", "generic"]:
             return args.backend
 
         elif args.backend in ["cuda", "cuda.explicit-multipass", "cuda.integrated-multipass"]:
-
             utils.cuda_arch.print_description(args.arch)
 
             return args.backend + ":" + args.arch
 
         elif args.backend in ["hip", "hip.integrated-multipass"]:
-
             utils.amd_arch.print_description(args.arch)
 
             return args.backend + ":" + args.arch

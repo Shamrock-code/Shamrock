@@ -188,6 +188,16 @@ TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1) {
     validate_kernel_3d<shammath::C6<f64>>(1e-5, 1e-5, 1e-5);
 }
 
+TestStart(Unittest, "shammath/sphkernels/TGauss3", validateTGauss3kernel, 1) {
+    validate_kernel_3d<shammath::TGauss3<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss3<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/TGauss5", validateTGauss5kernel, 1) {
+    validate_kernel_3d<shammath::TGauss5<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss5<f64>>(1e-5, 1e-5, 1e-5);
+}
+
 struct Outplot {
     std::vector<f64> val_W1;
     std::vector<f64> val_dW1;

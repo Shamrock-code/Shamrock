@@ -84,6 +84,8 @@ namespace shampylib {
         bind_sph_kernel<shammath::M4Shift4<f64>>(sphkernel_module, "M4Shift4");
         bind_sph_kernel<shammath::M4Shift8<f64>>(sphkernel_module, "M4Shift8");
         bind_sph_kernel<shammath::M4Shift16<f64>>(sphkernel_module, "M4Shift16");
+        bind_sph_kernel<shammath::TGauss3<f64>>(sphkernel_module, "TGauss3");
+        bind_sph_kernel<shammath::TGauss5<f64>>(sphkernel_module, "TGauss5");
     }
 
 } // namespace shampylib

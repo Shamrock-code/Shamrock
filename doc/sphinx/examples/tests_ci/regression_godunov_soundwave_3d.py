@@ -64,7 +64,6 @@ delta_v = 1e-5
 
 
 def rho_map(rmin, rmax):
-
     x_min, y_min, z_min = rmin
     x_max, y_max, z_max = rmax
 
@@ -108,7 +107,6 @@ model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
 
 def save_collected_data(data_dict, fpath):
-
     print(f"Saving data to {fpath}")
 
     import h5py
@@ -121,7 +119,6 @@ def save_collected_data(data_dict, fpath):
 
 
 def load_collected_data(fpath):
-
     print(f"Loading data from {fpath}")
 
     if not os.path.exists(fpath):
@@ -143,7 +140,6 @@ def load_collected_data(fpath):
 
 
 def check_regression(data_dict1, data_dict2, tolerances):
-
     # Compare if keys sets match
     if set(data_dict1.keys()) != set(data_dict2.keys()):
         print("Data keys sets do not match")
@@ -160,7 +156,6 @@ def check_regression(data_dict1, data_dict2, tolerances):
 
     # Compare if values are equal
     for dset_name in data_dict1:
-
         # Compare same size
         if data_dict1[dset_name].shape != data_dict2[dset_name].shape:
             print(f"Data {dset_name} has different shape")

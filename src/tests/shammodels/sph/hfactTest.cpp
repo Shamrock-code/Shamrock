@@ -14,7 +14,8 @@
 inline std::vector<f64> get_h_test_vals() {
     std::vector<f64> ret{};
 
-    for (f64 hfact = 0; hfact < 3; hfact += 0.01) {
+    for (u32 i = 0; i < 300; i++) {
+        f64 hfact = i / 100.;
         ret.push_back(hfact);
     }
 

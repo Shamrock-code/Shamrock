@@ -574,7 +574,6 @@ print("rel error =", rel_error)
 
 
 def run_fmm(x_i, x_j, s_A, s_B, m_j, order, do_print):
-
     b_j = (x_j[0] - s_B[0], x_j[1] - s_B[1], x_j[2] - s_B[2])
     r = (s_B[0] - s_A[0], s_B[1] - s_A[1], s_B[2] - s_A[2])
     a_i = (x_i[0] - s_A[0], x_i[1] - s_A[1], x_i[2] - s_A[2])
@@ -857,7 +856,6 @@ for order in range(1, 6):
     rel_errors = []
 
     for x_i, x_j, s_A, s_B in zip(x_i_all, x_j_all, s_A_all, s_B_all):
-
         force_i, force_i_exact, angle = run_fmm(x_i, x_j, s_A, s_B, m_j, order, do_print=False)
 
         abs_error = np.linalg.norm(force_i - force_i_exact)
@@ -1171,7 +1169,6 @@ for order in range(0, 6):
     center_distances = []
     rel_errors = []
     for x_j, s_B, s_Bp in zip(x_j_all, s_B_all, s_Bp_all):
-
         b_j = (x_j[0] - s_B[0], x_j[1] - s_B[1], x_j[2] - s_B[2])
         b_jp = (x_j[0] - s_Bp[0], x_j[1] - s_Bp[1], x_j[2] - s_Bp[2])
 
@@ -1433,7 +1430,6 @@ print("delta_f =", delta_f)
 # %%
 # Let's modify FMM in a box to add the translation of the box A
 def test_grav_moment_offset(x_i, x_j, s_A, s_Ap, s_B, m_j, order, do_print):
-
     b_j = (x_j[0] - s_B[0], x_j[1] - s_B[1], x_j[2] - s_B[2])
     r = (s_B[0] - s_A[0], s_B[1] - s_A[1], s_B[2] - s_A[2])
     a_i = (x_i[0] - s_A[0], x_i[1] - s_A[1], x_i[2] - s_A[2])
@@ -1664,7 +1660,6 @@ for order in range(1, 6):
     rel_errors = []
 
     for x_i, x_j, s_A, s_Ap, s_B in zip(x_i_all, x_j_all, s_A_all, s_Ap_all, s_B_all):
-
         force_i, force_i_offset, angle, delta_A = test_grav_moment_offset(
             x_i, x_j, s_A, s_Ap, s_B, m_j, order, do_print=False
         )
@@ -1815,7 +1810,6 @@ assert rel_error < 1e-2
 
 
 def run_mm(x_i, x_j, s_B, m_j, order, do_print):
-
     b_j = (x_j[0] - s_B[0], x_j[1] - s_B[1], x_j[2] - s_B[2])
     r = (s_B[0] - x_i[0], s_B[1] - x_i[1], s_B[2] - x_i[2])
 
@@ -1939,7 +1933,6 @@ for order in range(1, 6):
     rel_errors = []
 
     for x_i, x_j, s_B in zip(x_i_all, x_j_all, s_B_all):
-
         force_i, force_i_exact, angle = run_mm(x_i, x_j, s_B, m_j, order, do_print=False)
 
         abs_error = np.linalg.norm(force_i - force_i_exact)

@@ -201,8 +201,6 @@ namespace shammodels::sph {
 
         /// @brief Initializes the solver graph for computation pipeline
         void init_solver_graph();
-        /// @brief Removes particles based on configured kill criteria
-        void part_killing_step();
 
         /// @brief Writes VTK dump file for visualization
         void vtk_do_dump(std::string filename, bool add_patch_world_id);

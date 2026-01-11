@@ -481,7 +481,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         // leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
-            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "predictor");
 
             lambda_update_time(
                 shamsys::instance::get_compute_scheduler().get_queue(),
@@ -502,7 +502,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
                 sycl::range<1>{pdat.get_obj_cnt()},
                 dt_cur / 2);
 
-            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "dt fields swap");
 
             lambda_swap_der(
                 shamsys::instance::get_compute_scheduler().get_queue(),
@@ -532,7 +532,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
         sched.for_each_patch_data([&](u64 id_patch, Patch &cur_p, PatchDataLayer &pdat) {
             shamlog_debug_ln(
                 "SPHLeapfrog",
-                "patch : n°",
+                "patch : n",
                 id_patch,
                 "->",
                 "making Radix Tree ( N=",
@@ -541,7 +541,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
             if (pdat.is_empty()) {
                 shamlog_debug_ln(
-                    "SPHLeapfrog", "patch : n°", id_patch, "->", "is empty skipping tree build");
+                    "SPHLeapfrog", "patch : n", id_patch, "->", "is empty skipping tree build");
             } else {
 
                 auto &buf_xyz = pdat.get_field<vec3>(ixyz).get_buf();
@@ -560,10 +560,10 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         sched.for_each_patch_data([&](u64 id_patch, Patch & /*cur_p*/, PatchDataLayer &pdat) {
             shamlog_debug_ln(
-                "SPHLeapfrog", "patch : n°", id_patch, "->", "compute radix tree cell volumes");
+                "SPHLeapfrog", "patch : n", id_patch, "->", "compute radix tree cell volumes");
             if (pdat.is_empty()) {
                 shamlog_debug_ln(
-                    "SPHLeapfrog", "patch : n°", id_patch, "->", "is empty skipping tree build");
+                    "SPHLeapfrog", "patch : n", id_patch, "->", "is empty skipping tree build");
             } else {
                 radix_trees[id_patch]->compute_cell_ibounding_box(
                     shamsys::instance::get_compute_queue());
@@ -1139,7 +1139,7 @@ f64 models::nbody::Nbody_SelfGrav<flt>::evolve(
 
         // leapfrog predictor
         sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
-            shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "corrector");
+            shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "corrector");
 
             lambda_correct(
                 shamsys::instance::get_compute_scheduler().get_queue(),

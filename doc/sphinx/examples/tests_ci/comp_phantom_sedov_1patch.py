@@ -22,7 +22,6 @@ split = int(Npart) * 2
 
 
 def load_dataset(filename):
-
     print("Loading", filename)
 
     dump = shamrock.load_phantom_dump(filename)
@@ -66,7 +65,6 @@ def L2diff_relat(arr1, pos1, arr2, pos2):
 
 
 def compare_datasets(istep, dataset1, dataset2):
-
     if shamrock.sys.world_rank() > 0:
         return
 
@@ -275,7 +273,6 @@ model.evolve_once_override_time(0, 0)
 dt = 1e-5
 t = 0
 for i in range(101):
-
     if i == 0:
         compare_datasets(i, get_testing_sets(step0000), get_testing_sets(ctx.collect_data()))
     if i == 1:

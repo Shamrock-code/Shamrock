@@ -37,10 +37,10 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
+#include "shammodels/gsph/config/FieldNames.hpp"
+#include "shammodels/gsph/modules/GSPHUtilities.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
-#include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
@@ -69,23 +69,23 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
-    storage.part_counts
-        = std::make_shared<shamrock::solvergraph::Indexes<u32>>("part_counts", "N_{\\rm part}");
+    storage.part_counts = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
+        edges::part_counts, "N_{\\rm part}");
 
     storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
-        "part_counts_with_ghost", "N_{\\rm part, with ghost}");
+        edges::part_counts_with_ghost, "N_{\\rm part, with ghost}");
 
-    storage.patch_rank_owner
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>(
+        edges::patch_rank_owner, "rank");
 
     // Merged ghost spans
-    storage.positions_with_ghosts
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("part_pos", "\\mathbf{r}");
+    storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
+        edges::positions_with_ghosts, "\\mathbf{r}");
     storage.hpart_with_ghosts
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("h_part", "h");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::hpart_with_ghosts, "h");
 
     storage.neigh_cache
-        = std::make_shared<shammodels::sph::solvergraph::NeighCache>("neigh_cache", "neigh");
+        = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
 
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
@@ -127,7 +127,7 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
     StackEntry stack_loc{};
 
-    using CfgClass = sph::BasicSPHGhostHandlerConfig<Tvec>;
+    using CfgClass = gsph::GSPHGhostHandlerConfig<Tvec>;
     using BCConfig = typename CfgClass::Variant;
 
     using BCFree             = typename CfgClass::Free;
@@ -171,10 +171,10 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     StackEntry stack_loc{};
 
-    using SPHUtils = sph::SPHUtilities<Tvec, Kernel>;
-    SPHUtils sph_utils(scheduler());
+    using GSPHUtils = GSPHUtilities<Tvec, Kernel>;
+    GSPHUtils gsph_utils(scheduler());
 
-    storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
+    storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
         storage.ghost_handler.get(),
         storage.serial_patch_tree.get(),
         solver_config.htol_up_coarse_cycle));
@@ -192,6 +192,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
 
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+
+    // Get field indices from xyzh_ghost_layout
+    const u32 ixyz_ghost   = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
+    const u32 ihpart_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tscal>("hpart");
 
     // Set element counts
     shambase::get_check_ref(storage.part_counts).indexes
@@ -211,15 +215,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     shambase::get_check_ref(storage.positions_with_ghosts)
         .set_refs(
             storage.merged_xyzh.get().template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-                    return std::ref(mpdat.get_field<Tvec>(0));
+                [&, ixyz_ghost](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tvec>(ixyz_ghost));
                 }));
 
     shambase::get_check_ref(storage.hpart_with_ghosts)
         .set_refs(
             storage.merged_xyzh.get().template map<std::reference_wrapper<PatchDataField<Tscal>>>(
-                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-                    return std::ref(mpdat.get_field<Tscal>(1));
+                [&, ihpart_ghost](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(ihpart_ghost));
                 }));
 }
 
@@ -230,30 +234,33 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_merged_pos_trees() {
     auto &merged_xyzh = storage.merged_xyzh.get();
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
-    shambase::DistributedData<RTree> trees
-        = merged_xyzh.template map<RTree>([&](u64 id, shamrock::patch::PatchDataLayer &merged) {
-              PatchDataField<Tvec> &pos = merged.template get_field<Tvec>(0);
-              Tvec bmax                 = pos.compute_max();
-              Tvec bmin                 = pos.compute_min();
+    // Get field index from xyzh_ghost_layout
+    const u32 ixyz_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
 
-              shammath::AABB<Tvec> aabb(bmin, bmax);
+    shambase::DistributedData<RTree> trees = merged_xyzh.template map<RTree>(
+        [&, ixyz_ghost](u64 id, shamrock::patch::PatchDataLayer &merged) {
+            PatchDataField<Tvec> &pos = merged.template get_field<Tvec>(ixyz_ghost);
+            Tvec bmax                 = pos.compute_max();
+            Tvec bmin                 = pos.compute_min();
 
-              Tscal infty = std::numeric_limits<Tscal>::infinity();
+            shammath::AABB<Tvec> aabb(bmin, bmax);
 
-              // Ensure that no particle is on the boundary of the AABB
-              aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
-              aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
-              aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
-              aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
-              aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
-              aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
+            Tscal infty = std::numeric_limits<Tscal>::infinity();
 
-              auto bvh = RTree::make_empty(dev_sched);
-              bvh.rebuild_from_positions(
-                  pos.get_buf(), pos.get_obj_cnt(), aabb, solver_config.tree_reduction_level);
+            // Ensure that no particle is on the boundary of the AABB
+            aabb.lower[0] = std::nextafter(aabb.lower[0], -infty);
+            aabb.lower[1] = std::nextafter(aabb.lower[1], -infty);
+            aabb.lower[2] = std::nextafter(aabb.lower[2], -infty);
+            aabb.upper[0] = std::nextafter(aabb.upper[0], infty);
+            aabb.upper[1] = std::nextafter(aabb.upper[1], infty);
+            aabb.upper[2] = std::nextafter(aabb.upper[2], infty);
 
-              return bvh;
-          });
+            auto bvh = RTree::make_empty(dev_sched);
+            bvh.rebuild_from_positions(
+                pos.get_buf(), pos.get_obj_cnt(), aabb, solver_config.tree_reduction_level);
+
+            return bvh;
+        });
 
     storage.merged_pos_trees.set(std::move(trees));
 }
@@ -647,11 +654,11 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     u32 igrad_vy_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vy") : 0;
     u32 igrad_vz_interf  = has_grads ? ghost_layout.get_field_idx<Tvec>("grad_vz") : 0;
 
-    using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+    using InterfaceBuildInfos = typename gsph::GSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
-    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
-    shamrock::solvergraph::Field<Tscal> &omega    = shambase::get_check_ref(storage.omega);
-    shamrock::solvergraph::Field<Tscal> &density  = shambase::get_check_ref(storage.density);
+    gsph::GSPHGhostHandler<Tvec> &ghost_handle   = storage.ghost_handler.get();
+    shamrock::solvergraph::Field<Tscal> &omega   = shambase::get_check_ref(storage.omega);
+    shamrock::solvergraph::Field<Tscal> &density = shambase::get_check_ref(storage.density);
 
     // Get gradient fields (for MUSCL)
     shamrock::solvergraph::Field<Tvec> *grad_density_ptr
@@ -811,7 +818,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
 
     // Create sizes directly from scheduler to ensure we have all patches
     std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
-        = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "N");
+        = std::make_shared<shamrock::solvergraph::Indexes<u32>>(edges::sizes, "N");
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
     });
@@ -845,32 +852,37 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // Create field references for the iteration module
     // Position spans (from merged xyzh)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos_merged
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("pos", "r");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(edges::pos_merged, "r");
     shamrock::solvergraph::DDPatchDataFieldRef<Tvec> pos_refs = {};
 
     // Old h spans (from merged xyzh - read only during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("h_old", "h^{old}");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_old, "h^{old}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
 
     // New h spans (local patchdata - written during iteration)
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("h_new", "h^{new}");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_new, "h^{new}");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
 
+    // Get field indices from xyzh_ghost_layout for merged data access
+    const u32 ixyz_ghost   = storage.xyzh_ghost_layout->template get_field_idx<Tvec>("xyz");
+    const u32 ihpart_ghost = storage.xyzh_ghost_layout->template get_field_idx<Tscal>("hpart");
+
     // Populate field references
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &mfield = merged_xyzh.get(p.id_patch);
+    scheduler().for_each_patchdata_nonempty(
+        [&, ixyz_ghost, ihpart_ghost](const Patch p, PatchDataLayer &pdat) {
+            auto &mfield = merged_xyzh.get(p.id_patch);
 
-        // Position from merged data (includes ghosts for neighbor search)
-        pos_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tvec>(0)));
+            // Position from merged data (includes ghosts for neighbor search)
+            pos_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tvec>(ixyz_ghost)));
 
-        // h_old from merged data
-        hold_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tscal>(1)));
+            // h_old from merged data
+            hold_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tscal>(ihpart_ghost)));
 
-        // h_new to local patchdata (this is updated during iteration)
-        hnew_refs.add_obj(p.id_patch, std::ref(pdat.get_field<Tscal>(ihpart)));
-    });
+            // h_new to local patchdata (this is updated during iteration)
+            hnew_refs.add_obj(p.id_patch, std::ref(pdat.get_field<Tscal>(ihpart)));
+        });
 
     pos_merged->set_refs(pos_refs);
     hold->set_refs(hold_refs);
@@ -921,7 +933,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
 
     // Create epsilon field references
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("eps_h", "\\epsilon_h");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::eps_h, "\\epsilon_h");
     shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         auto &field = _epsilon_h.get_field(p.id_patch);
@@ -1080,8 +1092,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     using namespace shamrock::patch;
 
     // GSPH EOS: Following reference implementation (g_pre_interaction.cpp)
-    // P = (γ - 1) * ρ * u  where ρ is from SPH summation
-    // c = sqrt(γ * (γ - 1) * u)  -- from internal energy, not from P/ρ
+    // P = (\gamma - 1) * \rho * u  where \rho is from SPH summation
+    // c = sqrt(\gamma * (\gamma - 1) * u)  -- from internal energy, not from P/\rho
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
@@ -1138,13 +1150,13 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                 if (has_uint && uint_ptr != nullptr) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
-                    // P = (γ - 1) * ρ * u
+                    // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
                     u       = sycl::max(u, Tscal(1e-30));
                     Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
                     // Sound speed from internal energy (reference: solver.cpp line 2661)
-                    // c = sqrt(γ * (γ - 1) * u)
+                    // c = sqrt(\gamma * (\gamma - 1) * u)
                     Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
 
                     // Clamp to reasonable values
@@ -1229,9 +1241,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
     static constexpr Tscal Rkern = Kernel::Rkern;
 
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
-    // grad_d = Σ_j m_j ∇W_ij
-    // grad_p = (grad_d * u_i + du) * (γ - 1)  where du = Σ_j m_j (u_j - u_i) ∇W_ij
-    // grad_v = Σ_j m_j (v_j - v_i) ∇W_ij / ρ_i
+    // grad_d = \sigma_j m_j \nabla W_ij
+    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
+    // grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         u32 cnt = pdat.get_obj_cnt();
         if (cnt == 0)
@@ -1310,7 +1322,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
                     Tscal rab = sycl::sqrt(rab2);
 
-                    // Kernel gradient: ∇W = (dW/dr) * (r/|r|)
+                    // Kernel gradient: \nabla W = (dW/dr) * (r/|r|)
                     Tscal dWdr = Kernel::dW_3d(rab, h_a);
                     Tvec gradW = dr * (dWdr * sham::inv_sat_positive(rab));
 
@@ -1331,7 +1343,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
                 // Store density gradient
                 grad_d_acc[id_a] = grad_d;
 
-                // Compute pressure gradient: ∇P = (∇ρ * u + du) * (γ - 1)
+                // Compute pressure gradient: \nabla P = (\nabla \rho * u + du) * (\gamma - 1)
                 // (reference: g_pre_interaction.cpp line 143)
                 Tvec grad_p      = (grad_d * u_a + grad_u) * (gamma - Tscal(1));
                 grad_p_acc[id_a] = grad_p;

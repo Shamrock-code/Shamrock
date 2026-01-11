@@ -34,6 +34,7 @@ extern const bool is_git;
 
 const u32 term_width = 64;
 
+// start allow utf-8
 inline std::string shamrock_title_bar_big = "\n\
   █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████\n\
  ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ \n\
@@ -44,6 +45,7 @@ inline std::string shamrock_title_bar_big = "\n\
 ░░█████████  █████   █████ █████   █████ █████     █████ █████   █████ ░░░███████░   ░░█████████  █████ ░░████\n\
  ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ \n\
 ";
+// end allow utf-8
 
 inline std::string get_date_hour_string() {
     auto now       = std::chrono::system_clock::now();

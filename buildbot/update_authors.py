@@ -34,9 +34,8 @@ def is_not_in_blacklist(a):
 def apply_mailmap(authors):
     ret = []
     for a in authors:
-
         try:
-            cmd = f'git check-mailmap "{a['author']} <{a['email']}>"'
+            cmd = f'git check-mailmap "{a["author"]} <{a["email"]}>"'
             output = subprocess.check_output(cmd, shell=True).decode()
 
             match = re.search(r"(.*) <(.*)>", output)
@@ -60,6 +59,8 @@ def get_author_list_from_blame(path):
     try:
         output = subprocess.check_output(R"git log " + path, shell=True).decode()
         for l in output.split("\n"):
+            # start allow utf-8
+
             # if we get an answer like
             # Author: Timothée David--Cléris <tim.shamrock@proton.me>
             # extract the author name and email
@@ -74,6 +75,8 @@ def get_author_list_from_blame(path):
                 app = {"author": match.group(1), "email": match.group(2)}
                 if not app in coauthors:
                     coauthors.append(app)
+
+            # end allow utf-8
 
         # print(authors, coauthors)
 
@@ -156,7 +159,6 @@ def print_diff(before, after, beforename, aftername):
 
 
 def autocorect(source, filename, path):
-
     l_start = 0
     l_end = 0
     i = 0
@@ -198,11 +200,9 @@ def autocorect(source, filename, path):
 
 
 def run_autocorect():
-
     errors = []
 
     for fname in file_list:
-
         if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
             continue
 
@@ -246,12 +246,14 @@ if missing_doxygenfilehead:
     print("--------------------------------")
 
     # Write markdown report
+    # start allow utf-8
     report = "## ❌ Authorship update required\n\n"
     report += (
         "The following files had their author headers updated by the author update script.\n\n"
     )
     report += "Please run the script again (`python3 buildbot/update_authors.py`) and commit these changes.\n\n"
     report += "**Note:** The list below is only partial. Only the first 10 files are shown.\n\n"
+    # end allow utf-8
     for fname in missing_doxygenfilehead[:10]:
         report += f"- `{fname}`\n"
     with open("log_precommit_check-Authorship-update", "w") as f:

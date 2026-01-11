@@ -111,7 +111,6 @@ os.makedirs(folder, exist_ok=True)
 
 
 def print_setup_logs(filepath, name_png_prefix):
-
     with open(filepath, "r") as file:
         data = json.load(file)
 

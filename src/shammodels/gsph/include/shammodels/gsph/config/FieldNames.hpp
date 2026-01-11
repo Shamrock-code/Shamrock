@@ -50,7 +50,7 @@ namespace shammodels::gsph::names {
         /// Time derivative of internal energy du/dt
         inline constexpr const char *duint = "duint";
 
-        /// Density ρ (derived from h)
+        /// Density \rho (derived from h)
         inline constexpr const char *density = "density";
 
         /// Pressure P (derived from EOS)
@@ -59,24 +59,23 @@ namespace shammodels::gsph::names {
         /// Sound speed c_s (derived from EOS)
         inline constexpr const char *soundspeed = "soundspeed";
 
-        /// Grad-h correction factor Ω
+        /// Grad-h correction factor \Omega
         inline constexpr const char *omega = "omega";
 
-        /// Gradient of density ∇ρ (for MUSCL reconstruction)
+        /// Gradient of density \nabla \rho (for MUSCL reconstruction)
         inline constexpr const char *grad_density = "grad_density";
 
-        /// Gradient of pressure ∇P (for MUSCL reconstruction)
+        /// Gradient of pressure \nabla P (for MUSCL reconstruction)
         inline constexpr const char *grad_pressure = "grad_pressure";
 
         /// Gradient of velocity x-component \nabla v_x (for MUSCL reconstruction)
         inline constexpr const char *grad_vx = "grad_vx";
-
+        
         /// Gradient of velocity y-component \nabla v_y (for MUSCL reconstruction)
         inline constexpr const char *grad_vy = "grad_vy";
-
+        
         /// Gradient of velocity z-component \nabla v_z (for MUSCL reconstruction)
         inline constexpr const char *grad_vz = "grad_vz";
-
     } // namespace newtonian
 
 } // namespace shammodels::gsph::names

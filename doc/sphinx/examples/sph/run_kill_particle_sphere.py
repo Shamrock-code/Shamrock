@@ -100,6 +100,11 @@ model.change_htolerance(1.3)
 model.timestep()
 model.change_htolerance(1.1)
 
+# %%
+# Show the current solvergraph
+
+print(model.get_solver_dot_graph())
+
 
 ####################################################
 # Draw utilities

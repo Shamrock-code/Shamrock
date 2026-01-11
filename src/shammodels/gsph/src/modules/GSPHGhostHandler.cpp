@@ -10,6 +10,7 @@
 /**
  * @file GSPHGhostHandler.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief GSPH-specific ghost handler implementation
  */
 

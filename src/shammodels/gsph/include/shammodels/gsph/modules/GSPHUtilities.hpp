@@ -12,6 +12,7 @@
 /**
  * @file GSPHUtilities.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief GSPH-specific utilities for ghost handling
  *
  * This file provides GSPH-specific versions of utility functions that use

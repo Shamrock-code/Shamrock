@@ -12,6 +12,7 @@
 /**
  * @file FieldNames.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Constants for field names in GSPH solver, organized by physics mode
  *
  * This file defines PatchDataField names used in PatchDataLayerLayout.

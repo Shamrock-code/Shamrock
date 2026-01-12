@@ -9,6 +9,7 @@
 
 /**
  * @file InterpolateToFace.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -16,58 +17,9 @@
 
 #include "shambase/assert.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shammodels/ramses/modules/InterpolationUtilities.hpp"
 
 namespace {
-
-    template<class Tvec, class TgridVec, class AMRBlock>
-    class GetShift {
-
-        public:
-        using Tscal     = shambase::VecComponent<Tvec>;
-        using Tgridscal = shambase::VecComponent<TgridVec>;
-
-        const Tvec *acc_aabb_block_lower;
-        const Tscal *acc_aabb_cell_size;
-
-        GetShift(const Tvec *aabb_block_lower, const Tscal *aabb_cell_size)
-            : acc_aabb_block_lower{aabb_block_lower}, acc_aabb_cell_size{aabb_cell_size} {}
-
-        shammath::AABB<Tvec> get_cell_aabb(u32 id) const {
-
-            const u32 cell_global_id = (u32) id;
-
-            const u32 block_id    = cell_global_id / AMRBlock::block_size;
-            const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
-
-            // fetch current block info
-            const Tvec cblock_min  = acc_aabb_block_lower[block_id];
-            const Tscal delta_cell = acc_aabb_cell_size[block_id];
-
-            std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
-            Tvec offset = Tvec{lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]} * delta_cell;
-
-            Tvec aabb_min = cblock_min + offset;
-            Tvec aabb_max = aabb_min + delta_cell;
-
-            return {aabb_min, aabb_max};
-        }
-
-        std::pair<Tvec, Tvec> get_shifts(u32 id_a, u32 id_b) const {
-
-            shammath::AABB<Tvec> aabb_cell_a = get_cell_aabb(id_a);
-            shammath::AABB<Tvec> aabb_cell_b = get_cell_aabb(id_b);
-
-            shammath::AABB<Tvec> face_aabb = aabb_cell_a.get_intersect(aabb_cell_b);
-
-            Tvec face_center = face_aabb.get_center();
-
-            Tvec shift_a = face_center - aabb_cell_a.get_center();
-            Tvec shift_b = face_center - aabb_cell_b.get_center();
-
-            return {shift_a, shift_b};
-        }
-    };
-
     template<class Tvec, class TgridVec, class AMRBlock>
     class RhoInterpolate {
         using Tscal = shambase::VecComponent<Tvec>;
@@ -115,7 +67,8 @@ namespace {
 
             Tscal get_dt_rho(
                 Tscal rho, Tvec v, Tvec grad_rho, Tvec dx_v, Tvec dy_v, Tvec dz_v) const {
-                return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
+                return -(v[0] * grad_rho[0] + rho * dx_v[0]);
+                // return -(sham::dot(v, grad_rho) + rho * (dx_v[0] + dy_v[1] + dz_v[2]));
             }
 
             std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
@@ -137,8 +90,11 @@ namespace {
                 Tvec dz_v_b = acc_dz_v_cell[id_b];
 
                 // Spatial interpolate
-                Tscal rho_face_a = rho_a + sycl::dot(grad_rho_a, shift_a);
-                Tscal rho_face_b = rho_b + sycl::dot(grad_rho_b, shift_b);
+                // Tscal rho_face_a = rho_a + sycl::dot(grad_rho_a, shift_a);
+                // Tscal rho_face_b = rho_b + sycl::dot(grad_rho_b, shift_b);
+
+                Tscal rho_face_a = rho_a + grad_rho_a[0] * shift_a[0];
+                Tscal rho_face_b = rho_b + grad_rho_b[0] * shift_b[0];
 
                 // Interpolate also to half a timestep
                 rho_face_a
@@ -223,7 +179,9 @@ namespace {
                   dt_interp(dt_interp), acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
 
             Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
-                return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
+                // return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
+
+                return -(v[0] * dx_v + grad_P[0] / rho);
             }
 
             std::array<Tvec, 2> get_link_field_val(u32 id_a, u32 id_b) const {
@@ -255,6 +213,11 @@ namespace {
 
                 Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp;
                 Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
+
+                vel_face_a[1] *= 0;
+                vel_face_b[2] *= 0;
+                vel_face_b[1] *= 0;
+                vel_face_b[2] *= 0;
 
                 return {vel_face_a, vel_face_b};
             }
@@ -337,7 +300,8 @@ namespace {
 
             Tscal get_dt_P(
                 Tscal P, Tvec grad_P, Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal gamma) const {
-                return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
+                // return -(gamma * P * (dx_v[0] + dy_v[1] + dz_v[2]) + sham::dot(v, grad_P));
+                return -(gamma * P * dx_v[0] + v[0] * grad_P[0]);
             }
 
             std::array<Tscal, 2> get_link_field_val(u32 id_a, u32 id_b) const {
@@ -361,8 +325,11 @@ namespace {
                 Tscal dtP_cell_a = get_dt_P(P_a, grad_P_a, v_a, dx_v_a, dy_v_a, dz_v_a, gamma);
                 Tscal dtP_cell_b = get_dt_P(P_b, grad_P_b, v_b, dx_v_b, dy_v_b, dz_v_b, gamma);
 
-                Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
-                Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
+                // Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
+                // Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
+
+                Tscal P_face_a = P_a + grad_P_a[0] * shift_a[0] + dtP_cell_a * dt_interp;
+                Tscal P_face_b = P_b + grad_P_b[0] * shift_b[0] + dtP_cell_b * dt_interp;
 
                 return {P_face_a, P_face_b};
             }

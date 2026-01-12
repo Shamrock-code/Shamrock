@@ -185,7 +185,7 @@ namespace shamalgs::collective {
         u32 SHAM_SPARSE_COMM_INFLIGHT_LIM = 128; // TODO: use the env variable
 
         RequestList rqs;
-        for (u32 i = 0; i < comm_table.message_all.size(); i++) {
+        for (size_t i = 0; i < comm_table.message_all.size(); i++) {
 
             auto message_info = comm_table.message_all[i];
 
@@ -228,6 +228,10 @@ namespace shamalgs::collective {
         const CommTable &comm_table) {
 
         __shamrock_stack_entry();
+
+        if (&bytebuffer_send == &bytebuffer_recv) {  
+            throw shambase::make_except_with_loc<std::invalid_argument>( "In-place sparse_exchange is not supported. Send and receive buffers must be distinct.");  
+        }  
 
         if (comm_table.send_total_size > bytebuffer_send.get_size()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(

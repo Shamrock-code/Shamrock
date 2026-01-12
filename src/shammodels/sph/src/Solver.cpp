@@ -66,6 +66,7 @@
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGFMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGSFMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -1772,24 +1773,50 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         } else if (solver_config.self_grav_config.is_fmm()) {
 
-            SelfGravConfig::FMM &mm_config = shambase::get_check_ref(
+            SelfGravConfig::FMM &fmm_config = shambase::get_check_ref(
                 std::get_if<SelfGravConfig::FMM>(&solver_config.self_grav_config.config));
 
-            auto run_sg_fmm = [&](auto mm_order_tag) {
-                constexpr u32 order = decltype(mm_order_tag)::value;
+            auto run_sg_fmm = [&](auto fmm_order_tag) {
+                constexpr u32 order = decltype(fmm_order_tag)::value;
                 modules::SGFMMPlummer<Tvec, order> self_gravity_mm_node(
-                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                    eps_grav, fmm_config.opening_angle, fmm_config.reduction_level);
                 self_gravity_mm_node.set_edges(
                     sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
                 self_gravity_mm_node.evaluate();
             };
 
-            switch (mm_config.order) {
+            switch (fmm_config.order) {
             case 1 : run_sg_fmm(std::integral_constant<u32, 1>{}); break;
             case 2 : run_sg_fmm(std::integral_constant<u32, 2>{}); break;
             case 3 : run_sg_fmm(std::integral_constant<u32, 3>{}); break;
             case 4 : run_sg_fmm(std::integral_constant<u32, 4>{}); break;
             case 5 : run_sg_fmm(std::integral_constant<u32, 5>{}); break;
+            default: shambase::throw_unimplemented();
+            }
+
+        } else if (solver_config.self_grav_config.is_sfmm()) {
+
+            SelfGravConfig::SFMM &sfmm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::SFMM>(&solver_config.self_grav_config.config));
+
+            auto run_sg_sfmm = [&](auto sfmm_order_tag) {
+                constexpr u32 order = decltype(sfmm_order_tag)::value;
+                modules::SGSFMMPlummer<Tvec, order> self_gravity_mm_node(
+                    eps_grav,
+                    sfmm_config.opening_angle,
+                    sfmm_config.leaf_lowering,
+                    sfmm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            };
+
+            switch (sfmm_config.order) {
+            case 1 : run_sg_sfmm(std::integral_constant<u32, 1>{}); break;
+            case 2 : run_sg_sfmm(std::integral_constant<u32, 2>{}); break;
+            case 3 : run_sg_sfmm(std::integral_constant<u32, 3>{}); break;
+            case 4 : run_sg_sfmm(std::integral_constant<u32, 4>{}); break;
+            case 5 : run_sg_sfmm(std::integral_constant<u32, 5>{}); break;
             default: shambase::throw_unimplemented();
             }
 

@@ -102,6 +102,25 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+
+option(SHAMROCK_PATCH_LIB_RPATH "patch the lib RPATH to include the current directory and ../lib" OFF)
+if(SHAMROCK_PATCH_LIB_RPATH)
+    message("-- patching lib RPATH to include the current directory and ../lib")
+
+    # CMake wants to strip the RPATH from the shared libraries,
+    # but we need it for the install python bindings, as all .so will be in the same directory
+    set(CMAKE_SKIP_BUILD_RPATH FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
+    # ldd search paths
+    #  - $ORIGIN : search in same dir
+    #  - $ORIGIN/../lib : search in ../lib (typically where shamrock is in bin and libs in ../lib)
+    #  - $ORIGIN/../../.. : in python install locate /lib from site package
+    #        .pyvenv/lib/python3.14/site-packages/shamrock/shamrock.cpython-314-x86_64-linux-gnu.so
+    #     -> .pyvenv/lib
+    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../..")
+endif()
+
 add_subdirectory(src)
 
 ####################################################################################################

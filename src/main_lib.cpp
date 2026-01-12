@@ -18,4 +18,4 @@
 #include <pybind11/pybind11.h>
 
 /// Call bindings init for the shamrock python module
-PYBIND11_MODULE(shamrock, m) { shambindings::init_lib(m); }
+PYBIND11_MODULE(pyshamrock, m) { shambindings::init_lib(m); }

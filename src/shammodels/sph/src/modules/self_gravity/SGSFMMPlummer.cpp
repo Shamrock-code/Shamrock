@@ -57,7 +57,7 @@ namespace shammodels::sph::modules {
         Tscal G          = edges.constant_G.data;
         Tscal gpart_mass = edges.gpart_mass.data;
 
-        Tscal gravitational_softening = epsilon;
+        Tscal gravitational_softening = epsilon * epsilon;
 
         auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

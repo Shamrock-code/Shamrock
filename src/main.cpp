@@ -190,7 +190,7 @@ int main(int argc, char *argv[]) {
                         "cannot run ipython mode with > 1 processes");
                 }
 
-                shambindings::start_ipython(true, argc, argv);
+                shambindings::start_ipython(true);
 
             } else if (opts::has_option("--rscript")) {
                 __shamrock_stack_entry();

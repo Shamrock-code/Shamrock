@@ -136,7 +136,7 @@ if(CMAKE_INSTALL_PYTHONDIR)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
           DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")
 
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/math/__init__.py" "from ..shamrock.math import *; print(__file__)\n")
+  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/math/__init__.py" "from ..shamrock.math import *\n")
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/math/__init__.py"
           DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}/math")
 

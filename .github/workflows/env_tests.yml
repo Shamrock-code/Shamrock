@@ -275,6 +275,9 @@ jobs:
           shamrock.change_loglevel(125)
           if not shamrock.sys.is_initialized():
             shamrock.sys.init('0:0')
+          
+          # To test that importing nested modules works
+          from shamrock.math import *
           EOF
           cat /tmp/test_rscript.py
 

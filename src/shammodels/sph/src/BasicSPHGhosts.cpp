@@ -152,6 +152,8 @@ int main(){
 */
 
 #include "shambase/exception.hpp"
+#include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
+#include "shamalgs/primitives/stream_compact.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include <functional>
@@ -460,25 +462,74 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
     std::map<u64, f64> send_count_stats;
 
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+    struct MultikernelInput {
+        u64 sender;
+        u64 receiver;
+        InterfaceBuildInfos &build;
+        PatchDataField<vec> &xyz;
+        sham::DeviceBuffer<u32> mask;
+    };
+
+    std::vector<MultikernelInput> multikernel_input;
+
     gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
         shamrock::patch::PatchDataLayer &src = sched.patch_data.get_pdat(sender);
         PatchDataField<vec> &xyz             = src.get_field<vec>(0);
+        if (xyz.get_obj_cnt() == 0) {
+            return;
+        }
+        multikernel_input.push_back(
+            {sender,
+             receiver,
+             build,
+             xyz,
+             sham::DeviceBuffer<u32>(xyz.get_obj_cnt() + 1, dev_sched)});
+    });
 
-        sham::DeviceBuffer<u32> idxs_res = xyz.get_ids_where(
-            [](auto access, u32 id, vec vmin, vec vmax) {
-                return Patch::is_in_patch_converted(access[id], vmin, vmax);
-            },
-            build.cut_volume.lower,
-            build.cut_volume.upper);
+    for (auto &input : multikernel_input) {
+
+        auto &sender   = input.sender;
+        auto &receiver = input.receiver;
+        auto &build    = input.build;
+        auto &xyz      = input.xyz;
+        auto &mask     = input.mask;
+        auto obj_cnt   = xyz.get_obj_cnt();
+
+        sham::kernel_call(
+            q,
+            sham::MultiRef{xyz.get_buf()},
+            sham::MultiRef{mask},
+            obj_cnt + 1,
+            [vmin = build.cut_volume.lower, vmax = build.cut_volume.upper, obj_cnt](
+                u32 id, const vec *__restrict acc, u32 *__restrict acc_mask) {
+                acc_mask[id]
+                    = (id < obj_cnt) ? Patch::is_in_patch_converted(acc[id], vmin, vmax) : 0;
+            });
+    }
+
+    for (auto &input : multikernel_input) {
+
+        auto &sender   = input.sender;
+        auto &receiver = input.receiver;
+        auto &build    = input.build;
+        auto &xyz      = input.xyz;
+        auto &mask     = input.mask;
+        auto obj_cnt   = xyz.get_obj_cnt();
+
+        sham::DeviceBuffer<u32> idxs_res
+            = shamalgs::primitives::stream_compact(dev_sched, std::move(mask), obj_cnt);
 
         u32 pcnt = idxs_res.get_size();
 
         // prevent sending empty patches
         if (pcnt == 0) {
-            return;
+            continue;
         }
 
-        f64 ratio = f64(pcnt) / f64(src.get_obj_cnt());
+        f64 ratio = f64(pcnt) / f64(xyz.get_obj_cnt());
 
         shamlog_debug_ln(
             "InterfaceGen",
@@ -494,7 +545,7 @@ auto BasicSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
         res.add_obj(sender, receiver, InterfaceIdTable{build, std::move(idxs_res), ratio});
 
         send_count_stats[sender] += ratio;
-    });
+    }
 
     bool has_warn = false;
 

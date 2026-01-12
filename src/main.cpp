@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
                 __shamrock_stack_entry();
                 std::string fname = std::string(opts::get_option("--rscript"));
 
-                shambindings::run_py_file(fname, shamcomm::world_rank() == 0, argc, argv);
+                shambindings::run_py_file(fname, shamcomm::world_rank() == 0);
 
             } else {
                 if (shamcomm::world_rank() == 0) {

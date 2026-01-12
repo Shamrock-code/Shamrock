@@ -2381,6 +2381,13 @@ namespace shammath {
         inline static Tscal phi_3D_prime(Tscal r, Tscal h) {
             return BaseKernel::norm_3d * phi_tilde_3d_prime(r / h) / (h * h);
         }
+
+        inline static Tscal dphi_dh_3D(Tscal r, Tscal h) {
+            Tscal h_m1 = 1 / h;
+            Tscal q    = r * h_m1;
+            return BaseKernel::norm_3d * (-phi_tilde_3d(q) - q * phi_tilde_3d_prime(q)) * h_m1
+                   * h_m1;
+        }
     };
 
     /**

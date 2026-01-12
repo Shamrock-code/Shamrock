@@ -82,6 +82,10 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
+        // xi resemble omega for the managment in the code, if somethign is done to omega and not to
+        // xi (when enabled) it is a bug !
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> xi;
+
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 

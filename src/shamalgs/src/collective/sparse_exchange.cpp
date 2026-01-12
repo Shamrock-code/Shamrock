@@ -229,9 +229,11 @@ namespace shamalgs::collective {
 
         __shamrock_stack_entry();
 
-        if (&bytebuffer_send == &bytebuffer_recv) {  
-            throw shambase::make_except_with_loc<std::invalid_argument>( "In-place sparse_exchange is not supported. Send and receive buffers must be distinct.");  
-        }  
+        if (&bytebuffer_send == &bytebuffer_recv) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "In-place sparse_exchange is not supported. Send and receive buffers must be "
+                "distinct.");
+        }
 
         if (comm_table.send_total_size > bytebuffer_send.get_size()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(

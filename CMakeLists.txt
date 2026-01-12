@@ -112,8 +112,13 @@ if(SHAMROCK_PATCH_LIB_RPATH)
     set(CMAKE_SKIP_BUILD_RPATH FALSE)
     set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
-    # search in current dir and ../lib for .so
-    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib")
+    # ldd search paths
+    #  - $ORIGIN : search in same dir
+    #  - $ORIGIN/../lib : search in ../lib (typically where shamrock is in bin and libs in ../lib)
+    #  - $ORIGIN/../../.. : in python install locate /lib from site package
+    #        .pyvenv/lib/python3.14/site-packages/shamrock/shamrock.cpython-314-x86_64-linux-gnu.so
+    #     -> .pyvenv/lib
+    set(CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/../lib;$ORIGIN/../../..")
 endif()
 
 add_subdirectory(src)

@@ -128,6 +128,7 @@ namespace shammodels::gsph {
         void compute_omega();
         void compute_eos_fields();
         void reset_eos_fields();
+        void copy_eos_to_patchdata();
 
         /**
          * @brief Compute gradients for MUSCL reconstruction

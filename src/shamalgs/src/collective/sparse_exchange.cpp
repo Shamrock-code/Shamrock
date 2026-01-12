@@ -140,7 +140,7 @@ namespace shamalgs::collective {
             auto message_info = message_all[i];
             if (message_info.rank_sender == shamcomm::world_rank()) {
 
-                // the sender shoudl have set the offset for all messages, otherwise throw
+                // the sender should have set the offset for all messages, otherwise throw
                 auto expected_offset = shambase::get_check_ref(
                     messages_send.at(send_idx).message_bytebuf_offset_send);
 
@@ -229,7 +229,7 @@ namespace shamalgs::collective {
 
         __shamrock_stack_entry();
 
-        if (comm_table.send_total_size < bytebuffer_send.get_size()) {
+        if (comm_table.send_total_size > bytebuffer_send.get_size()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "The send total size is greater than the send buffer size\n"
                 "    send_total_size = {}, send_buffer_size = {}",
@@ -237,7 +237,7 @@ namespace shamalgs::collective {
                 bytebuffer_send.get_size()));
         }
 
-        if (comm_table.recv_total_size < bytebuffer_recv.get_size()) {
+        if (comm_table.recv_total_size > bytebuffer_recv.get_size()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
                 "The recv total size is greater than the recv buffer size\n"
                 "    recv_total_size = {}, recv_buffer_size = {}",

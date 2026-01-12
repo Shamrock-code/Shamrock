@@ -64,6 +64,8 @@ namespace shamalgs::collective {
             std::vector<MPI_Status> st_lst(rqs.size());
             shamcomm::mpi::Waitall(
                 shambase::narrow_or_throw<i32>(rqs.size()), rqs.data(), st_lst.data());
+            ready_count = rqs.size();
+            is_ready.assign(rqs.size(), true);
         }
 
         size_t remain_count_no_test() { return rqs.size() - ready_count; }
@@ -91,16 +93,12 @@ namespace shamalgs::collective {
                 return;
             }
 
-            f64 last_print_time = 0;
-            size_t in_flight    = remain_count();
-
-            if (in_flight < max_in_flight) {
-                return;
-            }
-
             shambase::Timer twait;
             twait.start();
-            do {
+            f64 last_print_time = 0;
+            size_t in_flight;
+
+            while ((in_flight = remain_count()) >= max_in_flight) {
                 twait.end();
                 if (twait.elasped_sec() > timeout) {
                     report_timeout();
@@ -115,8 +113,7 @@ namespace shamalgs::collective {
                         max_in_flight);
                     last_print_time = twait.elasped_sec();
                 }
-                in_flight = remain_count();
-            } while (in_flight >= max_in_flight);
+            }
         }
     };
 

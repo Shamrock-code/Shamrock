@@ -307,7 +307,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     shambase::Timer time_part_gen;
     time_part_gen.start();
 
-    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr());
+    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr_old());
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("SPH setup", "generating particles ...");
@@ -661,7 +661,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     _tmp.resize(indices_size);
                 }
 
-                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
+                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr_old());
                 to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
 
                 idx_to_rem.append(_tmp);
@@ -692,7 +692,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // exchange the buffer held by the distrib data and give it to the
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
-                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
+                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr_old());
             });
 
         // insert the data into the data to be inserted

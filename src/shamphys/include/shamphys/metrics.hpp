@@ -20,9 +20,13 @@
 
 namespace shamphys {
 
-    // The Boyer-Lindquist metric tensor in CARTESIAN-like form
+    struct Kerr {};
+    struct Schwarzschild {};
+
+    /********************  The Kerr metric  ***********************/
+    // ################in CARTESIAN-like form ##################
     template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_cov_metric(Tvec pos) {
+    inline Tvec get_cartesian_cov_metric_impl(Kerr, Tvec pos) {
 
         // metric params
         Tscal a     = 1;
@@ -83,7 +87,7 @@ namespace shamphys {
     }
 
     template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_contrav_metric(Tvec pos) {
+    inline Tvec get_cartesian_contrav_metric_impl(Kerr, Tvec pos) {
 
         // metric params
         Tscal a     = 1;
@@ -146,8 +150,8 @@ namespace shamphys {
     }
 
     template<class Tscal, class Tvec>
-    inline void metric_cartesian_derivatives(
-        Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
+    inline void metric_cartesian_derivatives_impl(
+        Kerr, Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
 
         // metric params
         Tscal a     = 1;
@@ -428,6 +432,31 @@ namespace shamphys {
         dgcovdz(3, 0) = dgcovdz(0, 3);
         dgcovdz(3, 1) = dgcovdz(1, 3);
         dgcovdz(3, 2) = dgcovdz(2, 3);
+    }
+
+    // ################in spherical form ##################
+    // TODO
+
+    /********************  The Kerr metric  ***********************/
+    // ################in CARTESIAN-like form ##################
+    // ################in spherical form ##################
+    // TODO
+
+    /********************  frontend  ***********************/
+    template<class MetricTag, class Tscal, class Tvec>
+    inline Tvec get_cartesian_cov_metric(Tvec pos) {
+        return get_cartesian_cov_metric_impl<Tscal, Tvec>(MetricTag{}, pos);
+    }
+
+    template<class MetricTag, class Tscal, class Tvec>
+    inline Tvec get_cartesian_contrav_metric(Tvec pos) {
+        return get_cartesian_contrav_metric_impl<Tscal, Tvec>(MetricTag{}, pos);
+    }
+
+    template<class MetricTag, class Tscal, class Tvec>
+    inline void metric_cartesian_derivatives(
+        Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
+        metric_cartesian_derivatives_impl<Tscal, Tvec>(MetricTag{}, pos, dgcovdx, dgcovdy, dgcovdz);
     }
 
 } // namespace shamphys

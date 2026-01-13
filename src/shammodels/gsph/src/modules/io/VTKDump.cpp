@@ -37,7 +37,7 @@ namespace {
 
         shamlog_debug_mpi_ln("gsph::vtk", "rank count =", num_obj);
 
-        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(gsph::names::common::xyz);
+        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
         std::unique_ptr<sycl::buffer<Tvec>> pos = sched.rankgather_field<Tvec>(ixyz);
 
         writer.write_points(pos, num_obj);
@@ -170,7 +170,8 @@ namespace shammodels::gsph::modules {
         const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
         // Compute density field from smoothing length
-        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+        ComputeField<Tscal> density
+            = utility.make_compute_field<Tscal>(gsph::names::newtonian::density, 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             shamlog_debug_ln("gsph::vtk", "compute rho field for patch ", p.id_patch);
@@ -200,7 +201,8 @@ namespace shammodels::gsph::modules {
         });
 
         // Compute pressure field from EOS
-        ComputeField<Tscal> pressure_field = utility.make_compute_field<Tscal>("P", 1);
+        ComputeField<Tscal> pressure_field
+            = utility.make_compute_field<Tscal>(gsph::names::newtonian::pressure, 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();

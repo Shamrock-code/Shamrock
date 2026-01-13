@@ -1396,7 +1396,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::prepare_corrector() {
     const u32 iaxyz = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
 
     // Create compute field to store old acceleration
-    auto old_axyz = utility.make_compute_field<Tvec>("old_axyz", 1);
+    auto old_axyz = utility.make_compute_field<Tvec>(gsph::names::internal::old_axyz, 1);
 
     // Copy current acceleration to old_axyz
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -1425,7 +1425,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::prepare_corrector() {
 
     if (solver_config.has_field_uint()) {
         const u32 iduint = pdl.get_field_idx<Tscal>(gsph::names::newtonian::duint);
-        auto old_duint   = utility.make_compute_field<Tscal>("old_duint", 1);
+        auto old_duint   = utility.make_compute_field<Tscal>(gsph::names::internal::old_duint, 1);
 
         scheduler().for_each_patchdata_nonempty(
             [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {

@@ -80,7 +80,7 @@ repos:
     log_file: log_precommit_clang-format
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.10
+  rev: v0.14.11
   hooks:
     - id: ruff-check
       args:

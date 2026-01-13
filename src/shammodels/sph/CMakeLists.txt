@@ -57,6 +57,7 @@ set(Sources
     src/modules/self_gravity/SGDirectPlummer.cpp
     src/modules/self_gravity/SGMMPlummer.cpp
     src/modules/self_gravity/SGFMMPlummer.cpp
+    src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 

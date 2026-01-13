@@ -20,21 +20,29 @@
 
 namespace shamphys {
 
-    struct Kerr {};
+    template<class Tscal>
+    struct Kerr {
+
+        Tscal a;
+        Tscal bh_mass;
+        Tscal rs;
+
+        Kerr(Tscal spin = 1, Tscal mass = 1) : a(spin), bh_mass(bh_mass), rs(2. * bh_mass) {}
+    };
+
     struct Schwarzschild {};
 
     /********************  The Kerr metric  ***********************/
     // ################in CARTESIAN-like form ##################
     template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_cov_metric_impl(Kerr, Tvec pos) {
+    inline Tvec get_cartesian_cov_metric_impl(const Kerr<Tscal> &kerr, Tvec pos) {
 
         // metric params
-        Tscal a     = 1;
-        Tscal mass1 = 1.;
-        Tscal rs    = 2. * mass1;
+        static constexpr Tscal a  = kerr.a;
+        static constexpr Tscal rs = kerr.rs;
 
         // pos coords
-        Tscal x, y, z = pos;
+        Tscal x = pos(0), y = pos(1), z = pos(2);
         Tscal x2       = x * x;
         Tscal y2       = y * y;
         Tscal z2       = z * z;
@@ -87,15 +95,14 @@ namespace shamphys {
     }
 
     template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_contrav_metric_impl(Kerr, Tvec pos) {
+    inline Tvec get_cartesian_contrav_metric_impl(const Kerr<Tscal> &kerr, Tvec pos) {
 
         // metric params
-        Tscal a     = 1;
-        Tscal mass1 = 1.;
-        Tscal rs    = 2. * mass1;
+        static constexpr Tscal a  = kerr.a;
+        static constexpr Tscal rs = kerr.rs;
 
         // pos coords
-        Tscal x, y, z = pos;
+        Tscal x = pos(0), y = pos(1), z = pos(2);
         Tscal x2       = x * x;
         Tscal y2       = y * y;
         Tscal z2       = z * z;
@@ -151,13 +158,11 @@ namespace shamphys {
 
     template<class Tscal, class Tvec>
     inline void metric_cartesian_derivatives_impl(
-        Kerr, Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
+        const Kerr<Tscal> &kerr, Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
 
         // metric params
-        Tscal a     = 1;
-        Tscal mass1 = 1.;
-        Tscal rs    = 2. * mass1;
-
+        static constexpr Tscal a  = kerr.a;
+        static constexpr Tscal rs = kerr.rs;
         // position coords
         Tscal x = pos(0);
         Tscal y = pos(1);

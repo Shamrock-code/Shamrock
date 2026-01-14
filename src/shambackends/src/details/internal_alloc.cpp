@@ -326,6 +326,8 @@ namespace sham::details {
             register_alloc_shared(sz, end_time - start_time);
         } else if constexpr (target == host) {
             register_alloc_host(sz, end_time - start_time);
+            // logger::info_ln("internal_alloc", "alloc host : sz =", sz, " | time =", end_time -
+            // start_time);
         }
 
         return usm_ptr;

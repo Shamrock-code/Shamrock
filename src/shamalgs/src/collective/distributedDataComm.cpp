@@ -18,6 +18,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/sparse_exchange.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
@@ -78,6 +79,7 @@ namespace shamalgs::collective {
         SerializedDDataComm &send_distrib_data,
         SerializedDDataComm &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
+        DDSCommCache &cache,
         std::optional<SparseCommTable> comm_table) {
 
         StackEntry stack_loc{};
@@ -106,6 +108,79 @@ namespace shamalgs::collective {
             }
         }
 
+        sham::DeviceBuffer<u8> send_buf(0, dev_sched);
+        std::vector<shamalgs::collective::CommMessageInfo> messages_send;
+
+        size_t sender_offset = 0;
+        for (auto &[key, buf] : send_bufs) {
+
+            auto [sender, receiver] = key;
+            u64 size                = buf->get_size();
+
+            messages_send.push_back(
+                shamalgs::collective::CommMessageInfo{
+                    size,
+                    sender,
+                    receiver,
+                    std::nullopt,
+                    sender_offset,
+                    std::nullopt,
+                });
+
+            send_buf.append(*buf);
+            sender_offset += size;
+        }
+
+        shamalgs::collective::CommTable comm_table2
+            = shamalgs::collective::build_sparse_exchange_table(messages_send);
+
+        sham::DeviceBuffer<u8> recv_buf(comm_table2.recv_total_size, dev_sched);
+
+        if (dev_sched->ctx->device->mpi_prop.is_mpi_direct_capable) {
+            shamalgs::collective::sparse_exchange<sham::device>(
+                dev_sched, send_buf, recv_buf, comm_table2);
+        } else {
+            if (!cache.cache1) {
+                // logger::info_ln("ddcomm", "alloc cache1", shambase::fmt_callstack());
+                cache.cache1 = std::make_unique<sham::DeviceBuffer<u8, sham::host>>(
+                    send_buf.get_size(), dev_sched);
+            } else {
+                // logger::info_ln(
+                //     "ddcomm",
+                //     shambase::format(
+                //     "resize cache1 from {} to {} (cache1 ptr = {})",
+                //     cache.cache1->get_size(),
+                //     send_buf.get_size(),
+                //     static_cast<void*>(cache.cache1.get())),
+                //     shambase::fmt_callstack());
+                cache.cache1->resize(send_buf.get_size());
+            }
+            cache.cache1->copy_from(send_buf);
+            sham::DeviceBuffer<u8, sham::host> &send_buf_host = *cache.cache1;
+
+            if (!cache.cache2) {
+                // logger::info_ln("ddcomm", "alloc cache2", shambase::fmt_callstack());
+                cache.cache2 = std::make_unique<sham::DeviceBuffer<u8, sham::host>>(
+                    comm_table2.recv_total_size, dev_sched);
+            } else {
+                // logger::info_ln(
+                //     "ddcomm",
+                //     shambase::format(
+                //     "resize cache2 from {} to {} (cache2 ptr = {})",
+                //     cache.cache2->get_size(),
+                //     comm_table2.recv_total_size,
+                //     static_cast<void*>(cache.cache2.get())),
+                //     shambase::fmt_callstack());
+                cache.cache2->resize(comm_table2.recv_total_size);
+            }
+            sham::DeviceBuffer<u8, sham::host> &recv_buf_host = *cache.cache2;
+
+            shamalgs::collective::sparse_exchange<sham::host>(
+                dev_sched, send_buf_host, recv_buf_host, comm_table2);
+            recv_buf.copy_from(recv_buf_host);
+        }
+
+#ifdef false
         // prepare payload
         std::vector<SendPayload> send_payoad;
         {
@@ -127,6 +202,8 @@ namespace shamalgs::collective {
             base_sparse_comm(dev_sched, send_payoad, recv_payload);
         }
 
+#endif
+
         // make serializers from recv buffs
         struct RecvPayloadSer {
             i32 sender_ranks;
@@ -135,6 +212,7 @@ namespace shamalgs::collective {
 
         std::vector<RecvPayloadSer> recv_payload_bufs;
 
+#ifdef false
         {
             NamedStackEntry stack_loc2{"move payloads"};
             for (RecvPayload &payload : recv_payload) {
@@ -148,6 +226,22 @@ namespace shamalgs::collective {
                     RecvPayloadSer{
                         payload.sender_ranks, SerializeHelper(dev_sched, std::move(buf))});
             }
+        }
+#endif
+
+        for (auto &msg : comm_table2.messages_recv) {
+
+            u64 size     = msg.message_size;
+            i32 sender   = msg.rank_sender;
+            i32 receiver = msg.rank_receiver;
+            size_t begin = shambase::get_check_ref(msg.message_bytebuf_offset_recv);
+            size_t end   = begin + size;
+
+            sham::DeviceBuffer<u8> recov(size, dev_sched);
+
+            recv_buf.copy_range(begin, end, recov);
+            recv_payload_bufs.push_back(
+                RecvPayloadSer{sender, SerializeHelper(dev_sched, std::move(recov))});
         }
 
         {

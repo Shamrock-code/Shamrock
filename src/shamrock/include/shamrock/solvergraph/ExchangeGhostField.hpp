@@ -19,6 +19,7 @@
  * domains in the Shamrock hydrodynamics framework.
  */
 
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -56,6 +57,8 @@ namespace shamrock::solvergraph {
      */
     template<class T>
     class ExchangeGhostField : public shamrock::solvergraph::INode {
+
+        shamalgs::collective::DDSCommCache cache;
 
         public:
         /**

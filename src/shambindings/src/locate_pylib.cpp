@@ -52,7 +52,7 @@ namespace shambindings {
     }
 
     std::optional<std::string> is_path_valid_pylib(const std::string &path) {
-        std::filesystem::path path_fs = std::filesystem::path(path.c_str());
+        std::filesystem::path path_fs(path);
         if (!std::filesystem::exists(path_fs)) {
             return "does not exist";
         }

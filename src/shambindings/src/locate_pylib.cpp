@@ -15,6 +15,7 @@
  */
 
 #include "shambase/print.hpp"
+#include "shambase/string.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shamcmdopt/env.hpp"
 #include <pybind11/embed.h>
@@ -28,7 +29,11 @@
 std::optional<std::string> pylib_path_env_var = shamcmdopt::getenv_str("SHAMROCK_PYLIB_PATH");
 
 /// @brief Path to shamrock utils lib supplied at configure time
-extern std::vector<std::string> configure_time_pylib_paths();
+extern const char *configure_time_pylib_paths();
+
+std::vector<std::string> configure_time_pylib_paths_str() {
+    return shambase::split_str(std::string(configure_time_pylib_paths()), std::string(";"));
+}
 
 namespace shambindings {
 
@@ -95,15 +100,19 @@ namespace shambindings {
         std::filesystem::path pyshamrock_path_relative2 = binary_dir / ".." / "src" / "pylib";
 
         std::vector<std::string> possible_paths
-            = {"pyshamrock", pyshamrock_path_relative1, pyshamrock_path_relative2};
+            = {"pylib", pyshamrock_path_relative1, pyshamrock_path_relative2};
 
-        for (auto path : configure_time_pylib_paths()) {
+        for (auto path : configure_time_pylib_paths_str()) {
             possible_paths.push_back(path);
         }
 
         if (pylib_path_env_var.has_value()) {
             shambase::println("using pylib path from env var: " + pylib_path_env_var.value());
             possible_paths = {pylib_path_env_var.value()};
+        }
+
+        for (auto path : possible_paths) {
+            shambase::println("possible path: " + path);
         }
 
         std::optional<std::string> ret = std::nullopt;

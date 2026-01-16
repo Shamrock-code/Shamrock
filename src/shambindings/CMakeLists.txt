@@ -37,6 +37,12 @@ target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
+
+
+#####################################
+# python sys.path config
+#####################################
+
 if(NOT DEFINED PYTHON_EXECUTABLE)
     message(FATAL_ERROR "This should have been defined in the main CmakeLists.txt")
 endif()
@@ -73,33 +79,21 @@ set(PYLIB_PATHS
   "${CMAKE_SOURCE_DIR}/src/pylib"
 )
 
-set(code
-"#include <vector>
- #include <string>
+# Escape for C++ string literals
+string(REPLACE "\\" "\\\\" PYLIB_PATHS "${PYLIB_PATHS}")
+string(REPLACE "\"" "\\\"" PYLIB_PATHS "${PYLIB_PATHS}")
+string(JOIN ",\n        " PYLIB_PATHS_CPP "\"${PYLIB_PATHS}\"")
 
- std::vector<std::string> configure_time_pylib_paths() {
-     return {
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "
+  const char* configure_time_pylib_paths() { return \"${PYLIB_PATHS}\"; }
 ")
 
-foreach(path IN LISTS PYLIB_PATHS)
-    # Escape backslashes and quotes for C++
-    string(REPLACE "\\" "\\\\" path "${path}")
-    string(REPLACE "\"" "\\\"" path "${path}")
-
-    string(APPEND code "        \"${path}\",\n")
-endforeach()
-
-string(APPEND code
-"    };
-}
-")
-
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "${code}")
 target_sources(shambindings PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp")
 
 
-
-
+#####################################
+# run_ipython.py config
+#####################################
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
 

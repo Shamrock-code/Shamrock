@@ -3,4 +3,4 @@ try:
     from pyshamrock.math import *
 except ImportError:
     # then it is a library mode, we import from the local namespace
-    from ..pyshamrock.math import *
+    from .shamrock.math import *

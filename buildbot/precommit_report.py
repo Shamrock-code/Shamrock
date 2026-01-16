@@ -59,7 +59,9 @@ for f in file_list:
     elif f == "log_precommit_check-Authorship-update":
         print(log_f)
     else:
+        # start allow utf-8
         print("# ❌", logfiles_map[f]["id"])
+        # end allow utf-8
         print("```")
         print(log_f)
         print("```")

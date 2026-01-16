@@ -97,9 +97,7 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
 
 
 def show_image_sequence(glob_str, render_gif):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))
@@ -145,7 +143,6 @@ def show_image_sequence(glob_str, render_gif):
 
 
 def run_case(set_bc_func, case_name):
-
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
 
@@ -179,14 +176,12 @@ def run_case(set_bc_func, case_name):
     delta_v = 1e-4
 
     def rho_map(rmin, rmax):
-
         x, y, z = rmin
 
         return 1.0
         # return 1.0 + delta_rho * np.cos(kx * x + ky * y + kz * z)
 
     def rhoetot_map(rmin, rmax):
-
         rho = rho_map(rmin, rmax)
 
         x, y, z = rmin
@@ -197,7 +192,6 @@ def run_case(set_bc_func, case_name):
         return u_cs1
 
     def rhovel_map(rmin, rmax):
-
         rho = rho_map(rmin, rmax)
 
         x, y, z = rmin

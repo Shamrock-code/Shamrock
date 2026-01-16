@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -84,6 +84,8 @@ namespace shampylib {
         bind_sph_kernel<shammath::M4Shift4<f64>>(sphkernel_module, "M4Shift4");
         bind_sph_kernel<shammath::M4Shift8<f64>>(sphkernel_module, "M4Shift8");
         bind_sph_kernel<shammath::M4Shift16<f64>>(sphkernel_module, "M4Shift16");
+        bind_sph_kernel<shammath::TGauss3<f64>>(sphkernel_module, "TGauss3");
+        bind_sph_kernel<shammath::TGauss5<f64>>(sphkernel_module, "TGauss5");
     }
 
 } // namespace shampylib

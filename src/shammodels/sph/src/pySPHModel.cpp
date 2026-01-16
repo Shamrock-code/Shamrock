@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -197,6 +197,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("order"),
             py::arg("opening_angle"),
+            py::arg("reduction_level") = 3)
+        .def(
+            "set_self_gravity_sfmm",
+            [](TConfig &self,
+               u32 sfmm_order,
+               f64 opening_angle,
+               bool leaf_lowering,
+               u32 reduction_level) {
+                self.self_grav_config.set_sfmm(
+                    sfmm_order, opening_angle, leaf_lowering, reduction_level);
+            },
+            py::kw_only(),
+            py::arg("order"),
+            py::arg("opening_angle"),
+            py::arg("leaf_lowering")   = true,
             py::arg("reduction_level") = 3)
         .def(
             "set_softening_plummer",

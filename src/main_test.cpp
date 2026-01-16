@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file main_test.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -175,7 +176,6 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamsys::instance::is_initialized()) {
-        bool _ = shamrock::are_experimental_features_allowed();
         shamcomm::logs::code_init_done_log();
 
         if (opts::has_option("--pypath")) {
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
         cfg.run_benchmark  = opts::has_option("--benchmark");
         cfg.run_validation = opts::has_option("--validation");
         cfg.run_unittest   = opts::has_option("--unittest");
-        if ((cfg.run_benchmark || cfg.run_unittest || cfg.run_validation) == false) {
+        if (!(cfg.run_benchmark || cfg.run_unittest || cfg.run_validation)) {
             cfg.run_unittest   = true;
             cfg.run_validation = true;
             cfg.run_benchmark  = false;

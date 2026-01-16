@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -104,7 +104,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             },
             py::arg("gamma"),
             R"==(
-    Set adiabatic equation of state: P = (γ-1) × ρ × u
+    Set adiabatic equation of state: P = (\gamma-1)  \rho  u
 
     Parameters
     ----------
@@ -118,7 +118,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             },
             py::arg("cs"),
             R"==(
-    Set isothermal equation of state: P = cs² × ρ
+    Set isothermal equation of state: P = cs^2  \rho
 
     Parameters
     ----------

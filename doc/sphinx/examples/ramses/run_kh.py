@@ -78,7 +78,6 @@ if shamrock.sys.world_rank() == 0:
 
 
 def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
-
     # Create the cylindrical coordinate grid
     x_vals = np.linspace(min_x, max_x, nx)
     y_vals = np.linspace(min_y, max_y, ny)
@@ -126,9 +125,7 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
 
 
 def show_image_sequence(glob_str, render_gif):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))
@@ -174,7 +171,6 @@ def show_image_sequence(glob_str, render_gif):
 
 
 def run_case(set_bc_func, case_name):
-
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
 
@@ -209,7 +205,6 @@ def run_case(set_bc_func, case_name):
     u_cs2 = rho_2 / (gamma * (gamma - 1))
 
     def rho_map(rmin, rmax):
-
         x, y, z = rmin
 
         if y > y_interface:
@@ -218,7 +213,6 @@ def run_case(set_bc_func, case_name):
             return rho_1
 
     def rhovel_map(rmin, rmax):
-
         rho = rho_map(rmin, rmax)
 
         x, y, z = rmin
@@ -245,7 +239,6 @@ def run_case(set_bc_func, case_name):
         return (vx * rho, ampl * pert * rho, 0)
 
     def rhoetot_map(rmin, rmax):
-
         rho = rho_map(rmin, rmax)
         rhovel = rhovel_map(rmin, rmax)
 

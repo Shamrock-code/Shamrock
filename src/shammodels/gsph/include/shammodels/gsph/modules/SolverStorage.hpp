@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -27,7 +27,7 @@
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/BasicSPHGhosts.hpp"
+#include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -64,8 +64,8 @@ namespace shammodels::gsph {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        // Reuse SPH ghost handler - the mechanism is the same
-        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        // Use GSPH ghost handler with Newtonian field names
+        using GhostHandle      = gsph::GSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
@@ -117,11 +117,11 @@ namespace shammodels::gsph {
 
         /// Gradient fields for MUSCL reconstruction (2nd order)
         /// These are computed when ReconstructConfig::is_muscl() is true
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_density;  ///< ∇ρ
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure; ///< ∇P
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vx;       ///< ∇v_x
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< ∇v_y
-        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< ∇v_z
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_density;  ///< \nabla \rho
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure; ///< \nabla P
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vx;       ///< \nabla v_x
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< \nabla v_y
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< \nabla v_z
 
         /// Minimum h/c_s for CFL timestep calculation
         /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s

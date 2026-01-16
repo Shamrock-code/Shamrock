@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -28,9 +28,8 @@
 #include "shambase/exception.hpp"
 #include "SolverConfig.hpp"
 #include "shambackends/vec.hpp"
+#include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include "shammodels/gsph/modules/SolverStorage.hpp"
-#include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/SolverLog.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
@@ -92,8 +91,8 @@ namespace shammodels::gsph {
         void gen_serial_patch_tree();
         inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
-        // Ghost handling - reuse SPH ghost handler
-        using GhostHandle      = sph::BasicSPHGhostHandler<Tvec>;
+        // Ghost handling - use GSPH ghost handler with Newtonian field names
+        using GhostHandle      = GSPHGhostHandler<Tvec>;
         using GhostHandleCache = typename GhostHandle::CacheMap;
 
         void gen_ghost_handler(Tscal time_val);

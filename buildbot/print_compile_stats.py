@@ -26,7 +26,6 @@ comp_time = []
 
 
 for [tstart, tend, hsh, name, hsh2] in arr:
-
     tstart = float(tstart)
     tend = float(tend)
 

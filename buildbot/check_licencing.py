@@ -13,7 +13,7 @@ print_buildbot_info("licence check tool")
 licence_cpp = R"""// -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,7 +30,7 @@ def selector_cpp(fname):
 licence_cmake = R"""## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -70,7 +70,6 @@ for fname in file_list:
     print("checking", fname)
     for selector, licence in checkers:
         if selector(fname):
-
             print(" -", fname)
 
             f = open(fname, "r")
@@ -89,7 +88,9 @@ def write_file(fname, source):
 
 def make_check_pr_report():
     rep = ""
+    # start allow utf-8
     rep += "## ❌ Check license headers"
+    # end allow utf-8
     rep += """
 
 The pre-commit checks have found some missing or ill formed license header.
@@ -98,7 +99,7 @@ All C++ files (headers or sources) should start with :
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //

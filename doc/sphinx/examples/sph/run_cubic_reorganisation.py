@@ -155,7 +155,7 @@ def make_plot(model, iplot):
     if scatter_range is None:
         scatter_range = (min_hpart, max_hpart)
 
-    print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart-min_hpart}")
+    print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart - min_hpart}")
 
     # Compute all pairwise distances
     from scipy.spatial.distance import pdist
@@ -211,7 +211,7 @@ def make_plot(model, iplot):
 
     ax.bar(bin_centers, normalized_counts, width=bin_edges[1] - bin_edges[0], align="center")
     ax.set_xlabel("distances / hmean")
-    ax.set_ylabel("counts / (r² * number of particles)")
+    ax.set_ylabel("counts / (r^2 * number of particles)")
     ax.set_xlim(0, 3)
     ax.set_ylim(0, 1.5)
 
@@ -236,9 +236,7 @@ render_gif = True
 
 
 def show_image_sequence(glob_str):
-
     if render_gif and shamrock.sys.world_rank() == 0:
-
         import glob
 
         files = sorted(glob.glob(glob_str))

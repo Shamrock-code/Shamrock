@@ -250,7 +250,6 @@ arr_vxyz = model.render_cartesian_column_integ(
 
 
 def plot_rho_integ(metadata, arr_rho):
-
     ext = metadata["extent"]
 
     my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap

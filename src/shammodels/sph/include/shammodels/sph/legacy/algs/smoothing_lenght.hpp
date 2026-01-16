@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -242,15 +242,11 @@ namespace models::sph {
             constexpr u32 reduc_level = 5;
 
             sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
-                shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "making Radix Tree");
+                shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "making Radix Tree");
 
                 if (merge_pdat.at(id_patch).or_element_cnt == 0)
                     shamlog_debug_ln(
-                        "SPHLeapfrog",
-                        "patch : n°",
-                        id_patch,
-                        "->",
-                        "is empty skipping tree build");
+                        "SPHLeapfrog", "patch : n", id_patch, "->", "is empty skipping tree build");
 
                 // PatchDataBuffer &mpdat_buf = *merge_pdat_buf.at(id_patch).data;
                 PatchData &mpdat = merge_pdat.at(id_patch).data;
@@ -270,11 +266,11 @@ namespace models::sph {
 
             sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                 shamlog_debug_ln(
-                    "SPHLeapfrog", "patch : n°", id_patch, "->", "compute radix tree cell volumes");
+                    "SPHLeapfrog", "patch : n", id_patch, "->", "compute radix tree cell volumes");
                 if (merge_pdat.at(id_patch).or_element_cnt == 0)
                     shamlog_debug_ln(
                         "SPHLeapfrog",
-                        "patch : n°",
+                        "patch : n",
                         id_patch,
                         "->",
                         "is empty skipping tree volumes step");
@@ -287,14 +283,14 @@ namespace models::sph {
             sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                 shamlog_debug_ln(
                     "SPHLeapfrog",
-                    "patch : n°",
+                    "patch : n",
                     id_patch,
                     "->",
                     "compute Radix Tree interaction boxes");
                 if (merge_pdat.at(id_patch).or_element_cnt == 0)
                     shamlog_debug_ln(
                         "SPHLeapfrog",
-                        "patch : n°",
+                        "patch : n",
                         id_patch,
                         "->",
                         "is empty skipping interaction box compute");
@@ -318,11 +314,11 @@ namespace models::sph {
 
             // iterate smoothing length
             sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
-                shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "Init h iteration");
+                shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "Init h iteration");
                 if (merge_pdat.at(id_patch).or_element_cnt == 0)
                     shamlog_debug_ln(
                         "SPHLeapfrog",
-                        "patch : n°",
+                        "patch : n",
                         id_patch,
                         "->",
                         "is empty skipping h iteration");

@@ -61,6 +61,7 @@ namespace shammodels {
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using Tillotson     = typename EOSConfig<Tvec>::Tillotson;
 
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
@@ -86,6 +87,20 @@ namespace shammodels {
                 {"Tvec", type_id},
                 {"eos_type", "locally_isothermal_fa2014"},
                 {"h_over_r", eos_config->h_over_r}};
+        } else if (const Tillotson *eos_config = std::get_if<Tillotson>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "tillotson"},
+                {"rho0", eos_config->rho0},
+                {"E0", eos_config->E0},
+                {"A", eos_config->A},
+                {"B", eos_config->B},
+                {"a", eos_config->a},
+                {"b", eos_config->b},
+                {"alpha", eos_config->alpha},
+                {"beta", eos_config->beta},
+                {"u_iv", eos_config->u_iv},
+                {"u_cv", eos_config->u_cv}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
         }
@@ -138,6 +153,7 @@ namespace shammodels {
         using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using Tillotson     = typename EOSConfig<Tvec>::Tillotson;
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
@@ -152,6 +168,18 @@ namespace shammodels {
                 j.at("cs0").get<Tscal>(), j.at("q").get<Tscal>(), j.at("r0").get<Tscal>()};
         } else if (eos_type == "locally_isothermal_fa2014") {
             p.config = LocIsoTFA2014{j.at("h_over_r").get<Tscal>()};
+        } else if (eos_type == "tillotson") {
+            p.config = Tillotson{
+                j.at("rho0").get<Tscal>(),
+                j.at("E0").get<Tscal>(),
+                j.at("A").get<Tscal>(),
+                j.at("B").get<Tscal>(),
+                j.at("a").get<Tscal>(),
+                j.at("b").get<Tscal>(),
+                j.at("alpha").get<Tscal>(),
+                j.at("beta").get<Tscal>(),
+                j.at("u_iv").get<Tscal>(),
+                j.at("u_cv").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("wtf !");
         }

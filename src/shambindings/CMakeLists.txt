@@ -58,7 +58,6 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
   "
   const char* configure_time_py_sys_path() { return \"${__PYTHON_SYS_PATH_OUT}\"; }
   const char* configure_time_py_executable() { return \"${PYTHON_EXECUTABLE}\"; }
-  const char* configure_time_pylib_path() { return \"${CMAKE_SOURCE_DIR}/src/pylib\"; }
   "
 )
 

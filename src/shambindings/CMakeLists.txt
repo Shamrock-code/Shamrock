@@ -74,15 +74,20 @@ target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_p
 # pylib paths config
 #####################################
 
-set(PYLIB_PATHS
+# Default value (used only if NOT provided via cache)
+set(_DEFAULT_PYLIB_PATHS
   "${CMAKE_INSTALL_PYTHONDIR}"
   "${CMAKE_SOURCE_DIR}/src/pylib"
 )
 
+set(PYLIB_PATHS "${_DEFAULT_PYLIB_PATHS}"
+    CACHE STRING "Python library search paths (CMake list)")
+
+message(STATUS "PYLIB_PATHS : ${PYLIB_PATHS}")
+
 # Escape for C++ string literals
 string(REPLACE "\\" "\\\\" PYLIB_PATHS "${PYLIB_PATHS}")
 string(REPLACE "\"" "\\\"" PYLIB_PATHS "${PYLIB_PATHS}")
-string(JOIN ",\n        " PYLIB_PATHS_CPP "\"${PYLIB_PATHS}\"")
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "
   const char* configure_time_pylib_paths() { return \"${PYLIB_PATHS}\"; }

@@ -190,13 +190,13 @@ int main(int argc, char *argv[]) {
                         "cannot run ipython mode with > 1 processes");
                 }
 
-                shambindings::start_ipython(true);
+                shambindings::start_ipython(true, argc, argv);
 
             } else if (opts::has_option("--rscript")) {
                 __shamrock_stack_entry();
                 std::string fname = std::string(opts::get_option("--rscript"));
 
-                shambindings::run_py_file(fname, shamcomm::world_rank() == 0);
+                shambindings::run_py_file(fname, shamcomm::world_rank() == 0, argc, argv);
 
             } else {
                 if (shamcomm::world_rank() == 0) {

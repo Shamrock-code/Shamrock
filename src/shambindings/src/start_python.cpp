@@ -109,10 +109,28 @@ namespace shambindings {
         py::exec(modify_path);
     }
 
-    void start_ipython(bool do_print) {
+    void set_sys_argv(int argc, char *argv[]) {
+        std::vector<std::string> sys_argv;
+        for (int i = 0; i < argc; i++) {
+            sys_argv.push_back(argv[i]);
+        }
+        std::stringstream ss;
+        ss << "[";
+        for (const auto &arg : sys_argv) {
+            ss << "\"" << arg << "\", ";
+        }
+        ss << "]";
+
+        std::string cmd = "import sys; sys.argv = " + ss.str();
+
+        py::exec(cmd);
+    }
+
+    void start_ipython(bool do_print, int argc, char *argv[]) {
 
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("--------------------------------------------");
@@ -127,9 +145,10 @@ namespace shambindings {
         }
     }
 
-    void run_py_file(std::string file_path, bool do_print) {
+    void run_py_file(std::string file_path, bool do_print, int argc, char *argv[]) {
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("-----------------------------------");

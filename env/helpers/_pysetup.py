@@ -84,7 +84,7 @@ setup(
     author_email="tim.shamrock@proton.me",
     description="SHAMROCK Code for astrophysics",
     long_description="",
-    ext_modules=[ShamEnvExtension("shamrock.shamrock")],
+    ext_modules=[ShamEnvExtension("shamrock.pyshamrock")],
     data_files=[("bin", ["shamrock"])],
     cmdclass={"build_ext": ShamEnvBuild},
     zip_safe=False,

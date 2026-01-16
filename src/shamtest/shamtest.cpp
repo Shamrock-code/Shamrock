@@ -501,6 +501,7 @@ namespace shamtest {
 
         ON_RANK_0(shamcomm::logs::print_faint_row());
         shambindings::modify_py_sys_path(shamcomm::world_rank() == 0);
+        shambindings::set_sys_argv(argc, argv);
         ON_RANK_0(shamcomm::logs::print_faint_row());
 
         // import shamrock in pybind

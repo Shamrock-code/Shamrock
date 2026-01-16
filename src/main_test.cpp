@@ -40,7 +40,7 @@
 #include <string>
 
 /// Call bindings init for the shamrock python module
-PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
+PYBIND11_EMBEDDED_MODULE(pyshamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 

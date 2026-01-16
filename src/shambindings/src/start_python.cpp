@@ -20,6 +20,7 @@
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include <pybind11/embed.h>
+#include <pybind11/stl.h>
 #include <cstdlib>
 #include <optional>
 #include <string>
@@ -110,20 +111,8 @@ namespace shambindings {
     }
 
     void set_sys_argv(int argc, char *argv[]) {
-        std::vector<std::string> sys_argv;
-        for (int i = 0; i < argc; i++) {
-            sys_argv.push_back(argv[i]);
-        }
-        std::stringstream ss;
-        ss << "[";
-        for (const auto &arg : sys_argv) {
-            ss << "\"" << arg << "\", ";
-        }
-        ss << "]";
-
-        std::string cmd = "import sys; sys.argv = " + ss.str();
-
-        py::exec(cmd);
+        std::vector<std::string> cpp_argv(argv, argv + argc);
+        py::module_::import("sys").attr("argv") = py::cast(cpp_argv);
     }
 
     void start_ipython(bool do_print, int argc, char *argv[]) {

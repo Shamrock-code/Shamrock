@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -78,6 +78,17 @@ namespace shammodels::gsph::names {
         /// Gradient of velocity z-component \nabla v_z (for MUSCL reconstruction)
         inline constexpr const char *grad_vz = "grad_vz";
     } // namespace newtonian
+
+    // ========================================================================
+    // Internal temporary field names (for compute fields)
+    // ========================================================================
+    namespace internal {
+        /// Old acceleration (for corrector step)
+        inline constexpr const char *old_axyz = "old_axyz";
+
+        /// Old internal energy derivative (for corrector step)
+        inline constexpr const char *old_duint = "old_duint";
+    } // namespace internal
 
 } // namespace shammodels::gsph::names
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -36,7 +37,7 @@ namespace {
 
         shamlog_debug_mpi_ln("gsph::vtk", "rank count =", num_obj);
 
-        const u32 ixyz                          = sched.pdl().get_field_idx<Tvec>("xyz");
+        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
         std::unique_ptr<sycl::buffer<Tvec>> pos = sched.rankgather_field<Tvec>(ixyz);
 
         writer.write_points(pos, num_obj);
@@ -159,17 +160,18 @@ namespace shammodels::gsph::modules {
         shamrock::SchedulerUtility utility(scheduler());
 
         PatchDataLayerLayout &pdl = scheduler().pdl();
-        const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-        const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-        const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+        const u32 ixyz            = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
+        const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
+        const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
+        const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
 
         // Check for optional internal energy field
         const bool has_uint = solver_config.has_field_uint();
-        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
+        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
         // Compute density field from smoothing length
-        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
+        ComputeField<Tscal> density
+            = utility.make_compute_field<Tscal>(gsph::names::newtonian::density, 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             shamlog_debug_ln("gsph::vtk", "compute rho field for patch ", p.id_patch);
@@ -199,7 +201,8 @@ namespace shammodels::gsph::modules {
         });
 
         // Compute pressure field from EOS
-        ComputeField<Tscal> pressure_field = utility.make_compute_field<Tscal>("P", 1);
+        ComputeField<Tscal> pressure_field
+            = utility.make_compute_field<Tscal>(gsph::names::newtonian::pressure, 1);
 
         scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
             auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();

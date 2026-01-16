@@ -409,13 +409,13 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             using namespace shamunits;
             auto unit_sys = *solver_config.unit_sys;
 
-            const Tscal mass   = unit_sys.template to<units::kilogram>();
-            const Tscal length = unit_sys.template to<units::metre>();
-            const Tscal time   = unit_sys.template to<units::second>();
+            Tscal mass   = unit_sys.template to<units::kilogram>();
+            Tscal length = unit_sys.template to<units::metre>();
+            Tscal time   = unit_sys.template to<units::second>();
 
-            const Tscal pressure_unit = mass / length / (time * time);
-            const Tscal density_unit  = mass / (length * length * length);
-            const Tscal velocity_unit = length / time;
+            Tscal pressure_unit = mass / length / (time * time);
+            Tscal density_unit  = mass / (length * length * length);
+            Tscal velocity_unit = length / time;
 
             sham::kernel_call(
                 q,

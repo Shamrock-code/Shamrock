@@ -64,6 +64,44 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
 
 target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp)
 
+
+#####################################
+# pylib paths config
+#####################################
+
+set(PYLIB_PATHS
+  "${CMAKE_INSTALL_PYTHONDIR}"
+  "${CMAKE_SOURCE_DIR}/src/pylib"
+)
+
+set(code
+"#include <vector>
+ #include <string>
+
+ std::vector<std::string> configure_time_pylib_paths() {
+     return {
+")
+
+foreach(path IN LISTS PYLIB_PATHS)
+    # Escape backslashes and quotes for C++
+    string(REPLACE "\\" "\\\\" path "${path}")
+    string(REPLACE "\"" "\\\"" path "${path}")
+
+    string(APPEND code "        \"${path}\",\n")
+endforeach()
+
+string(APPEND code
+"    };
+}
+")
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "${code}")
+target_sources(shambindings PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp")
+
+
+
+
+
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
 
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/run_ipython_src.cpp

@@ -27,9 +27,8 @@
 // env var to set the path to the pylib
 std::optional<std::string> pylib_path_env_var = shamcmdopt::getenv_str("SHAMROCK_PYLIB_PATH");
 
-/// @brief Path to shamrock utils lib a config time
-extern const char *configure_time_pylib_path();
-// std::string configure_time_pylib_path () { return ""; }
+/// @brief Path to shamrock utils lib supplied at configure time
+extern std::vector<std::string> configure_time_pylib_paths();
 
 namespace shambindings {
 
@@ -96,13 +95,15 @@ namespace shambindings {
         std::filesystem::path pyshamrock_path_relative2 = binary_dir / ".." / "src" / "pylib";
 
         std::vector<std::string> possible_paths
-            = {"pyshamrock",
-               pyshamrock_path_relative1,
-               pyshamrock_path_relative2,
-               std::string(configure_time_pylib_path())};
+            = {"pyshamrock", pyshamrock_path_relative1, pyshamrock_path_relative2};
+
+        for (auto path : configure_time_pylib_paths()) {
+            possible_paths.push_back(path);
+        }
 
         if (pylib_path_env_var.has_value()) {
-            possible_paths.push_back(pylib_path_env_var.value());
+            shambase::println("using pylib path from env var: " + pylib_path_env_var.value());
+            possible_paths = {pylib_path_env_var.value()};
         }
 
         std::optional<std::string> ret = std::nullopt;

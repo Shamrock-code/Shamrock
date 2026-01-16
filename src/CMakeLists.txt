@@ -135,6 +135,8 @@ if(CMAKE_INSTALL_PYTHONDIR)
   install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/pylib/shamrock"
           DESTINATION "${CMAKE_INSTALL_PYTHONDIR}")
 
+  # pylib paths config is in shambindings/CMakeLists.txt
+
   # Install the Python module shared library
   install(TARGETS shamrock_pylib
           LIBRARY DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")

@@ -16,6 +16,7 @@
 
 #include "shambase/popen.hpp"
 #include "shambase/print.hpp"
+#include "shambindings/locate_pylib.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
@@ -108,6 +109,10 @@ namespace shambindings {
         std::string modify_path = std::string("paths = ") + get_pypath() + "\n";
         modify_path += R"(import sys;sys.path = paths)";
         py::exec(modify_path);
+
+        std::string pylib_path      = shambindings::locate_pylib_path(do_print);
+        std::string modify_path_lib = std::string("sys.path.insert(0, \"") + pylib_path + "\")\n";
+        py::exec(modify_path_lib);
     }
 
     void set_sys_argv(int argc, char *argv[]) {

@@ -86,7 +86,7 @@ class perf_history:
             plt.plot(t, cum_sim_time_delta)
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("t [s] (real time)")
-            plt.savefig(self.plot_filename + "_cum_sim_time_delta.png")
+            plt.savefig(self.plot_filename + "sim_time.png")
             if close_plots:
                 plt.close()
 
@@ -94,7 +94,7 @@ class perf_history:
             plt.plot(t, cum_sim_step_count_delta)
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$N_\\mathrm{step}$")
-            plt.savefig(self.plot_filename + "_cum_sim_step_count_delta.png")
+            plt.savefig(self.plot_filename + "step_count.png")
             if close_plots:
                 plt.close()
 
@@ -118,8 +118,8 @@ class perf_history:
             dt_code = np.diff(t)
             tsim_per_hour = dt_code / (sim_time_delta[1:] / 3600)
             plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(cum_sim_time_delta[1:], tsim_per_hour)
-            plt.xlabel("t [code unit] (real time)")
+            plt.plot(t[1:], tsim_per_hour)
+            plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("sim time per hour")
             plt.savefig(self.plot_filename + "_tsim_per_hour.png")
             if close_plots:

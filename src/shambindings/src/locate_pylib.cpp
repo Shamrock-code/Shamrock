@@ -107,20 +107,22 @@ namespace shambindings {
         }
 
         if (pylib_path_env_var.has_value()) {
-            shambase::println("using pylib path from env var: " + pylib_path_env_var.value());
+            if (do_print) {
+                shambase::println("using pylib path from env var: " + pylib_path_env_var.value());
+            }
             possible_paths = {pylib_path_env_var.value()};
         }
 
-        for (auto path : possible_paths) {
-            shambase::println("possible path: " + path);
-        }
+        // for (auto path : possible_paths) {
+        //     shambase::println("possible path: " + path);
+        // }
 
         std::optional<std::string> ret = std::nullopt;
 
         for (const auto &path : possible_paths) {
             auto err = is_path_valid_pylib(path);
             if (err.has_value()) {
-                shambase::println("pylib path " + path + " is not valid: " + err.value());
+                // shambase::println("pylib path " + path + " is not valid: " + err.value());
             } else {
                 ret = path;
                 break;

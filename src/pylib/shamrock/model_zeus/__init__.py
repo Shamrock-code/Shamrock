@@ -1,23 +1,17 @@
 """
-Main shamrock module.
+Shamrock Zeus model.
 """
 
 try:
     # try to import from the global namespace (works if embedded python interpreter is used)
-    from pyshamrock import *
-
-    SHAM_IMPORT_MODE = "global"
+    from pyshamrock.model_zeus import *
 except ImportError:
     # then it is a library mode, we import from the local namespace
-    from .pyshamrock import *
+    from ..pyshamrock.model_zeus import *
 
-    SHAM_IMPORT_MODE = "local"
-
-# print(f"shamrock imported from {__file__}")
-# print(f"import log: {SHAM_IMPORT_MODE}")
 
 # explicitly re-export public API
-__all__ = [name for name in globals() if not name.startswith("_") and not name == "pyshamrock"]
+__all__ = [name for name in globals() if not name.startswith("_")]
 
 # Sphinx uses obj.__module__ to decide where something belongs.
 for name in __all__:
@@ -27,4 +21,4 @@ for name in __all__:
         # Some C-extension objects or builtins don't allow rebinding __module__
         pass
 
-# print(f"shamrock.__all__: {__all__}")
+# print(f"shamrock.model_zeus.__all__: {__all__}")

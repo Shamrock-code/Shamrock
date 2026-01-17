@@ -569,6 +569,22 @@ struct shammodels::sph::SolverConfig {
         eos_config.set_locally_isothermalFA2014(h_over_r);
     }
 
+    /**
+     * @brief Set the EOS configuration to a Machida 2006 equation of state
+     *
+     * @param rho_c1 Critical density 1
+     * @param rho_c2 Critical density 2
+     * @param rho_c3 Critical density 3
+     * @param cs Sound speed
+     * @param mu Mean molecular weight
+     * @param mh Mass of hydrogen
+     * @param kb Boltzmann constant
+     */
+    inline void set_eos_machida06(
+        Tscal rho_c1, Tscal rho_c2, Tscal rho_c3, Tscal cs, Tscal mu, Tscal mh, Tscal kb) {
+        eos_config.set_machida06(rho_c1, rho_c2, rho_c3, cs, mu, mh, kb);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

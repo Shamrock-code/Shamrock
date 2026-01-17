@@ -187,4 +187,41 @@ namespace shamphys {
         return (lhs.h_over_r == rhs.h_over_r);
     }
 
+    /**
+     * @brief Configuration struct for the Machida 2006 equation of state
+     *
+     * @tparam Tscal Scalar type
+     */
+    template<class Tscal>
+    struct EOS_Config_Machida06 {
+        Tscal rho_c1;
+        Tscal rho_c2;
+        Tscal rho_c3;
+        Tscal cs;
+        Tscal mu;
+        Tscal mh;
+        Tscal kb;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Machida06 struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Machida06 struct to compare
+     * @param rhs Second EOS_Config_Machida06 struct to compare
+     *
+     * This function checks if two EOS_Config_Machida06 structs are equal by comparing their rho_c1,
+     * rho_c2, rho_c3, cs, mu, mh, and kb values.
+     *
+     * @return true if the two structs have the same rho_c1, rho_c2, rho_c3, cs, mu, mh, and kb
+     * values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_Machida06<Tscal> &lhs, const EOS_Config_Machida06<Tscal> &rhs) {
+        return (lhs.rho_c1 == rhs.rho_c1) && (lhs.rho_c2 == rhs.rho_c2)
+               && (lhs.rho_c3 == rhs.rho_c3) && (lhs.cs == rhs.cs) && (lhs.mu == rhs.mu)
+               && (lhs.mh == rhs.mh) && (lhs.kb == rhs.kb);
+    }
+
 } // namespace shamphys

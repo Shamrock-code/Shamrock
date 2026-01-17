@@ -18,6 +18,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammath/Perlin.h"
 #include "shammath/derivatives.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
@@ -849,4 +850,9 @@ Register_pymod(pysham_mathinit) {
                 "SymTensorCollection_f64_1_1(\n  t1={}\n)",
                 py::str(py::cast(c.t1)).cast<std::string>());
         });
+
+    // PerlinNoise
+    py::class_<shammath::PerlinNoise>(math_module, "PerlinNoise")
+        .def(py::init<>())
+        .def("noise_3d", &shammath::PerlinNoise::noise_3d);
 }

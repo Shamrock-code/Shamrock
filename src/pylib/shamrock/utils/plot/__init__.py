@@ -15,7 +15,7 @@ try:
     _HAS_MATPLOTLIB = True
 except ImportError:
     _HAS_MATPLOTLIB = False
-    print("Warning: matplotlib is not installed, some functions will not be available")
+    print("Warning: matplotlib is not installed, some Shamrock functions will not be available")
 
 try:
     from PIL import Image
@@ -23,7 +23,7 @@ try:
     _HAS_PIL = True
 except ImportError:
     _HAS_PIL = False
-    print("Warning: PIL is not installed, some functions will not be available")
+    print("Warning: PIL is not installed, some Shamrock functions will not be available")
 
 if _HAS_MATPLOTLIB and _HAS_PIL:
     __all__.append("show_image_sequence")

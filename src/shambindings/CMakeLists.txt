@@ -85,6 +85,9 @@ list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
   "${CMAKE_SOURCE_DIR}/src/pylib"
 )
 
+set(SHAM_PYLIB_PATHS ""
+    CACHE STRING "Python library search paths (CMake list). Leave empty to use defaults.")
+
 if(SHAM_PYLIB_PATHS STREQUAL "")
   set(SHAM_PYLIB_PATH_LIST "${_DEFAULT_SHAM_PYLIB_PATHS}")
   message(STATUS "pylib paths list (auto-detected) :")

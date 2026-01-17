@@ -373,6 +373,11 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
+from shamrock.utils.analysis import perf_history
+
+perf_analysis = perf_history(model, analysis_folder, "perf_history")
+
+
 def analysis(ianalysis):
     ext = rout * 1.5
     nx = 1024
@@ -409,17 +414,7 @@ def analysis(ianalysis):
     sinks = model.get_sinks()
     save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
-    sim_time_delta = model.solver_logs_cumulated_step_time()
-    scount = model.solver_logs_step_count()
-
-    save_analysis_data("sim_time_delta.json", "sim_time_delta", sim_time_delta, ianalysis)
-    save_analysis_data("sim_step_count_delta.json", "sim_step_count_delta", scount, ianalysis)
-
-    model.solver_logs_reset_cumulated_step_time()
-    model.solver_logs_reset_step_count()
-
-    part_count = model.get_total_part_count()
-    save_analysis_data("part_count.json", "part_count", part_count, ianalysis)
+    perf_analysis.analysis_save(ianalysis)
 
 
 # %%
@@ -667,63 +662,7 @@ plt.legend()
 plt.savefig(analysis_folder + "sink_to_barycenter_distance.png")
 plt.show()
 
-# %%
-# load the json file for sim_time_delta
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_time_delta)
-plt.xlabel("t")
-plt.ylabel("sim_time_delta")
-plt.savefig(analysis_folder + "sim_time_delta.png")
-plt.show()
 
 # %%
-# load the json file for sim_step_count_delta
-t, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_step_count_delta)
-plt.xlabel("t")
-plt.ylabel("sim_step_count_delta")
-plt.savefig(analysis_folder + "sim_step_count_delta.png")
-plt.show()
-
-# %%
-# Time per step
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-_, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-_, part_count = load_data_from_json("part_count.json", "part_count")
-
-time_per_step = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        time_per_step.append(td / sc)
-    else:
-        # NAN here because the step count is 0
-        time_per_step.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, time_per_step, "+-")
-plt.xlabel("t")
-plt.ylabel("time_per_step")
-plt.savefig(analysis_folder + "time_per_step.png")
-plt.show()
-
-rate = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        rate.append(pc / (td / sc))
-    else:
-        # NAN here because the step count is 0
-        rate.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, rate, "+-")
-plt.xlabel("t")
-plt.ylabel("Particles / second")
-plt.yscale("log")
-plt.savefig(analysis_folder + "rate.png")
-plt.show()
+# Plot the performance history
+perf_analysis.plot_perf_history(close_plots=False, show_plots=True)

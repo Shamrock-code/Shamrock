@@ -4,8 +4,6 @@ Shamrock plot utility functions.
 
 import glob
 
-from PIL import Image
-
 import shamrock.sys
 
 __all__ = []
@@ -17,12 +15,17 @@ try:
     _HAS_MATPLOTLIB = True
 except ImportError:
     _HAS_MATPLOTLIB = False
-    print(
-        "Warning: matplotlib is not installed, shamrock.utils.plot functions will not be available"
-    )
+    print("Warning: matplotlib is not installed, some functions will not be available")
 
+try:
+    from PIL import Image
 
-if _HAS_MATPLOTLIB:
+    _HAS_PIL = True
+except ImportError:
+    _HAS_PIL = False
+    print("Warning: PIL is not installed, some functions will not be available")
+
+if _HAS_MATPLOTLIB and _HAS_PIL:
     __all__.append("show_image_sequence")
 
     def show_image_sequence(
@@ -34,6 +37,8 @@ if _HAS_MATPLOTLIB:
     ):
         """
         Create a matplotlib animation from a sequence of image files.
+
+        Available only if matplotlib and PIL are installed.
 
         Parameters
         ----------
@@ -47,6 +52,10 @@ if _HAS_MATPLOTLIB:
             Delay between frames in milliseconds.
         repeat_delay : int, optional
             Delay before repeating the animation.
+
+        Raises
+        ------
+        FileNotFoundError : if no images are found for the glob pattern
 
         Returns
         -------

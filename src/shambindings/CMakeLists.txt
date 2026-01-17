@@ -85,17 +85,20 @@ list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
   "${CMAKE_SOURCE_DIR}/src/pylib"
 )
 
-set(SHAM_PYLIB_PATHS "${_DEFAULT_SHAM_PYLIB_PATHS}"
-    CACHE STRING "Python library search paths (CMake list)")
+if(SHAM_PYLIB_PATHS STREQUAL "")
+  set(SHAM_PYLIB_PATH_LIST "${_DEFAULT_SHAM_PYLIB_PATHS}")
+else()
+  set(SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATHS}")
+endif()
 
-message(STATUS "SHAM_PYLIB_PATHS : ${SHAM_PYLIB_PATHS}")
+message(STATUS "pylib paths list : ${SHAM_PYLIB_PATH_LIST}")
 
 # Escape for C++ string literals
-string(REPLACE "\\" "\\\\" SHAM_PYLIB_PATHS "${SHAM_PYLIB_PATHS}")
-string(REPLACE "\"" "\\\"" SHAM_PYLIB_PATHS "${SHAM_PYLIB_PATHS}")
+string(REPLACE "\\" "\\\\" SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATH_LIST}")
+string(REPLACE "\"" "\\\"" SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATH_LIST}")
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "
-  const char* configure_time_pylib_paths() { return \"${SHAM_PYLIB_PATHS}\"; }
+  const char* configure_time_pylib_paths() { return \"${SHAM_PYLIB_PATH_LIST}\"; }
 ")
 
 target_sources(shambindings PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp")

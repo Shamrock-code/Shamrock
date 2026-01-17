@@ -130,6 +130,15 @@ namespace shammodels::gsph {
         void reset_eos_fields();
 
         /**
+         * @brief Copy EOS fields from solvergraph to patchdata for persistence
+         *
+         * Copies density, pressure, and soundspeed from the temporary solvergraph
+         * fields to the persistent patchdata layout. This ensures thermodynamic
+         * state is preserved across simulation restarts and available for VTK output.
+         */
+        void copy_eos_to_patchdata();
+
+        /**
          * @brief Compute gradients for MUSCL reconstruction
          *
          * Computes density, pressure, and velocity gradients for each particle

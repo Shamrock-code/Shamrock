@@ -40,6 +40,12 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
         pdl.add_field<Tscal>(names::newtonian::uint, 1);
         pdl.add_field<Tscal>(names::newtonian::duint, 1);
     }
+
+    // Thermodynamic fields - stored in patchdata for persistence across restarts
+    // These are computed during EOS step and copied to patchdata
+    pdl.add_field<Tscal>(names::newtonian::density, 1);
+    pdl.add_field<Tscal>(names::newtonian::pressure, 1);
+    pdl.add_field<Tscal>(names::newtonian::soundspeed, 1);
 }
 
 template<class Tvec, template<class> class SPHKernel>

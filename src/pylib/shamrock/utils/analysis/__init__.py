@@ -49,6 +49,10 @@ class perf_history:
 
             perf_hist["history"] = perf_hist["history"][:iplot] + [perf_hist_new]
 
+            if scount == 0:
+                print("Warning: step count is 0, skipping save of perf history")
+                return
+
             with open(self.json_data_filename, "w") as fp:
                 print(f"Saving perf history to {self.json_data_filename}")
                 json.dump(perf_hist, fp, indent=4)
@@ -74,18 +78,38 @@ class perf_history:
             sim_step_count_delta = np.array(sim_step_count_delta)
             part_count = np.array(part_count)
 
+            # cumulative sim_time & step_count
+            cum_sim_time_delta = np.cumsum(sim_time_delta)
+            cum_sim_step_count_delta = np.cumsum(sim_step_count_delta)
+
+            plt.figure(figsize=(8, 5), dpi=200)
+            plt.plot(t, cum_sim_time_delta)
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("t [s] (real time)")
+            plt.savefig(self.plot_filename + "_cum_sim_time_delta.png")
+            if close_plots:
+                plt.close()
+
+            plt.figure(figsize=(8, 5), dpi=200)
+            plt.plot(t, cum_sim_step_count_delta)
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("$N_\\mathrm{step}$")
+            plt.savefig(self.plot_filename + "_cum_sim_step_count_delta.png")
+            if close_plots:
+                plt.close()
+
             plt.figure(figsize=(8, 5), dpi=200)
             plt.plot(t, sim_time_delta)
-            plt.xlabel("t")
-            plt.ylabel("sim_time_delta")
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("$d t_\\mathrm{real} / d i_\\mathrm{analysis}$ [s]")
             plt.savefig(self.plot_filename + "_sim_time_delta.png")
             if close_plots:
                 plt.close()
 
             plt.figure(figsize=(8, 5), dpi=200)
             plt.plot(t, sim_step_count_delta)
-            plt.xlabel("t")
-            plt.ylabel("sim_step_count_delta")
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("$d N_\\mathrm{step} / d i_\\mathrm{analysis}$")
             plt.savefig(self.plot_filename + "_step_count_delta.png")
             if close_plots:
                 plt.close()
@@ -101,8 +125,8 @@ class perf_history:
 
             plt.figure(figsize=(8, 5), dpi=200)
             plt.plot(t, time_per_step, "+-")
-            plt.xlabel("t")
-            plt.ylabel("time_per_step")
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("time per step [s]")
             plt.savefig(self.plot_filename + "_time_per_step.png")
             if close_plots:
                 plt.close()
@@ -118,7 +142,7 @@ class perf_history:
 
             plt.figure(figsize=(8, 5), dpi=200)
             plt.plot(t, rate, "+-")
-            plt.xlabel("t")
+            plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("Particles / second")
             plt.yscale("log")
             plt.savefig(self.plot_filename + "_rate.png")

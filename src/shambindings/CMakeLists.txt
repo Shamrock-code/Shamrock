@@ -75,8 +75,13 @@ target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_p
 #####################################
 
 # Default value (used only if NOT provided via cache)
-set(_DEFAULT_SHAM_PYLIB_PATHS
-  "${CMAKE_INSTALL_PYTHONDIR}"
+set(_DEFAULT_SHAM_PYLIB_PATHS)
+
+if(DEFINED CMAKE_INSTALL_PYTHONDIR)
+  list(APPEND _DEFAULT_SHAM_PYLIB_PATHS "${CMAKE_INSTALL_PYTHONDIR}")
+endif()
+
+list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
   "${CMAKE_SOURCE_DIR}/src/pylib"
 )
 

@@ -61,10 +61,17 @@ class ShamEnvBuild(build_ext):
         print(f" -> mkdir -p {extdir}")
         subprocess.run(["bash", "-c", f"mkdir -p {extdir}"], check=True)
 
+        cmake_cmd = "cmake ."
+        cmake_cmd += f" -DCMAKE_INSTALL_PREFIX={sys.prefix}"
+        cmake_cmd += f" -DCMAKE_INSTALL_PYTHONDIR={extdir}"
+        cmake_cmd += " -DSHAMROCK_PATCH_LIB_RPATH=On"
+        cmake_cmd += " -DSHAMROCK_PYLIB_ADD_SOURCE_DIR=Off"
+        cmake_cmd += " -DSHAMROCK_PYLIB_ADD_INSTALL_DIR=Off"
+
         install_steps = [
             "source ./activate",
             "shamconfigure",
-            f"cmake . -DCMAKE_INSTALL_PREFIX={sys.prefix} -DCMAKE_INSTALL_PYTHONDIR={extdir} -DSHAMROCK_PATCH_LIB_RPATH=On",
+            cmake_cmd,
             "shammake install",
         ]
 

@@ -74,16 +74,23 @@ target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_p
 # pylib paths config (can be set via setting -DSHAM_PYLIB_PATHS=<path1>;<path2>...)
 #####################################
 
+option(SHAMROCK_PYLIB_ADD_SOURCE_DIR "Add source directory to pylib paths if not provided via cache" On)
+option(SHAMROCK_PYLIB_ADD_INSTALL_DIR "Add install directory to pylib paths if not provided via cache" On)
+
 # Default value (used only if NOT provided via cache)
 set(_DEFAULT_SHAM_PYLIB_PATHS)
 
-if(DEFINED CMAKE_INSTALL_PYTHONDIR)
-  list(APPEND _DEFAULT_SHAM_PYLIB_PATHS "${CMAKE_INSTALL_PYTHONDIR}")
+if(SHAMROCK_PYLIB_ADD_INSTALL_DIR)
+  if(DEFINED CMAKE_INSTALL_PYTHONDIR)
+    list(APPEND _DEFAULT_SHAM_PYLIB_PATHS "${CMAKE_INSTALL_PYTHONDIR}")
+  endif()
 endif()
 
-list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
-  "${CMAKE_SOURCE_DIR}/src/pylib"
-)
+if(SHAMROCK_PYLIB_ADD_SOURCE_DIR)
+  list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
+    "${CMAKE_SOURCE_DIR}/src/pylib"
+  )
+endif()
 
 set(SHAM_PYLIB_PATHS ""
     CACHE STRING "Python library search paths (CMake list). Leave empty to use defaults.")

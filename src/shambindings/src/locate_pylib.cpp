@@ -83,6 +83,12 @@ namespace shambindings {
         return std::nullopt;
     }
 
+    std::vector<std::string> get_site_packages() {
+        py::module_ site   = py::module_::import("site");
+        auto site_packages = site.attr("getsitepackages")();
+        return site_packages.cast<std::vector<std::string>>();
+    }
+
     std::string locate_pylib_path(bool do_print) {
 
         auto get_binary_dir = []() -> std::filesystem::path {
@@ -99,8 +105,15 @@ namespace shambindings {
         std::filesystem::path pyshamrock_path_relative1 = binary_dir / ".." / "pylib";
         std::filesystem::path pyshamrock_path_relative2 = binary_dir / ".." / "src" / "pylib";
 
-        std::vector<std::string> possible_paths
-            = {"pylib", pyshamrock_path_relative1, pyshamrock_path_relative2};
+        std::vector<std::string> possible_paths = {};
+
+        for (auto path : get_site_packages()) {
+            possible_paths.push_back(path);
+        }
+
+        possible_paths.push_back("pylib");
+        possible_paths.push_back(pyshamrock_path_relative1);
+        possible_paths.push_back(pyshamrock_path_relative2);
 
         for (auto path : configure_time_pylib_paths_str()) {
             possible_paths.push_back(path);
@@ -113,9 +126,12 @@ namespace shambindings {
             possible_paths = {pylib_path_env_var.value()};
         }
 
-        // for (auto path : possible_paths) {
-        //     shambase::println("possible path: " + path);
-        // }
+        if (do_print) {
+            shambase::println("possible pylib paths (search order) : ");
+            for (auto path : possible_paths) {
+                shambase::println("  " + path);
+            }
+        }
 
         std::optional<std::string> ret = std::nullopt;
 

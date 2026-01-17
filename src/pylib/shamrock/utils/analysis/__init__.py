@@ -114,6 +114,17 @@ class perf_history:
             if close_plots:
                 plt.close()
 
+            # tsim per hour
+            dt_code = np.diff(t)
+            tsim_per_hour = dt_code / (sim_time_delta[1:] / 3600)
+            plt.figure(figsize=(8, 5), dpi=200)
+            plt.plot(cum_sim_time_delta[1:], tsim_per_hour)
+            plt.xlabel("t [code unit] (real time)")
+            plt.ylabel("sim time per hour")
+            plt.savefig(self.plot_filename + "_tsim_per_hour.png")
+            if close_plots:
+                plt.close()
+
             time_per_step = []
 
             for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):

@@ -15,6 +15,7 @@
 
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -93,5 +94,30 @@ namespace sham {
                 std::rethrow_exception(eptr);
             }
         }
+
+        logger::debug_ln("Backends", "[Alloc testing] starting...");
+
+        sham::DeviceQueue &qref     = shambase::get_check_ref(dev_sched).get_queue();
+        sham::DeviceContext &ctxref = shambase::get_check_ref(qref.ctx);
+
+        USMPtrHolder<sham::device> ptr1024_dev
+            = USMPtrHolder<sham::device>::create(1024, dev_sched, 8);
+        ptr1024_dev.free_ptr();
+        USMPtrHolder<sham::host> ptr1024_host
+            = USMPtrHolder<sham::host>::create(1024, dev_sched, 8);
+        ptr1024_host.free_ptr();
+
+        size_t GBval = 1024 * 1024 * 1024;
+        // avoid <8GB card, they won't run at that scale anyway
+        if (ctxref.device->prop.global_mem_size > usize(8 * GBval * 1.1)) {
+            USMPtrHolder<sham::device> ptr2G_dev
+                = USMPtrHolder<sham::device>::create(2 * GBval + 1024, dev_sched, 8);
+            ptr2G_dev.free_ptr();
+            USMPtrHolder<sham::host> ptr2G_host
+                = USMPtrHolder<sham::host>::create(2 * GBval + 1024, dev_sched, 8);
+            ptr2G_host.free_ptr();
+        }
+
+        logger::debug_ln("Backends", "[Alloc testing] done !");
     }
 } // namespace sham

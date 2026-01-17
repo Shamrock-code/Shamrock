@@ -43,8 +43,8 @@ def show_image_sequence(glob_str, render_gif=True, dpi=200, interval=50, repeat_
 
     image_array = []
     for my_file in files:
-        image = Image.open(my_file)
-        image_array.append(image)
+        with Image.open(my_file) as image:
+            image_array.append(image.copy())
 
     if not image_array:
         raise FileNotFoundError(f"No images found for glob pattern: {glob_str}")

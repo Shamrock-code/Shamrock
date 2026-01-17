@@ -87,6 +87,7 @@ jobs:
             runson: macos-14
             imagename: MacOS-14
             runtest: yes
+            runtestpy: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos14
 
@@ -94,6 +95,7 @@ jobs:
             runson: macos-15
             imagename: MacOS-15
             runtest: yes
+            runtestpy: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15
 
@@ -101,6 +103,7 @@ jobs:
             runson: macos-15-intel
             imagename: MacOS-15 (intel)
             runtest: yes
+            runtestpy: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15-intel
 
@@ -108,6 +111,7 @@ jobs:
             runson: macos-26
             imagename: MacOS-26
             runtest: yes
+            runtestpy: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos26
 

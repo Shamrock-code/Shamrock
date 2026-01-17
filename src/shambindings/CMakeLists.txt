@@ -71,7 +71,7 @@ target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_p
 
 
 #####################################
-# pylib paths config
+# pylib paths config (can be set via setting -DSHAM_PYLIB_PATHS=<path1>;<path2>...)
 #####################################
 
 # Default value (used only if NOT provided via cache)
@@ -87,11 +87,13 @@ list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
 
 if(SHAM_PYLIB_PATHS STREQUAL "")
   set(SHAM_PYLIB_PATH_LIST "${_DEFAULT_SHAM_PYLIB_PATHS}")
+  message(STATUS "pylib paths list (auto-detected) :")
+  message(STATUS "  ${_DEFAULT_SHAM_PYLIB_PATHS}")
 else()
   set(SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATHS}")
+  message(STATUS "pylib paths list (user-supplied) :")
+  message(STATUS "  ${SHAM_PYLIB_PATHS}")
 endif()
-
-message(STATUS "pylib paths list : ${SHAM_PYLIB_PATH_LIST}")
 
 # Escape for C++ string literals
 string(REPLACE "\\" "\\\\" SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATH_LIST}")

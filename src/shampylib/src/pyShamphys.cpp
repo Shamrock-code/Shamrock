@@ -459,4 +459,14 @@ Register_pymod(shamphyslibinit) {
         py::arg("mu"),
         py::arg("mh"),
         py::arg("kb"));
+
+    eos_module.def(
+        "eos_Fermi",
+        [](f64 mu_e, f64 rho) {
+            auto P_cs = shamphys::EOS_Fermi<f64>::pressure_and_soundspeed(mu_e, rho);
+            return std::tuple<f64, f64>{P_cs.pressure, P_cs.soundspeed};
+        },
+        py::kw_only(),
+        py::arg("mu_e"),
+        py::arg("rho"));
 }

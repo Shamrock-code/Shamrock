@@ -6,8 +6,11 @@ import glob
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
-import shamrock.sys
 from PIL import Image
+
+import shamrock.sys
+
+__all__ = ["show_image_sequence"]
 
 
 def show_image_sequence(glob_str, render_gif=True, dpi=200, interval=50, repeat_delay=10):

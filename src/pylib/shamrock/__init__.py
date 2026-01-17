@@ -13,9 +13,6 @@ except ImportError:
 
     SHAM_IMPORT_MODE = "local"
 
-# print(f"shamrock imported from {__file__}")
-# print(f"import log: {SHAM_IMPORT_MODE}")
-
 # explicitly re-export public API
 __all__ = [name for name in globals() if not name.startswith("_") and not name == "pyshamrock"]
 
@@ -27,4 +24,8 @@ for name in __all__:
         # Some C-extension objects or builtins don't allow rebinding __module__
         pass
 
+from . import utils
+
 # print(f"shamrock.__all__: {__all__}")
+# print(f"shamrock imported from {__file__}")
+# print(f"import log: {SHAM_IMPORT_MODE}")

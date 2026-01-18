@@ -120,7 +120,7 @@ class perf_history:
             "tsim_per_hour": tsim_per_hour,
         }
 
-    def plot_perf_history(self, close_plots=True, show_plots=False, figsize=(8, 5), dpi=200):
+    def plot_perf_history(self, close_plots=True, figsize=(8, 5), dpi=200):
         if not _HAS_MATPLOTLIB:
             print("Warning: matplotlib is not installed, plot_perf_history is a no-op")
             return
@@ -215,5 +215,3 @@ class perf_history:
             if close_plots:
                 plt.close()
 
-            if show_plots:
-                plt.show()

@@ -664,5 +664,6 @@ plt.show()
 
 
 # %%
-# Plot the performance history
-perf_analysis.plot_perf_history(close_plots=False, show_plots=True)
+# Plot the performance history (Switch close_plots to True if doing a long run)
+perf_analysis.plot_perf_history(close_plots=False)
+plt.show()

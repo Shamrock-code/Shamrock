@@ -7,15 +7,19 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
- * @file main_lib.cpp
+ * @file locate_pylib.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shambindings/pybindings.hpp"
-#include <pybind11/pybind11.h>
+#include <string>
 
-/// Call bindings init for the shamrock python module
-PYBIND11_MODULE(pyshamrock, m) { shambindings::init_lib(m); }
+namespace shambindings {
+
+    std::string locate_pylib_path(bool do_print);
+
+}

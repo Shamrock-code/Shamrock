@@ -6,7 +6,7 @@ Equations of state functions
 
 # %%
 # Machida06 EoS
-# ^^^^^^^^^
+# ^^^^^^^^^^^^^
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -68,13 +68,12 @@ plt.axvspan(rho_c3, rho_plot[-1], color="grey", alpha=0.5)
 
 
 plt.tight_layout()
-# plt.show()
 
 # %%
 # Fermi gas EoS
 # ^^^^^^^^^^^^^
 
-rho_plot = np.logspace(1, 8, 1000)
+rho_plot = np.logspace(1, 20, 1000)
 P_plot = []
 cs_plot = []
 
@@ -84,10 +83,17 @@ for rho in rho_plot:
     cs_plot.append(_cs)
 
 plt.figure()
-plt.plot(rho_plot, P_plot, label="P")
+plt.suptitle("Fermi Gas EoS")
+plt.plot(rho_plot, P_plot, label="P", color="blue")
 plt.yscale("log")
 plt.xscale("log")
 plt.xlabel("$\\rho$ [kg.m^-3]")
-plt.ylabel("$P$ [Pa]")
+plt.ylabel("$P$ [Pa]", color="blue")
+plt.legend()
 
-plt.show()
+
+ax = plt.twinx()
+ax.plot(rho_plot, cs_plot, label="cs", color="orange")
+ax.set_yscale("log")
+ax.set_ylabel("$c_s$ [m/s]", color="orange")
+ax.legend(loc="lower right")

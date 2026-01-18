@@ -214,4 +214,3 @@ class perf_history:
             plt.savefig(self.plot_filename + "_rate.png")
             if close_plots:
                 plt.close()
-

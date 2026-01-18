@@ -69,4 +69,4 @@ def exact_sol_coag(kernel, x, tau):
             return res
 
         case _:
-            return "Need to choose a kernel with analytic solution."
+            raise ValueError("Need to choose a kernel with analytic solution.")

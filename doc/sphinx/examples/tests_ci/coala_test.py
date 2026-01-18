@@ -48,7 +48,7 @@ coeff_CFL = 0.3
 # define path for data
 # pre defined values for dthydro and ndthydro
 if kernel == 0:
-    path_data = "./data/kconst/%dbins/Qcoag=%d/" % (nbins, Q)
+    path_data = f"./data/kconst/{nbins}bins/Qcoag={Q}/"
 
     t0 = 0.0
     dthydro = 100

@@ -12,7 +12,6 @@ try:
     _HAS_MATPLOTLIB = True
 except ImportError:
     _HAS_MATPLOTLIB = False
-    print("Warning: matplotlib is not installed, some Shamrock functions will not be available")
 
 
 class perf_history:
@@ -158,7 +157,6 @@ class perf_history:
             ax2.plot(t, perf_hist["world_size"], "+-", color="tab:orange", label="World size")
             ax2.set_ylabel("World size")
 
-            # Optional: combine legends
             lines1, labels1 = ax1.get_legend_handles_labels()
             lines2, labels2 = ax2.get_legend_handles_labels()
             ax1.legend(lines1 + lines2, labels1 + labels2, loc="best")

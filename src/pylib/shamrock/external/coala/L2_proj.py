@@ -159,7 +159,7 @@ def L2proj(eps, nbins, kpol, N0, m0, massgrid, massbins, Q, vecnodes, vecweights
 
     if gij[:, 0][gij[:, 0] < 0.0].any():
         print("gij", gij)
-        sys.exit()
+        raise ValueError(f"gij has negative values: {gij}")
     else:
         gij[:, 1:][gij[:, 0] < eps] = 0.0
         gij[:, 0][gij[:, 0] < eps] = eps

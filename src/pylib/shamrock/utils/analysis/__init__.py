@@ -37,6 +37,7 @@ class perf_history:
             perf_hist_new = {
                 "time": self.model.get_time(),
                 "sim_time_delta": sim_time_delta,
+                "world_size": shamrock.sys.world_size(),
                 "sim_step_count_delta": scount,
                 "part_count": part_count,
             }
@@ -67,6 +68,7 @@ class perf_history:
 
         t = [h["time"] for h in perf_hist["history"]]
         sim_time_delta = [h["sim_time_delta"] for h in perf_hist["history"]]
+        world_size = [h["world_size"] for h in perf_hist["history"]]
         sim_step_count_delta = [h["sim_step_count_delta"] for h in perf_hist["history"]]
         part_count = [h["part_count"] for h in perf_hist["history"]]
 
@@ -74,11 +76,14 @@ class perf_history:
         dt_code = np.diff(t)
 
         sim_time_delta = np.array(sim_time_delta)
+        world_size = np.array(world_size)
+        sim_time_delta_all_proc = sim_time_delta * world_size
         sim_step_count_delta = np.array(sim_step_count_delta)
         part_count = np.array(part_count)
 
         # cumulative sim_time & step_count
         cum_sim_time_delta = np.cumsum(sim_time_delta)
+        cum_sim_time_delta_all_proc = np.cumsum(sim_time_delta_all_proc)
         cum_sim_step_count_delta = np.cumsum(sim_step_count_delta)
 
         tsim_per_hour = dt_code / (sim_time_delta[1:] / 3600)
@@ -105,9 +110,11 @@ class perf_history:
             "t": t,
             "dt_code": dt_code,
             "part_count": part_count,
+            "world_size": world_size,
             "sim_time_delta": sim_time_delta,
             "sim_step_count_delta": sim_step_count_delta,
             "cum_sim_time_delta": cum_sim_time_delta,
+            "cum_sim_time_delta_all_proc": cum_sim_time_delta_all_proc,
             "cum_sim_step_count_delta": cum_sim_step_count_delta,
             "time_per_step": time_per_step,
             "rate": rate,
@@ -127,7 +134,7 @@ class perf_history:
             t = perf_hist["t"]
 
             plt.figure(figsize=figsize, dpi=dpi)
-            plt.plot(t, perf_hist["cum_sim_time_delta"])
+            plt.plot(t, perf_hist["cum_sim_time_delta"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("t [s] (real time)")
             plt.savefig(self.plot_filename + "_sim_time.png")
@@ -135,7 +142,33 @@ class perf_history:
                 plt.close()
 
             plt.figure(figsize=figsize, dpi=dpi)
-            plt.plot(t, perf_hist["cum_sim_step_count_delta"])
+            plt.plot(
+                t,
+                perf_hist["cum_sim_time_delta_all_proc"] / 3600.0,
+                "+-",
+                label="Used compute time",
+            )
+            plt.xlabel("t [code unit] (simulation)")
+            plt.ylabel("$\sum_{processes} t$ [h] (real time)")
+
+            ax1 = plt.gca()
+
+            # Right y-axis
+            ax2 = ax1.twinx()
+            ax2.plot(t, perf_hist["world_size"], "+-", color="tab:orange", label="World size")
+            ax2.set_ylabel("World size")
+
+            # Optional: combine legends
+            lines1, labels1 = ax1.get_legend_handles_labels()
+            lines2, labels2 = ax2.get_legend_handles_labels()
+            ax1.legend(lines1 + lines2, labels1 + labels2, loc="best")
+
+            plt.savefig(self.plot_filename + "_sim_time_all_proc.png")
+            if close_plots:
+                plt.close()
+
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["cum_sim_step_count_delta"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$N_\\mathrm{step}$")
             plt.savefig(self.plot_filename + "_step_count.png")
@@ -143,7 +176,7 @@ class perf_history:
                 plt.close()
 
             plt.figure(figsize=figsize, dpi=dpi)
-            plt.plot(t, perf_hist["sim_time_delta"])
+            plt.plot(t, perf_hist["sim_time_delta"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$d t_\\mathrm{real} / d i_\\mathrm{analysis}$ [s]")
             plt.savefig(self.plot_filename + "_sim_time_delta.png")
@@ -151,7 +184,7 @@ class perf_history:
                 plt.close()
 
             plt.figure(figsize=figsize, dpi=dpi)
-            plt.plot(t, perf_hist["sim_step_count_delta"])
+            plt.plot(t, perf_hist["sim_step_count_delta"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$d N_\\mathrm{step} / d i_\\mathrm{analysis}$")
             plt.savefig(self.plot_filename + "_step_count_delta.png")
@@ -160,7 +193,7 @@ class perf_history:
 
             # tsim per hour
             plt.figure(figsize=figsize, dpi=dpi)
-            plt.plot(t[1:], perf_hist["tsim_per_hour"])
+            plt.plot(t[1:], perf_hist["tsim_per_hour"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$d t_\\mathrm{sim} / d t_\\mathrm{realtime}$ [code unit (time) / hour]")
             plt.savefig(self.plot_filename + "_tsim_per_hour.png")

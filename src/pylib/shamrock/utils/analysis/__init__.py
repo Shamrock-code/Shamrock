@@ -19,8 +19,8 @@ class perf_history:
     def __init__(self, model, analysis_folder, analysis_prefix):
         self.model = model
 
-        self.analysis_prefix = os.path.join(analysis_folder, analysis_prefix) + "_"
-        self.plot_prefix = os.path.join(analysis_folder, "plot_" + analysis_prefix) + "_"
+        self.analysis_prefix = os.path.join(analysis_folder, analysis_prefix)
+        self.plot_prefix = os.path.join(analysis_folder, "plot_" + analysis_prefix)
 
         self.json_data_filename = self.analysis_prefix + ".json"
         self.plot_filename = self.plot_prefix
@@ -62,52 +62,96 @@ class perf_history:
             perf_hist = json.load(fp)
         return perf_hist
 
-    def plot_perf_history(self, close_plots=True, show_plots=False):
+    def digest_perf_history(self):
+        perf_hist = self.load_analysis()
+
+        t = [h["time"] for h in perf_hist["history"]]
+        sim_time_delta = [h["sim_time_delta"] for h in perf_hist["history"]]
+        sim_step_count_delta = [h["sim_step_count_delta"] for h in perf_hist["history"]]
+        part_count = [h["part_count"] for h in perf_hist["history"]]
+
+        t = np.array(t)
+        dt_code = np.diff(t)
+
+        sim_time_delta = np.array(sim_time_delta)
+        sim_step_count_delta = np.array(sim_step_count_delta)
+        part_count = np.array(part_count)
+
+        # cumulative sim_time & step_count
+        cum_sim_time_delta = np.cumsum(sim_time_delta)
+        cum_sim_step_count_delta = np.cumsum(sim_step_count_delta)
+
+        tsim_per_hour = dt_code / (sim_time_delta[1:] / 3600)
+
+        time_per_step = []
+
+        for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
+            if sc > 0:
+                time_per_step.append(td / sc)
+            else:
+                # NAN here because the step count is 0
+                time_per_step.append(np.nan)
+
+        rate = []
+
+        for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
+            if sc > 0:
+                rate.append(pc / (td / sc))
+            else:
+                # NAN here because the step count is 0
+                rate.append(np.nan)
+
+        return {
+            "t": t,
+            "dt_code": dt_code,
+            "part_count": part_count,
+            "sim_time_delta": sim_time_delta,
+            "sim_step_count_delta": sim_step_count_delta,
+            "cum_sim_time_delta": cum_sim_time_delta,
+            "cum_sim_step_count_delta": cum_sim_step_count_delta,
+            "time_per_step": time_per_step,
+            "rate": rate,
+            "tsim_per_hour": tsim_per_hour,
+        }
+
+    def plot_perf_history(self, close_plots=True, show_plots=False, figsize=(8, 5), dpi=200):
+        if not _HAS_MATPLOTLIB:
+            print("Warning: matplotlib is not installed, plot_perf_history is a no-op")
+            return
+
         if shamrock.sys.world_rank() == 0:
-            perf_hist = self.load_analysis()
+            perf_hist = self.digest_perf_history()
 
             print(f"Plotting perf history from {self.json_data_filename}")
 
-            t = [h["time"] for h in perf_hist["history"]]
-            sim_time_delta = [h["sim_time_delta"] for h in perf_hist["history"]]
-            sim_step_count_delta = [h["sim_step_count_delta"] for h in perf_hist["history"]]
-            part_count = [h["part_count"] for h in perf_hist["history"]]
+            t = perf_hist["t"]
 
-            t = np.array(t)
-            sim_time_delta = np.array(sim_time_delta)
-            sim_step_count_delta = np.array(sim_step_count_delta)
-            part_count = np.array(part_count)
-
-            # cumulative sim_time & step_count
-            cum_sim_time_delta = np.cumsum(sim_time_delta)
-            cum_sim_step_count_delta = np.cumsum(sim_step_count_delta)
-
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, cum_sim_time_delta)
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["cum_sim_time_delta"])
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("t [s] (real time)")
-            plt.savefig(self.plot_filename + "sim_time.png")
+            plt.savefig(self.plot_filename + "_sim_time.png")
             if close_plots:
                 plt.close()
 
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, cum_sim_step_count_delta)
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["cum_sim_step_count_delta"])
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$N_\\mathrm{step}$")
-            plt.savefig(self.plot_filename + "step_count.png")
+            plt.savefig(self.plot_filename + "_step_count.png")
             if close_plots:
                 plt.close()
 
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, sim_time_delta)
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["sim_time_delta"])
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$d t_\\mathrm{real} / d i_\\mathrm{analysis}$ [s]")
             plt.savefig(self.plot_filename + "_sim_time_delta.png")
             if close_plots:
                 plt.close()
 
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, sim_step_count_delta)
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["sim_step_count_delta"])
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("$d N_\\mathrm{step} / d i_\\mathrm{analysis}$")
             plt.savefig(self.plot_filename + "_step_count_delta.png")
@@ -115,44 +159,24 @@ class perf_history:
                 plt.close()
 
             # tsim per hour
-            dt_code = np.diff(t)
-            tsim_per_hour = dt_code / (sim_time_delta[1:] / 3600)
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t[1:], tsim_per_hour)
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t[1:], perf_hist["tsim_per_hour"])
             plt.xlabel("t [code unit] (simulation)")
-            plt.ylabel("sim time per hour")
+            plt.ylabel("$d t_\\mathrm{sim} / d t_\\mathrm{realtime}$ [code unit (time) / hour]")
             plt.savefig(self.plot_filename + "_tsim_per_hour.png")
             if close_plots:
                 plt.close()
 
-            time_per_step = []
-
-            for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-                if sc > 0:
-                    time_per_step.append(td / sc)
-                else:
-                    # NAN here because the step count is 0
-                    time_per_step.append(np.nan)
-
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, time_per_step, "+-")
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["time_per_step"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("time per step [s]")
             plt.savefig(self.plot_filename + "_time_per_step.png")
             if close_plots:
                 plt.close()
 
-            rate = []
-
-            for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-                if sc > 0:
-                    rate.append(pc / (td / sc))
-                else:
-                    # NAN here because the step count is 0
-                    rate.append(np.nan)
-
-            plt.figure(figsize=(8, 5), dpi=200)
-            plt.plot(t, rate, "+-")
+            plt.figure(figsize=figsize, dpi=dpi)
+            plt.plot(t, perf_hist["rate"], "+-")
             plt.xlabel("t [code unit] (simulation)")
             plt.ylabel("Particles / second")
             plt.yscale("log")

@@ -147,7 +147,6 @@ void validate_comm_table(
         }
     });
 }
-#endif
 
 template<>
 struct fmt::formatter<shamalgs::collective::CommMessageBufOffset> {
@@ -200,6 +199,7 @@ void print_comm_table(const shamalgs::collective::CommTable &comm_table) {
     logger::info_ln(
         "sparse exchange test", "rank :", shamcomm::world_rank(), "comm table :", "\n" + ss.str());
 }
+#endif
 
 void test_sparse_exchange(std::vector<TestElement> test_elements, size_t max_alloc_size) {
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();

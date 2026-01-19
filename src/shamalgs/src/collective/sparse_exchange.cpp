@@ -124,8 +124,8 @@ namespace shamalgs::collective {
         // Compute offsets
         ////////////////////////////////////////////////////////////
 
-        std::vector<size_t> send_buf_sizes{0};
-        std::vector<size_t> recv_buf_sizes{0};
+        std::vector<size_t> send_buf_sizes{};
+        std::vector<size_t> recv_buf_sizes{};
 
         u32 send_idx = 0;
         u32 recv_idx = 0;
@@ -151,6 +151,10 @@ namespace shamalgs::collective {
                                 max_alloc_size));
                     }
 
+                    if (send_buf_sizes.size() == 0) {
+                        send_buf_sizes.push_back(0);
+                    }
+
                     if (tmp_send_offset + message_info.message_size > max_alloc_size) {
                         send_buf_id++;
                         tmp_send_offset = 0;
@@ -173,6 +177,10 @@ namespace shamalgs::collective {
                                 "    message_size = {}, max_alloc_size = {}",
                                 message_info.message_size,
                                 max_alloc_size));
+                    }
+
+                    if (recv_buf_sizes.size() == 0) {
+                        recv_buf_sizes.push_back(0);
                     }
 
                     if (tmp_recv_offset + message_info.message_size > max_alloc_size) {

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -120,5 +120,81 @@ TestStart(
         test_serialize_basic(pdl_ptr, pdat);
     } else {
         REQUIRE_NAMED("dev_mem_size < 4'000'000'000, skipping test", false);
+    }
+}
+
+TestStart(
+    Unittest,
+    "shamrock/patch/PatchDataLayer::extract_elements",
+    testpatchdatalayerextractelements,
+    1) {
+    using namespace shamrock::patch;
+
+    { // Test extract_elements with multi-variable fields
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        auto &pdl                                     = *pdl_ptr;
+
+        pdl.add_field<f32_3>("position", 1);
+        pdl.add_field<f64_4>("velocity", 2);
+
+        u32 obj_cnt                = 8;
+        PatchDataLayer pdat_source = PatchDataLayer::mock_patchdata(0x456, obj_cnt, pdl_ptr);
+
+        std::vector<u32> indices_vec = {0, 2, 4, 6};
+        auto sched                   = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceBuffer<u32> indices(indices_vec.size(), sched);
+        indices.copy_from_stdvec(indices_vec);
+
+        auto &pos_field = pdat_source.get_field<f32_3>(pdl.get_field_idx<f32_3>("position"));
+        auto &vel_field = pdat_source.get_field<f64_4>(pdl.get_field_idx<f64_4>("velocity"));
+
+        std::vector<f32_3> original_pos = pos_field.copy_to_stdvec();
+        std::vector<f64_4> original_vel = vel_field.copy_to_stdvec();
+
+        PatchDataLayer pdat_dest{pdl_ptr};
+        pdat_source.extract_elements(indices, pdat_dest);
+
+        REQUIRE_EQUAL(pdat_dest.get_obj_cnt(), 4);
+        REQUIRE_EQUAL(pdat_source.get_obj_cnt(), 4);
+
+        auto &pos_dest = pdat_dest.get_field<f32_3>(pdl.get_field_idx<f32_3>("position"));
+        auto &vel_dest = pdat_dest.get_field<f64_4>(pdl.get_field_idx<f64_4>("velocity"));
+
+        std::vector<f32_3> extracted_pos = pos_dest.copy_to_stdvec();
+        std::vector<f64_4> extracted_vel = vel_dest.copy_to_stdvec();
+
+        std::vector<f32_3> expected_pos
+            = {original_pos[0], original_pos[2], original_pos[4], original_pos[6]};
+        std::vector<f64_4> expected_vel;
+        const u32 nvar_vel = vel_field.get_nvar();
+        for (const u32 obj_idx : indices_vec) {
+            for (u32 var_idx = 0; var_idx < nvar_vel; ++var_idx) {
+                expected_vel.push_back(original_vel[obj_idx * nvar_vel + var_idx]);
+            }
+        }
+
+        REQUIRE_EQUAL_CUSTOM_COMP(extracted_pos, expected_pos, sham::equals);
+        REQUIRE_EQUAL_CUSTOM_COMP(extracted_vel, expected_vel, sham::equals);
+    }
+
+    { // Test extract_elements with empty indices
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        auto &pdl                                     = *pdl_ptr;
+
+        pdl.add_field<f32>("field", 1);
+
+        u32 obj_cnt                = 5;
+        PatchDataLayer pdat_source = PatchDataLayer::mock_patchdata(0x789, obj_cnt, pdl_ptr);
+
+        auto sched = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceBuffer<u32> indices(0, sched);
+
+        PatchDataLayer pdat_dest{pdl_ptr};
+        pdat_source.extract_elements(indices, pdat_dest);
+
+        REQUIRE_EQUAL(pdat_dest.get_obj_cnt(), 0);
+        REQUIRE_EQUAL(pdat_dest.is_empty(), true);
+        REQUIRE_EQUAL(pdat_source.get_obj_cnt(), 5);
+        REQUIRE_EQUAL(pdat_source.is_empty(), false);
     }
 }

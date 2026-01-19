@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -91,6 +91,18 @@ void PatchDataField<T>::extract_element(u32 pidx, PatchDataField<T> &to) {
           };
 
     sub_extract(pidx, *this, to);
+}
+
+template<class T>
+void PatchDataField<T>::extract_elements(
+    const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to) {
+    if (&to == this) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "source and destination for extract_elements cannot be the same");
+    }
+    StackEntry stack_loc{};
+    append_subset_to(idxs, idxs.get_size(), to);
+    remove_ids(idxs, idxs.get_size());
 }
 
 template<class T>
@@ -319,6 +331,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     if (len > get_obj_cnt()) {
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "the number of ids to remove is greater than the patchdatafield obj count");
+    }
+
+    if (len == 0) {
+        return;
     }
 
     auto nobj      = get_obj_cnt();

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -182,9 +182,9 @@ namespace shamunits {
 
         addget(Hertz)   { return PREF* Uget(s, -1); }
         //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
-        addget(Newtown) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
+        addget(Newton) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
         addget(Pascal)  { return PREF* Uget(kg, 1)      * Uget(m, -1) * Uget(s, -2); }
-        addget(Joule)   { return PREF* Uget(Newtown, 1) * Uget(m, 1); }
+        addget(Joule)   { return PREF* Uget(Newton, 1) * Uget(m, 1); }
         addget(Watt)    { return PREF* Uget(Joule, 1)   * Uget(s, -1); }
         addget(Coulomb) { return PREF* Uget(s, 1)       * Uget(A, 1); }
         addget(Volt)    { return PREF* Uget(Watt, 1)    * Uget(A, -1); }
@@ -261,7 +261,7 @@ namespace shamunits {
             case units::candela : return get<pref, units::candela>(); break;
             // case units::mps: return get<pref, units::mps>(); break;
             case units::Hertz            : return get<pref, units::Hertz>(); break;
-            case units::Newtown          : return get<pref, units::Newtown>(); break;
+            case units::Newton           : return get<pref, units::Newton>(); break;
             case units::Pascal           : return get<pref, units::Pascal>(); break;
             case units::Joule            : return get<pref, units::Joule>(); break;
             case units::Watt             : return get<pref, units::Watt>(); break;

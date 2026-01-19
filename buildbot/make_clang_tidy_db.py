@@ -12,11 +12,9 @@ db = db.replace("--acpp-targets='omp'", "")
 
 
 def remove_plugin_flags(cmd):
-
     new_cmd = ""
 
     for a in cmd.split():
-
         if not (a.startswith("-fplugin=") or a.startswith("-fpass-plugin")):
             new_cmd += a
             new_cmd += " "

@@ -28,7 +28,6 @@ print_db = []
 
 
 def analyse_file(f):
-
     fname = f["file"]
     fname_relat = fname[1 + fname.index("/src/") :]
 

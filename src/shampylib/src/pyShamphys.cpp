@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,6 +23,7 @@
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamphys/collapse.hpp"
 #include "shamphys/eos.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
 #include "shamphys/fmm/contract_grav_moment.hpp"
@@ -245,6 +246,32 @@ Register_pymod(shamphyslibinit) {
         py::arg("roll"),
         py::arg("pitch"),
         py::arg("yaw"));
+
+    shamphys_module.def(
+        "free_fall_time",
+        [](f64 rho, f64 G) {
+            return shamphys::free_fall_time(rho, G);
+        },
+        py::arg("rho"),
+        py::arg("G"),
+        R"pbdoc(
+        Compute the free fall time
+        rho : Density
+        G : Gravitational constant
+    )pbdoc");
+
+    shamphys_module.def(
+        "free_fall_time",
+        [](f64 rho, const shamunits::UnitSystem<f64> usys) {
+            return shamphys::free_fall_time(rho, usys);
+        },
+        py::arg("rho"),
+        py::arg("units"),
+        R"pbdoc(
+        Compute the free fall time
+        rho : Density
+        units : unit system
+    )pbdoc");
 
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.HydroSoundwave");
     py::class_<shamphys::HydroSoundwave>(shamphys_module, "HydroSoundwave")

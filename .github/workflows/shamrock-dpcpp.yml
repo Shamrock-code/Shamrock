@@ -48,12 +48,12 @@ jobs:
             "include": [
               {
                 "machine": "ci.intel-llvm.cuda",
-                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu20cuda12dpcpp",
+                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
                 "runtest": false
               },
               {
                 "machine": "ci.intel-llvm.rocm",
-                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu20rocm543dpcpp",
+                "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
                 "runtest": false
               },
               {
@@ -108,6 +108,28 @@ jobs:
         if: github.event_name == 'pull_request_target'
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
+
+      - name: Install ccache
+        if: matrix.container == 'intel/oneapi'
+        run: |
+          apt update
+          apt install -y ccache
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{matrix.machine}}
+          verbose: 2
+
+      - name: Configure ccache
+        shell: bash
+        run: |
+          echo " ----- ccache configuration ----- "
+          echo " Old configuration: "
+          ccache -p
+          echo " ----- New configuration:   ----- "
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -p
+          echo " ----- ccache configuration done ----- "
 
       - name: Setup env
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build --

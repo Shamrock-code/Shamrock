@@ -37,7 +37,6 @@ delta_rho = 1e-2
 
 
 def rho_map(rmin, rmax):
-
     x, y, z = rmin
     if x < 1:
         return 1
@@ -50,7 +49,6 @@ eint_R = 0.1 / (gamma - 1)
 
 
 def eint_map(rmin, rmax):
-
     x, y, z = rmin
     if x < 1:
         return eint_L
@@ -59,7 +57,6 @@ def eint_map(rmin, rmax):
 
 
 def vel_map(rmin, rmax):
-
     return (0, 0, 0)
 
 
@@ -72,7 +69,6 @@ freq = 50
 dt = 0.0010
 t = 0
 for i in range(701):
-
     if i % freq == 0:
         model.dump_vtk("test" + str(i // freq) + ".vtk")
 
@@ -83,7 +79,6 @@ for i in range(701):
 
 
 def convert_to_cell_coords(dic):
-
     cmin = dic["cell_min"]
     cmax = dic["cell_max"]
 
@@ -95,7 +90,6 @@ def convert_to_cell_coords(dic):
     zmax = []
 
     for i in range(len(cmin)):
-
         m, M = cmin[i], cmax[i]
 
         mx, my, mz = m
@@ -133,7 +127,6 @@ velx = []
 eint = []
 
 for i in range(len(dic["xmin"])):
-
     X.append(dic["xmin"][i] - 0.5)
     rho.append(dic["rho"][i])
     velx.append(dic["vel"][i][0])

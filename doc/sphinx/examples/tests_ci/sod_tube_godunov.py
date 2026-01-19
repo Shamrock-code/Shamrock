@@ -71,7 +71,6 @@ delta_rho = 1e-2
 
 
 def rho_map(rmin, rmax):
-
     x, y, z = rmin
     if x < 1:
         return 1
@@ -84,7 +83,6 @@ etot_R = 0.1 / (gamma - 1)
 
 
 def rhoetot_map(rmin, rmax):
-
     rho = rho_map(rmin, rmax)
 
     x, y, z = rmin
@@ -122,7 +120,6 @@ sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, -xrang
 if False:
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -134,7 +131,6 @@ if False:
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -170,7 +166,6 @@ if False:
     rhoetot = []
 
     for i in range(len(dic["xmin"])):
-
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
         rhovelx.append(dic["rhovel"][i][0])

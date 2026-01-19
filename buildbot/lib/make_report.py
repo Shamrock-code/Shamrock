@@ -2,6 +2,7 @@ import json
 import math
 from enum import Enum
 
+# start allow utf-8
 Tex_template = r"""
 
 \documentclass{article}
@@ -13,8 +14,8 @@ Tex_template = r"""
 \usepackage{fancyhdr} % entêtes et pieds de pages personnalisés
 
 \pagestyle{fancy}
-\fancyhead[L]{\scriptsize \textsc{Test suite report}} % À changer
-\fancyhead[R]{\scriptsize \textsc{\textsc{SHAMROCK}}} % À changer
+\fancyhead[L]{\scriptsize \textsc{Test suite report}}
+\fancyhead[R]{\scriptsize \textsc{\textsc{SHAMROCK}}}
 \fancyfoot[C]{ \thepage}
 
 
@@ -68,6 +69,7 @@ hyperfigures=false]
 %%content%%
 \end{document}
 """
+# end allow utf-8
 
 
 class ReportFormat(Enum):
@@ -77,7 +79,6 @@ class ReportFormat(Enum):
 
 
 def load_test_report(file):
-
     print(file)
 
     out_file = open(file, "r")
@@ -98,7 +99,6 @@ def load_test_report(file):
 
     for l in lst_ln:
         if l.startswith(r"%test_name = "):
-
             test_name = l[l.find('"') + 1 : l.find('"', l.find('"') + 1)]
             cur_test = test_name
             # print(" -> starting_test", test_name)
@@ -162,14 +162,12 @@ def load_test_report(file):
 def get_succes_count_data(dt):
     out_dic = {}
     for k_cur_test in dt.keys():
-
         tmp = {}
 
         sum_cnt_assert = 0
         sum_cnt_succes = 0
 
         for k_cur_wrk in dt[k_cur_test].keys():
-
             cnt_assert = 0
             cnt_succes = 0
 
@@ -191,7 +189,6 @@ def get_succes_count_data(dt):
 
 
 def make_tex_repport(dat):
-
     dic_int = {}
 
     for config_k in dat.keys():
@@ -237,12 +234,10 @@ def make_tex_repport(dat):
     dic_suc_cnt_global = {}
 
     for kworldsz in dic_int.keys():
-
         cnt_config = 0
         cnt_succes = 0
 
         for kconfig in dic_int[kworldsz].keys():
-
             cnt_config += 1
             cnt_succes += (
                 dic_int[kworldsz][kconfig]["global_suc_cnt"]
@@ -262,7 +257,6 @@ def make_tex_repport(dat):
         World size & Status & Succesfull config / total number of config \\  \hline \hline
     """
     for kworldsz in dic_int.keys():
-
         config_suc_cnt = dic_suc_cnt_global[kworldsz]["global_suc_cnt"]
         config_cnt = dic_suc_cnt_global[kworldsz]["global_config_cnt"]
 
@@ -302,7 +296,6 @@ def make_tex_repport(dat):
             Config & Status & Succesfull tests / total number of tests \\  \hline \hline
         """
         for kconfig in dic_int[kworldsz].keys():
-
             test_suc_cnt = dic_int[kworldsz][kconfig]["global_suc_cnt"]
             test_cnt = dic_int[kworldsz][kconfig]["global_test_cnt"]
 
@@ -322,7 +315,6 @@ def make_tex_repport(dat):
         """
 
         for kconfig in dic_int[kworldsz].keys():
-
             str_file += (
                 r"""
                 \subsection{"""
@@ -338,7 +330,6 @@ def make_tex_repport(dat):
                 Test name & Status & Succesfull asserts / total number of asserts \\  \hline \hline
             """
             for ktest in dic_int[kworldsz][kconfig]["succes_cnt"].keys():
-
                 assert_suc_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["suc_cnt"]
                 assert_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["assert_cnt"]
 
@@ -369,7 +360,6 @@ def make_tex_repport(dat):
 
 
 def make_report(format, out_res_map_file):
-
     out_file = open(out_res_map_file, "r")
     data = json.load(out_file)
     out_file.close()

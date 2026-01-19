@@ -14,7 +14,6 @@ file_list.sort()
 pragma_once_missing = []
 
 for fname in file_list:
-
     if not fname.endswith(".hpp"):
         continue
 
@@ -38,7 +37,6 @@ for fname in file_list:
                 or l.startswith(r"/*")
                 or l.startswith("\n")
             ):
-
                 # print(l)
                 has_line_before_guard = True
 
@@ -55,9 +53,10 @@ def write_file(fname, source):
 
 
 def make_check_pr_report():
-
     rep = ""
+    # start allow utf-8
     rep += "## ❌ Check #pragma once"
+    # end allow utf-8
     rep += """
 
 The pre-commit checks have found some headers that are not starting with `#pragma once`.

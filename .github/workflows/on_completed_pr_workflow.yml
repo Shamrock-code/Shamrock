@@ -1,16 +1,16 @@
 name: on PR (completed)
 
-# This workflow is triggered by the completion of the "on PR" workflow
-# which can be use to perform reporting while allowing the use of the pull_request
-# event to trigger the pr workflow.
-# 
-# This change is motivated by multiple reasons. The most important one is that in order
-# to allow commenting on PR from the bots we were required to use pull_request_target
-# which annoyingly does not behave like pull_request. This required weird trickery to get
-# the correct commit to test against.
-# 
-# The current approach upload reports in artifacts, then after the workflow completes,
-# the new workflow gets triggered on main, then read a comment the report on the PR.
+# This workflow is triggered by the completion of the "on PR" workflow
+# which can be use to perform reporting while allowing the use of the pull_request
+# event to trigger the pr workflow.
+#
+# This change is motivated by multiple reasons. The most important one is that in order
+# to allow commenting on PR from the bots we were required to use pull_request_target
+# which annoyingly does not behave like pull_request. This required weird trickery to get
+# the correct commit to test against.
+#
+# The current approach upload reports in artifacts, then after the workflow completes,
+# the new workflow gets triggered on main, then read a comment the report on the PR.
 
 on:
   workflow_run:

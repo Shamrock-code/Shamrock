@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -24,6 +24,12 @@
 
 namespace shammodels::sph::modules {
 
+    /**
+     * @brief Module for reordering particles to improve cache locality
+     * @tparam Tvec Vector type for positions
+     * @tparam Tmorton Morton code type
+     * @tparam SPHKernel SPH kernel template
+     */
     template<class Tvec, class Tmorton, template<class> class SPHKernel>
     class ParticleReordering {
         public:
@@ -41,6 +47,7 @@ namespace shammodels::sph::modules {
         ParticleReordering(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        /// @brief Reorders particles by Morton code for improved memory access patterns
         void reorder_particles();
 
         private:

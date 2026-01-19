@@ -19,6 +19,9 @@ pip_list=(
     "sphinx_design"
     "sphinxcontrib-video"
     "sympy"
+    "matplotlib"
+    "numpy"
+    "scipy"
     )
 
 for package in "${pip_list[@]}"; do

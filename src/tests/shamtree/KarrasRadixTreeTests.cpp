@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -40,7 +40,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
     // int cell ------------------------------------------ (7)    |   |     \        \            //
     // int cell --------------- (3) (4) --------------------      |   |      \        \           //
     // int cell --- (1)   (2) ---    ------- (5) (6) -------      |   |       \        \          //
-    //            /  |     |   \        /     |   |        \      |   |        \        \         //
+    //            /  |     |   \        /     |   |        \      |   |        \        \         //
     // leafs    (0) (1)   (2)   (3) (4)      (5) (6)       (7)   (8) (9)      (10)     (11)       //
 
     std::vector<u32> expected_lchild_id  = {10, 0, 2, 1, 5, 4, 6, 3, 7, 9, 8};

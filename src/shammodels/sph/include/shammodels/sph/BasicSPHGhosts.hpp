@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -80,19 +80,17 @@ namespace shammodels::sph {
 
         using GeneratorMap = shambase::DistributedDataShared<InterfaceBuildInfos>;
 
-        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout;
 
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
         BasicSPHGhostHandler(
             PatchScheduler &sched,
             Config ghost_config,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner)
-            : sched(sched), ghost_config(ghost_config), patch_rank_owner(patch_rank_owner) {
-            xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
-            xyzh_ghost_layout->add_field<vec>("xyz", 1);
-            xyzh_ghost_layout->add_field<flt>("hpart", 1);
-        }
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner,
+            std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
+            : sched(sched), ghost_config(ghost_config), patch_rank_owner(patch_rank_owner),
+              xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         /**
          * @brief Find interfaces and their metadata

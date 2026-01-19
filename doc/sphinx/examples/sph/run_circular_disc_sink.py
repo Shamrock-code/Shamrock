@@ -41,7 +41,6 @@ then after the run is done (or while it is running), one can run the following t
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # The runscript is the actual simulation with on the fly analysis & rolling dumps
 
-
 import glob
 import json
 import os  # for makedirs
@@ -374,8 +373,12 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-def analysis(ianalysis):
+from shamrock.utils.analysis import perf_history
 
+perf_analysis = perf_history(model, analysis_folder, "perf_history")
+
+
+def analysis(ianalysis):
     ext = rout * 1.5
     nx = 1024
     ny = 1024
@@ -411,17 +414,7 @@ def analysis(ianalysis):
     sinks = model.get_sinks()
     save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
-    sim_time_delta = model.solver_logs_cumulated_step_time()
-    scount = model.solver_logs_step_count()
-
-    save_analysis_data("sim_time_delta.json", "sim_time_delta", sim_time_delta, ianalysis)
-    save_analysis_data("sim_step_count_delta.json", "sim_step_count_delta", scount, ianalysis)
-
-    model.solver_logs_reset_cumulated_step_time()
-    model.solver_logs_reset_step_count()
-
-    part_count = model.get_total_part_count()
-    save_analysis_data("part_count.json", "part_count", part_count, ianalysis)
+    perf_analysis.analysis_save(ianalysis)
 
 
 # %%
@@ -435,7 +428,6 @@ idump = 0
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     if ttarg >= t_start:
         model.evolve_until(ttarg)
 
@@ -474,7 +466,6 @@ import matplotlib.pyplot as plt
 
 
 def plot_rho_integ(metadata, arr_rho, iplot):
-
     ext = metadata["extent"]
 
     dpi = 200
@@ -532,56 +523,9 @@ if shamrock.sys.world_rank() == 0:
 
 # sphinx_gallery_multi_image = "single"
 
+
 import matplotlib.animation as animation
-
-
-def show_image_sequence(glob_str, render_gif):
-
-    if render_gif and shamrock.sys.world_rank() == 0:
-
-        import glob
-
-        files = sorted(glob.glob(glob_str))
-
-        from PIL import Image
-
-        image_array = []
-        for my_file in files:
-            image = Image.open(my_file)
-            image_array.append(image)
-
-        if not image_array:
-            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
-
-        pixel_x, pixel_y = image_array[0].size
-
-        # Create the figure and axes objects
-        # Remove axes, ticks, and frame & set aspect ratio
-        dpi = 200
-        fig = plt.figure(dpi=dpi)
-        plt.gca().set_position((0, 0, 1, 1))
-        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
-        plt.axis("off")
-
-        # Set the initial image with correct aspect ratio
-        im = plt.imshow(image_array[0], animated=True, aspect="auto")
-
-        def update(i):
-            im.set_array(image_array[i])
-            return (im,)
-
-        # Create the animation object
-        ani = animation.FuncAnimation(
-            fig,
-            update,
-            frames=len(image_array),
-            interval=50,
-            blit=True,
-            repeat_delay=10,
-        )
-
-        return ani
-
+from shamrock.utils.plot import show_image_sequence
 
 # %%
 # Do it for rho integ
@@ -718,63 +662,8 @@ plt.legend()
 plt.savefig(analysis_folder + "sink_to_barycenter_distance.png")
 plt.show()
 
-# %%
-# load the json file for sim_time_delta
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_time_delta)
-plt.xlabel("t")
-plt.ylabel("sim_time_delta")
-plt.savefig(analysis_folder + "sim_time_delta.png")
-plt.show()
 
 # %%
-# load the json file for sim_step_count_delta
-t, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_step_count_delta)
-plt.xlabel("t")
-plt.ylabel("sim_step_count_delta")
-plt.savefig(analysis_folder + "sim_step_count_delta.png")
-plt.show()
-
-# %%
-# Time per step
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-_, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-_, part_count = load_data_from_json("part_count.json", "part_count")
-
-time_per_step = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        time_per_step.append(td / sc)
-    else:
-        # NAN here because the step count is 0
-        time_per_step.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, time_per_step, "+-")
-plt.xlabel("t")
-plt.ylabel("time_per_step")
-plt.savefig(analysis_folder + "time_per_step.png")
-plt.show()
-
-rate = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        rate.append(pc / (td / sc))
-    else:
-        # NAN here because the step count is 0
-        rate.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, rate, "+-")
-plt.xlabel("t")
-plt.ylabel("Particles / second")
-plt.yscale("log")
-plt.savefig(analysis_folder + "rate.png")
+# Plot the performance history (Switch close_plots to True if doing a long run)
+perf_analysis.plot_perf_history(close_plots=False)
 plt.show()

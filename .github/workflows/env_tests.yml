@@ -131,7 +131,7 @@ jobs:
           brew uninstall cmake
 
           brew update
-          brew install cmake libomp boost open-mpi adaptivecpp
+          brew install cmake libomp boost open-mpi adaptivecpp fmt
           set -e
 
       # if ubuntu container

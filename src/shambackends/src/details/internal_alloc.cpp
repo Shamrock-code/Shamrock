@@ -216,14 +216,44 @@ namespace sham::details {
             }
         };
 
-        if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size) {
-            std::string err_log = shambase::format(
-                "You are trying to allocate more than the maximum allocation size allowed by the "
-                "device\n"
-                "  size = {} | max_alloc_size = {}",
-                sz,
-                ds.get_queue().get_device_prop().max_mem_alloc_size);
-            shambase::throw_with_loc<std::runtime_error>(err_log);
+        // check max alloc sizes
+        if constexpr (target == device) {
+            if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size_dev) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "device\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    ds.get_queue().get_device_prop().max_mem_alloc_size_dev);
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else if constexpr (target == shared) {
+            size_t max_alloc_size_dev  = ds.get_queue().get_device_prop().max_mem_alloc_size_dev;
+            size_t max_alloc_size_host = ds.get_queue().get_device_prop().max_mem_alloc_size_host;
+            if (sz > sycl::min(max_alloc_size_dev, max_alloc_size_host)) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "device\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    sycl::min(max_alloc_size_dev, max_alloc_size_host));
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else if constexpr (target == host) {
+            if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size_host) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "host\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    ds.get_queue().get_device_prop().max_mem_alloc_size_host);
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else {
+            shambase::throw_unimplemented();
         }
 
         if (alignment) {

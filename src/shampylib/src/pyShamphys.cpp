@@ -473,7 +473,7 @@ Register_pymod(shamphyslibinit) {
            f64 beta,
            f64 u_iv,
            f64 u_cv) {
-            auto p_cs = shamphys::EOS_Tillotson<f64>::pressure_and_cs(
+            auto p_cs = shamphys::EOS_Tillotson<f64>::pressure_and_soundspeed(
                 rho, u, rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
             auto P   = p_cs.pressure;
             auto _cs = p_cs.soundspeed;

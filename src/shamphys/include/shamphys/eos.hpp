@@ -211,13 +211,25 @@ namespace shamphys {
      */
     template<class T>
     struct EOS_Tillotson {
+        static constexpr T coeff1 = 3.0021e-1; // SI fit parameters that work well for Granite
+        static constexpr T coeff2 = -9.5284e2; // SI fit parameters that work well for Granite
+        static constexpr T coeff3 = 4.2450e5;  // SI fit parameters that work well for Granite
+        static constexpr T density_unit_earth   = 23093.884200654968;
+        static constexpr T sp_energy_unit_earth = 62522743.68231048;
+
+        static T u_c(T rho) {
+            T rhoa = rho * density_unit_earth;
+            T uc   = coeff1 * rhoa * rhoa + coeff2 * rhoa + coeff3;
+            return uc / sp_energy_unit_earth;
+        }
 
         /**
          * @brief EOS_Tillotson::pressure_and_soundspeed
          * Returns pressure and sound speed from the given values of density and internal energy in
          * the Tillotson equation of state. Parameters are in the code units.
          * @param rho Density
-         * @param u Internal energy
+         * @param u_T Internal energy (temperature contribution, which is the field stored in
+         * Shamrock)
          * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
          * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
          * @param A Tillotson EoS \f$ A \f$ parameter
@@ -232,8 +244,9 @@ namespace shamphys {
          * vaporization
          */
         static PressureAndCs<T> pressure_and_soundspeed(
-            T rho, T u, T rho0, T E0, T A, T B, T a, T b, T alpha, T beta, T u_iv, T u_cv) {
+            T rho, T u_T, T rho0, T E0, T A, T B, T a, T b, T alpha, T beta, T u_iv, T u_cv) {
 
+            T u      = u_T + u_c(rho);
             T eta    = rho / rho0;
             T eta2   = eta * eta;
             T chi    = eta - 1.0;

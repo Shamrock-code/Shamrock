@@ -549,6 +549,64 @@ namespace sham {
         }
 
         /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range_offset(
+            size_t begin,
+            size_t end,
+            sham::DeviceBuffer<T, dest_target> &dest,
+            size_t dest_offset) const {
+
+            if (begin > end) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+            }
+
+            if (dest_offset > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "
+                    "dest.get_size() = {}",
+                    dest_offset,
+                    dest.get_size()));
+            }
+
+            if (end - begin > (dest.get_size() - dest_offset)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: end - begin > dest.get_size() - dest_offset\n  end - begin "
+                    "= {},\n  "
+                    "dest.get_size() - dest_offset = {},\n  dest_offset = {}",
+                    end - begin,
+                    dest.get_size() - dest_offset,
+                    dest_offset));
+            }
+
+            if (begin == end) {
+                return;
+            }
+
+            size_t len = end - begin;
+
+            sham::EventList depends_list;
+            const T *ptr_src = get_read_access(depends_list) + begin;
+            T *ptr_dest      = dest.get_write_access(depends_list) + dest_offset;
+
+            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(ptr_src, ptr_dest, len);
+            });
+
+            complete_event_state(e);
+            dest.complete_event_state(e);
+        }
+
+        /**
          * @brief Copy the content of a std::vector into the buffer
          *
          * This function copies the content of a given std::vector into the buffer.

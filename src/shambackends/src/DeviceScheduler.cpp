@@ -15,6 +15,7 @@
 
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
@@ -93,5 +94,56 @@ namespace sham {
                 std::rethrow_exception(eptr);
             }
         }
+
+        logger::debug_ln("Backends", "[Alloc testing] starting...");
+
+        sham::DeviceQueue &qref     = shambase::get_check_ref(dev_sched).get_queue();
+        sham::DeviceContext &ctxref = shambase::get_check_ref(qref.ctx);
+
+        USMPtrHolder<sham::device> ptr1024_dev
+            = USMPtrHolder<sham::device>::create(1024, dev_sched, 8);
+        ptr1024_dev.free_ptr();
+        USMPtrHolder<sham::host> ptr1024_host
+            = USMPtrHolder<sham::host>::create(1024, dev_sched, 8);
+        ptr1024_host.free_ptr();
+
+        auto &dev = shambase::get_check_ref(ctxref.device);
+
+        size_t GBval = 1024 * 1024 * 1024;
+        // avoid <8GB card, they won't run at that scale anyway
+        if (dev.prop.global_mem_size > usize(3 * GBval)) {
+
+            if (dev.prop.max_mem_alloc_size_dev > 2 * GBval) {
+                try {
+                    USMPtrHolder<sham::device> ptr2G_dev
+                        = USMPtrHolder<sham::device>::create(2 * GBval + 1024, dev_sched, 8);
+                    ptr2G_dev.free_ptr();
+                } catch (std::runtime_error &e) {
+                    logger::warn_ln(
+                        "Backends",
+                        " name = ",
+                        dev.dev.get_info<sycl::info::device::name>(),
+                        " -> large device allocation (>2GB) not working !");
+                    dev.prop.max_mem_alloc_size_dev = i32_max;
+                }
+            }
+
+            if (dev.prop.max_mem_alloc_size_host > 2 * GBval) {
+                try {
+                    USMPtrHolder<sham::host> ptr2G_host
+                        = USMPtrHolder<sham::host>::create(2 * GBval + 1024, dev_sched, 8);
+                    ptr2G_host.free_ptr();
+                } catch (std::runtime_error &e) {
+                    logger::warn_ln(
+                        "Backends",
+                        " name = ",
+                        dev.dev.get_info<sycl::info::device::name>(),
+                        " -> large host allocation (>2GB) not working !");
+                    dev.prop.max_mem_alloc_size_host = i32_max;
+                }
+            }
+        }
+
+        logger::debug_ln("Backends", "[Alloc testing] done !");
     }
 } // namespace sham

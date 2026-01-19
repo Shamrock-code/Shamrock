@@ -1204,6 +1204,68 @@ void shammodels::gsph::Solver<Tvec, Kern>::reset_eos_fields() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::copy_eos_to_patchdata() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    // Copy density, pressure, and soundspeed from solvergraph fields to patchdata
+    // This ensures the values persist across restarts and can be read by VTKDump
+
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    u32 idensity              = pdl.get_field_idx<Tscal>(names::newtonian::density);
+    u32 ipressure             = pdl.get_field_idx<Tscal>(names::newtonian::pressure);
+    u32 isoundspeed           = pdl.get_field_idx<Tscal>(names::newtonian::soundspeed);
+
+    auto &density_field    = shambase::get_check_ref(storage.density);
+    auto &pressure_field   = shambase::get_check_ref(storage.pressure);
+    auto &soundspeed_field = shambase::get_check_ref(storage.soundspeed);
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u32 npart = pdat.get_obj_cnt();
+        if (npart == 0) {
+            return;
+        }
+
+        // Get patchdata buffers
+        sham::DeviceBuffer<Tscal> &buf_rho = pdat.get_field_buf_ref<Tscal>(idensity);
+        sham::DeviceBuffer<Tscal> &buf_P   = pdat.get_field_buf_ref<Tscal>(ipressure);
+        sham::DeviceBuffer<Tscal> &buf_cs  = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+
+        // Get solvergraph field buffers (source data)
+        sham::DeviceBuffer<Tscal> &buf_rho_in = density_field.get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_P_in   = pressure_field.get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs_in = soundspeed_field.get_field(cur_p.id_patch).get_buf();
+
+        auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
+
+        auto rho_in = buf_rho_in.get_read_access(depends_list);
+        auto P_in   = buf_P_in.get_read_access(depends_list);
+        auto cs_in  = buf_cs_in.get_read_access(depends_list);
+        auto rho    = buf_rho.get_write_access(depends_list);
+        auto P      = buf_P.get_write_access(depends_list);
+        auto cs     = buf_cs.get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            cgh.parallel_for(sycl::range<1>{npart}, [=](sycl::item<1> item) {
+                rho[item] = rho_in[item];
+                P[item]   = P_in[item];
+                cs[item]  = cs_in[item];
+            });
+        });
+
+        buf_rho_in.complete_event_state(e);
+        buf_P_in.complete_event_state(e);
+        buf_cs_in.complete_event_state(e);
+        buf_rho.complete_event_state(e);
+        buf_P.complete_event_state(e);
+        buf_cs.complete_event_state(e);
+    });
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
     StackEntry stack_loc{};
 
@@ -1753,6 +1815,9 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     if (dt > Tscal(0)) {
         dt_next = sham::min(dt_next, Tscal(2) * dt);
     }
+
+    // Copy EOS fields to patchdata for persistence and VTKDump access
+    copy_eos_to_patchdata();
 
     // Cleanup for next iteration
     reset_neighbors_cache();

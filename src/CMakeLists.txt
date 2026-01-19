@@ -96,7 +96,7 @@ target_link_lib_and_install(shamrock_exe)
 target_link_lib_and_install(shamrock_pylib)
 
 set_property(TARGET shamrock_exe PROPERTY OUTPUT_NAME shamrock)
-set_property(TARGET shamrock_pylib PROPERTY OUTPUT_NAME shamrock)
+set_property(TARGET shamrock_pylib PROPERTY OUTPUT_NAME pyshamrock)
 
 
 ########################################################################################
@@ -131,14 +131,11 @@ if(CMAKE_INSTALL_PYTHONDIR)
   # Set the install dir for the shamrock package
   set(SHAMROCK_PYTHON_INSTALL_DIR "${CMAKE_INSTALL_PYTHONDIR}/shamrock")
 
-  # Create and install __init__.py file for Python package
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/__init__.py" "from .shamrock import *\n")
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/__init__.py"
-          DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}")
+  # Copy content of pylib/shamrock to the install directory
+  install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/pylib/shamrock"
+          DESTINATION "${CMAKE_INSTALL_PYTHONDIR}")
 
-  file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/math/__init__.py" "from ..shamrock.math import *\n")
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/math/__init__.py"
-          DESTINATION "${SHAMROCK_PYTHON_INSTALL_DIR}/math")
+  # pylib paths config is in shambindings/CMakeLists.txt
 
   # Install the Python module shared library
   install(TARGETS shamrock_pylib

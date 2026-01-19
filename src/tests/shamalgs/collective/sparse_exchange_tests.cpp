@@ -7,7 +7,6 @@
 //
 // -------------------------------------------------------//
 
-#include "shamalgs/collective/sequentialize.hpp"
 #include "shamalgs/collective/sparse_exchange.hpp"
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/equals.hpp"

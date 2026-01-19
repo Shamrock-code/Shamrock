@@ -175,18 +175,16 @@ namespace shamphys {
      * c_s =
      * \sqrt{\frac{8\alpha\beta}{3\mu_e^{\frac13}\rho^{\frac23}}\frac{\tilde{p}_F^4}{\sqrt{1+\tilde{p}_F^2}}}
      * \f] where:
-     * \f[
-     * \begin{cases}
-     * \tilde{p}_F &= \frac{1}{\mu_e^{\frac13}}\alpha \rho^{1/3} \\
-     * \alpha &= \frac{1}{\me c}h\left(\frac{3}{8\pi m_{\mathrm{p}}}\right)^{\frac13} \\
-     * \beta &= \frac{\pi m_\mathrm{e}^4c^5}{3h^3}
-     * \end{cases}
-     * \f]
+     * \f{eqnarray*}{
+     * \tilde{p}_F &=& \frac{1}{\mu_e^{\frac13}}\alpha \rho^{1/3} \\
+     * \alpha &=& \frac{1}{m_{\mathrm{e}} c}h\left(\frac{3}{8\pi m_{\mathrm{p}}}\right)^{\frac13} \\
+     * \beta &=& \frac{\pi m_\mathrm{e}^4c^5}{3h^3}
+     * \f}
      *
      * Pressure:
      * \f[
      * P =  \beta
-     * \left(\left[\tilde{p}_F\sqrt{\tilde{p}_F^2+1}(2\tilde{p}_F^2-3)+3\mathop{arcsinh}(\tilde{p}_F)\right]
+     * \left[\tilde{p}_F\sqrt{\tilde{p}_F^2+1}(2\tilde{p}_F^2-3)+3\operatorname{arcsinh}(\tilde{p}_F)\right]
      * \f]
      */
     template<class T>

@@ -52,6 +52,7 @@
 #include "shammodels/sph/modules/DiffOperator.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
+#include "shammodels/sph/modules/GetParticlesInWall.hpp"
 #include "shammodels/sph/modules/GetParticlesOutsideSphere.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
@@ -2014,6 +2015,49 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         // save old acceleration
         prepare_corrector();
+
+        // select phantom particles (create a mask of the ids of the particles to disable)
+        using namespace shamrock::solvergraph;
+        SolverGraph &solver_graph = storage.solver_graph;
+        auto xyz_edge             = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
+
+        auto part_to_disable = solver_graph.register_edge(
+            "part_to_disable", DistributedBuffers<u32>("part_to_disable", "part_to_disable"));
+
+        { // empty part to disable
+            auto empty_part_to_disable
+                = solver_graph.register_node("empty_part_to_disable", NodeFreeAlloc{});
+            shambase::get_check_ref(empty_part_to_disable).set_edges(part_to_disable);
+            empty_part_to_disable->evaluate();
+        }
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_disable_sequence{};
+
+        using disable_t    = typename ParticleDisableConfig<Tvec>::disable_t; // the types
+        using disable_wall = typename ParticleDisableConfig<Tvec>::Wall;
+
+        for (disable_t &kill_obj : solver_config.particle_disable.disable_list) {
+            if (disable_wall *kill_info = std::get_if<disable_wall>(&kill_obj)) {
+
+                modules::GetParticlesOutsideSphere<Tvec> node_selector(
+                    kill_info->pos, kill_info->thickness);
+                node_selector.set_edges(xyz_edge, part_to_disable);
+
+                part_disable_sequence.push_back(
+                    std::make_shared<decltype(node_selector)>(std::move(node_selector)));
+            }
+        }
+
+        if (!part_disable_sequence.empty()) {
+            auto disable_sequence_node = solver_graph.register_node(
+                "part_disable_selectors",
+                OperationSequence("part disable selectors", std::move(part_disable_sequence)));
+
+            disable_sequence_node->evaluate();
+        }
+        // here is the particles to disable
+        auto &disabled_particles_buffer
+            = solver_graph.get_edge_ref<DistributedBuffers<u32>>("part_to_disable");
 
         update_derivs();
 

@@ -105,6 +105,24 @@ namespace shammodels::sph {
         }
     };
 
+    template<class Tvec>
+    struct ParticleDisableConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        struct Wall {
+            Tvec pos;
+            Tscal thickness;
+        };
+
+        using disable_t = std::variant<Wall>;
+
+        std::vector<disable_t> disable_list;
+
+        inline void add_disable_wall(const Tvec &pos, Tscal thickness) {
+            disable_list.push_back(Wall{pos, thickness});
+        }
+    };
+
     template<class Tscal>
     struct DustConfig {
 
@@ -340,6 +358,7 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     ParticleKillingConfig<Tvec> particle_killing;
+    ParticleDisableConfig<Tvec> particle_disable;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Particle killing config (END)
@@ -947,6 +966,35 @@ namespace shammodels::sph {
                 p.kill_list.push_back(sphere);
             }
             // If more types are added to kill_t, handle them here
+        }
+    }
+
+    // JSON serialisation for ParticleDisableConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const ParticleDisableConfig<Tvec> &p) {
+        j = nlohmann::json::array();
+        for (const auto &disable : p.disable_list) {
+            if (std::holds_alternative<typename ParticleDisableConfig<Tvec>::Wall>(disable)) {
+                const auto &wall = std::get<typename ParticleDisableConfig<Tvec>::Wall>(disable);
+                j.push_back(
+                    {{"type", "wall"}, {"pos", wall.pos}, {"thickness", wall.thickness}});
+            }
+            // If more types are added to disable_t, handle them here
+        }
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, ParticleDisableConfig<Tvec> &p) {
+        p.disable_list.clear();
+        for (const auto &item : j) {
+            std::string type = item.at("type").get<std::string>();
+            if (type == "wall") {
+                typename ParticleDisableConfig<Tvec>::Wall wall;
+                item.at("pos").get_to(wall.pos);
+                item.at("thickness").get_to(wall.thickness);
+                p.disable_list.push_back(wall);
+            }
+            // If more types are added to disable_t, handle them here
         }
     }
 

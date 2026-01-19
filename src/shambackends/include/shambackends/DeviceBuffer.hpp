@@ -543,6 +543,11 @@ namespace sham {
                     dest_offset));
             }
 
+            if (static_cast<const void *>(this) == static_cast<const void *>(&dest)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the source and destination buffers must not be the same");
+            }
+
             if (begin == end) {
                 return;
             }

@@ -127,6 +127,23 @@ namespace shammodels {
             config = LocallyIsothermalFA2014{h_over_r};
         }
 
+        /**
+         * @brief Set the EOS configuration to a Tillotson equation of state. Details in
+         * EOS_Tillotson.
+         *
+         * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
+         * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
+         * @param A Tillotson EoS \f$ A \f$ parameter
+         * @param B Tillotson EoS \f$ B \f$ parameter
+         * @param a Tillotson EoS \f$ a \f$ parameter
+         * @param b Tillotson EoS \f$ b \f$ parameter
+         * @param alpha Tillotson EoS \f$\alpha\f$ parameter
+         * @param beta Tillotson EoS \f$\beta\f$ parameter
+         * @param u_iv Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+         * vaporization
+         * @param u_cv Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+         * vaporization
+         */
         inline void set_tillotson(
             Tscal rho0,
             Tscal E0,

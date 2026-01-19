@@ -428,7 +428,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                     Tscal *__restrict P,
                     Tscal *__restrict cs) {
                     using namespace shamrock::sph;
-                    auto P_and_cs = EOS::pressure_and_cs(
+                    auto P_and_cs = EOS::pressure_and_soundspeed(
                         rho(i), uint[i], rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
                     P[i]  = P_and_cs.pressure;
                     cs[i] = P_and_cs.soundspeed;

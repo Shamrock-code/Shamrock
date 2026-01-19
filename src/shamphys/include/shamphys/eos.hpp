@@ -163,10 +163,75 @@ namespace shamphys {
         T soundspeed;
     };
 
+    /**
+     * @brief Tillotson equation of state from Brundage (2013)
+     *
+     * The Tillotson equation of state is characterized by ten material properties: \f$ \rho_0, E_0,
+     * A, B, a, b, \alpha, \beta, u_{\mathrm{iv}}, u_{\mathrm{cv}} \f$. The pressure-density diagram
+     * is divided into 3 regions, corresponding to condensate or vaporized states. Pressure is
+     * function of density \f$\rho\f$ and internal energy \f$ u \f$.
+     *
+     *
+     * Pressure (piecewise):
+     * \f[
+     * p = \begin{cases}
+     *   p_{\mathrm{c}} = \left[a + \frac{b}{1+\frac{u}{E_0\eta^2}}\right]\rho u + A \chi + B \chi^2
+     * & \rho \geq \rho_0 \quad\text{or}\quad u \leq u_{\mathrm{iv}} \\
+     * p_{\mathrm{h}} = a\rho u + \left[\frac{b}{1+\frac{u}{E_0\eta^2}}\rho u + A \chi
+     * e^{-\beta\left(\frac{\rho_0}{\rho} -1\right)}  \right] e^{-\alpha \left(\frac{\rho_0}{\rho}
+     * -1\right)^2} & \rho < \rho_0 \quad\text{and}\quad u \geq u_{\mathrm{cv}} \\
+     * \frac{(u-u_{\mathrm{iv}})p_{\mathrm{c}} +
+     * (u_{\mathrm{cv}}-u)p_{\mathrm{c}}}{u_{\mathrm{cv}} -
+     * u_{\mathrm{iv}}} & \rho < \rho_0
+     * \quad\text{and}\quad u_{\mathrm{cv}} > u > u_{\mathrm{iv}}
+     * \end{cases}
+     * \f]
+     *
+     * where
+     * \f{eqnarray*}{
+     * \eta &=& \frac{\rho}{\rho_0} \\
+     * \chi &=& \eta -1
+     * \f}
+     * Negative pressures are not allowed and set to zero.
+     *
+     * The sound speed formulas are derived from
+     * \f[ c_s^2 = \frac{\partial p}{\partial \rho} +
+     * \frac{p}{\rho^2}\frac{\partial p}{\partial u} \f]
+     *
+     * The internal energy has two main contributions: temperature and pressure. The pressure
+     * component is given by the numerical integration of
+     * \f{eqnarray*}{
+     * \frac{\mathrm{d}u_{\mathrm{c}}}{\mathrm{d}\rho} &=& \frac{1}{\rho^2}p_{\mathrm{c}} \\
+     * u_{\mathrm{c}}(\rho_0) &=& 0
+     * \f}
+     * and the temperature is finally deduced as:
+     * \f[
+     * T = \frac{u-u_{\mathrm{c}}}{c_{\mathrm{V}}}
+     * \f]
+     */
     template<class T>
     struct EOS_Tillotson {
 
-        static PressureAndCs<T> pressure_and_cs(
+        /**
+         * @brief EOS_Tillotson::pressure_and_soundspeed
+         * Returns pressure and sound speed from the given values of density and internal energy in
+         * the Tillotson equation of state. Parameters are in the code units.
+         * @param rho Density
+         * @param u Internal energy
+         * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
+         * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
+         * @param A Tillotson EoS \f$ A \f$ parameter
+         * @param B Tillotson EoS \f$ B \f$ parameter
+         * @param a Tillotson EoS \f$ a \f$ parameter
+         * @param b Tillotson EoS \f$ b \f$ parameter
+         * @param alpha Tillotson EoS \f$\alpha\f$ parameter
+         * @param beta Tillotson EoS \f$\beta\f$ parameter
+         * @param u_iv Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+         * vaporization
+         * @param u_cv Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+         * vaporization
+         */
+        static PressureAndCs<T> pressure_and_soundspeed(
             T rho, T u, T rho0, T E0, T A, T B, T a, T b, T alpha, T beta, T u_iv, T u_cv) {
 
             T eta    = rho / rho0;
@@ -180,9 +245,7 @@ namespace shamphys {
             T dP_drho = 0.0;
             T dP_du   = 0.0;
 
-            // --- 1. Condensed/Cold state (rho > rho0 || u < u_iv) ---
             auto compute_cold = [&]() {
-                // P_c formula
                 T term_bracket = a + b / denom;
                 T P_c          = term_bracket * rho * u + A * chi + B * chi * chi;
 

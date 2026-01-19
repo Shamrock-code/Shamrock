@@ -192,22 +192,22 @@ namespace shamphys {
      *
      * @tparam Tscal Scalar type
      *
-     * The equation of state is given by:
-     * TODO
+     * The equation of state is detailed in EOS_Tillotson
      */
     template<class Tscal>
     struct EOS_Config_Tillotson {
-        /// Parameters
-        Tscal rho0;
-        Tscal E0;
-        Tscal A;
-        Tscal B;
-        Tscal a;
-        Tscal b;
-        Tscal alpha;
-        Tscal beta;
-        Tscal u_iv;
-        Tscal u_cv;
+        Tscal rho0;  ///< Tillotson EoS \f$ \rho_0 \f$ parameter
+        Tscal E0;    ///< Tillotson EoS \f$ E_0 \f$ parameter
+        Tscal A;     ///< Tillotson EoS \f$ A \f$ parameter
+        Tscal B;     ///< Tillotson EoS \f$ B \f$ parameter
+        Tscal a;     ///< Tillotson EoS \f$ a \f$ parameter
+        Tscal b;     ///< Tillotson EoS \f$ b \f$ parameter
+        Tscal alpha; ///< Tillotson EoS \f$\alpha\f$ parameter
+        Tscal beta;  ///< Tillotson EoS \f$\beta\f$ parameter
+        Tscal u_iv;  ///< Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+                     ///< vaporization
+        Tscal u_cv;  ///< Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+                     ///< vaporization
     };
 
     /**

@@ -4,7 +4,6 @@ import numpy as np
 
 # from progressbar import  Bar,Percentage,ProgressBar
 # from numba import jit, njit, prange
-
 from .coag_term.coag_functions_GQ import *
 from .utils_polynomials import *
 

@@ -45,7 +45,9 @@ def minval_approx_g(nbins, kpol, massgrid, massbins, gij):
 
     else:
         for j in range(nbins):
-            func_pol = lambda x: recons_g(massgrid, massbins, kpol, gij, j, x)
+
+            def func_pol(x):
+                return recons_g(massgrid, massbins, kpol, gij, j, x)
 
             xjgridl = massgrid[j]
             xjgridr = massgrid[j + 1]

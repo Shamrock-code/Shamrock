@@ -525,6 +525,14 @@ namespace sham {
                     "copy_range_offset: begin > end\n  begin = {},\n  end = {}", begin, end));
             }
 
+            if (end > get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: end index is out of bounds\n  end = {},\n  source buffer "
+                    "size = {}",
+                    end,
+                    get_size()));
+            }
+
             if (dest_offset > dest.get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
                     "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "

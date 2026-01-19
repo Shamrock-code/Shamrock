@@ -2016,6 +2016,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         // save old acceleration
         prepare_corrector();
 
+        update_derivs();
+
         // select phantom particles (create a mask of the ids of the particles to disable)
         using namespace shamrock::solvergraph;
         SolverGraph &solver_graph = storage.solver_graph;
@@ -2036,11 +2038,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         using disable_t    = typename ParticleDisableConfig<Tvec>::disable_t; // the types
         using disable_wall = typename ParticleDisableConfig<Tvec>::Wall;
 
-        for (disable_t &kill_obj : solver_config.particle_disable.disable_list) {
-            if (disable_wall *kill_info = std::get_if<disable_wall>(&kill_obj)) {
+        for (disable_t &disable_obj : solver_config.particle_disable.disable_list) {
+            if (disable_wall *disable_info = std::get_if<disable_wall>(&disable_obj)) {
 
                 modules::GetParticlesOutsideSphere<Tvec> node_selector(
-                    kill_info->pos, kill_info->thickness);
+                    disable_info->pos, disable_info->thickness);
                 node_selector.set_edges(xyz_edge, part_to_disable);
 
                 part_disable_sequence.push_back(
@@ -2055,11 +2057,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             disable_sequence_node->evaluate();
         }
+
         // here is the particles to disable
         auto &disabled_particles_buffer
             = solver_graph.get_edge_ref<DistributedBuffers<u32>>("part_to_disable");
 
-        update_derivs();
+        // done disabling, now do the integration
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();

@@ -37,6 +37,12 @@ target_include_directories(shambindings PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")
 
+
+
+#####################################
+# python sys.path config
+#####################################
+
 if(NOT DEFINED PYTHON_EXECUTABLE)
     message(FATAL_ERROR "This should have been defined in the main CmakeLists.txt")
 endif()
@@ -62,6 +68,57 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp
 )
 
 target_sources(shambindings PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/configure_time_py_sys_path.cpp)
+
+
+#####################################
+# pylib paths config (can be set via setting -DSHAM_PYLIB_PATHS=<path1>;<path2>...)
+#####################################
+
+option(SHAMROCK_PYLIB_ADD_SOURCE_DIR "Add source directory to pylib paths if not provided via cache" On)
+option(SHAMROCK_PYLIB_ADD_INSTALL_DIR "Add install directory to pylib paths if not provided via cache" On)
+
+# Default value (used only if NOT provided via cache)
+set(_DEFAULT_SHAM_PYLIB_PATHS)
+
+if(SHAMROCK_PYLIB_ADD_INSTALL_DIR)
+  if(DEFINED CMAKE_INSTALL_PYTHONDIR)
+    list(APPEND _DEFAULT_SHAM_PYLIB_PATHS "${CMAKE_INSTALL_PYTHONDIR}")
+  endif()
+endif()
+
+if(SHAMROCK_PYLIB_ADD_SOURCE_DIR)
+  list(APPEND _DEFAULT_SHAM_PYLIB_PATHS
+    "${CMAKE_SOURCE_DIR}/src/pylib"
+  )
+endif()
+
+set(SHAM_PYLIB_PATHS ""
+    CACHE STRING "Python library search paths (CMake list). Leave empty to use defaults.")
+
+if(SHAM_PYLIB_PATHS STREQUAL "")
+  set(SHAM_PYLIB_PATH_LIST "${_DEFAULT_SHAM_PYLIB_PATHS}")
+  message(STATUS "pylib paths list (auto-detected) :")
+  message(STATUS "  ${_DEFAULT_SHAM_PYLIB_PATHS}")
+else()
+  set(SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATHS}")
+  message(STATUS "pylib paths list (user-supplied) :")
+  message(STATUS "  ${SHAM_PYLIB_PATHS}")
+endif()
+
+# Escape for C++ string literals
+string(REPLACE "\\" "\\\\" SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATH_LIST}")
+string(REPLACE "\"" "\\\"" SHAM_PYLIB_PATH_LIST "${SHAM_PYLIB_PATH_LIST}")
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp" "
+  const char* configure_time_pylib_paths() { return \"${SHAM_PYLIB_PATH_LIST}\"; }
+")
+
+target_sources(shambindings PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/configure_time_pylib_paths.cpp")
+
+
+#####################################
+# run_ipython.py config
+#####################################
 
 file(READ ${CMAKE_CURRENT_SOURCE_DIR}/src/run_ipython.py __CAT_RUNIPYTHON_OUT)
 

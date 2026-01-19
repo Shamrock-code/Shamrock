@@ -28,6 +28,13 @@ namespace shambindings {
     void setpypath(std::string path);
 
     /**
+     * @brief set the value of sys.argv
+     *
+     * This function will throw if bindings were not initialized in embed mode
+     */
+    void set_sys_argv(int argc, char *argv[]);
+
+    /**
      * @brief set the value of sys.path before init from the supplied binary
      *
      * This function will throw if bindings were not initialized in embed mode
@@ -42,7 +49,7 @@ namespace shambindings {
      * @warning This function shall not be called if more than one processes are running
      * @param do_print print log at python startup
      */
-    void start_ipython(bool do_print);
+    void start_ipython(bool do_print, int argc, char *argv[]);
 
     /**
      * @brief run python runscript
@@ -52,7 +59,7 @@ namespace shambindings {
      * @param do_print print log at python startup
      * @param file_path path to the runscript
      */
-    void run_py_file(std::string file_path, bool do_print);
+    void run_py_file(std::string file_path, bool do_print, int argc, char *argv[]);
 
     /**
      * @brief Modify Python sys.path to point to one detected during cmake invocation

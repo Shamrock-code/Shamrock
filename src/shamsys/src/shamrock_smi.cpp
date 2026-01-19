@@ -178,13 +178,17 @@ namespace shamsys {
           - default_work_group_size = {}
           - global_mem_size = {}
           - local_mem_size = {}
-          - mem_base_addr_align = {})",
+          - mem_base_addr_align = {},
+          - max_mem_alloc_size_dev = {},
+          - max_mem_alloc_size_host = {})",
                 DeviceName,
                 dev.device_id,
                 dev.prop.default_work_group_size,
                 shambase::readable_sizeof(dev.prop.global_mem_size),
                 nolimit_if_too_large(dev.prop.local_mem_size),
-                dev.prop.mem_base_addr_align);
+                dev.prop.mem_base_addr_align,
+                shambase::readable_sizeof(dev.prop.max_mem_alloc_size_dev),
+                shambase::readable_sizeof(dev.prop.max_mem_alloc_size_host));
 
             std::unordered_map<std::string, int> devicename_histogram
                 = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");

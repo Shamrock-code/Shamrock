@@ -108,7 +108,7 @@ namespace shamphys {
      */
     template<class Tscal>
     struct EOS_Config_Fermi {
-        Tscal mu_e;
+        Tscal mu_e; ///< mu_e is the mean molecular weight
     };
 
     /**

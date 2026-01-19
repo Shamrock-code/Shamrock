@@ -159,10 +159,15 @@ namespace shamphys {
         };
     };
 
+    /**
+     * @brief PressureAndCs
+     *
+     * Just a structure to hold the pressure and sound speed returned by EoS functions
+     */
     template<class T>
     struct PressureAndCs {
-        T pressure;
-        T soundspeed;
+        T pressure;   ///< pressure pressure value
+        T soundspeed; ///< sound speed value
     };
 
     /**
@@ -190,8 +195,14 @@ namespace shamphys {
     template<class T>
     struct EOS_Fermi {
 
+        /**
+         * @brief EOS_Fermi::pressure_and_soundspeed
+         * Returns pressure and sound speed from the given value of density in the Fermi gas
+         * equation of state
+         * @param mu_e Mean molecular weight
+         * @param rho Density in SI unit
+         */
         static constexpr PressureAndCs<T> pressure_and_soundspeed(T mu_e, T rho) {
-            // rho has to be SI!
 
             constexpr T ALPHA
                 = 0.10064082802851738e-2; // = (3/(8pi))**(1./3) * h / (mp^(1/3) m_e c) (SI)

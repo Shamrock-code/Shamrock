@@ -177,7 +177,6 @@ namespace shammodels::basegodunov {
                 "set_amr_mode_none",
                 [](TConfig &self) {
                     self.amr_mode.set_refine_none();
-                    self.amr_mode.do_refinement = false;
                 })
             .def(
                 "set_amr_mode_density_based",

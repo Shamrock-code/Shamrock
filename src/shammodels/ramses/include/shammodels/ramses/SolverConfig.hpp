@@ -319,10 +319,6 @@ struct shammodels::basegodunov::SolverConfig {
                     npscal_gas_config.npscal_gas));
             }
         }
-
-        if (do_amr_refinement()) {
-            ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "AMR Refinement is experimental"));
-        }
     }
 };
 

@@ -29,11 +29,15 @@ namespace shammodels::sph::modules {
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tvec wall_pos;
+        Tscal wall_length;
+        Tscal wall_width;
         Tscal wall_thickness;
 
         public:
-        GetParticlesInWall(const Tvec &wall_pos, Tscal wall_thickness)
-            : wall_pos(wall_pos), wall_thickness(wall_thickness) {}
+        GetParticlesInWall(
+            const Tvec &wall_pos, Tscal wall_length, Tscal wall_width, Tscal wall_thickness)
+            : wall_pos(wall_pos), wall_length(wall_length), wall_width(wall_width),
+              wall_thickness(wall_thickness) {}
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tvec> &pos;

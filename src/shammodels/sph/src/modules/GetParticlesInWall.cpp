@@ -31,10 +31,28 @@ namespace shammodels::sph::modules {
 
         pos_refs.for_each([&](u64 id_patch, const PatchDataField<Tvec> &pos) {
             auto tmp = pos.get_ids_where(
-                [](const Tvec *__restrict pos, u32 i, Tvec wall_pos, Tscal wall_thickness) {
-                    return sycl::length(pos[i] - wall_pos) > wall_thickness;
+                [](const Tvec *__restrict pos,
+                   u32 i,
+                   Tvec wall_pos,
+                   Tscal wall_length,
+                   Tscal wall_width,
+                   Tscal wall_thickness) {
+                    Tscal x = pos[i][0];
+                    Tscal y = pos[i][1];
+                    Tscal z = pos[i][2];
+
+                    Tscal x0 = wall_pos[0];
+                    Tscal y0 = wall_pos[1];
+                    Tscal z0 = wall_pos[2];
+
+                    bool in_wall = (x - x0 < wall_length) && (x - x0 > 0) && (y - y0 < wall_width)
+                                   && (y - y0 > 0) && (z - z0 < wall_thickness) && (z - z0 > 0);
+
+                    return in_wall;
                 },
                 wall_pos,
+                wall_length,
+                wall_width,
                 wall_thickness);
 
             // edges.part_ids_in_wall.buffers.get(id_patch).append(tmp);
@@ -47,19 +65,19 @@ namespace shammodels::sph::modules {
         auto part_ids_in_wall = get_rw_edge_base(0).get_tex_symbol();
 
         std::string tex = R"tex(
-        Get particles outside of the sphere
+    Get particles inside the rectangular wall
 
-        \begin{align}
-        {part_ids_in_wall} &= \{i \text{ where } \vert\vert{pos}_i - c\vert\vert > r\}\\
-        c &= {center}\\
-        r &= {radius}
-        \end{align}
-        )tex";
+    \begin{align}
+    {part_ids_in_wall} &= \{i \text{ where } \vert\vert{x}_i - {x0}\vert\vert < {wall_length} \text{ and } \vert\vert{y}_i - {y0}\vert\vert < {wall_width} \text{ and } \vert\vert{z}_i - {z0}\vert\vert < {wall_thickness}\}\\
+    \end{align}
+    )tex";
 
-        shambase::replace_all(tex, "{pos}", pos);
-        shambase::replace_all(tex, "{part_ids_in_wall}", part_ids_in_wall);
-        shambase::replace_all(tex, "{center}", shambase::format("{}", wall_pos));
-        shambase::replace_all(tex, "{radius}", shambase::format("{}", wall_thickness));
+        shambase::replace_all(tex, "{x0}", std::to_string(wall_pos[0]));
+        shambase::replace_all(tex, "{y0}", std::to_string(wall_pos[1]));
+        shambase::replace_all(tex, "{z0}", std::to_string(wall_pos[2]));
+        shambase::replace_all(tex, "{wall_length}", std::to_string(wall_length));
+        shambase::replace_all(tex, "{wall_width}", std::to_string(wall_width));
+        shambase::replace_all(tex, "{wall_thickness}", std::to_string(wall_thickness));
 
         return tex;
     }

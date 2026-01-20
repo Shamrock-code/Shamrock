@@ -2077,9 +2077,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         set_omega_mask.evaluate();
 
-        // set_omega_mask.set_edges(storage.part_counts, part_to_disable, axyz_edge);
-        //
-        set_omega_mask.evaluate();
+        modules::SetWhenMask<Tvec> set_omega_mask_vec({0.0, 0.0, 0.0});
+        set_omega_mask_vec.set_edges(storage.part_counts, part_to_disable, axyz_edge);
+        set_omega_mask_vec.evaluate();
 
         // done disabling, now do the integration
 

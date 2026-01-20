@@ -2023,14 +2023,19 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         SolverGraph &solver_graph = storage.solver_graph;
         auto xyz_edge             = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
 
-        auto part_to_disable = solver_graph.register_edge(
-            "part_to_disable", DistributedBuffers<u32>("part_to_disable", "part_to_disable"));
+        // auto part_to_disable = solver_graph.register_edge(
+        //     "part_to_disable",
+        //     std::make_shared<shamrock::solvergraph::Field<u32>>("part_to_disable",
+        //     "part_to_disable"));
+
+        auto part_to_disable = std::make_shared<shamrock::solvergraph::Field<u32>>(
+            1, "part_to_disable", "part_to_disable");
 
         { // empty part to disable
             auto empty_part_to_disable
                 = solver_graph.register_node("empty_part_to_disable", NodeFreeAlloc{});
-            shambase::get_check_ref(empty_part_to_disable).set_edges(part_to_disable);
-            empty_part_to_disable->evaluate();
+            // shambase::get_check_ref(empty_part_to_disable).set_edges(part_to_disable);
+            // empty_part_to_disable->evaluate();
         }
 
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_disable_sequence{};
@@ -2041,7 +2046,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         for (disable_t &disable_obj : solver_config.particle_disable.disable_list) {
             if (disable_wall *disable_info = std::get_if<disable_wall>(&disable_obj)) {
 
-                modules::GetParticlesOutsideSphere<Tvec> node_selector(
+                modules::GetParticlesInWall<Tvec> node_selector(
                     disable_info->pos, disable_info->thickness);
                 node_selector.set_edges(xyz_edge, part_to_disable);
 
@@ -2059,8 +2064,22 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
 
         // here is the particles to disable
-        auto &disabled_particles_buffer
-            = solver_graph.get_edge_ref<DistributedBuffers<u32>>("part_to_disable");
+        // auto &disabled_particles_mask
+        //    = solver_graph.get_edge_ref<DistributedBuffers<u32>>("part_to_disable");
+
+        // now set accelerations to 0 for these particles
+        // for this, let's reuse _impl_evaluate_internal() twice form Node Compute Omega
+        auto axyz_edge = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tvec>>("axyz");
+        auto du_edge   = solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint");
+
+        modules::SetWhenMask<Tscal> set_omega_mask{0};
+        set_omega_mask.set_edges(storage.part_counts, part_to_disable, du_edge);
+
+        set_omega_mask.evaluate();
+
+        // set_omega_mask.set_edges(storage.part_counts, part_to_disable, axyz_edge);
+        //
+        set_omega_mask.evaluate();
 
         // done disabling, now do the integration
 

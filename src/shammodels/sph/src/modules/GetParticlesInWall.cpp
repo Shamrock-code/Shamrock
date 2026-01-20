@@ -27,7 +27,7 @@ namespace shammodels::sph::modules {
 
         const shamrock::solvergraph::DDPatchDataFieldRef<Tvec> &pos_refs = edges.pos.get_refs();
 
-        edges.part_ids_in_wall.ensure_allocated(pos_refs.get_ids());
+        // edges.part_ids_in_wall.ensure_allocated(pos_refs.get_ids());
 
         pos_refs.for_each([&](u64 id_patch, const PatchDataField<Tvec> &pos) {
             auto tmp = pos.get_ids_where(
@@ -37,7 +37,7 @@ namespace shammodels::sph::modules {
                 wall_pos,
                 wall_thickness);
 
-            edges.part_ids_in_wall.buffers.get(id_patch).append(tmp);
+            // edges.part_ids_in_wall.buffers.get(id_patch).append(tmp);
         });
     }
 

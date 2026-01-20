@@ -37,12 +37,12 @@ namespace shammodels::sph::modules {
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tvec> &pos;
-            shamrock::solvergraph::DistributedBuffers<u32> &part_ids_in_wall;
+            shamrock::solvergraph::IFieldSpan<u32> &part_ids_in_wall;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tvec>> pos,
-            std::shared_ptr<shamrock::solvergraph::DistributedBuffers<u32>> part_ids_in_wall) {
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> part_ids_in_wall) {
             __internal_set_ro_edges({pos});
             __internal_set_rw_edges({part_ids_in_wall});
         }
@@ -50,7 +50,7 @@ namespace shammodels::sph::modules {
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::IFieldRefs<Tvec>>(0),
-                get_rw_edge<shamrock::solvergraph::DistributedBuffers<u32>>(0)};
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(1)};
         }
 
         void _impl_evaluate_internal();

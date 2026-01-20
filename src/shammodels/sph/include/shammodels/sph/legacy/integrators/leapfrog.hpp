@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -204,7 +204,7 @@ namespace integrators {
 
                 // leapfrog predictor
                 sched.for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchData &pdat) {
-                    shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "predictor");
+                    shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "predictor");
 
                     lambda_update_time(
                         shamsys::instance::get_compute_queue(),
@@ -225,7 +225,7 @@ namespace integrators {
                         sycl::range<1>{pdat.get_obj_cnt()},
                         dt_cur / 2);
 
-                    shamlog_debug_ln("SPHLeapfrog", "patch : n°", id_patch, "->", "dt fields swap");
+                    shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "dt fields swap");
 
                     lambda_swap_der(
                         shamsys::instance::get_compute_queue(),
@@ -293,12 +293,12 @@ namespace integrators {
 
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                     shamlog_debug_ln(
-                        "SPHLeapfrog", "patch : n°", id_patch, "->", "making Radix Tree");
+                        "SPHLeapfrog", "patch : n", id_patch, "->", "making Radix Tree");
 
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
                         shamlog_debug_ln(
                             "SPHLeapfrog",
-                            "patch : n°",
+                            "patch : n",
                             id_patch,
                             "->",
                             "is empty skipping tree build");
@@ -322,14 +322,14 @@ namespace integrators {
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                     shamlog_debug_ln(
                         "SPHLeapfrog",
-                        "patch : n°",
+                        "patch : n",
                         id_patch,
                         "->",
                         "compute radix tree cell volumes");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
                         shamlog_debug_ln(
                             "SPHLeapfrog",
-                            "patch : n°",
+                            "patch : n",
                             id_patch,
                             "->",
                             "is empty skipping tree volumes step");
@@ -343,14 +343,14 @@ namespace integrators {
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                     shamlog_debug_ln(
                         "SPHLeapfrog",
-                        "patch : n°",
+                        "patch : n",
                         id_patch,
                         "->",
                         "compute Radix Tree interaction boxes");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
                         shamlog_debug_ln(
                             "SPHLeapfrog",
-                            "patch : n°",
+                            "patch : n",
                             id_patch,
                             "->",
                             "is empty skipping interaction box compute");
@@ -377,11 +377,11 @@ namespace integrators {
                 // iterate smoothing length
                 sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
                     shamlog_debug_ln(
-                        "SPHLeapfrog", "patch : n°", id_patch, "->", "Init h iteration");
+                        "SPHLeapfrog", "patch : n", id_patch, "->", "Init h iteration");
                     if (merge_pdat.at(id_patch).or_element_cnt == 0)
                         shamlog_debug_ln(
                             "SPHLeapfrog",
-                            "patch : n°",
+                            "patch : n",
                             id_patch,
                             "->",
                             "is empty skipping h iteration");

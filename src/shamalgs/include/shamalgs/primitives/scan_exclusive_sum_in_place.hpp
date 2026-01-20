@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -38,7 +38,7 @@ namespace shamalgs::primitives {
      * of all elements from index 0 to i-1. The first element is set to 0 (the
      * identity for addition).
      *
-     * The operation transforms: [a, b, c, d] → [0, a, a+b, a+b+c]
+     * The operation transforms: [a, b, c, d] -> [0, a, a+b, a+b+c]
      *
      * @tparam T Element type - must support addition and assignment
      * @param buf1 Device buffer to scan in-place (modified by this operation)

@@ -108,7 +108,6 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     model.set_field_value_lambda_f64_3("rhovel_dust", b_rhovel_d_2_map, 1)
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -120,7 +119,6 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -154,7 +152,6 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     freq = 1
 
     for i in range(13):
-
         if i % freq == 0:
             model.dump_vtk("colid_test" + str(i // freq) + ".vtk")
 

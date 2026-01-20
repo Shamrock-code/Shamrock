@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -186,6 +186,16 @@ TestStart(Unittest, "shammath/sphkernels/C4", validateC4kernel, 1) {
 TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1) {
     validate_kernel_3d<shammath::C6<f32>>(1e-3, 1e-3, 1e-3);
     validate_kernel_3d<shammath::C6<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/TGauss3", validateTGauss3kernel, 1) {
+    validate_kernel_3d<shammath::TGauss3<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss3<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/TGauss5", validateTGauss5kernel, 1) {
+    validate_kernel_3d<shammath::TGauss5<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss5<f64>>(1e-5, 1e-5, 1e-5);
 }
 
 struct Outplot {

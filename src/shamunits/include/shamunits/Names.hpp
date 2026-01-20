@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -34,7 +34,7 @@
     X1(candela, cd)                                                                                \
     /*derived units*/                                                                              \
     X1(Hertz, Hz)    /* hertz : frequency (s-1) */                                                 \
-    X1(Newtown, N)   /* (kg.m.s-2)*/                                                               \
+    X1(Newton, N)    /* (kg.m.s-2)*/                                                               \
     X1(Pascal, Pa)   /* (kg.m-1.s-2) = (N/m2)*/                                                    \
     X1(Joule, J)     /* (kg.m2.s-2) = (N.m = Pa.m3)*/                                              \
     X1(Watt, W)      /* (kg.m2.s-3) = (J/s)*/                                                      \

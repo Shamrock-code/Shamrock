@@ -81,7 +81,6 @@ def run_sim(vanleer=True, label="none"):
     tend = 0.245
 
     for i in range(100):
-
         # if i % freq == 0:
         model.dump_vtk("test" + str(i) + ".vtk")
         next_dt = model.evolve_once_override_time(t, dt)
@@ -95,7 +94,6 @@ def run_sim(vanleer=True, label="none"):
             break
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -107,7 +105,6 @@ def run_sim(vanleer=True, label="none"):
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -142,7 +139,6 @@ def run_sim(vanleer=True, label="none"):
     rho = []
     rho_d = []
     for i in range(len(dic["xmin"])):
-
         X.append(dic["xmin"][i])
         rho.append(dic["rho"][i])
         rho_d.append(dic["rho_dust"][i])

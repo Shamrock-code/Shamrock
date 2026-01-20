@@ -9,7 +9,6 @@ def plot_fcc(nx, ny, nz):
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
-
                 x = 2 * i + ((j + k) % 2)
                 y = (3.0**0.5) * (j + (1) * (k % 2))
                 z = 2 * (6.0**0.5) * k / 3.0
@@ -28,7 +27,6 @@ def plot_fcc_new(nx, ny, nz):
     for i in range(nx):
         for j in range(ny):
             for k in range(nz):
-
                 x = 2 * i + (j % 2)
                 y = (3**0.5) * j
                 z = 2 * (6.0**0.5) * k / 3.0

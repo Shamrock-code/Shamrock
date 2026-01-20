@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -70,6 +70,55 @@ inline bool is_sort_equal(std::vector<u32_2> a, std::vector<u32_2> b) {
         }
     }
     return true;
+}
+
+template<class Tvec, class Tscal>
+inline Tscal mac(shammath::AABB<Tvec> a, shammath::AABB<Tvec> b) {
+    Tvec s_a      = (a.upper - a.lower);
+    Tvec s_b      = (b.upper - b.lower);
+    Tvec r_a      = (a.upper + a.lower) / 2;
+    Tvec r_b      = (b.upper + b.lower) / 2;
+    Tvec delta_ab = r_a - r_b;
+
+    Tscal delta_ab_sq = sham::dot(delta_ab, delta_ab);
+
+    if (delta_ab_sq == 0) {
+        return 100000000;
+    }
+
+    Tscal s_a_sq = sham::dot(s_a, s_a);
+    Tscal s_b_sq = sham::dot(s_b, s_b);
+
+    Tscal theta_sq = (sycl::sqrt(s_a_sq) + sycl::sqrt(s_b_sq)) / sycl::sqrt(delta_ab_sq);
+
+    return theta_sq;
+}
+
+inline std::vector<f64> compute_theta_interactions(
+    const shamtree::CompressedLeafBVH<Tmorton, Tvec, 3> &bvh,
+    const std::vector<u32_2> &interactions) {
+
+    auto trav = bvh.get_traverser_host();
+
+    auto &aabb_min = trav.aabb_min;
+    auto &aabb_max = trav.aabb_max;
+
+    std::vector<f64> theta_interactions;
+    for (auto &interaction : interactions) {
+        u32 id_a = interaction.x();
+        u32 id_b = interaction.y();
+
+        shammath::AABB<Tvec> aabb_a = {aabb_min[id_a], aabb_max[id_a]};
+        shammath::AABB<Tvec> aabb_b = {aabb_min[id_b], aabb_max[id_b]};
+
+        f64 theta = mac<f64_3, f64>(aabb_a, aabb_b);
+
+        if (theta == 100000000) {
+            continue;
+        }
+        theta_interactions.push_back(theta);
+    }
+    return theta_interactions;
 }
 
 inline void validate_dtt_results(
@@ -239,6 +288,50 @@ inline void validate_dtt_results(
 
     test_is_symmetric(internal_node_interactions);
     test_is_symmetric(unrolled_interact);
+
+    auto theta_m2l = compute_theta_interactions(bvh, internal_node_interactions);
+    auto theta_p2p = compute_theta_interactions(bvh, unrolled_interact);
+
+    f64 quiet_nan = std::numeric_limits<Tscal>::quiet_NaN();
+
+    f64 theta_max_m2l = (theta_m2l.size() > 0)
+                            ? *std::max_element(theta_m2l.begin(), theta_m2l.end())
+                            : quiet_nan;
+    f64 theta_max_p2p = (theta_p2p.size() > 0)
+                            ? *std::max_element(theta_p2p.begin(), theta_p2p.end())
+                            : quiet_nan;
+
+    f64 theta_min_m2l = (theta_m2l.size() > 0)
+                            ? *std::min_element(theta_m2l.begin(), theta_m2l.end())
+                            : quiet_nan;
+    f64 theta_min_p2p = (theta_p2p.size() > 0)
+                            ? *std::min_element(theta_p2p.begin(), theta_p2p.end())
+                            : quiet_nan;
+
+    f64 theta_avg_m2l
+        = (theta_m2l.size() > 0)
+              ? std::accumulate(theta_m2l.begin(), theta_m2l.end(), 0.0) / theta_m2l.size()
+              : quiet_nan;
+    f64 theta_avg_p2p
+        = (theta_p2p.size() > 0)
+              ? std::accumulate(theta_p2p.begin(), theta_p2p.end(), 0.0) / theta_p2p.size()
+              : quiet_nan;
+
+    logger::raw_ln("theta_crit :", theta_crit);
+    logger::raw_ln("theta_max_m2l :", theta_max_m2l);
+    logger::raw_ln("theta_max_p2p :", theta_max_p2p);
+
+    logger::raw_ln("theta_min_m2l :", theta_min_m2l);
+    logger::raw_ln("theta_min_p2p :", theta_min_p2p);
+
+    logger::raw_ln("theta_avg_m2l :", theta_avg_m2l);
+    logger::raw_ln("theta_avg_p2p :", theta_avg_p2p);
+
+    logger::raw_ln("M2L per cell :", theta_m2l.size() / f64(bvh.structure.get_total_cell_count()));
+    logger::raw_ln("P2P per cell :", theta_p2p.size() / f64(bvh.structure.get_total_cell_count()));
+
+    logger::raw_ln("M2L per part :", theta_m2l.size() / f64(positions.get_size()));
+    logger::raw_ln("P2P per part :", theta_p2p.size() / f64(positions.get_size()));
 }
 
 void dtt_test(
@@ -374,6 +467,7 @@ inline void dtt_test_empty(bool ordered_result, bool allow_leaf_lowering) {
 
 inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {
     __shamrock_stack_entry();
+    // dtt_test(50000, 1, 0.5, ordered_result, allow_leaf_lowering);
     dtt_test(1000, 1, 0.5, ordered_result, allow_leaf_lowering);
     dtt_test(1000, 1, 0.0, ordered_result, allow_leaf_lowering);
     dtt_test(1, 1, 0.5, ordered_result, allow_leaf_lowering);

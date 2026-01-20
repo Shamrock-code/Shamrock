@@ -13,7 +13,7 @@ else
 fi
 
 # List of required packages
-required_packages=("cmake" "libomp" "boost" "open-mpi" "adaptivecpp")
+required_packages=("cmake" "libomp" "boost" "open-mpi" "adaptivecpp" "fmt")
 
 echo " ---------- Activating sham environment ---------- "
 # Check if each package is installed
@@ -36,12 +36,13 @@ function shamconfigure {
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
         ${CCACHE_CMAKE_ARG} \
+        -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
         -DCMAKE_CXX_COMPILER="acpp" \
         -DCMAKE_CXX_FLAGS="-I$OMP_ROOT/include" \
         -DACPP_PATH="${ACPP_ROOT}" \
-        -DCMAKE_BUILD_TYPE="${SHAMROCK_BUILD_TYPE}" \
+        -DSHAMROCK_EXTERNAL_FMTLIB=ON \
         -DBUILD_TEST=Yes \
         "${CMAKE_OPT[@]}"
 }

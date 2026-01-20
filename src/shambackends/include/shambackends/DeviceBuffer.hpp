@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -514,20 +514,46 @@ namespace sham {
          * @param dest The destination buffer to copy to.
          */
         template<USMKindTarget dest_target>
-        inline void copy_range(
-            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+        inline void copy_range_offset(
+            size_t begin,
+            size_t end,
+            sham::DeviceBuffer<T, dest_target> &dest,
+            size_t dest_offset) const {
 
             if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+                    "copy_range_offset: begin > end\n  begin = {},\n  end = {}", begin, end));
             }
 
-            if (end - begin > dest.get_size()) {
+            if (end > get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "copy_range_offset: end index is out of bounds\n  end = {},\n  source buffer "
+                    "size = {}",
+                    end,
+                    get_size()));
+            }
+
+            if (dest_offset > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "
                     "dest.get_size() = {}",
-                    end - begin,
+                    dest_offset,
                     dest.get_size()));
+            }
+
+            if (end - begin > (dest.get_size() - dest_offset)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: end - begin > dest.get_size() - dest_offset\n  end - begin "
+                    "= {},\n  "
+                    "dest.get_size() - dest_offset = {},\n  dest_offset = {}",
+                    end - begin,
+                    dest.get_size() - dest_offset,
+                    dest_offset));
+            }
+
+            if (static_cast<const void *>(this) == static_cast<const void *>(&dest)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the source and destination buffers must not be the same");
             }
 
             if (begin == end) {
@@ -538,7 +564,7 @@ namespace sham {
 
             sham::EventList depends_list;
             const T *ptr_src = get_read_access(depends_list) + begin;
-            T *ptr_dest      = dest.get_write_access(depends_list);
+            T *ptr_dest      = dest.get_write_access(depends_list) + dest_offset;
 
             sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                 cgh.copy(ptr_src, ptr_dest, len);
@@ -546,6 +572,23 @@ namespace sham {
 
             complete_event_state(e);
             dest.complete_event_state(e);
+        }
+
+        /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+
+            copy_range_offset(begin, end, dest, 0);
         }
 
         /**

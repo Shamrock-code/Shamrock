@@ -42,7 +42,6 @@ delta_v = 1e-5
 
 
 def rho_map(rmin, rmax):
-
     x_min, y_min, z_min = rmin
     x_max, y_max, z_max = rmax
 
@@ -72,7 +71,6 @@ model.evolve_until(tmax)
 
 
 def convert_to_cell_coords(dic):
-
     cmin = dic["cell_min"]
     cmax = dic["cell_max"]
 
@@ -84,7 +82,6 @@ def convert_to_cell_coords(dic):
     zmax = []
 
     for i in range(len(cmin)):
-
         m, M = cmin[i], cmax[i]
 
         mx, my, mz = m

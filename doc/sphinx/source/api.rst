@@ -19,3 +19,4 @@ Python API documentation
    shamrock.phys
    shamrock.sys
    shamrock.tree
+   shamrock.utils

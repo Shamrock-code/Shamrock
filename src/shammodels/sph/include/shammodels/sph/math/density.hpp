@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,7 +30,7 @@ namespace shamrock::sph {
     }
 
     template<class flt, i32 dim = 3>
-    inline flt newtown_iterate_new_h(flt rho_ha, flt rho_sum, flt sumdWdh, flt h_a) {
+    inline flt newton_iterate_new_h(flt rho_ha, flt rho_sum, flt sumdWdh, flt h_a) {
         flt f_iter  = rho_sum - rho_ha;
         flt df_iter = sumdWdh + dim * rho_ha / h_a;
 

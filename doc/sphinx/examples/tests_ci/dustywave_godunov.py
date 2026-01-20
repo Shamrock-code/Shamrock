@@ -217,7 +217,6 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     model.set_field_value_lambda_f64_3("rhovel_dust", rhovel_d_4_map, 3)
 
     def convert_to_cell_coords(dic):
-
         cmin = dic["cell_min"]
         cmax = dic["cell_max"]
 
@@ -229,7 +228,6 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -262,7 +260,6 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     t = 0
     tend = 2
     for i in range(1000000):
-
         if i % freq == 0:
             dic_i = convert_to_cell_coords(ctx.collect_data())
 

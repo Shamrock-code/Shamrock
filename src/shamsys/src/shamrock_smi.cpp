@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -178,13 +178,17 @@ namespace shamsys {
           - default_work_group_size = {}
           - global_mem_size = {}
           - local_mem_size = {}
-          - mem_base_addr_align = {})",
+          - mem_base_addr_align = {},
+          - max_mem_alloc_size_dev = {},
+          - max_mem_alloc_size_host = {})",
                 DeviceName,
                 dev.device_id,
                 dev.prop.default_work_group_size,
                 shambase::readable_sizeof(dev.prop.global_mem_size),
                 nolimit_if_too_large(dev.prop.local_mem_size),
-                dev.prop.mem_base_addr_align);
+                dev.prop.mem_base_addr_align,
+                shambase::readable_sizeof(dev.prop.max_mem_alloc_size_dev),
+                shambase::readable_sizeof(dev.prop.max_mem_alloc_size_host));
 
             std::unordered_map<std::string, int> devicename_histogram
                 = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");

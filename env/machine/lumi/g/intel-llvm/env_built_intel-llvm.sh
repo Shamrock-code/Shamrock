@@ -57,9 +57,9 @@ fi
 
 function shamconfigure {
 
-    # see https://github.com/audacity/audacity/issues/3173 for why "-Wl,--copy-dt-needed-entries"
+    # see https://github.com/audacity/audacity/issues/3173 for why "-Wl,--copy-dt-needed-entries"
     # is needed
-    # If not one gets /usr/lib64/gcc/x86_64-suse-linux/13/../../../../x86_64-suse-linux/bin/ld: /lib64/libpthread.so.0: error adding symbols: DSO missing from command line
+    # If not one gets /usr/lib64/gcc/x86_64-suse-linux/13/../../../../x86_64-suse-linux/bin/ld: /lib64/libpthread.so.0: error adding symbols: DSO missing from command line
 
     cmake \
         -S $SHAMROCK_DIR \

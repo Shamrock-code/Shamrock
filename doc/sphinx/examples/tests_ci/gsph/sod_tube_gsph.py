@@ -131,9 +131,9 @@ if shamrock.sys.world_rank() == 0:
     for name, (value, expected) in error_checks.items():
         if abs(value - expected) > tol * expected:
             err_log += f"error on {name} is outside of tolerances:\n"
-            err_log += f"  expected error = {expected} +- {tol*expected}\n"
+            err_log += f"  expected error = {expected} +- {tol * expected}\n"
             err_log += (
-                f"  obtained error = {value} (relative error = {(value - expected)/expected})\n"
+                f"  obtained error = {value} (relative error = {(value - expected) / expected})\n"
             )
             test_pass = False
 

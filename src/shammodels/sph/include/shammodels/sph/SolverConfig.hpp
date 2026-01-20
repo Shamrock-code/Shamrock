@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -185,6 +185,13 @@ namespace shammodels::sph {
 
     struct SelfGravConfig {
 
+        struct SFMM {
+            u32 order;
+            f64 opening_angle;
+            bool leaf_lowering;
+            u32 reduction_level;
+        };
+
         struct FMM {
             u32 order;
             f64 opening_angle;
@@ -203,7 +210,7 @@ namespace shammodels::sph {
 
         struct None {};
 
-        using mode = std::variant<FMM, MM, Direct, None>;
+        using mode = std::variant<SFMM, FMM, MM, Direct, None>;
 
         mode config = None{};
 
@@ -215,11 +222,15 @@ namespace shammodels::sph {
         void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
             config = FMM{order, opening_angle, reduction_level};
         }
+        void set_sfmm(u32 order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
+            config = SFMM{order, opening_angle, leaf_lowering, reduction_level};
+        }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
         bool is_direct() const { return std::holds_alternative<Direct>(config); }
         bool is_mm() const { return std::holds_alternative<MM>(config); }
         bool is_fmm() const { return std::holds_alternative<FMM>(config); }
+        bool is_sfmm() const { return std::holds_alternative<SFMM>(config); }
 
         bool is_sg_on() const { return !is_none(); }
         bool is_sg_off() const { return is_none(); }
@@ -973,7 +984,15 @@ namespace shammodels::sph {
 
     /// JSON serialization for SelfGravConfig
     inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
-        if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
+        if (const SelfGravConfig::SFMM *conf = std::get_if<SelfGravConfig::SFMM>(&p.config)) {
+            j = {
+                {"type", "sfmm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+                {"leaf_lowering", conf->leaf_lowering},
+            };
+        } else if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
             j = {
                 {"type", "fmm"},
                 {"order", conf->order},
@@ -1011,7 +1030,13 @@ namespace shammodels::sph {
 
     /// JSON deserialization for SelfGravConfig
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
-        if (j.at("type").get<std::string>() == "fmm") {
+        if (j.at("type").get<std::string>() == "sfmm") {
+            p.config = SelfGravConfig::SFMM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("leaf_lowering").get<bool>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "fmm") {
             p.config = SelfGravConfig::FMM{
                 j.at("order").get<u32>(),
                 j.at("opening_angle").get<f64>(),

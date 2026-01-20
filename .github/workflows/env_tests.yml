@@ -131,7 +131,7 @@ jobs:
           brew uninstall cmake
 
           brew update
-          brew install cmake libomp boost open-mpi adaptivecpp
+          brew install cmake libomp boost open-mpi adaptivecpp fmt
           set -e
 
       # if ubuntu container
@@ -275,6 +275,9 @@ jobs:
           shamrock.change_loglevel(125)
           if not shamrock.sys.is_initialized():
             shamrock.sys.init('0:0')
+
+          # To test that importing nested modules works
+          from shamrock.math import *
           EOF
           cat /tmp/test_rscript.py
 
@@ -349,20 +352,3 @@ jobs:
         run: |
           . venv/bin/activate
           pip uninstall -y shamrock
-
-      - name: Try pip install editable Shamrock
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
-        run: |
-          . venv/bin/activate
-          cd build
-          pip install --verbose -e .
-
-      - name: Try shamrock startup (pip install)
-        shell: bash # In docker container github action default to sh
-        if: matrix.runtestpy
-        run: |
-          . venv/bin/activate
-          ACPP_VISIBILITY_MASK=omp \
-          ACPP_DEBUG_LEVEL=3 \
-          python3 /tmp/test_rscript.py

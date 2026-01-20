@@ -165,7 +165,7 @@ def make_plot(model, iplot):
     if scatter_range is None:
         scatter_range = (min_hpart, max_hpart)
 
-    print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart-min_hpart}")
+    print(f"hpart min={min_hpart} max={max_hpart} delta={max_hpart - min_hpart}")
 
     # Compute all pairwise distances
     from scipy.spatial.distance import pdist
@@ -221,7 +221,7 @@ def make_plot(model, iplot):
 
     ax.bar(bin_centers, normalized_counts, width=bin_edges[1] - bin_edges[0], align="center")
     ax.set_xlabel("distances / hmean")
-    ax.set_ylabel("counts / (r² * number of particles)")
+    ax.set_ylabel("counts / (r^2 * number of particles)")
     ax.set_xlim(0, 3)
     ax.set_ylim(0, 1.5)
 
@@ -240,62 +240,16 @@ for iplot in range(50):
 ####################################################
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
+
 import matplotlib.animation as animation
+from shamrock.utils.plot import show_image_sequence
 
 render_gif = True
 
 
-def show_image_sequence(glob_str):
-
-    if render_gif and shamrock.sys.world_rank() == 0:
-
-        import glob
-
-        files = sorted(glob.glob(glob_str))
-
-        from PIL import Image
-
-        image_array = []
-        for my_file in files:
-            image = Image.open(my_file)
-            image_array.append(image)
-
-        if not image_array:
-            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
-
-        pixel_x, pixel_y = image_array[0].size
-
-        # Create the figure and axes objects
-        # Remove axes, ticks, and frame & set aspect ratio
-        dpi = 200
-        fig = plt.figure(dpi=dpi)
-        plt.gca().set_position((0, 0, 1, 1))
-        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
-        plt.axis("off")
-
-        # Set the initial image with correct aspect ratio
-        im = plt.imshow(image_array[0], animated=True, aspect="auto")
-
-        def update(i):
-            im.set_array(image_array[i])
-            return (im,)
-
-        # Create the animation object
-        ani = animation.FuncAnimation(
-            fig,
-            update,
-            frames=len(image_array),
-            interval=50,
-            blit=True,
-            repeat_delay=10,
-        )
-
-        return ani
-
-
 # If the animation is not returned only a static image will be shown in the doc
 glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
-ani = show_image_sequence(glob_str)
+ani = show_image_sequence(glob_str, render_gif=render_gif)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

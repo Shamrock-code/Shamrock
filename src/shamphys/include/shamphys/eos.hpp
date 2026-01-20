@@ -228,7 +228,7 @@ namespace shamphys {
          * Returns pressure and sound speed from the given values of density and internal energy in
          * the Tillotson equation of state. Parameters are in the code units.
          * @param rho Density
-         * @param u_T Internal energy (temperature contribution, which is the field stored in
+         * @param u_T Internal energy (temperature contribution, which is the field uint stored in
          * Shamrock)
          * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
          * @param E0 Tillotson EoS \f$ E_0 \f$ parameter

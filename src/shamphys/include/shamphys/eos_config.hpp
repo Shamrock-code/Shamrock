@@ -207,7 +207,7 @@ namespace shamphys {
         Tscal u_iv;  ///< Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
                      ///< vaporization
         Tscal u_cv;  ///< Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
-                     ///< vaporization
+        ///< vaporization
     };
 
     /**

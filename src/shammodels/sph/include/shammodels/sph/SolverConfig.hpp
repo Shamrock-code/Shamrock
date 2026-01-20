@@ -111,6 +111,8 @@ namespace shammodels::sph {
 
         struct Wall {
             Tvec pos;
+            Tscal length;
+            Tscal width;
             Tscal thickness;
         };
 
@@ -118,8 +120,8 @@ namespace shammodels::sph {
 
         std::vector<disable_t> disable_list;
 
-        inline void add_disable_wall(const Tvec &pos, Tscal thickness) {
-            disable_list.push_back(Wall{pos, thickness});
+        inline void add_disable_wall(const Tvec &pos, Tscal length, Tscal width, Tscal thickness) {
+            disable_list.push_back(Wall{pos, length, width, thickness});
         }
     };
 

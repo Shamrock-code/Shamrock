@@ -745,6 +745,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self) {
                 return self.solver.solver_config;
             })
+        .def(
+            "add_wall",
+            [](T &self, Tvec pos, Tscal length, Tscal width, Tscal thickness) {
+                ParticleDisableConfig<Tvec> config;
+                config.add_disable_wall(pos, length, width, thickness);
+            })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
         .def(

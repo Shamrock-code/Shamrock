@@ -24,7 +24,6 @@
 #include "shambase/string.hpp"
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
-#include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/units_json.hpp"

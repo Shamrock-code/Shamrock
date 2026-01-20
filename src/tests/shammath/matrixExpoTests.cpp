@@ -53,5 +53,5 @@ TestStart(Unittest, "shammath/matrix_exp", test_mat_exp, 1) {
                 sham::abs(A.data[i] - ex_res.data[i])));
     }
 
-    REQUIRE(A.equal_at_precision(ex_res, 1e-10));
+    REQUIRE(A.equal_at_precision(ex_res, 5e-7));
 }

@@ -130,7 +130,6 @@ namespace shammodels::basegodunov {
         using mode = std::variant<None, DensityBased>;
 
         mode config        = None{};
-        bool do_refinement = false;
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
     };

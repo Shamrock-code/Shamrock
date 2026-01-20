@@ -95,6 +95,26 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("h_over_r"))
+        .def(
+            "set_eos_machida06",
+            [](TConfig &self,
+               Tscal rho_c1,
+               Tscal rho_c2,
+               Tscal rho_c3,
+               Tscal cs,
+               Tscal mu,
+               Tscal mh,
+               Tscal kb) {
+                self.set_eos_machida06(rho_c1, rho_c2, rho_c3, cs, mu, mh, kb);
+            },
+            py::kw_only(),
+            py::arg("rho_c1"),
+            py::arg("rho_c2"),
+            py::arg("rho_c3"),
+            py::arg("cs"),
+            py::arg("mu"),
+            py::arg("mh"),
+            py::arg("kb"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",

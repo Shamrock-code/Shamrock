@@ -244,7 +244,6 @@ struct shammodels::basegodunov::SolverConfig {
 
     /// AMR refinement mode
     AMRMode<Tvec, TgridVec> amr_mode = {};
-    inline bool do_amr_refinement() { return amr_mode.do_refinement; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config

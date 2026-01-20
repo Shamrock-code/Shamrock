@@ -30,6 +30,7 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include <ctime>
+#include <deque>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -99,7 +100,7 @@ void PatchScheduler::make_patch_base_grid(std::array<u32, dim> patch_count) {
 template void PatchScheduler::make_patch_base_grid<3>(std::array<u32, 3> patch_count);
 
 std::vector<u64> PatchScheduler::add_root_patches(
-    std::vector<shamrock::patch::PatchCoord<3>> coords) {
+    std::vector<shamrock::patch::PatchCoord<3>> coords, u32 layer_idx) {
 
     using namespace shamrock::patch;
 
@@ -125,7 +126,7 @@ std::vector<u64> PatchScheduler::add_root_patches(
         patch_list._next_patch_id++;
 
         if (shamcomm::world_rank() == node_owner_id) {
-            patch_data.owned_data.add_obj(root.id_patch, PatchDataLayer(get_layout_ptr()));
+            patch_data_list.at(layer_idx).owned_data.add_obj(root.id_patch, PatchDataLayer(get_layout_ptr()));
             shamlog_debug_sycl_ln("Scheduler", "adding patch data");
         } else {
             shamlog_debug_sycl_ln(
@@ -207,13 +208,20 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+    const std::deque<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> &pdl_ptr_list,
     u64 crit_split,
     u64 crit_merge)
-    : pdl_ptr(pdl_ptr),
-      patch_data(
-          pdl_ptr,
-          {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
+    : pdl_ptr_list(pdl_ptr_list),
+      patch_data_list{SchedulerPatchData(
+            pdl_ptr_list.at(0),
+            {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}})},
+      patch_data(patch_data_list.at(0)) // patch_data is kept for legacy reasons
+    {
+    for (u32 layer_idx = 1; layer_idx < pdl_ptr_list.size(); layer_idx++) {
+        patch_data_list.push_back(SchedulerPatchData(
+            pdl_ptr_list.at(layer_idx),
+            {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}));
+    }
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -229,7 +237,7 @@ bool PatchScheduler::should_resize_box(bool node_in) {
 }
 
 // TODO move Loadbalancing function to template state
-void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load) {
+void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load, u32 layer_idx) {
 
     patch_list.check_load_values_valid();
 
@@ -242,7 +250,7 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load) {
             = LoadBalancer::make_change_list(patch_list.global);
 
         // exchange data
-        patch_data.apply_change_list(change_list, patch_list);
+        patch_data_list.at(layer_idx).apply_change_list(change_list, patch_list);
     }
 
     // rebuild local table
@@ -250,12 +258,12 @@ void PatchScheduler::sync_build_LB(bool global_patch_sync, bool balance_load) {
 }
 
 template<>
-std::tuple<f32_3, f32_3> PatchScheduler::get_box_tranform() {
+std::tuple<f32_3, f32_3> PatchScheduler::get_box_tranform(u32 layer_idx) {
     if (!pdl().check_main_field_type<f32_3>())
         throw shambase::make_except_with_loc<std::runtime_error>(
             "cannot query single precision box the main field is not of f32_3 type");
 
-    auto [bmin, bmax] = patch_data.sim_box.get_bounding_box<f32_3>();
+    auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.get_bounding_box<f32_3>();
 
     f32_3 translate_factor = bmin;
     f32_3 scale_factor     = (bmax - bmin) / LoadBalancer::max_box_sz;
@@ -264,12 +272,12 @@ std::tuple<f32_3, f32_3> PatchScheduler::get_box_tranform() {
 }
 
 template<>
-std::tuple<f64_3, f64_3> PatchScheduler::get_box_tranform() {
+std::tuple<f64_3, f64_3> PatchScheduler::get_box_tranform(u32 layer_idx) {
     if (!pdl().check_main_field_type<f64_3>())
         throw shambase::make_except_with_loc<std::runtime_error>(
             "cannot query single precision box the main field is not of f64_3 type");
 
-    auto [bmin, bmax] = patch_data.sim_box.get_bounding_box<f64_3>();
+    auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.get_bounding_box<f64_3>();
 
     f64_3 translate_factor = bmin;
     f64_3 scale_factor     = (bmax - bmin) / LoadBalancer::max_box_sz;
@@ -278,30 +286,30 @@ std::tuple<f64_3, f64_3> PatchScheduler::get_box_tranform() {
 }
 
 template<>
-std::tuple<f32_3, f32_3> PatchScheduler::get_box_volume() {
+std::tuple<f32_3, f32_3> PatchScheduler::get_box_volume(u32 layer_idx) {
     if (!pdl().check_main_field_type<f32_3>())
         throw shambase::make_except_with_loc<std::runtime_error>(
             "cannot query single precision box the main field is not of f32_3 type");
 
-    return patch_data.sim_box.get_bounding_box<f32_3>();
+    return patch_data_list.at(layer_idx).sim_box.get_bounding_box<f32_3>();
 }
 
 template<>
-std::tuple<f64_3, f64_3> PatchScheduler::get_box_volume() {
+std::tuple<f64_3, f64_3> PatchScheduler::get_box_volume(u32 layer_idx) {
     if (!pdl().check_main_field_type<f64_3>())
         throw shambase::make_except_with_loc<std::runtime_error>(
             "cannot query single precision box the main field is not of f64_3 type");
 
-    return patch_data.sim_box.get_bounding_box<f64_3>();
+    return patch_data_list.at(layer_idx).sim_box.get_bounding_box<f64_3>();
 }
 
 template<>
-std::tuple<i64_3, i64_3> PatchScheduler::get_box_volume() {
+std::tuple<i64_3, i64_3> PatchScheduler::get_box_volume(u32 layer_idx) {
     if (!pdl().check_main_field_type<i64_3>())
         throw shambase::make_except_with_loc<std::runtime_error>(
             "cannot query single precision box the main field is not of i64_3 type");
 
-    return patch_data.sim_box.get_bounding_box<i64_3>();
+    return patch_data_list.at(layer_idx).sim_box.get_bounding_box<i64_3>();
 }
 
 // TODO clean the output of this function
@@ -468,7 +476,9 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.load_balance_apply = shambase::Timer{};
         timers.load_balance_apply->start();
         // apply LB change list
-        patch_data.apply_change_list(change_list, patch_list);
+        for (auto & _patch_data : patch_data_list) {
+            _patch_data.apply_change_list(change_list, patch_list);
+        }
         timers.load_balance_apply->end();
     }
 
@@ -605,9 +615,11 @@ std::string PatchScheduler::dump_status() {
     ss << " -> SchedulerPatchData\n";
     ss << "    owned data : \n";
 
-    patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-        ss << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << "\n";
-    });
+    for (auto _patch_data : patch_data_list) {
+        _patch_data.for_each_patchdata([&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+            ss << "patch id : " << patch_id << " len = " << pdat.get_obj_cnt() << "\n";
+        });
+    }
 
     /*
     for(auto & [k,pdat] : patch_data.owned_data){
@@ -638,19 +650,19 @@ std::string PatchScheduler::dump_status() {
     return ss.str();
 }
 
-std::string PatchScheduler::format_patch_coord(shamrock::patch::Patch p) {
+std::string PatchScheduler::format_patch_coord(shamrock::patch::Patch p, u32 layer_idx) {
     std::string ret;
-    if (pdl().check_main_field_type<f32_3>()) {
-        auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<f32_3>(p);
+    if (pdl(layer_idx).check_main_field_type<f32_3>()) {
+        auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.patch_coord_to_domain<f32_3>(p);
         ret               = shambase::format("coord = {} {}", bmin, bmax);
-    } else if (pdl().check_main_field_type<f64_3>()) {
-        auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<f64_3>(p);
+    } else if (pdl(layer_idx).check_main_field_type<f64_3>()) {
+        auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.patch_coord_to_domain<f64_3>(p);
         ret               = shambase::format("coord = {} {}", bmin, bmax);
-    } else if (pdl().check_main_field_type<u32_3>()) {
-        auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<u32_3>(p);
+    } else if (pdl(layer_idx).check_main_field_type<u32_3>()) {
+        auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.patch_coord_to_domain<u32_3>(p);
         ret               = shambase::format("coord = {} {}", bmin, bmax);
-    } else if (pdl().check_main_field_type<u64_3>()) {
-        auto [bmin, bmax] = patch_data.sim_box.patch_coord_to_domain<u64_3>(p);
+    } else if (pdl(layer_idx).check_main_field_type<u64_3>()) {
+        auto [bmin, bmax] = patch_data_list.at(layer_idx).sim_box.patch_coord_to_domain<u64_3>(p);
         ret               = shambase::format("coord = {} {}", bmin, bmax);
     } else {
         throw shambase::make_except_with_loc<std::runtime_error>(
@@ -667,7 +679,7 @@ void check_locality_t(PatchScheduler &sched) {
     using namespace shamrock::patch;
     sched.for_each_patch_data([&](u64 pid, Patch p, shamrock::patch::PatchDataLayer &pdat) {
         PatchDataField<vec> &main_field = pdat.get_field<vec>(0);
-        auto [bmin_p0, bmax_p0]         = sched.patch_data.sim_box.patch_coord_to_domain<vec>(p);
+        auto [bmin_p0, bmax_p0]         = sched.patch_data_list.at(0).sim_box.patch_coord_to_domain<vec>(p);
 
         main_field.check_err_range(
             [&](vec val, vec vmin, vec vmax) {
@@ -699,7 +711,7 @@ void PatchScheduler::check_patchdata_locality_corectness() {
     }
 }
 
-void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
+void PatchScheduler::split_patches(std::unordered_set<u64> split_rq, u32 layer_idx) {
     StackEntry stack_loc{};
     for (u64 tree_id : split_rq) {
 
@@ -733,7 +745,7 @@ void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
             = patch_list.global[idx_p7].id_patch;
 
         try {
-            patch_data.split_patchdata(
+            patch_data_list.at(layer_idx).split_patchdata(
                 old_patch_id,
                 {patch_list.global[idx_p0],
                  patch_list.global[idx_p1],
@@ -760,7 +772,7 @@ void PatchScheduler::split_patches(std::unordered_set<u64> split_rq) {
     }
 }
 
-inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
+inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq, u32 layer_idx) {
     StackEntry stack_loc{};
     for (u64 tree_id : merge_rq) {
 
@@ -783,7 +795,7 @@ inline void PatchScheduler::merge_patches(std::unordered_set<u64> merge_rq) {
 
         if (patch_list.global[patch_list.id_patch_to_global_idx[patch_id0]].node_owner_id
             == shamcomm::world_rank()) {
-            patch_data.merge_patchdata(
+            patch_data_list.at(layer_idx).merge_patchdata(
                 patch_id0,
                 {patch_id0,
                  patch_id1,
@@ -943,12 +955,12 @@ void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &r
 }
 
 std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::gather_data(
-    u32 rank) {
+    u32 rank, u32 layer_idx) {
 
     using namespace shamrock::patch;
 
     auto plist = this->patch_list.global;
-    auto pdata = this->patch_data.owned_data;
+    auto pdata = this->patch_data_list.at(layer_idx).owned_data;
 
     auto serializer = [](shamrock::patch::PatchDataLayer &pdat) {
         shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
@@ -970,9 +982,9 @@ std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::ga
     for (u32 i = 0; i < plist.size(); i++) {
         auto &cpatch = plist[i];
         if (cpatch.node_owner_id == shamcomm::world_rank()) {
-            auto &patchdata = pdata.get(cpatch.id_patch);
+            auto &patch_data = pdata.get(cpatch.id_patch);
 
-            sham::DeviceBuffer<u8> tmp = serializer(patchdata);
+            sham::DeviceBuffer<u8> tmp = serializer(patch_data);
 
             send_payloads.push_back(
                 Message{
@@ -1020,7 +1032,7 @@ std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::ga
 nlohmann::json PatchScheduler::serialize_patch_metadata() {
 
     nlohmann::json jsim_box;
-    patch_data.sim_box.to_json(jsim_box);
+    patch_data_list.at(0).sim_box.to_json(jsim_box);
 
     return {
         {"patchtree", patch_tree},

@@ -1,12 +1,24 @@
+"""
+Using Coala within Shamrock to solve the Smoluchowski equation
+==============================================================
+
+"""
+
+# %%
+# Imports
 import os
 
 import numpy as np
 import shamrock.external.coala as coala
 from matplotlib import pyplot as plt
 
+# %%
+# Where is coala located?
 print(f"coala path : {coala.__file__}")
 
 
+# %%
+# Parameters of the dust distribution & evolution
 nbins = 20
 
 massmax = 1e6
@@ -89,6 +101,8 @@ for case in cases:
     cases[case]["time"] = [t0, time_coag]
 
 
+# %%
+# Plotting
 plt.rcParams["font.size"] = 16
 plt.rcParams["lines.linewidth"] = 3
 plt.rcParams["legend.columnspacing"] = 0.5

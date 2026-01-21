@@ -39,7 +39,7 @@ repos:
   #- id: pretty-format-json
 
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: "v1.5.5"
+  rev: "v1.5.6"
   hooks:
   - id: forbid-tabs
     exclude: Makefile|\.gitmodules
@@ -80,7 +80,7 @@ repos:
     log_file: log_precommit_clang-format
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.11
+  rev: v0.14.13
   hooks:
     - id: ruff-check
       args:

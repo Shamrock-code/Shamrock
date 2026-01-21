@@ -19,6 +19,7 @@
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 
 namespace shammodels::sph::modules {
@@ -41,19 +42,22 @@ namespace shammodels::sph::modules {
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tvec> &pos;
+            const shamrock::solvergraph::Indexes<u32> &sizes;
             shamrock::solvergraph::IFieldSpan<u32> &part_ids_in_wall;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tvec>> pos,
+            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> part_ids_in_wall) {
-            __internal_set_ro_edges({pos});
+            __internal_set_ro_edges({pos, sizes});
             __internal_set_rw_edges({part_ids_in_wall});
         }
 
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::IFieldRefs<Tvec>>(0),
+                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(1)};
         }
 

@@ -2019,28 +2019,35 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         update_derivs();
 
-        bool has_walls = !solver_config.particle_disable.disable_list.empty();
-        if (true) {
+        bool has_walls = solver_config.particle_disable.disable_list.empty();
+        logger::raw_ln("value of has_wallas: ", has_walls);
+        if (has_walls) {
+            logger::raw_ln("@@@@@@@@@@@@ in wall disabling routine @@@@@@@@@@@@@@@");
 
             // select phantom particles (create a mask of the ids of the particles to disable)
             using namespace shamrock::solvergraph;
             SolverGraph &solver_graph = storage.solver_graph;
-            auto xyz_edge             = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
 
-            // auto part_to_disable = solver_graph.register_edge(
-            //     "part_to_disable",
-            //     std::make_shared<shamrock::solvergraph::Field<u32>>("part_to_disable",
-            //     "part_to_disable"));
+            auto xyz_edge = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
 
-            auto part_to_disable = std::make_shared<shamrock::solvergraph::Field<u32>>(
-                1, "part_to_disable", "part_to_disable");
+            // get number of particle per patch: array of sizes of each patch
+            auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+            });
 
-            { // empty part to disable
-                auto empty_part_to_disable
-                    = solver_graph.register_node("empty_part_to_disable", NodeFreeAlloc{});
-                // shambase::get_check_ref(empty_part_to_disable).set_edges(part_to_disable);
-                // empty_part_to_disable->evaluate();
-            }
+            // create the actual mask field
+            auto part_to_disable_field = std::make_shared<shamrock::solvergraph::Field<u32>>(
+                "part_to_disable", "part_to_disable");
+
+            // properly initialize it for all patches
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto &field = part_to_disable_field->get_field(p.id_patch);
+                field.resize(pdat.get_obj_cnt());
+            });
+
+            // now cast to the interface type through inheritance
+            auto part_to_disable = part_to_disable_field;
 
             std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_disable_sequence{};
 
@@ -2055,7 +2062,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         disable_info->length,
                         disable_info->width,
                         disable_info->thickness);
-                    node_selector.set_edges(xyz_edge, part_to_disable);
+                    node_selector.set_edges(xyz_edge, sizes, part_to_disable);
 
                     part_disable_sequence.push_back(
                         std::make_shared<decltype(node_selector)>(std::move(node_selector)));
@@ -2069,10 +2076,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 disable_sequence_node->evaluate();
             }
-
-            // here is the particles to disable
-            // auto &disabled_particles_mask
-            //    = solver_graph.get_edge_ref<DistributedBuffers<u32>>("part_to_disable");
 
             // now set accelerations to 0 for these particles
             // for this, let's reuse _impl_evaluate_internal() twice form Node Compute Omega

@@ -16,6 +16,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shambackends/kernel_call_distrib.hpp"
 #include "shammodels/sph/modules/GetParticlesInWall.hpp"
 
 namespace shammodels::sph::modules {
@@ -23,42 +24,57 @@ namespace shammodels::sph::modules {
     template<typename Tvec>
     void GetParticlesInWall<Tvec>::_impl_evaluate_internal() {
         StackEntry stack_loc{};
+
         auto edges = get_edges();
 
-        const shamrock::solvergraph::DDPatchDataFieldRef<Tvec> &pos_refs = edges.pos.get_refs();
+        auto &thread_counts = edges.sizes.indexes;
 
-        // edges.part_ids_in_wall.ensure_allocated(pos_refs.get_ids());
+        edges.pos.check_sizes(thread_counts);
+        edges.part_ids_in_wall.ensure_sizes(thread_counts);
 
-        pos_refs.for_each([&](u64 id_patch, const PatchDataField<Tvec> &pos) {
-            auto tmp = pos.get_ids_where(
-                [](const Tvec *__restrict pos,
-                   u32 i,
-                   Tvec wall_pos,
-                   Tscal wall_length,
-                   Tscal wall_width,
-                   Tscal wall_thickness) {
-                    Tscal x = pos[i][0];
-                    Tscal y = pos[i][1];
-                    Tscal z = pos[i][2];
+        auto &positions        = edges.pos.get_spans();
+        auto &part_ids_in_wall = edges.part_ids_in_wall.get_spans();
 
-                    Tscal x0 = wall_pos[0];
-                    Tscal y0 = wall_pos[1];
-                    Tscal z0 = wall_pos[2];
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-                    bool in_wall = (x - x0 < wall_length) && (x - x0 > 0) && (y - y0 < wall_width)
-                                   && (y - y0 > 0) && (z - z0 < wall_thickness) && (z - z0 > 0);
+        sham::distributed_data_kernel_call(
+            dev_sched,
+            sham::DDMultiRef{positions},
+            sham::DDMultiRef{part_ids_in_wall},
+            thread_counts,
+            [wall_pos       = this->wall_pos,
+             wall_length    = this->wall_length,
+             wall_width     = this->wall_width,
+             wall_thickness = this->wall_thickness](
+                u32 i, const Tvec *__restrict pos, u32 *__restrict part_ids_in_wall) {
+                Tscal x = pos[i][0];
+                Tscal y = pos[i][1];
+                Tscal z = pos[i][2];
 
-                    return in_wall;
-                },
-                wall_pos,
-                wall_length,
-                wall_width,
-                wall_thickness);
+                Tscal x0 = wall_pos[0];
+                Tscal y0 = wall_pos[1];
+                Tscal z0 = wall_pos[2];
 
-            // edges.part_ids_in_wall.buffers.get(id_patch).append(tmp);
-        });
+                bool in_wall = (x - x0 < wall_length) && (x - x0 > 0) && (y - y0 < wall_width)
+                               && (y - y0 > 0) && (z - z0 < wall_thickness) && (z - z0 > 0);
+
+                if (in_wall) {
+                    part_ids_in_wall[i] = 1;
+                } else {
+                    part_ids_in_wall[i] = 0;
+                }
+            });
     }
 
+    /**
+     * @brief Returns the tex string for the GetParticlesInWall module.
+     *
+     * This module identifies particles inside a rectangular wall.
+     *
+     * @param[in] pos The position field.
+     * @param[in] part_ids_in_wall The particle id field.
+     * @return The tex string.
+     */
     template<typename Tvec>
     std::string GetParticlesInWall<Tvec>::_impl_get_tex() const {
         auto pos              = get_ro_edge_base(0).get_tex_symbol();

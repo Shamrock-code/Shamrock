@@ -1035,8 +1035,9 @@ namespace sham {
                 size_t max_alloc_size           = get_max_alloc_size();
                 std::optional<size_t> alignment = get_alignment(dev_sched);
                 size_t min_size_new_alloc       = alloc_request_size_fct(new_size, dev_sched);
-                size_t wanted_size_new_alloc    = alloc_request_size_fct(new_size + new_size / 2, dev_sched);
-                size_t max_possible_alloc       = max_alloc_size;
+                size_t wanted_size_new_alloc
+                    = alloc_request_size_fct(new_size + new_size / 2, dev_sched);
+                size_t max_possible_alloc = max_alloc_size;
 
                 if (alignment) {
                     max_possible_alloc = max_possible_alloc - (max_possible_alloc % *alignment);

@@ -58,7 +58,7 @@ namespace shammodels::sph::modules {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::IFieldRefs<Tvec>>(0),
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(1)};
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(0)};
         }
 
         void _impl_evaluate_internal();

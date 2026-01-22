@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -96,7 +96,30 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
 template<class Tvec, template<class> class SPHKernel>
 std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_get_tex()
     const {
-    return "TODO";
+    auto xyz        = get_ro_edge_base(0).get_tex_symbol();
+    auto hpart      = get_ro_edge_base(1).get_tex_symbol();
+    auto omega      = get_ro_edge_base(2).get_tex_symbol();
+    auto uint       = get_ro_edge_base(3).get_tex_symbol();
+    auto pressure   = get_ro_edge_base(4).get_tex_symbol();
+    auto luminosity = get_rw_edge_base(0).get_tex_symbol();
+
+    std::string tex = R"tex(
+        Compute idealized luminosity from shocks only: energy dissipated immidiately emitted
+        \begin{align}
+                 {luminosity}_i &= pmass * alpha_u * vsigu * u_ab * \frac{1}{2}
+               * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b)\\
+               &= pmass * alpha_u * \sqrt(\frac{\abs({pressure}_a - {pressure}_b)}{2 (rho_a + rho_b)}); * ({uint}_a - {uint}_b) * \frac{1}{2}
+               * (\frac{Fab_a}{{omega}_a * rho_a} + \frac{Fab_b}{{omega}_b * rho_b})
+        \end{align}
+        )tex";
+
+    shambase::replace_all(tex, "{xyz}", xyz);
+    shambase::replace_all(tex, "{hpart}", hpart);
+    shambase::replace_all(tex, "{omega}", omega);
+    shambase::replace_all(tex, "{uint}", uint);
+    shambase::replace_all(tex, "{pressure}", pressure);
+    shambase::replace_all(tex, "{luminosity}", luminosity);
+    return tex;
 }
 
 using namespace shammath;

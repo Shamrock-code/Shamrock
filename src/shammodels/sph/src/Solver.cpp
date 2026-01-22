@@ -2061,7 +2061,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     });
 
             set_uint_with_ghost_refs.set_edges(uint_with_ghost);
-            // @@@@@@@@@@@@@@@@
 
             auto luminosity = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
 

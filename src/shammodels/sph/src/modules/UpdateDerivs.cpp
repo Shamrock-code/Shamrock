@@ -63,7 +63,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
@@ -264,7 +263,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
@@ -482,7 +480,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
@@ -685,7 +682,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    bool has_luminosity       = solver_config.compute_luminosity;
     PatchDataLayerLayout &pdl = scheduler().pdl();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");

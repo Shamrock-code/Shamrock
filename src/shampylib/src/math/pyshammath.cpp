@@ -9,6 +9,7 @@
 
 /**
  * @file pyshammath.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
  * @brief
@@ -19,6 +20,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
 #include "shammath/derivatives.hpp"
+#include "shammath/integrator.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
 #include "shammath/paving_function.hpp"
@@ -849,4 +851,26 @@ Register_pymod(pysham_mathinit) {
                 "SymTensorCollection_f64_1_1(\n  t1={}\n)",
                 py::str(py::cast(c.t1)).cast<std::string>());
         });
+
+    math_module.def(
+        "euler_ode",
+        [](f64 start, f64 end, f64 step, std::function<f64(f64, f64)> &&ode, f64 x0, f64 u0) {
+            return shammath::euler_ode<f64>(start, end, step, ode, x0, u0);
+        },
+        py::kw_only(),
+        py::arg("start"),
+        py::arg("end"),
+        py::arg("step"),
+        py::arg("ode"),
+        py::arg("x0"),
+        py::arg("u0"),
+        R"pbdoc(
+        Solve ODE with Euler method
+        start : Lower bound of integration
+        end :   Higher bound of integration
+        step :  Step of integration
+        ode :   Ode function
+        x0 :    Initial coordinate
+        u0 :    Initial value
+    )pbdoc");
 }

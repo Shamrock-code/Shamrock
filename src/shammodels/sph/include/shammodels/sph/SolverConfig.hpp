@@ -978,7 +978,12 @@ namespace shammodels::sph {
         for (const auto &disable : p.disable_list) {
             if (std::holds_alternative<typename ParticleDisableConfig<Tvec>::Wall>(disable)) {
                 const auto &wall = std::get<typename ParticleDisableConfig<Tvec>::Wall>(disable);
-                j.push_back({{"type", "wall"}, {"pos", wall.pos}, {"thickness", wall.thickness}});
+                j.push_back(
+                    {{"type", "wall"},
+                     {"pos", wall.pos},
+                     {"length", wall.length},
+                     {"width", wall.width},
+                     {"thickness", wall.thickness}});
             }
             // If more types are added to disable_t, handle them here
         }
@@ -992,6 +997,8 @@ namespace shammodels::sph {
             if (type == "wall") {
                 typename ParticleDisableConfig<Tvec>::Wall wall;
                 item.at("pos").get_to(wall.pos);
+                item.at("length").get_to(wall.length);
+                item.at("width").get_to(wall.width);
                 item.at("thickness").get_to(wall.thickness);
                 p.disable_list.push_back(wall);
             }

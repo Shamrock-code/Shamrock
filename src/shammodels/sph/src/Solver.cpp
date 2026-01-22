@@ -2038,7 +2038,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             // create the actual mask field
             auto part_to_disable_field = std::make_shared<shamrock::solvergraph::Field<u32>>(
-                "part_to_disable", "part_to_disable");
+                1, "part_to_disable", "part_to_disable");
 
             // properly initialize it for all patches
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {

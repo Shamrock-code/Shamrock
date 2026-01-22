@@ -1,4 +1,4 @@
-FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu22
 
 ARG CLANGVERSION=18
 
@@ -9,6 +9,7 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
     rm llvm.sh
 
+RUN sudo apt install -y gfortran
 RUN pip install matplotlib numpy scipy h5py
 
 WORKDIR /opt/Shamrock_src

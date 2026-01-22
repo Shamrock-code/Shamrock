@@ -1,0 +1,133 @@
+// -------------------------------------------------------//
+//
+// SHAMROCK code for hydrodynamics
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+// SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+// Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+//
+// -------------------------------------------------------//
+
+#pragma once
+
+/**
+ * @file FieldNames.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @brief Constants for field names in GSPH solver, organized by physics mode
+ *
+ * This file defines PatchDataField names used in PatchDataLayerLayout.
+ * Fields are organized by physics mode to clearly separate:
+ * - Common fields (used by all physics modes)
+ * - Newtonian-specific fields
+ * - SR (Special Relativity) specific fields
+ *
+ * Solvergraph edge names are also organized by physics mode in the edges:: namespace.
+ */
+
+namespace shammodels::gsph::names {
+
+    // ========================================================================
+    // Common fields - used by ALL physics modes
+    // ========================================================================
+    namespace common {
+        inline constexpr const char *xyz   = "xyz";   ///< Position field (3D coordinates)
+        inline constexpr const char *hpart = "hpart"; ///< Smoothing length field
+    } // namespace common
+
+    // ========================================================================
+    // Newtonian physics fields
+    // ========================================================================
+    namespace newtonian {
+
+        /// 3-velocity field
+        inline constexpr const char *vxyz = "vxyz";
+
+        /// 3-acceleration field
+        inline constexpr const char *axyz = "axyz";
+
+        /// Specific internal energy u
+        inline constexpr const char *uint = "uint";
+
+        /// Time derivative of internal energy du/dt
+        inline constexpr const char *duint = "duint";
+
+        /// Density \rho (derived from h)
+        inline constexpr const char *density = "density";
+
+        /// Pressure P (derived from EOS)
+        inline constexpr const char *pressure = "pressure";
+
+        /// Sound speed c_s (derived from EOS)
+        inline constexpr const char *soundspeed = "soundspeed";
+
+        /// Grad-h correction factor \Omega
+        inline constexpr const char *omega = "omega";
+
+        /// Gradient of density \nabla \rho (for MUSCL reconstruction)
+        inline constexpr const char *grad_density = "grad_density";
+
+        /// Gradient of pressure \nabla P (for MUSCL reconstruction)
+        inline constexpr const char *grad_pressure = "grad_pressure";
+
+        /// Gradient of velocity x-component \nabla v_x (for MUSCL reconstruction)
+        inline constexpr const char *grad_vx = "grad_vx";
+
+        /// Gradient of velocity y-component \nabla v_y (for MUSCL reconstruction)
+        inline constexpr const char *grad_vy = "grad_vy";
+
+        /// Gradient of velocity z-component \nabla v_z (for MUSCL reconstruction)
+        inline constexpr const char *grad_vz = "grad_vz";
+    } // namespace newtonian
+
+    // ========================================================================
+    // Internal temporary field names (for compute fields)
+    // ========================================================================
+    namespace internal {
+        /// Old acceleration (for corrector step)
+        inline constexpr const char *old_axyz = "old_axyz";
+
+        /// Old internal energy derivative (for corrector step)
+        inline constexpr const char *old_duint = "old_duint";
+    } // namespace internal
+
+} // namespace shammodels::gsph::names
+
+// ============================================================================
+// Solvergraph edge names
+// ============================================================================
+namespace shammodels::gsph::edges {
+
+    /// Particle counts per patch
+    inline constexpr const char *part_counts = "part_counts";
+
+    /// Particle counts including ghosts
+    inline constexpr const char *part_counts_with_ghost = "part_counts_with_ghost";
+
+    /// Patch rank ownership
+    inline constexpr const char *patch_rank_owner = "patch_rank_owner";
+
+    /// Neighbor cache
+    inline constexpr const char *neigh_cache = "neigh_cache";
+
+    /// Temporary sizes for h-iteration
+    inline constexpr const char *sizes = "sizes";
+
+    /// Position references with ghosts
+    inline constexpr const char *positions_with_ghosts = "part_pos";
+
+    /// Smoothing length references with ghosts
+    inline constexpr const char *hpart_with_ghosts = "h_part";
+
+    /// Position merged references (for h-iteration)
+    inline constexpr const char *pos_merged = "pos";
+
+    /// Old smoothing length references (for h-iteration)
+    inline constexpr const char *h_old = "h_old";
+
+    /// New smoothing length references (for h-iteration)
+    inline constexpr const char *h_new = "h_new";
+
+    /// Epsilon h references (for h-iteration convergence)
+    inline constexpr const char *eps_h = "eps_h";
+
+} // namespace shammodels::gsph::edges

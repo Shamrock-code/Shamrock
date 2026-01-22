@@ -100,6 +100,11 @@ model.change_htolerance(1.3)
 model.timestep()
 model.change_htolerance(1.1)
 
+# %%
+# Show the current solvergraph
+
+print(model.get_solver_dot_graph())
+
 
 ####################################################
 # Draw utilities
@@ -109,7 +114,6 @@ import numpy as np
 
 
 def plot_state(iplot):
-
     pos = ctx.collect_data()["xyz"]
 
     if shamrock.sys.world_rank() == 0:
@@ -145,7 +149,6 @@ ax = fig.add_subplot(111, projection="3d")
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     model.evolve_until(ttarg)
 
     # if do_plots:
@@ -159,60 +162,13 @@ plt.close(fig)
 ####################################################
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
+
 import matplotlib.animation as animation
-
-
-def show_image_sequence(glob_str):
-
-    if render_gif and shamrock.sys.world_rank() == 0:
-
-        import glob
-
-        files = sorted(glob.glob(glob_str))
-
-        from PIL import Image
-
-        image_array = []
-        for my_file in files:
-            image = Image.open(my_file)
-            image_array.append(image)
-
-        if not image_array:
-            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
-
-        pixel_x, pixel_y = image_array[0].size
-
-        # Create the figure and axes objects
-        # Remove axes, ticks, and frame & set aspect ratio
-        dpi = 200
-        fig = plt.figure(dpi=dpi)
-        plt.gca().set_position((0, 0, 1, 1))
-        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
-        plt.axis("off")
-
-        # Set the initial image with correct aspect ratio
-        im = plt.imshow(image_array[0], animated=True, aspect="auto")
-
-        def update(i):
-            im.set_array(image_array[i])
-            return (im,)
-
-        # Create the animation object
-        ani = animation.FuncAnimation(
-            fig,
-            update,
-            frames=len(image_array),
-            interval=50,
-            blit=True,
-            repeat_delay=10,
-        )
-
-        return ani
-
+from shamrock.utils.plot import show_image_sequence
 
 # If the animation is not returned only a static image will be shown in the doc
 glob_str = os.path.join(dump_folder, f"{sim_name}_*.png")
-ani = show_image_sequence(glob_str)
+ani = show_image_sequence(glob_str, render_gif=render_gif)
 
 if render_gif and shamrock.sys.world_rank() == 0:
     # To save the animation using Pillow as a gif

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -171,10 +171,10 @@ namespace shammodels::gsph::riemann {
     }
 
     /**
-     * @brief HLLC approximate Riemann solver
+     * @brief HLL approximate Riemann solver
      *
-     * Harten-Lax-van Leer-Contact approximate solver. Faster than iterative
-     * but still captures contact discontinuities accurately.
+     * Harten-Lax-van Leer approximate solver following the reference implementation.
+     * Uses Roe-averaged wave speeds for better wave speed estimates.
      *
      * @tparam Tscal Scalar type (f32 or f64)
      * @param u_L Left state velocity
@@ -191,41 +191,40 @@ namespace shammodels::gsph::riemann {
         Tscal u_L, Tscal rho_L, Tscal p_L, Tscal u_R, Tscal rho_R, Tscal p_R, Tscal gamma) {
 
         RiemannResult<Tscal> result;
+        const Tscal smallval = Tscal{1.0e-25};
 
-        // Compute Eulerian sound speeds from gamma
-        const Tscal c_L = sycl::sqrt(gamma * p_L / rho_L);
-        const Tscal c_R = sycl::sqrt(gamma * p_R / rho_R);
+        // Compute Eulerian sound speeds
+        const Tscal c_L = sycl::sqrt(gamma * p_L / sycl::fmax(rho_L, smallval));
+        const Tscal c_R = sycl::sqrt(gamma * p_R / sycl::fmax(rho_R, smallval));
 
         // Roe averages for wave speed estimates
         const Tscal sqrt_rho_L = sycl::sqrt(rho_L);
         const Tscal sqrt_rho_R = sycl::sqrt(rho_R);
-        const Tscal roe_inv    = Tscal{1} / (sqrt_rho_L + sqrt_rho_R);
+        const Tscal roe_inv    = Tscal{1} / (sqrt_rho_L + sqrt_rho_R + smallval);
 
         const Tscal u_roe = (sqrt_rho_L * u_L + sqrt_rho_R * u_R) * roe_inv;
         const Tscal c_roe = (sqrt_rho_L * c_L + sqrt_rho_R * c_R) * roe_inv;
 
-        // Wave speed estimates
+        // Wave speed estimates (following reference implementation)
         const Tscal S_L = sycl::fmin(u_L - c_L, u_roe - c_roe);
         const Tscal S_R = sycl::fmax(u_R + c_R, u_roe + c_roe);
 
-        // Contact wave speed (star velocity)
-        const Tscal denom = rho_L * (S_L - u_L) - rho_R * (S_R - u_R);
-        const Tscal numer = p_R - p_L + rho_L * u_L * (S_L - u_L) - rho_R * u_R * (S_R - u_R);
+        // HLL flux formula (following reference g_fluid_force.cpp hll_solver)
+        // c1 = rho_L * (S_L - u_L)
+        // c2 = rho_R * (S_R - u_R)
+        // c3 = 1 / (c1 - c2)
+        // c4 = p_L - u_L * c1
+        // c5 = p_R - u_R * c2
+        // v* = (c5 - c4) * c3
+        // p* = (c1 * c5 - c2 * c4) * c3
+        const Tscal c1 = rho_L * (S_L - u_L);
+        const Tscal c2 = rho_R * (S_R - u_R);
+        const Tscal c3 = Tscal{1} / (c1 - c2 + smallval);
+        const Tscal c4 = p_L - u_L * c1;
+        const Tscal c5 = p_R - u_R * c2;
 
-        const Tscal smallval = Tscal{1.0e-25};
-        Tscal S_star;
-        if (sycl::fabs(denom) > smallval) {
-            S_star = numer / denom;
-        } else {
-            S_star = Tscal{0.5} * (u_L + u_R);
-        }
-
-        // Star pressure
-        Tscal p_star = p_L + rho_L * (S_L - u_L) * (S_star - u_L);
-        p_star       = sycl::fmax(smallval, p_star);
-
-        result.p_star = p_star;
-        result.v_star = S_star;
+        result.v_star = (c5 - c4) * c3;
+        result.p_star = sycl::fmax(smallval, (c1 * c5 - c2 * c4) * c3);
 
         return result;
     }

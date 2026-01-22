@@ -61,7 +61,7 @@ fi
 
 
 function shamconfigure {
-    # Why the FFFF is pthread not linked by default ?
+    # Why the FFFF is pthread not linked by default ?
     # If one invoke a c++ thread that compile to something that uses pthread
 
     cmake \

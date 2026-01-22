@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 /**
  * @file sphkernels.hpp
+ * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief sph kernels
  */
@@ -1181,7 +1182,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 1.4;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 3. / 4.;
@@ -1263,7 +1264,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 1.6;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 27. / 32.;
@@ -1360,7 +1361,7 @@ namespace shammath::details {
         public:
         inline static constexpr Tscal Rkern = 2; ///< Compact support radius of the kernel
         /// default hfact to be used for this kernel
-        inline static constexpr Tscal hfactd = 1.0;
+        inline static constexpr Tscal hfactd = 2.2;
 
         /// 1D norm of the kernel
         inline static constexpr Tscal norm_1d = 15. / 16.;
@@ -1457,6 +1458,148 @@ namespace shammath::details {
                                    - 560560 * t7 + 549120 * t5 - 768768 * t3 + 931840));
             } else
                 return (512.0 / 1365.0) * shambase::constants::pi<Tscal> / t3;
+        }
+    };
+
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=3h
+     *
+     * W(q) = exp(-q^2) for q < 3, 0 otherwise
+     *
+     * This kernel provides smooth derivatives and is well-suited for
+     * relativistic SPH simulations where gradient accuracy is important.
+     */
+    template<class Tscal>
+    class KernelDefTGauss3 {
+        public:
+        inline static constexpr Tscal Rkern  = 3;   ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+
+        /// 1D norm of the kernel
+        inline static constexpr Tscal norm_1d = 0.564202047051383;
+        /// 2D norm of the kernel (accounts for truncation at q=3)
+        inline static constexpr Tscal norm_2d = 0.318349173592935;
+        /// 3D norm of the kernel
+        inline static constexpr Tscal norm_3d = 0.179666148218087;
+
+        inline static Tscal f(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal df(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return -2 * q * sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 3) {
+                return (4 * t1 - 2) * sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            if (q == 0) {
+                return -6.282409900511787;
+            } else if (q < 3) {
+                return 2 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9})
+                       - sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / q;
+            } else
+                return (-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{3})
+                        + 6 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9}))
+                       / q;
+        }
+
+        inline static Tscal phi_tilde_3d_prime(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q == 0) {
+                return 0;
+            } else if (q < 3) {
+                return -2 * shambase::constants::pi<Tscal> * sycl::exp(-t1) / q
+                       + sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / t1;
+            } else
+                return -(-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{3})
+                         + 6 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-9}))
+                       / t1;
+        }
+    };
+
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=5h
+     *
+     * W(q) = exp(-q^2) for q < 5, 0 otherwise
+     *
+     * Extended support version of TGauss3. Provides even smoother behavior
+     * at the cost of more neighbor interactions.
+     */
+    template<class Tscal>
+    class KernelDefTGauss5 {
+        public:
+        inline static constexpr Tscal Rkern  = 5;   ///< Compact support radius of the kernel
+        inline static constexpr Tscal hfactd = 1.5; ///< default hfact to be used for this kernel
+
+        /// 1D norm of the kernel
+        inline static constexpr Tscal norm_1d = 0.564189583548624;
+        /// 2D norm of the kernel
+        inline static constexpr Tscal norm_2d = 0.318309886188211;
+        /// 3D norm of the kernel
+        inline static constexpr Tscal norm_3d = 0.179587122139514;
+
+        inline static Tscal f(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal df(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return -2 * q * sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal ddf(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q < 5) {
+                return (4 * t1 - 2) * sycl::exp(-t1);
+            } else
+                return 0;
+        }
+
+        inline static Tscal phi_tilde_3d(Tscal q) {
+            if (q == 0) {
+                return -6.283185307092326;
+            } else if (q < 5) {
+                return 2 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25})
+                       - sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / q;
+            } else
+                return (-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{5})
+                        + 10 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25}))
+                       / q;
+        }
+
+        inline static Tscal phi_tilde_3d_prime(Tscal q) {
+            Tscal t1 = sham::pow_constexpr<2>(q);
+            if (q == 0) {
+                return 0;
+            } else if (q < 5) {
+                return -2 * shambase::constants::pi<Tscal> * sycl::exp(-t1) / q
+                       + sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(q) / t1;
+            } else
+                return -(-sycl::pow(shambase::constants::pi<Tscal>, 3.0 / 2.0) * sycl::erf(Tscal{5})
+                         + 10 * shambase::constants::pi<Tscal> * sycl::exp(Tscal{-25}))
+                       / t1;
         }
     };
 
@@ -2331,6 +2474,22 @@ namespace shammath {
     using C6 = SPHKernelGen<flt_type, details::KernelDefC6<flt_type>>;
 
     /**
+     * @brief Truncated Gaussian kernel with compact support R=3h
+     *
+     * @tparam flt_type the floating point representation to use
+     */
+    template<class flt_type>
+    using TGauss3 = SPHKernelGen<flt_type, details::KernelDefTGauss3<flt_type>>;
+
+    /**
+     * @brief Truncated Gaussian kernel with compact support R=5h
+     *
+     * @tparam flt_type the floating point representation to use
+     */
+    template<class flt_type>
+    using TGauss5 = SPHKernelGen<flt_type, details::KernelDefTGauss5<flt_type>>;
+
+    /**
      * @brief The M4DoubleHump SPH kernel
      * \todo add graph
      *
@@ -2446,6 +2605,16 @@ namespace shambase {
     template<class flt_type>
     struct TypeNameInfo<shammath::C6<flt_type>> {
         inline static const std::string name = "C6<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::TGauss3<flt_type>> {
+        inline static const std::string name = "TGauss3<" + get_type_name<flt_type>() + ">";
+    };
+
+    template<class flt_type>
+    struct TypeNameInfo<shammath::TGauss5<flt_type>> {
+        inline static const std::string name = "TGauss5<" + get_type_name<flt_type>() + ">";
     };
 
     template<class flt_type>

@@ -26,7 +26,6 @@ if not shamrock.sys.is_initialized():
 # %%
 # Main benchmark functions
 def benchmark_u32_balanced(N, slice_size, nb_repeat=10):
-
     assert N % slice_size == 0, "N must be divisible by slice_size"
 
     random.seed(111)
@@ -51,7 +50,6 @@ particle_counts = 2**20  # = 1.048.576
 
 
 def run_performance_sweep_balanced():
-
     # Define parameter ranges
     # logspace as array
 

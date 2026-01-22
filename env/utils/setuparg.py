@@ -43,7 +43,6 @@ class EnvGen:
         return cmd
 
     def gen_env_file(self, source_file, destname="activate"):
-
         ENV_SCRIPT_HEADER = self.ENV_SCRIPT_HEADER
 
         for k in self.export_list.keys():
@@ -79,7 +78,6 @@ class EnvGen:
         )
 
     def copy_file(self, source_path, dest_file):
-
         ENV_SCRIPT_PATH = self.builddir + "/" + dest_file
 
         run_cmd(f"mkdir -p {os.path.dirname(ENV_SCRIPT_PATH)}")
@@ -90,6 +88,5 @@ class EnvGen:
         utils.envscript.copy_env_file(source_path=source_path, path_write=ENV_SCRIPT_PATH)
 
     def copy_env_file(self, source_file, dest_file):
-
         source_path = os.path.join(self.machinefolder, source_file)
         self.copy_file(source_path, dest_file)

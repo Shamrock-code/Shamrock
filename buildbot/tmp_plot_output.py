@@ -15,7 +15,6 @@ frame = []
 
 
 def get_plot_patchdata(filename):
-
     f = open(filename, "rb")
 
     header = f.read(24)
@@ -73,13 +72,11 @@ def get_plot_patchdata(filename):
     }
 
     for i in range(len(dic["x"])):
-
         cd = True
         # cd = cd and dic["y"][i] < 0.1 and dic["y"][i] > -0.1
         # cd = cd and dic["z"][i] < 0.3e-2 and dic["z"][i] > -0.3e-2
 
         if cd:
-
             dic_filtered["x"].append(dic["x"][i])
             dic_filtered["y"].append(dic["y"][i])
             dic_filtered["z"].append(dic["z"][i])
@@ -108,7 +105,6 @@ def get_plot_patchdata(filename):
 
 
 def loading_frames():
-
     idx = 0
 
     while True:
@@ -157,7 +153,6 @@ def make_gif():
 
 
 def make_gif_with_load():
-
     plotter = pv.Plotter(window_size=([1920, 1080]), notebook=False, off_screen=True)
     plotter.open_gif("out.gif")
 
@@ -190,7 +185,6 @@ def make_gif_with_load():
 
 
 def make_movie_with_load():
-
     plotter = pv.Plotter(window_size=([1920, 1080]), notebook=False, off_screen=True)
     plotter.open_movie("out.mp4")
 

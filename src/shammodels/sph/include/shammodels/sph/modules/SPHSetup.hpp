@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -49,7 +49,20 @@ namespace shammodels::sph::modules {
             bool part_reordering,
             std::optional<u32> insert_step = std::nullopt);
 
+        void apply_setup_new(
+            SetupNodePtr setup,
+            bool part_reordering,
+            std::optional<u32> gen_count_per_step               = std::nullopt,
+            std::optional<u32> insert_count_per_step            = std::nullopt,
+            std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
+            std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,
+            std::optional<u64> max_msg_size                     = std::nullopt,
+            bool do_setup_log                                   = false);
+
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
+            Tscal dr, std::pair<Tvec, Tvec> box);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
             Tscal dr, std::pair<Tvec, Tvec> box);
 
         std::shared_ptr<ISPHSetupNode> make_generator_disc_mc(

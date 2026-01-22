@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -45,6 +45,13 @@ namespace shamrock::scheduler::details {
             : ordering_val(in.ordering_val), load_value(in.load_value), index(inindex) {}
     };
 
+    /**
+     * @brief Sort tiles by their ordering value
+     *
+     * @tparam Torder Ordering value type
+     * @tparam Tweight Load weight type
+     * @param lb_vec Vector of load-balanced tiles to sort
+     */
     template<class Torder, class Tweight>
     inline void apply_ordering(std::vector<LoadBalancedTile<Torder, Tweight>> &lb_vec) {
         using LBTileResult = LoadBalancedTile<Torder, Tweight>;
@@ -53,6 +60,15 @@ namespace shamrock::scheduler::details {
         });
     }
 
+    /**
+     * @brief Load balance using parallel sweep strategy based on accumulated load
+     *
+     * @tparam Torder Ordering value type
+     * @tparam Tweight Load weight type
+     * @param lb_vector Tiles with load information
+     * @param wsize Number of workers
+     * @return std::vector<i32> New owner assignments for each tile
+     */
     template<class Torder, class Tweight>
     inline std::vector<i32> lb_startegy_parallel_sweep(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
@@ -109,6 +125,15 @@ namespace shamrock::scheduler::details {
         return new_owners;
     }
 
+    /**
+     * @brief Load balance using round-robin strategy ignoring actual load values
+     *
+     * @tparam Torder Ordering value type
+     * @tparam Tweight Load weight type
+     * @param lb_vector Tiles with load information
+     * @param wsize Number of workers
+     * @return std::vector<i32> New owner assignments for each tile
+     */
     template<class Torder, class Tweight>
     inline std::vector<i32> lb_startegy_roundrobin(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
@@ -173,6 +198,16 @@ namespace shamrock::scheduler::details {
         f64 stddev;
     };
 
+    /**
+     * @brief Compute load balance quality metrics
+     *
+     * @tparam Torder Ordering value type
+     * @tparam Tweight Load weight type
+     * @param lb_vector Tiles with load information
+     * @param new_owners Owner assignments to evaluate
+     * @param world_size Number of workers
+     * @return LBMetric Statistics about load distribution (min, max, mean, stddev)
+     */
     template<class Torder, class Tweight>
     inline LBMetric compute_LB_metric(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector,

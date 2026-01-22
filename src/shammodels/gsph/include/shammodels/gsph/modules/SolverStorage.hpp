@@ -14,10 +14,15 @@
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Storage for GSPH solver runtime data
+ * @brief Storage for GSPH solver runtime data with SolverGraph integration
  *
  * This file contains the storage structure for GSPH solver runtime data,
  * including neighbor caches, ghost data, and field storage.
+ *
+ * The storage uses the SolverGraph architecture for:
+ * - Explicit data dependency tracking
+ * - Automatic memory management via free_alloc()
+ * - Graph-based operation sequencing
  *
  * The GSPH solver originated from:
  * - Inutsuka, S. (2002) "Reformulation of Smoothed Particle Hydrodynamics
@@ -27,14 +32,31 @@
 #include "shambase/StorageComponent.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
+
+// GSPH-specific includes
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
-#include "shammodels/sph/solvergraph/NeighCache.hpp"
-#include "shamrock/scheduler/SerialPatchTree.hpp"
-#include "shamrock/scheduler/ShamrockCtx.hpp"
+
+// SolverGraph core includes
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
+
+// GSPH SolverGraph edge types
+#include "shammodels/gsph/solvergraph/GhostCacheEdge.hpp"
+#include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
+#include "shammodels/gsph/solvergraph/MergedPatchDataEdge.hpp"
+#include "shammodels/gsph/solvergraph/SerialPatchTreeEdge.hpp"
+
+// Reuse SPH NeighCache (same implementation)
+#include "shammodels/sph/solvergraph/NeighCache.hpp"
+
+// Scheduler and tree includes
+#include "shamrock/scheduler/ComputeField.hpp"
+#include "shamrock/scheduler/SerialPatchTree.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
@@ -48,9 +70,10 @@ namespace shammodels::gsph {
     using Component = shambase::StorageComponent<T>;
 
     /**
-     * @brief Runtime storage for GSPH solver
+     * @brief Runtime storage for GSPH solver with SolverGraph integration
      *
      * Stores all temporary data needed during GSPH simulation steps:
+     * - SolverGraph for data dependency management
      * - Neighbor caches for particle interactions
      * - Ghost particle data for boundary handling
      * - Computed fields (pressure, sound speed, omega)
@@ -70,49 +93,88 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
-        /// Particle counts per patch
+        // =====================================================================
+        // SolverGraph infrastructure
+        // =====================================================================
+
+        /// Central graph for managing edges (data) and nodes (operations)
+        shamrock::solvergraph::SolverGraph solver_graph;
+
+        /// Main operation sequence executed each timestep
+        std::shared_ptr<shamrock::solvergraph::OperationSequence> solver_sequence;
+
+        // =====================================================================
+        // SolverGraph edges - Particle counts and indices
+        // =====================================================================
+
+        /// Particle counts per patch (real particles only)
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
+
+        /// Particle counts including ghost particles
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
 
-        /// Position and smoothing length fields with ghosts
+        /// Patch rank ownership mapping
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+
+        // =====================================================================
+        // SolverGraph edges - Field references
+        // =====================================================================
+
+        /// Position field references with ghost particles
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> positions_with_ghosts;
+
+        /// Smoothing length field references with ghost particles
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_with_ghosts;
+
+        // =====================================================================
+        // SolverGraph edges - Neighbor cache (reuse from SPH)
+        // =====================================================================
 
         /// Neighbor cache - uses shamrock's tree-based neighbor search
         std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
 
-        /// Patch rank ownership
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+        // =====================================================================
+        // SolverGraph edges - Infrastructure (GSPH-specific)
+        // =====================================================================
 
-        /// Serial patch tree for load balancing
-        Component<SerialPatchTree<Tvec>> serial_patch_tree;
+        /// Serial patch tree for load balancing and interface detection
+        std::shared_ptr<solvergraph::SerialPatchTreeEdge<Tvec>> serial_patch_tree;
 
-        /// Ghost handler for boundary particles
-        Component<GhostHandle> ghost_handler;
-        Component<GhostHandleCache> ghost_patch_cache;
+        /// Ghost handler for boundary particle communication
+        std::shared_ptr<solvergraph::GhostHandlerEdge<Tvec>> ghost_handler;
 
-        /// Merged position-h data for neighbor search
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>> merged_xyzh;
+        /// Ghost interface cache for communication optimization
+        std::shared_ptr<solvergraph::GhostCacheEdge<Tvec>> ghost_patch_cache;
+
+        /// Merged position-h data for neighbor search (local + ghost)
+        std::shared_ptr<solvergraph::MergedPatchDataEdge> merged_xyzh;
+
+        /// Merged patchdata including all ghost fields
+        std::shared_ptr<solvergraph::MergedPatchDataEdge> merged_patchdata_ghost;
+
+        // =====================================================================
+        // Legacy Component storage (trees - complex lifecycle, migrate later)
+        // =====================================================================
 
         /// Radix trees for neighbor search
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
         Component<shambase::DistributedData<shamtree::KarrasRadixTreeField<Tscal>>>
             rtree_rint_field;
 
+        // =====================================================================
+        // SolverGraph edges - Computed fields
+        // =====================================================================
+
         /// Grad-h correction factor (Omega)
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
-
-        /// Ghost data layout and merged data
-        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
-        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
-            merged_patchdata_ghost;
 
         /// Density field computed via SPH summation
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> density;
 
-        /// Thermodynamic fields computed from EOS
+        /// Pressure from EOS
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> pressure;
+
+        /// Sound speed from EOS
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> soundspeed;
 
         /// Gradient fields for MUSCL reconstruction (2nd order)
@@ -123,13 +185,21 @@ namespace shammodels::gsph {
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vy;       ///< \nabla v_y
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_vz;       ///< \nabla v_z
 
-        /// Minimum h/c_s for CFL timestep calculation
-        /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s
-        Tscal h_per_cs_min = std::numeric_limits<Tscal>::max();
-
         /// Old derivatives for predictor-corrector integration
         Component<shamrock::ComputeField<Tvec>> old_axyz;
         Component<shamrock::ComputeField<Tscal>> old_duint;
+
+        // =====================================================================
+        // Non-graph storage
+        // =====================================================================
+
+        /// Ghost data layout pointers
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
+
+        /// Minimum h/c_s for CFL timestep calculation
+        /// For pure GSPH hydrodynamics: dt_CFL = C_cour * h / c_s
+        Tscal h_per_cs_min = std::numeric_limits<Tscal>::max();
 
         /// Timing statistics
         struct Timings {

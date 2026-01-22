@@ -21,6 +21,7 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtest/shamtest.hpp"
 #include <string>
+#include <vector>
 
 template<class flt>
 std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
@@ -31,9 +32,9 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     u64 Nesti = (2.F / dr) * (2.F / dr) * (2.F / dr);
 
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr
-        = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
-    auto &pdl = *pdl_ptr;
+    shamrock::patch::PatchDataLayout pdl_ptr;
+    pdl_ptr.create_layers(1);
+    auto &pdl = pdl_ptr.get_layer_layout_ptr(0);
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);

@@ -9,6 +9,7 @@
 
 /**
  * @file ShamrockDump.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -190,7 +191,8 @@ namespace shamrock {
         json jpdat_info  = json::parse(patchdata_infos);
 
         ctx.pdata_layout_new();
-        *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
+        ctx.pdl.get_layer_layout_ptr(0) = jmeta_patch.at("patchdata_layout")
+                                              .get<patch::PatchDataLayerLayout>(); // ->astodo ->hc
         ctx.init_sched(
             jmeta_patch.at("crit_patch_split").get<u64>(),
             jmeta_patch.at("crit_patch_merge").get<u64>());
@@ -246,7 +248,10 @@ namespace shamrock {
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
 
-            patch::PatchDataLayer pdat = patch::PatchDataLayer::deserialize_buf(ser, ctx.pdl);
+            patch::PatchDataLayer pdat = patch::PatchDataLayer::deserialize_buf(
+                ser,
+                std::make_shared<patch::PatchDataLayerLayout>(
+                    ctx.pdl.get_layer_layout_ptr(0))); // ->astodo ->hc
 
             sched.patch_data.owned_data.add_obj(pid, std::move(pdat));
         }

@@ -9,6 +9,7 @@
 
 /**
  * @file PatchScheduler.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
@@ -22,7 +23,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/legacy/patch/base/patchdata_field.hpp"
-#include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -207,12 +208,10 @@ void PatchScheduler::add_root_patch() {
 }
 
 PatchScheduler::PatchScheduler(
-    const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
-    u64 crit_split,
-    u64 crit_merge)
+    const shamrock::patch::PatchDataLayout pdl_ptr, u64 crit_split, u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
-          pdl_ptr,
+          pdl_ptr.get_layer_layout(0), // @astodo should be a list
           {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
 
     crit_patch_split = crit_split;

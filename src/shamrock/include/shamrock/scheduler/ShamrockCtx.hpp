@@ -11,6 +11,7 @@
 
 /**
  * @file ShamrockCtx.hpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -19,6 +20,7 @@
 #include "shamrock/legacy/patch/base/patchdata.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <map>
 #include <memory>
@@ -41,14 +43,14 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
+    shamrock::patch::PatchDataLayout pdl;
     std::unique_ptr<PatchScheduler> sched;
 
-    inline void pdata_layout_new() {
+    inline void pdata_layout_new(size_t nlayers = 1) {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+        pdl.create_layers(nlayers);
     }
 
     // inline void pdata_layout_do_double_prec_mode(){
@@ -65,33 +67,35 @@ class ShamrockCtx {
     //    pdl->xyz_mode = xyz32;
     //}
 
-    inline shamrock::patch::PatchDataLayerLayout &get_pdl_write() {
+    inline shamrock::patch::PatchDataLayerLayout &get_pdl_write(size_t layer_idx = 0) {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        return *pdl;
+        return pdl.get_layer_layout_ptr(layer_idx);
     }
 
     template<class T>
-    inline void pdata_layout_add_field(std::string fname, u32 nvar) {
+    inline void pdata_layout_add_field(std::string fname, u32 nvar, size_t layer_idx = 0) {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl->add_field<T>(fname, nvar);
+        pdl.get_layer_layout_ptr(layer_idx).add_field<T>(fname, nvar);
     }
 
-    inline void pdata_layout_add_field_t(std::string fname, u32 nvar, std::string type) {
+    inline void pdata_layout_add_field_t(
+        std::string fname, u32 nvar, std::string type, size_t layer_idx = 0) {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl->add_field_t(fname, nvar, type);
+        pdl.get_layer_layout_ptr(layer_idx).add_field_t(fname, nvar, type);
     }
 
-    inline void pdata_layout_print() {
-        if (!pdl) {
-            throw ShamAPIException("patch data layout is not initialized");
+    inline void pdata_layout_print(size_t layer_idx = 0) {
+        if (!pdl.get_layer_layout(layer_idx)) {
+            throw ShamAPIException(
+                shambase::format("patch data layout of index {} is not initialized", layer_idx));
         }
-        std::cout << pdl->get_description_str() << std::endl;
+        std::cout << pdl.get_layer_layout_ptr(layer_idx).get_description_str() << std::endl;
     }
 
     inline void dump_status() {
@@ -104,8 +108,12 @@ class ShamrockCtx {
 
     inline void init_sched(u64 crit_split, u64 crit_merge) {
 
-        if (!pdl) {
-            throw ShamAPIException("patch data layout is not initialized");
+        for (size_t layer_idx = 0; layer_idx < pdl.get_layer_count(); layer_idx++) {
+            if (!pdl.get_layer_layout(layer_idx)) {
+                throw ShamAPIException(
+                    shambase::format(
+                        "patch data layout of index {} is not initialized", layer_idx));
+            }
         }
 
         sched = std::make_unique<PatchScheduler>(pdl, crit_split, crit_merge);
@@ -144,10 +152,11 @@ class ShamrockCtx {
         return recv_data;
     }
 
-    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box) {
+    void set_coord_domain_bound(std::tuple<f64_3, f64_3> box, size_t layer_idx = 0) {
 
-        if (!pdl) {
-            throw ShamAPIException("patch data layout is not initialized");
+        if (!pdl.get_layer_layout(layer_idx)) {
+            throw ShamAPIException(
+                shambase::format("patch data layout of index {} is not initialized", layer_idx));
         }
 
         if (!sched) {
@@ -156,7 +165,7 @@ class ShamrockCtx {
 
         auto [a, b] = box;
 
-        if (pdl->check_main_field_type<f32_3>()) {
+        if (pdl.get_layer_layout_ptr(layer_idx).check_main_field_type<f32_3>()) {
             auto conv_vec = [](f64_3 v) -> f32_3 {
                 return {v.x(), v.y(), v.z()};
             };
@@ -165,8 +174,7 @@ class ShamrockCtx {
             f32_3 vec1 = conv_vec(b);
 
             sched->set_coord_domain_bound<f32_3>(vec0, vec1);
-        } else if (pdl->check_main_field_type<f64_3>()) {
-
+        } else if (pdl.get_layer_layout_ptr(layer_idx).check_main_field_type<f64_3>()) {
             sched->set_coord_domain_bound<f64_3>(a, b);
         } else {
             throw shambase::make_except_with_loc<std::runtime_error>(

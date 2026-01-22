@@ -2084,6 +2084,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 uint_with_ghost,
                 storage.pressure,
                 luminosity);
+
             compute_luminosity.evaluate();
         }
 

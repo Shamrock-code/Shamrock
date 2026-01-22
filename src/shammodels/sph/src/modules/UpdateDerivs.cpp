@@ -422,12 +422,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    if (has_luminosity) {
-                        shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
-                            compute_luminosity(pmass, alpha_u);
-                        compute_luminosity._impl_evaluate_internal();
-                    }
-
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         rho_a_sq,
@@ -637,11 +631,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                     Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
 
-                    if (has_luminosity) {
-                        shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
-                            compute_luminosity(pmass, alpha_u);
-                        compute_luminosity._impl_evaluate_internal();
-                    }
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,
                         rho_a_sq,
@@ -845,12 +834,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
                         rho_a, h_a, rab, alpha_a, cs_a, vsig_a, v_ab_r_ab);
                     Tscal qb_ab = shamrock::sph::q_av_disc(
                         rho_b, h_b, rab, alpha_b, cs_b, vsig_b, v_ab_r_ab);
-
-                    if (has_luminosity) {
-                        shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>
-                            compute_luminosity(pmass, alpha_u);
-                        compute_luminosity._impl_evaluate_internal();
-                    }
 
                     add_to_derivs_sph_artif_visco_cond(
                         pmass,

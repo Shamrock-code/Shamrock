@@ -56,7 +56,7 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
             shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             using namespace shamrock::sph;
-            logger::raw_ln("first batch of loads");
+
             Tscal h_a               = hpart[id_a];
             Tvec xyz_a              = r[id_a];
             const Tscal u_a         = uint[id_a];
@@ -64,24 +64,18 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
             const Tscal rho_a       = rho_h(part_mass, h_a, SPHKernel<Tscal>::hfactd);
             const Tscal P_a         = pressure[id_a];
             Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
-            logger::raw_ln("passed first batch of loads");
-            Tscal tmp_luminosity = 0;
+            Tscal tmp_luminosity    = 0;
 
             particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                logger::raw_ln("second batch of loads");
-                const Tscal u_b = uint[id_b];
-                logger::raw_ln("PB u");
-                const Tscal h_b = hpart[id_b];
-                logger::raw_ln("PB h");
+                const Tscal u_b     = uint[id_b];
+                const Tscal h_b     = hpart[id_b];
                 const Tscal omega_b = omega[id_b];
-                logger::raw_ln("PB omega");
-                const Tscal P_b = pressure[id_b];
-                logger::raw_ln("PB pressure");
-                const Tscal rho_b = rho_h(part_mass, h_b, SPHKernel<Tscal>::hfactd);
-                Tvec dr           = xyz_a - r[id_b];
-                Tscal rab2        = sycl::dot(dr, dr);
-                Tscal rab         = sycl::sqrt(rab2);
-                logger::raw_ln("passed second batch of loads");
+                const Tscal P_b     = pressure[id_b];
+                const Tscal rho_b   = rho_h(part_mass, h_b, SPHKernel<Tscal>::hfactd);
+                Tvec dr             = xyz_a - r[id_b];
+                Tscal rab2          = sycl::dot(dr, dr);
+                Tscal rab           = sycl::sqrt(rab2);
+
                 Tscal vsigu = vsig_u(P_a, P_b, rho_a, rho_b);
                 Tscal Fab_a = SPHKernel<Tscal>::dW_3d(rab, h_a);
                 Tscal Fab_b = SPHKernel<Tscal>::dW_3d(rab, h_b);

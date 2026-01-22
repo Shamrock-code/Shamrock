@@ -69,7 +69,9 @@ def format_delta_pourcent():
         if after_count == 0:
             return ""
         else:
+            # start allow utf-8
             return "(+∞)"
+            # end allow utf-8
     else:
         return "({:.1%})".format(div)
 
@@ -77,7 +79,9 @@ def format_delta_pourcent():
 print("# Doxygen diff with `main`")
 print(f"Removed warnings : {len(line_del)}")
 print(f"New warnings : {len(line_add)}")
+# start allow utf-8
 print(f"Warnings count : {before_count} → {after_count} {format_delta_pourcent()}")
+# end allow utf-8
 print("<details>")
 print("<summary>")
 print("Detailed changes :")

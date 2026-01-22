@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,10 +16,12 @@
 
 #include "shambase/popen.hpp"
 #include "shambase/print.hpp"
+#include "shambindings/locate_pylib.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pybindings.hpp"
 #include "shambindings/start_python.hpp"
 #include <pybind11/embed.h>
+#include <pybind11/stl.h>
 #include <cstdlib>
 #include <optional>
 #include <string>
@@ -107,12 +109,22 @@ namespace shambindings {
         std::string modify_path = std::string("paths = ") + get_pypath() + "\n";
         modify_path += R"(import sys;sys.path = paths)";
         py::exec(modify_path);
+
+        std::string pylib_path      = shambindings::locate_pylib_path(do_print);
+        std::string modify_path_lib = std::string("sys.path.insert(0, \"") + pylib_path + "\")\n";
+        py::exec(modify_path_lib);
     }
 
-    void start_ipython(bool do_print) {
+    void set_sys_argv(int argc, char *argv[]) {
+        std::vector<std::string> cpp_argv(argv, argv + argc);
+        py::module_::import("sys").attr("argv") = py::cast(cpp_argv);
+    }
+
+    void start_ipython(bool do_print, int argc, char *argv[]) {
 
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("--------------------------------------------");
@@ -127,9 +139,10 @@ namespace shambindings {
         }
     }
 
-    void run_py_file(std::string file_path, bool do_print) {
+    void run_py_file(std::string file_path, bool do_print, int argc, char *argv[]) {
         py::scoped_interpreter guard{};
         modify_py_sys_path(do_print);
+        set_sys_argv(argc, argv);
 
         if (do_print) {
             shambase::println("-----------------------------------");

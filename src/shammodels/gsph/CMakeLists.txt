@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -11,9 +11,15 @@ cmake_minimum_required(VERSION 3.9)
 
 project(Shammodels_gsph CXX C)
 
-# Core infrastructure sources (Phase 1)
+# Sources: GSPH solver, Model, VTK I/O, and Python bindings
 set(Sources
     src/SolverConfig.cpp
+    src/Solver.cpp
+    src/Model.cpp
+    src/pyGSPHModel.cpp
+    src/modules/UpdateDerivs.cpp
+    src/modules/GSPHGhostHandler.cpp
+    src/modules/io/VTKDump.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

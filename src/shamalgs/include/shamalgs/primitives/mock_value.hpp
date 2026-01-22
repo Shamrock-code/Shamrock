@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -59,8 +59,8 @@ namespace shamalgs::primitives {
      * );
      * @endcode
      */
-    template<class T>
-    T mock_value(std::mt19937 &eng, T min_bound, T max_bound);
+    template<class T, class Engine = std::mt19937>
+    T mock_value(Engine &eng, T min_bound, T max_bound);
 
     /**
      * @brief Generates a random mock value using default bounds
@@ -86,8 +86,8 @@ namespace shamalgs::primitives {
      * sycl::vec<f32, 2> random_vec2 = shamalgs::mock_value<sycl::vec<f32, 2>>(rng);
      * @endcode
      */
-    template<class T>
-    inline T mock_value(std::mt19937 &eng) {
+    template<class T, class Engine = std::mt19937>
+    inline T mock_value(Engine &eng) {
         using Prop = shambase::VectorProperties<T>;
         return mock_value<T>(eng, Prop::get_min(), Prop::get_max());
     }

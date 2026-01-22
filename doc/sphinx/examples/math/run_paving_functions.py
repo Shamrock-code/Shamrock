@@ -40,7 +40,6 @@ def add_rect(x, y, w, h):
 
 
 def plot_paving_function(pav_func, pav_func_name, shear_x=0.0):
-
     plt.figure()
     for i in range(-2, 3):
         for j in range(-3, 4):

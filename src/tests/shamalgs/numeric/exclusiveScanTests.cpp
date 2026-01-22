@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -113,8 +113,10 @@ struct TestExclScan {
 
         logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
 
-        for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
+        f64 i = 1e3;
+        while (i < lim_bench) {
             sizes.push_back(u32(i));
+            i = i * 1.1_f64;
         }
 
         for (const u32 &sz : sizes) {
@@ -238,8 +240,10 @@ struct TestExclScanUSM {
 
         logger::info_ln("TestExclScan", "testing :", __PRETTY_FUNCTION__);
 
-        for (f64 i = 1e3; i < lim_bench; i *= 1.1) {
+        f64 i = 1e3;
+        while (i < lim_bench) {
             sizes.push_back(u32(i));
+            i *= 1.1_f64;
         }
 
         for (const u32 &sz : sizes) {

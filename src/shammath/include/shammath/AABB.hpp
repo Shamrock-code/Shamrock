@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -24,6 +24,11 @@
 
 namespace shammath {
 
+    /**
+     * @brief Ray representation for intersection testing
+     *
+     * @tparam T Vector type for coordinates
+     */
     template<class T>
     struct Ray {
         using T_prop = shambase::VectorProperties<T>;
@@ -33,6 +38,12 @@ namespace shammath {
         T direction;
         T inv_direction;
 
+        /**
+         * @brief Construct a normalized ray from origin and direction
+         *
+         * @param origin Starting point of the ray
+         * @param direction Direction vector (will be normalized)
+         */
         inline Ray(T origin, T direction)
             : origin(origin), direction(direction), inv_direction(1 / direction) {
 
@@ -192,12 +203,24 @@ namespace shammath {
             return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
         }
 
+        /**
+         * @brief Check if AABB fully contains another AABB
+         *
+         * @param other AABB to check for containment
+         * @return true if this AABB fully contains other
+         */
         inline bool contains(AABB other) const noexcept {
             // return lower <= other.lower && upper >= other.upper;
             return sham::vec_compare_leq(lower, other.lower)
                    && sham::vec_compare_geq(upper, other.upper);
         }
 
+        /**
+         * @brief Check if point is in AABB using half-open interval [lower, upper)
+         *
+         * @param point Point to test
+         * @return true if point is in [lower, upper)
+         */
         inline bool contains_asymmetric(T point) const noexcept {
             return sham::vec_compare_leq(lower, point) && sham::vec_compare_g(upper, point);
         }

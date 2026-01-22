@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -50,7 +50,7 @@ f64 shamphys::SodTube::solve_P_4() {
         return shammath::derivative_upwind<f64>(P_4, 1e-6, shock_tube_function);
     };
 
-    return shammath::newtown_rhaphson<f64>(shock_tube_function, df, 1e-6, P_1);
+    return shammath::newton_rhaphson<f64>(shock_tube_function, df, 1e-6, P_1);
 }
 
 auto shamphys::SodTube::get_value(f64 t, f64 x) -> field_val {

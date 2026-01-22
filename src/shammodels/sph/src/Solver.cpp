@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -67,6 +67,7 @@
 #include "shammodels/sph/modules/self_gravity/SGDirectPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGFMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
+#include "shammodels/sph/modules/self_gravity/SGSFMMPlummer.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -87,6 +88,7 @@
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/NodeFreeAlloc.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
@@ -432,14 +434,70 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         }
     }
 
-    storage.solver_sequence = solver_graph.register_node(
-        "time_step",
-        OperationSequence(
-            "time step",
-            {
-                solver_graph.get_node_ptr_base("attach fields to scheduler"),
-                solver_graph.get_node_ptr_base("leapfrog predictor"),
-            }));
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // Part killing step
+    ////////////////////////////////////////////////////////////////////////////////////////
+    bool do_part_killing_step = solver_config.particle_killing.kill_list.size() > 0;
+
+    if (do_part_killing_step) {
+
+        auto patchdatas = solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata");
+        auto xyz_edge   = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
+
+        auto part_to_remove = solver_graph.register_edge(
+            "part_to_remove", DistributedBuffers<u32>("part_to_remove", "part_to_remove"));
+
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_kill_sequence{};
+
+        {
+
+            auto empty_part_to_remove
+                = solver_graph.register_node("empty_part_to_remove", NodeFreeAlloc{});
+            shambase::get_check_ref(empty_part_to_remove).set_edges(part_to_remove);
+            part_kill_sequence.push_back(empty_part_to_remove);
+        }
+
+        using kill_t      = typename ParticleKillingConfig<Tvec>::kill_t;
+        using kill_sphere = typename ParticleKillingConfig<Tvec>::Sphere;
+
+        // selectors
+        for (kill_t &kill_obj : solver_config.particle_killing.kill_list) {
+            if (kill_sphere *kill_info = std::get_if<kill_sphere>(&kill_obj)) {
+
+                modules::GetParticlesOutsideSphere<Tvec> node_selector(
+                    kill_info->center, kill_info->radius);
+                node_selector.set_edges(xyz_edge, part_to_remove);
+
+                part_kill_sequence.push_back(
+                    std::make_shared<decltype(node_selector)>(std::move(node_selector)));
+            }
+        }
+
+        { // killing
+            modules::KillParticles node_killer{};
+            node_killer.set_edges(part_to_remove, patchdatas);
+
+            part_kill_sequence.push_back(
+                std::make_shared<decltype(node_killer)>(std::move(node_killer)));
+        }
+
+        solver_graph.register_node(
+            "part killing step",
+            OperationSequence("part killing step", std::move(part_kill_sequence)));
+    }
+
+    {
+        std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
+
+        seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
+        seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
+        if (do_part_killing_step) {
+            seq.push_back(solver_graph.get_node_ptr_base("part killing step"));
+        }
+
+        storage.solver_sequence = solver_graph.register_node(
+            "time_step", OperationSequence("time step", std::move(seq)));
+    }
 
     storage.part_counts
         = std::make_shared<shamrock::solvergraph::Indexes<u32>>("part_counts", "N_{\\rm part}");
@@ -1082,12 +1140,16 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_ghost_layout() {
 
-    storage.ghost_layout.set(std::make_shared<shamrock::patch::PatchDataLayerLayout>());
+    storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout.get());
+        = shambase::get_check_ref(storage.ghost_layout);
 
     solver_config.set_ghost_layout(ghost_layout);
+
+    storage.xyzh_ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+    storage.xyzh_ghost_layout->template add_field<Tvec>("xyz", 1);
+    storage.xyzh_ghost_layout->template add_field<Tscal>("hpart", 1);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1212,7 +1274,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
 
-    auto ghost_layout_ptr                               = storage.ghost_layout.get();
+    auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
@@ -1491,73 +1553,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::part_killing_step() {
-
-    using namespace shamrock;
-    using namespace shamrock::patch;
-
-    if (solver_config.particle_killing.kill_list.size() == 0) {
-        return;
-    }
-
-    PatchDataLayerLayout &pdl = scheduler().pdl();
-    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
-
-    {
-        shamrock::solvergraph::DDPatchDataFieldRef<Tvec> refs = {};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(ixyz)));
-        });
-        pos->set_refs(refs);
-    }
-
-    std::shared_ptr<shamrock::solvergraph::PatchDataLayerRefs> patchdatas
-        = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>("", "");
-
-    {
-        patchdatas->free_alloc();
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            patchdatas->patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
-        });
-    }
-
-    std::shared_ptr<shamrock::solvergraph::DistributedBuffers<u32>> part_to_remove
-        = std::make_shared<shamrock::solvergraph::DistributedBuffers<u32>>("", "");
-
-    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> part_kill_sequence;
-
-    using kill_t      = typename ParticleKillingConfig<Tvec>::kill_t;
-    using kill_sphere = typename ParticleKillingConfig<Tvec>::Sphere;
-
-    // selectors
-    for (kill_t &kill_obj : solver_config.particle_killing.kill_list) {
-        if (kill_sphere *kill_info = std::get_if<kill_sphere>(&kill_obj)) {
-
-            modules::GetParticlesOutsideSphere<Tvec> node_selector(
-                kill_info->center, kill_info->radius);
-            node_selector.set_edges(pos, part_to_remove);
-
-            part_kill_sequence.push_back(
-                std::make_shared<decltype(node_selector)>(std::move(node_selector)));
-        }
-    }
-
-    { // killing
-        modules::KillParticles node_killer{};
-        node_killer.set_edges(part_to_remove, patchdatas);
-
-        part_kill_sequence.push_back(
-            std::make_shared<decltype(node_killer)>(std::move(node_killer)));
-    }
-
-    shamrock::solvergraph::OperationSequence seq("particle killing", std::move(part_kill_sequence));
-    seq.evaluate();
-}
-
-template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
@@ -1648,10 +1643,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
-    // do_predictor_leapfrog(dt);
-
-    part_killing_step();
-
     sink_update.compute_ext_forces();
 
     ext_forces.compute_ext_forces_indep_v();
@@ -1675,7 +1666,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // Here we will add self grav to the external forces indep of vel (this will be moved into a
     // sperate module later)
-    {
+    if (solver_config.self_grav_config.is_sg_on()) {
 
         auto constant_G = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
 
@@ -1783,24 +1774,50 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         } else if (solver_config.self_grav_config.is_fmm()) {
 
-            SelfGravConfig::FMM &mm_config = shambase::get_check_ref(
+            SelfGravConfig::FMM &fmm_config = shambase::get_check_ref(
                 std::get_if<SelfGravConfig::FMM>(&solver_config.self_grav_config.config));
 
-            auto run_sg_fmm = [&](auto mm_order_tag) {
-                constexpr u32 order = decltype(mm_order_tag)::value;
+            auto run_sg_fmm = [&](auto fmm_order_tag) {
+                constexpr u32 order = decltype(fmm_order_tag)::value;
                 modules::SGFMMPlummer<Tvec, order> self_gravity_mm_node(
-                    eps_grav, mm_config.opening_angle, mm_config.reduction_level);
+                    eps_grav, fmm_config.opening_angle, fmm_config.reduction_level);
                 self_gravity_mm_node.set_edges(
                     sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
                 self_gravity_mm_node.evaluate();
             };
 
-            switch (mm_config.order) {
+            switch (fmm_config.order) {
             case 1 : run_sg_fmm(std::integral_constant<u32, 1>{}); break;
             case 2 : run_sg_fmm(std::integral_constant<u32, 2>{}); break;
             case 3 : run_sg_fmm(std::integral_constant<u32, 3>{}); break;
             case 4 : run_sg_fmm(std::integral_constant<u32, 4>{}); break;
             case 5 : run_sg_fmm(std::integral_constant<u32, 5>{}); break;
+            default: shambase::throw_unimplemented();
+            }
+
+        } else if (solver_config.self_grav_config.is_sfmm()) {
+
+            SelfGravConfig::SFMM &sfmm_config = shambase::get_check_ref(
+                std::get_if<SelfGravConfig::SFMM>(&solver_config.self_grav_config.config));
+
+            auto run_sg_sfmm = [&](auto sfmm_order_tag) {
+                constexpr u32 order = decltype(sfmm_order_tag)::value;
+                modules::SGSFMMPlummer<Tvec, order> self_gravity_mm_node(
+                    eps_grav,
+                    sfmm_config.opening_angle,
+                    sfmm_config.leaf_lowering,
+                    sfmm_config.reduction_level);
+                self_gravity_mm_node.set_edges(
+                    sizes, gpart_mass, constant_G, field_xyz, field_axyz_ext);
+                self_gravity_mm_node.evaluate();
+            };
+
+            switch (sfmm_config.order) {
+            case 1 : run_sg_sfmm(std::integral_constant<u32, 1>{}); break;
+            case 2 : run_sg_sfmm(std::integral_constant<u32, 2>{}); break;
+            case 3 : run_sg_sfmm(std::integral_constant<u32, 3>{}); break;
+            case 4 : run_sg_sfmm(std::integral_constant<u32, 4>{}); break;
+            case 5 : run_sg_sfmm(std::integral_constant<u32, 5>{}); break;
             default: shambase::throw_unimplemented();
             }
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -82,7 +82,8 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 
-        Component<std::shared_ptr<shamrock::patch::PatchDataLayerLayout>> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
+        std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
 
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
             merged_patchdata_ghost;

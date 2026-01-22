@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,9 +22,9 @@
 namespace shammath {
 
     template<class T>
-    float newtown_rhaphson(std::function<T(T)> &&f, std::function<T(T)> &&df, T epsilon_c, T x_0) {
+    float newton_rhaphson(std::function<T(T)> &&f, std::function<T(T)> &&df, T epsilon_c, T x_0) {
 
-        auto iterate_newtown = [](T f, T df, T xk) -> T {
+        auto iterate_newton = [](T f, T df, T xk) -> T {
             return xk - (f / df);
         };
 
@@ -32,7 +32,7 @@ namespace shammath {
         T epsilon = 100000;
 
         while (epsilon > epsilon_c) {
-            T xkp1 = iterate_newtown(f(xk), df(xk), xk);
+            T xkp1 = iterate_newton(f(xk), df(xk), xk);
 
             epsilon = std::fabs(xk - xkp1);
 

@@ -44,10 +44,6 @@ jobs:
 
     - uses: pre-commit/action@v3.0.1
 
-    - name: "Run author update script"
-      run: |
-        python3 buildbot/update_authors.py
-
     - name: rerun precommit for logs
       if: success()
       run: pre-commit run --all-files > out

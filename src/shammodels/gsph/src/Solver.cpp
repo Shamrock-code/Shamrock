@@ -133,7 +133,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_serial_patch_tree() {
     storage.serial_patch_tree.set(std::move(_sptree));
 
     // Set solvergraph edge reference to the stored tree
-    shambase::get_check_ref(storage.serial_patch_tree_ref).patch_tree = storage.serial_patch_tree.get();
+    shambase::get_check_ref(storage.serial_patch_tree_ref).patch_tree
+        = storage.serial_patch_tree.get();
 }
 
 template<class Tvec, template<class> class Kern>

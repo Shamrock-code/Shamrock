@@ -28,6 +28,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
+#include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -41,7 +42,6 @@
 #include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
-#include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
 #include <memory>
 
 namespace shammodels::gsph {

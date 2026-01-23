@@ -75,7 +75,7 @@ namespace shammodels::gsph::solvergraph {
             handler.emplace(std::move(h));
         }
 
-        ///Free the allocated handler
+        /// Free the allocated handler
         inline virtual void free_alloc() override { handler.reset(); }
     };
 

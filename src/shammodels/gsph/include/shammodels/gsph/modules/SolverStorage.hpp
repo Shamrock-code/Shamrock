@@ -41,8 +41,6 @@
 #include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
-
-// SolverGraph edge for ghost handler
 #include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
 #include <memory>
 

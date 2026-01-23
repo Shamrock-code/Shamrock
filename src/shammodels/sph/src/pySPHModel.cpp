@@ -96,6 +96,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("h_over_r"))
+        .def(
+            "set_eos_fermi",
+            [](TConfig &self, Tscal mu_e) {
+                self.set_eos_fermi(mu_e);
+            },
+            py::kw_only(),
+            py::arg("mu_e"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",

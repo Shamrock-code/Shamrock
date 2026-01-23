@@ -35,7 +35,11 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
+
+// GSPH solvergraph edges
+#include "shammodels/gsph/solvergraph/MergedPatchDataEdge.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -70,6 +74,17 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
+        // =====================================================================
+        // SolverGraph infrastructure
+        // =====================================================================
+
+        /// Central graph for managing edges (data) and nodes (operations)
+        shamrock::solvergraph::SolverGraph solver_graph;
+
+        // =====================================================================
+        // SolverGraph edges
+        // =====================================================================
+
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -91,8 +106,8 @@ namespace shammodels::gsph {
         Component<GhostHandle> ghost_handler;
         Component<GhostHandleCache> ghost_patch_cache;
 
-        /// Merged position-h data for neighbor search
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>> merged_xyzh;
+        /// Merged position-h data for neighbor search - managed via SolverGraph
+        std::shared_ptr<solvergraph::MergedPatchDataEdge> merged_xyzh;
 
         /// Radix trees for neighbor search
         Component<shambase::DistributedData<RTree>> merged_pos_trees;
@@ -105,8 +120,9 @@ namespace shammodels::gsph {
         /// Ghost data layout and merged data
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> xyzh_ghost_layout;
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layout;
-        Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>>
-            merged_patchdata_ghost;
+
+        /// Merged patchdata including all ghost fields - managed via SolverGraph
+        std::shared_ptr<solvergraph::MergedPatchDataEdge> merged_patchdata_ghost;
 
         /// Density field computed via SPH summation
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> density;

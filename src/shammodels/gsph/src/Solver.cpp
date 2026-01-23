@@ -69,84 +69,47 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
-    using namespace shamrock::solvergraph;
+    storage.part_counts = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
+        edges::part_counts, "N_{\\rm part}");
 
-    SolverGraph &solver_graph = storage.solver_graph;
+    storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
+        edges::part_counts_with_ghost, "N_{\\rm part, with ghost}");
 
-    // =========================================================================
-    // Register particle count and index edges
-    // =========================================================================
-    storage.part_counts = solver_graph.register_edge(
-        edges::part_counts, Indexes<u32>(edges::part_counts, "N_{\\rm part}"));
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>(
+        edges::patch_rank_owner, "rank");
 
-    storage.part_counts_with_ghost = solver_graph.register_edge(
-        edges::part_counts_with_ghost,
-        Indexes<u32>(edges::part_counts_with_ghost, "N_{\\rm part, ghost}"));
+    // Merged ghost spans
+    storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
+        edges::positions_with_ghosts, "\\mathbf{r}");
+    storage.hpart_with_ghosts
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::hpart_with_ghosts, "h");
 
-    storage.patch_rank_owner = solver_graph.register_edge(
-        edges::patch_rank_owner, ScalarsEdge<u32>(edges::patch_rank_owner, "rank"));
+    storage.neigh_cache
+        = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
 
-    // =========================================================================
-    // Register field reference edges (with ghosts)
-    // =========================================================================
-    storage.positions_with_ghosts = solver_graph.register_edge(
-        edges::positions_with_ghosts, FieldRefs<Tvec>(edges::positions_with_ghosts, "\\mathbf{r}"));
+    // Register ghost handler in solvergraph for explicit data dependency tracking
+    storage.ghost_handler = storage.solver_graph.register_edge(
+        "ghost_handler",
+        solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
 
-    storage.hpart_with_ghosts = solver_graph.register_edge(
-        edges::hpart_with_ghosts, FieldRefs<Tscal>(edges::hpart_with_ghosts, "h"));
-
-    // =========================================================================
-    // Register neighbor cache edge (reuse SPH implementation)
-    // =========================================================================
-    storage.neigh_cache = solver_graph.register_edge(
-        edges::neigh_cache, shammodels::sph::solvergraph::NeighCache(edges::neigh_cache, "neigh"));
-
-    // =========================================================================
-    // Register GSPH infrastructure edges
-    // =========================================================================
-    storage.serial_patch_tree = solver_graph.register_edge(
-        "serial_patch_tree",
-        solvergraph::SerialPatchTreeEdge<Tvec>("serial_patch_tree", "\\mathcal{T}_{\\rm patch}"));
-
-    storage.ghost_handler = solver_graph.register_edge(
-        "ghost_handler", solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
-
-    storage.ghost_patch_cache = solver_graph.register_edge(
-        "ghost_patch_cache",
-        solvergraph::GhostCacheEdge<Tvec>("ghost_patch_cache", "\\mathcal{C}_{\\rm ghost}"));
-
-    storage.merged_xyzh = solver_graph.register_edge(
-        "merged_xyzh", solvergraph::MergedPatchDataEdge("merged_xyzh", "\\mathbf{xyzh}_{\\rm m}"));
-
-    storage.merged_patchdata_ghost = solver_graph.register_edge(
-        "merged_patchdata_ghost",
-        solvergraph::MergedPatchDataEdge("merged_patchdata_ghost", "\\mathbb{U}_{\\rm ghost}"));
-
-    // =========================================================================
-    // Register computed field edges
-    // =========================================================================
-    storage.omega    = solver_graph.register_edge("omega", Field<Tscal>(1, "omega", "\\Omega"));
-    storage.density  = solver_graph.register_edge("density", Field<Tscal>(1, "density", "\\rho"));
-    storage.pressure = solver_graph.register_edge("pressure", Field<Tscal>(1, "pressure", "P"));
+    storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
+    storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
+    storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
     storage.soundspeed
-        = solver_graph.register_edge("soundspeed", Field<Tscal>(1, "soundspeed", "c_s"));
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
 
-    // Gradient fields for MUSCL reconstruction (2nd order)
+    // Initialize gradient fields for MUSCL reconstruction
     // These are only used when reconstruct_config.is_muscl() == true
-    storage.grad_density = solver_graph.register_edge(
-        "grad_density", Field<Tvec>(1, "grad_density", "\\nabla\\rho"));
+    storage.grad_density
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_density", "\\nabla\\rho");
     storage.grad_pressure
-        = solver_graph.register_edge("grad_pressure", Field<Tvec>(1, "grad_pressure", "\\nabla P"));
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_pressure", "\\nabla P");
     storage.grad_vx
-        = solver_graph.register_edge("grad_vx", Field<Tvec>(1, "grad_vx", "\\nabla v_x"));
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vx", "\\nabla v_x");
     storage.grad_vy
-        = solver_graph.register_edge("grad_vy", Field<Tvec>(1, "grad_vy", "\\nabla v_y"));
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vy", "\\nabla v_y");
     storage.grad_vz
-        = solver_graph.register_edge("grad_vz", Field<Tvec>(1, "grad_vz", "\\nabla v_z"));
-
-    // Note: old_axyz and old_duint are managed as Component<ComputeField<...>>
-    // for predictor-corrector integration, not as solvergraph Field edges.
-    // They are set/reset in prepare_corrector() and apply_corrector().
+        = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad_vz", "\\nabla v_z");
 }
 
 template<class Tvec, template<class> class Kern>
@@ -162,7 +125,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_serial_patch_tree() {
 
     SerialPatchTree<Tvec> _sptree = SerialPatchTree<Tvec>::build(scheduler());
     _sptree.attach_buf();
-    shambase::get_check_ref(storage.serial_patch_tree).set(std::move(_sptree));
+    storage.serial_patch_tree.set(std::move(_sptree));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -185,31 +148,25 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
     // Note: Wall boundaries use Periodic with dynamic wall particles
     if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
         shambase::get_check_ref(storage.ghost_handler)
-            .set(
-                GhostHandle{
-                    scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+            .set(GhostHandle{
+                scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCPeriodic *c
         = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
         shambase::get_check_ref(storage.ghost_handler)
-            .set(
-                GhostHandle{
-                    scheduler(),
-                    BCPeriodic{},
-                    storage.patch_rank_owner,
-                    storage.xyzh_ghost_layout});
+            .set(GhostHandle{
+                scheduler(), BCPeriodic{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCShearingPeriodic *c
         = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
         // Shearing periodic boundaries (Stone 2010) - reuse SPH implementation
         shambase::get_check_ref(storage.ghost_handler)
-            .set(
-                GhostHandle{
-                    scheduler(),
-                    BCShearingPeriodic{
-                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                    storage.patch_rank_owner,
-                    storage.xyzh_ghost_layout});
+            .set(GhostHandle{
+                scheduler(),
+                BCShearingPeriodic{
+                    c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                storage.patch_rank_owner,
+                storage.xyzh_ghost_layout});
     } else {
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
@@ -222,27 +179,25 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     using GSPHUtils = GSPHUtilities<Tvec, Kernel>;
     GSPHUtils gsph_utils(scheduler());
 
-    shambase::get_check_ref(storage.ghost_patch_cache)
-        .set(gsph_utils.build_interf_cache(
-            shambase::get_check_ref(storage.ghost_handler).get(),
-            shambase::get_check_ref(storage.serial_patch_tree).get(),
-            solver_config.htol_up_coarse_cycle));
+    storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
+        shambase::get_check_ref(storage.ghost_handler).get(),
+        storage.serial_patch_tree.get(),
+        solver_config.htol_up_coarse_cycle));
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::clear_ghost_cache() {
     StackEntry stack_loc{};
-    shambase::get_check_ref(storage.ghost_patch_cache).free_alloc();
+    storage.ghost_patch_cache.reset();
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
-    shambase::get_check_ref(storage.merged_xyzh).data
-        = shambase::get_check_ref(storage.ghost_handler)
-              .get()
-              .build_comm_merge_positions(shambase::get_check_ref(storage.ghost_patch_cache).get());
+    storage.merged_xyzh.set(
+        shambase::get_check_ref(storage.ghost_handler).get().build_comm_merge_positions(
+            storage.ghost_patch_cache.get()));
 
     // Get field indices from xyzh_ghost_layout
     const u32 ixyz_ghost
@@ -250,31 +205,31 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     const u32 ihpart_ghost
         = storage.xyzh_ghost_layout->template get_field_idx<Tscal>(gsph::names::common::hpart);
 
-    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh);
-
     // Set element counts
-    shambase::get_check_ref(storage.part_counts).indexes = merged_xyzh.get_data().template map<u32>(
-        [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-            return scheduler().patch_data.get_pdat(id).get_obj_cnt();
-        });
+    shambase::get_check_ref(storage.part_counts).indexes
+        = storage.merged_xyzh.get().template map<u32>(
+            [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                return scheduler().patch_data.get_pdat(id).get_obj_cnt();
+            });
 
     // Set element counts with ghost
     shambase::get_check_ref(storage.part_counts_with_ghost).indexes
-        = merged_xyzh.get_data().template map<u32>(
+        = storage.merged_xyzh.get().template map<u32>(
             [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
                 return mpdat.get_obj_cnt();
             });
 
     // Attach spans to block coords
     shambase::get_check_ref(storage.positions_with_ghosts)
-        .set_refs(merged_xyzh.get_data().template map<std::reference_wrapper<PatchDataField<Tvec>>>(
-            [&, ixyz_ghost](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-                return std::ref(mpdat.get_field<Tvec>(ixyz_ghost));
-            }));
+        .set_refs(
+            storage.merged_xyzh.get().template map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                [&, ixyz_ghost](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tvec>(ixyz_ghost));
+                }));
 
     shambase::get_check_ref(storage.hpart_with_ghosts)
         .set_refs(
-            merged_xyzh.get_data().template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+            storage.merged_xyzh.get().template map<std::reference_wrapper<PatchDataField<Tscal>>>(
                 [&, ihpart_ghost](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
                     return std::ref(mpdat.get_field<Tscal>(ihpart_ghost));
                 }));
@@ -284,7 +239,7 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::build_merged_pos_trees() {
     StackEntry stack_loc{};
 
-    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    auto &merged_xyzh = storage.merged_xyzh.get();
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
     // Get field index from xyzh_ghost_layout
@@ -329,7 +284,7 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
     StackEntry stack_loc{};
 
-    auto &xyzh_merged = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    auto &xyzh_merged = storage.merged_xyzh.get();
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
     storage.rtree_rint_field.set(
@@ -375,7 +330,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
 
     // Build neighbor cache using tree traversal - same approach as SPH module
     auto build_neigh_cache = [&](u64 patch_id) -> shamrock::tree::ObjectCache {
-        auto &mfield = shambase::get_check_ref(storage.merged_xyzh).get(patch_id);
+        auto &mfield = storage.merged_xyzh.get().get(patch_id);
 
         sham::DeviceBuffer<Tvec> &buf_xyz    = mfield.template get_field_buf_ref<Tvec>(0);
         sham::DeviceBuffer<Tscal> &buf_hpart = mfield.template get_field_buf_ref<Tscal>(1);
@@ -591,8 +546,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
 
-    reatrib.reatribute_patch_objects(
-        shambase::get_check_ref(storage.serial_patch_tree).get(), gsph::names::common::xyz);
+    reatrib.reatribute_patch_objects(storage.serial_patch_tree.get(), gsph::names::common::xyz);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -736,7 +690,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Build interface data from ghost cache
     auto pdat_interf = ghost_handle.template build_interface_native<PatchDataLayer>(
-        shambase::get_check_ref(storage.ghost_patch_cache).get(),
+        storage.ghost_patch_cache.get(),
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sham::DeviceBuffer<u32> &buf_idx, u32 cnt) {
             PatchDataLayer pdat(ghost_layout_ptr);
             pdat.reserve(cnt);
@@ -745,7 +699,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Populate interface data with field values
     ghost_handle.template modify_interface_native<PatchDataLayer>(
-        shambase::get_check_ref(storage.ghost_patch_cache).get(),
+        storage.ghost_patch_cache.get(),
         pdat_interf,
         [&](u64 sender,
             u64,
@@ -786,7 +740,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Apply velocity offset for periodic boundaries
     ghost_handle.template modify_interface_native<PatchDataLayer>(
-        shambase::get_check_ref(storage.ghost_patch_cache).get(),
+        storage.ghost_patch_cache.get(),
         pdat_interf,
         [&](u64 sender,
             u64,
@@ -810,8 +764,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     });
 
     // Merge local and ghost data
-    shambase::get_check_ref(storage.merged_patchdata_ghost).data
-        = ghost_handle.template merge_native<PatchDataLayer, PatchDataLayer>(
+    storage.merged_patchdata_ghost.set(
+        ghost_handle.template merge_native<PatchDataLayer, PatchDataLayer>(
             std::move(interf_pdat),
             [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                 PatchDataLayer pdat_new(ghost_layout_ptr);
@@ -848,7 +802,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             },
             [](PatchDataLayer &pdat, PatchDataLayer &pdat_interf) {
                 pdat.insert_elements(pdat_interf);
-            });
+            }));
 
     timer_interf.end();
     storage.timings_details.interface += timer_interf.elasped_sec();
@@ -856,7 +810,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::reset_merge_ghosts_fields() {
-    shambase::get_check_ref(storage.merged_patchdata_ghost).free_alloc();
+    storage.merged_patchdata_ghost.reset();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -909,7 +863,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     // 3. If h grows beyond tolerance, signal for cache rebuild
     // =========================================================================
 
-    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    auto &merged_xyzh = storage.merged_xyzh.get();
 
     // Create field references for the iteration module
     // Position spans (from merged xyzh)
@@ -1182,77 +1136,73 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     soundspeed_field.ensure_sizes(counts_with_ghosts);
 
     // Iterate over merged_patchdata_ghost (includes local + ghost particles)
-    shambase::get_check_ref(storage.merged_patchdata_ghost)
-        .get_data()
-        .for_each([&](u64 id, PatchDataLayer &mpdat) {
-            u32 total_elements
-                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
-            if (total_elements == 0)
-                return;
+    storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+        u32 total_elements
+            = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+        if (total_elements == 0)
+            return;
 
-            // Use SPH-summation density from communicated ghost data
-            sham::DeviceBuffer<Tscal> &buf_density
-                = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
-            auto &pressure_buf   = pressure_field.get_field(id).get_buf();
-            auto &soundspeed_buf = soundspeed_field.get_field(id).get_buf();
+        // Use SPH-summation density from communicated ghost data
+        sham::DeviceBuffer<Tscal> &buf_density = mpdat.get_field_buf_ref<Tscal>(idensity_interf);
+        auto &pressure_buf                     = pressure_field.get_field(id).get_buf();
+        auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
 
-            sham::DeviceQueue &q = dev_sched->get_queue();
-            sham::EventList depends_list;
+        sham::DeviceQueue &q = dev_sched->get_queue();
+        sham::EventList depends_list;
 
-            auto density    = buf_density.get_read_access(depends_list);
-            auto pressure   = pressure_buf.get_write_access(depends_list);
-            auto soundspeed = soundspeed_buf.get_write_access(depends_list);
+        auto density    = buf_density.get_read_access(depends_list);
+        auto pressure   = pressure_buf.get_write_access(depends_list);
+        auto soundspeed = soundspeed_buf.get_write_access(depends_list);
 
-            const Tscal *uint_ptr = nullptr;
-            if (has_uint) {
-                uint_ptr
-                    = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
-            }
+        const Tscal *uint_ptr = nullptr;
+        if (has_uint) {
+            uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
+        }
 
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
-                    u32 i = (u32) gid;
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
+                u32 i = (u32) gid;
 
-                    // Use SPH-summation density (from compute_omega, communicated to ghosts)
-                    Tscal rho = density[i];
-                    rho       = sycl::max(rho, Tscal(1e-30));
+                // Use SPH-summation density (from compute_omega, communicated to ghosts)
+                Tscal rho = density[i];
+                rho       = sycl::max(rho, Tscal(1e-30));
 
-                    if (has_uint && uint_ptr != nullptr) {
-                        // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
-                        // P = (\gamma - 1) * \rho * u
-                        Tscal u = uint_ptr[i];
-                        u       = sycl::max(u, Tscal(1e-30));
-                        Tscal P = (gamma - Tscal(1.0)) * rho * u;
+                if (has_uint && uint_ptr != nullptr) {
+                    // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
+                    // P = (\gamma - 1) * \rho * u
+                    Tscal u = uint_ptr[i];
+                    u       = sycl::max(u, Tscal(1e-30));
+                    Tscal P = (gamma - Tscal(1.0)) * rho * u;
 
-                        // Sound speed from internal energy (reference: solver.cpp line 2661)
-                        // c = sqrt(\gamma * (\gamma - 1) * u)
-                        Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
+                    // Sound speed from internal energy (reference: solver.cpp line 2661)
+                    // c = sqrt(\gamma * (\gamma - 1) * u)
+                    Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
 
-                        // Clamp to reasonable values
-                        P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                        cs = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
+                    // Clamp to reasonable values
+                    P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
+                    cs = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
 
-                        pressure[i]   = P;
-                        soundspeed[i] = cs;
-                    } else {
-                        // Isothermal case
-                        Tscal cs = Tscal(1.0);
-                        Tscal P  = cs * cs * rho;
+                    pressure[i]   = P;
+                    soundspeed[i] = cs;
+                } else {
+                    // Isothermal case
+                    Tscal cs = Tscal(1.0);
+                    Tscal P  = cs * cs * rho;
 
-                        pressure[i]   = P;
-                        soundspeed[i] = cs;
-                    }
-                });
+                    pressure[i]   = P;
+                    soundspeed[i] = cs;
+                }
             });
-
-            // Complete all buffer event states
-            buf_density.complete_event_state(e);
-            if (has_uint) {
-                mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
-            }
-            pressure_buf.complete_event_state(e);
-            soundspeed_buf.complete_event_state(e);
         });
+
+        // Complete all buffer event states
+        buf_density.complete_event_state(e);
+        if (has_uint) {
+            mpdat.get_field_buf_ref<Tscal>(iuint_interf).complete_event_state(e);
+        }
+        pressure_buf.complete_event_state(e);
+        soundspeed_buf.complete_event_state(e);
+    });
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1366,7 +1316,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
     grad_vy_field.ensure_sizes(counts);
     grad_vz_field.ensure_sizes(counts);
 
-    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    auto &merged_xyzh = storage.merged_xyzh.get();
     auto &neigh_cache = storage.neigh_cache->neigh_cache;
 
     static constexpr Tscal Rkern = Kernel::Rkern;
@@ -1881,7 +1831,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     reset_presteps_rint();
     clear_merged_pos_trees();
     reset_merge_ghosts_fields();
-    shambase::get_check_ref(storage.merged_xyzh).free_alloc();
+    storage.merged_xyzh.reset();
     clear_ghost_cache();
     reset_serial_patch_tree();
     reset_ghost_handler();

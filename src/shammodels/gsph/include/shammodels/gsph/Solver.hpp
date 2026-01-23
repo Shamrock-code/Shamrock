@@ -89,9 +89,7 @@ namespace shammodels::gsph {
 
         // Serial patch tree control
         void gen_serial_patch_tree();
-        inline void reset_serial_patch_tree() {
-            shambase::get_check_ref(storage.serial_patch_tree).free_alloc();
-        }
+        inline void reset_serial_patch_tree() { storage.serial_patch_tree.reset(); }
 
         // Ghost handling - use GSPH ghost handler with Newtonian field names
         using GhostHandle      = GSPHGhostHandler<Tvec>;

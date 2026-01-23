@@ -84,9 +84,10 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
         = has_uint ? ghost_layout.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
     // Get merged data and caches from storage
-    auto &merged_xyzh                                 = shambase::get_check_ref(storage.merged_xyzh).get_data();
-    shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
-    shambase::DistributedData<PatchDataLayer> &mpdats = shambase::get_check_ref(storage.merged_patchdata_ghost).get_data();
+    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    shamrock::solvergraph::Field<Tscal> &omega_field = shambase::get_check_ref(storage.omega);
+    shambase::DistributedData<PatchDataLayer> &mpdats
+        = shambase::get_check_ref(storage.merged_patchdata_ghost).get_data();
 
     // Get pressure and soundspeed from storage (includes ghosts)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
@@ -300,9 +301,10 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
     u32 iuint_interf
         = has_uint ? ghost_layout.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
-    auto &merged_xyzh                                 = shambase::get_check_ref(storage.merged_xyzh).get_data();
-    shamrock::solvergraph::Field<Tscal> &omega_field  = shambase::get_check_ref(storage.omega);
-    shambase::DistributedData<PatchDataLayer> &mpdats = shambase::get_check_ref(storage.merged_patchdata_ghost).get_data();
+    auto &merged_xyzh = shambase::get_check_ref(storage.merged_xyzh).get_data();
+    shamrock::solvergraph::Field<Tscal> &omega_field = shambase::get_check_ref(storage.omega);
+    shambase::DistributedData<PatchDataLayer> &mpdats
+        = shambase::get_check_ref(storage.merged_patchdata_ghost).get_data();
 
     // Get pressure and soundspeed from storage (includes ghosts)
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);

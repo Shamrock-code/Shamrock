@@ -951,9 +951,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 )==")
         .def(
             "init_from_phantom_dump",
-            [](T &self, PhantomDump &dump) {
-                self.init_from_phantom_dump(dump);
-            })
+            [](T &self, PhantomDump &dump, Tscal hpart_fact_load) {
+                self.init_from_phantom_dump(dump, hpart_fact_load);
+            },
+            py::arg("dump"),
+            py::arg("hpart_fact_load") = 1.0)
         .def(
             "make_phantom_dump",
             [](T &self) {

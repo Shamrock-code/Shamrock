@@ -14,7 +14,7 @@
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
- * @brief Storage for GSPH solver runtime data with SolverGraph integration
+ * @brief Storage for GSPH solver runtime data with
  *
  * This file contains the storage structure for GSPH solver runtime data,
  * including neighbor caches, ghost data, and field storage.
@@ -52,7 +52,7 @@ namespace shammodels::gsph {
     using Component = shambase::StorageComponent<T>;
 
     /**
-     * @brief Runtime storage for GSPH solver with SolverGraph integration
+     * @brief Runtime storage for GSPH solver
      *
      * Stores all temporary data needed during GSPH simulation steps:
      * - Neighbor caches for particle interactions
@@ -79,17 +79,8 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
-        // =====================================================================
-        // SolverGraph infrastructure
-        // =====================================================================
-
-        /// Central graph for managing edges (data) and nodes (operations)
+        // main solver graph for GSPH
         shamrock::solvergraph::SolverGraph solver_graph;
-
-        // =====================================================================
-        // SolverGraph edges - Particle counts and indices
-        // =====================================================================
-
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -104,17 +95,8 @@ namespace shammodels::gsph {
         /// Patch rank ownership
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
-        // =====================================================================
-        // SolverGraph edge - Ghost handler (migrated to solvergraph)
-        // =====================================================================
-
         /// Ghost handler for boundary particles - managed via SolverGraph
         std::shared_ptr<solvergraph::GhostHandlerEdge<Tvec>> ghost_handler;
-
-        // =====================================================================
-        // Component storage (legacy pattern, migrate later)
-        // =====================================================================
-
         /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 

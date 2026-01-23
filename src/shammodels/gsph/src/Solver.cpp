@@ -91,6 +91,12 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.ghost_handler = storage.solver_graph.register_edge(
         "ghost_handler", solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
 
+    // Register serial patch tree reference edge for dependency tracking
+    storage.serial_patch_tree_ref = storage.solver_graph.register_edge(
+        "serial_patch_tree",
+        shamrock::solvergraph::SerialPatchTreeRefEdge<Tvec>(
+            "serial_patch_tree", "\\mathcal{T}_{\\rm patch}"));
+
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
     storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
@@ -125,6 +131,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_serial_patch_tree() {
     SerialPatchTree<Tvec> _sptree = SerialPatchTree<Tvec>::build(scheduler());
     _sptree.attach_buf();
     storage.serial_patch_tree.set(std::move(_sptree));
+
+    // Set solvergraph edge reference to the stored tree
+    shambase::get_check_ref(storage.serial_patch_tree_ref).patch_tree = storage.serial_patch_tree.get();
 }
 
 template<class Tvec, template<class> class Kern>

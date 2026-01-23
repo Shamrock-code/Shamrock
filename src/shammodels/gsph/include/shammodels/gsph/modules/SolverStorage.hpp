@@ -36,6 +36,7 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SerialPatchTreeEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -74,6 +75,7 @@ namespace shammodels::gsph {
 
         shamrock::solvergraph::SolverGraph solver_graph;
 
+
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -88,7 +90,14 @@ namespace shammodels::gsph {
         /// Patch rank ownership
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
-        /// Serial patch tree for load balancing
+        /// Serial patch tree reference for solvergraph dependency tracking
+        std::shared_ptr<shamrock::solvergraph::SerialPatchTreeRefEdge<Tvec>> serial_patch_tree_ref;
+
+        // =====================================================================
+        // Component storage (tree storage, migrate to solvergraph later)
+        // =====================================================================
+
+        /// Serial patch tree for load balancing (actual storage)
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 
         /// Ghost handler for boundary particles

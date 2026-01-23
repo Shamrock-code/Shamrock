@@ -111,10 +111,6 @@ namespace shammodels::gsph {
         Component<shambase::DistributedData<shamtree::KarrasRadixTreeField<Tscal>>>
             rtree_rint_field;
 
-        // =====================================================================
-        // SolverGraph edges - Computed fields
-        // =====================================================================
-
         /// Grad-h correction factor (Omega)
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> omega;
 

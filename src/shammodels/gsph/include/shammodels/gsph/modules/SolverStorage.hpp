@@ -58,11 +58,6 @@ namespace shammodels::gsph {
      * - Computed fields (pressure, sound speed, omega)
      * - Tree structures for neighbor search
      *
-     * The ghost_handler is managed via SolverGraph for explicit data
-     * dependency tracking. Other infrastructure objects (serial_patch_tree,
-     * ghost_patch_cache, merged_xyzh, merged_patchdata_ghost) remain as
-     * Component<> storage.
-     *
      * @tparam Tvec Vector type (e.g., f64_3)
      * @tparam Tmorton Morton code type for tree construction
      */

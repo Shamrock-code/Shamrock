@@ -22,7 +22,6 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
-#include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shamphys/mhd.hpp"
 
 template<class Tvec, template<class> class SPHKernel>

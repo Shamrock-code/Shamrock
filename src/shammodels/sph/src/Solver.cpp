@@ -2086,7 +2086,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             set_uint_with_ghost_refs.evaluate();
             set_luminosity_refs.evaluate();
 
-            Tscal alpha_u = av_config.get_alpha_u().value();
+            Tscal alpha_u = solver_config.artif_viscosity.get_alpha_u().value();
 
             modules::NodeComputeLuminosity<Tvec, Kern> compute_luminosity{
                 solver_config.gpart_mass, alpha_u};

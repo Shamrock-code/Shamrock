@@ -62,8 +62,7 @@ namespace shammodels::sph {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config   = SolverConfig<Tvec, SPHKernel>;
-        using AVConfig = AVConfig<Tvec>;
+        using Config = SolverConfig<Tvec, SPHKernel>;
 
         using u_morton = typename Config::u_morton;
 
@@ -75,7 +74,6 @@ namespace shammodels::sph {
         SolverStorage<Tvec, u_morton> storage{};
 
         Config solver_config;
-        AVConfig av_config;
         SolverLog solve_logs;
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }

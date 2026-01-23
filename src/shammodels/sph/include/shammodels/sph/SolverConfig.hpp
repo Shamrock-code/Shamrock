@@ -508,7 +508,7 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    /// Check if the EOS is an polytropic equation of state
+    /// Check if the EOS is a polytropic equation of state
     inline bool is_eos_polytropic() {
         using T = typename EOSConfig::Polytropic;
         return bool(std::get_if<T>(&eos_config.config));
@@ -517,6 +517,12 @@ struct shammodels::sph::SolverConfig {
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is a Fermi equation of state
+    inline bool is_eos_fermi() {
+        using T = typename EOSConfig::Fermi;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
@@ -568,6 +574,13 @@ struct shammodels::sph::SolverConfig {
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);
     }
+
+    /**
+     * @brief Set the EOS configuration to a Fermi equation of state
+     *
+     * @param mu_e The mean molecular weight
+     */
+    inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)

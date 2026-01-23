@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcomm/mpiInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamsys::instance {
@@ -78,6 +79,15 @@ namespace shamsys::instance {
             },
             R"pbdoc(
             Return true if the node instance is initialized
+            )pbdoc");
+
+        m.def(
+            "mpi_barrier",
+            []() {
+                shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+            },
+            R"pbdoc(
+            Call the MPI barrier
             )pbdoc");
     }
 } // namespace shamsys::instance

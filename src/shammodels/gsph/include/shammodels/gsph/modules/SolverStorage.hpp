@@ -35,7 +35,11 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
+
+// GSPH solvergraph edges
+#include "shammodels/gsph/solvergraph/GhostCacheEdge.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/KarrasRadixTreeField.hpp"
 #include "shamtree/RadixTree.hpp"
@@ -70,6 +74,17 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
+        // =====================================================================
+        // SolverGraph infrastructure
+        // =====================================================================
+
+        /// Central graph for managing edges (data) and nodes (operations)
+        shamrock::solvergraph::SolverGraph solver_graph;
+
+        // =====================================================================
+        // SolverGraph edges
+        // =====================================================================
+
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -89,7 +104,9 @@ namespace shammodels::gsph {
 
         /// Ghost handler for boundary particles
         Component<GhostHandle> ghost_handler;
-        Component<GhostHandleCache> ghost_patch_cache;
+
+        /// Ghost interface cache - managed via SolverGraph
+        std::shared_ptr<solvergraph::GhostCacheEdge<Tvec>> ghost_cache;
 
         /// Merged position-h data for neighbor search
         Component<shambase::DistributedData<shamrock::patch::PatchDataLayer>> merged_xyzh;

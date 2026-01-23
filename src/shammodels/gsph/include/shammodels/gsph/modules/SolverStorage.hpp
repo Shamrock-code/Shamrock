@@ -44,7 +44,6 @@
 
 // SolverGraph edge for ghost handler
 #include "shammodels/gsph/solvergraph/GhostHandlerEdge.hpp"
-
 #include <memory>
 
 namespace shammodels::gsph {

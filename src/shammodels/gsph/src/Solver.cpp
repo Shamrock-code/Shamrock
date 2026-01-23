@@ -89,8 +89,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
 
     // Register ghost handler in solvergraph for explicit data dependency tracking
     storage.ghost_handler = storage.solver_graph.register_edge(
-        "ghost_handler",
-        solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
+        "ghost_handler", solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
 
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
@@ -148,25 +147,31 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
     // Note: Wall boundaries use Periodic with dynamic wall particles
     if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
         shambase::get_check_ref(storage.ghost_handler)
-            .set(GhostHandle{
-                scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+            .set(
+                GhostHandle{
+                    scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCPeriodic *c
         = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
         shambase::get_check_ref(storage.ghost_handler)
-            .set(GhostHandle{
-                scheduler(), BCPeriodic{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+            .set(
+                GhostHandle{
+                    scheduler(),
+                    BCPeriodic{},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
     } else if (
         SolverBCShearingPeriodic *c
         = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
         // Shearing periodic boundaries (Stone 2010) - reuse SPH implementation
         shambase::get_check_ref(storage.ghost_handler)
-            .set(GhostHandle{
-                scheduler(),
-                BCShearingPeriodic{
-                    c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                storage.patch_rank_owner,
-                storage.xyzh_ghost_layout});
+            .set(
+                GhostHandle{
+                    scheduler(),
+                    BCShearingPeriodic{
+                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
     } else {
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
@@ -196,8 +201,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
     storage.merged_xyzh.set(
-        shambase::get_check_ref(storage.ghost_handler).get().build_comm_merge_positions(
-            storage.ghost_patch_cache.get()));
+        shambase::get_check_ref(storage.ghost_handler)
+            .get()
+            .build_comm_merge_positions(storage.ghost_patch_cache.get()));
 
     // Get field indices from xyzh_ghost_layout
     const u32 ixyz_ghost

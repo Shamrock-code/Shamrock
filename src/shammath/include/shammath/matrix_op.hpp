@@ -697,4 +697,58 @@ namespace shammath {
         }
     }
 
+    /**
+* @brief This function solves a system of linear equations with Cholesky decomposition. The
+system must have the form
+\f[
+    Mx = y
+\f]
+where $M$ is a (real) symmetric, definite-positive square matrix.
+* @param M a square symmetric, definite-positive matrix
+* @param y a vector, right hand side of the system
+* @param x the ouput vector to store the solution of the system
+*/
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3>
+    inline void Cholesky_solve(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &y,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &x) {
+
+        SHAM_ASSERT(M.extent(1) == M.extent(0));
+        SHAM_ASSERT(M.extent(1) == x.extent(0));
+        SHAM_ASSERT(M.extent(0) == y.extent(0));
+
+        std::vector<T> a_storage(M.extent(0));
+        std::vector<T> L_storage(M.extent(0) * M.extent(1));
+
+        std::mdspan<T, Extents1> L{L_storage.data()};
+        std::mdspan<T, Extents3> a{a_storage.data()};
+        Cholesky_decomp(M, L);
+
+        for (int i = 0; i < M.extent(0); i++) {
+            T sum = 0.0;
+            for (int k = 0; k < i; k++) {
+                sum += L(i, k) * a(k);
+            }
+            a(i) = (y(i) - sum) / L(i, i);
+        }
+        for (int i = M.extent(0) - 1; i >= 0; i--) {
+            T sum = 0.0;
+            for (int k = i + 1; k < M.extent(0); k++) {
+                sum += L(k, i) * x(k);
+            }
+            x(i) = (a(i) - sum) / L(i, i);
+        }
+    }
+
 } // namespace shammath

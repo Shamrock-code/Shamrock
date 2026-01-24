@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shambase/aliases_float.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -511,4 +512,33 @@ TestStart(Unittest, "shammath/matrix::Cholesky_decomp", Cholesky_decomp, 1) {
     };
     shammath::Cholesky_decomp(M.get_mdspan(), L.get_mdspan());
     REQUIRE_EQUAL(L.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::Cholesky_solve", Cholesky_solve, 1) {
+    shammath::mat<f32, 3, 3> M{
+        // clang-format off
+        6,15,55,
+        15,55,225,
+        55,225,979
+        // clang-format on
+    };
+
+    shammath::vec<f32, 3> y{
+        // clang-format off
+        76,295,1259
+        // clang-format on
+    };
+
+    shammath::vec<f32, 3> x;
+    shammath::vec<f32, 3> ex_res{
+        // clang-format off
+        1,1,1
+        // clang-format on
+    };
+    shammath::Cholesky_solve(M.get_mdspan(), y.get_mdspan(), x.get_mdspan());
+    REQUIRE_EQUAL_CUSTOM_COMP_NAMED("", x.data, ex_res.data, [](const auto &p1, const auto &p2) {
+        return sycl::pow(p1[0] - p2[0], 2) + sycl::pow(p1[0] - p2[0], 2)
+                   + sycl::pow(p1[0] - p2[0], 2)
+               < 1e-9;
+    });
 }

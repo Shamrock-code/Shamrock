@@ -680,7 +680,7 @@ namespace shammath {
         SHAM_ASSERT(M.extent(0) == L.extent(0));
         SHAM_ASSERT(L.extent(1) == L.extent(0));
 
-        for (int i = 0; i <= M.extent(0); i++) {
+        for (int i = 0; i < M.extent(0); i++) {
             T sum_ik = 0.0;
             for (int k = 0; k < i; k++) {
                 sum_ik += L(i, k) * L(i, k);

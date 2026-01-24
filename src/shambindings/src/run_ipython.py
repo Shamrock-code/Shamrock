@@ -22,4 +22,4 @@ import shamrock
 ###
 """
 
-start_ipython(config=c)
+start_ipython(argv=[], config=c)

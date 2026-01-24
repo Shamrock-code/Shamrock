@@ -18,9 +18,8 @@
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shamalgs/memory.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/gsph/config/FieldNames.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
-#include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
@@ -36,7 +35,7 @@ namespace {
 
         shamlog_debug_mpi_ln("gsph::vtk", "rank count =", num_obj);
 
-        const u32 ixyz                          = sched.pdl().get_field_idx<Tvec>("xyz");
+        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
         std::unique_ptr<sycl::buffer<Tvec>> pos = sched.rankgather_field<Tvec>(ixyz);
 
         writer.write_points(pos, num_obj);
@@ -106,26 +105,6 @@ namespace {
     }
 
     template<class T>
-    void vtk_dump_add_compute_field(
-        PatchScheduler &sched,
-        shamrock::LegacyVtkWritter &writter,
-        shamrock::ComputeField<T> &field,
-        std::string field_dump_name) {
-        StackEntry stack_loc{};
-
-        using namespace shamrock::patch;
-        u64 num_obj = sched.get_rank_count();
-
-        if (num_obj > 0) {
-            std::unique_ptr<sycl::buffer<T>> field_vals = field.rankgather_computefield(sched);
-
-            writter.write_field(field_dump_name, field_vals, num_obj);
-        } else {
-            writter.write_field_no_buf<T>(field_dump_name);
-        }
-    }
-
-    template<class T>
     void vtk_dump_add_field(
         PatchScheduler &sched,
         shamrock::LegacyVtkWritter &writter,
@@ -156,92 +135,23 @@ namespace shammodels::gsph::modules {
 
         using namespace shamrock;
         using namespace shamrock::patch;
-        shamrock::SchedulerUtility utility(scheduler());
+
+        using namespace gsph::names;
 
         PatchDataLayerLayout &pdl = scheduler().pdl();
-        const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-        const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-        const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-        const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+        const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
+        const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
+        const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
+
+        // Thermodynamic fields from patchdata (computed during timestep, persistent across
+        // restarts)
+        const u32 idensity    = pdl.get_field_idx<Tscal>(gsph::names::newtonian::density);
+        const u32 ipressure   = pdl.get_field_idx<Tscal>(gsph::names::newtonian::pressure);
+        const u32 isoundspeed = pdl.get_field_idx<Tscal>(gsph::names::newtonian::soundspeed);
 
         // Check for optional internal energy field
         const bool has_uint = solver_config.has_field_uint();
-        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>("uint") : 0;
-
-        // Compute density field from smoothing length
-        ComputeField<Tscal> density = utility.make_compute_field<Tscal>("rho", 1);
-
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-            shamlog_debug_ln("gsph::vtk", "compute rho field for patch ", p.id_patch);
-
-            auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
-
-            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-            auto &q   = sptr->get_queue();
-
-            sham::EventList depends_list;
-            const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
-            auto acc_rho       = density.get_buf(p.id_patch).get_write_access(depends_list);
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal part_mass = solver_config.gpart_mass;
-
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 gid = (u32) item.get_id();
-                    using namespace shamrock::sph;
-                    Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-                    acc_rho[gid] = rho_ha;
-                });
-            });
-
-            buf_hpart.complete_event_state(e);
-            density.get_buf(p.id_patch).complete_event_state(e);
-        });
-
-        // Compute pressure field from EOS
-        ComputeField<Tscal> pressure_field = utility.make_compute_field<Tscal>("P", 1);
-
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-            auto &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
-
-            auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-            auto &q   = sptr->get_queue();
-
-            sham::EventList depends_list;
-            const Tscal *acc_h = buf_hpart.get_read_access(depends_list);
-            auto acc_P         = pressure_field.get_buf(p.id_patch).get_write_access(depends_list);
-
-            const Tscal *acc_u = nullptr;
-            if (has_uint) {
-                acc_u = pdat.get_field<Tscal>(iuint).get_buf().get_read_access(depends_list);
-            }
-
-            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                const Tscal part_mass = solver_config.gpart_mass;
-                const Tscal gamma     = solver_config.get_eos_gamma();
-                const bool do_uint    = has_uint;
-
-                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                    u32 gid = (u32) item.get_id();
-                    using namespace shamrock::sph;
-                    Tscal rho = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
-
-                    if (do_uint && acc_u != nullptr) {
-                        // Adiabatic EOS: P = (gamma - 1) * rho * u
-                        acc_P[gid] = (gamma - Tscal(1)) * rho * acc_u[gid];
-                    } else {
-                        // Isothermal: use cs = 1 by default
-                        acc_P[gid] = rho; // P = cs^2 * rho with cs = 1
-                    }
-                });
-            });
-
-            buf_hpart.complete_event_state(e);
-            pressure_field.get_buf(p.id_patch).complete_event_state(e);
-            if (has_uint) {
-                pdat.get_field<Tscal>(iuint).get_buf().complete_event_state(e);
-            }
-        });
+        const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
         shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
         writter.add_point_data_section();
@@ -256,6 +166,7 @@ namespace shammodels::gsph::modules {
         fnum++; // a
         fnum++; // rho
         fnum++; // P
+        fnum++; // cs
 
         if (has_uint) {
             fnum++; // u
@@ -276,8 +187,10 @@ namespace shammodels::gsph::modules {
             vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
         }
 
-        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
-        vtk_dump_add_compute_field(scheduler(), writter, pressure_field, "P");
+        // Read precomputed thermodynamic fields from patchdata
+        vtk_dump_add_field<Tscal>(scheduler(), writter, idensity, "rho");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, ipressure, "P");
+        vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "cs");
     }
 
 } // namespace shammodels::gsph::modules

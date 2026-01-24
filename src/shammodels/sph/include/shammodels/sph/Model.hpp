@@ -100,7 +100,7 @@ namespace shammodels::sph {
         }
 
         SolverConfig gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error);
-        void init_from_phantom_dump(PhantomDump &phdump);
+        void init_from_phantom_dump(PhantomDump &phdump, Tscal hpart_fact_load = 1.0);
         PhantomDump make_phantom_dump();
 
         void do_vtk_dump(std::string filename, bool add_patch_world_id) {

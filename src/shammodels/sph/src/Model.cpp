@@ -1224,7 +1224,8 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
+    PhantomDump &phdump, Tscal hpart_fact_load) {
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
@@ -1353,7 +1354,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
                 ins_vxyz.push_back(vxyz[i]);
             }
             for (u64 i : sel_index) {
-                ins_h.push_back(h[i]);
+                ins_h.push_back(h[i] * hpart_fact_load);
             }
             if (u.size() > 0) {
                 for (u64 i : sel_index) {

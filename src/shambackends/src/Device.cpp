@@ -20,9 +20,13 @@
 #include "shambase/numeric_limits.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sysinfo.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include <fmt/ranges.h>
+
+auto SHAM_MAX_ALLOC_SIZE
+    = shamcmdopt::getenv_str_register("SHAM_MAX_ALLOC_SIZE", "shamrock max alloc size if set");
 
 namespace sham {
 
@@ -207,12 +211,13 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
+        auto physmem = sham::getPhysicalMemory();
+
 // On acpp 2^64-1 is returned, so we need to correct it
 // see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573
 #ifdef SYCL_COMP_ACPP
         if (get_device_backend(dev) == Backend::OPENMP) {
             // Correct memory size
-            auto physmem = sham::getPhysicalMemory();
             if (physmem) {
                 global_mem_size = {*physmem};
             }
@@ -250,6 +255,24 @@ namespace sham {
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
 
+        size_t max_alloc_dev  = shambase::get_check_ref(max_mem_alloc_size);
+        size_t max_alloc_host = ((physmem) ? *physmem : i64_max);
+        if (SHAM_MAX_ALLOC_SIZE) {
+            try {
+                const auto max_alloc = std::stoull(SHAM_MAX_ALLOC_SIZE.value());
+                max_alloc_dev        = max_alloc;
+                max_alloc_host       = max_alloc;
+            } catch (const std::exception &e) {
+                logger::warn_ln(
+                    "Backends",
+                    shambase::format(
+                        "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
+                        "Ignoring override.",
+                        SHAM_MAX_ALLOC_SIZE.value(),
+                        e.what()));
+            }
+        }
+
         return DeviceProperties{
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
@@ -259,7 +282,8 @@ namespace sham {
             shambase::get_check_ref(global_mem_cache_size),
             shambase::get_check_ref(local_mem_size),
             shambase::get_check_ref(max_compute_units),
-            shambase::get_check_ref(max_mem_alloc_size),
+            max_alloc_dev,
+            max_alloc_host,
             shambase::get_check_ref(mem_base_addr_align),
             shambase::get_check_ref(sub_group_sizes),
             default_work_group_size};

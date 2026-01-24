@@ -91,6 +91,11 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("deltav", ndust);
             pdl.add_field<Tvec>("dtdeltav", ndust);
         }
+
+        if (compute_luminosity) {
+            pdl.add_field<Tscal>("luminosity", 1);
+        }
+
         if (do_MHD_debug()) {
             pdl.add_field<Tvec>("gas_pressure", 1);
             pdl.add_field<Tvec>("mag_pressure", 1);

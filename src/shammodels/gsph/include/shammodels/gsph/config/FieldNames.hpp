@@ -79,6 +79,17 @@ namespace shammodels::gsph::names {
         inline constexpr const char *grad_vz = "grad_vz";
     } // namespace newtonian
 
+    // ========================================================================
+    // Internal temporary field names (for compute fields)
+    // ========================================================================
+    namespace internal {
+        /// Old acceleration (for corrector step)
+        inline constexpr const char *old_axyz = "old_axyz";
+
+        /// Old internal energy derivative (for corrector step)
+        inline constexpr const char *old_duint = "old_duint";
+    } // namespace internal
+
 } // namespace shammodels::gsph::names
 
 // ============================================================================

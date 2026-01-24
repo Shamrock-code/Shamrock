@@ -75,6 +75,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             &TConfig::set_smoothing_length_density_based_neigh_lim)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
+        .def("use_luminosity", &TConfig::use_luminosity)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_polytropic", &TConfig::set_eos_polytropic)
@@ -95,6 +96,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("h_over_r"))
+        .def(
+            "set_eos_fermi",
+            [](TConfig &self, Tscal mu_e) {
+                self.set_eos_fermi(mu_e);
+            },
+            py::kw_only(),
+            py::arg("mu_e"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",
@@ -944,9 +952,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 )==")
         .def(
             "init_from_phantom_dump",
-            [](T &self, PhantomDump &dump) {
-                self.init_from_phantom_dump(dump);
-            })
+            [](T &self, PhantomDump &dump, Tscal hpart_fact_load) {
+                self.init_from_phantom_dump(dump, hpart_fact_load);
+            },
+            py::arg("dump"),
+            py::arg("hpart_fact_load") = 1.0)
         .def(
             "make_phantom_dump",
             [](T &self) {

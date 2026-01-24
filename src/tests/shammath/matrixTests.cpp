@@ -490,3 +490,25 @@ TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
     shammath::mat_gemv(a, B.get_mdspan(), x.get_mdspan(), b, y.get_mdspan());
     REQUIRE_EQUAL(y.data, ex_res.data);
 }
+
+TestStart(Unittest, "shammath/matrix::Cholesky_decomp", Cholesky_decomp, 1) {
+    shammath::mat<f32, 4, 4> M{
+        // clang-format off
+         1, 1, 1, 1,
+         1, 5, 5, 5,
+         1, 5, 14, 14,
+        1, 5, 14, 15,
+        // clang-format on
+    };
+    shammath::mat<f32, 4, 4> L;
+    shammath::mat<f32, 4, 4> ex_res{
+        // clang-format off
+        1,0,0,0,
+        1,2,0,0,
+        1,2,3,0,
+        1,2,3,1
+        // clang-format on
+    };
+    shammath::Cholesky_decomp(M.get_mdspan(), L.get_mdspan());
+    REQUIRE_EQUAL(L.data, ex_res.data);
+}

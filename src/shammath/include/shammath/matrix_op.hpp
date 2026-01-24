@@ -11,6 +11,7 @@
 
 /**
  * @file matrix_op.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
@@ -650,6 +651,49 @@ namespace shammath {
                 sum += M(i, j) * x(j);
             }
             y(i) = alpha * sum + beta * y(i);
+        }
+    }
+
+    /**
+     * @brief This function performs Cholesky decomposition. From a (real) symmetric,
+     definite-positive square matrix $M$, return a lower triangular matrix $L$ such that
+     \f[
+        M = L L^T
+     \f]
+     * @param M a square symmetric, definite-positive matrix
+     * @param L the output matrix to store the lower triangular matrix obtained by Cholesky
+     decomposition
+     */
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void Cholesky_decomp(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &L) {
+
+        SHAM_ASSERT(M.extent(1) == M.extent(0));
+        SHAM_ASSERT(M.extent(0) == L.extent(0));
+        SHAM_ASSERT(L.extent(1) == L.extent(0));
+
+        for (int i = 0; i <= M.extent(0); i++) {
+            T sum_ik = 0.0;
+            for (int k = 0; k < i; k++) {
+                sum_ik += L(i, k) * L(i, k);
+            }
+            L(i, i) = sycl::sqrt(M(i, i) - sum_ik);
+            for (int j = i + 1; j < M.extent(1); j++) {
+                T sum_ikjk = 0.0;
+                for (int k = 0; k < i; k++) {
+                    sum_ikjk += L(i, k) * L(j, k);
+                }
+                L(j, i) = (M(i, j) - sum_ikjk) / L(i, i);
+                L(i, j) = 0.0;
+            }
         }
     }
 

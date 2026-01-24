@@ -492,7 +492,7 @@ TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
     REQUIRE_EQUAL(y.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::Cholesky_decomp", Cholesky_decomp, 1) {
+TestStart(Unittest, "shammath/matrix::Cholesky_decomp", test_Cholesky_decomp, 1) {
     shammath::mat<f32, 4, 4> M{
         // clang-format off
          1, 1, 1, 1,
@@ -514,7 +514,7 @@ TestStart(Unittest, "shammath/matrix::Cholesky_decomp", Cholesky_decomp, 1) {
     REQUIRE_EQUAL(L.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::Cholesky_solve", Cholesky_solve, 1) {
+TestStart(Unittest, "shammath/matrix::Cholesky_solve", test_Cholesky_solve, 1) {
     shammath::mat<f32, 3, 3> M{
         // clang-format off
         6,15,55,

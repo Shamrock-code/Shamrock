@@ -133,7 +133,7 @@ namespace shammodels {
             config = LocallyIsothermalFA2014{h_over_r};
         }
 
-        inline void set_locally_isothermalFA2014Extended(
+        inline void set_locally_isothermalFA2014_extended(
             Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
             config = LocallyIsothermalFA2014Extended{cs0, q, r0, n_sinks};
         }

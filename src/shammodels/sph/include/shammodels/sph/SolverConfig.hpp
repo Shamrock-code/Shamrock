@@ -832,6 +832,10 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
 
+    /// @brief Whether to store luminosity
+    bool compute_luminosity = false;
+    inline void use_luminosity(bool enable) { compute_luminosity = enable; }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {

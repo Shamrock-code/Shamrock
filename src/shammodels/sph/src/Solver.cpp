@@ -46,6 +46,7 @@
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
@@ -2016,6 +2017,92 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         prepare_corrector();
 
         update_derivs();
+
+        bool has_luminosity = solver_config.compute_luminosity;
+
+        if (has_luminosity) {
+            const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
+
+            shambase::get_check_ref(storage.hpart_with_ghosts)
+                .set_refs(storage.merged_xyzh.get()
+                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                      return std::ref(mpdat.get_field<Tscal>(
+                                          1)); // hpart is at index 1 in merged_xyzh
+                                  }));
+
+            auto uint_with_ghost = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
+
+            shambase::get_check_ref(storage.hpart_with_ghosts)
+                .set_refs(storage.merged_xyzh.get()
+                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                      return std::ref(mpdat.get_field<Tscal>(1));
+                                  }));
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
+                set_uint_with_ghost_refs(
+                    [&](shamrock::solvergraph::FieldRefs<Tscal> &field_uint_with_ghost_edge) {
+                        shambase::DistributedData<PatchDataLayer> &mpdats
+                            = storage.merged_patchdata_ghost.get();
+
+                        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_uint_with_ghost_refs
+                            = {};
+
+                        scheduler().for_each_patchdata_nonempty(
+                            [&](const Patch p, PatchDataLayer &pdat) {
+                                PatchDataLayer &mpdat = mpdats.get(p.id_patch);
+
+                                auto &field = mpdat.get_field<Tscal>(iuint_interf);
+                                field_uint_with_ghost_refs.add_obj(p.id_patch, std::ref(field));
+                            });
+
+                        field_uint_with_ghost_edge.set_refs(field_uint_with_ghost_refs);
+                    });
+
+            set_uint_with_ghost_refs.set_edges(uint_with_ghost);
+
+            auto luminosity = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
+                set_luminosity_refs(
+                    [&](shamrock::solvergraph::FieldRefs<Tscal> &field_luminosity_edge) {
+                        shambase::DistributedData<PatchDataLayer> &mpdats
+                            = storage.merged_patchdata_ghost.get();
+
+                        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_luminosity_refs
+                            = {};
+
+                        scheduler().for_each_patchdata_nonempty(
+                            [&](const Patch p, PatchDataLayer &pdat) {
+                                auto &field = pdat.get_field<Tscal>(iluminosity);
+                                field_luminosity_refs.add_obj(p.id_patch, std::ref(field));
+                            });
+                        field_luminosity_edge.set_refs(field_luminosity_refs);
+                    });
+
+            set_luminosity_refs.set_edges(luminosity);
+
+            set_uint_with_ghost_refs.evaluate();
+            set_luminosity_refs.evaluate();
+
+            Tscal alpha_u = solver_config.artif_viscosity.get_alpha_u().value();
+
+            modules::NodeComputeLuminosity<Tvec, Kern> compute_luminosity{
+                solver_config.gpart_mass, alpha_u};
+
+            compute_luminosity.set_edges(
+                storage.part_counts_with_ghost,
+                storage.neigh_cache,
+                storage.positions_with_ghosts,
+                storage.hpart_with_ghosts,
+                storage.omega,
+                uint_with_ghost,
+                storage.pressure,
+                luminosity);
+
+            compute_luminosity.evaluate();
+        }
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();

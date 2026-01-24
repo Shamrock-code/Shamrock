@@ -12,6 +12,7 @@
 /**
  * @file AVConfig.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -220,6 +221,23 @@ struct shammodels::sph::AVConfig {
         logger::raw_ln("--- artificial viscosity config (deduced)");
 
         logger::raw_ln("-------------");
+    }
+
+    inline std::optional<Tscal> get_alpha_u() {
+        if (const Constant *v = std::get_if<Constant>(&config)) {
+            return v->alpha_u;
+        } else if (const VaryingMM97 *v = std::get_if<VaryingMM97>(&config)) {
+            return v->alpha_u;
+        } else if (const VaryingCD10 *v = std::get_if<VaryingCD10>(&config)) {
+            return v->alpha_u;
+        } else if (const ConstantDisc *v = std::get_if<ConstantDisc>(&config)) {
+            return v->alpha_u;
+        } else if (const None *v = std::get_if<None>(&config)) {
+            return std::nullopt;
+        } else {
+            shambase::throw_unimplemented();
+            return std::nullopt;
+        }
     }
 };
 

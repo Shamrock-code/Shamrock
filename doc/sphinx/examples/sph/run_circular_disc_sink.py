@@ -373,9 +373,9 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-from shamrock.utils.analysis import perf_history
+from shamrock.utils.analysis import PerfHistory
 
-perf_analysis = perf_history(model, analysis_folder, "perf_history")
+perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
 
 
 def analysis(ianalysis):

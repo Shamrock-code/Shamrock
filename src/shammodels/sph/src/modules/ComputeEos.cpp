@@ -412,10 +412,15 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         for (auto &s : sink_parts) {
             sink_pos.push_back(s.pos);
             sink_mass.push_back(s.mass);
+            sink_cnt++;
             if (sink_pos.size() >= n_sinks) { // We only consider the first n_sinks sinks
                 break;
             }
-            sink_cnt++;
+        }
+
+        if (sink_cnt == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "No sinks found for the equation of state");
         }
 
         sycl::buffer<Tvec> sink_pos_buf{sink_pos};

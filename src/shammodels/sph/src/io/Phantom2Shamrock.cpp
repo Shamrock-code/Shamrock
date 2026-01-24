@@ -47,11 +47,11 @@ namespace shammodels::sph {
             f64 cs0, q, r0;
             phdump::eos13_load(phdump, cs0, q, r0);
             // u32_max implies all sinks
-            cfg.set_locally_isothermalFA2014Extended(cs0, q, r0, u32_max);
+            cfg.set_locally_isothermalFA2014_extended(cs0, q, r0, u32_max);
         } else if (ieos == 14) {
             f64 cs0, q, r0;
             phdump::eos14_load(phdump, cs0, q, r0);
-            cfg.set_locally_isothermalFA2014Extended(cs0, q, r0, 2);
+            cfg.set_locally_isothermalFA2014_extended(cs0, q, r0, 2);
         } else {
             const std::string msg = "loading phantom ieos=" + std::to_string(ieos)
                                     + " is not implemented in shamrock";

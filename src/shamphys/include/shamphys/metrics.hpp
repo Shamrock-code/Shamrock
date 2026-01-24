@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -15,7 +15,10 @@
  * @brief
  */
 
+#include "shambase/assert.hpp"
+#include "shambackends/math.hpp"
 #include "shamunits/Constants.hpp"
+#include <experimental/mdspan>
 #include <shambackends/sycl.hpp>
 
 namespace shamphys {
@@ -34,8 +37,17 @@ namespace shamphys {
 
     /********************  The Kerr metric  ***********************/
     // ################in CARTESIAN-like form ##################
-    template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_cov_metric_impl(const Kerr<Tscal> &kerr, Tvec pos) {
+    template<
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void get_cartesian_covariant_metric_impl(
+        const Kerr<Tscal> &kerr,
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> &pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
 
         // metric params
         static constexpr Tscal a  = kerr.a;
@@ -68,7 +80,6 @@ namespace shamphys {
         Tscal gtphi_on_x2py2 = -rs * r * a / (rho2 * a2pr2);
 
         // let the fun begin
-        Tvec g(4, 4);
         g(0, 0) = gtt;
         g(1, 0) = -y * gtphi_on_x2py2;
         g(2, 0) = x * gtphi_on_x2py2;
@@ -90,12 +101,19 @@ namespace shamphys {
         g(1, 3) = g(3, 1);
         g(2, 3) = g(3, 2);
         g(3, 3) = 1. + ((a2 + r2) * rs * z2) / (delta * r * rho2);
-
-        return g;
     }
 
-    template<class Tscal, class Tvec>
-    inline Tvec get_cartesian_contrav_metric_impl(const Kerr<Tscal> &kerr, Tvec pos) {
+    template<
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void get_cartesian_contravariant_metric_impl(
+        const Kerr<Tscal> &kerr,
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> &pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
 
         // metric params
         static constexpr Tscal a  = kerr.a;
@@ -128,7 +146,6 @@ namespace shamphys {
         Tscal gtphi_on_x2py2 = -rs * r * a / (rho2 * a2pr2);
 
         // let the fun begin
-        Tvec g(4, 4);
         Tscal domegaterm = 1. / (omega * gtphi + gtt);
         g(0, 0)          = domegaterm;
         g(1, 0)          = -y * omega * domegaterm;
@@ -152,13 +169,21 @@ namespace shamphys {
         g(1, 3) = g(3, 1);
         g(2, 3) = g(3, 2);
         g(3, 3) = (r2 - z2) * inv_rho2 + (delta * z2) / (r2 * rho2);
-
-        return g;
     }
 
-    template<class Tscal, class Tvec>
+    template<
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
     inline void metric_cartesian_derivatives_impl(
-        const Kerr<Tscal> &kerr, Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
+        const Kerr<Tscal> &kerr,
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> &pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdx,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdy,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdz) {
 
         // metric params
         static constexpr Tscal a  = kerr.a;
@@ -246,10 +271,6 @@ namespace shamphys {
                        + r * rs * sintheta2 * (2. * dsintheta2dz * rho2 + sintheta2 * z));
 
         // let the fun begin again
-        dgcovdx = Tvec(4, 4, 0.0);
-        dgcovdy = Tvec(4, 4, 0.0);
-        dgcovdz = Tvec(4, 4, 0.0);
-
         // X
         dgcovdx(0, 0) = r * rho21 * rho21 * rs * (-drho2dx + x);
         dgcovdx(0, 1) = x2py21 * (-dgtphidx + 2. * gtphi * x * x2py21) * y;
@@ -448,20 +469,61 @@ namespace shamphys {
     // TODO
 
     /********************  frontend  ***********************/
-    template<class MetricTag, class Tscal, class Tvec>
-    inline Tvec get_cartesian_cov_metric(Tvec pos) {
-        return get_cartesian_cov_metric_impl<Tscal, Tvec>(MetricTag{}, pos);
+    template<
+        class MetricTag,
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void get_cartesian_covariant_metric(
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
+        return get_cartesian_covariant_metric_impl<
+            Tscal,
+            SizeType,
+            Layout1,
+            Layout2,
+            Accessor1,
+            Accessor2>(MetricTag{}, pos, g);
     }
 
-    template<class MetricTag, class Tscal, class Tvec>
-    inline Tvec get_cartesian_contrav_metric(Tvec pos) {
-        return get_cartesian_contrav_metric_impl<Tscal, Tvec>(MetricTag{}, pos);
+    template<
+        class MetricTag,
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void get_cartesian_contravariant_metric(
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
+        return get_cartesian_contravariant_metric_impl<
+            Tscal,
+            SizeType,
+            Layout1,
+            Layout2,
+            Accessor1,
+            Accessor2>(MetricTag{}, pos, g);
     }
 
-    template<class MetricTag, class Tscal, class Tvec>
+    template<
+        class MetricTag,
+        class Tscal,
+        class SizeType,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
     inline void metric_cartesian_derivatives(
-        Tvec pos, Tvec &dgcovdx, Tvec &dgcovdy, Tvec &dgcovdz) {
-        metric_cartesian_derivatives_impl<Tscal, Tvec>(MetricTag{}, pos, dgcovdx, dgcovdy, dgcovdz);
+        const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> pos,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdx,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdy,
+        std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdz) {
+        metric_cartesian_derivatives_impl<Tscal, SizeType, Layout1, Layout2, Accessor1, Accessor2>(
+            MetricTag{}, pos, dgcovdx, dgcovdy, dgcovdz);
     }
 
 } // namespace shamphys

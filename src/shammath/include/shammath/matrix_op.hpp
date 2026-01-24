@@ -80,6 +80,29 @@ namespace shammath {
     }
 
     /**
+     * @brief Update the elements of a vector according to a user-provided function
+     *
+     * @param input The vector to update the elements of
+     * @param func The function to use to update the elements of the matrix. The
+     * function must take two arguments, the first being the value of the
+     * element to update and the second being the index.
+     *
+     * @details The function `func` is called for each element of the vector, and
+     * the value returned by the function is used to update the corresponding
+     * element of the matrix.
+     */
+    template<class T, class Extents, class Layout, class Accessor, class Func>
+    inline void vec_update_vals(
+        const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+
+        shambase::check_functor_signature<void, T &, int>(func);
+
+        for (int i = 0; i < input.extent(0); i++) {
+            func(input(i), i);
+        }
+    }
+
+    /**
      * @brief Set the content of a matrix to the identity matrix
      *
      * @param input1 The matrix to set to the identity matrix

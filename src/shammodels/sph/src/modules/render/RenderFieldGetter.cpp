@@ -72,13 +72,8 @@ namespace shammodels::sph::modules {
                 using namespace shamrock;
                 using namespace shamrock::patch;
                 shamrock::SchedulerUtility utility(scheduler());
-                shamrock::ComputeField<Tscal> unity = utility.make_compute_field<Tscal>("unity", 1);
-
-                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-                    shamlog_debug_ln("sph::vtk", "compute rho field for patch ", p.id_patch);
-
-                    unity.get_buf(p.id_patch).fill(1.0);
-                });
+                shamrock::ComputeField<Tscal> unity
+                    = utility.make_compute_field<Tscal>("unity", 1, 1.0);
 
                 auto field_source_getter
                     = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)

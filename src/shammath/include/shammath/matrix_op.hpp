@@ -655,6 +655,34 @@ namespace shammath {
     }
 
     /**
+     * @brief This function transposes a (square) matrix
+     * @param intput matrix to tranpose
+     * @param output matrix to store the transposed matrix
+     */
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void mat_transpose(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
+
+        SHAM_ASSERT(input.extent(1) == input.extent(0));
+        SHAM_ASSERT(output.extent(1) == output.extent(0));
+        SHAM_ASSERT(input.extent(0) == output.extent(0));
+
+        for (int i = 0; i < input.extent(0); i++) {
+            for (int j = 0; j < input.extent(1); j++) {
+                output(i, j) = input(j, i);
+            }
+        }
+    }
+
+    /**
      * @brief This function performs Cholesky decomposition. From a (real) symmetric,
      definite-positive square matrix $M$, return a lower triangular matrix $L$ such that
      \f[

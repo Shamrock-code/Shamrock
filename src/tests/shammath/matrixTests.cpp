@@ -492,6 +492,26 @@ TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
     REQUIRE_EQUAL(y.data, ex_res.data);
 }
 
+TestStart(Unittest, "shammath/matrix::mat_transpose", test_transpose, 1) {
+    shammath::mat<f32, 3, 3> A{
+        // clang-format off
+        1,2,3,
+        4,5,6,
+        7,8,9
+        // clang-format on
+    };
+    shammath::mat<f32, 3, 3> B;
+    shammath::mat<f32, 3, 3> ex_res{
+        // clang-format off
+        1,4,7,
+        2,5,8,
+        3,6,9
+        // clang-format on
+    };
+    shammath::mat_transpose(A.get_mdspan(), B.get_mdspan());
+    REQUIRE_EQUAL(B.data, ex_res.data);
+}
+
 TestStart(Unittest, "shammath/matrix::Cholesky_decomp", test_Cholesky_decomp, 1) {
     shammath::mat<f32, 4, 4> M{
         // clang-format off

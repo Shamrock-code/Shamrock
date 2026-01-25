@@ -190,7 +190,7 @@ namespace shamsys {
                 dev.prop.mem_base_addr_align,
                 shambase::readable_sizeof(dev.prop.max_mem_alloc_size_dev),
                 shambase::readable_sizeof(dev.prop.max_mem_alloc_size_host),
-                dev.prop.pci_address ? *dev.prop.pci_address : "N/A");
+                dev.prop.pci_address ? *dev.prop.pci_address : "Unknown");
 
             std::unordered_map<std::string, int> devicename_histogram
                 = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");

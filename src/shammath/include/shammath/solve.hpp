@@ -130,7 +130,8 @@ namespace shammath {
 
             sse_trial = 0.0;
             for (int k = 0; k < X.size(); k++) {
-                sse_trial += (Y[k] - f(p_trial, X[k])) * (Y[k] - f(p_trial, X[k]));
+                T residual = Y[k] - f(p_trial, X[k]);
+                sse_trial += residual * residual;
             };
             if (sse_trial > sse) { // Fail -> gradient descent
                 mu /= beta;

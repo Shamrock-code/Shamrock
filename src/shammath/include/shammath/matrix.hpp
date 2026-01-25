@@ -120,6 +120,102 @@ namespace shammath {
         bool operator==(const vec<T, n> &other) { return data == other.data; }
     };
 
+    /**
+     * @brief Matrix class based on std::vector storage and mdspan
+     * @tparam T the type of the matrix entries
+     */
+    template<class T>
+    class mat_d {
+        public:
+        /// The matrix data
+        std::vector<T> data;
+        int rows;
+        int columns;
+
+        mat_d(int rows, int columns) : rows(rows), columns(columns), data(rows * columns) {}
+
+        /// Get the matrix data as a mdspan
+        inline constexpr auto get_mdspan() {
+            return std::mdspan<T, std::dextents<size_t, 2>>(data.data(), rows, columns);
+        }
+
+        /// const overload
+        inline constexpr auto get_mdspan() const {
+            return std::mdspan<const T, std::dextents<size_t, 2>>(data.data(), rows, columns);
+        }
+
+        inline constexpr auto get_rows_nb() { return get_mdspan().extent(0); }
+
+        inline constexpr auto get_columns_nb() { return get_mdspan().extent(1); }
+
+        /// Access the matrix entry at position (i, j)
+        inline constexpr T &operator()(int i, int j) { return get_mdspan()(i, j); }
+
+        /// const overload
+        inline constexpr const T &operator()(int i, int j) const { return get_mdspan()(i, j); }
+
+        /// Check if this matrix is equal to another one
+        bool operator==(const mat_d<T> &other) const { return data == other.data; }
+
+        inline mat_d &operator+=(const mat_d &other) {
+#pragma unroll
+            for (size_t i = 0; i < get_mdspan().extent(0) * get_mdspan().extent(1); i++) {
+                data[i] += other.data[i];
+            }
+            return *this;
+        }
+
+        /// check if this matrix is equal to another one at a given precison
+        bool equal_at_precision(const mat_d<T> &other, const T precision) const {
+            bool res = true;
+            for (auto i = 0; i < get_rows_nb(); i++) {
+                for (auto j = 0; j < get_columns_nb(); j++) {
+                    if (sham::abs(
+                            data[i * get_rows_nb() + j] - other.data[i * get_columns_nb() + j])
+                        >= precision) {
+                        res = false;
+                    }
+                }
+            }
+            return res;
+        }
+    };
+
+    /**
+     * @brief Vector class based on std::array storage and mdspan
+     * @tparam T the type of the vector entries
+     * @tparam n the number of entries
+     */
+    template<class T>
+    class vec_d {
+        public:
+        /// The vector data
+        std::vector<T> data;
+        int size;
+
+        vec_d(int size) : size(size), data(size) {}
+
+        /// Get the vector data as a mdspan
+        inline constexpr auto get_mdspan() {
+            return std::mdspan<T, std::dextents<size_t, 1>>(data.data(), size);
+        }
+
+        /// Get the vector data as a mdspan of a matrix with one column
+        inline constexpr auto get_mdspan_mat_col() {
+            return std::mdspan<T, std::dextents<size_t, 2>>(data.data(), size, 1);
+        }
+
+        /// Get the vector data as a mdspan of a matrix with one row
+        inline constexpr auto get_mdspan_mat_row() {
+            return std::mdspan<T, std::dextents<size_t, 2>>(data.data(), 1, size);
+        }
+
+        /// Access the vector entry at position i
+        inline constexpr T &operator[](int i) { return get_mdspan()(i); }
+
+        /// Check if this vector is equal to another one
+        bool operator==(const vec_d<T> &other) { return data == other.data; }
+    };
 } // namespace shammath
 
 template<class T, int m, int n>

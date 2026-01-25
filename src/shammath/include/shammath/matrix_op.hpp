@@ -693,7 +693,7 @@ namespace shammath {
         const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
         SHAM_ASSERT(input.extent(0) == output.extent(1));
-        SHAM_ASSERT(input.extent(1) == input.extent(0));
+        SHAM_ASSERT(input.extent(1) == output.extent(0));
 
         for (int i = 0; i < output.extent(0); i++) {
             for (int j = 0; j < output.extent(1); j++) {

@@ -69,8 +69,8 @@ namespace shammath {
         /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat<T, m, n> &other, const T precision) const {
             bool res = true;
-            for (auto i = 0; i < m; i++) {
-                for (auto j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < n; j++) {
                     if (sham::abs(data[i * n + j] - other.data[i * n + j]) >= precision) {
                         res = false;
                     }
@@ -145,10 +145,6 @@ namespace shammath {
             return std::mdspan<const T, std::dextents<size_t, 2>>(data.data(), rows, columns);
         }
 
-        inline constexpr auto get_rows_nb() { return get_mdspan().extent(0); }
-
-        inline constexpr auto get_columns_nb() { return get_mdspan().extent(1); }
-
         /// Access the matrix entry at position (i, j)
         inline constexpr T &operator()(int i, int j) { return get_mdspan()(i, j); }
 
@@ -169,10 +165,9 @@ namespace shammath {
         /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat_d<T> &other, const T precision) const {
             bool res = true;
-            for (auto i = 0; i < get_rows_nb(); i++) {
-                for (auto j = 0; j < get_columns_nb(); j++) {
-                    if (sham::abs(
-                            data[i * get_rows_nb() + j] - other.data[i * get_columns_nb() + j])
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < columns; j++) {
+                    if (sham::abs(data[i * columns + j] - other.data[i * columns + j])
                         >= precision) {
                         res = false;
                     }
@@ -183,7 +178,7 @@ namespace shammath {
     };
 
     /**
-     * @brief Vector class based on std::array storage and mdspan
+     * @brief Vector class based on std::vector storage and mdspan
      * @tparam T the type of the vector entries
      * @tparam n the number of entries
      */

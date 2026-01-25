@@ -80,14 +80,22 @@ namespace shammath {
         };
         while (it < maxits) {
 
-            // Construct the Jaobian (finite differences)
+            // Construct the Jacobian (finite differences)
             shammath::mat_d<T> J(data_size, params_nb);
+            std::vector<T> f_at_p(data_size);
+            for (int i = 0; i < data_size; i++) {
+                f_at_p[i] = f(p, X[i]);
+            }
             mat_set_vals(J.get_mdspan(), [&](auto i, auto j) -> T {
-                auto p_plus_dpj = p;
-                T step_scale    = (std::abs(p_plus_dpj[j]) < 1e-6) ? 1e-6 : p_plus_dpj[j];
-                T dpj           = step_scale * 0.001;
-                p_plus_dpj[j] += dpj;
-                return (f(p_plus_dpj, X[i]) - f(p, X[i])) / dpj;
+                T original_p_j = p[j];
+                T step_scale   = (std::abs(original_p_j) < 1e-6) ? 1e-6 : original_p_j;
+                T dpj          = step_scale * 0.001;
+
+                p[j] += dpj;
+                T f_perturbed = f(p, X[i]);
+                p[j]          = original_p_j; // Restore
+
+                return (f_perturbed - f_at_p[i]) / dpj;
             });
 
             shammath::vec_d<T> R(data_size);

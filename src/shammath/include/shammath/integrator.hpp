@@ -62,12 +62,15 @@ namespace shammath {
             u_prev = u;
         };
         u_prev = u0;
+        std::vector<T> X_backward, U_backward;
         for (T x = x0 - step; x > start; x -= step) {
             u = u_prev - ode(u_prev, x) * step;
-            X.insert(X.begin(), x);
-            U.insert(U.begin(), u);
+            X_backward.push_back(x);
+            U_backward.push_back(u);
             u_prev = u;
         }
+        X.insert(X.begin(), X_backward.rbegin(), X_backward.rend());
+        U.insert(U.begin(), U_backward.rbegin(), U_backward.rend());
         return {X, U};
     }
 

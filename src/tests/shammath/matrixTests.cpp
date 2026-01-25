@@ -556,8 +556,8 @@ TestStart(Unittest, "shammath/matrix::Cholesky_solve", test_Cholesky_solve, 1) {
     };
     shammath::Cholesky_solve(M.get_mdspan(), y.get_mdspan(), x.get_mdspan());
     REQUIRE_EQUAL_CUSTOM_COMP_NAMED("", x.data, ex_res.data, [](const auto &p1, const auto &p2) {
-        return sycl::pow(p1[0] - p2[0], 2) + sycl::pow(p1[0] - p2[0], 2)
-                   + sycl::pow(p1[0] - p2[0], 2)
+        return sycl::pow(p1[0] - p2[0], 2) + sycl::pow(p1[1] - p2[1], 2)
+                   + sycl::pow(p1[2] - p2[2], 2)
                < 1e-9;
     });
 }

@@ -155,10 +155,11 @@ namespace shamalgs::collective {
                         send_buf_sizes.push_back(0);
                     }
 
-                    if (tmp_send_offset + message_info.message_size > max_alloc_size) {
+                    if (tmp_send_offset + message_info.message_size >= max_alloc_size) {
                         send_buf_id++;
                         tmp_send_offset = 0;
                         send_buf_sizes.push_back(0);
+                        // logger::info_ln("sparse comm", "is using multiple buffers (send) !");
                     }
 
                     message_info.message_bytebuf_offset_send = {send_buf_id, tmp_send_offset};
@@ -183,10 +184,11 @@ namespace shamalgs::collective {
                         recv_buf_sizes.push_back(0);
                     }
 
-                    if (tmp_recv_offset + message_info.message_size > max_alloc_size) {
+                    if (tmp_recv_offset + message_info.message_size >= max_alloc_size) {
                         recv_buf_id++;
                         tmp_recv_offset = 0;
                         recv_buf_sizes.push_back(0);
+                        // logger::info_ln("sparse comm", "is using multiple buffers (recv) !");
                     }
 
                     message_info.message_bytebuf_offset_recv = {recv_buf_id, tmp_recv_offset};
@@ -199,6 +201,11 @@ namespace shamalgs::collective {
                 message_all[i] = message_info;
             }
         }
+
+        //{
+        //    logger::info_ln("sparse comm", "send_buf_sizes :", send_buf_sizes);
+        //    logger::info_ln("sparse comm", "recv_buf_sizes :", recv_buf_sizes);
+        //}
 
         ////////////////////////////////////////////////////////////
         // now that all comm were computed we can build the send and recv message lists

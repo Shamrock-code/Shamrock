@@ -58,7 +58,7 @@ namespace shammath {
      * to be greater than the number of paremeters.
      */
     template<class T, class Lambda>
-    std::vector<T> least_squares(
+    std::tuple<std::vector<T>, T> least_squares(
         const Lambda &f,
         const std::vector<T> &X,
         const std::vector<T> &Y,
@@ -81,6 +81,11 @@ namespace shammath {
         };
         T sse_trial = 999.0;
         while (it < maxits and sham::abs(sse_trial - sse) > tolerence) {
+            sse = 0.0;
+            for (int k = 0; k < X.size(); k++) {
+                T r = Y[k] - f(p, X[k]);
+                sse += r * r;
+            };
 
             // Construct the Jacobian (finite differences)
             shammath::mat_d<T> J(data_size, params_nb);
@@ -134,9 +139,21 @@ namespace shammath {
                 mu *= beta;
                 p = p_trial;
             }
-            it++;
         };
 
-        return p;
+        T total_sum_squares = 0.0;
+        T mean_Y            = 0.0;
+        for (int k = 0; k < Y.size(); k++) {
+            mean_Y += Y[k];
+        }
+        mean_Y /= Y.size();
+        for (int k = 0; k < Y.size(); k++) {
+            total_sum_squares += (Y[k] - mean_Y) * (Y[k] - mean_Y);
+        }
+        T R2 = 1 - sse / total_sum_squares;
+
+        shamlog_debug_ln(
+            "least_squares", "Least squares stopped after", it, "iterations with R^2=", R2);
+        return {p, R2};
     }
 } // namespace shammath

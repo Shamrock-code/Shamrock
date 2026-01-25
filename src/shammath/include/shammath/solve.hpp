@@ -62,7 +62,9 @@ namespace shammath {
         const Lambda &f,
         const std::vector<T> &X,
         const std::vector<T> &Y,
-        const std::vector<T> &p0) {
+        const std::vector<T> &p0,
+        int maxits  = 1000,
+        T tolerence = 1e-6) {
         SHAM_ASSERT(X.size() == Y.size());
 
         const int params_nb = p0.size();
@@ -71,14 +73,14 @@ namespace shammath {
         std::vector<T> p = p0;
         T mu             = 1e-2; // damping parameter
         T beta           = 0.1;  // decay rate
-        int maxits       = 1000;
         int it           = 0;
         T sse            = 0.0;
         for (int k = 0; k < X.size(); k++) {
             T r = Y[k] - f(p, X[k]);
             sse += r * r;
         };
-        while (it < maxits) {
+        T sse_trial = 999.0;
+        while (it < maxits and sham::abs(sse_trial - sse) > tolerence) {
 
             // Construct the Jacobian (finite differences)
             shammath::mat_d<T> J(data_size, params_nb);
@@ -120,7 +122,8 @@ namespace shammath {
             for (int i = 0; i < params_nb; i++) {
                 p_trial[i] += delta.data[i];
             };
-            T sse_trial = 0.0;
+
+            sse_trial = 0.0;
             for (int k = 0; k < X.size(); k++) {
                 sse_trial += (Y[k] - f(p_trial, X[k])) * (Y[k] - f(p_trial, X[k]));
             };

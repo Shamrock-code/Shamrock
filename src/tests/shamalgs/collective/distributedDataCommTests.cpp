@@ -71,9 +71,15 @@ void distribdata_sparse_comm_test(std::string prefix) {
     });
 
     shamalgs::collective::SerializedDDataComm recv_data;
-    distributed_data_sparse_comm(get_compute_scheduler_ptr(), send_data, recv_data, [&](u64 id) {
-        return rank_owner[id];
-    });
+    shamalgs::collective::DDSCommCache cache;
+    distributed_data_sparse_comm(
+        get_compute_scheduler_ptr(),
+        send_data,
+        recv_data,
+        [&](u64 id) {
+            return rank_owner[id];
+        },
+        cache);
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {

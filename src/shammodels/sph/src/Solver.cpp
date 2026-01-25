@@ -527,6 +527,13 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
     storage.soundspeed
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
+
+    storage.exchange_gz_alpha
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostField<Tscal>>();
+    storage.exchange_gz_node
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
+    storage.exchange_gz_positions
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -779,8 +786,8 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
 
     StackEntry stack_loc{};
 
-    storage.merged_xyzh.set(
-        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+    storage.merged_xyzh.set(storage.ghost_handler.get().build_comm_merge_positions(
+        storage.ghost_patch_cache.get(), storage.exchange_gz_positions));
 
     { // set element counts
         shambase::get_check_ref(storage.part_counts).indexes
@@ -1382,8 +1389,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             }
         });
 
-    shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = ghost_handle.communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
+    shambase::DistributedDataShared<PatchDataLayer> interf_pdat = ghost_handle.communicate_pdat(
+        ghost_layout_ptr, std::move(pdat_interf), storage.exchange_gz_node);
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
@@ -1951,7 +1958,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 });
 
             shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat
-                = ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+                = ghost_handle.communicate_pdatfield(
+                    std::move(field_interf), 1, storage.exchange_gz_alpha);
 
             shambase::DistributedData<PatchDataField<Tscal>> merged_field
                 = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(

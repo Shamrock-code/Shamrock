@@ -22,15 +22,7 @@
 
 namespace shammodels::gsph::solvergraph {
 
-    /**
-     * @brief SolverGraph edge wrapping the GSPHGhostHandler
-     *
-     * This edge provides storage for the ghost handler used in GSPH
-     * boundary condition processing. The handler is created per timestep
-     * and freed after use.
-     *
-     * @tparam Tvec Vector type (e.g., f64_3)
-     */
+    /// SolverGraph edge for GSPH ghost handler
     template<class Tvec>
     class GhostHandlerEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
@@ -39,10 +31,6 @@ namespace shammodels::gsph::solvergraph {
 
         std::optional<GhostHandle> handler;
 
-        /**
-         * @brief Get the ghost handler
-         * @throws std::runtime_error if handler is not set
-         */
         GhostHandle &get() {
             if (!handler.has_value()) {
                 shambase::throw_with_loc<std::runtime_error>("GhostHandler not set");
@@ -50,10 +38,6 @@ namespace shammodels::gsph::solvergraph {
             return handler.value();
         }
 
-        /**
-         * @brief Get the ghost handler (const)
-         * @throws std::runtime_error if handler is not set
-         */
         const GhostHandle &get() const {
             if (!handler.has_value()) {
                 shambase::throw_with_loc<std::runtime_error>("GhostHandler not set");
@@ -61,21 +45,14 @@ namespace shammodels::gsph::solvergraph {
             return handler.value();
         }
 
-        /**
-         * @brief Check if the handler is set
-         */
         bool has_value() const { return handler.has_value(); }
 
-        /**
-         * @brief Set the ghost handler
-         * @param h The ghost handler to store
-         */
         void set(GhostHandle &&h) {
             handler.reset();
             handler.emplace(std::move(h));
         }
 
-        /// Free the allocated handler
+        ///Free the allocated handler
         inline virtual void free_alloc() override { handler.reset(); }
     };
 

@@ -72,8 +72,8 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
-        // main solver graph for GSPH
         shamrock::solvergraph::SolverGraph solver_graph;
+
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost;
@@ -88,7 +88,6 @@ namespace shammodels::gsph {
         /// Patch rank ownership
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
-        /// Ghost handler for boundary particles - managed via SolverGraph
         std::shared_ptr<solvergraph::GhostHandlerEdge<Tvec>> ghost_handler;
         /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;

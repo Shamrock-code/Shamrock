@@ -22,15 +22,7 @@
 
 namespace shammodels::gsph::solvergraph {
 
-    /**
-     * @brief SolverGraph edge wrapping the ghost interface cache
-     *
-     * This edge stores the cache map used for ghost particle communication.
-     * The cache is built per timestep based on the current particle distribution
-     * and freed after the force computation.
-     *
-     * @tparam Tvec Vector type (e.g., f64_3)
-     */
+    /// SolverGraph edge for ghost interface cache
     template<class Tvec>
     class GhostCacheEdge : public shamrock::solvergraph::IEdgeNamed {
         public:
@@ -40,10 +32,6 @@ namespace shammodels::gsph::solvergraph {
 
         std::optional<CacheMap> cache;
 
-        /**
-         * @brief Get the ghost cache
-         * @throws std::runtime_error if cache is not set
-         */
         CacheMap &get() {
             if (!cache.has_value()) {
                 shambase::throw_with_loc<std::runtime_error>("GhostCache not set");
@@ -51,10 +39,6 @@ namespace shammodels::gsph::solvergraph {
             return cache.value();
         }
 
-        /**
-         * @brief Get the ghost cache (const)
-         * @throws std::runtime_error if cache is not set
-         */
         const CacheMap &get() const {
             if (!cache.has_value()) {
                 shambase::throw_with_loc<std::runtime_error>("GhostCache not set");
@@ -62,20 +46,8 @@ namespace shammodels::gsph::solvergraph {
             return cache.value();
         }
 
-        /**
-         * @brief Check if the cache is set
-         */
         bool has_value() const { return cache.has_value(); }
-
-        /**
-         * @brief Set the ghost cache
-         * @param c The cache map to store
-         */
         void set(CacheMap &&c) { cache = std::move(c); }
-
-        /**
-         * @brief Free the allocated cache
-         */
         inline virtual void free_alloc() override { cache.reset(); }
     };
 

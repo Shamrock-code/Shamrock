@@ -54,6 +54,27 @@ namespace shammath {
     }
 
     /**
+     * @brief Set the elements of a vector according to a user-provided function
+     *
+     * @param input The vector to update the elements of
+     * @param func The function to use to update the elements of the matrix. The
+     * function must take one argument being the index.
+     *
+     * @details The function `func` is called for each element of the vector, and
+     * the value returned by the function is used to set the corresponding
+     * element of the vector.
+     */
+    template<class T, class Extents, class Layout, class Accessor, class Func>
+    inline void vec_set_vals(const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+
+        shambase::check_functor_signature<T, int>(func);
+
+        for (int i = 0; i < input.extent(0); i++) {
+            input(i) = func(i);
+        }
+    }
+
+    /**
      * @brief Update the elements of a matrix according to a user-provided function
      *
      * @param input The matrix to update the elements of
@@ -76,29 +97,6 @@ namespace shammath {
             for (int j = 0; j < input.extent(1); j++) {
                 func(input(i, j), i, j);
             }
-        }
-    }
-
-    /**
-     * @brief Update the elements of a vector according to a user-provided function
-     *
-     * @param input The vector to update the elements of
-     * @param func The function to use to update the elements of the matrix. The
-     * function must take two arguments, the first being the value of the
-     * element to update and the second being the index.
-     *
-     * @details The function `func` is called for each element of the vector, and
-     * the value returned by the function is used to update the corresponding
-     * element of the matrix.
-     */
-    template<class T, class Extents, class Layout, class Accessor, class Func>
-    inline void vec_update_vals(
-        const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
-
-        shambase::check_functor_signature<void, T &, int>(func);
-
-        for (int i = 0; i < input.extent(0); i++) {
-            func(input(i), i);
         }
     }
 
@@ -778,26 +776,25 @@ where $M$ is a (real) symmetric, definite-positive square matrix.
         SHAM_ASSERT(M.extent(1) == x.extent(0));
         SHAM_ASSERT(M.extent(0) == y.extent(0));
 
-        std::vector<T> a_storage(M.extent(0));
+        std::vector<T> a(M.extent(0));
         std::vector<T> L_storage(M.extent(0) * M.extent(1));
 
-        std::mdspan<T, Extents1> L{L_storage.data()};
-        std::mdspan<T, Extents3> a{a_storage.data()};
+        std::mdspan<T, Extents1> L{L_storage.data(), M.extent(0), M.extent(1)};
         Cholesky_decomp(M, L);
 
         for (int i = 0; i < M.extent(0); i++) {
             T sum = 0.0;
             for (int k = 0; k < i; k++) {
-                sum += L(i, k) * a(k);
+                sum += L(i, k) * a[k];
             }
-            a(i) = (y(i) - sum) / L(i, i);
+            a[i] = (y(i) - sum) / L(i, i);
         }
         for (int i = M.extent(0) - 1; i >= 0; i--) {
             T sum = 0.0;
             for (int k = i + 1; k < M.extent(0); k++) {
                 sum += L(k, i) * x(k);
             }
-            x(i) = (a(i) - sum) / L(i, i);
+            x(i) = (a[i] - sum) / L(i, i);
         }
     }
 

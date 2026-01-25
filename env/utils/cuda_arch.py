@@ -25,7 +25,7 @@ def print_description(arch_code):
         print("-- unknown cuda arch code possible list :")
         for k in NVIDIA_ARCH_DESC.keys():
             print("      ", k, NVIDIA_ARCH_DESC[k])
-        raise "unknown cuda arch code"
+        raise ValueError(f"unknown cuda arch code: {arch_code}")
 
     print("-- arch :", arch_code)
     print("   ->", NVIDIA_ARCH_DESC[arch_code])

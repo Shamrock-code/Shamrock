@@ -22,6 +22,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <pybind11/pytypes.h>
 
 namespace shammodels::sph::modules {
 
@@ -53,10 +54,14 @@ namespace shammodels::sph::modules {
             const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
 
         sham::DeviceBuffer<Tfield> compute_slice(
-            std::string field_name, const sham::DeviceBuffer<Tvec> &positions);
+            std::string field_name,
+            const sham::DeviceBuffer<Tvec> &positions,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
-            std::string field_name, const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays);
+            std::string field_name,
+            const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_slice(
             std::function<field_getter_t> field_getter,
@@ -75,25 +80,41 @@ namespace shammodels::sph::modules {
             u32 ny);
 
         sham::DeviceBuffer<Tfield> compute_slice(
-            std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
+            std::string field_name,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter);
 
         sham::DeviceBuffer<Tfield> compute_column_integ(
-            std::string field_name, Tvec center, Tvec delta_x, Tvec delta_y, u32 nx, u32 ny);
+            std::string field_name,
+            Tvec center,
+            Tvec delta_x,
+            Tvec delta_y,
+            u32 nx,
+            u32 ny,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter);
 
         inline sham::DeviceBuffer<Tfield> compute_slice(
-            std::string field_name, const std::vector<Tvec> &positions) {
+            std::string field_name,
+            const std::vector<Tvec> &positions,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter) {
             sham::DeviceBuffer<Tvec> positions_buf{
                 positions.size(), shamsys::instance::get_compute_scheduler_ptr()};
             positions_buf.copy_from_stdvec(positions);
-            return compute_slice(field_name, positions_buf);
+            return compute_slice(field_name, positions_buf, custom_getter);
         }
 
         inline sham::DeviceBuffer<Tfield> compute_column_integ(
-            std::string field_name, const std::vector<shammath::Ray<Tvec>> &rays) {
+            std::string field_name,
+            const std::vector<shammath::Ray<Tvec>> &rays,
+            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter) {
             sham::DeviceBuffer<shammath::Ray<Tvec>> rays_buf{
                 rays.size(), shamsys::instance::get_compute_scheduler_ptr()};
             rays_buf.copy_from_stdvec(rays);
-            return compute_column_integ(field_name, rays_buf);
+            return compute_column_integ(field_name, rays_buf, custom_getter);
         }
 
         private:

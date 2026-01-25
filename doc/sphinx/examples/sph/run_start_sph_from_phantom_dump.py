@@ -30,26 +30,9 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-# %%
-# Open the phantom dump
-dump = shamrock.load_phantom_dump(filename)
-dump.print_state()
-
-# %%
-# Start a SPH simulation from the phantom dump
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
-
-cfg = model.gen_config_from_phantom_dump(dump)
-# Set the solver config to be the one stored in cfg
-model.set_solver_config(cfg)
-# Print the solver config
-model.get_current_config().print_status()
-
-model.init_scheduler(int(1e8), 1)
-
-model.init_from_phantom_dump(dump)
+ctx, model, in_params = shamrock.utils.phantom.load_simulation(
+    dump_folder, dump_file_name="blast_00010", in_file_name=None
+)
 
 # %%
 # Run a simple timestep just for wasting some computing time :)

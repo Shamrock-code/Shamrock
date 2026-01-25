@@ -677,7 +677,7 @@ namespace shammath {
 
     /**
      * @brief This function transposes a matrix
-     * @param intput matrix to tranpose
+     * @param input matrix to transpose
      * @param output matrix to store the transposed matrix
      */
     template<

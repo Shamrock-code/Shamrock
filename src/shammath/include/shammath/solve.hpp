@@ -110,7 +110,7 @@ namespace shammath {
                 return Y[i] - f(p, X[i]);
             });
 
-            shammath::mat_d<T> J_T(params_nb, data_size); // Jacobian tranpose
+            shammath::mat_d<T> J_T(params_nb, data_size); // Jacobian transposed
             shammath::mat_transpose(J.get_mdspan(), J_T.get_mdspan());
 
             shammath::mat_d<T> G(params_nb, params_nb); // left hand side

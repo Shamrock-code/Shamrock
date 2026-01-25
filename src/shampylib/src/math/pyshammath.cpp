@@ -877,7 +877,7 @@ Register_pymod(pysham_mathinit) {
 
     math_module.def(
         "least_squares",
-        [](const std::function<f64(const std::vector<f64>, f64)> &func,
+        [](const std::function<f64(const std::vector<f64> &, f64)> &func,
            const std::vector<f64> &x_data,
            const std::vector<f64> &y_data,
            const std::vector<f64> &p0) {

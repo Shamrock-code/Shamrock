@@ -98,7 +98,6 @@ class ColumnDensityPlot:
     def render_gif(
         self,
         save_animation=False,
-        show_animation=False,
         fps=15,
         bitrate=1800,
         gif_filename="rho_integ.gif",
@@ -113,5 +112,5 @@ class ColumnDensityPlot:
                     fps=fps, metadata=dict(artist="Me"), bitrate=bitrate
                 )
                 ani.save(self.helper.analysis_prefix + gif_filename, writer=writer)
-            if show_animation:
-                plt.show()
+            return ani
+        return None

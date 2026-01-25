@@ -590,14 +590,18 @@ render_gif = True
 # Do it for rho integ
 
 if render_gif:
-    column_density_plot.render_gif(save_animation=True, show_animation=True)
+    ani = column_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
 
 # %%
 # Same but in hollywood
 
 if render_gif:
-    column_density_plot_hollywood.render_gif(save_animation=True, show_animation=True)
+    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
 # %%
 # Do it for rho integ

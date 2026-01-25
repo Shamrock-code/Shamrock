@@ -24,6 +24,7 @@
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
 #include "shammath/paving_function.hpp"
+#include "shammath/solve.hpp"
 #include "shammath/symtensor_collections.hpp"
 #include "shammath/symtensors.hpp"
 #include "shampylib/math/pyAABB.hpp"
@@ -872,5 +873,26 @@ Register_pymod(pysham_mathinit) {
         ode :   Ode function
         x0 :    Initial coordinate
         u0 :    Initial value
+    )pbdoc");
+
+    math_module.def(
+        "least_squares",
+        [](const std::function<f64(std::vector<f64>, f64)> &func,
+           const std::vector<f64> &x_data,
+           const std::vector<f64> &y_data,
+           const std::vector<f64> &p0) {
+            return shammath::least_squares(func, x_data, y_data, p0);
+        },
+        py::kw_only(),
+        py::arg("func"),
+        py::arg("x_data"),
+        py::arg("y_data"),
+        py::arg("p0"),
+        R"pbdoc(
+        Fit data with a given function by least squares method
+        f:     Function (1d values)
+        X:     $x$ Data to fit
+        Y:     $y$ Data to fit
+        p0:    Initial parameters estimated
     )pbdoc");
 }

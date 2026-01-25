@@ -74,16 +74,7 @@ namespace shammodels::gsph {
 
         using RTree = shamtree::CompressedLeafBVH<Tmorton, Tvec, 3>;
 
-        // =====================================================================
-        // SolverGraph infrastructure
-        // =====================================================================
-
-        /// Central graph for managing edges (data) and nodes (operations)
         shamrock::solvergraph::SolverGraph solver_graph;
-
-        // =====================================================================
-        // SolverGraph edges
-        // =====================================================================
 
         /// Particle counts per patch
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts;

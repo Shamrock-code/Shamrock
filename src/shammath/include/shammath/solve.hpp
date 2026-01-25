@@ -130,7 +130,7 @@ namespace shammath {
             if (sse_trial > sse) { // Fail -> gradient descent
                 mu /= beta;
             } else { // Not bad -> Gauss-Newton
-                // it++;
+                it++;
                 mu *= beta;
                 p = p_trial;
             }

@@ -678,7 +678,7 @@ namespace shammath {
     }
 
     /**
-     * @brief This function transposes a (square) matrix
+     * @brief This function transposes a matrix
      * @param intput matrix to tranpose
      * @param output matrix to store the transposed matrix
      */
@@ -694,12 +694,11 @@ namespace shammath {
         const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
         const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
 
+        SHAM_ASSERT(input.extent(0) == output.extent(1));
         SHAM_ASSERT(input.extent(1) == input.extent(0));
-        SHAM_ASSERT(output.extent(1) == output.extent(0));
-        SHAM_ASSERT(input.extent(0) == output.extent(0));
 
-        for (int i = 0; i < input.extent(0); i++) {
-            for (int j = 0; j < input.extent(1); j++) {
+        for (int i = 0; i < output.extent(0); i++) {
+            for (int j = 0; j < output.extent(1); j++) {
                 output(i, j) = input(j, i);
             }
         }

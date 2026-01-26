@@ -87,6 +87,11 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
 
+    // Register ghost cache edge for dependency tracking
+    storage.ghost_cache = storage.solver_graph.register_edge(
+        "ghost_cache",
+        solvergraph::GhostCacheEdge<Tvec>("ghost_cache", "\\mathcal{C}_{\\rm ghost}"));
+
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
     storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
@@ -174,24 +179,25 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     using GSPHUtils = GSPHUtilities<Tvec, Kernel>;
     GSPHUtils gsph_utils(scheduler());
 
-    storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
-        storage.ghost_handler.get(),
-        storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+    shambase::get_check_ref(storage.ghost_cache)
+        .set(gsph_utils.build_interf_cache(
+            storage.ghost_handler.get(),
+            storage.serial_patch_tree.get(),
+            solver_config.htol_up_coarse_cycle));
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::clear_ghost_cache() {
     StackEntry stack_loc{};
-    storage.ghost_patch_cache.reset();
+    shambase::get_check_ref(storage.ghost_cache).free_alloc();
 }
 
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
-    storage.merged_xyzh.set(
-        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+    storage.merged_xyzh.set(storage.ghost_handler.get().build_comm_merge_positions(
+        shambase::get_check_ref(storage.ghost_cache).get()));
 
     // Get field indices from xyzh_ghost_layout
     const u32 ixyz_ghost
@@ -683,7 +689,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Build interface data from ghost cache
     auto pdat_interf = ghost_handle.template build_interface_native<PatchDataLayer>(
-        storage.ghost_patch_cache.get(),
+        shambase::get_check_ref(storage.ghost_cache).get(),
         [&](u64 sender, u64, InterfaceBuildInfos binfo, sham::DeviceBuffer<u32> &buf_idx, u32 cnt) {
             PatchDataLayer pdat(ghost_layout_ptr);
             pdat.reserve(cnt);
@@ -692,7 +698,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Populate interface data with field values
     ghost_handle.template modify_interface_native<PatchDataLayer>(
-        storage.ghost_patch_cache.get(),
+        shambase::get_check_ref(storage.ghost_cache).get(),
         pdat_interf,
         [&](u64 sender,
             u64,
@@ -733,7 +739,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     // Apply velocity offset for periodic boundaries
     ghost_handle.template modify_interface_native<PatchDataLayer>(
-        storage.ghost_patch_cache.get(),
+        shambase::get_check_ref(storage.ghost_cache).get(),
         pdat_interf,
         [&](u64 sender,
             u64,

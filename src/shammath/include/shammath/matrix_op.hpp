@@ -733,7 +733,7 @@ namespace shammath {
             for (int k = 0; k < i; k++) {
                 sum_ik += L(i, k) * L(i, k);
             }
-            L(i, i) = sycl::sqrt(M(i, i) - sum_ik);
+            L(i, i) = std::sqrt(M(i, i) - sum_ik);
             for (int j = i + 1; j < M.extent(1); j++) {
                 T sum_ikjk = 0.0;
                 for (int k = 0; k < i; k++) {

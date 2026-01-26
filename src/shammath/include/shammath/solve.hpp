@@ -73,7 +73,8 @@ namespace shammath {
         int maxits  = 1000,
         T tolerance = 1e-6) {
         SHAM_ASSERT(X.size() == Y.size());
-        SHAM_ASSERT(X.size() > p0.size());
+        SHAM_ASSERT(X.size() >= p0.size());
+        SHAM_ASSERT(p0.size() > 0);
 
         const int params_nb = p0.size();
         const int data_size = X.size();

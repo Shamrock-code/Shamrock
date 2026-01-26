@@ -118,7 +118,7 @@ namespace shammath {
         inline constexpr T &operator[](int i) { return get_mdspan()(i); }
 
         /// Check if this vector is equal to another one
-        bool operator==(const vec<T, n> &other) { return data == other.data; }
+        bool operator==(const vec<T, n> &other) const { return data == other.data; }
     };
 
     /**
@@ -216,7 +216,7 @@ namespace shammath {
         inline constexpr T &operator[](int i) { return get_mdspan()(i); }
 
         /// Check if this vector is equal to another one
-        bool operator==(const vec_d<T> &other) { return data == other.data; }
+        bool operator==(const vec_d<T> &other) const { return data == other.data; }
     };
 } // namespace shammath
 

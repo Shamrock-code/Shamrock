@@ -102,9 +102,13 @@ namespace shammath {
                 f_at_p[i] = f(p, X[i]);
             }
             mat_set_vals(J.get_mdspan(), [&](auto i, auto j) -> T {
-                T original_p_j = p[j];
-                T step_scale   = (std::abs(original_p_j) < 1e-6) ? 1e-6 : original_p_j;
-                T dpj          = step_scale * 0.001;
+                T original_p_j                  = p[j];
+                const T MIN_STEP_SCALE_EPSILON  = 1e-6;
+                T step_scale                    = (std::abs(original_p_j) < MIN_STEP_SCALE_EPSILON)
+                                                      ? MIN_STEP_SCALE_EPSILON
+                                                      : original_p_j;
+                const T FINITE_DIFF_STEP_FACTOR = 0.001;
+                T dpj                           = step_scale * FINITE_DIFF_STEP_FACTOR;
 
                 p[j] += dpj;
                 T f_perturbed = f(p, X[i]);

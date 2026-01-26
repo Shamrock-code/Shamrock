@@ -211,9 +211,15 @@ namespace shamphys {
      */
     template<class T>
     struct EOS_Tillotson {
-        static constexpr T coeff1 = 3.0021e-1; // SI fit parameters that work well for Granite
-        static constexpr T coeff2 = -9.5284e2; // SI fit parameters that work well for Granite
-        static constexpr T coeff3 = 4.2450e5;  // SI fit parameters that work well for Granite
+        static constexpr T coeff1
+            = 3.0021e-1; // SI fit parameters that work well for Granite // TODO Will be computed
+                         // with least_squares once PR is merged.
+        static constexpr T coeff2
+            = -9.5284e2; // SI fit parameters that work well for Granite // TODO Will be computed
+                         // with least_squares once PR is merged.
+        static constexpr T coeff3
+            = 4.2450e5; // SI fit parameters that work well for Granite // TODO Will be computed
+                        // with least_squares once PR is merged.
         static constexpr T density_unit_earth   = 23093.884200654968;
         static constexpr T sp_energy_unit_earth = 62522743.68231048;
 
@@ -258,12 +264,13 @@ namespace shamphys {
             T dP_drho = 0.0;
             T dP_du   = 0.0;
 
+            // Compressed (rho < rho0 or u < u_cv)
             auto compute_cold = [&]() {
                 T term_bracket = a + b / denom;
                 T P_c          = term_bracket * rho * u + A * chi + B * chi * chi;
-
-                if (P_c < 0.0) {
-                    P_c = 0.0;
+                // discard negative pressure
+                if (P_c < 0) {
+                    P_c = 0;
                 }
 
                 T term_rho_1 = u * term_bracket;
@@ -276,26 +283,25 @@ namespace shamphys {
                 return std::make_tuple(P_c, dPc_drho, dPc_du);
             };
 
-            // --- 2. Expanded, vaporized (rho < rho0 && u > u_cv) ---
+            // Vaporized (rho < rho0 and u > u_cv)
             auto compute_hot = [&]() {
                 T X = (rho0 / rho) - 1.0;
 
                 T exp_beta  = sycl::exp(-beta * X);
                 T exp_alpha = sycl::exp(-alpha * X * X);
 
-                // P_h formula
-                // P = a*rho*u + [ b*rho*u / (1+w) + A*chi*e^(-beta*X) ] * e^(-alpha*X^2)
                 T part_a = a * rho * u;
                 T part_b = (b * rho * u) / denom;
                 T part_A = A * chi * exp_beta;
 
                 T P_h = part_a + (part_b + part_A) * exp_alpha;
+                // discard negative pressure
+                if (P_h < 0) {
+                    P_h = 0;
+                }
 
-                // dPh / du
-                // rho * [ a + (b / (1+w)^2) * exp_alpha ]
                 T dPh_du = rho * (a + (b / denom2) * exp_alpha);
 
-                // dPh / drho
                 T dPartA_drho = a * u;
                 T term_brackets_b
                     = (1.0 / rho) * (1.0 + (2.0 * omega / denom) + (2.0 * alpha * X / eta));
@@ -309,15 +315,9 @@ namespace shamphys {
             };
 
             if (rho >= rho0 || u < u_iv) {
-                auto [p, dpdrho, dpdu] = compute_cold();
-                P                      = p;
-                dP_drho                = dpdrho;
-                dP_du                  = dpdu;
+                auto [P, dP_drho, dP_du] = compute_cold();
             } else if (u > u_cv) {
-                auto [p, dpdrho, dpdu] = compute_hot();
-                P                      = p;
-                dP_drho                = dpdrho;
-                dP_du                  = dpdu;
+                auto [P, dP_drho, dP_du] = compute_hot();
             } else {
                 auto [Pc, dPc_drho, dPc_du] = compute_cold();
                 auto [Ph, dPh_drho, dPh_du] = compute_hot();
@@ -325,24 +325,18 @@ namespace shamphys {
                 T delta_U = u_cv - u_iv;
                 T x       = (u - u_iv) / delta_U;
 
-                // P = (1-x)Pc + xPh
-                P = (1.0 - x) * Pc + x * Ph;
-
-                // dP/drho
-                dP_drho = (1.0 - x) * dPc_drho + x * dPh_drho;
-
-                // dP/du
-                // P' = x' * (Ph - Pc) + (1-x)Pc' + xPh'
-                // x' = 1 / delta_U
-                T term_interp = (Ph - Pc) / delta_U;
-                T term_derivs = (1.0 - x) * dPc_du + x * dPh_du;
-                dP_du         = term_interp + term_derivs;
+                P                    = (1.0 - x) * Pc + x * Ph;
+                dP_drho              = (1.0 - x) * dPc_drho + x * dPh_drho;
+                T term_interpolation = (Ph - Pc) / delta_U;
+                T term_derivs        = (1.0 - x) * dPc_du + x * dPh_du;
+                dP_du                = term_interpolation + term_derivs;
             }
 
             T c2 = dP_drho + (P / (rho * rho)) * dP_du;
+            // Discard negative c_s^2
             if (c2 < 0.0) {
                 c2 = 0.0;
-            }
+            };
 
             return {P, sycl::sqrt(c2)};
         }

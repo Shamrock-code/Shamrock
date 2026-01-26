@@ -154,13 +154,68 @@ namespace shamphys {
                 return cs * cs * rho_c1 * sycl::pow(rho_c2 / rho_c1, 7. / 5.)
                        * sycl::pow(rho_c3 / rho_c2, 1.1) * sycl::pow(rho / rho_c3, 5. / 3.);
             }
-        }
+        };
     };
 
+    /**
+     * @brief PressureAndCs
+     *
+     * Just a structure to hold the pressure and sound speed returned by EoS functions
+     */
     template<class T>
     struct PressureAndCs {
-        T pressure;
-        T soundspeed;
+        T pressure;   ///< pressure pressure value
+        T soundspeed; ///< sound speed value
+    };
+
+    /**
+     * @brief Fermi Gas EoS
+     *
+     * mu_e is the mean molecular weight
+     *
+     * Sound speed:
+     * \f[
+     * c_s =
+     * \sqrt{\frac{8\alpha\beta}{3\mu_e^{\frac13}\rho^{\frac23}}\frac{\tilde{p}_F^4}{\sqrt{1+\tilde{p}_F^2}}}
+     * \f] where:
+     * \f{eqnarray*}{
+     * \tilde{p}_F &=& \frac{1}{\mu_e^{\frac13}}\alpha \rho^{1/3} \\
+     * \alpha &=& \frac{1}{m_{\mathrm{e}} c}h\left(\frac{3}{8\pi m_{\mathrm{p}}}\right)^{\frac13} \\
+     * \beta &=& \frac{\pi m_\mathrm{e}^4c^5}{3h^3}
+     * \f}
+     *
+     * Pressure:
+     * \f[
+     * P =  \beta
+     * \left[\tilde{p}_F\sqrt{\tilde{p}_F^2+1}(2\tilde{p}_F^2-3)+3\operatorname{arcsinh}(\tilde{p}_F)\right]
+     * \f]
+     */
+    template<class T>
+    struct EOS_Fermi {
+
+        /**
+         * @brief EOS_Fermi::pressure_and_soundspeed
+         * Returns pressure and sound speed from the given value of density in the Fermi gas
+         * equation of state
+         * @param mu_e Mean molecular weight
+         * @param rho Density in SI unit
+         */
+        static constexpr PressureAndCs<T> pressure_and_soundspeed(T mu_e, T rho) {
+
+            constexpr T ALPHA
+                = 0.10064082802851738e-2; // = (3/(8pi))**(1./3) * h / (mp^(1/3) m_e c) (SI)
+            constexpr T BETA = 6002.332181706928e18; // = (pi/3) * m_e^4c^5/h^3 (SI)
+
+            //\tilde p_F is the Fermi momentum divided by m_e*c
+            const T mu13 = sycl::rootn(mu_e, 3);
+            T tpf        = ALPHA * sycl::rootn(rho, 3) / mu13;
+            T tpf2       = tpf * tpf;
+
+            T P   = BETA * (tpf * sycl::sqrt(tpf2 + 1) * (2 * tpf2 - 3) + 3 * sycl::asinh(tpf));
+            T cs2 = 8 * ALPHA * BETA * tpf2 * tpf2
+                    / (3 * mu13 * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + tpf2));
+            return {P, sycl::sqrt(cs2)};
+        }
     };
 
     /**

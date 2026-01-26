@@ -51,6 +51,7 @@ namespace shammodels {
         /// Adiabatic equation of state configuration
         using Adiabatic = shamphys::EOS_Config_Adiabatic<Tscal>;
 
+        /// Polytropic equation of state configuration
         using Polytropic = shamphys::EOS_Config_Polytropic<Tscal>;
 
         /// Isothermal equation of state configuration
@@ -66,6 +67,13 @@ namespace shammodels {
         using LocallyIsothermalFA2014
             = shamphys::EOS_Config_LocallyIsothermalDisc_Farris2014<Tscal>;
 
+        /// Locally isothermal equation of state configuration from Farris 2014 extended to q != 1/2
+        using LocallyIsothermalFA2014Extended
+            = shamphys::EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014<Tscal>;
+
+        /// Fermi equation of state configuration
+        using Fermi = shamphys::EOS_Config_Fermi<Tscal>;
+
         /// Tillotson equation of state configuration
         using Tillotson = shamphys::EOS_Config_Tillotson<Tscal>;
 
@@ -77,6 +85,8 @@ namespace shammodels {
             LocallyIsothermal,
             LocallyIsothermalLP07,
             LocallyIsothermalFA2014,
+            LocallyIsothermalFA2014Extended,
+            Fermi,
             Tillotson>;
 
         /// Current EOS configuration
@@ -126,6 +136,18 @@ namespace shammodels {
         inline void set_locally_isothermalFA2014(Tscal h_over_r) {
             config = LocallyIsothermalFA2014{h_over_r};
         }
+
+        inline void set_locally_isothermalFA2014_extended(
+            Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+            config = LocallyIsothermalFA2014Extended{cs0, q, r0, n_sinks};
+        }
+
+        /**
+         * @brief Set the EOS configuration to a Fermi equation of state
+         *
+         * @param mu_e The mean molecular weight
+         */
+        inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
 
         /**
          * @brief Set the EOS configuration to a Tillotson equation of state. Details in
@@ -185,6 +207,10 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (Adiabatic *eos_config = std::get_if<Adiabatic>(&config)) {
         logger::raw_ln("adiabatic : ");
         logger::raw_ln("gamma", eos_config->gamma);
+    } else if (Polytropic *eos_config = std::get_if<Polytropic>(&config)) {
+        logger::raw_ln("polytropic : ");
+        logger::raw_ln("K", eos_config->K);
+        logger::raw_ln("gamma", eos_config->gamma);
     } else if (LocallyIsothermal *eos_config = std::get_if<LocallyIsothermal>(&config)) {
         logger::raw_ln("locally isothermal : ");
     } else if (LocallyIsothermalLP07 *eos_config = std::get_if<LocallyIsothermalLP07>(&config)) {
@@ -192,6 +218,13 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (
         LocallyIsothermalFA2014 *eos_config = std::get_if<LocallyIsothermalFA2014>(&config)) {
         logger::raw_ln("locally isothermal (Farris 2014) : ");
+    } else if (
+        LocallyIsothermalFA2014Extended *eos_config
+        = std::get_if<LocallyIsothermalFA2014Extended>(&config)) {
+        logger::raw_ln("locally isothermal (Farris 2014 extended) : ");
+    } else if (Fermi *eos_config = std::get_if<Fermi>(&config)) {
+        logger::raw_ln("Fermi : ");
+        logger::raw_ln("mu_e", eos_config->mu_e);
     } else {
         shambase::throw_unimplemented();
     }

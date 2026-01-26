@@ -318,7 +318,8 @@ namespace shammodels::sph {
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> communicate_pdat(
             const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
-            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf) {
+            shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&interf,
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node) {
             StackEntry stack_loc{};
 
             // ----------------------------------------------------------------------------------------
@@ -330,8 +331,6 @@ namespace shammodels::sph {
                 = std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
                     interf);
 
-            std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node
-                = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(pdl_ptr);
             exchange_gz_node->set_edges(this->patch_rank_owner, exchange_gz_edge);
 
             exchange_gz_node->evaluate();
@@ -371,7 +370,9 @@ namespace shammodels::sph {
 
         template<class T>
         inline shambase::DistributedDataShared<PatchDataField<T>> communicate_pdatfield(
-            shambase::DistributedDataShared<PatchDataField<T>> &&interf, u32 nvar) {
+            shambase::DistributedDataShared<PatchDataField<T>> &&interf,
+            u32 nvar,
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<T>> exchange_gz_node) {
             StackEntry stack_loc{};
 
             // ----------------------------------------------------------------------------------------
@@ -382,8 +383,6 @@ namespace shammodels::sph {
             exchange_gz_edge->patchdata_fields
                 = std::forward<shambase::DistributedDataShared<PatchDataField<T>>>(interf);
 
-            std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<T>> exchange_gz_node
-                = std::make_shared<shamrock::solvergraph::ExchangeGhostField<T>>();
             exchange_gz_node->set_edges(this->patch_rank_owner, exchange_gz_edge);
 
             exchange_gz_node->evaluate();
@@ -421,9 +420,12 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>
-        build_communicate_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
+        build_communicate_positions(
+            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> &exchange_gz_positions) {
             auto pos_interf = build_position_interf_field(builder);
-            return communicate_pdat(xyzh_ghost_layout, std::move(pos_interf));
+            return communicate_pdat(
+                xyzh_ghost_layout, std::move(pos_interf), exchange_gz_positions);
         }
 
         template<class T, class Tmerged>
@@ -482,9 +484,12 @@ namespace shammodels::sph {
         }
 
         inline shambase::DistributedData<shamrock::patch::PatchDataLayer>
-        build_comm_merge_positions(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
+        build_comm_merge_positions(
+            shambase::DistributedDataShared<InterfaceIdTable> &builder,
+            std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> &exchange_gz_positions) {
             auto pos_interf = build_position_interf_field(builder);
-            return merge_position_buf(communicate_pdat(xyzh_ghost_layout, std::move(pos_interf)));
+            return merge_position_buf(
+                communicate_pdat(xyzh_ghost_layout, std::move(pos_interf), exchange_gz_positions));
         }
     };
 

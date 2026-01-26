@@ -17,12 +17,21 @@
 
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
 namespace shammodels::sph::modules {
     template<class Tvec, class Tfield, template<class> class SPHKernel>
     auto RenderFieldGetter<Tvec, Tfield, SPHKernel>::runner_function(
-        std::string field_name, lamda_runner lambda) -> sham::DeviceBuffer<Tfield> {
+        std::string field_name,
+        lamda_runner lambda,
+        std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter)
+        -> sham::DeviceBuffer<Tfield> {
+
+        if (field_name != "custom" && custom_getter.has_value()) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "custom_getter is only supported for the custom field");
+        }
 
         if constexpr (std::is_same_v<Tfield, f64>) {
             if (field_name == "rho" && std::is_same_v<Tscal, Tfield>) {
@@ -68,7 +77,56 @@ namespace shammodels::sph::modules {
                 };
 
                 return lambda(field_source_getter);
+            } else if (field_name == "unity" && std::is_same_v<Tscal, Tfield>) {
+                using namespace shamrock;
+                using namespace shamrock::patch;
+                shamrock::SchedulerUtility utility(scheduler());
+                shamrock::ComputeField<Tscal> unity
+                    = utility.make_compute_field<Tscal>("unity", 1, 1.0);
+
+                auto field_source_getter
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
+                    return unity.get_buf(cur_p.id_patch);
+                };
+
+                return lambda(field_source_getter);
             }
+        }
+
+        if (field_name == "custom" && custom_getter.has_value()) {
+            std::function<Tfield(size_t, pybind11::dict &)> &field_source_getter
+                = custom_getter.value();
+
+            using namespace shamrock;
+            using namespace shamrock::patch;
+            shamrock::SchedulerUtility utility(scheduler());
+            shamrock::ComputeField<Tfield> custom = utility.make_compute_field<Tfield>("custom", 1);
+
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                shamlog_debug_ln("sph::vtk", "compute custom field for patch ", p.id_patch);
+
+                auto &buf_custom = custom.get_buf(p.id_patch);
+
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                py::dict dic_out = shamrock::pdat_to_dic(pdat);
+                auto acc_custom  = buf_custom.copy_to_stdvec();
+
+                for (size_t i = 0; i < acc_custom.size(); i++) {
+                    acc_custom[i] = field_source_getter(i, dic_out);
+                }
+
+                buf_custom.copy_from_stdvec(acc_custom);
+            });
+
+            auto custom_field_source_getter
+                = [&](const shamrock::patch::Patch cur_p,
+                      shamrock::patch::PatchDataLayer &pdat) -> const sham::DeviceBuffer<Tfield> & {
+                return custom.get_buf(cur_p.id_patch);
+            };
+
+            return lambda(custom_field_source_getter);
         }
 
         auto field_source_getter

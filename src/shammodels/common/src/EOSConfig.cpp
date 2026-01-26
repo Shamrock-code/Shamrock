@@ -55,13 +55,15 @@ namespace shammodels {
             static_assert(shambase::always_false_v<Tvec>, "This Tvec type is not handled");
         }
 
-        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
-        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
-        using Polytropic    = typename EOSConfig<Tvec>::Polytropic;
-        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
-        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
-        using Tillotson     = typename EOSConfig<Tvec>::Tillotson;
+        using Isothermal            = typename EOSConfig<Tvec>::Isothermal;
+        using Adiabatic             = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic            = typename EOSConfig<Tvec>::Polytropic;
+        using LocIsoT               = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07           = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
+        using Fermi                 = typename EOSConfig<Tvec>::Fermi;
+        using Tillotson             = typename EOSConfig<Tvec>::Tillotson;
 
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
@@ -87,6 +89,18 @@ namespace shammodels {
                 {"Tvec", type_id},
                 {"eos_type", "locally_isothermal_fa2014"},
                 {"h_over_r", eos_config->h_over_r}};
+        } else if (
+            const LocIsoTFA2014Extended *eos_config
+            = std::get_if<LocIsoTFA2014Extended>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "locally_isothermal_fa2014_extended"},
+                {"cs0", eos_config->cs0},
+                {"q", eos_config->q},
+                {"r0", eos_config->r0},
+                {"n_sinks", eos_config->n_sinks}};
+        } else if (const Fermi *eos_config = std::get_if<Fermi>(&p.config)) {
+            j = json{{"Tvec", type_id}, {"eos_type", "fermi"}, {"mu_e", eos_config->mu_e}};
         } else if (const Tillotson *eos_config = std::get_if<Tillotson>(&p.config)) {
             j = json{
                 {"Tvec", type_id},
@@ -147,13 +161,15 @@ namespace shammodels {
         std::string eos_type;
         j.at("eos_type").get_to(eos_type);
 
-        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
-        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
-        using Polytropic    = typename EOSConfig<Tvec>::Polytropic;
-        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
-        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
-        using Tillotson     = typename EOSConfig<Tvec>::Tillotson;
+        using Isothermal            = typename EOSConfig<Tvec>::Isothermal;
+        using Adiabatic             = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic            = typename EOSConfig<Tvec>::Polytropic;
+        using LocIsoT               = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07           = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
+        using Fermi                 = typename EOSConfig<Tvec>::Fermi;
+        using Tillotson             = typename EOSConfig<Tvec>::Tillotson;
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
@@ -168,6 +184,14 @@ namespace shammodels {
                 j.at("cs0").get<Tscal>(), j.at("q").get<Tscal>(), j.at("r0").get<Tscal>()};
         } else if (eos_type == "locally_isothermal_fa2014") {
             p.config = LocIsoTFA2014{j.at("h_over_r").get<Tscal>()};
+        } else if (eos_type == "locally_isothermal_fa2014_extended") {
+            p.config = LocIsoTFA2014Extended{
+                j.at("cs0").get<Tscal>(),
+                j.at("q").get<Tscal>(),
+                j.at("r0").get<Tscal>(),
+                j.at("n_sinks").get<u32>()};
+        } else if (eos_type == "fermi") {
+            p.config = Fermi{j.at("mu_e").get<Tscal>()};
         } else if (eos_type == "tillotson") {
             p.config = Tillotson{
                 j.at("rho0").get<Tscal>(),
@@ -181,7 +205,7 @@ namespace shammodels {
                 j.at("u_iv").get<Tscal>(),
                 j.at("u_cv").get<Tscal>()};
         } else {
-            shambase::throw_unimplemented("wtf !");
+            shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }
     }
 

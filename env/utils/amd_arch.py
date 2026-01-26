@@ -17,7 +17,7 @@ def print_description(arch_code):
         print("-- unknown AMD arch code possible list :")
         for k in AMD_ARCH_DESC.keys():
             print("      ", k, AMD_ARCH_DESC[k])
-        raise "unknown AMD arch code"
+        raise ValueError(f"unknown AMD arch code: {arch_code}")
 
     print("-- arch :", arch_code)
     print("   ->", AMD_ARCH_DESC[arch_code])

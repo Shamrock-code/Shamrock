@@ -402,9 +402,33 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-from shamrock.utils.analysis import perf_history
+from shamrock.utils.analysis import ColumnDensityPlot, PerfHistory
 
-perf_analysis = perf_history(model, analysis_folder, "perf_history")
+perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_normal",
+)
+
+column_density_plot_hollywood = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_hollywood",
+)
 
 
 def analysis(ianalysis):
@@ -412,15 +436,8 @@ def analysis(ianalysis):
     nx = 1024
     ny = 1024
 
-    arr_rho2 = model.render_cartesian_column_integ(
-        "rho",
-        "f64",
-        center=(0.0, 0.0, 0.0),
-        delta_x=(ext * 2, 0, 0.0),
-        delta_y=(0.0, ext * 2, 0.0),
-        nx=nx,
-        ny=ny,
-    )
+    column_density_plot.analysis_save(ianalysis)
+    column_density_plot_hollywood.analysis_save(ianalysis)
 
     arr_vxyz = model.render_cartesian_column_integ(
         "vxyz",
@@ -432,7 +449,6 @@ def analysis(ianalysis):
         ny=ny,
     )
 
-    save_rho_integ(ext, arr_rho2, ianalysis)
     save_vxyz_integ(ext, arr_vxyz, ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
@@ -502,31 +518,10 @@ import matplotlib.pyplot as plt
 # dump_folder += "/"
 
 
-def plot_rho_integ(metadata, arr_rho, iplot):
-    ext = metadata["extent"]
-
-    dpi = 200
-
-    # Reset the figure using the same memory as the last one
-    plt.figure(num=1, clear=True, dpi=dpi)
-    import copy
-
-    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
-    my_cmap.set_bad(color="black")
-
-    res = plt.imshow(
-        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-6, vmax=1e-2
-    )
-
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
-
-    cbar = plt.colorbar(res, extend="both")
-    cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
-
-    plt.savefig(plot_folder + "rho_integ_{:04}.png".format(iplot))
-    plt.close()
+column_density_plot.render_all(vmin=1, vmax=1e7, norm="log", time_unit="second")
+column_density_plot_hollywood.render_all(
+    vmin=1, vmax=1e7, norm="log", holywood_mode=True, time_unit="second"
+)
 
 
 def plot_vz_integ(metadata, arr_vz, iplot):
@@ -554,7 +549,7 @@ def plot_vz_integ(metadata, arr_vz, iplot):
 def get_list_dumps_id():
     import glob
 
-    list_files = glob.glob(plot_folder + "rho_integ_*.npy")
+    list_files = glob.glob(plot_folder + "vxyz_integ_*.npy")
     list_files.sort()
     list_dumps_id = []
     for f in list_files:
@@ -576,10 +571,6 @@ def load_vxyz_integ(iplot):
 
 if shamrock.sys.world_rank() == 0:
     for iplot in get_list_dumps_id():
-        print("Rendering rho integ plot for dump", iplot)
-        arr_rho, metadata = load_rho_integ(iplot)
-        plot_rho_integ(metadata, arr_rho, iplot)
-
         print("Rendering vxyz integ plot for dump", iplot)
         arr_vxyz, metadata = load_vxyz_integ(iplot)
         plot_vz_integ(metadata, arr_vxyz[:, :, 2], iplot)
@@ -595,21 +586,24 @@ if shamrock.sys.world_rank() == 0:
 import matplotlib.animation as animation
 from shamrock.utils.plot import show_image_sequence
 
+render_gif = True
+
 # %%
 # Do it for rho integ
-render_gif = True
-glob_str = os.path.join(plot_folder, "rho_integ_*.png")
 
-# If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str, render_gif)
+if render_gif:
+    ani = column_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
-if render_gif and shamrock.sys.world_rank() == 0:
-    # To save the animation using Pillow as a gif
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(analysis_folder + "rho_integ.gif", writer=writer)
 
-    # Show the animation
-    plt.show()
+# %%
+# Same but in hollywood
+
+if render_gif:
+    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
 # %%
 # Do it for rho integ

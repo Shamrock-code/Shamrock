@@ -508,7 +508,7 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
-    /// Check if the EOS is an polytropic equation of state
+    /// Check if the EOS is a polytropic equation of state
     inline bool is_eos_polytropic() {
         using T = typename EOSConfig::Polytropic;
         return bool(std::get_if<T>(&eos_config.config));
@@ -517,6 +517,12 @@ struct shammodels::sph::SolverConfig {
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is a Fermi equation of state
+    inline bool is_eos_fermi() {
+        using T = typename EOSConfig::Fermi;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
@@ -574,6 +580,27 @@ struct shammodels::sph::SolverConfig {
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);
     }
+
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     * extended to q != 1/2
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     * @param n_sinks Number of sinks to consider for the equation of state
+     */
+    inline void set_eos_locally_isothermalFA2014_extended(
+        Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+        eos_config.set_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a Fermi equation of state
+     *
+     * @param mu_e The mean molecular weight
+     */
+    inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
 
     /**
      * @brief Set the EOS configuration to a Tillotson equation of state
@@ -854,6 +881,10 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
+
+    /// @brief Whether to store luminosity
+    bool compute_luminosity = false;
+    inline void use_luminosity(bool enable) { compute_luminosity = enable; }
 
     /// Print the current status of the solver config
     inline void print_status() {

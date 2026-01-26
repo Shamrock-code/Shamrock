@@ -268,15 +268,17 @@ namespace shamphys {
     struct EOS_Tillotson {
         static constexpr T coeff1
             = 3.0021e-1; // SI fit parameters that work well for Granite // TODO Will be computed
-                         // with least_squares once PR is merged.
+                         // with least_squares once #1591 is merged.
         static constexpr T coeff2
             = -9.5284e2; // SI fit parameters that work well for Granite // TODO Will be computed
-                         // with least_squares once PR is merged.
+                         // with least_squares once #1591 is merged.
         static constexpr T coeff3
             = 4.2450e5; // SI fit parameters that work well for Granite // TODO Will be computed
-                        // with least_squares once PR is merged.
-        static constexpr T density_unit_earth   = 23093.884200654968;
-        static constexpr T sp_energy_unit_earth = 62522743.68231048;
+                        // with least_squares once #1591 is merged.
+        static constexpr T density_unit_earth   = 1.0;
+        static constexpr T sp_energy_unit_earth = 1.0;
+        // static constexpr T density_unit_earth   = 23093.884200654968;
+        // static constexpr T sp_energy_unit_earth = 62522743.68231048;
 
         static T u_c(T rho) {
             T rhoa = rho * density_unit_earth;
@@ -324,8 +326,8 @@ namespace shamphys {
                 T term_bracket = a + b / denom;
                 T P_c          = term_bracket * rho * u + A * chi + B * chi * chi;
                 // discard negative pressure
-                if (P_c < 0) {
-                    P_c = 0;
+                if (P_c < 0.0) {
+                    P_c = 0.0;
                 }
 
                 T term_rho_1 = u * term_bracket;
@@ -351,8 +353,8 @@ namespace shamphys {
 
                 T P_h = part_a + (part_b + part_A) * exp_alpha;
                 // discard negative pressure
-                if (P_h < 0) {
-                    P_h = 0;
+                if (P_h > 0.0) {
+                    P_h = 0.0;
                 }
 
                 T dPh_du = rho * (a + (b / denom2) * exp_alpha);
@@ -370,9 +372,9 @@ namespace shamphys {
             };
 
             if (rho >= rho0 || u < u_iv) {
-                auto [P, dP_drho, dP_du] = compute_cold();
+                std::tie(P, dP_drho, dP_du) = compute_cold();
             } else if (u > u_cv) {
-                auto [P, dP_drho, dP_du] = compute_hot();
+                std::tie(P, dP_drho, dP_du) = compute_hot();
             } else {
                 auto [Pc, dPc_drho, dPc_du] = compute_cold();
                 auto [Ph, dPh_drho, dPh_du] = compute_hot();

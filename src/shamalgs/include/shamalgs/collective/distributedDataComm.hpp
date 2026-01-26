@@ -41,8 +41,8 @@ namespace shamalgs::collective {
 
         void set_sizes(
             sham::DeviceScheduler_ptr dev_sched,
-            const std::vector<size_t>& sizes_cache1,
-            const std::vector<size_t>& sizes_cache2) {
+            const std::vector<size_t> &sizes_cache1,
+            const std::vector<size_t> &sizes_cache2) {
 
             __shamrock_stack_entry();
 
@@ -110,8 +110,8 @@ namespace shamalgs::collective {
         template<sham::USMKindTarget target>
         void set_sizes(
             sham::DeviceScheduler_ptr dev_sched,
-            const std::vector<size_t>& sizes_cache1,
-            const std::vector<size_t>& sizes_cache2) {
+            const std::vector<size_t> &sizes_cache1,
+            const std::vector<size_t> &sizes_cache2) {
 
             __shamrock_stack_entry();
 

@@ -234,8 +234,8 @@ namespace shamphys {
      *
      * @tparam Tscal Scalar type
      *
-     * Note that the notation in the original paper are confusing and a clearer version is to
-     * use the form in The Santa Barbara Binary-disk Code Comparison, Duffel et al. 2024
+     * Note that the notation in the original paper are confusing and a clearer version is to use
+     * the form in The Santa Barbara Binary-disk Code Comparison, Duffel et al. 2024
      *
      * The equation of state is given by:
      * \f$ c_s = (H(r)/r) \sqrt(- \phi_{\rm grav}) \f$
@@ -252,8 +252,8 @@ namespace shamphys {
      * @param lhs First EOS_Config_LocallyIsothermalDisc_Farris2014 struct to compare
      * @param rhs Second EOS_Config_LocallyIsothermalDisc_Farris2014 struct to compare
      *
-     * This function checks if two EOS_Config_LocallyIsothermalDisc_Farris2014 structs are equal
-     * by comparing their cs0, q, and r0 values.
+     * This function checks if two EOS_Config_LocallyIsothermalDisc_Farris2014 structs are equal by
+     * comparing their cs0, q, and r0 values.
      *
      * @return true if the two structs have the same cs0, q, and r0 values, false otherwise
      */
@@ -265,8 +265,8 @@ namespace shamphys {
     }
 
     /**
-     * @brief Configuration struct for the locally isothermal equation of state extended from
-     * Farris 2014 to include for the q index of the disc.
+     * @brief Configuration struct for the locally isothermal equation of state extended from Farris
+     * 2014 to include for the q index of the disc.
      *
      * This EOS should match with ieos 13 and 14 of phantom.
      *
@@ -278,8 +278,8 @@ namespace shamphys {
      * c_s = \frac{H_0}{r_0}\left(\frac{G M_1}{r_1} + \frac{G M_2}{r_2}\right)
      * \f$
      *
-     * However the extension of that EOS to q != 1/2 was only introduced in Ragussa et al 2016,
-     * if I'm right with:
+     * However the extension of that EOS to q != 1/2 was only introduced in Ragussa et al 2016, if
+     * I'm right with:
      *
      * \f$
      * c_s = \frac{H_0}{r_0} \left(\frac{G M_1}{r_1} + \frac{G M_2}{r_2}\right)^{q}
@@ -294,8 +294,7 @@ namespace shamphys {
      * \f$= c_{s0} \frac{1}{(r_0 \Omega_0)^{q}}\left(\frac{G M_1}{r_1}
      * + \frac{G M_2}{r_2}\right)^{q}\f$
      *
-     * \f$= c_{s0}\frac{1}{r_0^{q}}\left[\frac{1}{\sum_i M_i}\sum_i
-     * \frac{M_i}{r_i}\right]^{q}\f$
+     * \f$= c_{s0}\frac{1}{r_0^{q}}\left[\frac{1}{\sum_i M_i}\sum_i \frac{M_i}{r_i}\right]^{q}\f$
      *
      * @tparam Tscal Scalar type
      */
@@ -321,12 +320,10 @@ namespace shamphys {
      * @param lhs First EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct to compare
      * @param rhs Second EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct to compare
      *
-     * This function checks if two EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 structs
-     are equal by
-     * comparing their cs0, q, r0, and n_sinks values.
+     * This function checks if two EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 structs are
+     equal by comparing their cs0, q, r0, and n_sinks values.
 
-     * @return true if the two structs have the same cs0, q, r0, and n_sinks values, false
-     otherwise
+     * @return true if the two structs have the same cs0, q, r0, and n_sinks values, false otherwise
     */
     template<class Tscal>
     inline bool operator==(

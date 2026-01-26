@@ -518,8 +518,10 @@ import matplotlib.pyplot as plt
 # dump_folder += "/"
 
 
-column_density_plot.render_all(vmin=1, vmax=1e7, norm="log")
-column_density_plot_hollywood.render_all(vmin=1, vmax=1e7, norm="log", holywood_mode=True)
+column_density_plot.render_all(vmin=1, vmax=1e7, norm="log", time_unit="second")
+column_density_plot_hollywood.render_all(
+    vmin=1, vmax=1e7, norm="log", holywood_mode=True, time_unit="second"
+)
 
 
 def plot_vz_integ(metadata, arr_vz, iplot):

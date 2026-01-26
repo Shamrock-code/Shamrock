@@ -110,14 +110,22 @@ class SliceDensityPlot:
         for iplot in self.get_list_analysis_id():
             self.plot_rho_xy(iplot, holywood_mode, **kwargs)
 
-    def render_gif(self, save_animation=False):
+    def render_gif(
+        self,
+        save_animation=False,
+        fps=15,
+        bitrate=1800,
+        gif_filename="rho_slice.gif",
+    ):
         if shamrock.sys.world_rank() == 0:
             ani = shamrock.utils.plot.show_image_sequence(
                 self.helper.glob_str_plot, render_gif=True
             )
             if save_animation:
                 # To save the animation using Pillow as a gif
-                writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-                ani.save(self.helper.analysis_prefix + "rho_slice.gif", writer=writer)
+                writer = animation.PillowWriter(
+                    fps=fps, metadata=dict(artist="Shamrock"), bitrate=bitrate
+                )
+                ani.save(self.helper.analysis_prefix + gif_filename, writer=writer)
             return ani
         return None

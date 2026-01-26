@@ -55,7 +55,7 @@ namespace shammath {
      * @param p0    Initial parameters guessed
      *
      * @details The Levenberg-Marquardt method is used. Therefore, the number of observations needs
-     * to be greater than the number of paremeters.
+     * to be greater than the number of parameters.
      */
     template<class T, class Lambda>
     std::tuple<std::vector<T>, T> least_squares(
@@ -66,6 +66,7 @@ namespace shammath {
         int maxits  = 1000,
         T tolerence = 1e-6) {
         SHAM_ASSERT(X.size() == Y.size());
+        SHAM_ASSERT(X.size() > p0.size());
 
         const int params_nb = p0.size();
         const int data_size = X.size();

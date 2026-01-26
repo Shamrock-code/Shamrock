@@ -41,8 +41,8 @@ namespace shamalgs::collective {
 
         void set_sizes(
             sham::DeviceScheduler_ptr dev_sched,
-            std::vector<size_t> sizes_cache1,
-            std::vector<size_t> sizes_cache2) {
+            const std::vector<size_t>& sizes_cache1,
+            const std::vector<size_t>& sizes_cache2) {
 
             __shamrock_stack_entry();
 
@@ -110,8 +110,8 @@ namespace shamalgs::collective {
         template<sham::USMKindTarget target>
         void set_sizes(
             sham::DeviceScheduler_ptr dev_sched,
-            std::vector<size_t> sizes_cache1,
-            std::vector<size_t> sizes_cache2) {
+            const std::vector<size_t>& sizes_cache1,
+            const std::vector<size_t>& sizes_cache2) {
 
             __shamrock_stack_entry();
 
@@ -125,7 +125,7 @@ namespace shamalgs::collective {
         }
 
         inline void send_cache_write_buf_at(
-            size_t buf_id, size_t offset, sham::DeviceBuffer<u8> &buf) {
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
             std::visit(
                 [&](auto &cache) {
                     cache.send_cache_write_buf_at(buf_id, offset, buf);
@@ -143,7 +143,7 @@ namespace shamalgs::collective {
         }
 
         inline void recv_cache_write_buf_at(
-            size_t buf_id, size_t offset, sham::DeviceBuffer<u8> &buf) {
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
             std::visit(
                 [&](auto &cache) {
                     cache.recv_cache_write_buf_at(buf_id, offset, buf);

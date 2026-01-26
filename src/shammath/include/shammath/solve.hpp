@@ -46,16 +46,23 @@ namespace shammath {
     }
 
     /**
-     * @brief This function determines the best fit parameters $\vec p$ for a given function(f(\vec
-     * (beta), \mathbf(X)) with least squares.
+     * @brief This function determines the best fit parameters \f$ \vec p \f$ for a given
+     function \f$ f(\vec p, \mathbf X) \f$ with least squares.
      *
-     * @param f     Function (1d values)
-     * @param X     $x$ Data to fit
-     * @param Y     $y$ Data to fit
-     * @param p0    Initial parameters guessed
+     * @param f         Function (1d values)
+     * @param X         Data to fit \f$ x \f$
+     * @param Y         Data to fit \f$ y \f$
+     * @param p0        Initial parameters guessed
+     * @param maxits    Maximum number of iterations in the Levenberg-Marquardt procedure. Default:
+     1000
+     * @param tolerance Convergence condition in the Levenberg-Marquardt procedure. Default: 1e-6
      *
      * @details The Levenberg-Marquardt method is used. Therefore, the number of observations needs
-     * to be greater than the number of parameters.
+     * to be greater than the number of parameters. At every iteration, a new parameters array \f$
+     \vec p' \f$ is estimated. The convergence condition is
+     \f[
+     |S(\vec p') - S(\vec p))| < \epsilon
+     \f] where \f$ S \f$ is the residual sum of squares and \f$ \epsilon \f$ is the tolerance.
      */
     template<class T, class Lambda>
     std::tuple<std::vector<T>, T> least_squares(
@@ -64,7 +71,7 @@ namespace shammath {
         const std::vector<T> &Y,
         const std::vector<T> &p0,
         int maxits  = 1000,
-        T tolerence = 1e-6) {
+        T tolerance = 1e-6) {
         SHAM_ASSERT(X.size() == Y.size());
         SHAM_ASSERT(X.size() > p0.size());
 
@@ -81,7 +88,7 @@ namespace shammath {
             sse += r * r;
         };
         T sse_trial = 999.0;
-        while (it < maxits and sham::abs(sse_trial - sse) > tolerence) {
+        while (it < maxits and sham::abs(sse_trial - sse) > tolerance) {
             sse = 0.0;
             for (int k = 0; k < X.size(); k++) {
                 T r = Y[k] - f(p, X[k]);

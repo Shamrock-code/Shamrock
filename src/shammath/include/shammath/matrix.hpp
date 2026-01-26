@@ -130,9 +130,12 @@ namespace shammath {
         public:
         /// The matrix data
         std::vector<T> data;
+        /// Number of rows
         int rows;
+        /// Number of columns
         int columns;
 
+        /// Constructor
         mat_d(int rows, int columns) : rows(rows), columns(columns), data(rows * columns) {}
 
         /// Get the matrix data as a mdspan
@@ -154,6 +157,7 @@ namespace shammath {
         /// Check if this matrix is equal to another one
         bool operator==(const mat_d<T> &other) const { return data == other.data; }
 
+        /// Addition operator
         inline mat_d &operator+=(const mat_d &other) {
 #pragma unroll
             for (size_t i = 0; i < get_mdspan().extent(0) * get_mdspan().extent(1); i++) {
@@ -187,8 +191,10 @@ namespace shammath {
         public:
         /// The vector data
         std::vector<T> data;
+        /// The vector size
         int size;
 
+        /// Constructor
         vec_d(int size) : size(size), data(size) {}
 
         /// Get the vector data as a mdspan

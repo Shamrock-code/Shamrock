@@ -69,8 +69,8 @@ namespace shammath {
         /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat<T, m, n> &other, const T precision) const {
             bool res = true;
-            for (int i = 0; i < m; i++) {
-                for (int j = 0; j < n; j++) {
+            for (auto i = 0; i < m; i++) {
+                for (auto j = 0; j < n; j++) {
                     if (sham::abs(data[i * n + j] - other.data[i * n + j]) >= precision) {
                         res = false;
                     }
@@ -169,8 +169,8 @@ namespace shammath {
         /// check if this matrix is equal to another one at a given precison
         bool equal_at_precision(const mat_d<T> &other, const T precision) const {
             bool res = true;
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < columns; j++) {
+            for (auto i = 0; i < rows; i++) {
+                for (auto j = 0; j < columns; j++) {
                     if (sham::abs(data[i * columns + j] - other.data[i * columns + j])
                         >= precision) {
                         res = false;

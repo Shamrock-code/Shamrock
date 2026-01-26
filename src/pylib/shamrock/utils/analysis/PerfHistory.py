@@ -152,7 +152,7 @@ class PerfHistory:
                 label="Used compute time",
             )
             plt.xlabel("t [code unit] (simulation)")
-            plt.ylabel("$\sum_{processes} t$ [h] (real time)")
+            plt.ylabel("$\\sum_{processes} t$ [h] (real time)")
 
             ax1 = plt.gca()
 

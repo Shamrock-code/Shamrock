@@ -82,8 +82,8 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.01
-nstop = 30
+dt_stop = 0.05
+nstop = 20
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
@@ -245,7 +245,7 @@ else:
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
     cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
-
+    # cfg.set_eos_locally_isothermalFA2014_extended(cs0=cs0, q=q, r0=r0, n_sinks=1)
     cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
 
     cfg.set_units(codeu)
@@ -373,10 +373,15 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-from shamrock.utils.analysis import ColumnDensityPlot, PerfHistory
+from shamrock.utils.analysis import (
+    ColumnDensityPlot,
+    PerfHistory,
+    SliceDensityPlot,
+    SliceRelativeAzyVelocityPlot,
+    SliceVzPlot,
+)
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
-
 column_density_plot = ColumnDensityPlot(
     model,
     ext_r=rout * 1.5,
@@ -401,10 +406,55 @@ column_density_plot_hollywood = ColumnDensityPlot(
     analysis_prefix="rho_integ_hollywood",
 )
 
+vertical_density_plot = SliceDensityPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_slice",
+)
+v_z_slice_plot = SliceVzPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="v_z_slice",
+    do_normalization=True,
+)
+relative_azy_velocity_slice_plot = SliceRelativeAzyVelocityPlot(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="relative_azy_velocity_slice",
+    velocity_profile=kep_profile,
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
 
 def analysis(ianalysis):
+    ext = rout * 1.5
+    nx = 1024
+    ny = 1024
+
     column_density_plot.analysis_save(ianalysis)
     column_density_plot_hollywood.analysis_save(ianalysis)
+    vertical_density_plot.analysis_save(ianalysis)
+    v_z_slice_plot.analysis_save(ianalysis)
+    relative_azy_velocity_slice_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -471,18 +521,18 @@ for ttarg in t_stop:
 import matplotlib
 import matplotlib.pyplot as plt
 
-column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
-column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
-
-# %%
-# Make gif for the doc (plot_to_gif.py)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Convert PNG sequence to Image sequence in mpl
-
-# sphinx_gallery_multi_image = "single"
-
+# Uncomment this and replace by you dump folder, here since it is just above i comment it out
+# dump_folder = "my_masterpiece"
+# dump_folder += "/"
 
 render_gif = True
+
+column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
+column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
+vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
+v_z_slice_plot.render_all(vmin=-100, vmax=100)
+relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05)
+
 
 # %%
 # Do it for rho integ
@@ -497,7 +547,34 @@ if render_gif:
 # Same but in hollywood
 
 if render_gif:
-    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    ani = ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = v_z_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = relative_azy_velocity_slice_plot.render_gif(save_animation=True)
     if ani is not None:
         plt.show()
 

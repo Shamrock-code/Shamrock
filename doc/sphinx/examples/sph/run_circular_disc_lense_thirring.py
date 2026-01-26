@@ -405,6 +405,17 @@ def save_analysis_data(filename, key, value, ianalysis):
 from shamrock.utils.analysis import ColumnDensityPlot, PerfHistory
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ",
+)
 
 column_density_plot = ColumnDensityPlot(
     model,
@@ -557,12 +568,6 @@ def get_list_dumps_id():
     return list_dumps_id
 
 
-def load_rho_integ(iplot):
-    with open(plot_folder + f"rho_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
-
-
 def load_vxyz_integ(iplot):
     with open(plot_folder + f"vxyz_integ_{iplot:07}.json") as fp:
         metadata = json.load(fp)
@@ -574,14 +579,6 @@ if shamrock.sys.world_rank() == 0:
         print("Rendering vxyz integ plot for dump", iplot)
         arr_vxyz, metadata = load_vxyz_integ(iplot)
         plot_vz_integ(metadata, arr_vxyz[:, :, 2], iplot)
-
-
-# %%
-# Make gif for the doc (plot_to_gif.py)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Convert PNG sequence to Image sequence in mpl
-
-# sphinx_gallery_multi_image = "single"
 
 import matplotlib.animation as animation
 from shamrock.utils.plot import show_image_sequence

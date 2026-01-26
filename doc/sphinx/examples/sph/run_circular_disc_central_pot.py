@@ -374,6 +374,17 @@ def save_analysis_data(filename, key, value, ianalysis):
 from shamrock.utils.analysis import ColumnDensityPlot, PerfHistory
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ",
+)
 
 column_density_plot = ColumnDensityPlot(
     model,
@@ -470,11 +481,7 @@ column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
 column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
 
 # %%
-# Make gif for the doc (plot_to_gif.py)
-# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# Convert PNG sequence to Image sequence in mpl
-
-# sphinx_gallery_multi_image = "single"
+# The same one but in holywood mode
 
 
 render_gif = True

@@ -58,7 +58,7 @@ def plot_codeu_to_unit(unit_system, name):
 
     # Acceleration
     elif name == "m.s^-2":
-        return "[$\\mathrm{{m}} \\cdot \mathrm{{s}}^{-2}$]", unit_system.to("m") * unit_system.to(
+        return "[$\\mathrm{{m}} \\cdot \\mathrm{{s}}^{-2}$]", unit_system.to("m") * unit_system.to(
             "s", power=-2
         )
 

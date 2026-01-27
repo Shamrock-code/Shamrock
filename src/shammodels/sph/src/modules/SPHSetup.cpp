@@ -532,6 +532,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     f64 total_time_rank_getter = 0;
     f64 max_time_rank_getter   = 0;
 
+    shamalgs::collective::DDSCommCache comm_cache;
     u32 step_count = 0;
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
@@ -693,7 +694,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
                 return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-            });
+            },
+            comm_cache);
 
         // insert the data into the data to be inserted
         recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {

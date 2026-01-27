@@ -392,3 +392,87 @@ plt.figure(dpi=dpi)
 plot_rho_slice_cylindrical(metadata, arr_rho_pos)
 
 plt.show()
+
+# %%
+# Cylindrical rendering with custom getter (vtheta but with a mask)
+
+positions_cylindrical = make_cylindrical_coords(nr, ntheta)
+rays_cylindrical = positions_to_rays(positions_cylindrical)
+
+
+def custom_getter(index, dic_out):
+    x, y, z = dic_out["xyz"][index]
+    vx, vy, vz = dic_out["vxyz"][index]
+
+    e_theta = np.array([-y, x, 0])
+    e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
+    v_theta = np.dot(e_theta, np.array([vx, vy, vz]))
+
+    if x > 0.2:
+        return 0.0  # To show that we have full control on the rendering
+
+    return v_theta
+
+
+arr_vtheta_cylindrical = model.render_column_integ("custom", "f64", rays_cylindrical, custom_getter)
+arr_vtheta_pos = model.render_slice("custom", "f64", positions_cylindrical, custom_getter)
+
+
+def plot_vtheta_integ_cylindrical(metadata, arr_vtheta_cylindrical):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vtheta_cylindrical = np.array(arr_vtheta_cylindrical).reshape(nr, ntheta)
+
+    res = plt.imshow(
+        arr_vtheta_cylindrical,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        norm="log",
+        vmin=1e-7,
+        vmax=1e-5,
+        aspect="auto",
+    )
+    plt.xlabel("r")
+    plt.ylabel(r"$\theta$")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int v_\theta \, \mathrm{d}z$ [code unit]")
+
+
+def plot_vtheta_slice_cylindrical(metadata, arr_vtheta_pos):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vtheta_pos = np.array(arr_vtheta_pos).reshape(nr, ntheta)
+
+    res = plt.imshow(
+        arr_vtheta_pos,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        norm="log",
+        vmin=1e-8,
+        aspect="auto",
+    )
+    plt.xlabel("r")
+    plt.ylabel(r"$\theta$")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$v_\theta$ [code unit]")
+
+
+metadata = {"extent": [0, ext, -np.pi, np.pi], "time": model.get_time()}
+
+plt.figure(dpi=dpi)
+plot_vtheta_integ_cylindrical(metadata, arr_vtheta_cylindrical)
+
+plt.figure(dpi=dpi)
+plot_vtheta_slice_cylindrical(metadata, arr_vtheta_pos)
+
+plt.show()

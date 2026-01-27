@@ -49,7 +49,8 @@ void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchDataLayer::deserialize_buf(ser, ghost_layer_layout);
-        });
+        },
+        cache);
 
     ghost_layer.patchdatas = std::move(recv_dat);
 }

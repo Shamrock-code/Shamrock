@@ -353,7 +353,7 @@ namespace shamphys {
 
                 T P_h = part_a + (part_b + part_A) * exp_alpha;
                 // discard negative pressure
-                if (P_h > 0.0) {
+                if (P_h < 0.0) {
                     P_h = 0.0;
                 }
 

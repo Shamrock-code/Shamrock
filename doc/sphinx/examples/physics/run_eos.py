@@ -103,7 +103,6 @@ ax.legend(loc="lower right")
 # ^^^^^^^^^^^^^
 # With Tillotson parameters for Granite (Benz et al. 1986)
 
-# rho_plot = 0.5 * np.logspace(1, 5)
 kwargs_tillotson = {
     "rho0": 2.7e3,
     "E0": 1.6e7,
@@ -116,19 +115,24 @@ kwargs_tillotson = {
     "u_iv": 3.5e6,
     "u_cv": 1.8e7,
 }
+cv = 790
 rho0 = kwargs_tillotson["rho0"]
 u_iv = kwargs_tillotson["u_iv"]
 u_cv = kwargs_tillotson["u_cv"]
 
 rho_plot = np.linspace(0.5 * rho0, 1.5 * rho0)
-P_plot = []
+T_list = [0, 4000, 30000]
+u_T_list = cv * np.array(T_list)
+P_plot = [[] for _ in u_T_list]
 cs_plot = []
 uc_plot = []
 
+# Compute the data
 for rho in rho_plot:
-    P, _cs = shamrock.phys.eos.eos_Tillotson(rho=rho, u=0, **kwargs_tillotson)
     _uc = shamrock.phys.eos.cold_energy_Tillotson(rho=rho, **kwargs_tillotson)
-    P_plot.append(P)
+    for i, u_T in enumerate(u_T_list):
+        P, _cs = shamrock.phys.eos.eos_Tillotson(rho=rho, u=u_T, **kwargs_tillotson)
+        P_plot[i].append(P)
     cs_plot.append(_cs)
     uc_plot.append(_uc)
 
@@ -136,77 +140,49 @@ P_plot = np.array(P_plot)
 cs_plot = np.array(cs_plot)
 uc_plot = np.array(uc_plot)
 
-# rho_low = rho_plot[uc_plot > kwargs_tillotson["u_iv"]][0]
-rho_low = rho0
-rho_high = 2 * rho0
-# rho_high = rho_plot[uc_plot > kwargs_tillotson["u_cv"]][0]
+fig, axs = plt.subplots(2, figsize=(8, 8))
+fig.suptitle("Tillotson EoS")
 
-fig, axs = plt.subplots(2)
-fig.suptitle("Fermi Gas EoS")
-axs[0].plot(rho_plot, P_plot, color="blue")
-axs[0].axvline(x=rho0, color="black", ls="--")
+
+axs[0].set_title("Pressure")
 axs[0].set_xlabel("$\\rho$ [kg/m³]")
-axs[0].set_ylabel("$P$ [Pa]", color="blue")
-axs[0].legend()
-
-
-ax_twin = axs[0].twinx()
-ax_twin.set_ylabel("$c_s$ [m/s]", color="orange")
-ax_twin.legend(loc="lower right")
-
-axs[1].set_title("Cold energy")
+axs[0].set_ylabel("$P$ [Pa]")
+axs[1].set_title("Internal energy")
 axs[1].set_xlabel("$\\rho$ [kg/m³]")
-axs[1].set_ylabel("$u_c$ [J/kg]", color="tab:blue")
-axs[1].set_ylim(uc_plot[0], uc_plot[-1])
-axs[1].plot(rho_plot, uc_plot, color="tab:blue")
+axs[1].set_ylabel("$u$ [J/kg]")
 
-axs[1].axhline(y=kwargs_tillotson["u_iv"], color="black", ls="--", lw=0.5, alpha=0.5)
-axs[1].axhline(y=kwargs_tillotson["u_cv"], color="black", ls="--", lw=0.5, alpha=0.5)
+axs[1].axhline(y=kwargs_tillotson["u_iv"], color="black", ls="--", lw=1, alpha=0.5)
+axs[1].axhline(y=kwargs_tillotson["u_cv"], color="black", ls="--", lw=1, alpha=0.5)
+axs[0].annotate(
+    text=r"$\rho_0$",
+    xy=(rho0, np.max(P_plot)),
+    ha="left",
+    va="top",
+)
 axs[1].annotate(
     text=r"$u_{\rm iv}$",
-    xy=(1, u_iv / uc_plot[-1]),
-    xycoords="axes fraction",
+    xy=(rho_plot[-1], u_iv),
     ha="right",
-    va="bottom",
+    va="top",
 )
 axs[1].annotate(
     text=r"$u_{\rm cv}$",
-    xy=(1, u_cv / uc_plot[-1]),
-    xycoords="axes fraction",
+    xy=(rho_plot[-1], u_cv),
     ha="right",
-    va="bottom",
+    va="top",
 )
+
+for i, u_T in enumerate(u_T_list):
+    axs[0].plot(rho_plot, P_plot[i], label=f"T={T_list[i]:.0e}K")
+    axs[1].plot(
+        rho_plot, uc_plot + np.full_like(uc_plot, u_T), label=f"T={T_list[i]:.0e}K"
+    )
+# Notice that at T=0K, u=u_{cold}.
 
 for ax in axs:
     ax.set_xlim(rho_plot[0], rho_plot[-1])
-    ax.axvspan(rho_plot[0], rho_low, color="grey", alpha=0.5)
-    ax.axvspan(rho_high, rho_plot[-1], color="grey", alpha=0.5)
+    ax.axvspan(rho_plot[0], rho0, color="grey", alpha=0.1)
+    ax.axvline(x=rho0, color="black", ls="--")
+    ax.legend()
 
 fig.tight_layout()
-
-# fig, axs = plt.subplots(1, 2)
-# fig.suptitle("Tillotson EoS")
-
-# for u in [1e5, 5e6, 1e8]:
-#     P_plot = []
-#     cs_plot = []
-#     for rho in rho_plot:
-#         P, _cs = shamrock.phys.eos.eos_Tillotson(rho=rho, u=u, **kwargs_tillotson)
-#         P_plot.append(P)
-#         cs_plot.append(_cs)
-#     axs[0].plot(rho_plot, P_plot, label=f"$u={u:.0e}$ J/kg")
-#     axs[1].plot(rho_plot, cs_plot, label=f"$u={u:.0e}$ J/kg")
-
-# axs[0].set_ylabel("$P$ [Pa]")
-# axs[0].set_title("$P(\\rho)$")
-# axs[1].set_ylabel("$c_s$ [m/s]")
-# axs[1].set_title("$c_s(\\rho)$")
-
-# for ax in axs:
-#     ax.set_xscale("log")
-#     ax.set_xlabel("$\\rho$ [kg.m^-3]")
-#     ax.axvline(x=kwargs_tillotson["rho0"], color="black", ls="--", lw="1", alpha=0.4)
-#     ax.legend()
-# fig.tight_layout()
-
-# %%

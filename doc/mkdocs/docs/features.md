@@ -52,6 +52,8 @@ please wait for the corresponding feature to be published before publishing anyt
 | Adiabatic | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
 | Isothermal - LP07 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Yona Lapeyre](https://github.com/y-lapeyre) | | [![PR - #361](https://img.shields.io/badge/PR-%23361-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/361)  |
 | Isothermal - FA14 | ![Production ready](https://img.shields.io/badge/Production_ready-brightgreen)  |  [Timothée David--Cléris](https://github.com/tdavidcl) | | |
+| Ideal Fermi gas | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [David Fang](https://github.com/DavidFang03) | | [![PR - #1405](https://img.shields.io/badge/PR-%231405-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/1405) |
+| Tillotson | ![Ok](https://img.shields.io/badge/Ok-yellowgreen)  |  [David Fang](https://github.com/DavidFang03) | | [![PR - #1445](https://img.shields.io/badge/PR-%231445-brightgreen?logo=github)](https://github.com/Shamrock-code/Shamrock/pull/1445) |
 
 ### Godunov model
 

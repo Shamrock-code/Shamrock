@@ -65,7 +65,7 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         std::function<Tscal(Tscal)> H_profile,
         std::function<Tscal(Tscal)> rot_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::mt19937 eng,
+        std::mt19937_64 eng,
         Tscal init_h_factor) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
         context,

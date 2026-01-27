@@ -17,6 +17,8 @@
  */
 
 #include "shambase/constants.hpp"
+#include "shamalgs/collective/InvariantParallelGenerator.hpp"
+#include "shamalgs/collective/indexing.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -56,7 +58,7 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> H_profile,
             std::function<Tscal(Tscal)> rot_profile,
             std::function<Tscal(Tscal)> cs_profile,
-            std::mt19937 eng) {
+            std::mt19937_64 eng) {
             return DiscIterator(
                 part_mass,
                 disc_mass,
@@ -81,7 +83,7 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> H_profile,
             std::function<Tscal(Tscal)> rot_profile,
             std::function<Tscal(Tscal)> cs_profile,
-            std::mt19937 eng,
+            std::mt19937_64 eng,
             Tscal init_h_factor)
             : context(context), solver_config(solver_config), generator(make_generator(
                                                                   part_mass,
@@ -122,11 +124,13 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
     std::function<Tscal(Tscal)> rot_profile;
     std::function<Tscal(Tscal)> cs_profile;
 
-    std::mt19937 eng;
+    shamalgs::collective::InvariantParallelGenerator<std::mt19937_64> generator;
 
     static constexpr Tscal _2pi = 2 * shambase::constants::pi<Tscal>;
 
     Tscal f_func(Tscal r) { return r * sigma_profile(r); }
+
+    DiscOutput next(u64 seed);
 
     public:
     DiscIterator(
@@ -138,10 +142,33 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
         std::function<Tscal(Tscal)> H_profile,
         std::function<Tscal(Tscal)> rot_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::mt19937 eng)
-        : part_mass(part_mass), disc_mass(disc_mass), Npart(disc_mass / part_mass), r_in(r_in),
-          r_out(r_out), sigma_profile(sigma_profile), H_profile(H_profile),
-          rot_profile(rot_profile), cs_profile(cs_profile), eng(eng), current_index(0) {
+        std::mt19937_64 eng)
+        : DiscIterator(
+              part_mass,
+              disc_mass,
+              r_in,
+              r_out,
+              sigma_profile,
+              H_profile,
+              rot_profile,
+              cs_profile,
+              eng,
+              disc_mass / part_mass) {}
+
+    DiscIterator(
+        Tscal part_mass,
+        Tscal disc_mass,
+        Tscal r_in,
+        Tscal r_out,
+        std::function<Tscal(Tscal)> sigma_profile,
+        std::function<Tscal(Tscal)> H_profile,
+        std::function<Tscal(Tscal)> rot_profile,
+        std::function<Tscal(Tscal)> cs_profile,
+        std::mt19937_64 eng,
+        u64 Npart)
+        : part_mass(part_mass), disc_mass(disc_mass), Npart(Npart), r_in(r_in), r_out(r_out),
+          sigma_profile(sigma_profile), H_profile(H_profile), rot_profile(rot_profile),
+          cs_profile(cs_profile), generator(eng, Npart), current_index(0) {
 
         shamlog_debug_ln(
             "GeneratorMCDisc",
@@ -155,34 +182,18 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
             r_out,
             "Npart",
             Npart);
-
-        if (Npart == 0) {
-            done = true;
-        }
     }
 
-    inline bool is_done() { return done; } // just to make sure the result is not tempered with
+    inline bool is_done() {
+        return generator.is_done();
+    } // just to make sure the result is not tempered with
 
-    DiscOutput next();
-
-    inline std::vector<DiscOutput> next_n(u32 nmax) {
+    inline std::vector<DiscOutput> next_n(u64 nmax) {
+        std::vector<u64> seeds = generator.next_n(nmax);
         std::vector<DiscOutput> ret{};
-        for (u32 i = 0; i < nmax; i++) {
-            if (done) {
-                break;
-            }
-
-            ret.push_back(next());
+        for (u64 seed : seeds) {
+            ret.push_back(next(seed));
         }
         return ret;
-    }
-
-    inline void skip(u32 n) {
-        for (u32 i = 0; i < n; i++) {
-            if (done) {
-                break;
-            }
-            next();
-        }
     }
 };

@@ -120,6 +120,9 @@ namespace sham {
 
         /// Default work group size
         uint32_t default_work_group_size;
+
+        /// PCI address of the device
+        std::optional<std::string> pci_address;
     };
 
     struct DeviceMPIProperties {

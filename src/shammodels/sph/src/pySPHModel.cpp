@@ -387,7 +387,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     H_profile,
                     rot_profile,
                     cs_profile,
-                    std::mt19937(random_seed),
+                    std::mt19937_64(random_seed),
                     init_h_factor);
             },
             py::kw_only(),

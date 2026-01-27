@@ -174,9 +174,7 @@ axs[1].annotate(
 
 for i, u_T in enumerate(u_T_list):
     axs[0].plot(rho_plot, P_plot[i], label=f"T={T_list[i]:.0e}K")
-    axs[1].plot(
-        rho_plot, uc_plot + np.full_like(uc_plot, u_T), label=f"T={T_list[i]:.0e}K"
-    )
+    axs[1].plot(rho_plot, uc_plot + np.full_like(uc_plot, u_T), label=f"T={T_list[i]:.0e}K")
 # Notice that at T=0K, u=u_{cold}.
 
 for ax in axs:

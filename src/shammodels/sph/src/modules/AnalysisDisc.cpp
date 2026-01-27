@@ -41,7 +41,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_b
     using namespace shamrock::patch;
 
     PatchScheduler &sched     = shambase::get_check_ref(context.sched);
-    PatchDataLayerLayout &pdl = sched.pdl();
+    PatchDataLayerLayout &pdl = sched.pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 
@@ -194,7 +194,7 @@ auto shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>::compute_analysis_s
     using namespace shamrock;
     using namespace shamrock::patch;
     PatchScheduler &sched     = shambase::get_check_ref(context.sched);
-    PatchDataLayerLayout &pdl = sched.pdl();
+    PatchDataLayerLayout &pdl = sched.pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
 

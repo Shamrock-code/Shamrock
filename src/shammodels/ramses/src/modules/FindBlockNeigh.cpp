@@ -9,6 +9,7 @@
 
 /**
  * @file FindBlockNeigh.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -102,10 +103,14 @@ namespace shammodels::basegodunov::modules {
             sycl::buffer<TgridVec> buf_block_min_sycl = block_min.get_buf().copy_to_sycl_buffer();
             sycl::buffer<TgridVec> buf_block_max_sycl = block_max.get_buf().copy_to_sycl_buffer();
 
+            // Build the block graphs for the current patch in all 6 directions
             for (u32 dir = 0; dir < 6; dir++) {
 
                 TgridVec dir_offset = result.offset_check[dir];
 
+                // This build for the current patch in the direction [dir], the graph of its blocks.
+                // So for each block in the patch we know its neighbors, and neccessary information
+                // to access them
                 AMRGraph rslt = details::compute_neigh_graph_deprecated<AMRBlockFinder>(
                     shamsys::instance::get_compute_scheduler_ptr(),
                     edges.sizes.indexes.get(id),

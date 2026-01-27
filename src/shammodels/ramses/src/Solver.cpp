@@ -19,13 +19,16 @@
 #include "shambase/memory.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammath/AABB.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -57,6 +60,7 @@
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
+#include <algorithm>
 #include <memory>
 
 template<class Tvec, class TgridVec>
@@ -407,6 +411,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         1, "block_cell_sizes", "s_{\\rm cell}");
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
+
+    // AMR : block levels and level0 sizes
+    using TgridUint          = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+    storage.amr_block_levels = std::make_shared<shamrock::solvergraph::Field<TgridUint>>(1, "", "");
+    storage.level0_size      = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
+        "level0_amr", "level0_amr");
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_rho", "\\nabla \\rho");
@@ -879,6 +889,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     { // build neigh tables
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> neigh_table_sequence;
 
+        /** @brief For each patch on  the current MPI process, this node build the graph of
+         *  their blocks in all 6 directions and store them in block_graph_edge. So, for
+         *  a given patch, we know for each of its block their neighbors in all the 6 directions
+         *  and the needed information to access them.
+         */
         modules::FindBlockNeigh<Tvec, TgridVec, u_morton> node1;
         node1.set_edges(
             storage.block_counts_with_ghost,
@@ -888,6 +903,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_graph_edge);
         node1.evaluate();
 
+        /** @brief For each patch on  the current MPI process, this node build the graph of
+         *  their cells in all 6 directions and store them in cell_graph_edge. So, for
+         *  a given patch, we know for each of its cell their neighbors in all the 6 directions
+         *  and the needed information to access them.
+         */
         modules::BlockNeighToCellNeigh<Tvec, TgridVec, u_morton> node2(Config::NsideBlockPow);
         node2.set_edges(
             storage.block_counts_with_ghost,
@@ -919,6 +939,28 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    { // compute level0 sizes in patch
+        modules::ComputeLevel0CellSize<Tvec, TgridVec> node_level0_sizes{};
+        node_level0_sizes.set_edges(
+            graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
+            storage.source_patches,
+            storage.level0_size);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
+    }
+
+    { // compute block amr level in patch
+        modules::ComputeAMRLevel<TgridVec> node_amr_level{};
+        node_amr_level.set_edges(
+            storage.block_counts,
+            storage.level0_size,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.amr_block_levels);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_amr_level)>(std::move(node_amr_level)));
     }
 
     if (solver_config.should_compute_rho_mean()) {
@@ -1507,6 +1549,26 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
+    {
+
+        modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
+            AMRBlock::block_size, solver_config.eos_gamma};
+        node_ctp_after_updated.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_rho,
+            storage.refs_rhov,
+            storage.refs_rhoe,
+            storage.vel,
+            storage.press);
+
+        node_ctp_after_updated.evaluate();
+    }
+
+    // if(dt_input > 0)
+    // {
+    //     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+    //     refinement.update_refinement();
+    // }
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
     refinement.update_refinement();
 

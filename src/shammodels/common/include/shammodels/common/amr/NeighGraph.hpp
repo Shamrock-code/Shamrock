@@ -11,6 +11,7 @@
 
 /**
  * @file NeighGraph.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -32,7 +33,7 @@ namespace shammodels::basegodunov::modules {
         sham::DeviceBuffer<u32> node_link_offset;
         sham::DeviceBuffer<u32> node_links;
         u32 link_count;
-        u32 obj_cnt;
+        u32 obj_cnt; /* Number of objects (e.g., cells or blocks) in the patch. */
 
         std::optional<sham::DeviceBuffer<u32>> antecedent = std::nullopt;
 
@@ -97,6 +98,11 @@ namespace shammodels::basegodunov::modules {
         }
 
         void complete_event_state(sycl::event &e) {
+            node_link_offset.complete_event_state(e);
+            node_links.complete_event_state(e);
+        }
+
+        void complete_event_state(sham::EventList &e) {
             node_link_offset.complete_event_state(e);
             node_links.complete_event_state(e);
         }

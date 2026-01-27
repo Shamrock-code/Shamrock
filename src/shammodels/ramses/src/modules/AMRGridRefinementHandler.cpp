@@ -596,10 +596,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
-    // Ensure that the blocks are sorted before refinement
-    AMRSortBlocks block_sorter(context, solver_config, storage);
-    block_sorter.reorder_amr_blocks();
-
     using AMRmode_None         = typename AMRMode<Tvec, TgridVec>::None;
     using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
 
@@ -628,6 +624,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // be both refined and derefined in the same pass
         internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
     }
+
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

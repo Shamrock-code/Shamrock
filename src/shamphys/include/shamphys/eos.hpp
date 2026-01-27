@@ -18,8 +18,6 @@
  */
 
 #include "shambackends/sycl.hpp"
-#include "shamunits/Constants.hpp"
-#include "shamunits/UnitSystem.hpp"
 
 namespace shamphys {
 
@@ -140,8 +138,8 @@ namespace shamphys {
             return sycl::sqrt(gamma * P / rho);
         }
 
-        static constexpr T temperature(T P, T rho, T mu, T mh, T kb) {
-            return mu * mh * P / (rho * kb);
+        static constexpr T temperature(T P, T rho, T chi, T mh, T kb) {
+            return chi * mh * P / (rho * kb);
         }
 
         static constexpr T pressure(T cs, T rho, T rho_c1, T rho_c2, T rho_c3) {
@@ -217,6 +215,187 @@ namespace shamphys {
             T cs2 = 8 * ALPHA * BETA * tpf2 * tpf2
                     / (3 * mu13 * sycl::powr(rho, 2. / 3.) * sycl::sqrt(1 + tpf2));
             return {P, sycl::sqrt(cs2)};
+        }
+    };
+
+    /**
+     * @brief Tillotson equation of state from Brundage (2013)
+     *
+     * The Tillotson equation of state is characterized by ten material properties: \f$ \rho_0, E_0,
+     * A, B, a, b, \alpha, \beta, u_{\mathrm{iv}}, u_{\mathrm{cv}} \f$. The pressure-density diagram
+     * is divided into 3 regions, corresponding to condensate or vaporized states. Pressure is
+     * function of density \f$\rho\f$ and internal energy \f$ u \f$.
+     *
+     *
+     * Pressure (piecewise):
+     * \f[
+     * p = \begin{cases}
+     *   p_{\mathrm{c}} = \left[a + \frac{b}{1+\frac{u}{E_0\eta^2}}\right]\rho u + A \chi + B \chi^2
+     * & \rho \geq \rho_0 \quad\text{or}\quad u \leq u_{\mathrm{iv}} \\
+     * p_{\mathrm{h}} = a\rho u + \left[\frac{b}{1+\frac{u}{E_0\eta^2}}\rho u + A \chi
+     * e^{-\beta\left(\frac{\rho_0}{\rho} -1\right)}  \right] e^{-\alpha \left(\frac{\rho_0}{\rho}
+     * -1\right)^2} & \rho < \rho_0 \quad\text{and}\quad u \geq u_{\mathrm{cv}} \\
+     * \frac{(u-u_{\mathrm{iv}})p_{\mathrm{c}} +
+     * (u_{\mathrm{cv}}-u)p_{\mathrm{c}}}{u_{\mathrm{cv}} -
+     * u_{\mathrm{iv}}} & \rho < \rho_0
+     * \quad\text{and}\quad u_{\mathrm{cv}} > u > u_{\mathrm{iv}}
+     * \end{cases}
+     * \f]
+     *
+     * where
+     * \f{eqnarray*}{
+     * \eta &=& \frac{\rho}{\rho_0} \\
+     * \chi &=& \eta -1
+     * \f}
+     * Negative pressures are not allowed and set to zero.
+     *
+     * The sound speed formulas are derived from
+     * \f[ c_s^2 = \frac{\partial p}{\partial \rho} +
+     * \frac{p}{\rho^2}\frac{\partial p}{\partial u} \f]
+     *
+     * The internal energy has two main contributions: temperature and pressure. The pressure
+     * component is given by the numerical integration of
+     * \f{eqnarray*}{
+     * \frac{\mathrm{d}u_{\mathrm{c}}}{\mathrm{d}\rho} &=& \frac{1}{\rho^2}p_{\mathrm{c}} \\
+     * u_{\mathrm{c}}(\rho_0) &=& 0
+     * \f}
+     * and the temperature is finally deduced as:
+     * \f[
+     * T = \frac{u-u_{\mathrm{c}}}{c_{\mathrm{V}}}
+     * \f]
+     */
+    template<class T>
+    struct EOS_Tillotson {
+        static constexpr T coeff1
+            = 3.0021e-1; // SI fit parameters that work well for Granite // TODO Will be computed
+                         // with least_squares once #1591 is merged.
+        static constexpr T coeff2
+            = -9.5284e2; // SI fit parameters that work well for Granite // TODO Will be computed
+                         // with least_squares once #1591 is merged.
+        static constexpr T coeff3
+            = 4.2450e5; // SI fit parameters that work well for Granite // TODO Will be computed
+                        // with least_squares once #1591 is merged.
+        static constexpr T density_unit_earth   = 1.0;
+        static constexpr T sp_energy_unit_earth = 1.0;
+        // static constexpr T density_unit_earth   = 23093.884200654968;
+        // static constexpr T sp_energy_unit_earth = 62522743.68231048;
+
+        static T u_c(T rho) {
+            T rhoa = rho * density_unit_earth;
+            T uc   = coeff1 * rhoa * rhoa + coeff2 * rhoa + coeff3;
+            return uc / sp_energy_unit_earth;
+        }
+
+        /**
+         * @brief EOS_Tillotson::pressure_and_soundspeed
+         * Returns pressure and sound speed from the given values of density and internal energy in
+         * the Tillotson equation of state. Parameters are in the code units.
+         * @param rho Density
+         * @param u_T Internal energy (temperature contribution, which is the field uint stored in
+         * Shamrock)
+         * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
+         * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
+         * @param A Tillotson EoS \f$ A \f$ parameter
+         * @param B Tillotson EoS \f$ B \f$ parameter
+         * @param a Tillotson EoS \f$ a \f$ parameter
+         * @param b Tillotson EoS \f$ b \f$ parameter
+         * @param alpha Tillotson EoS \f$\alpha\f$ parameter
+         * @param beta Tillotson EoS \f$\beta\f$ parameter
+         * @param u_iv Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+         * vaporization
+         * @param u_cv Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+         * vaporization
+         */
+        static PressureAndCs<T> pressure_and_soundspeed(
+            T rho, T u_T, T rho0, T E0, T A, T B, T a, T b, T alpha, T beta, T u_iv, T u_cv) {
+
+            T u      = u_T + u_c(rho);
+            T eta    = rho / rho0;
+            T eta2   = eta * eta;
+            T chi    = eta - 1.0;
+            T omega  = u / (E0 * eta2);
+            T denom  = 1.0 + omega;
+            T denom2 = denom * denom;
+
+            T P       = 0.0;
+            T dP_drho = 0.0;
+            T dP_du   = 0.0;
+
+            // Compressed (rho < rho0 or u < u_cv)
+            auto compute_cold = [&]() {
+                T term_bracket = a + b / denom;
+                T P_c          = term_bracket * rho * u + A * chi + B * chi * chi;
+                // discard negative pressure
+                if (P_c < 0.0) {
+                    P_c = 0.0;
+                }
+
+                T term_rho_1 = u * term_bracket;
+                T term_rho_2 = (u * u / E0) * (2.0 / eta2) * (b / denom2);
+                T term_rho_3 = (1.0 / rho0) * (A + 2.0 * B * chi);
+
+                T dPc_drho = term_rho_1 + term_rho_2 + term_rho_3;
+                T dPc_du   = rho * (a + b / denom2);
+
+                return std::make_tuple(P_c, dPc_drho, dPc_du);
+            };
+
+            // Vaporized (rho < rho0 and u > u_cv)
+            auto compute_hot = [&]() {
+                T X = (rho0 / rho) - 1.0;
+
+                T exp_beta  = sycl::exp(-beta * X);
+                T exp_alpha = sycl::exp(-alpha * X * X);
+
+                T part_a = a * rho * u;
+                T part_b = (b * rho * u) / denom;
+                T part_A = A * chi * exp_beta;
+
+                T P_h = part_a + (part_b + part_A) * exp_alpha;
+                // discard negative pressure
+                if (P_h < 0.0) {
+                    P_h = 0.0;
+                }
+
+                T dPh_du = rho * (a + (b / denom2) * exp_alpha);
+
+                T dPartA_drho = a * u;
+                T term_brackets_b
+                    = (1.0 / rho) * (1.0 + (2.0 * omega / denom) + (2.0 * alpha * X / eta));
+                T dPartB_drho      = (part_b * exp_alpha) * term_brackets_b;
+                T brackets_A       = 1.0 + (chi / eta2) * (beta + 2.0 * alpha * X);
+                T dPartA_term_drho = (A / rho0) * exp_beta * exp_alpha * brackets_A;
+
+                T dPh_drho = dPartA_drho + dPartB_drho + dPartA_term_drho;
+
+                return std::make_tuple(P_h, dPh_drho, dPh_du);
+            };
+
+            if (rho >= rho0 || u < u_iv) {
+                std::tie(P, dP_drho, dP_du) = compute_cold();
+            } else if (u > u_cv) {
+                std::tie(P, dP_drho, dP_du) = compute_hot();
+            } else {
+                auto [Pc, dPc_drho, dPc_du] = compute_cold();
+                auto [Ph, dPh_drho, dPh_du] = compute_hot();
+
+                T delta_U = u_cv - u_iv;
+                T x       = (u - u_iv) / delta_U;
+
+                P                    = (1.0 - x) * Pc + x * Ph;
+                dP_drho              = (1.0 - x) * dPc_drho + x * dPh_drho;
+                T term_interpolation = (Ph - Pc) / delta_U;
+                T term_derivs        = (1.0 - x) * dPc_du + x * dPh_du;
+                dP_du                = term_interpolation + term_derivs;
+            }
+
+            T c2 = dP_drho + (P / (rho * rho)) * dP_du;
+            // Discard negative c_s^2
+            if (c2 < 0.0) {
+                c2 = 0.0;
+            };
+
+            return {P, sycl::sqrt(c2)};
         }
     };
 

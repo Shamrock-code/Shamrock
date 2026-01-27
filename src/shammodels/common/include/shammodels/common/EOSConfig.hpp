@@ -74,6 +74,9 @@ namespace shammodels {
         /// Fermi equation of state configuration
         using Fermi = shamphys::EOS_Config_Fermi<Tscal>;
 
+        /// Tillotson equation of state configuration
+        using Tillotson = shamphys::EOS_Config_Tillotson<Tscal>;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<
             Isothermal,
@@ -83,7 +86,8 @@ namespace shammodels {
             LocallyIsothermalLP07,
             LocallyIsothermalFA2014,
             LocallyIsothermalFA2014Extended,
-            Fermi>;
+            Fermi,
+            Tillotson>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -144,6 +148,37 @@ namespace shammodels {
          * @param mu_e The mean molecular weight
          */
         inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
+
+        /**
+         * @brief Set the EOS configuration to a Tillotson equation of state. Details in
+         * EOS_Tillotson.
+         *
+         * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
+         * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
+         * @param A Tillotson EoS \f$ A \f$ parameter
+         * @param B Tillotson EoS \f$ B \f$ parameter
+         * @param a Tillotson EoS \f$ a \f$ parameter
+         * @param b Tillotson EoS \f$ b \f$ parameter
+         * @param alpha Tillotson EoS \f$\alpha\f$ parameter
+         * @param beta Tillotson EoS \f$\beta\f$ parameter
+         * @param u_iv Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+         * vaporization
+         * @param u_cv Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+         * vaporization
+         */
+        inline void set_tillotson(
+            Tscal rho0,
+            Tscal E0,
+            Tscal A,
+            Tscal B,
+            Tscal a,
+            Tscal b,
+            Tscal alpha,
+            Tscal beta,
+            Tscal u_iv,
+            Tscal u_cv) {
+            config = Tillotson{rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv};
+        }
 
         /**
          * @brief Print current status of the EOSConfig

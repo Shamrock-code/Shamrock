@@ -38,14 +38,14 @@ namespace shammath {
      * u'(x) &=& f(u,x) \\
      * u(x_0) &=& u_0
      * \f}
-     * and will be solved between start and end with step $\mathrm{d}t$.
+     * and will be solved between start and end with step \f$ \mathrm{d}t \f$.
      *
      * @param start Lower bound of integration
      * @param end   Higher bound of integration
-     * @param step  Step of integration $\mathrm{d}t$
-     * @param ode   Ode function $f$
-     * @param x0    Initial coordinate $x_0$
-     * @param u0    Initial value $u_0$
+     * @param step  Step of integration \f$ \mathrm{d}t \f$
+     * @param ode   Ode function \f$ f \f$
+     * @param x0    Initial coordinate \f$ x_0 \f$
+     * @param u0    Initial value \f$ u_0 \f$
      */
     template<class T, class Lambda>
     inline constexpr std::pair<std::vector<T>, std::vector<T>> euler_ode(

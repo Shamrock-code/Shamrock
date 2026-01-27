@@ -145,10 +145,10 @@ fig.suptitle("Tillotson EoS")
 
 
 axs[0].set_title("Pressure")
-axs[0].set_xlabel("$\\rho$ [kg/m³]")
+axs[0].set_xlabel("$\\rho$ [kg.m^-3]")
 axs[0].set_ylabel("$P$ [Pa]")
 axs[1].set_title("Internal energy")
-axs[1].set_xlabel("$\\rho$ [kg/m³]")
+axs[1].set_xlabel("$\\rho$ [kg.m^-3]")
 axs[1].set_ylabel("$u$ [J/kg]")
 
 axs[1].axhline(y=kwargs_tillotson["u_iv"], color="black", ls="--", lw=1, alpha=0.5)

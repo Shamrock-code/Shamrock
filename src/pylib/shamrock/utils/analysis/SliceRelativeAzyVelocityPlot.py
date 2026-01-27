@@ -75,7 +75,7 @@ class SliceRelativeAzyVelocityPlot:
     def get_list_analysis_id(self):
         return self.helper.get_list_analysis_id()
 
-    def plot_relative_azy_velocity(
+    def plot(
         self,
         iplot,
         holywood_mode=False,
@@ -127,18 +127,26 @@ class SliceRelativeAzyVelocityPlot:
 
     def render_all(self, holywood_mode=False, **kwargs):
         for iplot in self.get_list_analysis_id():
-            self.plot_relative_azy_velocity(iplot, holywood_mode, **kwargs)
+            self.plot(iplot, holywood_mode, **kwargs)
 
-    def render_gif(self, save_animation=False):
+    def render_gif(
+        self,
+        save_animation=False,
+        fps=15,
+        bitrate=1800,
+        gif_filename="relative_azy_velocity_slice.gif",
+    ):
         if shamrock.sys.world_rank() == 0:
             ani = shamrock.utils.plot.show_image_sequence(
                 self.helper.glob_str_plot, render_gif=True
             )
             if save_animation:
                 # To save the animation using Pillow as a gif
-                writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+                writer = animation.PillowWriter(
+                    fps=fps, metadata=dict(artist="Me"), bitrate=bitrate
+                )
                 ani.save(
-                    self.helper.analysis_prefix + "relative_azy_velocity_slice_plot.gif",
+                    self.helper.analysis_prefix + gif_filename,
                     writer=writer,
                 )
             return ani

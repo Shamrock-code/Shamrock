@@ -40,7 +40,7 @@ class ColumnDensityPlot:
     def get_list_analysis_id(self):
         return self.helper.get_list_analysis_id()
 
-    def plot_rho_xy(
+    def plot(
         self,
         iplot,
         holywood_mode=False,
@@ -93,7 +93,7 @@ class ColumnDensityPlot:
 
     def render_all(self, holywood_mode=False, **kwargs):
         for iplot in self.get_list_analysis_id():
-            self.plot_rho_xy(iplot, holywood_mode, **kwargs)
+            self.plot(iplot, holywood_mode, **kwargs)
 
     def render_gif(
         self,

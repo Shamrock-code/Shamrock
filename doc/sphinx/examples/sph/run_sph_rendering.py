@@ -199,7 +199,7 @@ gen_disc = setup.make_generator_disc_mc(
     rot_profile=rot_profile,
     cs_profile=cs_profile,
     random_seed=666,
-    init_h_factor=0.06,
+    init_h_factor=0.03,
 )
 
 # Print the dot graph of the setup
@@ -207,6 +207,8 @@ print(gen_disc.get_dot())
 
 # Apply the setup
 setup.apply_setup(gen_disc)
+
+model.do_vtk_dump("init_disc.vtk", True)
 
 model.change_htolerances(coarse=1.3, fine=1.1)
 model.timestep()

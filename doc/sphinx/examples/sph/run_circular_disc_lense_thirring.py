@@ -312,7 +312,7 @@ else:
         rot_profile=rot_profile,
         cs_profile=cs_profile,
         random_seed=666,
-        init_h_factor=0.06,
+        init_h_factor=0.03,
     )
 
     # Print the dot graph of the setup

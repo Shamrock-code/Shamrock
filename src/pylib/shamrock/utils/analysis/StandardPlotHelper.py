@@ -26,8 +26,10 @@ class StandardPlotHelper:
         self.center = center
         self.aspect = float(self.nx) / float(self.ny)
 
-        self.analysis_prefix = os.path.join(analysis_folder, analysis_prefix) + "_"
-        self.plot_prefix = os.path.join(analysis_folder, "plot_" + analysis_prefix) + "_"
+        self.analysis_prefix = os.path.join(analysis_folder, "plots", analysis_prefix) + "_"
+        self.plot_prefix = os.path.join(analysis_folder, "plots", "plot_" + analysis_prefix) + "_"
+
+        os.makedirs(os.path.join(analysis_folder, "plots"), exist_ok=True)
 
         self.npy_data_filename = self.analysis_prefix + "{:07}.npy"
         self.json_data_filename = self.analysis_prefix + "{:07}.json"
@@ -44,7 +46,7 @@ class StandardPlotHelper:
 
         return dx, dy
 
-    def column_integ_render(self, field_name, field_type):
+    def column_integ_render(self, field_name, field_type, custom_getter=None):
         dx, dy = self.get_dx_dy()
         arr_field = self.model.render_cartesian_column_integ(
             field_name,
@@ -54,9 +56,40 @@ class StandardPlotHelper:
             delta_y=dy,
             nx=self.nx,
             ny=self.ny,
+            custom_getter=custom_getter,
         )
 
         return arr_field
+
+    def column_average_render(
+        self, field_name, field_type, min_normalization=1e-9, custom_getter=None
+    ):
+        dx, dy = self.get_dx_dy()
+        arr_field = self.model.render_cartesian_column_integ(
+            field_name,
+            field_type,
+            center=(self.center[0], self.center[1], self.center[2]),
+            delta_x=dx,
+            delta_y=dy,
+            nx=self.nx,
+            ny=self.ny,
+            custom_getter=custom_getter,
+        )
+
+        normalisation = self.model.render_cartesian_column_integ(
+            "unity",
+            "f64",
+            center=(self.center[0], self.center[1], self.center[2]),
+            delta_x=dx,
+            delta_y=dy,
+            nx=self.nx,
+            ny=self.ny,
+        )
+
+        # set to nan below min_normalization
+        arr_field[normalisation < min_normalization] = np.nan
+
+        return arr_field / normalisation
 
     def slice_render(
         self,
@@ -175,7 +208,7 @@ class StandardPlotHelper:
             plt.axis("off")
 
     def figure_render_sinks(
-        self, metadata, ax, scale_factor=5, color="green", linewidth=1, fill=False
+        self, metadata, ax, scale_factor=1, color="green", linewidth=1, fill=False
     ):
         sink_list_plot = self.metadata_to_screen_sink_pos(metadata)
         output_list = []

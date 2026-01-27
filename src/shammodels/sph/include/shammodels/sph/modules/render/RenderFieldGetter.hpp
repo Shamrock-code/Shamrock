@@ -53,7 +53,8 @@ namespace shammodels::sph::modules {
         sham::DeviceBuffer<Tfield> runner_function(
             std::string field_name,
             lamda_runner lambda,
-            std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter
+            std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
+                custom_getter
             = std::nullopt);
 
         private:

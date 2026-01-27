@@ -798,7 +798,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "render_slice",
-            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
 
                     if(custom_getter.has_value()) {
@@ -831,7 +831,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::string name,
                std::string field_type,
                std::vector<shammath::Ray<Tvec>> rays,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
 
                     if(custom_getter.has_value()) {
@@ -868,7 +868,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                -> std::variant<py::array_t<Tscal>> {
 
                 if(custom_getter.has_value()) {
@@ -938,7 +938,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                -> std::variant<py::array_t<Tscal>> {
 
                 if(custom_getter.has_value()) {

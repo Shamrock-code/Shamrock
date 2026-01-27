@@ -14,6 +14,13 @@ try:
 except ImportError:
     _HAS_MATPLOTLIB = False
 
+try:
+    from numba import njit
+
+    _HAS_NUMBA = True
+except ImportError:
+    _HAS_NUMBA = False
+
 from .StandardPlotHelper import StandardPlotHelper
 from .UnitHelper import plot_codeu_to_unit
 
@@ -43,17 +50,38 @@ class SliceRelativeAzyVelocityPlot:
         self.min_normalization = min_normalization
 
     def compute_relative_azy_velocity(self):
-        def custom_getter(index, dic_out):
-            x, y, z = dic_out["xyz"][index]
-            vx, vy, vz = dic_out["vxyz"][index]
+        if _HAS_NUMBA:
+            if shamrock.sys.world_rank() == 0:
+                print("Using numba for velocity profile in SliceRelativeAzyVelocityPlot")
 
-            e_theta = np.array([-y, x, 0])
-            e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
-            v_theta = np.dot(e_theta, np.array([vx, vy, vz]))
+        if _HAS_NUMBA:
+            vel_profile_jit = njit(self.velocity_profile)
+        else:
+            vel_profile_jit = self.velocity_profile
 
-            v_relative = v_theta / self.velocity_profile(np.sqrt(x**2 + y**2))
-
+        def internal(
+            size: int, x: np.array, y: np.array, vx: np.array, vy: np.array, vz: np.array
+        ) -> np.array:
+            v_relative = np.zeros(size)
+            for i in range(size):
+                e_theta = np.array([-y[i], x[i], 0])
+                e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
+                v_theta = np.dot(e_theta, np.array([vx[i], vy[i], vz[i]]))
+                v_relative[i] = v_theta / vel_profile_jit(np.sqrt(x[i] ** 2 + y[i] ** 2))
             return v_relative
+
+        if _HAS_NUMBA:
+            internal = njit(internal)
+
+        def custom_getter(size: int, dic_out: dict) -> np.array:
+            return internal(
+                size,
+                dic_out["xyz"][:, 0],
+                dic_out["xyz"][:, 1],
+                dic_out["vxyz"][:, 0],
+                dic_out["vxyz"][:, 1],
+                dic_out["vxyz"][:, 2],
+            )
 
         arr_v = self.helper.slice_render(
             "custom",

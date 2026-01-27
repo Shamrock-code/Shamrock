@@ -400,16 +400,22 @@ positions_cylindrical = make_cylindrical_coords(nr, ntheta)
 rays_cylindrical = positions_to_rays(positions_cylindrical)
 
 
-def custom_getter(index, dic_out):
-    x, y, z = dic_out["xyz"][index]
-    vx, vy, vz = dic_out["vxyz"][index]
+def custom_getter(size, dic_out):
+    x = dic_out["xyz"][:, 0]
+    y = dic_out["xyz"][:, 1]
+    z = dic_out["xyz"][:, 2]
+    vx = dic_out["vxyz"][:, 0]
+    vy = dic_out["vxyz"][:, 1]
+    vz = dic_out["vxyz"][:, 2]
 
-    e_theta = np.array([-y, x, 0])
-    e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
-    v_theta = np.dot(e_theta, np.array([vx, vy, vz]))
+    v_theta = np.zeros(size)
+    for i in range(size):
+        e_theta = np.array([-y[i], x[i], 0])
+        e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
+        v_theta[i] = np.dot(e_theta, np.array([vx[i], vy[i], vz[i]]))
 
-    if x > 0.2:
-        return 0.0  # To show that we have full control on the rendering
+        if x[i] > 0.2:
+            v_theta[i] = 0.0  # To show that we have full control on the rendering
 
     return v_theta
 

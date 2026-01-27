@@ -312,7 +312,7 @@ else:
         rot_profile=rot_profile,
         cs_profile=cs_profile,
         random_seed=666,
-        init_h_factor=0.06,
+        init_h_factor=0.03,
     )
 
     # Print the dot graph of the setup
@@ -402,7 +402,11 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-from shamrock.utils.analysis import ColumnDensityPlot, PerfHistory
+from shamrock.utils.analysis import (
+    ColumnDensityPlot,
+    PerfHistory,
+    SliceDensityPlot,
+)
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
 
@@ -430,6 +434,18 @@ column_density_plot_hollywood = ColumnDensityPlot(
     analysis_prefix="rho_integ_hollywood",
 )
 
+vertical_density_plot = SliceDensityPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_slice",
+)
+
 
 def analysis(ianalysis):
     ext = rout * 1.5
@@ -438,6 +454,7 @@ def analysis(ianalysis):
 
     column_density_plot.analysis_save(ianalysis)
     column_density_plot_hollywood.analysis_save(ianalysis)
+    vertical_density_plot.analysis_save(ianalysis)
 
     arr_vxyz = model.render_cartesian_column_integ(
         "vxyz",
@@ -522,6 +539,7 @@ column_density_plot.render_all(vmin=1, vmax=1e7, norm="log", time_unit="second")
 column_density_plot_hollywood.render_all(
     vmin=1, vmax=1e7, norm="log", holywood_mode=True, time_unit="second"
 )
+vertical_density_plot.render_all(vmin=1e-5, vmax=1e-2, norm="log", time_unit="second")
 
 
 def plot_vz_integ(metadata, arr_vz, iplot):
@@ -602,6 +620,14 @@ if render_gif:
 
 if render_gif:
     ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# For the vertical density plot
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_density_plot.render_gif(save_animation=True)
     if ani is not None:
         plt.show()
 

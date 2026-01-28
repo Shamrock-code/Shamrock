@@ -197,8 +197,6 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4"
 
 # %%
 # Dump handling
-def get_dump_name(idump):
-    return dump_prefix + f"{idump:07}" + ".sham"
 
 
 def get_vtk_dump_name(idump):
@@ -209,48 +207,13 @@ def get_ph_dump_name(idump):
     return dump_prefix + f"{idump:07}" + ".phdump"
 
 
-def get_last_dump():
-    res = glob.glob(dump_prefix + "*.sham")
-
-    num_max = -1
-
-    for f in res:
-        try:
-            dump_num = int(f[len(dump_prefix) : -5])
-            if dump_num > num_max:
-                num_max = dump_num
-        except ValueError:
-            pass
-
-    if num_max == -1:
-        return None
-    else:
-        return num_max
-
-
-def purge_old_dumps():
-    if shamrock.sys.world_rank() == 0:
-        res = glob.glob(dump_prefix + "*.sham")
-        res.sort()
-
-        # The list of dumps to remove (keep the first and last 3 dumps)
-        to_remove = res[1:-3]
-
-        for f in to_remove:
-            os.remove(f)
-
-
-idump_last_dump = get_last_dump()
-
-if shamrock.sys.world_rank() == 0:
-    print("Last dump:", idump_last_dump)
+dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_prefix)
 
 # %%
 # Load the last dump if it exists, setup otherwise
 
-if idump_last_dump is not None:
-    model.load_from_dump(get_dump_name(idump_last_dump))
-else:
+
+def setup_model():
     # Generate the default config
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
@@ -365,6 +328,9 @@ else:
     model.change_htolerances(coarse=1.3, fine=1.1)
     model.timestep()
     model.change_htolerances(coarse=1.1, fine=1.1)
+
+
+dump_helper.load_last_dump_or(setup_model)
 
 
 # %%
@@ -503,12 +469,10 @@ for ttarg in t_stop:
 
         if istop % dump_freq_stop == 0:
             model.do_vtk_dump(get_vtk_dump_name(idump), True)
-            model.dump(get_dump_name(idump))
+            dump_helper.write_dump(idump, purge_old_dumps=True, keep_first=1, keep_last=3)
 
             # dump = model.make_phantom_dump()
             # dump.save_dump(get_ph_dump_name(idump))
-
-            purge_old_dumps()
 
         if istop % plot_freq_stop == 0:
             analysis(iplot)
@@ -565,8 +529,6 @@ def plot_vz_integ(metadata, arr_vz, iplot):
 
 
 def get_list_dumps_id():
-    import glob
-
     list_files = glob.glob(plot_folder + "vxyz_integ_*.npy")
     list_files.sort()
     list_dumps_id = []

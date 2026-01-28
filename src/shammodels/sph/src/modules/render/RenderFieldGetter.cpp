@@ -77,6 +77,47 @@ namespace shammodels::sph::modules {
                 };
 
                 return lambda(field_source_getter);
+            } else if (field_name == "inv_hpart" && std::is_same_v<Tscal, Tfield>) {
+                using namespace shamrock;
+                using namespace shamrock::patch;
+                shamrock::SchedulerUtility utility(scheduler());
+                shamrock::ComputeField<Tscal> inv_hpart
+                    = utility.make_compute_field<Tscal>("inv_hpart", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    shamlog_debug_ln("sph::vtk", "compute inv_hpart field for patch ", p.id_patch);
+
+                    auto &buf_h
+                        = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
+                    auto &buf_inv_hpart = inv_hpart.get_buf(p.id_patch);
+
+                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                    sham::EventList depends_list;
+
+                    auto acc_h         = buf_h.get_read_access(depends_list);
+                    auto acc_inv_hpart = buf_inv_hpart.get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                u32 gid = (u32) item.get_id();
+                                using namespace shamrock::sph;
+                                acc_inv_hpart[gid] = 1.0 / acc_h[gid];
+                            });
+                    });
+
+                    buf_h.complete_event_state(e);
+                    buf_inv_hpart.complete_event_state(e);
+                });
+
+                auto field_source_getter
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
+                    return inv_hpart.get_buf(cur_p.id_patch);
+                };
+
+                return lambda(field_source_getter);
             } else if (field_name == "unity" && std::is_same_v<Tscal, Tfield>) {
                 using namespace shamrock;
                 using namespace shamrock::patch;

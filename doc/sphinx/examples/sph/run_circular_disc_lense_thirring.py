@@ -214,6 +214,8 @@ dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_prefix)
 
 
 def setup_model():
+    global disc_mass
+
     # Generate the default config
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)

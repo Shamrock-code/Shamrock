@@ -1,6 +1,8 @@
-import os
 import glob
+import os
+
 import shamrock.sys
+
 
 def purge_old_dumps(dump_prefix, keep_first=1, keep_last=3):
     if shamrock.sys.world_rank() == 0:
@@ -12,6 +14,7 @@ def purge_old_dumps(dump_prefix, keep_first=1, keep_last=3):
 
         for f in to_remove:
             os.remove(f)
+
 
 def get_last_dump(dump_prefix):
     res = glob.glob(dump_prefix + "*.sham")
@@ -30,6 +33,7 @@ def get_last_dump(dump_prefix):
         return None
     else:
         return num_max
+
 
 class ShamrockDumpHandleHelper:
     def __init__(self, model, dump_prefix):

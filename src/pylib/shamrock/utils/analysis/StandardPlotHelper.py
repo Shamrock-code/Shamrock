@@ -207,9 +207,7 @@ class StandardPlotHelper:
             plt.gcf().set_size_inches(self.nx / dpi, self.ny / dpi)
             plt.axis("off")
 
-    def figure_render_sinks(
-        self, metadata, ax, scale_factor=1, color="green", linewidth=1, fill=False
-    ):
+    def figure_render_sinks(self, metadata, ax, scale_factor, color, linewidth, fill):
         sink_list_plot = self.metadata_to_screen_sink_pos(metadata)
         output_list = []
         for x, y, s in sink_list_plot:

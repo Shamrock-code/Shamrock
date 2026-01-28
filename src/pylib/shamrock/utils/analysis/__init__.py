@@ -1,6 +1,7 @@
 from .ColumnDensityPlot import ColumnDensityPlot
 from .PerfHistory import PerfHistory
 from .SliceDensityPlot import SliceDensityPlot
+from .SliceDtPart import SliceDtPart
 from .SliceRelativeAzyVelocityPlot import SliceRelativeAzyVelocityPlot
 from .SliceVzPlot import SliceVzPlot
 from .StandardPlotHelper import StandardPlotHelper

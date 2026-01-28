@@ -38,4 +38,49 @@ dump_file_url = "https://raw.githubusercontent.com/Shamrock-code/reference-files
 shamrock.utils.url.download_file(input_file_url, input_file_path)
 shamrock.utils.url.download_file(dump_file_url, dump_file_path)
 
-shamrock.utils.phantom.run_phantom_simulation(dump_folder, "disc")
+
+def plot_that_rippa(ctx, model, dump_number):
+    pixel_x = 1920
+    pixel_y = 1080
+    radius = 5
+    center = (0.0, 0.0, 0.0)
+
+    aspect = pixel_x / pixel_y
+    pic_range = [-radius * aspect, radius * aspect, -radius, radius]
+    delta_x = (radius * 2 * aspect, 0.0, 0.0)
+    delta_y = (0.0, radius * 2, 0.0)
+
+    arr_rho = model.render_cartesian_column_integ(
+        "rho",
+        "f64",
+        center=(0.0, 0.0, 0.0),
+        delta_x=delta_x,
+        delta_y=delta_y,
+        nx=pixel_x,
+        ny=pixel_y,
+    )
+
+    import copy
+
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    my_cmap = copy.copy(matplotlib.colormaps.get_cmap("gist_heat"))  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    plt.figure(figsize=(16 / 2, 9 / 2))
+    res = plt.imshow(arr_rho, cmap=my_cmap, origin="lower", extent=pic_range, norm="log", vmin=1e-9)
+
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int \rho \, \mathrm{d} z$ [code unit]")
+    # or r"$\rho$ [code unit]" for slices
+
+    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+    plt.xlabel("x")
+    plt.ylabel("z")
+    plt.show()
+
+
+ctx, model, in_params = shamrock.utils.phantom.run_phantom_simulation(
+    dump_folder, "disc", callback=plot_that_rippa
+)

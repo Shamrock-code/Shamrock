@@ -150,12 +150,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 }
 template<class Tvec, class TgridVec>
 template<class UserAcc>
-void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list) {
 
     using namespace shamrock::patch;
 
     u64 sum_block_count = 0;
+
+    bool new_cell_were_added = false;
 
     scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -230,17 +232,22 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
 
         sum_block_count += pdat.get_obj_cnt();
+        new_cell_were_added = new_cell_were_added || refine_flags.count > 0;
     });
 
     logger::info_ln("AMRGrid", "process block count =", sum_block_count);
+
+    return new_cell_were_added;
 }
 
 template<class Tvec, class TgridVec>
 template<class UserAcc>
-void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list) {
 
     using namespace shamrock::patch;
+
+    bool cell_were_removed = false;
 
     scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -330,8 +337,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             // remap pdat according to stream compact
             pdat.index_remap_resize(*opt_buf, len);
+
+            cell_were_removed = cell_were_removed || derefine_flags.count > 0;
         }
     });
+
+    return cell_were_removed;
 }
 
 template<class Tvec, class TgridVec>
@@ -596,12 +607,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
-    // Ensure that the blocks are sorted before refinement
-    AMRSortBlocks block_sorter(context, solver_config, storage);
-    block_sorter.reorder_amr_blocks();
-
     using AMRmode_None         = typename AMRMode<Tvec, TgridVec>::None;
     using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
+
+    bool has_cell_order_changed = false;
 
     if (AMRmode_None *cfg = std::get_if<AMRmode_None>(&solver_config.amr_mode.config)) {
         // no refinment here turn around there is nothing to see
@@ -619,14 +628,22 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
-        internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+        bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
 
         //////// apply derefine ////////
         // Note that this will perform the merge then remove the old blocks
         // This is ok to call straight after the refine without edditing the index list in
         // derefine_list since no permutations were applied in internal_refine_grid and no cells can
         // be both refined and derefined in the same pass
-        internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+
+        has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
+    }
+
+    if (has_cell_order_changed) {
+        // Ensure that the blocks are sorted before refinement
+        AMRSortBlocks block_sorter(context, solver_config, storage);
+        block_sorter.reorder_amr_blocks();
     }
 }
 

@@ -8,6 +8,7 @@
 // -------------------------------------------------------//
 
 #include "shambase/aliases_float.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
 #include "shamtest/details/TestResult.hpp"
@@ -489,4 +490,74 @@ TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
     };
     shammath::mat_gemv(a, B.get_mdspan(), x.get_mdspan(), b, y.get_mdspan());
     REQUIRE_EQUAL(y.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::mat_transpose", test_transpose, 1) {
+    shammath::mat<f32, 2, 3> A{
+        // clang-format off
+        1,2,3,
+        4,5,6,
+        // clang-format on
+    };
+    shammath::mat<f32, 3, 2> B;
+    shammath::mat<f32, 3, 2> ex_res{
+        // clang-format off
+        1, 4,
+        2, 5,
+        3, 6,
+        // clang-format on
+    };
+    shammath::mat_transpose(A.get_mdspan(), B.get_mdspan());
+    REQUIRE_EQUAL(B.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::Cholesky_decomp", test_Cholesky_decomp, 1) {
+    shammath::mat<f32, 4, 4> M{
+        // clang-format off
+         1, 1, 1, 1,
+         1, 5, 5, 5,
+         1, 5, 14, 14,
+        1, 5, 14, 15,
+        // clang-format on
+    };
+    shammath::mat<f32, 4, 4> L;
+    shammath::mat<f32, 4, 4> ex_res{
+        // clang-format off
+        1,0,0,0,
+        1,2,0,0,
+        1,2,3,0,
+        1,2,3,1
+        // clang-format on
+    };
+    shammath::Cholesky_decomp(M.get_mdspan(), L.get_mdspan());
+    REQUIRE_EQUAL(L.data, ex_res.data);
+}
+
+TestStart(Unittest, "shammath/matrix::Cholesky_solve", test_Cholesky_solve, 1) {
+    shammath::mat<f32, 3, 3> M{
+        // clang-format off
+        6,15,55,
+        15,55,225,
+        55,225,979
+        // clang-format on
+    };
+
+    shammath::vec<f32, 3> y{
+        // clang-format off
+        76,295,1259
+        // clang-format on
+    };
+
+    shammath::vec<f32, 3> x;
+    shammath::vec<f32, 3> ex_res{
+        // clang-format off
+        1,1,1
+        // clang-format on
+    };
+    shammath::Cholesky_solve(M.get_mdspan(), y.get_mdspan(), x.get_mdspan());
+    REQUIRE_EQUAL_CUSTOM_COMP_NAMED("", x.data, ex_res.data, [](const auto &p1, const auto &p2) {
+        return sycl::pow(p1[0] - p2[0], 2) + sycl::pow(p1[1] - p2[1], 2)
+                   + sycl::pow(p1[2] - p2[2], 2)
+               < 1e-9;
+    });
 }

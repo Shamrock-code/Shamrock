@@ -287,6 +287,8 @@ else:
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
 
+    cfg.set_save_dt_to_fields(True)
+
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
 
@@ -406,6 +408,7 @@ from shamrock.utils.analysis import (
     ColumnDensityPlot,
     PerfHistory,
     SliceDensityPlot,
+    SliceDtPart,
 )
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
@@ -447,6 +450,19 @@ vertical_density_plot = SliceDensityPlot(
 )
 
 
+dt_part_slice_plot = SliceDtPart(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="dt_part_slice",
+)
+
+
 def analysis(ianalysis):
     ext = rout * 1.5
     nx = 1024
@@ -455,6 +471,7 @@ def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
     column_density_plot_hollywood.analysis_save(ianalysis)
     vertical_density_plot.analysis_save(ianalysis)
+    dt_part_slice_plot.analysis_save(ianalysis)
 
     arr_vxyz = model.render_cartesian_column_integ(
         "vxyz",
@@ -540,6 +557,9 @@ column_density_plot_hollywood.render_all(
     vmin=1, vmax=1e7, norm="log", holywood_mode=True, time_unit="second"
 )
 vertical_density_plot.render_all(vmin=1e-5, vmax=1e-2, norm="log", time_unit="second")
+dt_part_slice_plot.render_all(
+    vmin=1e-2, vmax=1e2, norm="log", time_unit="second", contour_list=[1e-2, 1e-1, 1, 1e1, 1e2]
+)
 
 
 def plot_vz_integ(metadata, arr_vz, iplot):
@@ -628,6 +648,13 @@ if render_gif:
 # For the vertical density plot
 if render_gif and shamrock.sys.world_rank() == 0:
     ani = vertical_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = dt_part_slice_plot.render_gif(save_animation=True)
     if ani is not None:
         plt.show()
 

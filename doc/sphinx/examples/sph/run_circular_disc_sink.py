@@ -518,14 +518,23 @@ for ttarg in t_stop:
 import matplotlib
 import matplotlib.pyplot as plt
 
-column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
-column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
-vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
-v_z_slice_plot.render_all(vmin=-300, vmax=300)
-relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05)
-vertical_shear_gradient_slice_plot.render_all(vmin=-1, vmax=1)
+sink_params = {
+    "sink_scale_factor": 5,
+    "sink_color": "green",
+    "sink_linewidth": 1,
+    "sink_fill": False,
+}
+
+column_density_plot.render_all(vmin=1, vmax=1e4, norm="log", **sink_params)
+column_density_plot_hollywood.render_all(
+    vmin=1, vmax=1e4, norm="log", holywood_mode=True, **sink_params
+)
+vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log", **sink_params)
+v_z_slice_plot.render_all(vmin=-300, vmax=300, **sink_params)
+relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05, **sink_params)
+vertical_shear_gradient_slice_plot.render_all(vmin=-1, vmax=1, **sink_params)
 dt_part_slice_plot.render_all(
-    vmin=1e-4, vmax=1, norm="log", contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1]
+    vmin=1e-4, vmax=1, norm="log", contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1], **sink_params
 )
 
 # %%

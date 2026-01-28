@@ -606,30 +606,18 @@ from shamrock.utils.plot import show_image_sequence
 
 render_gif = True
 
-# %%
-# Do it for rho integ
+module_to_show = [
+    column_density_plot,
+    column_density_plot_hollywood,
+    vertical_density_plot,
+]
 
 if render_gif:
-    ani = column_density_plot.render_gif(save_animation=True)
-    if ani is not None:
-        plt.show()
+    for module in module_to_show:
+        ani = module.render_gif(save_animation=True)
+        if ani is not None:
+            plt.show()
 
-
-# %%
-# Same but in hollywood
-
-if render_gif:
-    ani = column_density_plot_hollywood.render_gif(save_animation=True)
-    if ani is not None:
-        plt.show()
-
-
-# %%
-# For the vertical density plot
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = vertical_density_plot.render_gif(save_animation=True)
-    if ani is not None:
-        plt.show()
 
 # %%
 # Do it for rho integ

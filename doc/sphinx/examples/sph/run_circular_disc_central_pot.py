@@ -586,6 +586,7 @@ module_to_show = [
     v_z_slice_plot,
     relative_azy_velocity_slice_plot,
     vertical_shear_gradient_slice_plot,
+    dt_part_slice_plot,
 ]
 
 if render_gif:
@@ -593,13 +594,6 @@ if render_gif:
         ani = module.render_gif(save_animation=True)
         if ani is not None:
             plt.show()
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = dt_part_slice_plot.render_gif(save_animation=True)
-    if ani is not None:
-        plt.show()
 
 
 # %%

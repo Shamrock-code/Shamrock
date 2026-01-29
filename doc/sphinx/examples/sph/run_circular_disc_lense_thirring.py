@@ -630,7 +630,7 @@ module_to_show = [
     column_density_plot,
     column_density_plot_hollywood,
     vertical_density_plot,
-    dt_part_slice_plot
+    dt_part_slice_plot,
 ]
 
 if render_gif:

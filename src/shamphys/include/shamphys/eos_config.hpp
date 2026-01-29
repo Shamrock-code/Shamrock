@@ -95,23 +95,6 @@ namespace shamphys {
     };
 
     /**
-     * @brief Configuration struct for Fermi equation of state
-     *
-     * @tparam Tscal Scalar type
-     *
-     * This struct holds the configuration for Fermi equation of state.
-     * It contains mu_e the mean molecular weight which is dimensionless quantities that
-     * determines the behavior of the gas.
-     *
-     * The equation of state is given by:
-     * \f$ P = P(\rho, \mu_e) \f$, see `shamphys::EOS_Fermi` for the exact formula.
-     */
-    template<class Tscal>
-    struct EOS_Config_Fermi {
-        Tscal mu_e; ///< mu_e is the mean molecular weight
-    };
-
-    /**
      * @brief Equal operator for the EOS_Config_Polytropic struct
      *
      * @tparam Tscal Scalar type
@@ -130,6 +113,40 @@ namespace shamphys {
     }
 
     /**
+     * @brief Configuration struct for Fermi equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * This struct holds the configuration for Fermi equation of state.
+     * It contains mu_e the mean molecular weight which is dimensionless quantities that
+     * determines the behavior of the gas.
+     *
+     * The equation of state is given by:
+     * \f$ P = P(\rho, \mu_e) \f$, see `shamphys::EOS_Fermi` for the exact formula.
+     */
+    template<class Tscal>
+    struct EOS_Config_Fermi {
+        Tscal mu_e; ///< mu_e is the mean molecular weight
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Fermi struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Fermi struct to compare
+     * @param rhs Second EOS_Config_Fermi struct to compare
+     *
+     * This function checks if two EOS_Config_Fermi structs are equal by comparing their mu_e
+     * values.
+     *
+     * @return true if the two structs have the same mu_e values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(const EOS_Config_Fermi<Tscal> &lhs, const EOS_Config_Fermi<Tscal> &rhs) {
+        return lhs.mu_e == rhs.mu_e;
+    }
+
+    /**
      * @brief Configuration struct for the locally isothermal equation of state from Lodato Price
      * 2007
      *
@@ -141,13 +158,13 @@ namespace shamphys {
     template<class Tscal>
     struct EOS_Config_LocallyIsothermal_LP07 {
         /// Soundspeed at the reference radius
-        Tscal cs0 = 0.005;
+        Tscal cs0;
 
         /// Power exponent of the soundspeed profile
-        Tscal q = 2;
+        Tscal q;
 
         /// Reference radius
-        Tscal r0 = 10;
+        Tscal r0;
     };
 
     /**
@@ -205,20 +222,73 @@ namespace shamphys {
     }
 
     /**
-     * @brief Equal operator for the EOS_Config_Fermi struct
+     * @brief Configuration struct for the locally isothermal equation of state extended from Farris
+     * 2014 to include for the q index of the disc.
+     *
+     * This EOS should match with ieos 13 and 14 of phantom.
+     *
+     * The equation in phantom is a bit weird so re-derived it here.
+     *
+     * Farris 2014 EOS which only corresponds to q=1/2:
+     *
+     * \f$
+     * c_s = \frac{H_0}{r_0}\left(\frac{G M_1}{r_1} + \frac{G M_2}{r_2}\right)
+     * \f$
+     *
+     * However the extension of that EOS to q != 1/2 was only introduced in Ragussa et al 2016, if
+     * I'm right with:
+     *
+     * \f$
+     * c_s = \frac{H_0}{r_0} \left(\frac{G M_1}{r_1} + \frac{G M_2}{r_2}\right)^{q}
+     * \f$
+     *
+     * But as is the units are broken if q is not 1/2 so you need to compensate with
+     * \f$r_0 \Omega_0\f$
+     *
+     * \f$c_s = \frac{H_0}{r_0}\frac{1}{(r_0 \Omega_0)^{2q - 1}}\left(\frac{G M_1}{r_1}
+     * + \frac{G M_2}{r_2}\right)^{q} \f$
+     *
+     * \f$= c_{s0} \frac{1}{(r_0 \Omega_0)^{q}}\left(\frac{G M_1}{r_1}
+     * + \frac{G M_2}{r_2}\right)^{q}\f$
+     *
+     * \f$= c_{s0}\frac{1}{r_0^{q}}\left[\frac{1}{\sum_i M_i}\sum_i \frac{M_i}{r_i}\right]^{q}\f$
      *
      * @tparam Tscal Scalar type
-     * @param lhs First EOS_Config_Fermi struct to compare
-     * @param rhs Second EOS_Config_Fermi struct to compare
-     *
-     * This function checks if two EOS_Config_Fermi structs are equal by comparing their mu_e
-     * values.
-     *
-     * @return true if the two structs have the same mu_e values, false otherwise
      */
     template<class Tscal>
-    inline bool operator==(const EOS_Config_Fermi<Tscal> &lhs, const EOS_Config_Fermi<Tscal> &rhs) {
-        return lhs.mu_e == rhs.mu_e;
+    struct EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 {
+        /// Soundspeed at the reference radius
+        Tscal cs0;
+
+        /// Power exponent of the soundspeed profile
+        Tscal q;
+
+        /// Reference radius
+        Tscal r0;
+
+        /// Number of sinks to consider for the equation of state
+        u32 n_sinks;
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct to compare
+     * @param rhs Second EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct to compare
+     *
+     * This function checks if two EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 structs are
+     equal by
+     * comparing their cs0, q, r0, and n_sinks values.
+
+     * @return true if the two structs have the same cs0, q, r0, and n_sinks values, false otherwise
+    */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014<Tscal> &lhs,
+        const EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014<Tscal> &rhs) {
+        return (lhs.cs0 == rhs.cs0) && (lhs.q == rhs.q) && (lhs.r0 == rhs.r0)
+               && (lhs.n_sinks == rhs.n_sinks);
     }
 
 } // namespace shamphys

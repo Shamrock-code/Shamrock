@@ -260,10 +260,14 @@ else:
     # Standard way to set the smoothing length (e.g. Price et al. 2018)
     cfg.set_smoothing_length_density_based()
 
+    cfg.set_save_dt_to_fields(True)
+
     # Standard density based smoothing lenght but with a neighbor count limit
     # Use it if you have large slowdowns due to giant particles
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
+
+    cfg.set_save_dt_to_fields(True)
 
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
@@ -373,27 +377,115 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-from shamrock.utils.analysis import perf_history
+from shamrock.utils.analysis import (
+    ColumnDensityPlot,
+    PerfHistory,
+    SliceDensityPlot,
+    SliceDtPart,
+    SliceRelativeAzyVelocityPlot,
+    SliceVzPlot,
+    VerticalShearGradient,
+)
 
-perf_analysis = perf_history(model, analysis_folder, "perf_history")
+perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_normal",
+)
+
+column_density_plot_hollywood = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_hollywood",
+)
+
+vertical_density_plot = SliceDensityPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_slice",
+)
+v_z_slice_plot = SliceVzPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="v_z_slice",
+    do_normalization=True,
+)
+relative_azy_velocity_slice_plot = SliceRelativeAzyVelocityPlot(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="relative_azy_velocity_slice",
+    velocity_profile=kep_profile,
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+vertical_shear_gradient_slice_plot = VerticalShearGradient(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="vertical_shear_gradient_slice",
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+dt_part_slice_plot = SliceDtPart(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="dt_part_slice",
+)
 
 
 def analysis(ianalysis):
-    ext = rout * 1.5
-    nx = 1024
-    ny = 1024
-
-    arr_rho2 = model.render_cartesian_column_integ(
-        "rho",
-        "f64",
-        center=(0.0, 0.0, 0.0),
-        delta_x=(ext * 2, 0, 0.0),
-        delta_y=(0.0, ext * 2, 0.0),
-        nx=nx,
-        ny=ny,
-    )
-
-    save_rho_integ(ext, arr_rho2, ianalysis)
+    column_density_plot.analysis_save(ianalysis)
+    column_density_plot_hollywood.analysis_save(ianalysis)
+    vertical_density_plot.analysis_save(ianalysis)
+    v_z_slice_plot.analysis_save(ianalysis)
+    relative_azy_velocity_slice_plot.analysis_save(ianalysis)
+    vertical_shear_gradient_slice_plot.analysis_save(ianalysis)
+    dt_part_slice_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -452,7 +544,7 @@ for ttarg in t_stop:
     istop += 1
 
 # %%
-# Plot generation (make_plots.py)
+# Plot generation
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # Load the on-the-fly analysis after the run to make the plots
 # (everything in this section can be in another file)
@@ -460,61 +552,15 @@ for ttarg in t_stop:
 import matplotlib
 import matplotlib.pyplot as plt
 
-# Uncomment this and replace by you dump folder, here since it is just above i comment it out
-# dump_folder = "my_masterpiece"
-# dump_folder += "/"
-
-
-def plot_rho_integ(metadata, arr_rho, iplot):
-    ext = metadata["extent"]
-
-    dpi = 200
-
-    # Reset the figure using the same memory as the last one
-    plt.figure(num=1, clear=True, dpi=dpi)
-    import copy
-
-    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
-    my_cmap.set_bad(color="black")
-
-    res = plt.imshow(
-        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-8, vmax=1e-4
-    )
-
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [years]")
-
-    cbar = plt.colorbar(res, extend="both")
-    cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
-
-    plt.savefig(plot_folder + "rho_integ_{:04}.png".format(iplot))
-    plt.close()
-
-
-def get_list_dumps_id():
-    import glob
-
-    list_files = glob.glob(plot_folder + "rho_integ_*.npy")
-    list_files.sort()
-    list_dumps_id = []
-    for f in list_files:
-        list_dumps_id.append(int(f.split("_")[-1].split(".")[0]))
-    return list_dumps_id
-
-
-def load_rho_integ(iplot):
-    with open(plot_folder + f"rho_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
-
-
-if shamrock.sys.world_rank() == 0:
-    for iplot in get_list_dumps_id():
-        print("Rendering rho integ plot for dump", iplot)
-        arr_rho, metadata = load_rho_integ(iplot)
-        plot_rho_integ(metadata, arr_rho, iplot)
-
+column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
+column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
+vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
+v_z_slice_plot.render_all(vmin=-300, vmax=300)
+relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05)
+vertical_shear_gradient_slice_plot.render_all(vmin=-1, vmax=1)
+dt_part_slice_plot.render_all(
+    vmin=1e-4, vmax=1, norm="log", contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1]
+)
 
 # %%
 # Make gif for the doc (plot_to_gif.py)
@@ -524,24 +570,59 @@ if shamrock.sys.world_rank() == 0:
 # sphinx_gallery_multi_image = "single"
 
 
-import matplotlib.animation as animation
-from shamrock.utils.plot import show_image_sequence
+render_gif = True
 
 # %%
 # Do it for rho integ
-render_gif = True
-glob_str = os.path.join(plot_folder, "rho_integ_*.png")
+if render_gif:
+    ani = column_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
-# If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str, render_gif)
 
+# %%
+# Same but in hollywood
+if render_gif:
+    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# For the vertical density plot
 if render_gif and shamrock.sys.world_rank() == 0:
-    # To save the animation using Pillow as a gif
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(analysis_folder + "rho_integ.gif", writer=writer)
+    ani = vertical_density_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
-    # Show the animation
-    plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = v_z_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = relative_azy_velocity_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_shear_gradient_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = dt_part_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
 
 
 # %%

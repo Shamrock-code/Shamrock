@@ -57,7 +57,7 @@ class ShamrockDumpHandleHelper:
             print(f"Loading dump: {dump_name} i={idump}")
         self.model.load_from_dump(dump_name)
 
-    def write_dump(self, idump, purge_old_dumps, keep_first, keep_last):
+    def write_dump(self, idump, purge_old_dumps=False, keep_first=1, keep_last=3):
         dump_name = self.get_dump_name(idump)
         self.model.dump(dump_name)
         if purge_old_dumps:

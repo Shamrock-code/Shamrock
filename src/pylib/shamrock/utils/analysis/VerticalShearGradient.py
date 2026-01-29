@@ -106,6 +106,10 @@ class VerticalShearGradient:
         holywood_mode=False,
         dist_unit="au",
         time_unit="year",
+        sink_scale_factor=1,
+        sink_color="green",
+        sink_linewidth=1,
+        sink_fill=False,
         **kwargs,
     ):
         if shamrock.sys.world_rank() == 0:
@@ -139,7 +143,9 @@ class VerticalShearGradient:
 
             ax = plt.gca()
 
-            self.helper.figure_render_sinks(metadata, ax)
+            self.helper.figure_render_sinks(
+                metadata, ax, sink_scale_factor, sink_color, sink_linewidth, sink_fill
+            )
 
             plt.xlabel(f"x {dist_label}")
             plt.ylabel(f"y {dist_label}")

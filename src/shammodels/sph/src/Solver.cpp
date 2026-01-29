@@ -2105,7 +2105,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 solver_config.gpart_mass, alpha_u};
 
             compute_luminosity.set_edges(
-                storage.part_counts_with_ghost,
+                storage.part_counts,
                 storage.neigh_cache,
                 storage.positions_with_ghosts,
                 storage.hpart_with_ghosts,
@@ -2492,6 +2492,19 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             });
 
             Tscal rank_dt = cfl_dt.compute_rank_min();
+
+            if (solver_config.should_save_dt_to_fields()) {
+
+                const u32 idt_part = pdl.get_field_idx<Tscal>("dt_part");
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    sham::DeviceBuffer<Tscal> &buf_dt_part
+                        = pdat.get_field_buf_ref<Tscal>(idt_part);
+                    sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf_check(cur_p.id_patch);
+
+                    buf_dt_part.copy_from(buf_dt, pdat.get_obj_cnt());
+                });
+            }
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
             if (!storage.sinks.is_empty()) {

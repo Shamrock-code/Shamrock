@@ -2092,7 +2092,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 solver_config.gpart_mass, alpha_u};
 
             compute_luminosity.set_edges(
-                storage.part_counts_with_ghost,
+                storage.part_counts,
                 storage.neigh_cache,
                 storage.positions_with_ghosts,
                 storage.hpart_with_ghosts,

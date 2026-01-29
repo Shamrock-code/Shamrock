@@ -40,17 +40,17 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
             edges.xyz.get_spans(),
             edges.hpart.get_spans(),
             edges.omega.get_spans(),
-            edges.uint.get_spans(),
+            edges.u.get_spans(),
             edges.pressure.get_spans(),
             edges.neigh_cache.neigh_cache},
         sham::DDMultiRef{edges.luminosity.get_spans()},
         edges.part_counts.indexes,
-        [part_mass = this->part_mass, alpha_u = this->alpha_u](
+        [part_mass = this->part_mass, alpha_u = this->alpha_u, Rkern = kernel_radius](
             u32 id_a,
             const Tvec *r,
             const Tscal *hpart,
             const Tscal *omega,
-            const Tscal *uint,
+            const Tscal *u,
             const Tscal *pressure,
             const auto ploop_ptrs,
             Tscal *luminosity) {
@@ -60,7 +60,7 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
 
             Tscal h_a               = hpart[id_a];
             Tvec xyz_a              = r[id_a];
-            const Tscal u_a         = uint[id_a];
+            const Tscal u_a         = u[id_a];
             const Tscal omega_a     = omega[id_a];
             const Tscal rho_a       = rho_h(part_mass, h_a, SPHKernel<Tscal>::hfactd);
             const Tscal P_a         = pressure[id_a];
@@ -68,7 +68,7 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
             Tscal tmp_luminosity    = 0;
 
             particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                const Tscal u_b     = uint[id_b];
+                const Tscal u_b     = u[id_b];
                 const Tscal h_b     = hpart[id_b];
                 const Tscal omega_b = omega[id_b];
                 const Tscal P_b     = pressure[id_b];
@@ -100,7 +100,7 @@ std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_i
     auto xyz        = get_ro_edge_base(0).get_tex_symbol();
     auto hpart      = get_ro_edge_base(1).get_tex_symbol();
     auto omega      = get_ro_edge_base(2).get_tex_symbol();
-    auto uint       = get_ro_edge_base(3).get_tex_symbol();
+    auto u          = get_ro_edge_base(3).get_tex_symbol();
     auto pressure   = get_ro_edge_base(4).get_tex_symbol();
     auto luminosity = get_rw_edge_base(0).get_tex_symbol();
 
@@ -109,7 +109,7 @@ std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_i
         \begin{align}
                  {luminosity}_i &= pmass * alpha_u * vsigu * u_ab * \frac{1}{2}
                * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b)\\
-               &= pmass * alpha_u * \sqrt(\frac{\abs({pressure}_a - {pressure}_b)}{2 (rho_a + rho_b)}); * ({uint}_a - {uint}_b) * \frac{1}{2}
+               &= pmass * alpha_u * \sqrt(\frac{\abs({pressure}_a - {pressure}_b)}{2 (rho_a + rho_b)}); * ({u}_a - {u}_b) * \frac{1}{2}
                * (\frac{Fab_a}{{omega}_a * rho_a} + \frac{Fab_b}{{omega}_b * rho_b})
         \end{align}
         )tex";
@@ -117,7 +117,7 @@ std::string shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_i
     shambase::replace_all(tex, "{xyz}", xyz);
     shambase::replace_all(tex, "{hpart}", hpart);
     shambase::replace_all(tex, "{omega}", omega);
-    shambase::replace_all(tex, "{uint}", uint);
+    shambase::replace_all(tex, "{u}", u);
     shambase::replace_all(tex, "{pressure}", pressure);
     shambase::replace_all(tex, "{luminosity}", luminosity);
     return tex;

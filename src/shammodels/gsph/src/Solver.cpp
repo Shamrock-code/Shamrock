@@ -87,6 +87,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.neigh_cache
         = std::make_shared<shammodels::sph::solvergraph::NeighCache>(edges::neigh_cache, "neigh");
 
+    // Register ghost handler in solvergraph for explicit data dependency tracking
+    storage.ghost_handler = storage.solver_graph.register_edge(
+        "ghost_handler", solvergraph::GhostHandlerEdge<Tvec>("ghost_handler", "\\mathcal{G}"));
+
     storage.omega    = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "omega", "\\Omega");
     storage.density  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "density", "\\rho");
     storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
@@ -142,26 +146,32 @@ void shammodels::gsph::Solver<Tvec, Kern>::gen_ghost_handler(Tscal time_val) {
     // Boundary condition selection - similar to SPH solver
     // Note: Wall boundaries use Periodic with dynamic wall particles
     if (SolverBCFree *c = std::get_if<SolverBCFree>(&solver_config.boundary_config.config)) {
-        storage.ghost_handler.set(
-            GhostHandle{
-                scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+        shambase::get_check_ref(storage.ghost_handler)
+            .set(
+                GhostHandle{
+                    scheduler(), BCFree{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
     } else if (
         SolverBCPeriodic *c
         = std::get_if<SolverBCPeriodic>(&solver_config.boundary_config.config)) {
-        storage.ghost_handler.set(
-            GhostHandle{
-                scheduler(), BCPeriodic{}, storage.patch_rank_owner, storage.xyzh_ghost_layout});
+        shambase::get_check_ref(storage.ghost_handler)
+            .set(
+                GhostHandle{
+                    scheduler(),
+                    BCPeriodic{},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
     } else if (
         SolverBCShearingPeriodic *c
         = std::get_if<SolverBCShearingPeriodic>(&solver_config.boundary_config.config)) {
         // Shearing periodic boundaries (Stone 2010) - reuse SPH implementation
-        storage.ghost_handler.set(
-            GhostHandle{
-                scheduler(),
-                BCShearingPeriodic{
-                    c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
-                storage.patch_rank_owner,
-                storage.xyzh_ghost_layout});
+        shambase::get_check_ref(storage.ghost_handler)
+            .set(
+                GhostHandle{
+                    scheduler(),
+                    BCShearingPeriodic{
+                        c->shear_base, c->shear_dir, c->shear_speed * time_val, c->shear_speed},
+                    storage.patch_rank_owner,
+                    storage.xyzh_ghost_layout});
     } else {
         shambase::throw_with_loc<std::runtime_error>("GSPH: Unsupported boundary condition type.");
     }
@@ -175,7 +185,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     GSPHUtils gsph_utils(scheduler());
 
     storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
-        storage.ghost_handler.get(),
+        shambase::get_check_ref(storage.ghost_handler).get(),
         storage.serial_patch_tree.get(),
         solver_config.htol_up_coarse_cycle));
 }
@@ -191,7 +201,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
 
     storage.merged_xyzh.set(
-        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+        shambase::get_check_ref(storage.ghost_handler)
+            .get()
+            .build_comm_merge_positions(storage.ghost_patch_cache.get()));
 
     // Get field indices from xyzh_ghost_layout
     const u32 ixyz_ghost
@@ -665,7 +677,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     using InterfaceBuildInfos = typename gsph::GSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
-    gsph::GSPHGhostHandler<Tvec> &ghost_handle   = storage.ghost_handler.get();
+    gsph::GSPHGhostHandler<Tvec> &ghost_handle
+        = shambase::get_check_ref(storage.ghost_handler).get();
     shamrock::solvergraph::Field<Tscal> &omega   = shambase::get_check_ref(storage.omega);
     shamrock::solvergraph::Field<Tscal> &density = shambase::get_check_ref(storage.density);
 

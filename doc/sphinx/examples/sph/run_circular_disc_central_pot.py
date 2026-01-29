@@ -445,16 +445,6 @@ vertical_density_plot = SliceDensityPlot(
     analysis_prefix="rho_slice",
 )
 
-column_particle_count_plot = ColumnParticleCount(
-    model,
-    ext_r=rout * 1.5,
-    nx=1024,
-    ny=1024,
-    ex=(1, 0, 0),
-    ey=(0, 1, 0),
-    center=(0, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="particle_count",
 dt_part_slice_plot = SliceDtPart(
     model,
     ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
@@ -467,6 +457,18 @@ dt_part_slice_plot = SliceDtPart(
     analysis_prefix="dt_part_slice",
 )
 
+column_particle_count_plot = ColumnParticleCount(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="particle_count",
+)
+
 
 def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
@@ -475,8 +477,8 @@ def analysis(ianalysis):
     v_z_slice_plot.analysis_save(ianalysis)
     relative_azy_velocity_slice_plot.analysis_save(ianalysis)
     vertical_shear_gradient_slice_plot.analysis_save(ianalysis)
-    column_particle_count_plot.analysis_save(ianalysis)
     dt_part_slice_plot.analysis_save(ianalysis)
+    column_particle_count_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -544,11 +546,11 @@ vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
 v_z_slice_plot.render_all(vmin=-300, vmax=300)
 relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05)
 vertical_shear_gradient_slice_plot.render_all(vmin=-1, vmax=1)
-column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log")
-
 dt_part_slice_plot.render_all(
     vmin=1e-4, vmax=1, norm="log", contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1]
 )
+column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log")
+
 # %%
 # Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -607,8 +609,14 @@ if render_gif and shamrock.sys.world_rank() == 0:
 # %%
 # Make a gif from the plots
 if render_gif and shamrock.sys.world_rank() == 0:
-    ani = column_particle_count_plot.render_gif(save_animation=True)
     ani = dt_part_slice_plot.render_gif(save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = column_particle_count_plot.render_gif(save_animation=True)
     if ani is not None:
         plt.show()
 

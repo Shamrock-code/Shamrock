@@ -30,7 +30,6 @@ namespace shammodels::sph::modules {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
         Tscal part_mass;
         Tscal alpha_u;
 
@@ -44,7 +43,7 @@ namespace shammodels::sph::modules {
             const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
             const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
             const shamrock::solvergraph::IFieldSpan<Tscal> &omega;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &uint;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &u;
             const shamrock::solvergraph::IFieldSpan<Tscal> &pressure;
             shamrock::solvergraph::IFieldSpan<Tscal> &luminosity;
         };
@@ -55,10 +54,10 @@ namespace shammodels::sph::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> uint,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> u,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> pressure,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> luminosity) {
-            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart, omega, uint, pressure});
+            __internal_set_ro_edges({part_counts, neigh_cache, xyz, hpart, omega, u, pressure});
             __internal_set_rw_edges({luminosity});
         }
 

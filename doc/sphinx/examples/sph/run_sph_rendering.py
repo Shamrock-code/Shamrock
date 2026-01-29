@@ -199,7 +199,7 @@ gen_disc = setup.make_generator_disc_mc(
     rot_profile=rot_profile,
     cs_profile=cs_profile,
     random_seed=666,
-    init_h_factor=0.06,
+    init_h_factor=0.03,
 )
 
 # Print the dot graph of the setup
@@ -207,6 +207,8 @@ print(gen_disc.get_dot())
 
 # Apply the setup
 setup.apply_setup(gen_disc)
+
+model.do_vtk_dump("init_disc.vtk", True)
 
 model.change_htolerances(coarse=1.3, fine=1.1)
 model.timestep()
@@ -388,5 +390,95 @@ plot_rho_integ_cylindrical(metadata, arr_rho_cylindrical)
 
 plt.figure(dpi=dpi)
 plot_rho_slice_cylindrical(metadata, arr_rho_pos)
+
+plt.show()
+
+# %%
+# Cylindrical rendering with custom getter (vtheta but with a mask)
+
+positions_cylindrical = make_cylindrical_coords(nr, ntheta)
+rays_cylindrical = positions_to_rays(positions_cylindrical)
+
+
+def custom_getter(size, dic_out):
+    x = dic_out["xyz"][:, 0]
+    y = dic_out["xyz"][:, 1]
+    z = dic_out["xyz"][:, 2]
+    vx = dic_out["vxyz"][:, 0]
+    vy = dic_out["vxyz"][:, 1]
+    vz = dic_out["vxyz"][:, 2]
+
+    v_theta = np.zeros(size)
+    for i in range(size):
+        e_theta = np.array([-y[i], x[i], 0])
+        e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
+        v_theta[i] = np.dot(e_theta, np.array([vx[i], vy[i], vz[i]]))
+
+        if x[i] > 0.2:
+            v_theta[i] = 0.0  # To show that we have full control on the rendering
+
+    return v_theta
+
+
+arr_vtheta_cylindrical = model.render_column_integ("custom", "f64", rays_cylindrical, custom_getter)
+arr_vtheta_pos = model.render_slice("custom", "f64", positions_cylindrical, custom_getter)
+
+
+def plot_vtheta_integ_cylindrical(metadata, arr_vtheta_cylindrical):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vtheta_cylindrical = np.array(arr_vtheta_cylindrical).reshape(nr, ntheta)
+
+    res = plt.imshow(
+        arr_vtheta_cylindrical,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        norm="log",
+        vmin=1e-7,
+        vmax=1e-5,
+        aspect="auto",
+    )
+    plt.xlabel("r")
+    plt.ylabel(r"$\theta$")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int v_\theta \, \mathrm{d}z$ [code unit]")
+
+
+def plot_vtheta_slice_cylindrical(metadata, arr_vtheta_pos):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vtheta_pos = np.array(arr_vtheta_pos).reshape(nr, ntheta)
+
+    res = plt.imshow(
+        arr_vtheta_pos,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        norm="log",
+        vmin=1e-8,
+        aspect="auto",
+    )
+    plt.xlabel("r")
+    plt.ylabel(r"$\theta$")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$v_\theta$ [code unit]")
+
+
+metadata = {"extent": [0, ext, -np.pi, np.pi], "time": model.get_time()}
+
+plt.figure(dpi=dpi)
+plot_vtheta_integ_cylindrical(metadata, arr_vtheta_cylindrical)
+
+plt.figure(dpi=dpi)
+plot_vtheta_slice_cylindrical(metadata, arr_vtheta_pos)
 
 plt.show()

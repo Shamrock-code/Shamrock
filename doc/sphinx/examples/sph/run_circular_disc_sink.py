@@ -550,7 +550,7 @@ vertical_shear_gradient_slice_plot.render_all(vmin=-1, vmax=1, **sink_params)
 dt_part_slice_plot.render_all(
     vmin=1e-4, vmax=1, norm="log", contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1], **sink_params
 )
-column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log")
+column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log", **sink_params)
 
 # %%
 # Make gif for the doc (plot_to_gif.py)

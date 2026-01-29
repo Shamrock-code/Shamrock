@@ -45,7 +45,7 @@ void shammodels::sph::modules::NodeComputeLuminosity<Tvec, SPHKernel>::_impl_eva
             edges.neigh_cache.neigh_cache},
         sham::DDMultiRef{edges.luminosity.get_spans()},
         edges.part_counts.indexes,
-        [part_mass = this->part_mass, alpha_u = this->alpha_u, Rkern = kernel_radius](
+        [part_mass = this->part_mass, alpha_u = this->alpha_u](
             u32 id_a,
             const Tvec *r,
             const Tscal *hpart,

@@ -42,7 +42,7 @@ namespace shammodels::sph::modules {
         using namespace shamrock::patch;
         shamrock::SchedulerUtility utility(scheduler());
 
-        PatchDataLayerLayout &pdl   = scheduler().pdl();
+        PatchDataLayerLayout &pdl   = scheduler().pdl_old();
         const u32 ixyz              = pdl.get_field_idx<Tvec>("xyz");
         const u32 ivxyz             = pdl.get_field_idx<Tvec>("vxyz");
         const u32 iaxyz             = pdl.get_field_idx<Tvec>("axyz");

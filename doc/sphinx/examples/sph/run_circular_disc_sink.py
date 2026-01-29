@@ -552,7 +552,6 @@ dt_part_slice_plot.render_all(
 )
 column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log")
 
-
 # %%
 # Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

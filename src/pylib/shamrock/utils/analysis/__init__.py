@@ -1,4 +1,5 @@
 from .ColumnDensityPlot import ColumnDensityPlot
+from .ColumnParticleCount import ColumnParticleCount
 from .PerfHistory import PerfHistory
 from .SliceDensityPlot import SliceDensityPlot
 from .SliceDtPart import SliceDtPart

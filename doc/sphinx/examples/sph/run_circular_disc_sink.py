@@ -562,22 +562,30 @@ column_particle_count_plot.render_all(vmin=1, vmax=1e2, norm="log", **sink_param
 
 render_gif = True
 
-module_to_show = [
-    column_density_plot,
-    column_density_plot_hollywood,
-    vertical_density_plot,
-    v_z_slice_plot,
-    relative_azy_velocity_slice_plot,
-    vertical_shear_gradient_slice_plot,
-    dt_part_slice_plot,
-    column_particle_count_plot,
-]
 
-if render_gif:
-    for module in module_to_show:
-        ani = module.render_gif(save_animation=True)
+def show_saved_animations(analysis_module):
+    if render_gif:
+        ani = analysis_module.render_gif(save_animation=True)
         if ani is not None:
             plt.show()
+
+
+# %%
+show_saved_animations(column_density_plot)
+# %%
+show_saved_animations(column_density_plot_hollywood)
+# %%
+show_saved_animations(vertical_density_plot)
+# %%
+show_saved_animations(v_z_slice_plot)
+# %%
+show_saved_animations(relative_azy_velocity_slice_plot)
+# %%
+show_saved_animations(vertical_shear_gradient_slice_plot)
+# %%
+show_saved_animations(dt_part_slice_plot)
+# %%
+show_saved_animations(column_particle_count_plot)
 
 
 # %%

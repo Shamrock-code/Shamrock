@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 
@@ -15,6 +16,141 @@ except ImportError:
     _HAS_MATPLOTLIB = False
 
 
+def analysis_save(iplot, data, metadata, npy_data_filename, json_data_filename):
+    """
+    Save the analysis data to the json and npy files
+    """
+    if shamrock.sys.world_rank() == 0:
+        print(f"Saving data to {npy_data_filename.format(iplot)}")
+        np.save(npy_data_filename.format(iplot), data)
+
+        with open(json_data_filename.format(iplot), "w") as fp:
+            print(f"Saving metadata to {json_data_filename.format(iplot)}")
+            json.dump(metadata, fp)
+
+
+def load_analysis(iplot, json_data_filename, npy_data_filename):
+    """
+    Load the analysis data from the json and npy files
+    """
+    with open(json_data_filename.format(iplot), "r") as fp:
+        metadata = json.load(fp)
+    return np.load(npy_data_filename.format(iplot)), metadata
+
+
+def get_list_analysis_id(glob_str_data):
+    """
+    Get the list of analysis ids from the glob string
+    """
+    list_files = glob.glob(glob_str_data)
+    list_files.sort()
+    list_analysis_id = []
+    for f in list_files:
+        list_analysis_id.append(int(f.split("_")[-1].split(".")[0]))
+    return list_analysis_id
+
+
+def field_normalize(field, normalization, min_normalization=1e-9):
+    """
+    Normalize the field by the normalization and set to nan below min_normalization
+    """
+    ret = field / normalization
+
+    # set to nan below min_normalization
+    ret[normalization < min_normalization] = np.nan
+
+    return ret
+
+
+def figure_init(aspect, holywood_mode=False, dpi=200, base_size=6, nx=None, ny=None):
+    """
+    Initialize the figure
+    """
+    figsize = (aspect * base_size, 1.0 * base_size)
+
+    if not holywood_mode:
+        fx, fy = figsize
+        figsize = (fx + 1, fy)
+
+    # Reset the figure using the same memory as the last one
+    plt.figure(figsize=figsize, num=1, clear=True, dpi=dpi)
+
+    if holywood_mode:
+        if nx is None or ny is None:
+            raise ValueError("nx and ny must be provided in holywood mode")
+
+        plt.gca().set_position((0, 0, 1, 1))
+        plt.gcf().set_size_inches(nx / dpi, ny / dpi)
+        plt.axis("off")
+
+
+def figure_add_colorbar(imshow_result, label, holywood_mode=False):
+    """
+    Add the colorbar to the figure
+    """
+    if holywood_mode:
+        axins = plt.gca().inset_axes([0.73, 0.1, 0.25, 0.025])
+        cbar = plt.colorbar(imshow_result, cax=axins, orientation="horizontal", extend="both")
+        cbar.set_label(label, color="white")
+
+        # Set colorbar elements to white
+        cbar.outline.set_edgecolor("white")
+        # cbar.ax.yaxis.set_tick_params(color='white')
+        plt.setp(cbar.ax.get_yticklabels(), color="white")
+        plt.setp(cbar.ax.get_xticklabels(), color="white")
+        cbar.ax.tick_params(color="white", labelcolor="white", length=6, width=1)
+
+    else:
+        cbar = plt.colorbar(imshow_result, extend="both")
+        cbar.set_label(label)
+
+
+def figure_render_sinks(sink_pos_screen, ax, scale_factor, color, linewidth, fill):
+    """
+    Render the sinks on the figure
+    """
+    output_list = []
+    for x, y, s in sink_pos_screen:
+        output_list.append(
+            plt.Circle(
+                (x, y),
+                s["accretion_radius"] * scale_factor,
+                linewidth=linewidth,
+                color=color,
+                fill=fill,
+            )
+        )
+    for circle in output_list:
+        ax.add_artist(circle)
+
+
+def figure_add_time_info(text, holywood_mode=False):
+    """
+    Add the time info to the figure
+    """
+    if holywood_mode:
+        from matplotlib.offsetbox import AnchoredText
+
+        anchored_text = AnchoredText(text, loc=2)
+        plt.gca().add_artist(anchored_text)
+    else:
+        plt.title(text)
+
+
+def init_analysis_plot_paths(obj, analysis_folder, analysis_prefix):
+    plots_dir = os.path.join(analysis_folder, "plots")
+    os.makedirs(plots_dir, exist_ok=True)
+
+    obj.analysis_prefix = os.path.join(plots_dir, analysis_prefix) + "_"
+    obj.plot_prefix = os.path.join(plots_dir, "plot_" + analysis_prefix) + "_"
+
+    obj.npy_data_filename = obj.analysis_prefix + "{:07}.npy"
+    obj.json_data_filename = obj.analysis_prefix + "{:07}.json"
+    obj.plot_filename = obj.plot_prefix + "{:07}.png"
+    obj.glob_str_plot = obj.plot_prefix + "*.png"
+    obj.glob_str_data = obj.analysis_prefix + "*.json"
+
+
 class StandardPlotHelper:
     def __init__(self, model, ext_r, nx, ny, ex, ey, center, analysis_folder, analysis_prefix):
         self.model = model
@@ -26,16 +162,7 @@ class StandardPlotHelper:
         self.center = center
         self.aspect = float(self.nx) / float(self.ny)
 
-        self.analysis_prefix = os.path.join(analysis_folder, "plots", analysis_prefix) + "_"
-        self.plot_prefix = os.path.join(analysis_folder, "plots", "plot_" + analysis_prefix) + "_"
-
-        os.makedirs(os.path.join(analysis_folder, "plots"), exist_ok=True)
-
-        self.npy_data_filename = self.analysis_prefix + "{:07}.npy"
-        self.json_data_filename = self.analysis_prefix + "{:07}.json"
-        self.plot_filename = self.plot_prefix + "{:07}.png"
-        self.glob_str_plot = self.plot_prefix + "*.png"
-        self.glob_str_data = self.analysis_prefix + "*.json"  # json is writen in last
+        init_analysis_plot_paths(self, analysis_folder, analysis_prefix)
 
     def get_dx_dy(self):
         ext_x = 2 * self.ext_r * self.aspect
@@ -86,10 +213,7 @@ class StandardPlotHelper:
             ny=self.ny,
         )
 
-        # set to nan below min_normalization
-        arr_field[normalisation < min_normalization] = np.nan
-
-        return arr_field / normalisation
+        return field_normalize(arr_field, normalisation, min_normalization)
 
     def slice_render(
         self,
@@ -127,12 +251,8 @@ class StandardPlotHelper:
             nx=self.nx,
             ny=self.ny,
         )
-        ret = arr_field_data / arr_field_normalization
 
-        # set to nan below min_normalization
-        ret[arr_field_normalization < min_normalization] = np.nan
-
-        return ret
+        return field_normalize(arr_field_data, arr_field_normalization, min_normalization)
 
     def get_extent(self):
         x_e_x = (
@@ -149,34 +269,19 @@ class StandardPlotHelper:
         ]
 
     def analysis_save(self, iplot, data):
-        if shamrock.sys.world_rank() == 0:
-            metadata = {
-                "extent": self.get_extent(),
-                "time": self.model.get_time(),
-                "sinks": self.model.get_sinks(),
-            }
+        metadata = {
+            "extent": self.get_extent(),
+            "time": self.model.get_time(),
+            "sinks": self.model.get_sinks(),
+        }
 
-            print(f"Saving data to {self.npy_data_filename.format(iplot)}")
-            np.save(self.npy_data_filename.format(iplot), data)
-
-            with open(self.json_data_filename.format(iplot), "w") as fp:
-                print(f"Saving metadata to {self.json_data_filename.format(iplot)}")
-                json.dump(metadata, fp)
+        analysis_save(iplot, data, metadata, self.npy_data_filename, self.json_data_filename)
 
     def load_analysis(self, iplot):
-        with open(self.json_data_filename.format(iplot), "r") as fp:
-            metadata = json.load(fp)
-        return np.load(self.npy_data_filename.format(iplot)), metadata
+        return load_analysis(iplot, self.json_data_filename, self.npy_data_filename)
 
     def get_list_analysis_id(self):
-        import glob
-
-        list_files = glob.glob(self.glob_str_data)
-        list_files.sort()
-        list_analysis_id = []
-        for f in list_files:
-            list_analysis_id.append(int(f.split("_")[-1].split(".")[0]))
-        return list_analysis_id
+        return get_list_analysis_id(self.glob_str_data)
 
     def metadata_to_screen_sink_pos(self, metadata):
         output_list = []
@@ -191,60 +296,14 @@ class StandardPlotHelper:
         return output_list
 
     def figure_init(self, holywood_mode=False, dpi=200):
-        figsize = (self.aspect * 6, 1.0 * 6)
-
-        if not holywood_mode:
-            fx, fy = figsize
-            figsize = (fx + 1, fy)
-
-        dpi = 200
-
-        # Reset the figure using the same memory as the last one
-        plt.figure(figsize=figsize, num=1, clear=True, dpi=dpi)
-
-        if holywood_mode:
-            plt.gca().set_position((0, 0, 1, 1))
-            plt.gcf().set_size_inches(self.nx / dpi, self.ny / dpi)
-            plt.axis("off")
+        figure_init(self.aspect, holywood_mode, dpi, base_size=6, nx=self.nx, ny=self.ny)
 
     def figure_render_sinks(self, metadata, ax, scale_factor, color, linewidth, fill):
         sink_list_plot = self.metadata_to_screen_sink_pos(metadata)
-        output_list = []
-        for x, y, s in sink_list_plot:
-            output_list.append(
-                plt.Circle(
-                    (x, y),
-                    s["accretion_radius"] * scale_factor,
-                    linewidth=linewidth,
-                    color=color,
-                    fill=fill,
-                )
-            )
-        for circle in output_list:
-            ax.add_artist(circle)
+        figure_render_sinks(sink_list_plot, ax, scale_factor, color, linewidth, fill)
 
     def figure_add_time_info(self, text, holywood_mode=False):
-        if holywood_mode:
-            from matplotlib.offsetbox import AnchoredText
-
-            anchored_text = AnchoredText(text, loc=2)
-            plt.gca().add_artist(anchored_text)
-        else:
-            plt.title(text)
+        figure_add_time_info(text, holywood_mode)
 
     def figure_add_colorbar(self, imshow_result, label, holywood_mode=False):
-        if holywood_mode:
-            axins = plt.gca().inset_axes([0.73, 0.1, 0.25, 0.025])
-            cbar = plt.colorbar(imshow_result, cax=axins, orientation="horizontal", extend="both")
-            cbar.set_label(label, color="white")
-
-            # Set colorbar elements to white
-            cbar.outline.set_edgecolor("white")
-            # cbar.ax.yaxis.set_tick_params(color='white')
-            plt.setp(cbar.ax.get_yticklabels(), color="white")
-            plt.setp(cbar.ax.get_xticklabels(), color="white")
-            cbar.ax.tick_params(color="white", labelcolor="white", length=6, width=1)
-
-        else:
-            cbar = plt.colorbar(imshow_result, extend="both")
-            cbar.set_label(label)
+        figure_add_colorbar(imshow_result, label, holywood_mode)

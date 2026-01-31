@@ -540,8 +540,33 @@ for ttarg in t_stop:
 import matplotlib
 import matplotlib.pyplot as plt
 
-column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
-column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
+face_on_render_kwargs = {
+    "x_unit": "au",
+    "y_unit": "au",
+    "time_unit": "year",
+    "x_label": "x",
+    "y_label": "y",
+}
+
+column_density_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e4,
+    norm="log",
+)
+
+column_density_plot_hollywood.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e4,
+    norm="log",
+    holywood_mode=True,
+)
+
 vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
 v_z_slice_plot.render_all(vmin=-300, vmax=300)
 relative_azy_velocity_slice_plot.render_all(vmin=0.95, vmax=1.05)
@@ -564,7 +589,7 @@ render_gif = True
 # %%
 # Do it for rho integ
 if render_gif:
-    ani = column_density_plot.render_gif(save_animation=True)
+    ani = column_density_plot.render_gif(gif_filename="rho_integ.gif", save_animation=True)
     if ani is not None:
         plt.show()
 
@@ -572,7 +597,9 @@ if render_gif:
 # %%
 # Same but in hollywood
 if render_gif:
-    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    ani = column_density_plot_hollywood.render_gif(
+        gif_filename="rho_integ_hollywood.gif", save_animation=True
+    )
     if ani is not None:
         plt.show()
 

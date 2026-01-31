@@ -1,5 +1,8 @@
 def plot_codeu_to_unit(unit_system, name):
-    if name == "code_unit":
+    if name is None:
+        return "[unitless]", 1
+
+    elif name == "code_unit":
         return "[code unit]", 1
 
     # Distances

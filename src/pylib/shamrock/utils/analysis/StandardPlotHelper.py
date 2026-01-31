@@ -6,6 +6,8 @@ import numpy as np
 
 import shamrock.sys
 
+from .UnitHelper import plot_codeu_to_unit
+
 try:
     import matplotlib
     import matplotlib.animation as animation
@@ -152,7 +154,19 @@ def init_analysis_plot_paths(obj, analysis_folder, analysis_prefix):
 
 
 class StandardPlotHelper:
-    def __init__(self, model, ext_r, nx, ny, ex, ey, center, analysis_folder, analysis_prefix):
+    def __init__(
+        self,
+        model,
+        ext_r,
+        nx,
+        ny,
+        ex,
+        ey,
+        center,
+        analysis_folder,
+        analysis_prefix,
+        compute_function=None,
+    ):
         self.model = model
         self.ext_r = ext_r
         self.nx = nx
@@ -161,7 +175,7 @@ class StandardPlotHelper:
         self.ey = ey
         self.center = center
         self.aspect = float(self.nx) / float(self.ny)
-
+        self.compute_function = compute_function
         init_analysis_plot_paths(self, analysis_folder, analysis_prefix)
 
     def get_dx_dy(self):
@@ -268,13 +282,19 @@ class StandardPlotHelper:
             self.ext_r + y_e_y,
         ]
 
-    def analysis_save(self, iplot, data):
+    def compute(self):
+        if self.compute_function is None:
+            raise ValueError("compute_function is not set")
+        return self.compute_function(self)
+
+    def analysis_save(self, iplot, data=None):
         metadata = {
             "extent": self.get_extent(),
             "time": self.model.get_time(),
             "sinks": self.model.get_sinks(),
         }
-
+        if data is None:
+            data = self.compute()
         analysis_save(iplot, data, metadata, self.npy_data_filename, self.json_data_filename)
 
     def load_analysis(self, iplot):
@@ -307,3 +327,87 @@ class StandardPlotHelper:
 
     def figure_add_colorbar(self, imshow_result, label, holywood_mode=False):
         figure_add_colorbar(imshow_result, label, holywood_mode)
+
+    def make_plot(
+        self,
+        iplot,
+        x_unit=None,
+        y_unit=None,
+        time_unit=None,
+        field_unit=None,
+        x_label=None,
+        y_label=None,
+        field_label=None,
+        holywood_mode=False,
+        cmap="magma",
+        add_sinks=True,
+        sink_scale_factor=1,
+        sink_color="green",
+        sink_linewidth=1,
+        sink_fill=False,
+        save_plot=True,
+        **kwargs,
+    ):
+        if shamrock.sys.world_rank() == 0:
+            field_render, metadata = self.load_analysis(iplot)
+
+            dist_label_x, dist_conv_x = plot_codeu_to_unit(self.model.get_units(), x_unit)
+            dist_label_y, dist_conv_y = plot_codeu_to_unit(self.model.get_units(), y_unit)
+
+            metadata["extent"][0] *= dist_conv_x
+            metadata["extent"][1] *= dist_conv_x
+            metadata["extent"][2] *= dist_conv_y
+            metadata["extent"][3] *= dist_conv_y
+
+            time_label, time_conv = plot_codeu_to_unit(self.model.get_units(), time_unit)
+            metadata["time"] *= time_conv
+
+            field_unit_label, field_conv = plot_codeu_to_unit(self.model.get_units(), field_unit)
+            field_render *= field_conv
+
+            self.figure_init(holywood_mode)
+
+            import copy
+
+            my_cmap = matplotlib.colormaps[cmap].copy()  # copy the default cmap
+            my_cmap.set_bad(color="black")
+
+            res = plt.imshow(
+                field_render, cmap=my_cmap, origin="lower", extent=metadata["extent"], **kwargs
+            )
+
+            ax = plt.gca()
+
+            if add_sinks:
+                self.figure_render_sinks(
+                    metadata, ax, sink_scale_factor, sink_color, sink_linewidth, sink_fill
+                )
+
+            plt.xlabel(f"{x_label} {dist_label_x}")
+            plt.ylabel(f"{y_label} {dist_label_y}")
+
+            text = f"t = {metadata['time']:0.3f} {time_label}"
+            self.figure_add_time_info(text, holywood_mode)
+
+            cmap_label = f"{field_label} {field_unit_label}"
+            self.figure_add_colorbar(res, cmap_label, holywood_mode)
+
+            print(f"Saving plot to {self.plot_filename.format(iplot)}")
+            plt.savefig(self.plot_filename.format(iplot))
+            plt.close()
+
+    def render_all(self, **kwargs):
+        for iplot in self.get_list_analysis_id():
+            self.make_plot(iplot, **kwargs)
+
+    def render_gif(self, gif_filename, save_animation=False, fps=15, bitrate=1800):
+        if shamrock.sys.world_rank() == 0:
+            ani = shamrock.utils.plot.show_image_sequence(self.glob_str_plot, render_gif=True)
+            if save_animation:
+                # To save the animation using Pillow as a gif
+                writer = animation.PillowWriter(
+                    fps=fps, metadata=dict(artist="Me"), bitrate=bitrate
+                )
+                ani.save(self.analysis_prefix + gif_filename, writer=writer)
+            return ani
+        return None

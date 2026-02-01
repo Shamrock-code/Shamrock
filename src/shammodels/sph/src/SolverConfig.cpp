@@ -102,6 +102,9 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("psi_cons", 1);
             pdl.add_field<Tscal>("u_mhd", 1);
         }
+        if (true) { // has_field_disable_mask()
+            pdl.add_field<Tscal>("ghost_mask", 1);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>

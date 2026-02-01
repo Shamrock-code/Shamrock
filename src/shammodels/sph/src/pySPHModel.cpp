@@ -504,7 +504,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             return std::make_unique<T>(ctx);
         }))
         .def("init_scheduler", &T::init_scheduler)
-
         .def(
             "evolve_once_override_time",
             &T::evolve_once_time_expl,
@@ -519,6 +518,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("target_time"),
             py::kw_only(),
             py::arg("niter_max") = -1)
+        .def("apply_ghost_particles", &T::apply_ghost_particles)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))

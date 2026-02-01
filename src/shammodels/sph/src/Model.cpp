@@ -47,6 +47,11 @@ f64 shammodels::sph::Model<Tvec, SPHKernel>::evolve_once_time_expl(f64 t_curr, f
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::apply_ghost_particles() {
+    return solver.apply_ghost_particles();
+}
+
+template<class Tvec, template<class> class SPHKernel>
 shammodels::sph::TimestepLog shammodels::sph::Model<Tvec, SPHKernel>::timestep() {
     return solver.evolve_once();
 }

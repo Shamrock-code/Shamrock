@@ -1562,22 +1562,10 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
     SolverGraph &solver_graph = storage.solver_graph;
-    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
-    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> attach_field_sequence;
-    {
-    auto attach_xyz
-                = solver_graph.register_node("attach_xyz", GetFieldRefFromLayer<Tvec>(pdl, "xyz"));
-            shambase::get_check_ref(attach_xyz)
-                .set_edges(
-                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
-                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
-            attach_field_sequence.push_back(attach_xyz);
-        }
-    solver_graph.register_node(
-            "attach fields to scheduler",
-            OperationSequence("attach fields", std::move(attach_field_sequence)));
-    auto xyz_edge            = solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("xyz");
-    //auto &pos_merged = storage.positions_with_ghosts;
+    shambase::get_check_ref(storage.solver_sequence).evaluate();
+    
+    //auto xyz_edge            = solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("xyz");
+    auto &xyz_edge = storage.positions_with_ghosts;
 
     // get number of particle per patch: array of sizes of each patch
     auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");

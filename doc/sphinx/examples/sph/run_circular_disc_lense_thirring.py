@@ -539,7 +539,7 @@ column_density_plot_hollywood.render_all(
     field_unit="kg.m^-2",
     field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
     vmin=1,
-    vmax=1e4,
+    vmax=1e7,
     norm="log",
     holywood_mode=True,
 )

@@ -1562,15 +1562,22 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
     SolverGraph &solver_graph = storage.solver_graph;
-
-    auto scheduler_patchdata = solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata");
-    auto xyz_edge            = solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz");
-    if (xyz_edge->get_spans().is_empty()) {
-        logger::raw_ln("Attaching xyz field");
-        GetFieldRefFromLayer<Tvec> attach_xyz(scheduler().pdl(), "xyz");
-        attach_xyz.set_edges(scheduler_patchdata, xyz_edge);
-        attach_xyz.evaluate();
-    }
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    std::vector<std::shared_ptr<shamrock::solvergraph::INode>> attach_field_sequence;
+    {
+    auto attach_xyz
+                = solver_graph.register_node("attach_xyz", GetFieldRefFromLayer<Tvec>(pdl, "xyz"));
+            shambase::get_check_ref(attach_xyz)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
+            attach_field_sequence.push_back(attach_xyz);
+        }
+    solver_graph.register_node(
+            "attach fields to scheduler",
+            OperationSequence("attach fields", std::move(attach_field_sequence)));
+    auto xyz_edge            = solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("xyz");
+    //auto &pos_merged = storage.positions_with_ghosts;
 
     // get number of particle per patch: array of sizes of each patch
     auto sizes = std::make_shared<shamrock::solvergraph::Indexes<u32>>("sizes", "Np");

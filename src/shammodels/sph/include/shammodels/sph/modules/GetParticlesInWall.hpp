@@ -41,22 +41,22 @@ namespace shammodels::sph::modules {
               wall_thickness(wall_thickness) {}
 
         struct Edges {
-            const shamrock::solvergraph::IFieldRefs<Tvec> &pos;
+            const shamrock::solvergraph::IFieldSpan<Tvec> &pos;
             const shamrock::solvergraph::Indexes<u32> &sizes;
-            shamrock::solvergraph::IFieldSpan<u32> &part_ids_in_wall;
+            shamrock::solvergraph::IFieldSpan<u32> &ghost_mask;
         };
 
         inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tvec>> pos,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> pos,
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> part_ids_in_wall) {
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<u32>> ghost_mask) {
             __internal_set_ro_edges({pos, sizes});
-            __internal_set_rw_edges({part_ids_in_wall});
+            __internal_set_rw_edges({ghost_mask});
         }
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<Tvec>>(0),
+                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
                 get_ro_edge<shamrock::solvergraph::Indexes<u32>>(1),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<u32>>(0)};
         }

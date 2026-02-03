@@ -354,6 +354,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
     std::vector<Tvec> &part_pos_insert,
+    std::vector<Tvec> &part_vel_insert,
     std::vector<Tscal> &part_hpart_insert,
     std::vector<Tscal> &part_u_insert,
     std::vector<Tvec> &part_B_on_rho_insert,
@@ -372,6 +373,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
         shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
         std::vector<Tvec> vec_acc;
+        std::vector<Tvec> vel_acc;
         std::vector<Tscal> hpart_acc;
         std::vector<Tscal> u_acc;
         std::vector<Tvec> B_on_rho_acc;
@@ -381,6 +383,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
             Tscal u = part_u_insert[i];
             if (patch_coord.contain_pos(r)) {
                 vec_acc.push_back(r);
+                vel_acc.push_back(part_vel_insert[i]);
                 hpart_acc.push_back(part_hpart_insert[i]);
                 u_acc.push_back(u);
                 B_on_rho_acc.push_back(part_B_on_rho_insert[i]);
@@ -408,6 +411,13 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
             u32 len                 = vec_acc.size();
             PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
             sycl::buffer<Tvec> buf(vec_acc.data(), len);
+            f.override(buf, len);
+        }
+
+        {
+            u32 len                 = vec_acc.size();
+            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
+            sycl::buffer<Tvec> buf(vel_acc.data(), len);
             f.override(buf, len);
         }
 
@@ -1229,6 +1239,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
+    bool has_B_field         = solver.solver_config.has_field_B_on_rho();
 
     Tscal xmin, xmax, ymin, ymax, zmin, zmax;
     has_coord_in_header = phdump.has_header_entry("xmin");
@@ -1361,7 +1372,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
                     ins_u.push_back(u[i]);
                 }
             }
-            if (alpha.size() > 0) {
+            if (alpha.size() > 0 and !has_B_field) {
                 for (u64 i : sel_index) {
                     ins_alpha.push_back(alpha[i]);
                 }

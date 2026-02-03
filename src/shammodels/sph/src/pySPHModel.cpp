@@ -116,6 +116,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("mu_e"))
+        .def(
+            "set_eos_tillotson",
+            [](TConfig &self,
+               Tscal rho0,
+               Tscal E0,
+               Tscal A,
+               Tscal B,
+               Tscal a,
+               Tscal b,
+               Tscal alpha,
+               Tscal beta,
+               Tscal u_iv,
+               Tscal u_cv) {
+                self.set_eos_tillotson(rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
+            },
+            py::kw_only(),
+            py::arg("rho0"),
+            py::arg("E0"),
+            py::arg("A"),
+            py::arg("B"),
+            py::arg("a"),
+            py::arg("b"),
+            py::arg("alpha"),
+            py::arg("beta"),
+            py::arg("u_iv"),
+            py::arg("u_cv"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
             "to_json",

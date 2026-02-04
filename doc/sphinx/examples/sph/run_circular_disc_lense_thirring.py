@@ -373,6 +373,7 @@ def save_analysis_data(filename, key, value, ianalysis):
 
 
 from shamrock.utils.analysis import (
+    ColumnAverageVzPlot,
     ColumnDensityPlot,
     PerfHistory,
     SliceDensityPlot,
@@ -431,6 +432,19 @@ dt_part_slice_plot = SliceDtPart(
 )
 
 
+column_average_vz_plot = ColumnAverageVzPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="column_average_vz",
+)
+
+
 def analysis(ianalysis):
     ext = rout * 1.5
     nx = 1024
@@ -440,18 +454,7 @@ def analysis(ianalysis):
     column_density_plot_hollywood.analysis_save(ianalysis)
     vertical_density_plot.analysis_save(ianalysis)
     dt_part_slice_plot.analysis_save(ianalysis)
-
-    arr_vxyz = model.render_cartesian_column_integ(
-        "vxyz",
-        "f64_3",
-        center=(0.0, 0.0, 0.0),
-        delta_x=(ext * 2, 0, 0.0),
-        delta_y=(0.0, ext * 2, 0.0),
-        nx=nx,
-        ny=ny,
-    )
-
-    save_vxyz_integ(ext, arr_vxyz, ianalysis)
+    column_average_vz_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -563,55 +566,15 @@ dt_part_slice_plot.render_all(
     contour_list=[1e-2, 1e-1, 1, 1e1, 1e2],
 )
 
-
-def plot_vz_integ(metadata, arr_vz, iplot):
-    ext = metadata["extent"]
-    dpi = 200
-    plt.figure(num=1, clear=True, dpi=dpi)
-
-    # if you want an adaptive colorbar
-    # v_ext = np.max(arr_vz)
-    # v_ext = max(v_ext, np.abs(np.min(arr_vz)))
-    v_ext = 1e-6
-
-    res = plt.imshow(arr_vz, cmap="seismic", origin="lower", extent=ext, vmin=-v_ext, vmax=v_ext)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
-
-    cbar = plt.colorbar(res, extend="both")
-    cbar.set_label(r"$\int v_z \, \mathrm{d}z$ [code unit]")
-
-    plt.savefig(plot_folder + "vz_integ_{:04}.png".format(iplot))
-    plt.close()
-
-
-def get_list_dumps_id():
-    list_files = glob.glob(plot_folder + "vxyz_integ_*.npy")
-    list_files.sort()
-    list_dumps_id = []
-    for f in list_files:
-        list_dumps_id.append(int(f.split("_")[-1].split(".")[0]))
-    return list_dumps_id
-
-
-def load_rho_integ(iplot):
-    with open(plot_folder + f"rho_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
-
-
-def load_vxyz_integ(iplot):
-    with open(plot_folder + f"vxyz_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"vxyz_integ_{iplot:07}.npy"), metadata
-
-
-if shamrock.sys.world_rank() == 0:
-    for iplot in get_list_dumps_id():
-        print("Rendering vxyz integ plot for dump", iplot)
-        arr_vxyz, metadata = load_vxyz_integ(iplot)
-        plot_vz_integ(metadata, arr_vxyz[:, :, 2], iplot)
+column_average_vz_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="lightspeed",
+    field_label="$\\langle v_z \\rangle_z$",
+    cmap="seismic",
+    cmap_bad_color="white",
+    vmin=-0.5,
+    vmax=0.5,
+)
 
 
 # %%
@@ -659,20 +622,13 @@ if render_gif and shamrock.sys.world_rank() == 0:
         plt.show()
 
 # %%
-# Do it for rho integ
-render_gif = True
-glob_str = os.path.join(plot_folder, "vz_integ_*.png")
-
-# If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str, render_gif)
-
+# Make a gif from the plots
 if render_gif and shamrock.sys.world_rank() == 0:
-    # To save the animation using Pillow as a gif
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(analysis_folder + "vz_integ.gif", writer=writer)
-
-    # Show the animation
-    plt.show()
+    ani = column_average_vz_plot.render_gif(
+        gif_filename="column_average_vz.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
 
 
 # %%

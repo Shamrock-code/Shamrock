@@ -891,11 +891,11 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 }
 
 template<class Tvec, template<class> class SPHKernel>
-inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::SPHSetup<
-    Tvec,
-    SPHKernel>::make_modifier_split_part(SetupNodePtr parent, u64 n_split, u64 seed) {
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_split_part(
+        SetupNodePtr parent, u64 n_split, u64 seed, Tscal h_scaling) {
     return std::shared_ptr<ISPHSetupNode>(
-        new ModifierSplitPart<Tvec>(context, parent, n_split, seed));
+        new ModifierSplitPart<Tvec>(context, parent, n_split, seed, h_scaling));
 }
 
 using namespace shammath;

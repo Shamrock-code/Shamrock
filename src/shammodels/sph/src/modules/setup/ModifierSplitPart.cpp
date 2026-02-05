@@ -78,7 +78,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierSplitPart<Tvec
     // See
     // https://github.com/danieljprice/phantom/blob/f6d5beea4db73f432bc2ca3eaa450320f2abee7a/src/utils/utils_splitmerge.f90#L64
 
-    Tscal h_scaling_fact = sycl::pow(Tscal(n_split), -1. / 3.);
+    Tscal h_scaling_fact = sycl::pow(Tscal(n_split), -1. / 3.) * h_scaling;
 
     sham::DeviceBuffer<Tscal> &hpart_final = tmp.get_field_buf_ref<Tscal>(ihpart);
     sham::kernel_call(

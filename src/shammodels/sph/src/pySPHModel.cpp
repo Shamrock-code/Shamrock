@@ -473,13 +473,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent,
                u64 n_split,
-               u64 seed) {
-                return self.make_modifier_split_part(parent, n_split, seed);
+               u64 seed,
+               Tscal h_scaling) {
+                return self.make_modifier_split_part(parent, n_split, seed, h_scaling);
             },
             py::kw_only(),
             py::arg("parent"),
             py::arg("n_split"),
-            py::arg("seed"))
+            py::arg("seed"),
+            py::arg("h_scaling") = 0.6)
         .def(
             "apply_setup",
             [](TSPHSetup &self,

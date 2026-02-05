@@ -35,10 +35,17 @@ namespace shammodels::sph::modules {
 
         shamalgs::collective::InvariantParallelGenerator<std::mt19937_64> generator;
         u64 n_split;
+        Tscal h_scaling;
 
         public:
-        ModifierSplitPart(ShamrockCtx &context, SetupNodePtr parent, u64 n_split, u64 seed)
-            : context(context), parent(parent), n_split(n_split), generator(seed) {
+        ModifierSplitPart(
+            ShamrockCtx &context,
+            SetupNodePtr parent,
+            u64 n_split,
+            u64 seed,
+            Tscal h_scaling = 1. / 1.5)
+            : context(context), parent(parent), n_split(n_split), generator(seed),
+              h_scaling(h_scaling) {
             if (n_split == 0) {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
                     "n_split must be greater than 0");

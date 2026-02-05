@@ -98,7 +98,7 @@ namespace shammodels::sph::modules {
             SetupNodePtr parent, std::function<bool(Tvec)> filter);
 
         std::shared_ptr<ISPHSetupNode> make_modifier_split_part(
-            SetupNodePtr parent, u64 n_split, u64 seed);
+            SetupNodePtr parent, u64 n_split, u64 seed, Tscal h_scaling);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

@@ -875,6 +875,12 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     if (has_psi_field) {
         utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
     }
+    if (has_epsilon_field) {
+        utility.fields_forward_euler<Tscal>(iepsilon, idtepsilon, dt / 2);
+    }
+    if (has_deltav_field) {
+        utility.fields_forward_euler<Tvec>(ideltav, idtdeltav, dt / 2);
+    }
 
     // forward euler step positions dt
     shamlog_debug_ln("sph::BasicGas", "forward euler step positions dt");

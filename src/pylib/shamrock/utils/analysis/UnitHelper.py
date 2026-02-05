@@ -1,4 +1,10 @@
+import shamrock
+
+
 def plot_codeu_to_unit(unit_system, name):
+    si = shamrock.UnitSystem()
+    si_cte = shamrock.Constants(shamrock.UnitSystem())
+
     if name is None:
         return "[unitless]", 1
     elif name == "unitless":
@@ -66,6 +72,8 @@ def plot_codeu_to_unit(unit_system, name):
         return "[$\\mathrm{{m}} \\cdot \\mathrm{{s}}^{-1}$]", unit_system.to("m") * unit_system.to(
             "s", power=-1
         )
+    elif name == "lightspeed":
+        return "[$\\mathrm{{c}}$]", unit_system.to("m") * unit_system.to("s", power=-1) / si_cte.c()
 
     # Acceleration
     elif name == "m.s^-2":

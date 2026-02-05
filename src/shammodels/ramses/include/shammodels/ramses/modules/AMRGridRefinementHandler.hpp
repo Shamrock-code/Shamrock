@@ -79,10 +79,10 @@ namespace shammodels::basegodunov::modules {
             T &&...args);
 
         template<class UserAcc>
-        void internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
+        bool internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
 
         template<class UserAcc>
-        void internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list);
+        bool internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
         void internal_update_refinement();

@@ -482,6 +482,13 @@ struct shammodels::sph::SolverConfig {
         particle_reordering_step_freq = freq;
     }
 
+    bool save_dt_to_fields = false;
+    inline void set_save_dt_to_fields(bool enable) { save_dt_to_fields = enable; }
+    inline bool should_save_dt_to_fields() const { return save_dt_to_fields; }
+
+    bool show_ghost_zone_graph = false;
+    inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -573,6 +580,20 @@ struct shammodels::sph::SolverConfig {
      */
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     * extended to q != 1/2
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     * @param n_sinks Number of sinks to consider for the equation of state
+     */
+    inline void set_eos_locally_isothermalFA2014_extended(
+        Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+        eos_config.set_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
     }
 
     /**
@@ -831,6 +852,10 @@ struct shammodels::sph::SolverConfig {
 
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
+
+    /// @brief Whether to store luminosity
+    bool compute_luminosity = false;
+    inline void use_luminosity(bool enable) { compute_luminosity = enable; }
 
     /// Print the current status of the solver config
     inline void print_status() {
@@ -1126,6 +1151,9 @@ namespace shammodels::sph {
             {"enable_particle_reordering", p.enable_particle_reordering},
             {"particle_reordering_step_freq", p.particle_reordering_step_freq},
 
+            {"save_dt_to_fields", p.save_dt_to_fields},
+            {"show_ghost_zone_graph", p.show_ghost_zone_graph},
+
             {"eos_config", p.eos_config},
 
             {"artif_viscosity", p.artif_viscosity},
@@ -1252,6 +1280,24 @@ namespace shammodels::sph {
                 "SPHConfig",
                 "particle_reordering_step_freq not found when deserializing, defaulting to ",
                 p.particle_reordering_step_freq);
+        }
+
+        if (j.contains("save_dt_to_fields")) {
+            j.at("save_dt_to_fields").get_to(p.save_dt_to_fields);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "save_dt_to_fields not found when deserializing, defaulting to ",
+                p.save_dt_to_fields);
+        }
+
+        if (j.contains("show_ghost_zone_graph")) {
+            j.at("show_ghost_zone_graph").get_to(p.show_ghost_zone_graph);
+        } else {
+            logger::warn_ln(
+                "SPHConfig",
+                "show_ghost_zone_graph not found when deserializing, defaulting to ",
+                p.show_ghost_zone_graph);
         }
 
         j.at("eos_config").get_to(p.eos_config);

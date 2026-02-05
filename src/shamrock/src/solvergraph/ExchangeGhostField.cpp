@@ -50,7 +50,8 @@ void shamrock::solvergraph::ExchangeGhostField<T>::_impl_evaluate_internal() {
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
-        });
+        },
+        cache);
 
     ghost_layer.patchdata_fields = std::move(recv_dat);
 }

@@ -196,7 +196,7 @@ namespace shamunits {
                 return search->second;
             }
 
-            throw std::invalid_argument("this unit name is unknown");
+            throw std::invalid_argument("this unit name is unknown : " + p);
             return s; // to silence a warning
         }
 

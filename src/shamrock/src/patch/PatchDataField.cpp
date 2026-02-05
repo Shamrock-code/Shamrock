@@ -329,8 +329,10 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     auto &q        = dev_sched->get_queue();
 
     if (len > get_obj_cnt()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "the number of ids to remove is greater than the patchdatafield obj count");
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the number of ids to remove is greater than the patchdatafield obj count: {} > {}",
+            len,
+            get_obj_cnt()));
     }
 
     if (len == 0) {

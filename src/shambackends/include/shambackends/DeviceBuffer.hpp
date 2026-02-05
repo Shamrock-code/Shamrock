@@ -934,6 +934,24 @@ namespace sham {
          */
         inline void fill(T value) { fill(value, get_size()); }
 
+        template<class Fct>
+        inline void fill_lambda(Fct &&fct) {
+            if (get_size() == 0) {
+                return;
+            }
+
+            sham::EventList depends_list;
+            T *__restrict ptr = get_write_access(depends_list);
+
+            sycl::event e1 = get_queue().submit(depends_list, [&, ptr, fct](sycl::handler &cgh) {
+                shambase::parallel_for(cgh, get_size(), "fill field", [=](u32 gid) {
+                    ptr[gid] = fct(gid);
+                });
+            });
+
+            complete_event_state(e1);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Filler fcts (END)
         ///////////////////////////////////////////////////////////////////////

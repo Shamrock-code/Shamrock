@@ -75,6 +75,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             &TConfig::set_smoothing_length_density_based_neigh_lim)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
+        .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
+        .def("use_luminosity", &TConfig::use_luminosity)
+        .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
+        .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_polytropic", &TConfig::set_eos_polytropic)
@@ -95,6 +99,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("h_over_r"))
+        .def(
+            "set_eos_locally_isothermalFA2014_extended",
+            [](TConfig &self, Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+                self.set_eos_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+            },
+            py::kw_only(),
+            py::arg("cs0"),
+            py::arg("q"),
+            py::arg("r0"),
+            py::arg("n_sinks"))
         .def(
             "set_eos_fermi",
             [](TConfig &self, Tscal mu_e) {
@@ -267,6 +281,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("q"))
         .def("set_units", &TConfig::set_units)
         .def(
+            "get_units",
+            [](TConfig &self) {
+                return self.unit_sys;
+            })
+        .def(
             "set_cfl_cour",
             [](TConfig &self, Tscal cfl_cour) {
                 self.cfl_config.cfl_cour = cfl_cour;
@@ -371,7 +390,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     H_profile,
                     rot_profile,
                     cs_profile,
-                    std::mt19937(random_seed),
+                    std::mt19937_64(random_seed),
                     init_h_factor);
             },
             py::kw_only(),
@@ -385,6 +404,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cs_profile"),
             py::arg("random_seed"),
             py::arg("init_h_factor") = 0.8)
+        .def(
+            "make_generator_from_context",
+            [](TSPHSetup &self, ShamrockCtx &context_other) {
+                return self.make_generator_from_context(context_other);
+            })
         .def(
             "make_combiner_add",
             [](TSPHSetup &self,
@@ -526,6 +550,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("target_time"),
             py::kw_only(),
             py::arg("niter_max") = -1)
+        .def("set_dt", [](T &self, f64 dt) {
+            self.solver.solver_config.set_next_dt(dt);
+        })
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -776,44 +803,105 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return list_out;
             })
         .def(
+            "get_units",
+            [](T &self) {
+                return self.solver.solver_config.unit_sys;
+            })
+        .def(
             "render_slice",
-            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+
+                    if(custom_getter.has_value()) {
+                        if(!( name == "custom" && field_type == "f64")) {
+                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                        }
+                    }
+
                 if (field_type == "f64") {
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_slice(name, positions).copy_to_stdvec();
+                    return render.compute_slice(name, positions, custom_getter).copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
                     modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_slice(name, positions).copy_to_stdvec();
+                    return render.compute_slice(name, positions, std::nullopt).copy_to_stdvec();
                 }
 
                 throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
-            })
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("positions"),
+            py::arg("custom_getter") = std::nullopt)
         .def(
             "render_column_integ",
             [](T &self,
                std::string name,
                std::string field_type,
-               std::vector<shammath::Ray<Tvec>> rays)
+               std::vector<shammath::Ray<Tvec>> rays,
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+
+                    if(custom_getter.has_value()) {
+                        if(!( name == "custom" && field_type == "f64")) {
+                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                        }
+                    }
+
                 if (field_type == "f64") {
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                    return render.compute_column_integ(name, rays, custom_getter).copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
                     modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_column_integ(name, rays).copy_to_stdvec();
+                    return render.compute_column_integ(name, rays, std::nullopt).copy_to_stdvec();
                 }
 
                 throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
-            })
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("rays"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_azymuthal_integ",
+            [](T &self,
+                std::string name,
+                std::string field_type,
+                std::vector<shammath::RingRay<Tvec>> ring_rays,
+                std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+
+                    if(custom_getter.has_value()) {
+                        if(!( name == "custom" && field_type == "f64")) {
+                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                        }
+                    }
+
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_azymuthal_integ(name, ring_rays, custom_getter).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_azymuthal_integ(name, ring_rays, std::nullopt).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("ring_rays"),
+            py::arg("custom_getter") = std::nullopt)
         .def(
             "render_cartesian_slice",
             [](T &self,
@@ -823,7 +911,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_x,
                Tvec delta_y,
                u32 nx,
-               u32 ny) -> std::variant<py::array_t<Tscal>> {
+               u32 ny,
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+               -> std::variant<py::array_t<Tscal>> {
+
+                if(custom_getter.has_value()) {
+                    if(!( name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
                 if (field_type == "f64") {
                     py::array_t<Tscal> ret({ny, nx});
 
@@ -831,7 +928,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64> slice
-                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny)
+                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny, custom_getter)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -850,7 +947,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64_3> slice
-                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny)
+                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny, std::nullopt)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -873,7 +970,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("delta_x"),
             py::arg("delta_y"),
             py::arg("nx"),
-            py::arg("ny"))
+            py::arg("ny"),
+            py::arg("custom_getter") = std::nullopt)
         .def(
             "render_cartesian_column_integ",
             [](T &self,
@@ -883,7 +981,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_x,
                Tvec delta_y,
                u32 nx,
-               u32 ny) -> std::variant<py::array_t<Tscal>> {
+               u32 ny,
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+               -> std::variant<py::array_t<Tscal>> {
+
+                if(custom_getter.has_value()) {
+                    if(!( name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
                 if (field_type == "f64") {
                     py::array_t<Tscal> ret({ny, nx});
 
@@ -891,7 +998,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64> slice
-                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny)
+                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny, custom_getter)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -910,7 +1017,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64_3> slice
-                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny)
+                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny, std::nullopt)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -933,7 +1040,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("delta_x"),
             py::arg("delta_y"),
             py::arg("nx"),
-            py::arg("ny"))
+            py::arg("ny"),
+            py::arg("custom_getter") = std::nullopt)
         .def(
             "gen_config_from_phantom_dump",
             [](T &self, PhantomDump &dump, bool bypass_error) {

@@ -46,6 +46,7 @@
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/sph/modules/ComputeLuminosity.hpp"
 #include "shammodels/sph/modules/ComputeNeighStats.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
@@ -526,6 +527,13 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.pressure = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "pressure", "P");
     storage.soundspeed
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
+
+    storage.exchange_gz_alpha
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostField<Tscal>>();
+    storage.exchange_gz_node
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
+    storage.exchange_gz_positions
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
 }
 
 template<class Tvec, template<class> class Kern>
@@ -778,8 +786,10 @@ void shammodels::sph::Solver<Tvec, Kern>::merge_position_ghost() {
 
     StackEntry stack_loc{};
 
-    storage.merged_xyzh.set(
-        storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
+    storage.merged_xyzh.set(storage.ghost_handler.get().build_comm_merge_positions(
+        storage.ghost_patch_cache.get(),
+        storage.exchange_gz_positions,
+        solver_config.show_ghost_zone_graph));
 
     { // set element counts
         shambase::get_check_ref(storage.part_counts).indexes
@@ -1381,8 +1391,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             }
         });
 
-    shambase::DistributedDataShared<PatchDataLayer> interf_pdat
-        = ghost_handle.communicate_pdat(ghost_layout_ptr, std::move(pdat_interf));
+    shambase::DistributedDataShared<PatchDataLayer> interf_pdat = ghost_handle.communicate_pdat(
+        ghost_layout_ptr,
+        std::move(pdat_interf),
+        storage.exchange_gz_node,
+        solver_config.show_ghost_zone_graph);
 
     std::map<u64, u64> sz_interf_map;
     interf_pdat.for_each([&](u64 s, u64 r, PatchDataLayer &pdat_interf) {
@@ -1950,7 +1963,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 });
 
             shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat
-                = ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+                = ghost_handle.communicate_pdatfield(
+                    std::move(field_interf), 1, storage.exchange_gz_alpha);
 
             shambase::DistributedData<PatchDataField<Tscal>> merged_field
                 = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
@@ -2016,6 +2030,92 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         prepare_corrector();
 
         update_derivs();
+
+        bool has_luminosity = solver_config.compute_luminosity;
+
+        if (has_luminosity) {
+            const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
+
+            shambase::get_check_ref(storage.hpart_with_ghosts)
+                .set_refs(storage.merged_xyzh.get()
+                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                      return std::ref(mpdat.get_field<Tscal>(
+                                          1)); // hpart is at index 1 in merged_xyzh
+                                  }));
+
+            auto uint_with_ghost = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
+
+            shambase::get_check_ref(storage.hpart_with_ghosts)
+                .set_refs(storage.merged_xyzh.get()
+                              .template map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                                  [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                                      return std::ref(mpdat.get_field<Tscal>(1));
+                                  }));
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
+                set_uint_with_ghost_refs(
+                    [&](shamrock::solvergraph::FieldRefs<Tscal> &field_uint_with_ghost_edge) {
+                        shambase::DistributedData<PatchDataLayer> &mpdats
+                            = storage.merged_patchdata_ghost.get();
+
+                        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_uint_with_ghost_refs
+                            = {};
+
+                        scheduler().for_each_patchdata_nonempty(
+                            [&](const Patch p, PatchDataLayer &pdat) {
+                                PatchDataLayer &mpdat = mpdats.get(p.id_patch);
+
+                                auto &field = mpdat.get_field<Tscal>(iuint_interf);
+                                field_uint_with_ghost_refs.add_obj(p.id_patch, std::ref(field));
+                            });
+
+                        field_uint_with_ghost_edge.set_refs(field_uint_with_ghost_refs);
+                    });
+
+            set_uint_with_ghost_refs.set_edges(uint_with_ghost);
+
+            auto luminosity = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
+
+            shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::FieldRefs<Tscal>>
+                set_luminosity_refs(
+                    [&](shamrock::solvergraph::FieldRefs<Tscal> &field_luminosity_edge) {
+                        shambase::DistributedData<PatchDataLayer> &mpdats
+                            = storage.merged_patchdata_ghost.get();
+
+                        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> field_luminosity_refs
+                            = {};
+
+                        scheduler().for_each_patchdata_nonempty(
+                            [&](const Patch p, PatchDataLayer &pdat) {
+                                auto &field = pdat.get_field<Tscal>(iluminosity);
+                                field_luminosity_refs.add_obj(p.id_patch, std::ref(field));
+                            });
+                        field_luminosity_edge.set_refs(field_luminosity_refs);
+                    });
+
+            set_luminosity_refs.set_edges(luminosity);
+
+            set_uint_with_ghost_refs.evaluate();
+            set_luminosity_refs.evaluate();
+
+            Tscal alpha_u = solver_config.artif_viscosity.get_alpha_u().value();
+
+            modules::NodeComputeLuminosity<Tvec, Kern> compute_luminosity{
+                solver_config.gpart_mass, alpha_u};
+
+            compute_luminosity.set_edges(
+                storage.part_counts,
+                storage.neigh_cache,
+                storage.positions_with_ghosts,
+                storage.hpart_with_ghosts,
+                storage.omega,
+                uint_with_ghost,
+                storage.pressure,
+                luminosity);
+
+            compute_luminosity.evaluate();
+        }
 
         modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
         cv_check.check_conservation();
@@ -2392,6 +2492,19 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             });
 
             Tscal rank_dt = cfl_dt.compute_rank_min();
+
+            if (solver_config.should_save_dt_to_fields()) {
+
+                const u32 idt_part = pdl.get_field_idx<Tscal>("dt_part");
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    sham::DeviceBuffer<Tscal> &buf_dt_part
+                        = pdat.get_field_buf_ref<Tscal>(idt_part);
+                    sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf_check(cur_p.id_patch);
+
+                    buf_dt_part.copy_from(buf_dt, pdat.get_obj_cnt());
+                });
+            }
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
             if (!storage.sinks.is_empty()) {

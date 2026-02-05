@@ -88,7 +88,6 @@ namespace shammodels::gsph {
         /// Patch rank ownership
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
 
-        std::shared_ptr<solvergraph::GhostHandlerEdge<Tvec>> ghost_handler;
         /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 

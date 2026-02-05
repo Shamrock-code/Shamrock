@@ -91,6 +91,9 @@ namespace shammodels::gsph {
         /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;
 
+        /// Ghost handler for boundary particles
+        std::shared_ptr<solvergraph::GhostHandlerEdge<Tvec>> ghost_handler;
+        
         /// Ghost interface cache
         Component<GhostHandleCache> ghost_patch_cache;
 

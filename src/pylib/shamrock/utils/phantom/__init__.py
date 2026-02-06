@@ -138,7 +138,7 @@ def load_simulation(simulation_path, dump_file_name=None, in_file_name=None, do_
     return ctx, model, in_params
 
 
-def run_phantom_simulation(simulation_folder, sim_name):
+def run_phantom_simulation(simulation_folder, sim_name, callback=None):
     """
     Run a Phantom simulation in Shamrock.
     """
@@ -191,6 +191,12 @@ def run_phantom_simulation(simulation_folder, sim_name):
         ):
             os.remove(os.path.join(simulation_folder, f"{sim_name}_00000.tmp"))
 
+        if callback is not None:
+            callback(ctx, model, dump_number)
+
+    model.set_next_dt(0)
+    model.timestep()
+
     do_dump(dump_number)
 
     dump_number += 1
@@ -204,7 +210,7 @@ def run_phantom_simulation(simulation_folder, sim_name):
             next_time = tmax
             last_step = True
 
-        last_step = model.evolve_until(next_time)
+        model.evolve_until(next_time)
 
         do_dump(dump_number)
         dump_number += 1

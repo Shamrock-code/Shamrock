@@ -93,6 +93,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.soundspeed
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "soundspeed", "c_s");
 
+    storage.exchange_gz_node
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
+    storage.exchange_gz_positions
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
     // Initialize gradient fields for MUSCL reconstruction
     // These are only used when reconstruct_config.is_muscl() == true
     storage.grad_density
@@ -189,6 +193,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::clear_ghost_cache() {
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::merge_position_ghost() {
     StackEntry stack_loc{};
+
+    std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
 
     storage.merged_xyzh.set(
         storage.ghost_handler.get().build_comm_merge_positions(storage.ghost_patch_cache.get()));
@@ -618,7 +625,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_ghost_layout() {
     storage.ghost_layout = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
-        = shambase::get_check_ref(storage.ghost_layout.get());
+        = shambase::get_check_ref(storage.ghost_layout);
 
     solver_config.set_ghost_layout(ghost_layout);
 }
@@ -745,6 +752,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.get_field<Tvec>(ivxyz_interf).apply_offset(binfo.offset_speed);
             }
         });
+
+    std::shared_ptr<shamrock::solvergraph::ExchangeGhostLayer> exchange_gz_node
+        = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
 
     // Communicate ghost data across MPI ranks
     shambase::DistributedDataShared<PatchDataLayer> interf_pdat

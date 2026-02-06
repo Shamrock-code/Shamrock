@@ -151,6 +151,20 @@ namespace shammodels::sph {
         f64 utime  = phdump.read_header_float<f64>("utime");
         f64 umagfd = phdump.read_header_float<f64>("umagfd");
 
+        if (udist == 1.0 || umass == 1.0 || utime == 1.0 || umagfd == 3.54491) {
+            logger::warn_ln("SPH", "phantom dump units are not set, defaulting to SI");
+            logger::warn_ln("SPH", "udist =", udist);
+            logger::warn_ln("SPH", "umass =", umass);
+            logger::warn_ln("SPH", "utime =", utime);
+            logger::warn_ln("SPH", "umagfd =", umagfd);
+
+            return shamunits::UnitSystem<Tscal>();
+        }
+
+        // convert from CGS to SI
+        udist /= 100.0;
+        umass /= 1000.0;
+
         return shamunits::UnitSystem<Tscal>(
             utime, udist, umass
             // unit_current = 1 ,
@@ -169,9 +183,10 @@ namespace shammodels::sph {
             dump.table_header_f64.add("umass", units->kg_inv);
             dump.table_header_f64.add("utime", units->s_inv);
 
-            f64 umass = units->template to<shamunits::units::kg>();
+            // Back to freakin CGS (worst units system ever, well no ... there is imperial)
+            f64 umass = units->template to<shamunits::units::kg>() / 1000.0;
             f64 utime = units->template to<shamunits::units::s>();
-            f64 udist = units->template to<shamunits::units::m>();
+            f64 udist = units->template to<shamunits::units::m>() / 100.0;
 
             shamunits::Constants<Tscal> ctes{*units};
             f64 ccst    = ctes.c();

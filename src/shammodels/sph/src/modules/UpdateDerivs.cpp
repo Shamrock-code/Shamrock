@@ -150,7 +150,7 @@ struct KernelUpdateDerivsCD10 {
     Tscal alpha_u;
     Tscal beta_AV;
 
-    inline void operator() (
+    inline void operator()(
         unsigned int id_a,
         const Tvec *xyz,
         const Tscal *hpart,
@@ -162,7 +162,7 @@ struct KernelUpdateDerivsCD10 {
         const Tscal *alpha_AV,
         shamrock::tree::ObjectCache::ptrs_read ploop_ptrs,
         Tvec *axyz,
-        Tscal *duint) const{
+        Tscal *duint) const {
 
         using namespace shamrock::sph;
 
@@ -296,7 +296,7 @@ void NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_evaluate_internal() {
         sham::DDMultiRef{edges.axyz.get_spans(), edges.duint.get_spans()},
         edges.part_counts.indexes,
         Kernel{pmass, alpha_u, beta_AV});
-        //kernel2);
+    // kernel2);
 }
 
 template<class Tvec, template<class> class SPHKernel>

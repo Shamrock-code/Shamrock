@@ -546,6 +546,16 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
                 }));
     }
 
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+    { // Attach spans to block coords
+        shambase::get_check_ref(omega_refs)
+            .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(iomega_interf));
+                }));
+    }
+
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> alpha_av_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
     { // Attach spans to block coords
@@ -607,7 +617,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         shambase::get_check_ref(hpart_refs),
         shambase::get_check_ref(vxyz_refs),
         shambase::get_check_ref(uint_refs),
-        shambase::get_check_ref(omega_field),
+        shambase::get_check_ref(omega_refs),
         shambase::get_check_ref(pressure_field),
         shambase::get_check_ref(soundspeed_field),
         shambase::get_check_ref(alpha_av_refs),

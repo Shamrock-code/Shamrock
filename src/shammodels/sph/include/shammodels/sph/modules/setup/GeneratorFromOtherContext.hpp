@@ -89,7 +89,7 @@ namespace shammodels::sph::modules {
             return tmp;
         }
 
-        std::string get_name() { return "GeneratorLatticeCubic"; }
+        std::string get_name() { return "GeneratorFromOtherContext"; }
         ISPHSetupNode_Dot get_dot_subgraph() { return ISPHSetupNode_Dot{get_name(), 0, {}}; }
     };
 

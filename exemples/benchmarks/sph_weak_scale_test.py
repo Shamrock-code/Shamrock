@@ -66,7 +66,7 @@ model.resize_simulation_box(bmin, bmax)
 setup = model.get_setup()
 gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 
-# On aurora /2 was correct to avoid out of memory
+# Kind of optimized for Aurora
 setup.apply_setup(
     gen,
     gen_step=int(scheduler_split_val / 8),
@@ -130,6 +130,7 @@ res_rates = []
 res_cnts = []
 
 for i in range(5):
+    shamrock.sys.mpi_barrier()
     model.timestep()
 
     if i > 0:  # First step make no sense performance wise

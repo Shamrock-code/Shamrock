@@ -32,6 +32,272 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
+
+template<class Tvec, template<class> class SPHKernel>
+class NodeUpdateDerivsCD10 : public shamrock::solvergraph::INode {
+
+    using Tscal = shambase::VecComponent<Tvec>;
+
+    static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
+
+    public:
+    NodeUpdateDerivsCD10() {}
+
+    struct Edges {
+        // in scalars
+        const shamrock::solvergraph::ScalarEdge<Tscal> &gpart_mass; // slot ro 0
+        const shamrock::solvergraph::ScalarEdge<Tscal> &alpha_u;    // slot ro 1
+        const shamrock::solvergraph::ScalarEdge<Tscal> &beta_AV;    // slot ro 2
+
+        // in counts
+        const shamrock::solvergraph::Indexes<u32> &part_counts;            // slot ro 3
+        const shamrock::solvergraph::Indexes<u32> &part_counts_with_ghost; // slot ro 4
+
+        // in fields
+        const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;       // slot ro 5
+        const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;    // slot ro 6
+        const shamrock::solvergraph::IFieldSpan<Tvec> &vxyz;      // slot ro 7
+        const shamrock::solvergraph::IFieldSpan<Tscal> &uint;     // slot ro 8
+        const shamrock::solvergraph::IFieldSpan<Tscal> &omega;    // slot ro 9
+        const shamrock::solvergraph::IFieldSpan<Tscal> &pressure; // slot ro 10
+        const shamrock::solvergraph::IFieldSpan<Tscal> &cs;       // slot ro 11
+        const shamrock::solvergraph::IFieldSpan<Tscal> &alpha_AV; // slot ro 12
+
+        // in neigh list
+        const shammodels::sph::solvergraph::NeighCache &neigh_cache; // slot ro 12
+
+        // outputs
+        shamrock::solvergraph::IFieldSpan<Tvec> &axyz;   // slot rw 0
+        shamrock::solvergraph::IFieldSpan<Tscal> &duint; // slot rw 1
+    };
+
+    inline void set_edges(
+        // inputs
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> gpart_mass,
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u,
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV,
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> vxyz,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> uint,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> pressure,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> cs,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> alpha_AV,
+        std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
+
+        // outputs
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> axyz,
+        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> duint) {
+        __internal_set_ro_edges(
+            {gpart_mass,
+             alpha_u,
+             beta_AV,
+             part_counts,
+             part_counts_with_ghost,
+             xyz,
+             hpart,
+             vxyz,
+             uint,
+             omega,
+             pressure,
+             cs,
+             alpha_AV,
+             neigh_cache});
+        __internal_set_rw_edges({axyz, duint});
+    }
+
+    inline Edges get_edges() {
+        return Edges{
+            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
+            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(1),
+            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(2),
+            get_ro_edge<shamrock::solvergraph::Indexes<u32>>(3),
+            get_ro_edge<shamrock::solvergraph::Indexes<u32>>(4),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(5),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(7),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(8),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(9),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(10),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(11),
+            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(12),
+            get_ro_edge<shammodels::sph::solvergraph::NeighCache>(13),
+            get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
+            get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
+        };
+    }
+
+    void _impl_evaluate_internal();
+
+    inline virtual std::string _impl_get_label() const { return "UpdateDerivsCD10"; };
+
+    inline virtual std::string _impl_get_tex() const { return "TODO"; };
+};
+
+template<class Tvec, template<class> class SPHKernel>
+struct KernelUpdateDerivsCD10 {
+    using Tscal                   = shambase::VecComponent<Tvec>;
+    using Kernel                  = SPHKernel<Tscal>;
+    static constexpr Tscal hfactd = Kernel::hfactd;
+    static constexpr Tscal Rkern  = Kernel::Rkern;
+    static constexpr Tscal Rker2  = Rkern * Rkern;
+
+    Tscal pmass;
+    Tscal alpha_u;
+    Tscal beta_AV;
+
+    inline void operator() (
+        unsigned int id_a,
+        const Tvec *xyz,
+        const Tscal *hpart,
+        const Tvec *vxyz,
+        const Tscal *uint,
+        const Tscal *omega,
+        const Tscal *pressure,
+        const Tscal *cs,
+        const Tscal *alpha_AV,
+        shamrock::tree::ObjectCache::ptrs_read ploop_ptrs,
+        Tvec *axyz,
+        Tscal *duint) const{
+
+        using namespace shamrock::sph;
+
+        shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+        Tvec xyz_a    = xyz[id_a];
+        Tscal h_a     = hpart[id_a];
+        Tvec vxyz_a   = vxyz[id_a];
+        Tscal u_a     = uint[id_a];
+        Tscal omega_a = omega[id_a];
+        Tscal P_a     = pressure[id_a];
+        Tscal cs_a    = cs[id_a];
+        Tscal alpha_a = alpha_AV[id_a];
+
+        Tscal rho_a     = rho_h(pmass, h_a, hfactd);
+        Tscal rho_a_sq  = rho_a * rho_a;
+        Tscal rho_a_inv = 1. / rho_a;
+
+        Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
+
+        Tvec force_pressure  = Tvec{0, 0, 0};
+        Tscal tmpdU_pressure = Tscal{0};
+
+        particle_looper.for_each_object(id_a, [&](u32 id_b) {
+            Tvec dr    = xyz_a - xyz[id_b];
+            Tscal rab2 = sycl::dot(dr, dr);
+            Tscal h_b  = hpart[id_b];
+
+            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                return;
+            }
+
+            Tvec vxyz_b         = vxyz[id_b];
+            const Tscal u_b     = uint[id_b];
+            Tscal P_b           = pressure[id_b];
+            Tscal omega_b       = omega[id_b];
+            const Tscal alpha_b = alpha_AV[id_b];
+            Tscal cs_b          = cs[id_b];
+
+            Tscal rab = sycl::sqrt(rab2);
+
+            Tscal rho_b = rho_h(pmass, h_b, hfactd);
+
+            Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+            Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+            Tvec v_ab = vxyz_a - vxyz_b;
+
+            Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
+
+            Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+            Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
+
+            Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+            Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
+
+            Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
+
+            Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
+            Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
+
+            add_to_derivs_sph_artif_visco_cond(
+                pmass,
+                rho_a_sq,
+                omega_a_rho_a_inv,
+                rho_a_inv,
+                rho_b,
+                omega_a,
+                omega_b,
+                Fab_a,
+                Fab_b,
+                u_a,
+                u_b,
+                P_a,
+                P_b,
+                alpha_u,
+                v_ab,
+                r_ab_unit,
+                vsig_u,
+                qa_ab,
+                qb_ab,
+
+                force_pressure,
+                tmpdU_pressure);
+        });
+
+        axyz[id_a]  = force_pressure;
+        duint[id_a] = tmpdU_pressure;
+    }
+};
+
+template<class Tvec, template<class> class SPHKernel>
+void NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_evaluate_internal() {
+
+    __shamrock_stack_entry();
+
+    auto edges = get_edges();
+
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    edges.xyz.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.hpart.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.vxyz.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.uint.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.omega.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.pressure.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.cs.check_sizes(edges.part_counts_with_ghost.indexes);
+    edges.alpha_AV.check_sizes(edges.part_counts_with_ghost.indexes);
+
+    edges.axyz.check_sizes(edges.part_counts.indexes);
+    edges.duint.check_sizes(edges.part_counts.indexes);
+
+    const Tscal pmass   = edges.gpart_mass.value;
+    const Tscal alpha_u = edges.alpha_u.value;
+    const Tscal beta_AV = edges.beta_AV.value;
+
+    using Kernel = KernelUpdateDerivsCD10<Tvec, SPHKernel>;
+
+    sham::distributed_data_kernel_call(
+        dev_sched,
+        sham::DDMultiRef{
+            edges.xyz.get_spans(),
+            edges.hpart.get_spans(),
+            edges.vxyz.get_spans(),
+            edges.uint.get_spans(),
+            edges.omega.get_spans(),
+            edges.pressure.get_spans(),
+            edges.cs.get_spans(),
+            edges.alpha_AV.get_spans(),
+            edges.neigh_cache},
+        sham::DDMultiRef{edges.axyz.get_spans(), edges.duint.get_spans()},
+        edges.part_counts.indexes,
+        Kernel{pmass, alpha_u, beta_AV});
+        //kernel2);
+}
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
@@ -585,187 +851,44 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         shambase::get_check_ref(duint_refs).set_refs(refs);
     }
 
-    struct Edges {
-        // in counts
-        const shamrock::solvergraph::Indexes<u32> &part_counts;
-        const shamrock::solvergraph::Indexes<u32> &part_counts_with_ghost;
+    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> gpart_mass
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+    {
+        shambase::get_check_ref(gpart_mass).value = solver_config.gpart_mass;
+    }
+    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+    {
+        shambase::get_check_ref(alpha_u).value = cfg.alpha_u;
+    }
+    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+    {
+        shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
+    }
 
-        // in fields
-        const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;
-        const shamrock::solvergraph::IFieldSpan<Tvec> &vxyz;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &uint;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &omega;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &pressure;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &cs;
-        const shamrock::solvergraph::IFieldSpan<Tscal> &alpha_AV;
-
-        // in neigh list
-        const shammodels::sph::solvergraph::NeighCache &neigh_cache;
-
-        // outputs
-        shamrock::solvergraph::IFieldSpan<Tvec> &axyz;
-        shamrock::solvergraph::IFieldSpan<Tscal> &duint;
-    };
-
-    Edges edges{
-        shambase::get_check_ref(part_counts),
-        shambase::get_check_ref(part_counts_with_ghost),
-        shambase::get_check_ref(xyz_refs),
-        shambase::get_check_ref(hpart_refs),
-        shambase::get_check_ref(vxyz_refs),
-        shambase::get_check_ref(uint_refs),
-        shambase::get_check_ref(omega_refs),
-        shambase::get_check_ref(pressure_field),
-        shambase::get_check_ref(soundspeed_field),
-        shambase::get_check_ref(alpha_av_refs),
-        shambase::get_check_ref(storage.neigh_cache),
-        shambase::get_check_ref(axyz_refs),
-        shambase::get_check_ref(duint_refs),
-    };
-
-    edges.xyz.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.hpart.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.vxyz.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.uint.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.omega.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.pressure.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.cs.check_sizes(edges.part_counts_with_ghost.indexes);
-    edges.alpha_AV.check_sizes(edges.part_counts_with_ghost.indexes);
-
-    edges.axyz.check_sizes(edges.part_counts.indexes);
-    edges.duint.check_sizes(edges.part_counts.indexes);
-
-    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-    const Tscal pmass   = solver_config.gpart_mass;
-    const Tscal alpha_u = cfg.alpha_u;
-    const Tscal beta_AV = cfg.beta_AV;
-
-    auto kernel = [pmass, alpha_u, beta_AV](
-                      u32 id_a,
-                      const Tvec *__restrict xyz,
-                      const Tscal *__restrict hpart,
-                      const Tvec *__restrict vxyz,
-                      const Tscal *__restrict uint,
-                      const Tscal *__restrict omega,
-                      const Tscal *__restrict pressure,
-                      const Tscal *__restrict cs,
-                      const Tscal *__restrict alpha_AV,
-                      const shamrock::tree::ObjectCache::ptrs_read ploop_ptrs,
-                      // outs
-                      Tvec *__restrict axyz,
-                      Tscal *__restrict duint) {
-        // init utilities
-        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-        tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-        using namespace shamrock::sph;
-
-        Tvec xyz_a    = xyz[id_a];
-        Tscal h_a     = hpart[id_a];
-        Tvec vxyz_a   = vxyz[id_a];
-        Tscal u_a     = uint[id_a];
-        Tscal omega_a = omega[id_a];
-        Tscal P_a     = pressure[id_a];
-        Tscal cs_a    = cs[id_a];
-        Tscal alpha_a = alpha_AV[id_a];
-
-        Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
-        Tscal rho_a_sq  = rho_a * rho_a;
-        Tscal rho_a_inv = 1. / rho_a;
-
-        Tscal omega_a_rho_a_inv = 1 / (omega_a * rho_a);
-
-        Tvec force_pressure{0, 0, 0};
-        Tscal tmpdU_pressure = 0;
-        Tvec sum_axyz        = {0, 0, 0};
-        Tscal sum_du_a       = 0;
-
-        particle_looper.for_each_object(id_a, [&](u32 id_b) {
-            // compute only omega_a
-            Tvec dr    = xyz_a - xyz[id_b];
-            Tscal rab2 = sycl::dot(dr, dr);
-            Tscal h_b  = hpart[id_b];
-
-            if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
-                return;
-            }
-
-            Tvec vxyz_b         = vxyz[id_b];
-            const Tscal u_b     = uint[id_b];
-            Tscal P_b           = pressure[id_b];
-            Tscal omega_b       = omega[id_b];
-            const Tscal alpha_b = alpha_AV[id_b];
-            Tscal cs_b          = cs[id_b];
-
-            Tscal rab = sycl::sqrt(rab2);
-
-            Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
-
-            Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-            Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-            Tvec v_ab = vxyz_a - vxyz_b;
-
-            Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
-
-            // f32 P_b     = cs * cs * rho_b;
-            Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
-            Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
-
-            Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
-            Tscal vsig_b = alpha_b * cs_b + beta_AV * abs_v_ab_r_ab;
-
-            Tscal vsig_u = shamrock::sph::vsig_u(P_a, P_b, rho_a, rho_b);
-
-            Tscal qa_ab = shamrock::sph::q_av(rho_a, vsig_a, v_ab_r_ab);
-            Tscal qb_ab = shamrock::sph::q_av(rho_b, vsig_b, v_ab_r_ab);
-
-            add_to_derivs_sph_artif_visco_cond(
-                pmass,
-                rho_a_sq,
-                omega_a_rho_a_inv,
-                rho_a_inv,
-                rho_b,
-                omega_a,
-                omega_b,
-                Fab_a,
-                Fab_b,
-                u_a,
-                u_b,
-                P_a,
-                P_b,
-                alpha_u,
-                v_ab,
-                r_ab_unit,
-                vsig_u,
-                qa_ab,
-                qb_ab,
-
-                force_pressure,
-                tmpdU_pressure);
-        });
-
-        axyz[id_a]  = force_pressure;
-        duint[id_a] = tmpdU_pressure;
-    };
-
-    sham::distributed_data_kernel_call(
-        dev_sched,
-        sham::DDMultiRef{
-            edges.xyz.get_spans(),
-            edges.hpart.get_spans(),
-            edges.vxyz.get_spans(),
-            edges.uint.get_spans(),
-            edges.omega.get_spans(),
-            edges.pressure.get_spans(),
-            edges.cs.get_spans(),
-            edges.alpha_AV.get_spans(),
-            edges.neigh_cache},
-        sham::DDMultiRef{edges.axyz.get_spans(), edges.duint.get_spans()},
-        edges.part_counts.indexes,
-        std::move(kernel));
+    std::shared_ptr<NodeUpdateDerivsCD10<Tvec, SPHKernel>> node
+        = std::make_shared<NodeUpdateDerivsCD10<Tvec, SPHKernel>>();
+    {
+        node->set_edges(
+            gpart_mass,
+            alpha_u,
+            beta_AV,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            vxyz_refs,
+            uint_refs,
+            omega_refs,
+            pressure_field,
+            soundspeed_field,
+            alpha_av_refs,
+            storage.neigh_cache,
+            axyz_refs,
+            duint_refs);
+    }
+    node->evaluate();
 }
 
 template<class Tvec, template<class> class SPHKernel>

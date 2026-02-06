@@ -91,14 +91,14 @@ namespace shamalgs::collective {
         }
 
         public:
-        InvariantParallelGenerator(Engine eng, u64 nval_max)
+        InvariantParallelGenerator(Engine eng, u64 nval_max = u64_max)
             : eng_global(eng), nval_max(nval_max), nval_current(0), done(false) {
             if (nval_max == 0) {
                 done = true;
             }
         }
 
-        InvariantParallelGenerator(u64 seed, u64 nval_max)
+        InvariantParallelGenerator(u64 seed, u64 nval_max = u64_max)
             : InvariantParallelGenerator(Engine(seed), nval_max) {}
 
         /**

@@ -20,6 +20,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/math.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
@@ -510,7 +511,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     auto &part_counts            = storage.part_counts;
     auto &part_counts_with_ghost = storage.part_counts_with_ghost;
     auto &xyz_refs               = storage.positions_with_ghosts;
-    auto &hpart_refs             = storage.hpart_with_ghosts;
     auto &omega_field            = storage.omega;
     auto &pressure_field         = storage.pressure;
     auto &soundspeed_field       = storage.soundspeed;
@@ -533,6 +533,16 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
             mpdats.map<std::reference_wrapper<PatchDataField<Tvec>>>(
                 [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
                     return std::ref(mpdat.get_field<Tvec>(ivxyz_interf));
+                }));
+    }
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+    { // if was just reset before this call
+        shambase::get_check_ref(hpart_refs)
+            .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(ihpart_interf));
                 }));
     }
 
@@ -749,6 +759,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         edges.part_counts.indexes,
         std::move(kernel));
 }
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc_visco(
     ConstantDisc cfg) {

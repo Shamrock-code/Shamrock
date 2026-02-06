@@ -511,14 +511,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     auto &part_counts            = storage.part_counts;
     auto &part_counts_with_ghost = storage.part_counts_with_ghost;
     auto &xyz_refs               = storage.positions_with_ghosts;
-    auto &omega_field            = storage.omega;
     auto &pressure_field         = storage.pressure;
     auto &soundspeed_field       = storage.soundspeed;
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> uint_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-
-    { // Attach spans to block coords
+    {
         shambase::get_check_ref(uint_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
                 [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
@@ -528,7 +526,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> vxyz_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
-    { // Attach spans to block coords
+    {
         shambase::get_check_ref(vxyz_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tvec>>>(
                 [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
@@ -548,7 +546,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    { // Attach spans to block coords
+    {
         shambase::get_check_ref(omega_refs)
             .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
                 [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
@@ -558,7 +556,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> alpha_av_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    { // Attach spans to block coords
+    {
         shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             refs.add_obj(
@@ -569,7 +567,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> axyz_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
-    { // Attach spans to block coords
+    {
         shambase::DistributedData<std::reference_wrapper<PatchDataField<Tvec>>> refs{};
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(iaxyz)));
@@ -579,7 +577,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> duint_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    { // Attach spans to block coords
+    {
         shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
             refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tscal>(iduint)));

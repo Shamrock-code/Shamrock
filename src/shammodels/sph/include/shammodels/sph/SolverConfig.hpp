@@ -288,6 +288,11 @@ struct shammodels::sph::SolverConfig {
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
 
+    bool filter_empty_patch_gz = false;
+    inline void set_filter_empty_patch_gz(bool state) { filter_empty_patch_gz = state; }
+
+    inline bool has_filter_empty_patch_gz() { return filter_empty_patch_gz; }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
     //////////////////////////////////////////////////////////////////////////////////////////////

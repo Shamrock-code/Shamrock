@@ -287,6 +287,10 @@ class PatchScheduler {
         });
     }
 
+    inline const shamrock::patch::Patch &get_patch(u64 patch_id) const {
+        return patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];
+    }
+
     inline u32 get_patch_rank_owner(u64 patch_id) {
         shamrock::patch::Patch &cur_p
             = patch_list.global[patch_list.id_patch_to_global_idx.at(patch_id)];

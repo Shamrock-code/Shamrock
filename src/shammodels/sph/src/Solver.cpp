@@ -770,7 +770,8 @@ void shammodels::sph::Solver<Tvec, Kern>::build_ghost_cache() {
     storage.ghost_patch_cache.set(sph_utils.build_interf_cache(
         storage.ghost_handler.get(),
         storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+        solver_config.htol_up_coarse_cycle,
+        solver_config.has_filter_empty_patch_gz()));
 
     // storage.ghost_handler.get().gen_debug_patch_ghost(storage.ghost_patch_cache.get());
 }

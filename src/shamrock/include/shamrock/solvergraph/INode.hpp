@@ -19,6 +19,7 @@
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
+#include "shamrock/solvergraph/INullOptEdge.hpp"
 #include <memory>
 #include <vector>
 
@@ -84,6 +85,34 @@ namespace shamrock::solvergraph {
         template<class T>
         inline T &get_rw_edge(int slot) {
             return shambase::get_check_ref(std::dynamic_pointer_cast<T>(rw_edges.at(slot)));
+        }
+
+        /// Get a read only edge and cast it to the type T, return an optional
+        template<class T>
+        inline std::optional<const T &> get_ro_edge_optional(int slot) {
+            auto &tmp = ro_edges.at(slot);
+            if (T *ptr = std::dynamic_pointer_cast<T>(tmp)) {
+                return *ptr;
+            } else if (is_null_opt_edge(tmp)) {
+                return std::nullopt;
+            } else {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Edge is not from the requested type: {}", slot));
+            }
+        }
+
+        /// Get a read write edge and cast it to the type T, return an optional
+        template<class T>
+        inline std::optional<T &> get_rw_edge_optional(int slot) {
+            auto &tmp = rw_edges.at(slot);
+            if (T *ptr = std::dynamic_pointer_cast<T>(tmp)) {
+                return *ptr;
+            } else if (is_null_opt_edge(tmp)) {
+                return std::nullopt;
+            } else {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    shambase::format("Edge is not from the requested type: {}", slot));
+            }
         }
 
         /// Get a reference to a read only edge

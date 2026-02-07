@@ -34,6 +34,63 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
+#define DECL_RO(type, name) const type &name;
+#define DECL_RW(type, name) type & name;
+#define PARAM_RO(type, name) std::shared_ptr<type> name,
+#define PARAM_RW(type, name) std::shared_ptr<type> name,
+#define PUSH_RO1(type, name) name,
+#define PUSH_RW1(type, name)
+#define PUSH_RO2(type, name)
+#define PUSH_RW2(type, name) name,
+#define GET_RO(type, name) get_ro_edge<type>(ro++),
+#define GET_RW(type, name) get_rw_edge<type>(rw++),
+
+#define EXPAND_NODE_EDGES(EDGES)                                                                   \
+                                                                                                   \
+    struct Edges {                                                                                 \
+        EDGES(DECL_RO, DECL_RW)                                                                    \
+    };                                                                                             \
+                                                                                                   \
+    inline void set_edges(EDGES(PARAM_RO, PARAM_RW) SourceLocation loc = SourceLocation{}) {       \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        __internal_set_ro_edges({EDGES(PUSH_RO1, PUSH_RW1)});                                      \
+        __internal_set_rw_edges({EDGES(PUSH_RO2, PUSH_RW2)});                                      \
+    }                                                                                              \
+                                                                                                   \
+    inline Edges get_edges() {                                                                     \
+        int ro = 0;                                                                                \
+        int rw = 0;                                                                                \
+        return Edges{EDGES(GET_RO, GET_RW)};                                                       \
+    }
+
+#define NODE_UPDATE_DERIVS_CD10_EDGES(X_RO, X_RW)                                                  \
+    /* scalars */                                                                                  \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_u)                                        \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, beta_AV)                                        \
+                                                                                                   \
+    /* counts */                                                                                   \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts_with_ghost)                              \
+                                                                                                   \
+    /* fields */                                                                                   \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, xyz)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, vxyz)                                            \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, uint)                                           \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, omega)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                       \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, cs)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, alpha_AV)                                       \
+                                                                                                   \
+    /* neigh */                                                                                    \
+    X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
+                                                                                                   \
+    /* outputs */                                                                                  \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, duint)
+
 template<class Tvec, template<class> class SPHKernel>
 class NodeUpdateDerivsCD10 : public shamrock::solvergraph::INode {
 
@@ -44,92 +101,7 @@ class NodeUpdateDerivsCD10 : public shamrock::solvergraph::INode {
     public:
     NodeUpdateDerivsCD10() {}
 
-    struct Edges {
-        // in scalars
-        const shamrock::solvergraph::ScalarEdge<Tscal> &gpart_mass; // slot ro 0
-        const shamrock::solvergraph::ScalarEdge<Tscal> &alpha_u;    // slot ro 1
-        const shamrock::solvergraph::ScalarEdge<Tscal> &beta_AV;    // slot ro 2
-
-        // in counts
-        const shamrock::solvergraph::Indexes<u32> &part_counts;            // slot ro 3
-        const shamrock::solvergraph::Indexes<u32> &part_counts_with_ghost; // slot ro 4
-
-        // in fields
-        const shamrock::solvergraph::IFieldSpan<Tvec> &xyz;       // slot ro 5
-        const shamrock::solvergraph::IFieldSpan<Tscal> &hpart;    // slot ro 6
-        const shamrock::solvergraph::IFieldSpan<Tvec> &vxyz;      // slot ro 7
-        const shamrock::solvergraph::IFieldSpan<Tscal> &uint;     // slot ro 8
-        const shamrock::solvergraph::IFieldSpan<Tscal> &omega;    // slot ro 9
-        const shamrock::solvergraph::IFieldSpan<Tscal> &pressure; // slot ro 10
-        const shamrock::solvergraph::IFieldSpan<Tscal> &cs;       // slot ro 11
-        const shamrock::solvergraph::IFieldSpan<Tscal> &alpha_AV; // slot ro 12
-
-        // in neigh list
-        const shammodels::sph::solvergraph::NeighCache &neigh_cache; // slot ro 12
-
-        // outputs
-        shamrock::solvergraph::IFieldSpan<Tvec> &axyz;   // slot rw 0
-        shamrock::solvergraph::IFieldSpan<Tscal> &duint; // slot rw 1
-    };
-
-    inline void set_edges(
-        // inputs
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> gpart_mass,
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u,
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV,
-        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts,
-        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> part_counts_with_ghost,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> xyz,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> hpart,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> vxyz,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> uint,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> omega,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> pressure,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> cs,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> alpha_AV,
-        std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache,
-
-        // outputs
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> axyz,
-        std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> duint) {
-        __internal_set_ro_edges(
-            {gpart_mass,
-             alpha_u,
-             beta_AV,
-             part_counts,
-             part_counts_with_ghost,
-             xyz,
-             hpart,
-             vxyz,
-             uint,
-             omega,
-             pressure,
-             cs,
-             alpha_AV,
-             neigh_cache});
-        __internal_set_rw_edges({axyz, duint});
-    }
-
-    inline Edges get_edges() {
-        return Edges{
-            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
-            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(1),
-            get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(2),
-            get_ro_edge<shamrock::solvergraph::Indexes<u32>>(3),
-            get_ro_edge<shamrock::solvergraph::Indexes<u32>>(4),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(5),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(6),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(7),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(8),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(9),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(10),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(11),
-            get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(12),
-            get_ro_edge<shammodels::sph::solvergraph::NeighCache>(13),
-            get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-            get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
-        };
-    }
+    EXPAND_NODE_EDGES(NODE_UPDATE_DERIVS_CD10_EDGES)
 
     void _impl_evaluate_internal();
 

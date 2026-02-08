@@ -222,7 +222,7 @@ void shamsys::microbench::saxpy() {
         auto &dev       = shambase::get_check_ref(dev_ptr);
 
         size_t max_alloc = sham::min(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
-        double max_size = double(max_alloc) / (vec4_size * 4);
+        double max_size  = double(max_alloc) / (vec4_size * 4); // there is 2 allocations so /4
 
         auto result = bench_step(N);
 

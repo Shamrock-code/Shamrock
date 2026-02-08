@@ -230,6 +230,8 @@ namespace shambase {
 
     void set_callstack_process_identifier(std::string identifier);
 
+    void add_callstack_gen_info_generator(std::string (*generator)());
+
 } // namespace shambase
 
 /**

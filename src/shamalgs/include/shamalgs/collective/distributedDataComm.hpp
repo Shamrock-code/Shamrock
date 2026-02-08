@@ -92,6 +92,11 @@ namespace shamalgs::collective {
             buf.resize(size);
             shambase::get_check_ref(cache2[buf_id]).copy_range(offset, offset + size, buf);
         }
+
+        inline void clear() {
+            cache1.clear();
+            cache2.clear();
+        }
     };
 
     struct DDSCommCache {
@@ -156,6 +161,14 @@ namespace shamalgs::collective {
             std::visit(
                 [&](auto &cache) {
                     cache.recv_cache_read_buf_at(buf_id, offset, size, buf);
+                },
+                cache);
+        }
+
+        inline void clear() {
+            std::visit(
+                [&](auto &cache) {
+                    cache.clear();
                 },
                 cache);
         }

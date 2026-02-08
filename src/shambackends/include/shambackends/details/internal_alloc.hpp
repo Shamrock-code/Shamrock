@@ -48,6 +48,8 @@ namespace sham::details {
     /// @return A MemPerfInfos object containing the memory performance data.
     MemPerfInfos get_mem_perf_info();
 
+    std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched);
+
     /// @brief Reset the memory information for the maximum allocated bytes.
     void reset_mem_info_max();
 

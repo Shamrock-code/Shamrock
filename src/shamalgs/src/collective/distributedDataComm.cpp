@@ -492,6 +492,8 @@ namespace shamalgs::collective {
                 }
             }
         }
+
+        cache.clear();
     }
 
 } // namespace shamalgs::collective

@@ -218,6 +218,12 @@ namespace shambase::details {
 
 namespace shambase {
 
+    std::string _callstack_process_identifier;
+
+    void set_callstack_process_identifier(std::string identifier) {
+        _callstack_process_identifier = std::move(identifier);
+    }
+
     /**
      * @brief get the formatted callstack
      *
@@ -237,6 +243,11 @@ namespace shambase {
         std::reverse(lines.begin(), lines.end());
 
         std::stringstream ss;
+
+        if (!_callstack_process_identifier.empty()) {
+            ss << "  -> process identifier: " << _callstack_process_identifier << "\n";
+        }
+
         for (u32 i = 0; i < lines.size(); i++) {
             ss << shambase::format(" {:2} : {}\n", i, lines[i]);
         }

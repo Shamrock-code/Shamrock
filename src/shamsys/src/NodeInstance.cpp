@@ -30,11 +30,11 @@
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/env_variables.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shamsys/EnvVariables.hpp"
 #include "shamsys/MpiDataTypeHandler.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -162,7 +162,7 @@ namespace shamsys::instance {
 
         std::string print_buf = "";
 
-        std::optional<u32> loc = env::get_local_rank();
+        std::optional<u32> loc = shamcomm::get_local_rank();
         if (loc) {
             print_buf = shambase::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",

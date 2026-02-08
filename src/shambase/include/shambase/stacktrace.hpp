@@ -228,6 +228,8 @@ namespace shambase {
      */
     std::string fmt_callstack();
 
+    void set_callstack_process_identifier(std::string identifier);
+
 } // namespace shambase
 
 /**

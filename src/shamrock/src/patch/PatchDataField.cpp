@@ -113,7 +113,7 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (nvar == f2.nvar);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, get_obj_cnt() * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, get_val_cnt());
 
     return match;
 }
@@ -359,7 +359,7 @@ void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     serializer.write(get_obj_cnt());
     shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", get_obj_cnt());
     if (get_obj_cnt() > 0) {
-        serializer.write_buf(buf, get_obj_cnt() * nvar);
+        serializer.write_buf(buf, get_val_cnt());
     }
 }
 
@@ -384,7 +384,7 @@ template<class T>
 shamalgs::SerializeSize PatchDataField<T>::serialize_buf_byte_size() {
 
     using H = shamalgs::SerializeHelper;
-    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(get_obj_cnt() * nvar);
+    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(get_val_cnt());
 }
 
 template<class T>
@@ -421,7 +421,7 @@ T PatchDataField<T>::compute_max() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::max(dev_sched, buf, 0, get_obj_cnt() * nvar);
+    return shamalgs::primitives::max(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -432,7 +432,7 @@ T PatchDataField<T>::compute_min() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::min(dev_sched, buf, 0, get_obj_cnt() * nvar);
+    return shamalgs::primitives::min(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -443,7 +443,7 @@ T PatchDataField<T>::compute_sum() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::sum(dev_sched, buf, 0, get_obj_cnt() * nvar);
+    return shamalgs::primitives::sum(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -453,7 +453,7 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    return shamalgs::primitives::dot_sum(buf, 0, get_obj_cnt() * nvar);
+    return shamalgs::primitives::dot_sum(buf, 0, get_val_cnt());
 }
 
 template<class T>

@@ -111,10 +111,9 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
 
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
-    match = match && (obj_cnt == f2.obj_cnt);
 
     auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, get_obj_cnt() * nvar);
 
     return match;
 }
@@ -229,28 +228,7 @@ void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
     if (f2_len > 0) {
         shamlog_debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
 
-        const u32 old_val_cnt = get_val_cnt(); // field_data.size();
-        expand(f2.obj_cnt);
-
-        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-        auto &q   = sptr->get_queue();
-
-        sham::EventList depends_list;
-        T *acc          = get_buf().get_write_access(depends_list);
-        const T *acc_f2 = f2.get_buf().get_read_access(depends_list);
-
-        shamlog_debug_sycl_ln("PatchDataField", "write values");
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const u32 idx_st = old_val_cnt;
-
-            cgh.parallel_for<PdatField_insert<T>>(
-                sycl::range<1>{f2.get_val_cnt()}, [=](sycl::id<1> idx) {
-                    acc[idx_st + idx] = acc_f2[idx];
-                });
-        });
-
-        get_buf().complete_event_state(e);
-        f2.get_buf().complete_event_state(e);
+        get_buf().append(f2.get_buf());
 
     } else {
         shamlog_debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
@@ -274,8 +252,6 @@ void PatchDataField<T>::index_remap_resize(sham::DeviceBuffer<u32> &index_map, u
 
         buf = get_new_buf();
     }
-
-    obj_cnt = len;
 }
 
 template<class T>
@@ -387,10 +363,10 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{false};
-    serializer.write(obj_cnt);
-    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
-    if (obj_cnt > 0) {
-        serializer.write_buf(buf, obj_cnt * nvar);
+    serializer.write(get_obj_cnt());
+    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", get_obj_cnt());
+    if (get_obj_cnt() > 0) {
+        serializer.write_buf(buf, get_obj_cnt() * nvar);
     }
 }
 
@@ -415,7 +391,7 @@ template<class T>
 shamalgs::SerializeSize PatchDataField<T>::serialize_buf_byte_size() {
 
     using H = shamalgs::SerializeHelper;
-    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(obj_cnt * nvar);
+    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(get_obj_cnt() * nvar);
 }
 
 template<class T>
@@ -452,7 +428,7 @@ T PatchDataField<T>::compute_max() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::max(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::max(dev_sched, buf, 0, get_obj_cnt() * nvar);
 }
 
 template<class T>
@@ -463,7 +439,7 @@ T PatchDataField<T>::compute_min() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::min(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::min(dev_sched, buf, 0, get_obj_cnt() * nvar);
 }
 
 template<class T>
@@ -474,7 +450,7 @@ T PatchDataField<T>::compute_sum() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::sum(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::sum(dev_sched, buf, 0, get_obj_cnt() * nvar);
 }
 
 template<class T>
@@ -484,7 +460,7 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    return shamalgs::primitives::dot_sum(buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::dot_sum(buf, 0, get_obj_cnt() * nvar);
 }
 
 template<class T>

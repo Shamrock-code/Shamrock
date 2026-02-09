@@ -222,17 +222,7 @@ class PdatField_insert;
 
 template<class T>
 void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
-
-    u32 f2_len = f2.get_obj_cnt();
-
-    if (f2_len > 0) {
-        shamlog_debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
-
-        get_buf().append(f2.get_buf());
-
-    } else {
-        shamlog_debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
-    }
+    get_buf().append(f2.get_buf());
 }
 
 template<class T>

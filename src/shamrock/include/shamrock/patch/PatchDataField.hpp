@@ -157,7 +157,7 @@ class PatchDataField {
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
-    [[nodiscard]] inline const u32 &get_obj_cnt() const {
+    [[nodiscard]] inline u32 get_obj_cnt() const {
         size_t sz = buf.get_size();
         if (sz % nvar != 0) {
             throw shambase::make_except_with_loc<std::runtime_error>(

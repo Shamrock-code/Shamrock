@@ -258,8 +258,11 @@ template<class T>
 void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len) {
 
     if (len != get_obj_cnt()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "the match of the new index map does not match with the patchdatafield obj count");
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the match of the new index map does not match with the patchdatafield obj count: {} "
+            "!= {}",
+            len,
+            get_obj_cnt()));
     }
 
     index_remap_resize(index_map, len);

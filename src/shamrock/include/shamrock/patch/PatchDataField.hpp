@@ -175,8 +175,10 @@ class PatchDataField {
     [[nodiscard]] inline u32 get_obj_cnt() const {
         size_t sz = buf.get_size();
         if (sz % nvar != 0) {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "the size of the buffer is not a multiple of the number of variables");
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "the size of the buffer ({}) is not a multiple of the number of variables ({})",
+                sz,
+                nvar));
         }
         return shambase::narrow_or_throw<u32>(sz / nvar);
     }

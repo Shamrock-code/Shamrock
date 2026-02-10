@@ -84,6 +84,12 @@ class PatchDataField {
 
     u32 nvar; // number of variable per object
 
+    inline void check_nvar() const {
+        if (nvar == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>("nvar is 0 is not allowed");
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,23 +113,32 @@ class PatchDataField {
 
     inline PatchDataField(std::string name, u32 nvar)
         : field_name(std::move(name)), nvar(nvar),
-          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
         : field_name(std::move(name)), nvar(nvar),
-          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), buf(other.buf.copy()) {}
+        : field_name(other.field_name), nvar(other.nvar), buf(other.buf.copy()) {
+        check_nvar();
+    }
 
-    inline PatchDataField(
-        sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : field_name(name), nvar(nvar), buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
+    inline PatchDataField(sham::DeviceBuffer<T> &&moved_buf, std::string name, u32 nvar)
+        : field_name(name), nvar(nvar), buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {
+        check_nvar();
+    }
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
         : field_name(name), nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf),
                                             obj_cnt * nvar,
-                                            shamsys::instance::get_compute_scheduler_ptr()) {}
+                                            shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    }
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 

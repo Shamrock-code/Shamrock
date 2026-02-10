@@ -377,7 +377,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_buf(
     if (cnt > 0) {
         sham::DeviceBuffer<T> buf(cnt * nvar, serializer.get_device_scheduler());
         serializer.load_buf(buf, cnt * nvar);
-        return PatchDataField<T>(std::move(buf), cnt, field_name, nvar);
+        return PatchDataField<T>(std::move(buf), field_name, nvar);
     } else {
         return PatchDataField<T>(field_name, nvar, cnt);
     }

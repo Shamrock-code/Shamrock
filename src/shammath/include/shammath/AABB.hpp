@@ -34,7 +34,7 @@ namespace shammath {
         T inv_direction;
 
         inline Ray(T origin, T direction)
-            : origin(origin), direction(direction), inv_direction(1 / direction) {
+            : origin(origin), direction(direction), inv_direction(1. / direction) {
 
             Tscal f = sycl::length(direction);
             SHAM_ASSERT(f > 0);

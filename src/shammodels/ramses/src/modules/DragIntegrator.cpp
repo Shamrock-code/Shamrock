@@ -247,7 +247,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
                     tmp_mom_1
                         = tmp_mom_1
-                          + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
+                          + static_cast<double>(dt_alphas * inv_dt_alphas) * acc_rhov_d_new_patch[id_a * ndust + i];
                     tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
                 }
 
@@ -296,7 +296,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                     const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                     const f32 dt_alphas     = dt * acc_alphas[i];
                     acc_rhov_d_old[id_a * ndust + i]
-                        = inv_dt_alphas
+                        = static_cast<double>(inv_dt_alphas)
                           * (acc_rhov_d_new_patch[id_a * ndust + i]
                              + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
                     acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];

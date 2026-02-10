@@ -112,8 +112,10 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
 
-    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, get_val_cnt());
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    // it will also check that the size is the same
+    match = match && shamalgs::primitives::equals(dev_sched, buf, f2.buf);
 
     return match;
 }
@@ -356,9 +358,10 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{false};
-    serializer.write(get_obj_cnt());
-    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", get_obj_cnt());
-    if (get_obj_cnt() > 0) {
+    u32 obj_cnt = get_obj_cnt();
+    serializer.write(obj_cnt);
+    shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
+    if (obj_cnt > 0) {
         serializer.write_buf(buf, get_val_cnt());
     }
 }

@@ -17,6 +17,7 @@
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include <numeric>
 
 namespace shamalgs::numeric::details {
 

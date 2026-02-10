@@ -20,6 +20,7 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
+#include <numeric>
 
 #if defined(__has_include)
     #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)

@@ -70,9 +70,9 @@ gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
 setup.apply_setup(
     gen,
     gen_step=int(scheduler_split_val / 8),
-    insert_step=int(scheduler_split_val * 2),
+    insert_step=int(scheduler_split_val / 4),
     msg_count_limit=1024,
-    rank_comm_size_limit=int(scheduler_split_val) * 2,
+    rank_comm_size_limit=int(scheduler_split_val),
     max_msg_size=int(scheduler_split_val / 8),
     do_setup_log=False,
 )
@@ -154,6 +154,7 @@ if shamrock.sys.world_rank() == 0:
 
     print("world size  :", shamrock.sys.world_size())
     print("result rate :", res_rate)
+    print("result rate per rank :", res_rate / shamrock.sys.world_size())
     print("result cnt  :", res_cnt)
 
     print(

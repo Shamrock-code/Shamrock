@@ -100,15 +100,30 @@ namespace sham {
         template<class Fct>
         sycl::event submit(Fct &&fct) {
 
+            __shamrock_stack_entry();
+
+            wait_and_throw();
+
             auto e = q.submit([&](sycl::handler &h) {
                 fct(h);
             });
 
             if (wait_after_submit) {
+                __shamrock_stack_entry();
                 e.wait_and_throw();
             }
 
             return e;
+        }
+
+        /**
+         * @brief Wait for the queue to finish and throw an exception if one has occurred
+         *
+         * This function waits for the queue to finish and throws an exception if one has occurred.
+         */
+        void wait_and_throw() {
+            __shamrock_stack_entry();
+            q.wait_and_throw();
         }
 
         /**
@@ -138,14 +153,18 @@ namespace sham {
         template<class Fct>
         sycl::event submit(EventList &elist, Fct &&fct) {
 
-            elist.consumed = true;
+            __shamrock_stack_entry();
 
-            auto e = q.submit([&](sycl::handler &h) {
+            wait_and_throw();
+
+            elist.consumed = true;
+            auto e         = q.submit([&](sycl::handler &h) {
                 elist.apply_dependancy(h);
                 fct(h);
             });
 
             if (wait_after_submit) {
+                __shamrock_stack_entry();
                 e.wait_and_throw();
             }
 

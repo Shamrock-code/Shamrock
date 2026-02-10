@@ -251,6 +251,22 @@ struct SetupLog {
 
 inline constexpr f64 golden_number = 1.61803398874989484820458683436563;
 
+namespace {
+    void sync_point(SourceLocation loc = SourceLocation{}) {
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q        = shambase::get_check_ref(dev_sched).get_queue();
+        q.wait_and_throw();
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::raw_ln("sync point", loc.format_one_line());
+        }
+
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+    }
+} // namespace
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     SetupNodePtr setup,
@@ -263,6 +279,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     bool do_setup_log) {
 
     __shamrock_stack_entry();
+
+    sync_point();
 
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
@@ -326,7 +344,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         shambase::Timer timer_gen;
         timer_gen.start();
 
+        sync_point();
         shamrock::patch::PatchDataLayer tmp = setup->next_n(gen_step);
+
+        sync_point();
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles
@@ -367,8 +388,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     .overwrite(part_ids, loc_inj);
             }
         }
+        sync_point();
 
         to_insert.insert_elements(tmp);
+        sync_point();
 
         u64 sum_push = shamalgs::collective::allreduce_sum<u64>(tmp.get_obj_cnt());
         u64 sum_all  = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());

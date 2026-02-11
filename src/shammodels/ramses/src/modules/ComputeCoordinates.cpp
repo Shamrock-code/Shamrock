@@ -13,7 +13,7 @@
  * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Adnan-Ali Ahmad (adnan-ali.ahmad@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
-    
+
  * @brief Computes the coordinates of each cell
  *
  */
@@ -22,12 +22,11 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamsys/NodeInstance.hpp"
 
-
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     void NodeComputeCoordinates<Tvec, TgridVec>::_impl_evaluate_internal() {
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal    = shambase::VecComponent<Tvec>;
         using Config   = shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
         using AMRBlock = typename Config::AMRBlock;
 
@@ -36,13 +35,11 @@ namespace shammodels::basegodunov::modules {
         edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
         edges.spans_cell0block_aabb_lower.check_sizes(edges.sizes.indexes);
 
-
         shambase::DistributedData<u32> cell_counts
-                = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
-                      u32 cell_count = block_count * block_size;
-                      return cell_count;
-                  });
-
+            = edges.sizes.indexes.template map<u32>([&](u64 id, u32 block_count) {
+                  u32 cell_count = block_count * block_size;
+                  return cell_count;
+              });
 
         edges.spans_coordinates.ensure_sizes(cell_counts);
 
@@ -51,10 +48,9 @@ namespace shammodels::basegodunov::modules {
         auto patch_boxes = edges.patch_boxes.values;
 
         edges.sizes.indexes.for_each([&](u64 id, const u64 &n) { // for each patch
-
-            sham::kernel_call( // loop through cells 
+            sham::kernel_call( // loop through cells
                 shamsys::instance::get_compute_scheduler().get_queue(),
-                sham::MultiRef{edges.spans_block_cell_sizes.get_spans().get(id), 
+                sham::MultiRef{edges.spans_block_cell_sizes.get_spans().get(id),
                                   edges.spans_cell0block_aabb_lower.get_spans().get(id)},
                 sham::MultiRef{edges.spans_coordinates.get_spans().get(id)},
                 cell_counts.get(id),
@@ -75,34 +71,33 @@ namespace shammodels::basegodunov::modules {
 
                     shammath::AABB<TgridVec> patch_box = patch_boxes.get(id); // bounding box of the patch to which the block belongs
 
-                    Tvec pos_min_patch = patch_box.lower.template convert<Tscal>() * grid_coord_to_pos_fact; // coordinates of the lower left corner of the patch       
+                    Tvec pos_min_patch = patch_box.lower.template convert<Tscal>() * grid_coord_to_pos_fact; // coordinates of the lower left corner of the patch
 
-                    coordinates[i] =  pos_min_patch + pos_min_block + offset + 0.5 * cell_size_block; // coordinates of the cell center 
+                    coordinates[i] =  pos_min_patch + pos_min_block + offset + 0.5 * cell_size_block; // coordinates of the cell center
                     }
                 );
         });
-        
+
         {
             auto &buffer_coordinates = edges.spans_coordinates.get_buf(0);
-            u64 size = edges.spans_coordinates.get(0).get_obj_cnt();
-            auto vec_coor = buffer_coordinates.copy_to_stdvec();
+            u64 size                 = edges.spans_coordinates.get(0).get_obj_cnt();
+            auto vec_coor            = buffer_coordinates.copy_to_stdvec();
             logger::raw("patch 0", size, "\n");
-            for(int i = 0; i <size; i++) {
-                logger::raw(  vec_coor[i], "\n");
+            for (int i = 0; i < size; i++) {
+                logger::raw(vec_coor[i], "\n");
             }
         }
 
         {
             auto &buffer_coordinates = edges.spans_coordinates.get_buf(1);
-            auto vec_coor = buffer_coordinates.copy_to_stdvec();
-            auto size = edges.spans_coordinates.get(1).get_obj_cnt();
+            auto vec_coor            = buffer_coordinates.copy_to_stdvec();
+            auto size                = edges.spans_coordinates.get(1).get_obj_cnt();
 
-            logger::raw("patch 1",size, "\n");
-            for(int i = 0; i < size; i++) {
+            logger::raw("patch 1", size, "\n");
+            for (int i = 0; i < size; i++) {
                 logger::raw(vec_coor[i], "\n");
             }
         }
-
     }
 
     template<class Tvec, class TgridVec>

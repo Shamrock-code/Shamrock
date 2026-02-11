@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -220,7 +220,10 @@ void shamsys::microbench::saxpy() {
         auto &dev_sched = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
         auto &dev_ptr   = dev_sched.device;
         auto &dev       = shambase::get_check_ref(dev_ptr);
-        double max_size = double(dev.prop.global_mem_size) / (vec4_size * 4);
+
+        size_t max_alloc
+            = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
+        double max_size = double(max_alloc) / (vec4_size * 4); // there is 2 allocations so /4
 
         auto result = bench_step(N);
 

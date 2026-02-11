@@ -12,7 +12,6 @@ def extract(header, data):
 
 
 def read_header_field(header_f, dic_res):
-
     tmp = header_f
 
     while len(tmp) > 0:
@@ -31,7 +30,6 @@ def read_header_field(header_f, dic_res):
 
 
 def get_plot_patchdata(filename):
-
     f = open(filename, "rb")
 
     data = f.read()
@@ -139,9 +137,7 @@ def get_plot_patchdata(filename):
     }
 
     for field in dic_fields["f32_3"]:
-
         if field["name"] == ("xyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["x"].append(x)
@@ -149,7 +145,6 @@ def get_plot_patchdata(filename):
                 dic["z"].append(z)
 
         if field["name"] == ("vxyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["vx"].append(x)
@@ -157,7 +152,6 @@ def get_plot_patchdata(filename):
                 dic["vz"].append(z)
 
         if field["name"] == ("axyz"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["ax"].append(x)
@@ -165,7 +159,6 @@ def get_plot_patchdata(filename):
                 dic["az"].append(z)
 
         if field["name"] == ("axyz_old"):
-
             for a in field["field"]:
                 x, y, z = a
                 dic["ax_old"].append(x)
@@ -173,9 +166,7 @@ def get_plot_patchdata(filename):
                 dic["az_old"].append(z)
 
     for field in dic_fields["f32"]:
-
         if field["name"] == ("hpart"):
-
             for a in field["field"]:
                 (x,) = a
                 dic["h"].append(x)
@@ -184,7 +175,6 @@ def get_plot_patchdata(filename):
 
 
 def plot_soundwave(idx: int, toff: float):
-
     file_list = glob.glob("./step" + str(idx) + "/patchdata*")
 
     f = open("./step" + str(idx) + "/timeval.bin", "rb")
@@ -200,7 +190,6 @@ def plot_soundwave(idx: int, toff: float):
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-
             if not k in dic.keys():
                 dic[k] = []
 

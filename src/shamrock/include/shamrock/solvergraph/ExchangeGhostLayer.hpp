@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,6 +19,7 @@
  * domains in the Shamrock hydrodynamics framework.
  */
 
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -55,6 +56,7 @@ namespace shamrock::solvergraph {
      * @endcode
      */
     class ExchangeGhostLayer : public shamrock::solvergraph::INode {
+        shamalgs::collective::DDSCommCache cache;
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layer_layout;
 
         public:

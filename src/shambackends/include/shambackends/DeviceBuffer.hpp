@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
 
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -514,20 +515,46 @@ namespace sham {
          * @param dest The destination buffer to copy to.
          */
         template<USMKindTarget dest_target>
-        inline void copy_range(
-            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+        inline void copy_range_offset(
+            size_t begin,
+            size_t end,
+            sham::DeviceBuffer<T, dest_target> &dest,
+            size_t dest_offset) const {
 
             if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+                    "copy_range_offset: begin > end\n  begin = {},\n  end = {}", begin, end));
             }
 
-            if (end - begin > dest.get_size()) {
+            if (end > get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "copy_range_offset: end index is out of bounds\n  end = {},\n  source buffer "
+                    "size = {}",
+                    end,
+                    get_size()));
+            }
+
+            if (dest_offset > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "
                     "dest.get_size() = {}",
-                    end - begin,
+                    dest_offset,
                     dest.get_size()));
+            }
+
+            if (end - begin > (dest.get_size() - dest_offset)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: end - begin > dest.get_size() - dest_offset\n  end - begin "
+                    "= {},\n  "
+                    "dest.get_size() - dest_offset = {},\n  dest_offset = {}",
+                    end - begin,
+                    dest.get_size() - dest_offset,
+                    dest_offset));
+            }
+
+            if (static_cast<const void *>(this) == static_cast<const void *>(&dest)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the source and destination buffers must not be the same");
             }
 
             if (begin == end) {
@@ -538,7 +565,7 @@ namespace sham {
 
             sham::EventList depends_list;
             const T *ptr_src = get_read_access(depends_list) + begin;
-            T *ptr_dest      = dest.get_write_access(depends_list);
+            T *ptr_dest      = dest.get_write_access(depends_list) + dest_offset;
 
             sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                 cgh.copy(ptr_src, ptr_dest, len);
@@ -546,6 +573,23 @@ namespace sham {
 
             complete_event_state(e);
             dest.complete_event_state(e);
+        }
+
+        /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+
+            copy_range_offset(begin, end, dest, 0);
         }
 
         /**
@@ -890,6 +934,24 @@ namespace sham {
          */
         inline void fill(T value) { fill(value, get_size()); }
 
+        template<class Fct>
+        inline void fill_lambda(Fct &&fct) {
+            if (get_size() == 0) {
+                return;
+            }
+
+            sham::EventList depends_list;
+            T *__restrict ptr = get_write_access(depends_list);
+
+            sycl::event e1 = get_queue().submit(depends_list, [&, ptr, fct](sycl::handler &cgh) {
+                shambase::parallel_for(cgh, get_size(), "fill field", [=](u32 gid) {
+                    ptr[gid] = fct(gid);
+                });
+            });
+
+            complete_event_state(e1);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Filler fcts (END)
         ///////////////////////////////////////////////////////////////////////
@@ -956,12 +1018,30 @@ namespace sham {
         // Size manipulation
         ///////////////////////////////////////////////////////////////////////
 
+        inline size_t get_max_alloc_size() const {
+            auto &dev_prop = hold.get_dev_scheduler().get_queue().get_device_prop();
+
+            if constexpr (target == device) {
+                return dev_prop.max_mem_alloc_size_dev;
+            } else if constexpr (target == host) {
+                return dev_prop.max_mem_alloc_size_host;
+            } else if constexpr (target == shared) {
+                return sycl::min(dev_prop.max_mem_alloc_size_dev, dev_prop.max_mem_alloc_size_host);
+            } else {
+                static_assert(
+                    shambase::always_false_v<decltype(target)>,
+                    "get_max_alloc_size: invalid target");
+            }
+        }
+
         /**
          * @brief Resizes the buffer to a given size.
          *
          * @param new_size The new size of the buffer.
+         * @param keep_data If `true`, the content of the  buffer is preserved up to the minimum of
+         * the old and new sizes. If `false`, the content may be discarded if a reallocation occurs.
          */
-        inline void resize(u32 new_size) {
+        inline void resize(size_t new_size, bool keep_data = true) {
 
             auto dev_sched = hold.get_dev_scheduler_ptr();
 
@@ -970,7 +1050,34 @@ namespace sham {
             if (alloc_request_size_fct(new_size, dev_sched) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = alloc_request_size_fct(new_size * 1.5, dev_sched);
+                size_t max_alloc_size           = get_max_alloc_size();
+                std::optional<size_t> alignment = get_alignment(dev_sched);
+                size_t min_size_new_alloc       = alloc_request_size_fct(new_size, dev_sched);
+                size_t wanted_size_new_alloc
+                    = alloc_request_size_fct(new_size + new_size / 2, dev_sched);
+                size_t max_possible_alloc = max_alloc_size;
+
+                if (alignment) {
+                    max_possible_alloc = max_possible_alloc - (max_possible_alloc % *alignment);
+                }
+
+                size_t new_storage_size = wanted_size_new_alloc;
+                if (new_storage_size > max_alloc_size) {
+                    new_storage_size = sycl::max(max_possible_alloc, min_size_new_alloc);
+                }
+
+                if (new_storage_size > max_alloc_size) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "new_storage_size > max_alloc_size\n"
+                        "  new_storage_size      = {}\n"
+                        "  max_alloc_size  = {}\n"
+                        "  min_size_new_alloc    = {}\n"
+                        "  wanted_size_new_alloc = {}",
+                        new_storage_size,
+                        max_alloc_size,
+                        min_size_new_alloc,
+                        wanted_size_new_alloc));
+                }
 
                 DeviceBuffer new_buf(
                     new_size,
@@ -978,7 +1085,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, get_size());
+                if (keep_data) {
+                    new_buf.copy_from(*this, get_size());
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -994,7 +1103,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, new_size);
+                if (keep_data) {
+                    new_buf.copy_from(*this, new_size);
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -1005,10 +1116,13 @@ namespace sham {
             }
         }
 
+        /// same as resize but data will not be copied if reallocation is needed
+        inline void resize_discard_data(size_t new_size) { resize(new_size, false); }
+
         /**
-         * @brief Alias for resize(0).
+         * @brief Alias for resize_discard_data(0).
          */
-        inline void free_alloc() { resize(0); }
+        inline void free_alloc() { resize_discard_data(0); }
 
         /**
          * @brief Expand the buffer by `add_sz` elements.

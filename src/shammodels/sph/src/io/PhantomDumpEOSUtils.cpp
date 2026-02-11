@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -10,6 +10,7 @@
 /**
  * @file PhantomDumpEOSUtils.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -105,12 +106,10 @@ namespace {
                     eos.gamma));
         }
 
-        int ierr = 0;
         if (ieos == 3 || ieos == 6 || ieos == 7) {
             if (eos.qfacdisc <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("ERROR: qfacdisc <= 0"));
-                ierr = 2;
             } else {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("qfacdisc = {}", eos.qfacdisc));
@@ -125,7 +124,6 @@ namespace {
             if (std::abs(eos.qfacdisc2) <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("ERROR: qfacdisc2 == 0"));
-                ierr = 2;
             } else {
                 if (shamcomm::world_rank() == 0)
                     logger::raw_ln(shambase::format("qfacdisc2 = {}", eos.qfacdisc2));
@@ -245,5 +243,63 @@ namespace shammodels::sph::phdump {
 
         dump.table_header_i32.add("ieos", 3);
         write_headeropts_eos(3, dump, eos);
+    }
+
+    /*
+     case(13)
+    !
+    !--Locally isothermal eos for generic hierarchical system
+    !
+    !  Assuming all sink particles are stars.
+    !  Generalisation of Farris et al. (2014; for binaries) to N stars.
+    !  For two sink particles this is identical to ieos=14
+    !
+    */
+
+    void eos13_load(const PhantomDump &dump, f64 &cs0, f64 &q, f64 &r0) {
+        assert_ieos_val(dump, 13);
+        EOSPhConfig eos = read_headeropts_eos(dump, 13);
+
+        cs0 = sycl::sqrt(eos.polyk);
+        q   = eos.qfacdisc;
+        r0  = 1; // the polyk in phantom include the 1/r0^2 ?
+    }
+
+    void eos13_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0) {
+        EOSPhConfig eos;
+
+        eos.polyk    = cs0 * cs0 / (r0 * r0);
+        eos.qfacdisc = q;
+
+        dump.table_header_i32.add("ieos", 13);
+        write_headeropts_eos(13, dump, eos);
+    }
+
+    /*
+    case(14)
+    !
+    !--Locally isothermal eos from Farris et al. (2014) for binary system
+    !
+    !  uses the locations of the first two sink particles
+    !
+    */
+
+    void eos14_load(const PhantomDump &dump, f64 &cs0, f64 &q, f64 &r0) {
+        assert_ieos_val(dump, 14);
+        EOSPhConfig eos = read_headeropts_eos(dump, 14);
+
+        cs0 = sycl::sqrt(eos.polyk);
+        q   = eos.qfacdisc;
+        r0  = 1; // the polyk in phantom include the 1/r0^2 ?
+    }
+
+    void eos14_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0) {
+        EOSPhConfig eos;
+
+        eos.polyk    = cs0 * cs0 / (r0 * r0);
+        eos.qfacdisc = q;
+
+        dump.table_header_i32.add("ieos", 14);
+        write_headeropts_eos(14, dump, eos);
     }
 } // namespace shammodels::sph::phdump

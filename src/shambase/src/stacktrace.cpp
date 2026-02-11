@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -218,6 +218,18 @@ namespace shambase::details {
 
 namespace shambase {
 
+    std::string _callstack_process_identifier;
+
+    void set_callstack_process_identifier(std::string identifier) {
+        _callstack_process_identifier = std::move(identifier);
+    }
+
+    std::vector<std::function<std::string()>> _callstack_gen_info_generators;
+
+    void add_callstack_gen_info_generator(std::string (*generator)()) {
+        _callstack_gen_info_generators.push_back(std::move(generator));
+    }
+
     /**
      * @brief get the formatted callstack
      *
@@ -237,8 +249,17 @@ namespace shambase {
         std::reverse(lines.begin(), lines.end());
 
         std::stringstream ss;
+
+        if (!_callstack_process_identifier.empty()) {
+            ss << "  -> process identifier: " << _callstack_process_identifier << "\n";
+        }
+
         for (u32 i = 0; i < lines.size(); i++) {
             ss << shambase::format(" {:2} : {}\n", i, lines[i]);
+        }
+
+        for (auto &generator : _callstack_gen_info_generators) {
+            ss << generator() << "\n";
         }
 
         return ss.str();

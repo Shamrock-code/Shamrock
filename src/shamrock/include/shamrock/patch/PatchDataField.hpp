@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/memory.hpp"
@@ -81,8 +82,13 @@ class PatchDataField {
 
     std::string field_name;
 
-    u32 nvar;    // number of variable per object
-    u32 obj_cnt; // number of contained object
+    u32 nvar; // number of variable per object
+
+    inline void check_nvar() const {
+        if (nvar == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>("nvar is 0 is not allowed");
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
@@ -91,13 +97,12 @@ class PatchDataField {
     public:
     inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
-          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {} // move constructor
+          nvar(std::move(other.nvar)) {} // move constructor
 
     inline PatchDataField &operator=(PatchDataField &&other) noexcept {
         buf        = std::move(other.buf);
         field_name = std::move(other.field_name);
         nvar       = std::move(other.nvar);
-        obj_cnt    = std::move(other.obj_cnt);
 
         return *this;
     } // move assignment
@@ -107,27 +112,33 @@ class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
-          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
+        : field_name(std::move(name)), nvar(nvar),
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
-          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
+        : field_name(std::move(name)), nvar(nvar),
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
-          buf(other.buf.copy()) {}
+        : field_name(other.field_name), nvar(other.nvar), buf(other.buf.copy()) {
+        check_nvar();
+    }
 
-    inline PatchDataField(
-        sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
+    inline PatchDataField(sham::DeviceBuffer<T> &&moved_buf, std::string name, u32 nvar)
+        : field_name(name), nvar(nvar), buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {
+        check_nvar();
+    }
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<sycl::buffer<T>>(moved_buf),
-              obj_cnt * nvar,
-              shamsys::instance::get_compute_scheduler_ptr()) {}
+        : field_name(name), nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf),
+                                            obj_cnt * nvar,
+                                            shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    }
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -161,7 +172,16 @@ class PatchDataField {
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
-    [[nodiscard]] inline const u32 &get_obj_cnt() const { return obj_cnt; }
+    [[nodiscard]] inline u32 get_obj_cnt() const {
+        size_t sz = buf.get_size();
+        if (sz % nvar != 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "the size of the buffer ({}) is not a multiple of the number of variables ({})",
+                sz,
+                nvar));
+        }
+        return shambase::narrow_or_throw<u32>(sz / nvar);
+    }
 
     /**
      * @brief Get the number of values stored in the field.
@@ -172,7 +192,9 @@ class PatchDataField {
      * @return u32 the total number of values of the field, which is the product of the number of
      * objects and the number of variables per object.
      */
-    [[nodiscard]] inline u32 get_val_cnt() const { return get_obj_cnt() * get_nvar(); }
+    [[nodiscard]] inline u32 get_val_cnt() const {
+        return shambase::narrow_or_throw<u32>(buf.get_size());
+    }
 
     [[nodiscard]] inline const std::string &get_name() const { return field_name; }
 
@@ -341,6 +363,34 @@ class PatchDataField {
         }
     }
 
+    template<class Lambdacd, class... Args>
+    inline sham::DeviceBuffer<u32> get_ids_where_recycle_buffer(
+        sham::DeviceBuffer<u32> &mask, Lambdacd &&cd_true, Args... args) const {
+        StackEntry stack_loc{};
+
+        auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+        sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
+
+        auto obj_cnt = get_obj_cnt();
+        if (obj_cnt > 0) {
+            // buffer of booleans to store result of the condition
+            mask.resize(obj_cnt);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf},
+                sham::MultiRef{mask},
+                obj_cnt,
+                [=, nvar_field = nvar](u32 id, const T *__restrict acc, u32 *__restrict acc_mask) {
+                    acc_mask[id] = cd_true(acc, id * nvar_field, args...);
+                });
+
+            return shamalgs::stream_compact(dev_sched, mask, obj_cnt);
+        } else {
+            return sham::DeviceBuffer<u32>(0, dev_sched);
+        }
+    }
+
     /**
      * @brief Same function as @see PatchDataField#get_ids_set_where but return a optional
      * sycl::buffer of the found index
@@ -407,6 +457,7 @@ class PatchDataField {
     void check_err_range(Lambdacd &&cd_true, T vmin, T vmax, std::string add_log = "");
 
     void extract_element(u32 pidx, PatchDataField<T> &to);
+    void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataField<T> &to);
 
     bool check_field_match(PatchDataField<T> &f2);
 
@@ -546,37 +597,31 @@ class PatchDataField {
 // TODO add overflow check
 template<class T>
 inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
-
-    u32 new_size = new_obj_cnt * nvar;
-    // field_data.resize(new_size);
-
-    buf.resize(new_size);
-
-    obj_cnt = new_obj_cnt;
+    buf.resize(shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar)));
 }
 
 template<class T>
 inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
 
-    u32 add_cnt = new_obj_cnt * nvar;
+    u32 add_cnt = shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar));
     buf.reserve(add_cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::expand(u32 obj_to_add) {
-    resize(obj_cnt + obj_to_add);
+    resize(get_obj_cnt() + obj_to_add);
 }
 
 template<class T>
 inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
-    if (obj_to_rem > obj_cnt) {
+    if (obj_to_rem > get_obj_cnt()) {
 
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "impossible to remove more object than there is in the patchdata field");
     }
 
-    resize(obj_cnt - obj_to_rem);
+    resize(get_obj_cnt() - obj_to_rem);
 }
 
 template<class T>

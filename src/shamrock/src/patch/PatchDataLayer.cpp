@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -70,6 +70,29 @@ namespace shamrock::patch {
                         field.extract_element(pidx, out_field);
                     } else {
                         throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
+                    }
+                },
+                fields[idx].value,
+                out_pdat.fields[idx].value);
+        }
+    }
+
+    void PatchDataLayer::extract_elements(
+        const sham::DeviceBuffer<u32> &idxs, PatchDataLayer &out_pdat) {
+        StackEntry stack_loc{};
+
+        for (u32 idx = 0; idx < fields.size(); idx++) {
+
+            std::visit(
+                [&](auto &field, auto &out_field) {
+                    using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+                    using t2 =
+                        typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+                    if constexpr (std::is_same<t1, t2>::value) {
+                        field.extract_elements(idxs, out_field);
+                    } else {
+                        throw shambase::make_except_with_loc<std::invalid_argument>("mismatch");
                     }
                 },
                 fields[idx].value,

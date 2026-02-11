@@ -64,6 +64,66 @@ TOL_HPC_CUBE = {
         "min_rel_delta": [0.00011105937841131173 - 4e-8, 0.00011105937841131173 + 4e-8],
         "std_rel_delta": [0.003575474772831352 - 4e-7, 0.003575474772831352 + 4e-7],
     },
+    "fmm1": {
+        "max_rel_delta": [0.09457251908559332 - 1e-15, 0.09457251908559332 + 1e-15],
+        "avg_rel_delta": [0.025849750275017017 - 1.5e-7, 0.025849750275017017 + 1.5e-7],
+        "min_rel_delta": [0.0009107123147511316 - 1e-15, 0.0009107123147511316 + 1e-15],
+        "std_rel_delta": [0.014771871930712405 - 5e-7, 0.014771871930712405 + 5e-7],
+    },
+    "fmm2": {
+        "max_rel_delta": [0.0637884157532678 - 2e-15, 0.0637884157532678 + 2e-15],
+        "avg_rel_delta": [0.011974487570609172 - 1e-6, 0.011974487570609172 + 1e-6],
+        "min_rel_delta": [0.0003606563787779815 - 1e-15, 0.0003606563787779815 + 1e-15],
+        "std_rel_delta": [0.005685736194766207 - 1e-6, 0.005685736194766207 + 1e-6],
+    },
+    "fmm3": {
+        "max_rel_delta": [0.041451600220479765 - 1e-14, 0.041451600220479765 + 1e-14],
+        "avg_rel_delta": [0.00590471908748555 - 1e-7, 0.00590471908748555 + 1e-7],
+        "min_rel_delta": [0.00011353264639102378 - 1e-14, 0.00011353264639102378 + 1e-14],
+        "std_rel_delta": [0.003551982999913884 - 1e-6, 0.003551982999913884 + 1e-6],
+    },
+    "fmm4": {
+        "max_rel_delta": [0.027041008234275913 - 1e-14, 0.027041008234275913 + 1e-14],
+        "avg_rel_delta": [0.004870267930794465 - 5e-7, 0.004870267930794465 + 5e-7],
+        "min_rel_delta": [9.263728961868266e-05 - 1e-14, 9.263728961868266e-05 + 1e-14],
+        "std_rel_delta": [0.0028526970191818392 - 1e-7, 0.0028526970191818392 + 1e-7],
+    },
+    "fmm5": {
+        "max_rel_delta": [0.013154949137016961 - 1e-14, 0.013154949137016961 + 1e-14],
+        "avg_rel_delta": [0.001933834336767182 - 5e-7, 0.001933834336767182 + 5e-7],
+        "min_rel_delta": [3.7696982571244474e-05 - 1e-14, 3.7696982571244474e-05 + 1e-14],
+        "std_rel_delta": [0.0014635310344450105 - 5e-7, 0.0014635310344450105 + 5e-7],
+    },
+    "sfmm1": {
+        "max_rel_delta": [0.21892380131546568 - 1e-15, 0.21892380131546568 + 1e-15],
+        "avg_rel_delta": [0.05782934468995147 - 5e-7, 0.05782934468995147 + 5e-7],
+        "min_rel_delta": [0.0013277688426936505 - 1e-14, 0.0013277688426936505 + 1e-14],
+        "std_rel_delta": [0.03078712426421105 - 5e-7, 0.03078712426421105 + 5e-7],
+    },
+    "sfmm2": {
+        "max_rel_delta": [0.03804965294061554 - 5e-15, 0.03804965294061554 + 5e-15],
+        "avg_rel_delta": [0.011068506783910114 - 5e-7, 0.011068506783910114 + 5e-7],
+        "min_rel_delta": [0.0005623871943121567 - 1e-15, 0.0005623871943121567 + 1e-15],
+        "std_rel_delta": [0.005375924880946539 - 5e-7, 0.005375924880946539 + 5e-7],
+    },
+    "sfmm3": {
+        "max_rel_delta": [0.01693824120108178 - 5e-15, 0.01693824120108178 + 5e-15],
+        "avg_rel_delta": [0.004724856483131658 - 1e-6, 0.004724856483131658 + 1e-6],
+        "min_rel_delta": [0.00011119860215853415 - 1e-15, 0.00011119860215853415 + 1e-15],
+        "std_rel_delta": [0.0026448823012749684 - 5e-7, 0.0026448823012749684 + 5e-7],
+    },
+    "sfmm4": {
+        "max_rel_delta": [0.011356406701671626 - 1e-15, 0.011356406701671626 + 1e-15],
+        "avg_rel_delta": [0.0022876264690043753 - 5e-8, 0.0022876264690043753 + 5e-8],
+        "min_rel_delta": [5.847968796399966e-05 - 5e-15, 5.847968796399966e-05 + 5e-15],
+        "std_rel_delta": [0.0015169740765526084 - 5e-9, 0.0015169740765526084 + 5e-9],
+    },
+    "sfmm5": {
+        "max_rel_delta": [0.010203458622545465 - 1e-15, 0.010203458622545465 + 1e-15],
+        "avg_rel_delta": [0.0014135757954817333 - 5e-7, 0.0014135757954817333 + 5e-7],
+        "min_rel_delta": [3.503562542652889e-05 - 1e-15, 3.503562542652889e-05 + 1e-15],
+        "std_rel_delta": [0.001217910806477318 - 5e-7, 0.001217910806477318 + 5e-7],
+    },
 }
 
 
@@ -104,8 +164,12 @@ def compare_sg_methods_data(no_sg_data, reference_data, data_to_comp, sat_relati
     return delta_sg, rel_delta_norm, data_to_comp["xyz"]
 
 
+to_raise = []
+
+
 # Compute error related quantities and check if they are within the tolerances
 def check_print_errors(rel_delta, setup_name, method_name, tols):
+    global to_raise
     max_rel_delta = np.max(np.abs(rel_delta))
     if shamrock.sys.world_rank() == 0:
         print(f"max relative error {method_name}: {max_rel_delta} for {setup_name}")
@@ -124,8 +188,6 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
     delta_min_tol = (tols["min_rel_delta"][1] + tols["min_rel_delta"][0]) / 2 - min_rel_delta
     delta_std_tol = (tols["std_rel_delta"][1] + tols["std_rel_delta"][0]) / 2 - std_rel_delta
 
-    to_raise = []
-
     if max_rel_delta > tols["max_rel_delta"][1] or max_rel_delta < tols["max_rel_delta"][0]:
         to_raise.append(
             f"max relative error {method_name} is out of tolerance for {setup_name}: {max_rel_delta} not in [{tols['max_rel_delta'][0]}, {tols['max_rel_delta'][1]}], delta = {delta_max_tol}"
@@ -143,18 +205,9 @@ def check_print_errors(rel_delta, setup_name, method_name, tols):
             f"std relative error {method_name} is out of tolerance for {setup_name}: {std_rel_delta} not in [{tols['std_rel_delta'][0]}, {tols['std_rel_delta'][1]}], delta = {delta_std_tol}"
         )
 
-    if len(to_raise) > 0:
-        print(f"Errors for {setup_name} {method_name}:")
-        for to_raise_item in to_raise:
-            print(to_raise_item)
-
-    for to_raise_item in to_raise:
-        raise ValueError(to_raise_item)
-
 
 # Compare the SG method to the reference and the one without SG and return error metrics
 def compare_sg_methods(setup_func, setup_name, tols):
-
     def sg_case_none(cfg):
         cfg.set_self_gravity_none()
 
@@ -186,6 +239,46 @@ def compare_sg_methods(setup_func, setup_name, tols):
         cfg.set_self_gravity_mm(order=5, opening_angle=0.5, reduction_level=3)
         cfg.set_softening_plummer(epsilon=1e-9)
 
+    def sg_case_fmm1(cfg):
+        cfg.set_self_gravity_fmm(order=1, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm2(cfg):
+        cfg.set_self_gravity_fmm(order=2, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm3(cfg):
+        cfg.set_self_gravity_fmm(order=3, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm4(cfg):
+        cfg.set_self_gravity_fmm(order=4, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_fmm5(cfg):
+        cfg.set_self_gravity_fmm(order=5, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_sfmm1(cfg):
+        cfg.set_self_gravity_sfmm(order=1, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_sfmm2(cfg):
+        cfg.set_self_gravity_sfmm(order=2, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_sfmm3(cfg):
+        cfg.set_self_gravity_sfmm(order=3, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_sfmm4(cfg):
+        cfg.set_self_gravity_sfmm(order=4, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
+    def sg_case_sfmm5(cfg):
+        cfg.set_self_gravity_sfmm(order=5, opening_angle=0.5, reduction_level=3)
+        cfg.set_softening_plummer(epsilon=1e-9)
+
     no_sg_data = run_case(setup_func, setup_name, sg_case_none)
     reference_data = run_case(setup_func, setup_name, sg_case_reference)
 
@@ -195,6 +288,16 @@ def compare_sg_methods(setup_func, setup_name, tols):
     mm3_data = run_case(setup_func, setup_name, sg_case_mm3)
     mm4_data = run_case(setup_func, setup_name, sg_case_mm4)
     mm5_data = run_case(setup_func, setup_name, sg_case_mm5)
+    fmm1_data = run_case(setup_func, setup_name, sg_case_fmm1)
+    fmm2_data = run_case(setup_func, setup_name, sg_case_fmm2)
+    fmm3_data = run_case(setup_func, setup_name, sg_case_fmm3)
+    fmm4_data = run_case(setup_func, setup_name, sg_case_fmm4)
+    fmm5_data = run_case(setup_func, setup_name, sg_case_fmm5)
+    sfmm1_data = run_case(setup_func, setup_name, sg_case_sfmm1)
+    sfmm2_data = run_case(setup_func, setup_name, sg_case_sfmm2)
+    sfmm3_data = run_case(setup_func, setup_name, sg_case_sfmm3)
+    sfmm4_data = run_case(setup_func, setup_name, sg_case_sfmm4)
+    sfmm5_data = run_case(setup_func, setup_name, sg_case_sfmm5)
 
     delta_sg_direct, rel_delta_direct, xyz_direct = compare_sg_methods_data(
         no_sg_data, reference_data, direct_data
@@ -216,12 +319,54 @@ def compare_sg_methods(setup_func, setup_name, tols):
         no_sg_data, reference_data, mm5_data
     )
 
+    delta_sg_fmm1, rel_delta_fmm1, xyz_fmm1 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm1_data
+    )
+    delta_sg_fmm2, rel_delta_fmm2, xyz_fmm2 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm2_data
+    )
+    delta_sg_fmm3, rel_delta_fmm3, xyz_fmm3 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm3_data
+    )
+    delta_sg_fmm4, rel_delta_fmm4, xyz_fmm4 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm4_data
+    )
+    delta_sg_fmm5, rel_delta_fmm5, xyz_fmm5 = compare_sg_methods_data(
+        no_sg_data, reference_data, fmm5_data
+    )
+
+    delta_sg_sfmm1, rel_delta_sfmm1, xyz_sfmm1 = compare_sg_methods_data(
+        no_sg_data, reference_data, sfmm1_data
+    )
+    delta_sg_sfmm2, rel_delta_sfmm2, xyz_sfmm2 = compare_sg_methods_data(
+        no_sg_data, reference_data, sfmm2_data
+    )
+    delta_sg_sfmm3, rel_delta_sfmm3, xyz_sfmm3 = compare_sg_methods_data(
+        no_sg_data, reference_data, sfmm3_data
+    )
+    delta_sg_sfmm4, rel_delta_sfmm4, xyz_sfmm4 = compare_sg_methods_data(
+        no_sg_data, reference_data, sfmm4_data
+    )
+    delta_sg_sfmm5, rel_delta_sfmm5, xyz_sfmm5 = compare_sg_methods_data(
+        no_sg_data, reference_data, sfmm5_data
+    )
+
     check_print_errors(rel_delta_direct, setup_name, "direct", tols["direct"])
     check_print_errors(rel_delta_mm1, setup_name, "mm1", tols["mm1"])
     check_print_errors(rel_delta_mm2, setup_name, "mm2", tols["mm2"])
     check_print_errors(rel_delta_mm3, setup_name, "mm3", tols["mm3"])
     check_print_errors(rel_delta_mm4, setup_name, "mm4", tols["mm4"])
     check_print_errors(rel_delta_mm5, setup_name, "mm5", tols["mm5"])
+    check_print_errors(rel_delta_fmm1, setup_name, "fmm1", tols["fmm1"])
+    check_print_errors(rel_delta_fmm2, setup_name, "fmm2", tols["fmm2"])
+    check_print_errors(rel_delta_fmm3, setup_name, "fmm3", tols["fmm3"])
+    check_print_errors(rel_delta_fmm4, setup_name, "fmm4", tols["fmm4"])
+    check_print_errors(rel_delta_fmm5, setup_name, "fmm5", tols["fmm5"])
+    check_print_errors(rel_delta_sfmm1, setup_name, "sfmm1", tols["sfmm1"])
+    check_print_errors(rel_delta_sfmm2, setup_name, "sfmm2", tols["sfmm2"])
+    check_print_errors(rel_delta_sfmm3, setup_name, "sfmm3", tols["sfmm3"])
+    check_print_errors(rel_delta_sfmm4, setup_name, "sfmm4", tols["sfmm4"])
+    check_print_errors(rel_delta_sfmm5, setup_name, "sfmm5", tols["sfmm5"])
 
     return (
         {
@@ -231,6 +376,16 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": delta_sg_mm3,
             "mm4": delta_sg_mm4,
             "mm5": delta_sg_mm5,
+            "fmm1": delta_sg_fmm1,
+            "fmm2": delta_sg_fmm2,
+            "fmm3": delta_sg_fmm3,
+            "fmm4": delta_sg_fmm4,
+            "fmm5": delta_sg_fmm5,
+            "sfmm1": delta_sg_sfmm1,
+            "sfmm2": delta_sg_sfmm2,
+            "sfmm3": delta_sg_sfmm3,
+            "sfmm4": delta_sg_sfmm4,
+            "sfmm5": delta_sg_sfmm5,
         },
         {
             "direct": rel_delta_direct,
@@ -239,6 +394,16 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": rel_delta_mm3,
             "mm4": rel_delta_mm4,
             "mm5": rel_delta_mm5,
+            "fmm1": rel_delta_fmm1,
+            "fmm2": rel_delta_fmm2,
+            "fmm3": rel_delta_fmm3,
+            "fmm4": rel_delta_fmm4,
+            "fmm5": rel_delta_fmm5,
+            "sfmm1": rel_delta_sfmm1,
+            "sfmm2": rel_delta_sfmm2,
+            "sfmm3": rel_delta_sfmm3,
+            "sfmm4": rel_delta_sfmm4,
+            "sfmm5": rel_delta_sfmm5,
         },
         {
             "direct": xyz_direct,
@@ -247,13 +412,22 @@ def compare_sg_methods(setup_func, setup_name, tols):
             "mm3": xyz_mm3,
             "mm4": xyz_mm4,
             "mm5": xyz_mm5,
+            "fmm1": xyz_fmm1,
+            "fmm2": xyz_fmm2,
+            "fmm3": xyz_fmm3,
+            "fmm4": xyz_fmm4,
+            "fmm5": xyz_fmm5,
+            "sfmm1": xyz_sfmm1,
+            "sfmm2": xyz_sfmm2,
+            "sfmm3": xyz_sfmm3,
+            "sfmm4": xyz_sfmm4,
+            "sfmm5": xyz_sfmm5,
         },
     )
 
 
 # Plot the 3D delta of the SG method
 def plot3d_delta_sg(delta_sg_norm, xyz, case_name, method_name):
-
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     dat = ax.scatter(xyz[:, 0], xyz[:, 1], xyz[:, 2], c=delta_sg_norm, s=1, cmap="viridis")
@@ -272,7 +446,6 @@ def plot3d_delta_sg(delta_sg_norm, xyz, case_name, method_name):
 
 
 def setup_cube_hcp(model, cfg):
-
     si = shamrock.UnitSystem()
     sicte = shamrock.Constants(si)
     codeu = shamrock.UnitSystem(
@@ -380,3 +553,56 @@ plt.show()
 # %%
 fig = plot3d_delta_sg(rel_delta_dict["mm5"], xyz_dict["mm5"], "cube_hcp", "mm5")
 plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm1"], xyz_dict["fmm1"], "cube_hcp", "fmm1")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm2"], xyz_dict["fmm2"], "cube_hcp", "fmm2")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm3"], xyz_dict["fmm3"], "cube_hcp", "fmm3")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm4"], xyz_dict["fmm4"], "cube_hcp", "fmm4")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["fmm5"], xyz_dict["fmm5"], "cube_hcp", "fmm5")
+plt.show()
+
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["sfmm1"], xyz_dict["sfmm1"], "cube_hcp", "sfmm1")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["sfmm2"], xyz_dict["sfmm2"], "cube_hcp", "sfmm2")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["sfmm3"], xyz_dict["sfmm3"], "cube_hcp", "sfmm3")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["sfmm4"], xyz_dict["sfmm4"], "cube_hcp", "sfmm4")
+plt.show()
+
+# %%
+fig = plot3d_delta_sg(rel_delta_dict["sfmm5"], xyz_dict["sfmm5"], "cube_hcp", "sfmm5")
+plt.show()
+
+# %%
+# Report errors
+
+
+if len(to_raise) > 0:
+    print("Errors:")
+    for to_raise_item in to_raise:
+        print(to_raise_item)
+
+for to_raise_item in to_raise:
+    raise ValueError(to_raise_item)

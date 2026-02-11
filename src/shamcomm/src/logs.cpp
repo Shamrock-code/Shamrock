@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -60,11 +60,11 @@ namespace shamcomm::logs {
             // Someone that coded too much here
             "Now it's time to " + shambase::term_colors::col8b_cyan()
                 + shambase::term_colors::blink() + "ROCK" + shambase::term_colors::reset() + ".",
-            "Shamrock rolls — no time for moss.", // Rolling stone gathers no moss.
-            "Shamrock's live — go with the flow.",
-            "Shamrock — as solid as a rock.",
+            "Shamrock rolls - no time for moss.", // Rolling stone gathers no moss.
+            "Shamrock's live - go with the flow.",
+            "Shamrock - as solid as a rock.",
             "Shamrock's stable and steady as a rock.",
-            "Shamrock initialized — no cracks in this rock.",
+            "Shamrock initialized - no cracks in this rock.",
             "Shamrock is ready to eat cheese (melted) and bread.",
             "Are you sure you want to work today?",
             "No holidays for the Shamrock ... (yeah, this was a PhD at some point)",

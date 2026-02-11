@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -41,5 +41,33 @@ namespace shampylib {
     }
 
     template void init_shamrock_math_Ray<f64_3>(py::module &m, std::string name);
+
+    template<class T>
+    void init_shamrock_math_RingRay(py::module &m, std::string name) {
+        py::class_<shammath::RingRay<T>>(m, name.c_str())
+            .def(py::init([](f64_3 center, f64 radius, f64_3 e_x, f64_3 e_y) {
+                return std::make_unique<shammath::RingRay<T>>(center, radius, e_x, e_y);
+            }))
+            .def(
+                "center",
+                [](shammath::RingRay<T> &ring_ray) {
+                    return ring_ray.center;
+                })
+            .def(
+                "radius",
+                [](shammath::RingRay<T> &ring_ray) {
+                    return ring_ray.radius;
+                })
+            .def(
+                "e_x",
+                [](shammath::RingRay<T> &ring_ray) {
+                    return ring_ray.e_x;
+                })
+            .def("e_y", [](shammath::RingRay<T> &ring_ray) {
+                return ring_ray.e_y;
+            });
+    }
+
+    template void init_shamrock_math_RingRay<f64_3>(py::module &m, std::string name);
 
 } // namespace shampylib

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -40,6 +40,7 @@ Register_pymod(pysham_mathinit) {
 
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
+    shampylib::init_shamrock_math_RingRay<f64_3>(math_module, "RingRay_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
     shampylib::init_shamrock_math_sphkernels(math_module);
 

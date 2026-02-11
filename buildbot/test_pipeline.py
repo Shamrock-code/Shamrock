@@ -115,7 +115,6 @@ for dir_ in conf_dir_lst:
 current_wdir = os.getcwd()
 
 for dir_ in conf_dir_lst:
-
     os.chdir(dir_)
 
     for cnt in node_cnt:
@@ -132,7 +131,6 @@ os.chdir(current_wdir)
 dic_test_res_load = {}
 
 for dir_, desc in zip(conf_dir_lst, conf_dir_desc):
-
     conf_dic = {}
 
     for cnt in node_cnt:

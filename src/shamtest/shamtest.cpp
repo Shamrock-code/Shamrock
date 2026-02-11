@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -501,6 +501,7 @@ namespace shamtest {
 
         ON_RANK_0(shamcomm::logs::print_faint_row());
         shambindings::modify_py_sys_path(shamcomm::world_rank() == 0);
+        shambindings::set_sys_argv(argc, argv);
         ON_RANK_0(shamcomm::logs::print_faint_row());
 
         // import shamrock in pybind

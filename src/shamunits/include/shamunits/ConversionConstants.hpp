@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,10 +23,11 @@ namespace shamunits {
     template<class T>
     struct ConversionConstants {
 
-        static constexpr T au_to_m   = 149597870700;     //(m)
-        static constexpr T ly_to_m   = 9460730472580800; //(m)
-        static constexpr T pc_to_m   = 3.0857e16;        //(m)
-        static constexpr T rsol_to_m = 6.957e8;          //(m)
+        static constexpr T au_to_m     = 149597870700;     //(m)
+        static constexpr T ly_to_m     = 9460730472580800; //(m)
+        static constexpr T pc_to_m     = 3.0857e16;        //(m)
+        static constexpr T rsol_to_m   = 6.957e8;          //(m)
+        static constexpr T rearth_to_m = 6.378137e6;       // Earth equatorial radius (m)
 
         static constexpr T mn_to_s  = 60;            //(s)
         static constexpr T hr_to_s  = 3600;          //(s)
@@ -72,6 +73,9 @@ namespace shamunits {
  *
  * @fn shamunits::ConversionConstants::rsol_to_m()
  * @brief conversion factor from solar radii to meters
+ *
+ * @fn shamunits::ConversionConstants::rearth_to_m()
+ * @brief conversion factor from earth equatorial radii to meters
  *
  * @fn shamunits::ConversionConstants::mn_to_s()
  * @brief conversion factor from minutes to seconds

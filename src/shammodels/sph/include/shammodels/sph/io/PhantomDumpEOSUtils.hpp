@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -97,5 +97,45 @@ namespace shammodels::sph::phdump {
      * @param[in] r0 Reference radius
      */
     void eos3_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0);
+
+    /**
+     * @brief Load the EOS13 from the phantom dump
+     *
+     * @param[in] dump Phantom dump file
+     * @param[out] cs0 Sound speed at the reference radius
+     * @param[out] q Power law index
+     * @param[out] r0 Reference radius
+     */
+    void eos13_load(const PhantomDump &dump, f64 &cs0, f64 &q, f64 &r0);
+
+    /**
+     * @brief Write the EOS13 to the phantom dump
+     *
+     * @param[out] dump Phantom dump file
+     * @param[in] cs0 Sound speed at the reference radius
+     * @param[in] q Power law index
+     * @param[in] r0 Reference radius
+     */
+    void eos13_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0);
+
+    /**
+     * @brief Load the EOS14 from the phantom dump
+     *
+     * @param[in] dump Phantom dump file
+     * @param[out] cs0 Sound speed at the reference radius
+     * @param[out] q Power law index
+     * @param[out] r0 Reference radius
+     */
+    void eos14_load(const PhantomDump &dump, f64 &cs0, f64 &q, f64 &r0);
+
+    /**
+     * @brief Write the EOS14 to the phantom dump
+     *
+     * @param[out] dump Phantom dump file
+     * @param[in] cs0 Sound speed at the reference radius
+     * @param[in] q Power law index
+     * @param[in] r0 Reference radius
+     */
+    void eos14_write(PhantomDump &dump, const f64 &cs0, const f64 &q, const f64 &r0);
 
 } // namespace shammodels::sph::phdump

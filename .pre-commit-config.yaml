@@ -3,7 +3,7 @@ ci:
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v5.0.0
+  rev: v6.0.0
   hooks:
   - id: trailing-whitespace
     exclude: \.svg$|LICENSE
@@ -39,7 +39,7 @@ repos:
   #- id: pretty-format-json
 
 - repo: https://github.com/Lucas-C/pre-commit-hooks
-  rev: "v1.5.5"
+  rev: "v1.5.6"
   hooks:
   - id: forbid-tabs
     exclude: Makefile|\.gitmodules
@@ -65,7 +65,7 @@ repos:
 #  - id: shellcheck
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.28.6
+  rev: 0.36.1
   hooks:
   - id: check-github-workflows
     log_file: log_precommit_check-github-workflows
@@ -73,29 +73,26 @@ repos:
 
 # Clang format the codebase automatically
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v21.1.0
+  rev: v21.1.8
   hooks:
   - id: clang-format
     types_or: [c++, c, cuda]
     log_file: log_precommit_clang-format
 
-
-- repo: https://github.com/psf/black
-  rev: 25.1.0
-  hooks:
-  - id: black
-    args: [--line-length=100]
-    log_file: log_precommit_black
-
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.11.11
+  rev: v0.15.0
   hooks:
     - id: ruff-check
       args:
         - --extend-select=BLE,I,NPY,PLE
         - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
         - --fix
-      log_file: log_precommit_ruff
+      log_file: log_precommit_ruff_check
+
+    - id: ruff-format
+      args:
+        - --line-length=100
+      log_file: log_precommit_ruff_format
 
 #- repo: https://github.com/johnor/pre-commit-lizard
 #  rev: 'v1.17.10'
@@ -139,6 +136,14 @@ repos:
       entry: python buildbot/check_no_ssh_in_submodules.py
       language: python
       pass_filenames: false
+
+    - id: check_no_utf8
+      name: "No UTF-8 in files (except for authors)"
+      entry: python buildbot/check_no_utf8.py
+      language: python
+      pass_filenames: true
+      files: \.(cpp|hpp|py|cmake|txt)$
+
 
     # - id: update_authors
     #   name: "Update authors"

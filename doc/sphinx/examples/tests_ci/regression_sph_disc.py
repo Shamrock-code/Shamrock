@@ -177,7 +177,6 @@ model.change_htolerance(1.1)
 
 
 def save_collected_data(data_dict, fpath):
-
     print(f"Saving data to {fpath}")
 
     import h5py
@@ -190,7 +189,6 @@ def save_collected_data(data_dict, fpath):
 
 
 def load_collected_data(fpath):
-
     print(f"Loading data from {fpath}")
 
     if not os.path.exists(fpath):
@@ -212,7 +210,6 @@ def load_collected_data(fpath):
 
 
 def check_regression(data_dict1, data_dict2, tolerances):
-
     # Compare if keys sets match
     if set(data_dict1.keys()) != set(data_dict2.keys()):
         print("Data keys sets do not match")
@@ -229,7 +226,6 @@ def check_regression(data_dict1, data_dict2, tolerances):
 
     # Compare if values are equal
     for dset_name in data_dict1:
-
         # Compare same size
         if data_dict1[dset_name].shape != data_dict2[dset_name].shape:
             print(f"Data {dset_name} has different shape")
@@ -298,7 +294,7 @@ while t_sum < t_target:
 # %%
 # Check regression
 
-reference_folder = "reference-files/regression_sph_disc"
+reference_folder = "reference-files/regression_sph_disc_23_01_26"
 
 tolerances = [
     {
@@ -331,7 +327,6 @@ tolerances = [
 ]
 
 for iplot in range(i_dump):
-
     fpath_cur = os.path.join(dump_folder, f"{sim_name}_data_{iplot:04}.h5")
     fpath_ref = os.path.join(reference_folder, f"{sim_name}_data_{iplot:04}.h5")
 

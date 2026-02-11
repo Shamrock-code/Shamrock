@@ -13,3 +13,4 @@ dependencies:
   - numpy
   - matplotlib
   - psutil
+  - ccache

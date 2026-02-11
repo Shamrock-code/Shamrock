@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -24,9 +24,9 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     using namespace shamrock;
     using namespace shammath;
 
-    shamrock::ComputeField<Tscal> &cfield_dtrho  = storage.dtrho.get();
-    shamrock::ComputeField<Tvec> &cfield_dtrhov  = storage.dtrhov.get();
-    shamrock::ComputeField<Tscal> &cfield_dtrhoe = storage.dtrhoe.get();
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
+    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl();
@@ -44,9 +44,9 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
             u32 id               = p.id_patch;
 
-            sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf_check(id);
-            sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf_check(id);
-            sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf(id);
+            sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf(id);
+            sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf(id);
 
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
@@ -84,8 +84,10 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
 
     if (solver_config.is_dust_on()) {
 
-        shamrock::ComputeField<Tscal> &cfield_dtrho_dust = storage.dtrho_dust.get();
-        shamrock::ComputeField<Tvec> &cfield_dtrhov_dust = storage.dtrhov_dust.get();
+        shamrock::solvergraph::Field<Tscal> &cfield_dtrho_dust
+            = shambase::get_check_ref(storage.dtrho_dust);
+        shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_dust
+            = shambase::get_check_ref(storage.dtrhov_dust);
 
         const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
         const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
@@ -99,8 +101,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
             u32 id               = p.id_patch;
 
-            sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf_check(id);
-            sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf_check(id);
+            sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf(id);
+            sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf(id);
 
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
             u32 ndust      = solver_config.dust_config.ndust;

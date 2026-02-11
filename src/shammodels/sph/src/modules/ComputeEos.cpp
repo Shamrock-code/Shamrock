@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -108,6 +108,9 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
     using SolverEOS_LocallyIsothermalLP07   = typename SolverConfigEOS::LocallyIsothermalLP07;
     using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
+    using SolverEOS_LocallyIsothermalFA2014Extended =
+        typename SolverConfigEOS::LocallyIsothermalFA2014Extended;
+    using SolverEOS_Fermi = typename SolverConfigEOS::Fermi;
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -387,6 +390,148 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             rho_getter.complete_event_state(e);
             buf_uint.complete_event_state(e);
             buf_xyz.complete_event_state(e);
+        });
+
+    } else if (
+        SolverEOS_LocallyIsothermalFA2014Extended *eos_config
+        = std::get_if<SolverEOS_LocallyIsothermalFA2014Extended>(
+            &solver_config.eos_config.config)) {
+
+        Tscal _cs0  = eos_config->cs0;
+        Tscal _r0   = eos_config->r0;
+        Tscal _q    = eos_config->q;
+        u32 n_sinks = eos_config->n_sinks;
+
+        using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
+
+        auto &sink_parts = storage.sinks.get();
+        std::vector<Tvec> sink_pos;
+        std::vector<Tscal> sink_mass;
+        u32 sink_cnt = 0;
+
+        for (auto &s : sink_parts) {
+            sink_pos.push_back(s.pos);
+            sink_mass.push_back(s.mass);
+            sink_cnt++;
+            if (sink_pos.size() >= n_sinks) { // We only consider the first n_sinks sinks
+                break;
+            }
+        }
+
+        if (sink_cnt == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "No sinks found for the equation of state");
+        }
+
+        sycl::buffer<Tvec> sink_pos_buf{sink_pos};
+        sycl::buffer<Tscal> sink_mass_buf{sink_mass};
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+            auto &mfield = storage.merged_xyzh.get().get(id);
+
+            sham::DeviceBuffer<Tvec> &buf_xyz = mfield.template get_field_buf_ref<Tvec>(0);
+
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+            auto rho_getter                     = rho_getter_gen(mpdat);
+
+            // TODO: Use the complex kernel call when implemented
+
+            sham::EventList depends_list;
+
+            auto P   = buf_P.get_write_access(depends_list);
+            auto cs  = buf_cs.get_write_access(depends_list);
+            auto rho = rho_getter.get_read_access(depends_list);
+            auto U   = buf_uint.get_read_access(depends_list);
+            auto xyz = buf_xyz.get_read_access(depends_list);
+
+            u32 total_elements
+                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor spos{sink_pos_buf, cgh, sycl::read_only};
+                sycl::accessor smass{sink_mass_buf, cgh, sycl::read_only};
+                u32 scount = sink_cnt;
+
+                Tscal cs0 = _cs0;
+                Tscal r0  = _r0;
+                Tscal q   = _q;
+
+                Tscal inv_r0_q = 1. / sycl::pow(r0, q);
+
+                cgh.parallel_for(sycl::range<1>{total_elements}, [=](sycl::item<1> item) {
+                    using namespace shamrock::sph;
+
+                    Tvec R      = xyz[item];
+                    Tscal rho_a = rho(item.get_linear_id());
+
+                    Tscal sink_mass_sum = 0;
+                    Tscal pot_sum       = 0;
+                    for (u32 i = 0; i < scount; i++) {
+                        Tvec s_r      = spos[i] - R;
+                        Tscal s_m     = smass[i];
+                        Tscal s_r_abs = sycl::length(s_r);
+                        sink_mass_sum += s_m;
+                        pot_sum += s_m / s_r_abs;
+                    }
+
+                    Tscal cs_out = cs0 * inv_r0_q * sycl::pow(pot_sum / sink_mass_sum, q);
+                    Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
+
+                    P[item]  = P_a;
+                    cs[item] = cs_out;
+                });
+            });
+
+            buf_P.complete_event_state(e);
+            buf_cs.complete_event_state(e);
+            rho_getter.complete_event_state(e);
+            buf_uint.complete_event_state(e);
+            buf_xyz.complete_event_state(e);
+        });
+
+    } else if (
+        SolverEOS_Fermi *eos_config
+        = std::get_if<SolverEOS_Fermi>(&solver_config.eos_config.config)) {
+
+        using EOS = shamphys::EOS_Fermi<Tscal>;
+
+        storage.merged_patchdata_ghost.get().for_each([&](u64 id, PatchDataLayer &mpdat) {
+            sham::DeviceBuffer<Tscal> &buf_P
+                = shambase::get_check_ref(storage.pressure).get_field(id).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_cs
+                = shambase::get_check_ref(storage.soundspeed).get_field(id).get_buf();
+            auto rho_getter = rho_getter_gen(mpdat);
+
+            u32 total_elements
+                = shambase::get_check_ref(storage.part_counts_with_ghost).indexes.get(id);
+
+            using namespace shamunits;
+            auto unit_sys = *solver_config.unit_sys;
+
+            Tscal mass   = unit_sys.template to<units::kilogram>();
+            Tscal length = unit_sys.template to<units::metre>();
+            Tscal time   = unit_sys.template to<units::second>();
+
+            Tscal pressure_unit = mass / length / (time * time);
+            Tscal density_unit  = mass / (length * length * length);
+            Tscal velocity_unit = length / time;
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{rho_getter},
+                sham::MultiRef{buf_P, buf_cs},
+                total_elements,
+                [mu_e = eos_config->mu_e, density_unit, pressure_unit, velocity_unit](
+                    u32 i, auto rho, Tscal *__restrict P, Tscal *__restrict cs) {
+                    Tscal rho_a    = rho(i);
+                    auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a * density_unit);
+                    P[i]           = res.pressure / pressure_unit;
+                    cs[i]          = res.soundspeed / velocity_unit;
+                });
         });
 
     } else {

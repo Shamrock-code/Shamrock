@@ -25,42 +25,47 @@ jobs:
           ##########################################################################################
           - machine: debian-generic.acpp
             args: --backend omp
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15
+            imagename: Ubuntu 22 LLVM 15
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: omp
 
           - machine: debian-generic.acpp
             args: --backend generic
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15
+            imagename: Ubuntu 22 LLVM 15
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: generic
 
           - machine: debian-generic.acpp
             args: --backend cuda.explicit-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: cuda.explicit-multipass
 
           - machine: debian-generic.acpp
             args: --backend cuda.integrated-multipass --arch sm_80
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15cuda11
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 CUDA 11
+            imagename: Ubuntu 22 LLVM 15 CUDA 11
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: cuda.integrated-multipass
 
           - machine: debian-generic.acpp
             args: --backend hip --arch gfx906
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20llvm15rocm543
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15rocm543
             runson: ubuntu-latest
-            imagename: Ubuntu 20 LLVM 15 ROCM 5.4.3
+            imagename: Ubuntu 22 LLVM 15 ROCM 5.4.3
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: hip
 
           ##########################################################################################
           # Arch Linux
@@ -73,6 +78,7 @@ jobs:
             runtest: yes
             runtestpy: yes
             mpiargs: --allow-run-as-root --bind-to none --oversubscribe
+            ccache-key-extra: generic
 
           ##########################################################################################
           # MacOS
@@ -82,24 +88,28 @@ jobs:
             imagename: MacOS-14
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos14
 
           - machine: macos-generic.acpp
             runson: macos-15
             imagename: MacOS-15
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos15
 
           - machine: macos-generic.acpp
             runson: macos-15-intel
             imagename: MacOS-15 (intel)
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos15-intel
 
           - machine: macos-generic.acpp
             runson: macos-26
             imagename: MacOS-26
             runtest: yes
             mpiargs: --oversubscribe
+            ccache-key-extra: macos26
 
     timeout-minutes: 120
     steps:
@@ -108,7 +118,7 @@ jobs:
       - name : Install archlinux dependencies
         if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-          sudo pacman -Sy --noconfirm base-devel git python cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
+          sudo pacman -Sy --noconfirm base-devel git python python-pip cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
 
       # if macos container
       - name : Install macos dependencies
@@ -121,13 +131,16 @@ jobs:
           brew uninstall cmake
 
           brew update
-          brew install cmake libomp boost open-mpi adaptivecpp
+          brew install cmake libomp boost open-mpi adaptivecpp fmt
           set -e
 
       # if ubuntu container
       - name : Install ubuntu dependencies
         if: matrix.machine == 'debian-generic.acpp'
         run: |
+          sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt update
           sudo apt remove -y texlive-full
           sudo apt-get install -y \
             texlive-latex-base \
@@ -161,6 +174,26 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      - name: Install ccache
+        if: matrix.machine == 'archlinux.acpp'
+        run: |
+          sudo pacman -Sy --noconfirm ccache
+
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
+          verbose: 2
+
+      - name: Configure ccache
+        shell: bash
+        run: |
+          echo " ----- ccache configuration ----- "
+          echo " Old configuration: "
+          ccache -p
+          echo " ----- New configuration:   ----- "
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -p
+          echo " ----- ccache configuration done ----- "
 
       - name: ls local
         run : ls -la
@@ -231,12 +264,36 @@ jobs:
           cd build
           mpirun ${{ matrix.mpiargs }} -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
+      - name: Create Python test script for next tests
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtest
+        run: |
+          cat > /tmp/test_rscript.py << 'EOF'
+          import shamrock
+          #print("Shamrock module location:", shamrock.__file__)
+          print("Shamrock version:", shamrock.version_string())
+          print("Git info:", shamrock.get_git_info())
+          shamrock.change_loglevel(125)
+          if not shamrock.sys.is_initialized():
+            shamrock.sys.init('0:0')
+
+          # To test that importing nested modules works
+          from shamrock.math import *
+          EOF
+          cat /tmp/test_rscript.py
+
+      - name: Try starting Shamrock (build dir)
+        if: matrix.runtest
+        run: |
+          cd build
+          ./shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
+
       - name: Try starting Shamrock (installed version)
         shell: bash # In docker container github action default to sh
         if: matrix.runtest
         run: |
           cd build/install_test/bin
-          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
 
       - name: Try starting Shamrock (installed python libs)
         shell: bash # In docker container github action default to sh
@@ -248,4 +305,51 @@ jobs:
           ACPP_DEBUG_LEVEL=3 \
           PYTHONPATH=$(pwd)/../pyinstall_test:$PYTHONPATH \
           LD_LIBRARY_PATH=$(pwd)/lib:$LD_LIBRARY_PATH \
-          python3 -c "import shamrock;print(shamrock.__file__);shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
+          python3 /tmp/test_rscript.py
+
+      - name: Rm CMake cache
+        if: matrix.runtestpy
+        run: |
+          cd build
+          rm -rf CMakeCache.txt
+
+
+      - name: Create a Python venv
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtestpy
+        run: |
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install -U pip setuptools
+
+      - name: Try pip install Shamrock
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtestpy
+        run: |
+          . venv/bin/activate
+          cd build
+          pip install --verbose .
+
+      - name: Try shamrock startup (pip install)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtestpy
+        run: |
+          . venv/bin/activate
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          python3 /tmp/test_rscript.py
+
+      - name: Try shamrock startup (pip install)
+        shell: bash # In docker container github action default to sh
+        if: matrix.runtestpy
+        run: |
+          . venv/bin/activate
+          ACPP_VISIBILITY_MASK=omp \
+          ACPP_DEBUG_LEVEL=3 \
+          shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
+
+      - name: Try pip uninstall Shamrock
+        if: matrix.runtestpy
+        run: |
+          . venv/bin/activate
+          pip uninstall -y shamrock

@@ -24,9 +24,9 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
-            label: "ubuntu 20"
+            label: "ubuntu 22"
             upload_doc: false
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
           - clang: 18
             backend: omp
             arch: none
@@ -35,7 +35,7 @@ jobs:
             upload_doc: true
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -80,6 +80,9 @@ jobs:
       # if ubuntu container
       - name : Install ubuntu dependencies
         run: |
+          sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt update
           sudo apt remove -y texlive-full
           sudo apt-get install -y \
             texlive-latex-base \
@@ -92,6 +95,10 @@ jobs:
       - name: install ffmpeg
         run: |
           sudo apt install -y ffmpeg
+
+      - name: install gfortran (for run_compare_shamrock_ph_disc.py)
+        run: |
+          sudo apt install -y gfortran
 
       - name: Setup env
         run : |

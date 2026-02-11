@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,6 +23,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+// start allow utf-8
 
 /// Tex report template to be used
 std::string tex_template = R"==(
@@ -86,6 +88,7 @@ hyperfigures=false]
 
 
 )==";
+// end allow utf-8
 
 /// Footer of the document
 std::string tex_template_end = R"(

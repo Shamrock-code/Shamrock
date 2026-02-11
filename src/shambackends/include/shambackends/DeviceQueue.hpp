@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -68,13 +68,6 @@ namespace sham {
          * `SHAMROCK_WAIT_AFTER_SUBMIT`.
          */
         bool wait_after_submit = false;
-
-        /**
-         * @brief Test if the queueus working properly
-         *
-         * Enqueue a simple kernel to test that the queue can execute something.
-         */
-        void test();
 
         /**
          * @brief Create a device queue
@@ -169,7 +162,7 @@ namespace sham {
          *
          * @return DeviceProperties The properties of the associated device
          */
-        inline DeviceProperties get_device_prop() {
+        inline DeviceProperties &get_device_prop() {
             return shambase::get_check_ref(ctx).device->prop;
         }
     };

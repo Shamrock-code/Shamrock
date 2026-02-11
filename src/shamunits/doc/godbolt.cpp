@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -42,30 +42,30 @@ namespace shamunits::details {
     /*base units*/                                                                                 \
     X1(second, s)                                                                                  \
     X1(metre, m)                                                                                   \
-    X1(kilogramm, kg)                                                                              \
+    X1(kilogram, kg)                                                                               \
     X1(Ampere, A)                                                                                  \
     X1(Kelvin, K)                                                                                  \
     X1(mole, mol)                                                                                  \
     X1(candela, cd)                                                                                \
     /*derived units*/                                                                              \
-    X1(Hertz, Hz)    /* hertz : frequency (s−1) */                                                 \
-    X1(Newtown, N)   /* (kg⋅m⋅s−2)*/                                                               \
-    X1(Pascal, Pa)   /* (kg⋅m−1⋅s−2) (N/m2)*/                                                      \
-    X1(Joule, J)     /* (kg⋅m2⋅s−2) (N⋅m = Pa⋅m3)*/                                                \
-    X1(Watt, W)      /* (kg⋅m2⋅s−3) (J/s)*/                                                        \
-    X1(Coulomb, C)   /* (s⋅A)*/                                                                    \
-    X1(Volt, V)      /* (kg⋅m2⋅s−3⋅A−1) (W/A) = (J/C)*/                                            \
-    X1(Farad, F)     /* (kg−1⋅m−2⋅s4⋅A2) (C/V) = (C2/J)*/                                          \
-    X1(Ohm, ohm)     /* (kg⋅m2⋅s−3⋅A−2) (V/A) = (J⋅s/C2)*/                                         \
-    X1(Siemens, S)   /* (kg−1⋅m−2⋅s3⋅A2) (ohm−1)*/                                                 \
-    X1(Weber, Wb)    /* (kg⋅m2⋅s−2⋅A−1) (V⋅s)*/                                                    \
-    X1(Tesla, T)     /* (kg⋅s−2⋅A−1) (Wb/m2)*/                                                     \
-    X1(Henry, H)     /* (kg⋅m2⋅s−2⋅A−2) (Wb/A)*/                                                   \
+    X1(Hertz, Hz)    /* hertz : frequency (s-1) */                                                 \
+    X1(Newton, N)    /* (kg.m.s-2)*/                                                               \
+    X1(Pascal, Pa)   /* (kg.m-1.s-2) (N/m2)*/                                                      \
+    X1(Joule, J)     /* (kg.m2.s-2) (N.m = Pa.m3)*/                                                \
+    X1(Watt, W)      /* (kg.m2.s-3) (J/s)*/                                                        \
+    X1(Coulomb, C)   /* (s.A)*/                                                                    \
+    X1(Volt, V)      /* (kg.m2.s-3.A-1) (W/A) = (J/C)*/                                            \
+    X1(Farad, F)     /* (kg-1.m-2.s4.A2) (C/V) = (C2/J)*/                                          \
+    X1(Ohm, ohm)     /* (kg.m2.s-3.A-2) (V/A) = (J.s/C2)*/                                         \
+    X1(Siemens, S)   /* (kg-1.m-2.s3.A2) (ohm-1)*/                                                 \
+    X1(Weber, Wb)    /* (kg.m2.s-2.A-1) (V.s)*/                                                    \
+    X1(Tesla, T)     /* (kg.s-2.A-1) (Wb/m2)*/                                                     \
+    X1(Henry, H)     /* (kg.m2.s-2.A-2) (Wb/A)*/                                                   \
     X1(lumens, lm)   /* (cd.sr) (cd.sr)*/                                                          \
-    X1(lux, lx)      /* (cd.sr.m−2) (lm/m2)*/                                                      \
-    X1(Bequerel, Bq) /* (s−1)*/                                                                    \
-    X1(Gray, Gy)     /* (m2.s−2) (J/kg)*/                                                          \
-    X1(Sievert, Sv)  /* (m2.s−2) (J/kg)*/                                                          \
+    X1(lux, lx)      /* (cd.sr.m-2) (lm/m2)*/                                                      \
+    X1(Bequerel, Bq) /* (s-1)*/                                                                    \
+    X1(Gray, Gy)     /* (m2.s-2) (J/kg)*/                                                          \
+    X1(Sievert, Sv)  /* (m2.s-2) (J/kg)*/                                                          \
     X1(katal, kat)   /* (mol.s-1) */                                                               \
     /*relative units*/                                                                             \
     X1(minutes, mn)                                                                                \
@@ -192,7 +192,7 @@ namespace shamunits {
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
         addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
-        addget(kilogramm) { return PREF* pow_constexpr<power>(kg , kg_inv);  }
+        addget(kilogram)  { return PREF* pow_constexpr<power>(kg , kg_inv);  }
         addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
         addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
         addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
@@ -200,9 +200,9 @@ namespace shamunits {
 
         addget(Hertz)   { return PREF* Uget(s, -1); }
         //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
-        addget(Newtown) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
+        addget(Newton) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
         addget(Pascal)  { return PREF* Uget(kg, 1)      * Uget(m, -1) * Uget(s, -2); }
-        addget(Joule)   { return PREF* Uget(Newtown, 1) * Uget(m, 1); }
+        addget(Joule)   { return PREF* Uget(Newton, 1) * Uget(m, 1); }
         addget(Watt)    { return PREF* Uget(Joule, 1)   * Uget(s, -1); }
         addget(Coulomb) { return PREF* Uget(s, 1)       * Uget(A, 1); }
         addget(Volt)    { return PREF* Uget(Watt, 1)    * Uget(A, -1); }
@@ -255,16 +255,16 @@ namespace shamunits {
         inline T getter_1(units::UnitName name) {
             switch (name) {
 
-            case units::second   : return get<pref, units::second>(); break;
-            case units::metre    : return get<pref, units::metre>(); break;
-            case units::kilogramm: return get<pref, units::kilogramm>(); break;
-            case units::Ampere   : return get<pref, units::Ampere>(); break;
-            case units::Kelvin   : return get<pref, units::Kelvin>(); break;
-            case units::mole     : return get<pref, units::mole>(); break;
-            case units::candela  : return get<pref, units::candela>(); break;
+            case units::second  : return get<pref, units::second>(); break;
+            case units::metre   : return get<pref, units::metre>(); break;
+            case units::kilogram: return get<pref, units::kilogram>(); break;
+            case units::Ampere  : return get<pref, units::Ampere>(); break;
+            case units::Kelvin  : return get<pref, units::Kelvin>(); break;
+            case units::mole    : return get<pref, units::mole>(); break;
+            case units::candela : return get<pref, units::candela>(); break;
             // case units::mps: return get<pref, units::mps>(); break;
             case units::Hertz            : return get<pref, units::Hertz>(); break;
-            case units::Newtown          : return get<pref, units::Newtown>(); break;
+            case units::Newton           : return get<pref, units::Newton>(); break;
             case units::Pascal           : return get<pref, units::Pascal>(); break;
             case units::Joule            : return get<pref, units::Joule>(); break;
             case units::Watt             : return get<pref, units::Watt>(); break;
@@ -449,7 +449,7 @@ int main(void) {
     UnitSystem<double> astro_units{
         si.get<mega, units::years>(),
         si.get<units::astronomical_unit>(),
-        si.get<units::kilogramm>() * sol_mass,
+        si.get<units::kilogram>() * sol_mass,
     };
 
     // this time it returns 1 because the base length is the astronomical unit

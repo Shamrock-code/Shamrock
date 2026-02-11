@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -60,7 +60,7 @@ namespace shamunits {
     ///    UnitSystem<double> astro_units {
     ///        si.get<mega, units::years>(),
     ///        si.get<units::astronomical_unit>(),
-    ///        si.get<units::kilogramm>()*sol_mass,
+    ///        si.get<units::kilogram>()*sol_mass,
     ///    };
     ///
     ///    //this time it returns 1 because the base length is the astronomical unit
@@ -94,7 +94,7 @@ namespace shamunits {
          * \brief value of a meter in this system
          *
          * @fn kg
-         * \brief value of a kilogramm in this system
+         * \brief value of a kilogram in this system
          *
          * @fn A
          * \brief value of a Ampere in this system
@@ -115,7 +115,7 @@ namespace shamunits {
          * \brief inverse value of a meter in this system
          *
          * @fn kg_inv
-         * \brief inverse value of a kilogramm in this system
+         * \brief inverse value of a kilogram in this system
          *
          * @fn A_inv
          * \brief inverse value of a Ampere in this system
@@ -174,7 +174,7 @@ namespace shamunits {
         // clang-format off
         addget(second)    { return PREF* pow_constexpr<power>(s  , s_inv);   }
         addget(metre)     { return PREF* pow_constexpr<power>(m  , m_inv);   }
-        addget(kilogramm) { return PREF* pow_constexpr<power>(kg , kg_inv);  }
+        addget(kilogram)  { return PREF* pow_constexpr<power>(kg , kg_inv);  }
         addget(Ampere)    { return PREF* pow_constexpr<power>(A  , A_inv);   }
         addget(Kelvin)    { return PREF* pow_constexpr<power>(K  , K_inv);   }
         addget(mole)      { return PREF* pow_constexpr<power>(mol, mol_inv); }
@@ -182,9 +182,9 @@ namespace shamunits {
 
         addget(Hertz)   { return PREF* Uget(s, -1); }
         //addget(mps)     { return PREF* Uget(m, 1)       * Uget(s, -1); }
-        addget(Newtown) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
+        addget(Newton) { return PREF* Uget(kg, 1)      * Uget(m, 1)  * Uget(s, -2); }
         addget(Pascal)  { return PREF* Uget(kg, 1)      * Uget(m, -1) * Uget(s, -2); }
-        addget(Joule)   { return PREF* Uget(Newtown, 1) * Uget(m, 1); }
+        addget(Joule)   { return PREF* Uget(Newton, 1) * Uget(m, 1); }
         addget(Watt)    { return PREF* Uget(Joule, 1)   * Uget(s, -1); }
         addget(Coulomb) { return PREF* Uget(s, 1)       * Uget(A, 1); }
         addget(Volt)    { return PREF* Uget(Watt, 1)    * Uget(A, -1); }
@@ -212,6 +212,7 @@ namespace shamunits {
         addget(light_year)        { return PREF* Uget(m, 1) * Cget(Uconvert::ly_to_m, 1); }
         addget(parsec)            { return PREF* Uget(m, 1) * Cget(Uconvert::pc_to_m, 1); }
         addget(solar_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::rsol_to_m, 1); }
+        addget(earth_radius)      { return PREF* Uget(m, 1) * Cget(Uconvert::rearth_to_m, 1); }
 
         addget(eV) {return PREF* Uget(Joule, 1) * Cget(Uconvert::eV_to_J,1);}
         addget(erg) {return PREF* Uget(Joule, 1) * Cget(Uconvert::erg_to_J,1);}
@@ -251,16 +252,16 @@ namespace shamunits {
         inline T getter_1(units::UnitName name) {
             switch (name) {
 
-            case units::second   : return get<pref, units::second>(); break;
-            case units::metre    : return get<pref, units::metre>(); break;
-            case units::kilogramm: return get<pref, units::kilogramm>(); break;
-            case units::Ampere   : return get<pref, units::Ampere>(); break;
-            case units::Kelvin   : return get<pref, units::Kelvin>(); break;
-            case units::mole     : return get<pref, units::mole>(); break;
-            case units::candela  : return get<pref, units::candela>(); break;
+            case units::second  : return get<pref, units::second>(); break;
+            case units::metre   : return get<pref, units::metre>(); break;
+            case units::kilogram: return get<pref, units::kilogram>(); break;
+            case units::Ampere  : return get<pref, units::Ampere>(); break;
+            case units::Kelvin  : return get<pref, units::Kelvin>(); break;
+            case units::mole    : return get<pref, units::mole>(); break;
+            case units::candela : return get<pref, units::candela>(); break;
             // case units::mps: return get<pref, units::mps>(); break;
             case units::Hertz            : return get<pref, units::Hertz>(); break;
-            case units::Newtown          : return get<pref, units::Newtown>(); break;
+            case units::Newton           : return get<pref, units::Newton>(); break;
             case units::Pascal           : return get<pref, units::Pascal>(); break;
             case units::Joule            : return get<pref, units::Joule>(); break;
             case units::Watt             : return get<pref, units::Watt>(); break;
@@ -286,6 +287,7 @@ namespace shamunits {
             case units::light_year       : return get<pref, units::light_year>(); break;
             case units::parsec           : return get<pref, units::parsec>(); break;
             case units::solar_radius     : return get<pref, units::solar_radius>(); break;
+            case units::earth_radius     : return get<pref, units::earth_radius>(); break;
             case units::eV               : return get<pref, units::eV>(); break;
             case units::erg              : return get<pref, units::erg>(); break;
             case units::pint             : return get<pref, units::pint>(); break;

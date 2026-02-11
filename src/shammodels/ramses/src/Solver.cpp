@@ -26,6 +26,7 @@
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeCoordinates.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -41,7 +42,6 @@
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
-#include "shammodels/ramses/modules/ComputeCoordinates.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
@@ -924,10 +924,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-    
+
         modules::NodeComputeCoordinates<Tvec, TgridVec> node_coordinates{
             AMRBlock::block_size, solver_config.grid_coord_to_pos_fact};
-
 
         node_coordinates.set_edges(
             storage.block_counts_with_ghost,
@@ -936,11 +935,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.cell0block_aabb_lower,
             storage.coordinates);
 
-        solver_sequence.push_back(std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
-
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
     }
-
-
 
     if (solver_config.should_compute_rho_mean()) {
         modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};

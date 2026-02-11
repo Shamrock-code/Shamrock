@@ -11,18 +11,17 @@
 
 /**
  * @file ComputeCoordinates.hpp
- * @author 
- * @brief Compute the coordinates of each cell from the coordinates of the lower left corner of each block and the cell sizes
+ * @author
+ * @brief Compute the coordinates of each cell from the coordinates of the lower left corner of each
+ * block and the cell sizes
  */
 
 #include "shambackends/vec.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
-
-
 
 namespace shammodels::basegodunov::modules {
 
@@ -34,24 +33,32 @@ namespace shammodels::basegodunov::modules {
         Tscal grid_coord_to_pos_fact;
 
         public:
-        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact) :
-            block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
+        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact)
+            : block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
         struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes; // number of blocks per patch for all patches on the current MPI process
-            const shamrock::solvergraph::Field<Tscal> &spans_block_cell_sizes; // sizes of the cells within each block for all patches on the current MPI process
-            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes; // bounding boxes of the patches
-            const shamrock::solvergraph::Field<Tvec> &spans_cell0block_aabb_lower; // coordinates of the lower left corner of each block
-            shamrock::solvergraph::Field<Tvec> &spans_coordinates; // center coordinates of each cell
+            const shamrock::solvergraph::Indexes<u32>
+                &sizes; // number of blocks per patch for all patches on the current MPI process
+            const shamrock::solvergraph::Field<Tscal>
+                &spans_block_cell_sizes; // sizes of the cells within each block for all patches on
+                                         // the current MPI process
+            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>
+                &patch_boxes; // bounding boxes of the patches
+            const shamrock::solvergraph::Field<Tvec>
+                &spans_cell0block_aabb_lower; // coordinates of the lower left corner of each block
+            shamrock::solvergraph::Field<Tvec>
+                &spans_coordinates; // center coordinates of each cell
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_block_cell_sizes,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>> patch_boxes,
+            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
+                patch_boxes,
             std::shared_ptr<shamrock::solvergraph::Field<Tvec>> spans_cell0block_aabb_lower,
             std::shared_ptr<shamrock::solvergraph::Field<Tvec>> spans_coordinates) {
-            __internal_set_ro_edges({sizes, spans_block_cell_sizes, patch_boxes, spans_cell0block_aabb_lower});
+            __internal_set_ro_edges(
+                {sizes, spans_block_cell_sizes, patch_boxes, spans_cell0block_aabb_lower});
             __internal_set_rw_edges({spans_coordinates});
         }
 

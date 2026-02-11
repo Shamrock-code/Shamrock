@@ -20,6 +20,89 @@
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
 #include <stdexcept>
 
+/**
+ * @brief build histrogram for amr block levels
+ * @tparam  Tvec
+ * @tparam TgridVec
+ * @param sched pointer to device scheduler
+ * @param amr_levels block's amr level
+ * @param nb_levels number of levels from level_min to level_max
+ * @param block_count_per_level buffer of levels ordered from level_min to level_max
+ * @param block_reordered_indx_map
+ */
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    amr_block_levels_histogram(
+        const sham::DeviceScheduler_ptr &sched,
+        const sham::DeviceBuffer<TgridUint> &amr_levels,
+        const u32 nb_levels,
+        sham::DeviceBuffer<u32> &block_count_per_level,
+        sham::DeviceBuffer<u32> &block_reordered_indx_map,
+        const u32 len,
+        TgridUint level_min,
+        TgridUint level_max) {
+
+    SHAM_ASSERT(amr_levels.get_size() == len);
+    SHAM_ASSERT(block_count_per_level.get_size() == nb_levels);
+
+    // compute histogramm to count the number of blocks per level
+    block_count_per_level.fill(0);
+    auto &q1 = shambase::get_check_ref(sched).get_queue();
+    sham::kernel_call(
+        q1,
+        sham::MultiRef{amr_levels},
+        sham::MultiRef{block_count_per_level},
+        len,
+        [](u32 i, const TgridUint *__restrict amr_levels, u32 *__restrict block_count_per_level) {
+            auto cur_level = amr_levels[i];
+            sycl::atomic_ref<
+                u32,
+                sycl::memory_order::relaxed,
+                sycl::memory_scope::system,
+                sycl::access::address_space::global_space>
+                bin_count(block_count_per_level[cur_level]);
+            bin_count++;
+        });
+
+    // // build block index map such that from the left to right
+    // // amr_levl[reordered_blocks] ===> L_min,L_min,L_min...| L1,L1,L1...| .... |L_max L_max L_max
+    block_reordered_indx_map.fill(0);
+    sham::DeviceBuffer<u32> idx_counter_per_lev(nb_levels, sched);
+    idx_counter_per_lev.fill(0);
+    auto &q2 = shambase::get_check_ref(sched).get_queue();
+    sham::kernel_call(
+        q2,
+        sham::MultiRef{amr_levels, block_count_per_level},
+        sham::MultiRef{idx_counter_per_lev, block_reordered_indx_map},
+        len,
+        [level_min](
+            u32 i,
+            const TgridUint *__restrict amr_levels,
+            const u32 *__restrict block_cnt_per_lev,
+            u32 *__restrict idx_counter_per_lev,
+            u32 *__restrict reordered_blocks) {
+            auto amr_lev = amr_levels[i];
+            sycl::atomic_ref<
+                u32,
+                sycl::memory_order::relaxed,
+                sycl::memory_scope::system,
+                sycl::access::address_space::global_space>
+                atomic_cnt_idx_per_lev(idx_counter_per_lev[amr_lev]);
+            u32 old_loc_pos = atomic_cnt_idx_per_lev.fetch_add(1);
+            u32 offset;
+            if (amr_lev == level_min)
+                offset = 0;
+            else {
+                offset = 0;
+                for (auto k = level_min; k < amr_lev; k++) {
+                    offset += block_cnt_per_lev[k];
+                }
+            }
+            u32 glob_pos_idx               = offset + old_loc_pos;
+            reordered_blocks[glob_pos_idx] = i;
+        });
+}
+
 template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::

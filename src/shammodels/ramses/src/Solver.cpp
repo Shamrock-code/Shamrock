@@ -926,12 +926,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
-    if (solver_config.need_level_zero_compute()) { // compute level0 sizes in patch (to be enabled
-                                                   // later when needed)
+    if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
+                                                            // enabled later when needed)
         modules::ComputeLevel0CellSize<Tvec, TgridVec> node_level0_sizes{};
         node_level0_sizes.set_edges(
             graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.source_patches,
+            storage.refs_block_min,
+            storage.refs_block_max,
             storage.level0_size);
         solver_sequence.push_back(
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));

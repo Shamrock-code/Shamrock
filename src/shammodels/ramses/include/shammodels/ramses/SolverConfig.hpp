@@ -119,7 +119,8 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     struct AMRMode {
 
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal      = shambase::VecComponent<Tvec>;
+        bool no_none_cfg = false;
 
         struct None {};
         struct DensityBased {
@@ -131,7 +132,8 @@ namespace shammodels::basegodunov {
         mode config = None{};
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
-        bool need_level_zero_compute() { return false; }
+        bool need_level_zero_compute() { return no_none_cfg; }
+        bool need_amr_level_compute() { return no_none_cfg; }
     };
 
     struct BCConfig {

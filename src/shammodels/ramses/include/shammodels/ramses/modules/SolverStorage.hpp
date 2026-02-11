@@ -77,6 +77,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_max;
 
         std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size;
+        std::shared_ptr<shamrock::solvergraph::Field<TgridUint>> amr_block_levels;
 
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts_with_ghost;

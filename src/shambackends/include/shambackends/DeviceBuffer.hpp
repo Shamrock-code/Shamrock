@@ -18,6 +18,7 @@
 
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -933,6 +934,24 @@ namespace sham {
          */
         inline void fill(T value) { fill(value, get_size()); }
 
+        template<class Fct>
+        inline void fill_lambda(Fct &&fct) {
+            if (get_size() == 0) {
+                return;
+            }
+
+            sham::EventList depends_list;
+            T *__restrict ptr = get_write_access(depends_list);
+
+            sycl::event e1 = get_queue().submit(depends_list, [&, ptr, fct](sycl::handler &cgh) {
+                shambase::parallel_for(cgh, get_size(), "fill field", [=](u32 gid) {
+                    ptr[gid] = fct(gid);
+                });
+            });
+
+            complete_event_state(e1);
+        }
+
         ///////////////////////////////////////////////////////////////////////
         // Filler fcts (END)
         ///////////////////////////////////////////////////////////////////////
@@ -999,6 +1018,22 @@ namespace sham {
         // Size manipulation
         ///////////////////////////////////////////////////////////////////////
 
+        inline size_t get_max_alloc_size() const {
+            auto &dev_prop = hold.get_dev_scheduler().get_queue().get_device_prop();
+
+            if constexpr (target == device) {
+                return dev_prop.max_mem_alloc_size_dev;
+            } else if constexpr (target == host) {
+                return dev_prop.max_mem_alloc_size_host;
+            } else if constexpr (target == shared) {
+                return sycl::min(dev_prop.max_mem_alloc_size_dev, dev_prop.max_mem_alloc_size_host);
+            } else {
+                static_assert(
+                    shambase::always_false_v<decltype(target)>,
+                    "get_max_alloc_size: invalid target");
+            }
+        }
+
         /**
          * @brief Resizes the buffer to a given size.
          *
@@ -1015,7 +1050,34 @@ namespace sham {
             if (alloc_request_size_fct(new_size, dev_sched) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = alloc_request_size_fct(new_size * 1.5, dev_sched);
+                size_t max_alloc_size           = get_max_alloc_size();
+                std::optional<size_t> alignment = get_alignment(dev_sched);
+                size_t min_size_new_alloc       = alloc_request_size_fct(new_size, dev_sched);
+                size_t wanted_size_new_alloc
+                    = alloc_request_size_fct(new_size + new_size / 2, dev_sched);
+                size_t max_possible_alloc = max_alloc_size;
+
+                if (alignment) {
+                    max_possible_alloc = max_possible_alloc - (max_possible_alloc % *alignment);
+                }
+
+                size_t new_storage_size = wanted_size_new_alloc;
+                if (new_storage_size > max_alloc_size) {
+                    new_storage_size = sycl::max(max_possible_alloc, min_size_new_alloc);
+                }
+
+                if (new_storage_size > max_alloc_size) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "new_storage_size > max_alloc_size\n"
+                        "  new_storage_size      = {}\n"
+                        "  max_alloc_size  = {}\n"
+                        "  min_size_new_alloc    = {}\n"
+                        "  wanted_size_new_alloc = {}",
+                        new_storage_size,
+                        max_alloc_size,
+                        min_size_new_alloc,
+                        wanted_size_new_alloc));
+                }
 
                 DeviceBuffer new_buf(
                     new_size,

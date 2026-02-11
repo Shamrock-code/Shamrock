@@ -35,7 +35,7 @@ jobs:
             upload_doc: true
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -82,6 +82,7 @@ jobs:
         run: |
           sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
           export DEBIAN_FRONTEND=noninteractive
+          sudo apt update
           sudo apt remove -y texlive-full
           sudo apt-get install -y \
             texlive-latex-base \

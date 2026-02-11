@@ -162,7 +162,7 @@ namespace sham {
          *
          * @return DeviceProperties The properties of the associated device
          */
-        inline DeviceProperties get_device_prop() {
+        inline DeviceProperties &get_device_prop() {
             return shambase::get_check_ref(ctx).device->prop;
         }
     };

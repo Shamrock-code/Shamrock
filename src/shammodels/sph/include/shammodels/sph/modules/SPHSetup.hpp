@@ -74,8 +74,10 @@ namespace shammodels::sph::modules {
             std::function<Tscal(Tscal)> H_profile,
             std::function<Tscal(Tscal)> rot_profile,
             std::function<Tscal(Tscal)> cs_profile,
-            std::mt19937 eng,
+            std::mt19937_64 eng,
             Tscal init_h_factor);
+
+        std::shared_ptr<ISPHSetupNode> make_generator_from_context(ShamrockCtx &context_other);
 
         std::shared_ptr<ISPHSetupNode> make_combiner_add(
             SetupNodePtr parent1, SetupNodePtr parent2);
@@ -94,6 +96,9 @@ namespace shammodels::sph::modules {
 
         std::shared_ptr<ISPHSetupNode> make_modifier_filter(
             SetupNodePtr parent, std::function<bool(Tvec)> filter);
+
+        std::shared_ptr<ISPHSetupNode> make_modifier_split_part(
+            SetupNodePtr parent, u64 n_split, u64 seed, Tscal h_scaling);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

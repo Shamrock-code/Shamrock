@@ -18,6 +18,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/memory.hpp"
@@ -81,8 +82,13 @@ class PatchDataField {
 
     std::string field_name;
 
-    u32 nvar;    // number of variable per object
-    u32 obj_cnt; // number of contained object
+    u32 nvar; // number of variable per object
+
+    inline void check_nvar() const {
+        if (nvar == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>("nvar is 0 is not allowed");
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors
@@ -91,13 +97,12 @@ class PatchDataField {
     public:
     inline PatchDataField(PatchDataField &&other) noexcept
         : buf(std::move(other.buf)), field_name(std::move(other.field_name)),
-          nvar(std::move(other.nvar)), obj_cnt(std::move(other.obj_cnt)) {} // move constructor
+          nvar(std::move(other.nvar)) {} // move constructor
 
     inline PatchDataField &operator=(PatchDataField &&other) noexcept {
         buf        = std::move(other.buf);
         field_name = std::move(other.field_name);
         nvar       = std::move(other.nvar);
-        obj_cnt    = std::move(other.obj_cnt);
 
         return *this;
     } // move assignment
@@ -107,27 +112,33 @@ class PatchDataField {
     using Field_type = T;
 
     inline PatchDataField(std::string name, u32 nvar)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(0),
-          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {};
+        : field_name(std::move(name)), nvar(nvar),
+          buf(0, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(std::string name, u32 nvar, u32 obj_cnt)
-        : field_name(std::move(name)), nvar(nvar), obj_cnt(obj_cnt),
-          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {};
+        : field_name(std::move(name)), nvar(nvar),
+          buf(obj_cnt * nvar, shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    };
 
     inline PatchDataField(const PatchDataField &other)
-        : field_name(other.field_name), nvar(other.nvar), obj_cnt(other.obj_cnt),
-          buf(other.buf.copy()) {}
+        : field_name(other.field_name), nvar(other.nvar), buf(other.buf.copy()) {
+        check_nvar();
+    }
 
-    inline PatchDataField(
-        sham::DeviceBuffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {}
+    inline PatchDataField(sham::DeviceBuffer<T> &&moved_buf, std::string name, u32 nvar)
+        : field_name(name), nvar(nvar), buf(std::forward<sham::DeviceBuffer<T>>(moved_buf)) {
+        check_nvar();
+    }
 
     inline PatchDataField(sycl::buffer<T> &&moved_buf, u32 obj_cnt, std::string name, u32 nvar)
-        : obj_cnt(obj_cnt), field_name(name), nvar(nvar),
-          buf(std::forward<sycl::buffer<T>>(moved_buf),
-              obj_cnt * nvar,
-              shamsys::instance::get_compute_scheduler_ptr()) {}
+        : field_name(name), nvar(nvar), buf(std::forward<sycl::buffer<T>>(moved_buf),
+                                            obj_cnt * nvar,
+                                            shamsys::instance::get_compute_scheduler_ptr()) {
+        check_nvar();
+    }
 
     PatchDataField &operator=(const PatchDataField &other) = delete;
 
@@ -161,7 +172,16 @@ class PatchDataField {
 
     [[nodiscard]] inline const u32 &get_nvar() const { return nvar; }
 
-    [[nodiscard]] inline const u32 &get_obj_cnt() const { return obj_cnt; }
+    [[nodiscard]] inline u32 get_obj_cnt() const {
+        size_t sz = buf.get_size();
+        if (sz % nvar != 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "the size of the buffer ({}) is not a multiple of the number of variables ({})",
+                sz,
+                nvar));
+        }
+        return shambase::narrow_or_throw<u32>(sz / nvar);
+    }
 
     /**
      * @brief Get the number of values stored in the field.
@@ -172,7 +192,9 @@ class PatchDataField {
      * @return u32 the total number of values of the field, which is the product of the number of
      * objects and the number of variables per object.
      */
-    [[nodiscard]] inline u32 get_val_cnt() const { return get_obj_cnt() * get_nvar(); }
+    [[nodiscard]] inline u32 get_val_cnt() const {
+        return shambase::narrow_or_throw<u32>(buf.get_size());
+    }
 
     [[nodiscard]] inline const std::string &get_name() const { return field_name; }
 
@@ -575,37 +597,31 @@ class PatchDataField {
 // TODO add overflow check
 template<class T>
 inline void PatchDataField<T>::resize(u32 new_obj_cnt) {
-
-    u32 new_size = new_obj_cnt * nvar;
-    // field_data.resize(new_size);
-
-    buf.resize(new_size);
-
-    obj_cnt = new_obj_cnt;
+    buf.resize(shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar)));
 }
 
 template<class T>
 inline void PatchDataField<T>::reserve(u32 new_obj_cnt) {
 
-    u32 add_cnt = new_obj_cnt * nvar;
+    u32 add_cnt = shambase::narrow_or_throw<u32>(u64(new_obj_cnt) * u64(nvar));
     buf.reserve(add_cnt);
 }
 
 template<class T>
 inline void PatchDataField<T>::expand(u32 obj_to_add) {
-    resize(obj_cnt + obj_to_add);
+    resize(get_obj_cnt() + obj_to_add);
 }
 
 template<class T>
 inline void PatchDataField<T>::shrink(u32 obj_to_rem) {
 
-    if (obj_to_rem > obj_cnt) {
+    if (obj_to_rem > get_obj_cnt()) {
 
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "impossible to remove more object than there is in the patchdata field");
     }
 
-    resize(obj_cnt - obj_to_rem);
+    resize(get_obj_cnt() - obj_to_rem);
 }
 
 template<class T>

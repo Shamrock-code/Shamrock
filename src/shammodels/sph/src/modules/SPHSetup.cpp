@@ -29,6 +29,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
+#include "shammodels/sph/modules/setup/GeneratorFromOtherContext.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeCubic.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
@@ -36,6 +37,7 @@
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
+#include "shammodels/sph/modules/setup/ModifierSplitPart.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -65,7 +67,7 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         std::function<Tscal(Tscal)> H_profile,
         std::function<Tscal(Tscal)> rot_profile,
         std::function<Tscal(Tscal)> cs_profile,
-        std::mt19937 eng,
+        std::mt19937_64 eng,
         Tscal init_h_factor) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
         context,
@@ -80,6 +82,13 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         cs_profile,
         eng,
         init_h_factor));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_from_context(ShamrockCtx &context_other) {
+    return std::shared_ptr<ISPHSetupNode>(
+        new GeneratorFromOtherContext<Tvec>(context, context_other));
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -532,6 +541,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     f64 total_time_rank_getter = 0;
     f64 max_time_rank_getter   = 0;
 
+    shamalgs::collective::DDSCommCache comm_cache;
     u32 step_count = 0;
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
@@ -693,7 +703,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
                 return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-            });
+            },
+            comm_cache);
 
         // insert the data into the data to be inserted
         recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
@@ -877,6 +888,14 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierFilter<Tvec, SPHKernel>(context, parent, filter));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_split_part(
+        SetupNodePtr parent, u64 n_split, u64 seed, Tscal h_scaling) {
+    return std::shared_ptr<ISPHSetupNode>(
+        new ModifierSplitPart<Tvec>(context, parent, n_split, seed, h_scaling));
 }
 
 using namespace shammath;

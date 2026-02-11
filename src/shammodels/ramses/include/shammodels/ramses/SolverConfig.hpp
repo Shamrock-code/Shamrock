@@ -126,12 +126,55 @@ namespace shammodels::basegodunov {
             Tscal crit_mass;
         };
 
-        using mode = std::variant<None, DensityBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        struct SecondDerivativeBased {
+            Tscal crit_refine;
+            Tscal crit_coarsen;
+        };
+
+        struct SlopeBased {
+            Tscal smooth_detector_threshold;
+        };
+
+        struct ShocksBased {
+            Tscal pressure_threshold;
+            Tscal energy_threshold;
+        };
+
+        struct ShearBased {
+            Tscal epsilon_shear;
+        };
+
+        using mode = std::variant<
+            None,
+            DensityBased,
+            PseudoGradientBased,
+            SecondDerivativeBased,
+            SlopeBased,
+            ShocksBased,
+            ShearBased>;
 
         mode config = None{};
 
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
+        void set_refine_second_derivative_based(Tscal crit_refine, Tscal crit_coarsen) {
+            config = SecondDerivativeBased{crit_refine, crit_coarsen};
+        }
+        void set_refine_slope_based(Tscal smooth_detector_threshold) {
+            config = SlopeBased{smooth_detector_threshold};
+        }
+        void set_refine_shocks_based(Tscal pressure_threshold, Tscal energy_threshold) {
+            config = ShocksBased{pressure_threshold, energy_threshold};
+        }
+        void set_refine_shear_based(Tscal epsilon_shear) { config = ShearBased{epsilon_shear}; }
     };
 
     struct BCConfig {

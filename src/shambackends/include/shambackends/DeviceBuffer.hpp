@@ -84,7 +84,7 @@ namespace sham {
                 = shambase::narrow_or_throw<i32>(std::min<size_t>(max_copy_len, count - i));
             sycl::event e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 cgh.parallel_for(sycl::range<1>(copy_len), [dest, i, fct](sycl::item<1> gid) {
-                    dest[i + gid.get_linear_id()] = fct(gid.get_linear_id());
+                    dest[i + gid.get_linear_id()] = fct(i + gid.get_linear_id());
                 });
             });
             events.add_event(e);

@@ -12,14 +12,12 @@
 /**
  * @file NodeMacro.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
-    
- * @brief A macro to simplify node edge declarations and definitions.  
+
+ * @brief A macro to simplify node edge declarations and definitions.
  * It allows to declare read-only and read-write edges in a concise way,
  * and to set and get them easily.
  *
  */
-
-
 
 #define DECL_RO(type, name) const type &name;
 #define DECL_RW(type, name) type & name;

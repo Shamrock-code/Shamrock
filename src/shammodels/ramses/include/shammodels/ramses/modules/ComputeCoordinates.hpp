@@ -10,35 +10,44 @@
 #pragma once
 
 /**
- * @file ComputeCoordinates.cpp
+ * @file ComputeCoordinates.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Adnan-Ali Ahmad (adnan-ali.ahmad@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
-    
+
  * @brief Computes the coordinates of each cell
  *
  */
 
 #include "shambackends/vec.hpp"
+#include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/NodeMacro.hpp"
+#include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-#define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                                                                                 \
-    /* inputs */                                                                                                                                             \
-    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)    /* number of blocks per patch for all patches on the current MPI process*/                           \
-    X_RO(shamrock::solvergraph::Field<Tscal>, spans_block_cell_sizes)  /* sizes of the cells within each block for all patches on the current MPI process*/  \
-    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes) /* bounding boxes of the patches  */                                     \
-    X_RO(shamrock::solvergraph::Field<Tvec>, spans_cell0block_aabb_lower)   /* coordinates of the lower left corner of each block */                         \
-                                                                                                                                                             \
-    /* outputs */                                                                                                                                            \
-    X_RW(shamrock::solvergraph::Field<Tvec>, spans_coordinates)   /* center coordinates of each cell */  
-
-
+#define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                       \
+    /* inputs */                                                                                   \
+    X_RO(                                                                                          \
+        shamrock::solvergraph::Indexes<u32>,                                                       \
+        sizes) /* number of blocks per patch for all patches on the current MPI process*/          \
+    X_RO(                                                                                          \
+        shamrock::solvergraph::Field<Tscal>,                                                       \
+        spans_block_cell_sizes) /* sizes of the cells within each block for all patches on the     \
+                                   current MPI process*/                                           \
+    X_RO(                                                                                          \
+        shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>,                              \
+        patch_boxes) /* bounding boxes of the patches  */                                          \
+    X_RO(                                                                                          \
+        shamrock::solvergraph::Field<Tvec>,                                                        \
+        spans_cell0block_aabb_lower) /* coordinates of the lower left corner of each block */      \
+                                                                                                   \
+    /* outputs */                                                                                  \
+    X_RW(                                                                                          \
+        shamrock::solvergraph::Field<Tvec>,                                                        \
+        spans_coordinates) /* center coordinates of each cell */
 
 namespace shammodels::basegodunov::modules {
 
@@ -50,8 +59,8 @@ namespace shammodels::basegodunov::modules {
         Tscal grid_coord_to_pos_fact;
 
         public:
-        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact) :
-            block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
+        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact)
+            : block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
         EXPAND_NODE_EDGES(NODE_COMPUTE_COORDINATES)
 

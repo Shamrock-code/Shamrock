@@ -52,12 +52,12 @@ namespace shamrock::amr {
         void check_amr_main_fields() {
 
             bool correct_type = true;
-            correct_type &= sched.pdl().template check_field_type<Tcoord>(0);
-            correct_type &= sched.pdl().template check_field_type<Tcoord>(1);
+            correct_type &= sched.pdl_old().template check_field_type<Tcoord>(0);
+            correct_type &= sched.pdl_old().template check_field_type<Tcoord>(1);
 
             bool correct_names = true;
-            correct_names &= sched.pdl().template get_field<Tcoord>(0).name == "cell_min";
-            correct_names &= sched.pdl().template get_field<Tcoord>(1).name == "cell_max";
+            correct_names &= sched.pdl_old().template get_field<Tcoord>(0).name == "cell_min";
+            correct_names &= sched.pdl_old().template get_field<Tcoord>(1).name == "cell_max";
 
             if (!correct_type || !correct_names) {
                 throw std::runtime_error(
@@ -65,7 +65,7 @@ namespace shamrock::amr {
                     "    0 : cell_min : nvar=1 type : (Coordinate type)\n"
                     "    1 : cell_max : nvar=1 type : (Coordinate type)\n\n"
                     "the current layout is : \n"
-                    + sched.pdl().get_description_str());
+                    + sched.pdl_old().get_description_str());
             }
         }
 
@@ -541,7 +541,7 @@ namespace shamrock::amr {
 
             shambase::check_queue_state(shamsys::instance::get_compute_queue());
 
-            patch::PatchDataLayer pdat(sched.get_layout_ptr());
+            patch::PatchDataLayer pdat(sched.get_layout_ptr_old());
             pdat.resize(cell_tot_count);
 
             shambase::check_queue_state(shamsys::instance::get_compute_queue());

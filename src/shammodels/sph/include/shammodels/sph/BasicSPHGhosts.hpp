@@ -291,7 +291,7 @@ namespace shammodels::sph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             return build_interface_native<shamrock::patch::PatchDataLayer>(
                 builder,
@@ -476,7 +476,7 @@ namespace shammodels::sph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(

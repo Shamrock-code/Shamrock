@@ -110,28 +110,30 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
     }
 
     // Make a patchdata from pos_data
-    PatchDataLayer tmp(sched.get_layout_ptr());
+    PatchDataLayer tmp(sched.get_layout_ptr_old());
     if (!pos_data.empty()) {
         tmp.resize(pos_data.size());
         tmp.fields_raz();
 
         {
-            u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
             sycl::buffer<Tvec> buf(vec_pos.data(), len);
             f.override(buf, len);
         }
 
         {
-            u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
             sycl::buffer<Tvec> buf(vec_vel.data(), len);
             f.override(buf, len);
         }
         {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
             sycl::buffer<Tscal> buf(vec_h.data(), len);
             f.override(buf, len);
         }
@@ -139,7 +141,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
         if (solver_config.is_eos_locally_isothermal()) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("soundspeed"));
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
             sycl::buffer<Tscal> buf(vec_cs.data(), len);
             f.override(buf, len);
         }

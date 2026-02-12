@@ -39,9 +39,9 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierFilter<Tvec, S
 
     ////////////////////////// load data //////////////////////////
     sham::DeviceBuffer<Tvec> &buf_xyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+        = tmp.get_field_buf_ref<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
+        = tmp.get_field_buf_ref<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
 
     std::vector<Tvec> pos = buf_xyz.copy_to_stdvec();
 

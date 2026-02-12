@@ -71,14 +71,14 @@ namespace shamrock::solvergraph {
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layer_layout)
             : ghost_layer_layout(std::move(ghost_layer_layout)) {}
 
-#define NODE_EXCHANGE_GHOST_FIELD_EDGES(X_RO, X_RW)                                                \
+#define NODE_EXCHANGE_GHOST_LAYER_EDGES(X_RO, X_RW)                                                \
     /* input */                                                                                    \
     X_RO(shamrock::solvergraph::ScalarsEdge<u32>, rank_owner)                                      \
     /* output */                                                                                   \
     X_RW(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)
 
-        EXPAND_NODE_EDGES(NODE_EXCHANGE_GHOST_FIELD_EDGES)
-#undef NODE_EXCHANGE_GHOST_FIELD_EDGES
+        EXPAND_NODE_EDGES(NODE_EXCHANGE_GHOST_LAYER_EDGES)
+#undef NODE_EXCHANGE_GHOST_LAYER_EDGES
 
         /**
          * @brief Performs the ghost layer data exchange computation

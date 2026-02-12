@@ -86,6 +86,7 @@ void shammodels::sph::modules::SetWhenMask<T>::_impl_evaluate_internal() {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
+    logger::raw_ln("node infos :", this->print_node_info());
     edges.mask.check_sizes(edges.part_counts.indexes);
     edges.field_to_set.ensure_sizes(edges.part_counts.indexes);
 

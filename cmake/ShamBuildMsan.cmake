@@ -7,7 +7,7 @@
 ##
 ## -------------------------------------------------------
 
-set(asan_flags "-O1 -g -fsanitize=memory -fno-omit-frame-pointer")
+set(msan_flags "-O1 -g -fsanitize=memory -fno-omit-frame-pointer")
 
 set(CMAKE_C_FLAGS_MSAN "${msan_flags}")
 set(CMAKE_CXX_FLAGS_MSAN "${msan_flags}")

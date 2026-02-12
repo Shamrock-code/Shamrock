@@ -202,8 +202,9 @@ namespace shammodels::sph {
 
                         for (u32 i = 0; i < f.get_obj_cnt(); i++) {
                             Tvec r = acc_xyz[i];
-
+                            auto valcheck= pos_to_val(r);
                             acc[i] = pos_to_val(r);
+                            logger::raw_ln(valcheck);
                         }
 
                         buf.copy_from_stdvec(acc);

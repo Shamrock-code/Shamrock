@@ -103,7 +103,7 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("u_mhd", 1);
         }
         if (true) { // has_field_disable_mask()
-            pdl.add_field<Tscal>("ghost_mask", 1);
+            pdl.add_field<u32>("ghost_mask", 1);
         }
     }
 

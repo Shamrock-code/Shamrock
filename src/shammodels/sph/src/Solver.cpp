@@ -1562,9 +1562,9 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_ghost_particles() {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
     SolverGraph &solver_graph = storage.solver_graph;
-    //shambase::get_check_ref(storage.solver_sequence).evaluate();
-    
-    //auto xyz_edge            = solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("xyz");
+    // shambase::get_check_ref(storage.solver_sequence).evaluate();
+
+    // auto xyz_edge            = solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("xyz");
     auto &xyz_edge = storage.positions_with_ghosts;
 
     // get number of particle per patch: array of sizes of each patch
@@ -2077,14 +2077,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         logger::raw_ln("value of has_wallas: ", has_walls);
         if (has_walls) {
             logger::raw_ln("@@@@@@@@@@@@ in wall disabling routine @@@@@@@@@@@@@@@");
-            
+
             using namespace shamrock::solvergraph;
             SolverGraph &solver_graph = storage.solver_graph;
-            
 
             auto axyz_edge
                 = solver_graph.get_edge_ptr<shamrock::solvergraph::IFieldSpan<Tvec>>("axyz");
-            auto du_edge   = solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint");
+            auto du_edge = solver_graph.get_edge_ptr<FieldRefs<Tscal>>("duint");
 
             auto mask_edge = solver_graph.get_edge_ptr<FieldRefs<u32>>("ghost_mask");
 
@@ -2093,13 +2092,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
             });
             auto &thread_counts = sizes->indexes;
-            logger::raw_ln("got sizes"); 
+            logger::raw_ln("got sizes");
             axyz_edge->check_sizes(thread_counts);
             logger::raw_ln("checked sizes axyz");
             du_edge->check_sizes(thread_counts);
             logger::raw_ln("checked sizes du");
             mask_edge->check_sizes(thread_counts);
-            
+
             logger::raw_ln("checked sizes");
             modules::SetWhenMask<Tscal> set_omega_mask{0};
             set_omega_mask.set_edges(storage.part_counts, mask_edge, du_edge);

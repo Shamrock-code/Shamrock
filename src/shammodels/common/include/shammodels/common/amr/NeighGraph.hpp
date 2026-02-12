@@ -103,7 +103,6 @@ namespace shammodels::basegodunov::modules {
 
         /**
          * @brief Complete event state based on sham::EventList
-         *
          */
         void complete_event_state(sham::EventList &e) {
             node_link_offset.complete_event_state(e);

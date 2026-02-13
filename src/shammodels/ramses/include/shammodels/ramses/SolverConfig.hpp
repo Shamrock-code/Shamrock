@@ -179,8 +179,37 @@ struct shammodels::basegodunov::SolverConfig {
 
     inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
-    RiemmanSolverMode riemman_config  = HLL;
-    SlopeMode slope_config            = VanLeer_sym;
+    RiemmanSolverMode riemman_config = HLL;
+    SlopeMode slope_config           = VanLeer_sym;
+
+    inline static const std::map<std::string, SlopeMode> slope_mode_string_map = {
+        {"none", None},
+        {"vanleer_f", VanLeer_f},
+        {"vanleer_std", VanLeer_std},
+        {"vanleer_sym", VanLeer_sym},
+        {"minmod", Minmod},
+    };
+
+    inline static const std::vector<std::string> get_valid_slope_modes() {
+        std::vector<std::string> valid_slope_modes;
+        for (const auto &[key, value] : slope_mode_string_map) {
+            valid_slope_modes.push_back(key);
+        }
+        return valid_slope_modes;
+    }
+
+    inline void set_slope_limiter(std::string slope_mode) {
+        auto it = slope_mode_string_map.find(slope_mode);
+        if (it != slope_mode_string_map.end()) {
+            slope_config = it->second;
+        } else {
+            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                "Unsupported slope mode: {} (expected one of: {})",
+                slope_mode,
+                get_valid_slope_modes()));
+        }
+    }
+
     bool face_half_time_interpolation = true;
 
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }

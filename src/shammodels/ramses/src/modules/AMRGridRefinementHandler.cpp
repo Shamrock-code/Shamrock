@@ -779,19 +779,20 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         gen_refine_block_changes<RefineCritBlock>(
             refine_flags, derefine_flags, dxfact, cfg->crit_mass);
 
+        ///// enforce 2:1 for refinement ///////
+        enforce_two_to_one_for_refinement(std::move(refine_flags), refine_list);
+
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
         bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
-
-        ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_for_refinement(std::move(refine_flags), refine_list);
 
         //////// apply derefine ////////
         // Note that this will perform the merge then remove the old blocks
         // This is ok to call straight after the refine without edditing the index list in
         // derefine_list since no permutations were applied in internal_refine_grid and no cells can
         // be both refined and derefined in the same pass
-        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+        bool change_derefine = false;
+        //  internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
     }

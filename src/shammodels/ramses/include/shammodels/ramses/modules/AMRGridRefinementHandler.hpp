@@ -74,8 +74,8 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<OptIndexList> &refine_list,
-            shambase::DistributedData<OptIndexList> &derefine_list,
+            shambase::DistributedData<sycl::buffer<u32>> &refine_flags,
+            shambase::DistributedData<sycl::buffer<u32>> &derefine_flags,
             T &&...args);
 
         template<class UserAcc>

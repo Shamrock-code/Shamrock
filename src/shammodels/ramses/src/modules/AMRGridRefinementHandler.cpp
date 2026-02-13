@@ -14,24 +14,26 @@
  *
  */
 
-#include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
+#include "shambase/DistributedData.hpp"
+#include "shambase/aliases_int.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
+#include <shambackends/sycl.hpp>
+#include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     gen_refine_block_changes(
-        shambase::DistributedData<OptIndexList> &refine_list,
-        shambase::DistributedData<OptIndexList> &derefine_list,
+        shambase::DistributedData<sycl::buffer<u32>> &refn_flags,
+        shambase::DistributedData<sycl::buffer<u32>> &derfn_flags,
         T &&...args) {
 
     using namespace shamrock::patch;
-
-    u64 tot_refine   = 0;
-    u64 tot_derefine = 0;
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -73,81 +75,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             uacc.finalize(resulting_events, id_patch, cur_p, pdat, args...);
         }
-        sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
-        sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
-        sham::EventList depends_list;
-        auto acc_min = buf_cell_min.get_read_access(depends_list);
-        auto acc_max = buf_cell_max.get_read_access(depends_list);
-
-        // keep only derefine flags on only if the eight cells want to merge and if they can
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor acc_merge_flag{derefine_flags, cgh, sycl::read_write};
-
-            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
-                u32 id = gid.get_linear_id();
-
-                std::array<BlockCoord, split_count> blocks;
-                bool do_merge = true;
-
-                // This avoid the case where we are in the last block of the buffer to avoid the
-                // out-of-bound read
-                if (id + split_count <= obj_cnt) {
-                    bool all_want_to_merge = true;
-
-                    for (u32 lid = 0; lid < split_count; lid++) {
-                        blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
-                    }
-
-                    do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
-
-                } else {
-                    do_merge = false;
-                }
-
-                acc_merge_flag[gid] = do_merge;
-            });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // refinement
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // perform stream compactions on the refinement flags
-        auto [buf_refine, len_refine]
-            = shamalgs::numeric::stream_compact(q.q, refine_flags, obj_cnt);
-
-        shamlog_debug_ln("AMRGrid", "patch ", id_patch, "refine block count = ", len_refine);
-
-        tot_refine += len_refine;
-
-        // add the results to the map
-        refine_list.add_obj(id_patch, OptIndexList{std::move(buf_refine), len_refine});
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // derefinement
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // perform stream compactions on the derefinement flags
-        auto [buf_derefine, len_derefine]
-            = shamalgs::numeric::stream_compact(q.q, derefine_flags, obj_cnt);
-
-        shamlog_debug_ln("AMRGrid", "patch ", id_patch, "merge block count = ", len_derefine);
-
-        tot_derefine += len_derefine;
-
-        // add the results to the map
-        derefine_list.add_obj(id_patch, OptIndexList{std::move(buf_derefine), len_derefine});
+        refn_flags.add_obj(id_patch, std::move(refine_flags));
+        derfn_flags.add_obj(id_patch, std::move(derefine_flags));
     });
-
-    logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks were refined");
-    logger::info_ln(
-        "AMRGrid", "on this process", tot_derefine * split_count, "blocks were derefined");
 }
+
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
@@ -620,11 +553,13 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
 
         // get refine and derefine list
+        shambase::DistributedData<sycl::buffer<u32>> refine_flags;
+        shambase::DistributedData<sycl::buffer<u32>> derefine_flags;
         shambase::DistributedData<OptIndexList> refine_list;
         shambase::DistributedData<OptIndexList> derefine_list;
 
         gen_refine_block_changes<RefineCritBlock>(
-            refine_list, derefine_list, dxfact, cfg->crit_mass);
+            refine_flags, derefine_flags, dxfact, cfg->crit_mass);
 
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata

@@ -165,115 +165,26 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     auto cur_block_level = acc_amr_levels[block_id];
 
                     if (cur_ref_flag) {
-                        /////////////////////////////////////////////////////////////
-                        ///                             xp
-                        ////////////////////////////////////////////////////////////
-                        block_graph_xp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
+                        auto enforce_2_to_1_rule = [&](u32 neigh_block_id) {
+                            if (0 <= neigh_block_id && neigh_block_id < obj_cnt) {
+                                auto neigh_block_level = acc_amr_levels[neigh_block_id];
+                                if (cur_block_level > neigh_block_level) {
+                                    sycl::atomic_ref<
+                                        u32,
+                                        sycl::memory_order::relaxed,
+                                        sycl::memory_scope::device>
+                                        atomic_flag(acc_ref_flags[neigh_block_id]);
+                                    atomic_flag.store(1);
+                                }
                             }
-                        });
+                        };
 
-                        /////////////////////////////////////////////////////////////
-                        ///                             xm
-                        ////////////////////////////////////////////////////////////
-                        block_graph_xm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
-                            }
-                        });
-
-                        /////////////////////////////////////////////////////////////
-                        ///                             yp
-                        ////////////////////////////////////////////////////////////
-                        block_graph_yp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
-                            }
-                        });
-                        /////////////////////////////////////////////////////////////
-                        ///                             ym
-                        ////////////////////////////////////////////////////////////
-                        block_graph_ym.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
-                            }
-                        });
-                        /////////////////////////////////////////////////////////////
-                        ///                             zp
-                        ////////////////////////////////////////////////////////////
-                        block_graph_zp.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
-                            }
-                        });
-                        /////////////////////////////////////////////////////////////
-                        ///                             zm
-                        ////////////////////////////////////////////////////////////
-                        block_graph_zm.for_each_object_link(block_id, [&](u32 neigh_block_id) {
-                            // get refinement flag and amr level of the neighborh block
-                            u32 neigh_ref_flag     = acc_ref_flags[neigh_block_id];
-                            auto neigh_block_level = acc_amr_levels[neigh_block_id];
-
-                            if ((0 <= neigh_block_id) && (neigh_block_id < obj_cnt)
-                                && (cur_block_level > neigh_block_level)) {
-                                sycl::atomic_ref<
-                                    u32,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_flag(acc_ref_flags[neigh_block_id]);
-                                atomic_flag.store(1);
-                            }
-                        });
+                        block_graph_xp.for_each_object_link(block_id, enforce_2_to_1_rule);
+                        block_graph_xm.for_each_object_link(block_id, enforce_2_to_1_rule);
+                        block_graph_yp.for_each_object_link(block_id, enforce_2_to_1_rule);
+                        block_graph_ym.for_each_object_link(block_id, enforce_2_to_1_rule);
+                        block_graph_zp.for_each_object_link(block_id, enforce_2_to_1_rule);
+                        block_graph_zm.for_each_object_link(block_id, enforce_2_to_1_rule);
                     }
                 });
             });

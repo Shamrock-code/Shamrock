@@ -79,11 +79,17 @@ namespace shammodels::basegodunov::modules {
             T &&...args);
 
         /**
-         * @brief
+         * @brief Enforces the 2:1 refinement ratio for blocks.
+         *
+         * This function iterates through blocks marked for refinement and ensures that
+         * adjacent, coarser blocks are also marked for refinement to maintain the 2:1
+         * grid balance. This is done iteratively to propagate the refinement as needed.
+         * @param refine_flags refinement flags
+         * @param refine_list        refinement maps
          */
         void enforce_two_to_one_for_refinement(
             shambase::DistributedData<sycl::buffer<u32>> &&refine_flags,
-            shambase::DistributedData<OptIndexList> &refine_idx_list);
+            shambase::DistributedData<OptIndexList> &refine_list);
 
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);

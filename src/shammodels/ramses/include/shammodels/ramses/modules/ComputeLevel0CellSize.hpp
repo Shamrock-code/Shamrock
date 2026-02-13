@@ -88,13 +88,8 @@ namespace shammodels::basegodunov::modules {
                     edges.spans_block_max.get_field(id_patch).get_buf().complete_event_state(e);
                     block_size_buf.complete_event_state(e);
 
-                    auto patch_min = shamalgs::primitives::min(
-                        dev_sched, block_size_buf, 0, pdat.get_obj_cnt());
                     auto patch_max = shamalgs::primitives::max(
                         dev_sched, block_size_buf, 0, pdat.get_obj_cnt());
-
-                    // shammath::AABB<TgridVec> patch_box = edges.patch_boxes.values.get(id_patch);
-                    // return patch_box.delt();
                     return patch_max;
                 });
         }

@@ -16,6 +16,8 @@
 
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
 #include <stdexcept>
@@ -63,6 +65,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 bin_count(block_count_per_level[cur_level]);
             bin_count++;
         });
+    // computes offsets for each level
+    sham::DeviceBuffer<u32> offset_buf
+        = shamalgs::numeric::scan_exclusive(sched, block_count_per_level, nb_levels);
 
     // // build block index map such that from the left to right
     // // amr_levl[reordered_blocks] ===> L_min,L_min,L_min...| L1,L1,L1...| .... |L_max L_max L_max
@@ -72,33 +77,26 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     auto &q2 = shambase::get_check_ref(sched).get_queue();
     sham::kernel_call(
         q2,
-        sham::MultiRef{amr_levels, block_count_per_level},
+        sham::MultiRef{amr_levels, block_count_per_level, offset_buf},
         sham::MultiRef{idx_counter_per_lev, block_reordered_indx_map},
         len,
         [level_min](
             u32 i,
             const TgridUint *__restrict amr_levels,
             const u32 *__restrict block_cnt_per_lev,
+            const u32 *__restrict offsets,
             u32 *__restrict idx_counter_per_lev,
             u32 *__restrict reordered_blocks) {
             auto amr_lev = amr_levels[i];
             sycl::atomic_ref<
                 u32,
                 sycl::memory_order::relaxed,
-                sycl::memory_scope::system,
+                sycl::memory_scope::device,
                 sycl::access::address_space::global_space>
                 atomic_cnt_idx_per_lev(idx_counter_per_lev[amr_lev]);
             u32 old_loc_pos = atomic_cnt_idx_per_lev.fetch_add(1);
-            u32 offset;
-            if (amr_lev == level_min)
-                offset = 0;
-            else {
-                offset = 0;
-                for (auto k = level_min; k < amr_lev; k++) {
-                    offset += block_cnt_per_lev[k];
-                }
-            }
-            u32 glob_pos_idx               = offset + old_loc_pos;
+
+            u32 glob_pos_idx               = offsets[i] + old_loc_pos;
             reordered_blocks[glob_pos_idx] = i;
         });
 }

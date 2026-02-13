@@ -78,6 +78,13 @@ namespace shammodels::basegodunov::modules {
             shambase::DistributedData<sycl::buffer<u32>> &derefine_flags,
             T &&...args);
 
+        /**
+         * @brief
+         */
+        void enforce_two_to_one_for_refinement(
+            shambase::DistributedData<sycl::buffer<u32>> &&refine_flags,
+            shambase::DistributedData<OptIndexList> &refine_idx_list);
+
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
 

@@ -89,9 +89,10 @@ message( STATUS "CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
 
 include(ShamBuildAsan)
 include(ShamBuildUBsan)
+include(ShamBuildMsan)
 include(ShamBuildCoverage)
 
-set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "COVERAGE")
+set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "MSAN" "COVERAGE")
 if(NOT CMAKE_BUILD_TYPE)
     #set default build to release
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)

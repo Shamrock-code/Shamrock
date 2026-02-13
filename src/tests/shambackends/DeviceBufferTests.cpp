@@ -186,6 +186,75 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(exception)", DeviceBuffer_fi
     REQUIRE_EXCEPTION_THROW(buffer.fill(5, {15, 20}), std::invalid_argument);
 }
 
+TestStart(Unittest, "shambackends/DeviceBuffer:fill_lambda", DeviceBuffer_fill_lambda1, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create a device buffer with size 10
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+
+    // Fill the buffer with i^2
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 10);
+
+        // Check that the buffer is filled with the correct value (i^2)
+        for (int i = 0; i < 10; i++) {
+            REQUIRE_EQUAL(b[i], i * i);
+        }
+    }
+}
+
+TestStart(
+    Unittest,
+    "shambackends/DeviceBuffer:fill_lambda(different size)",
+    DeviceBuffer_fill_lambda2,
+    1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create a device buffer with size 20
+    sham::DeviceBuffer<int> buffer(20, dev_sched);
+
+    // Fill the buffer with i^2
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 20);
+
+        // Check that the buffer is filled with the correct value (i^2)
+        for (int i = 0; i < 20; i++) {
+            REQUIRE_EQUAL(b[i], i * i);
+        }
+    }
+}
+
+TestStart(
+    Unittest, "shambackends/DeviceBuffer:fill_lambda(empty buffer)", DeviceBuffer_fill_lambda3, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create an empty device buffer
+    sham::DeviceBuffer<int> buffer(0, dev_sched);
+
+    // Fill the buffer with i^2 (should handle empty buffer gracefully)
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 0);
+    }
+}
+
 TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) {
 
     std::shared_ptr<sham::DeviceScheduler> dev_sched

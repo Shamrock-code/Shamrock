@@ -94,7 +94,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 sycl::memory_scope::device,
                 sycl::access::address_space::global_space>
                 atomic_cnt_idx_per_lev(idx_counter_per_lev[amr_lev]);
-            u32 old_loc_pos = atomic_cnt_idx_per_lev.fetch_add(1);
+            u32 old_loc_pos = atomic_cnt_idx_per_lev.fetch_add(static_cast<u32>(1));
 
             u32 glob_pos_idx               = offsets[i] + old_loc_pos;
             reordered_blocks[glob_pos_idx] = i;

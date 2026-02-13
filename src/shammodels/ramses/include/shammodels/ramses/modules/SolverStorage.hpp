@@ -60,6 +60,7 @@ namespace shammodels::basegodunov {
         using Tscal              = shambase::VecComponent<Tvec>;
         using Tgridscal          = shambase::VecComponent<TgridVec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
 
         using RTree = RadixTree<Tmorton, TgridVec>;
 
@@ -140,6 +141,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<shammath::AABB<TgridVec>>> sim_box_edge;
 
         std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size;
+        std::shared_ptr<shamrock::solvergraph::Field<TgridUint>> amr_block_levels;
 
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xp;
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tscal, 2>>> rho_face_xm;

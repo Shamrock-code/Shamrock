@@ -211,6 +211,142 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    check_geometrical_validity_for_derefinement(
+        shambase::DistributedData<sycl::buffer<u32>> &&derefine_flags,
+        shambase::DistributedData<sycl::buffer<u32>> &&refine_flags) {
+
+    using namespace shamrock::patch;
+    using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u64 id_patch         = cur_p.id_patch;
+
+        sycl::buffer<u32> &derfn_flags = derefine_flags.get(id_patch);
+        sycl::buffer<u32> &refn_flags  = refine_flags.get(id_patch);
+
+        u32 obj_cnt = pdat.get_obj_cnt();
+
+        // get the current buffer of block levels in the current patch
+        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
+            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
+
+        sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
+        sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+
+        sham::EventList depends_list;
+        auto acc_min        = buf_cell_min.get_read_access(depends_list);
+        auto acc_max        = buf_cell_max.get_read_access(depends_list);
+        auto acc_amr_levels = buf_amr_block_levels.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            sycl::accessor acc_merge_flag{derfn_flags, cgh, sycl::read_write};
+            sycl::accessor acc_refine_flag{refn_flags, cgh, sycl::read_only};
+
+            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                u32 id = gid.get_linear_id();
+
+                std::array<BlockCoord, split_count> blocks;
+                bool do_merge       = true;
+                bool all_same_level = true;
+
+                // This avoid the case where we are in the last block of the buffer to
+                // avoid the out-of-bound read
+                if (id + split_count <= obj_cnt) {
+                    bool all_want_to_merge = true;
+
+                    /** get the local coordinate of a given block
+                     */
+                    auto get_coord = [](u32 i) -> std::array<u32, dim> {
+                        constexpr u32 NsideBlockPow = 1;
+                        constexpr u32 Nside         = 1U << NsideBlockPow;
+                        constexpr u32 side_size     = Nside;
+                        constexpr u32 block_size    = shambase::pow_constexpr<dim>(Nside);
+
+                        if constexpr (dim == 3) {
+                            const u32 tmp = i >> NsideBlockPow;
+                            // This line is why derefinement never happens with th old
+                            // implementation. return {i % Nside, (tmp) % Nside, (tmp ) >>
+                            // NsideBlockPow};
+
+                            // the following fix is what we should do. Is it only here should fix
+                            // this ?
+                            return {(tmp) >> NsideBlockPow, (tmp) % Nside, i % Nside};
+                        }
+                    };
+
+                    auto get_split
+                        = [=](BlockCoord target_block) -> std::array<BlockCoord, split_count> {
+                        std::array<BlockCoord, split_count> ret;
+                        auto bmin                   = target_block.bmin;
+                        auto bmax                   = target_block.bmax;
+                        auto split                  = bmin + (bmax - bmin) / 2;
+                        std::array<TgridVec, 3> szs = {bmin, split, bmax};
+                        for (u32 i = 0; i < split_count; i++) {
+                            auto [lx, ly, lz] = get_coord(i);
+
+                            ret[i].bmin = TgridVec{szs[lx].x(), szs[ly].y(), szs[lz].z()};
+                            ret[i].bmax
+                                = TgridVec{szs[lx + 1].x(), szs[ly + 1].y(), szs[lz + 1].z()};
+                        }
+
+                        return ret;
+                    };
+
+                    // check if all siblings want to merge and if the supposed sibling are at the
+                    // same level (for ghost blocks)
+                    for (u32 b_lid = 0; b_lid < split_count; b_lid++) {
+                        blocks[b_lid]     = BlockCoord{acc_min[id + b_lid], acc_max[id + b_lid]};
+                        all_want_to_merge = all_want_to_merge && acc_merge_flag[id + b_lid];
+                        all_same_level
+                            = all_same_level && (acc_amr_levels[id] == acc_amr_levels[id + b_lid]);
+                    }
+
+                    // check if the merge is geometrical valid
+                    BlockCoord merged                            = BlockCoord::get_merge(blocks);
+                    std::array<BlockCoord, split_count> splitted = get_split(merged);
+                    for (u32 lid = 0; lid < split_count; lid++) {
+                        do_merge = do_merge && sham::equals(blocks[lid].bmin, splitted[lid].bmin)
+                                   && sham::equals(blocks[lid].bmax, splitted[lid].bmax);
+                    }
+
+                    // are all siblings want to merge,  mergeable and at same level ?
+                    do_merge = do_merge && all_want_to_merge && all_same_level;
+
+                    // if a block is marked both for refinement and derefinement then the last is
+                    // aborted.
+                    if (acc_refine_flag[id] && do_merge) {
+                        do_merge = false;
+                    }
+
+                } else {
+                    do_merge = false;
+                }
+
+                acc_merge_flag[id] = do_merge;
+            });
+        });
+        buf_cell_min.complete_event_state(e);
+        buf_cell_max.complete_event_state(e);
+        buf_amr_block_levels.complete_event_state(e);
+
+        auto [buf_derefine, len_derefine]
+            = shamalgs::numeric::stream_compact(q.q, derfn_flags, obj_cnt);
+
+        logger::raw_ln(
+            " Count block's flag for derefinement [After geometry validity check and before 2:1 "
+            "check] "
+            "\t : ",
+            "patch id \t",
+            id_patch,
+            "\t",
+            len_derefine,
+            "\n");
+    });
+}
+
+template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list) {
@@ -692,6 +828,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         ///// enforce 2:1 for refinement ///////
         enforce_two_to_one_for_refinement(std::move(refine_flags), refine_list);
+
+        ///// Check geometrical validity for derefinement ///////
+        check_geometrical_validity_for_derefinement(
+            std::move(refine_flags), std::move(derefine_flags));
 
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata

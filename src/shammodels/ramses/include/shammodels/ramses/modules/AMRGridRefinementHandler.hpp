@@ -91,6 +91,24 @@ namespace shammodels::basegodunov::modules {
             shambase::DistributedData<sycl::buffer<u32>> &&refine_flags,
             shambase::DistributedData<OptIndexList> &refine_list);
 
+        /**
+         * @brief Check geometrical validity for derefinement
+         *
+         * This function iterates over all blocks flagged for derefinement and checks
+         * whether all of their siblings also request derefinement, and if the merge operation can
+         * be done. If these conditions are satisfied, the merge (coarsening) operation is
+         * considered valid.
+         *
+         * To avoid duplicate operations, only the first block among each group of
+         * eight siblings is retained when all validity checks succeed.
+         *
+         * @param derefine_flags  Derefinement flags
+         * @param refine_flags    Refinement flags
+         */
+        void check_geometrical_validity_for_derefinement(
+            shambase::DistributedData<sycl::buffer<u32>> &&derefine_flags,
+            shambase::DistributedData<sycl::buffer<u32>> &&refine_flags);
+
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
 

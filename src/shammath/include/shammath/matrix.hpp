@@ -123,7 +123,7 @@ namespace shammath {
     };
 
     /**
-     * @brief Matrix class based on std::vector storage and mdspan
+     * @brief Matrix class with runtime size based on std::vector storage and mdspan
      * @tparam T the type of the matrix entries
      */
     template<class T>
@@ -160,7 +160,6 @@ namespace shammath {
 
         /// Addition operator for matrices
         inline mat_d &operator+=(const mat_d &other) {
-#pragma unroll
             for (size_t i = 0; i < get_mdspan().extent(0) * get_mdspan().extent(1); i++) {
                 data[i] += other.data[i];
             }
@@ -183,7 +182,7 @@ namespace shammath {
     };
 
     /**
-     * @brief Vector class based on std::vector storage and mdspan
+     * @brief Vector class with runtime size based on std::vector storage and mdspan
      * @tparam T the type of the vector entries
      * @tparam n the number of entries
      */

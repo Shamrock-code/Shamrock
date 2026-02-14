@@ -733,7 +733,7 @@ namespace shammath {
             for (int k = 0; k < i; k++) {
                 sum_ik += L(i, k) * L(i, k);
             }
-            L(i, i) = std::sqrt(M(i, i) - sum_ik);
+            L(i, i) = sycl::sqrt(M(i, i) - sum_ik);
             for (int j = i + 1; j < M.extent(1); j++) {
                 T sum_ikjk = 0.0;
                 for (int k = 0; k < i; k++) {
@@ -746,16 +746,16 @@ namespace shammath {
     }
 
     /**
-* @brief This function solves a system of linear equations with Cholesky decomposition. The
-system must have the form
-\f[
-    Mx = y
-\f]
-where $M$ is a (real) symmetric, definite-positive square matrix.
-* @param M a square symmetric, definite-positive matrix
-* @param y a vector, right hand side of the system
-* @param x the ouput vector to store the solution of the system
-*/
+    * @brief This function solves a system of linear equations with Cholesky decomposition. The
+    system must have the form
+    \f[
+        Mx = y
+    \f]
+    where $M$ is a (real) symmetric, definite-positive square matrix.
+    * @param M a square symmetric, definite-positive matrix
+    * @param y a vector, right hand side of the system
+    * @param x the ouput vector to store the solution of the system
+    */
     template<
         class T,
         class Extents1,

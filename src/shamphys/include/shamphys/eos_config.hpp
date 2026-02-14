@@ -147,6 +147,49 @@ namespace shamphys {
     }
 
     /**
+     * @brief Configuration struct for the Tillotson equation of state
+     *
+     * @tparam Tscal Scalar type
+     *
+     * The equation of state is detailed in EOS_Tillotson
+     */
+    template<class Tscal>
+    struct EOS_Config_Tillotson {
+        Tscal rho0;  ///< Tillotson EoS \f$ \rho_0 \f$ parameter
+        Tscal E0;    ///< Tillotson EoS \f$ E_0 \f$ parameter
+        Tscal A;     ///< Tillotson EoS \f$ A \f$ parameter
+        Tscal B;     ///< Tillotson EoS \f$ B \f$ parameter
+        Tscal a;     ///< Tillotson EoS \f$ a \f$ parameter
+        Tscal b;     ///< Tillotson EoS \f$ b \f$ parameter
+        Tscal alpha; ///< Tillotson EoS \f$\alpha\f$ parameter
+        Tscal beta;  ///< Tillotson EoS \f$\beta\f$ parameter
+        Tscal u_iv;  ///< Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+                     ///< vaporization
+        Tscal u_cv;  ///< Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+        ///< vaporization
+    };
+
+    /**
+     * @brief Equal operator for the EOS_Config_Tillotson struct
+     *
+     * @tparam Tscal Scalar type
+     * @param lhs First EOS_Config_Tillotson struct to compare
+     * @param rhs Second EOS_Config_Tillotson struct to compare
+     *
+     * This function checks if two EOS_Config_Tillotson structs are equal by
+     * comparing their parameters values
+     *
+     * @return true if the two structs have the same parameter values, false otherwise
+     */
+    template<class Tscal>
+    inline bool operator==(
+        const EOS_Config_Tillotson<Tscal> &lhs, const EOS_Config_Tillotson<Tscal> &rhs) {
+        return (lhs.rho0 == rhs.rho0) && (lhs.A == rhs.A) && (lhs.B == rhs.B) && (lhs.a == rhs.a)
+               && (lhs.b == rhs.b) && (lhs.E0 == rhs.E0) && (lhs.alpha == rhs.alpha)
+               && (lhs.beta == rhs.beta) && (lhs.u_iv == rhs.u_iv) && (lhs.u_cv == rhs.u_cv);
+    }
+
+    /**
      * @brief Configuration struct for the locally isothermal equation of state from Lodato Price
      * 2007
      *
@@ -278,8 +321,7 @@ namespace shamphys {
      * @param rhs Second EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 struct to compare
      *
      * This function checks if two EOS_Config_LocallyIsothermalDisc_ExtendedFarris2014 structs are
-     equal by
-     * comparing their cs0, q, r0, and n_sinks values.
+     equal by comparing their cs0, q, r0, and n_sinks values.
 
      * @return true if the two structs have the same cs0, q, r0, and n_sinks values, false otherwise
     */

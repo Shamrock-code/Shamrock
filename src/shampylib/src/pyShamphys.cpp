@@ -470,4 +470,66 @@ Register_pymod(shamphyslibinit) {
         py::kw_only(),
         py::arg("mu_e"),
         py::arg("rho"));
+
+    eos_module.def(
+        "eos_Tillotson",
+        [](f64 rho,
+           f64 u,
+           f64 rho0,
+           f64 E0,
+           f64 A,
+           f64 B,
+           f64 a,
+           f64 b,
+           f64 alpha,
+           f64 beta,
+           f64 u_iv,
+           f64 u_cv) {
+            auto res = shamphys::EOS_Tillotson<f64>::pressure_and_soundspeed(
+                rho, u, rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
+            return std::tuple<f64, f64>{res.pressure, res.soundspeed};
+        },
+        py::kw_only(),
+        py::arg("rho"),
+        py::arg("u"),
+        py::arg("rho0"),
+        py::arg("E0"),
+        py::arg("A"),
+        py::arg("B"),
+        py::arg("a"),
+        py::arg("b"),
+        py::arg("alpha"),
+        py::arg("beta"),
+        py::arg("u_iv"),
+        py::arg("u_cv"));
+
+    eos_module.def(
+        "cold_energy_Tillotson",
+        [](f64 rho,
+           f64 rho0,
+           f64 E0,
+           f64 A,
+           f64 B,
+           f64 a,
+           f64 b,
+           f64 alpha,
+           f64 beta,
+           f64 u_iv,
+           f64 u_cv) {
+            // auto res =
+            return shamphys::EOS_Tillotson<f64>::u_c(rho);
+            // return std::tuple<f64, f64>{res.pressure, res.soundspeed};
+        },
+        py::kw_only(),
+        py::arg("rho"),
+        py::arg("rho0"),
+        py::arg("E0"),
+        py::arg("A"),
+        py::arg("B"),
+        py::arg("a"),
+        py::arg("b"),
+        py::arg("alpha"),
+        py::arg("beta"),
+        py::arg("u_iv"),
+        py::arg("u_cv"));
 }

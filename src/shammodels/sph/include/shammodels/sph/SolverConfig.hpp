@@ -533,6 +533,12 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is a Tillotson equation of state
+    inline bool is_eos_tillotson() {
+        using T = typename EOSConfig::Tillotson;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /**
      * @brief Set the EOS configuration to an isothermal equation of state
      *
@@ -602,6 +608,36 @@ struct shammodels::sph::SolverConfig {
      * @param mu_e The mean molecular weight
      */
     inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
+
+    /**
+     * @brief Set the EOS configuration to a Tillotson equation of state
+     *
+     * @param rho0 Tillotson EoS \f$ \rho_0 \f$ parameter
+     * @param E0 Tillotson EoS \f$ E_0 \f$ parameter
+     * @param A Tillotson EoS \f$ A \f$ parameter
+     * @param B Tillotson EoS \f$ B \f$ parameter
+     * @param a Tillotson EoS \f$ a \f$ parameter
+     * @param b Tillotson EoS \f$ b \f$ parameter
+     * @param alpha Tillotson EoS \f$\alpha\f$ parameter
+     * @param beta Tillotson EoS \f$\beta\f$ parameter
+     * @param u_iv Tillotson EoS \f$ u_{\mathrm{iv}} \f$ parameter: energy of incipient
+     * vaporization
+     * @param u_cv Tillotson EoS \f$ u_{\mathrm{cv}} \f$ parameter: energy of complete
+     * vaporization
+     */
+    inline void set_eos_tillotson(
+        Tscal rho0,
+        Tscal E0,
+        Tscal A,
+        Tscal B,
+        Tscal a,
+        Tscal b,
+        Tscal alpha,
+        Tscal beta,
+        Tscal u_iv,
+        Tscal u_cv) {
+        eos_config.set_tillotson(rho0, E0, A, B, a, b, alpha, beta, u_iv, u_cv);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)

@@ -155,14 +155,14 @@ plt.show()
 
 from matplotlib.animation import FuncAnimation
 
-fig2, ax2 = plt.subplots(figsize=(10, 6))
+fig2, ax2 = plt.subplots()
 ax2.set_xlabel("$x$")
 ax2.set_ylabel("$\\rho$")
 ax2.set_ylim(0.9, 2.1)
 ax2.grid(True, alpha=0.3)
 
 x_positions = np.linspace(0, 1, len(data["minmod_hllc"][0]))
-(line,) = ax2.plot(x_positions, data["minmod_hllc"][0], linewidth=2, color="blue")
+(line,) = ax2.plot(x_positions, data["minmod_hllc"][0])
 ax2.set_title(f"minmod_hllc - t = {0.0:.3f} s")
 
 

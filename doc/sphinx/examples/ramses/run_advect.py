@@ -29,9 +29,7 @@ base = 16
 positions = [(x, 0, 0) for x in np.linspace(0, 1, 256).tolist()[:-1]]
 
 
-def run_advect(
-    sim_prefix: str, slope_limiter: str, riemann_solver: str, only_last_step: bool = True
-):
+def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = True):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
 
@@ -111,15 +109,15 @@ def run_advect(
 
 # %%
 data = {}
-data["none_rusanov"] = run_advect("none_rusanov", "none", "rusanov")
-data["none_hll"] = run_advect("none_hll", "none", "hll")
-data["none_hllc"] = run_advect("none_hllc", "none", "hllc")
-data["vanleer_sym_rusanov"] = run_advect("vanleer_sym_rusanov", "vanleer_sym", "rusanov")
-data["vanleer_sym_hll"] = run_advect("vanleer_sym_hll", "vanleer_sym", "hll")
-data["vanleer_sym_hllc"] = run_advect("vanleer_sym_hllc", "vanleer_sym", "hllc")
-data["minmod_rusanov"] = run_advect("minmod_rusanov", "minmod", "rusanov")
-data["minmod_hll"] = run_advect("minmod_hll", "minmod", "hll")
-data["minmod_hllc"] = run_advect("minmod_hllc", "minmod", "hllc", only_last_step=False)
+data["none_rusanov"] = run_advect("none", "rusanov")
+data["none_hll"] = run_advect("none", "hll")
+data["none_hllc"] = run_advect("none", "hllc")
+data["vanleer_sym_rusanov"] = run_advect("vanleer_sym", "rusanov")
+data["vanleer_sym_hll"] = run_advect("vanleer_sym", "hll")
+data["vanleer_sym_hllc"] = run_advect("vanleer_sym", "hllc")
+data["minmod_rusanov"] = run_advect("minmod", "rusanov")
+data["minmod_hll"] = run_advect("minmod", "hll")
+data["minmod_hllc"] = run_advect("minmod", "hllc", only_last_step=False)
 
 # %%
 # Plot 1: Comparison grouped by Riemann solver (last timestep only)

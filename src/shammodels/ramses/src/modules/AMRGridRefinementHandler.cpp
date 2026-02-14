@@ -228,7 +228,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 });
             });
 
-            sham::EventList resulting_events;
+            sham::EventList resulting_events{e};
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
@@ -321,7 +321,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 });
             });
 
-            sham::EventList resulting_events;
+            sham::EventList resulting_events{e};
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);

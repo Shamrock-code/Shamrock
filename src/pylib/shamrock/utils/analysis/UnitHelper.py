@@ -1,5 +1,16 @@
+import shamrock
+
+
 def plot_codeu_to_unit(unit_system, name):
-    if name == "code_unit":
+    si = shamrock.UnitSystem()
+    si_cte = shamrock.Constants(shamrock.UnitSystem())
+
+    if name is None:
+        return "[unitless]", 1
+    elif name == "unitless":
+        return "[unitless]", 1
+
+    elif name == "code_unit":
         return "[code unit]", 1
 
     # Distances
@@ -30,6 +41,12 @@ def plot_codeu_to_unit(unit_system, name):
     elif name == "Gyr":
         return "[Gyr]", unit_system.to("yr", pref="G")
 
+    # Inverse times
+    elif name == "s^-1":
+        return "[s$^{-1}$]", unit_system.to("s", power=-1)
+    elif name == "yr^-1":
+        return "[yr$^{-1}$]", unit_system.to("yr", power=-1)
+
     # Surface densities
     elif name == "kg.m^-2":
         return "[$\\mathrm{{kg}} \\cdot \\mathrm{{m}}^{-2}$]", unit_system.to(
@@ -55,6 +72,8 @@ def plot_codeu_to_unit(unit_system, name):
         return "[$\\mathrm{{m}} \\cdot \\mathrm{{s}}^{-1}$]", unit_system.to("m") * unit_system.to(
             "s", power=-1
         )
+    elif name == "lightspeed":
+        return "[$\\mathrm{{c}}$]", unit_system.to("m") * unit_system.to("s", power=-1) / si_cte.c()
 
     # Acceleration
     elif name == "m.s^-2":

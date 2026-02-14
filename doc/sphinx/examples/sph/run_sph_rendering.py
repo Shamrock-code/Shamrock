@@ -59,7 +59,7 @@ rin = 4.0 * Rg  # [au]
 rout = 10 * rin  # [au]
 r0 = rin  # [au]
 
-H_r_0 = 0.01
+H_r_0 = 0.05
 q = 0.75
 p = 3.0 / 2.0
 
@@ -146,12 +146,12 @@ cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
 # cfg.add_ext_force_point_mass(center_mass, center_racc)
 
 cfg.add_kill_sphere(center=(0, 0, 0), radius=bsize)  # kill particles outside the simulation box
-cfg.add_ext_force_lense_thirring(
-    central_mass=center_mass,
-    Racc=rin,
-    a_spin=0.9,
-    dir_spin=(np.sin(inclination), np.cos(inclination), 0.0),
-)
+# cfg.add_ext_force_lense_thirring(
+#     central_mass=center_mass,
+#     Racc=rin,
+#     a_spin=0.9,
+#     dir_spin=(np.sin(inclination), np.cos(inclination), 0.0),
+# )
 
 cfg.set_units(codeu)
 cfg.set_particle_mass(pmass)
@@ -400,16 +400,22 @@ positions_cylindrical = make_cylindrical_coords(nr, ntheta)
 rays_cylindrical = positions_to_rays(positions_cylindrical)
 
 
-def custom_getter(index, dic_out):
-    x, y, z = dic_out["xyz"][index]
-    vx, vy, vz = dic_out["vxyz"][index]
+def custom_getter(size, dic_out):
+    x = dic_out["xyz"][:, 0]
+    y = dic_out["xyz"][:, 1]
+    z = dic_out["xyz"][:, 2]
+    vx = dic_out["vxyz"][:, 0]
+    vy = dic_out["vxyz"][:, 1]
+    vz = dic_out["vxyz"][:, 2]
 
-    e_theta = np.array([-y, x, 0])
-    e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
-    v_theta = np.dot(e_theta, np.array([vx, vy, vz]))
+    v_theta = np.zeros(size)
+    for i in range(size):
+        e_theta = np.array([-y[i], x[i], 0])
+        e_theta /= np.linalg.norm(e_theta) + 1e-9  # Avoid division by zero
+        v_theta[i] = np.dot(e_theta, np.array([vx[i], vy[i], vz[i]]))
 
-    if x > 0.2:
-        return 0.0  # To show that we have full control on the rendering
+        if x[i] > 0.2:
+            v_theta[i] = 0.0  # To show that we have full control on the rendering
 
     return v_theta
 
@@ -474,5 +480,165 @@ plot_vtheta_integ_cylindrical(metadata, arr_vtheta_cylindrical)
 
 plt.figure(dpi=dpi)
 plot_vtheta_slice_cylindrical(metadata, arr_vtheta_pos)
+
+plt.show()
+
+# %%
+# Azymuthal rendering
+
+H_r_render = H_r_0 * 4
+
+
+def make_azymuthal_coords(nr, nz):
+    """
+    Generate a list of positions in cylindrical coordinates (r, theta)
+    spanning [0, ext*2] x [-pi, pi] for use with the rendering module.
+
+    Returns:
+        list: List of [x, y, z] coordinate lists
+    """
+
+    # Create the cylindrical coordinate grid
+    r_vals = np.linspace(0, ext, nr)
+    z_vals = np.linspace(-ext * H_r_render, ext * H_r_render, nz)
+
+    # Create meshgrid
+    r_grid, z_grid = np.meshgrid(r_vals, z_vals)
+
+    # Flatten and stack to create list of positions
+    positions = np.column_stack([r_grid.ravel(), z_grid.ravel()])
+
+    return [tuple(pos) for pos in positions]
+
+
+def make_ring_rays(positions):
+    def position_to_ring_ray(position):
+        r = position[0]
+        z = position[1]
+        e_x = (1.0, 0.0, 0.0)
+        e_y = (0.0, 1.0, 0.0)
+        center = (0.0, 0.0, z)
+        return shamrock.math.RingRay_f64_3(center, r, e_x, e_y)
+
+    return [position_to_ring_ray(position) for position in positions]
+
+
+def make_slice_coord_for_azymuthal(positions):
+    def position_to_ring_ray(position):
+        r = position[0]
+        z = position[1]
+        e_x = (1.0, 0.0, 0.0)
+        e_y = (0.0, 1.0, 0.0)
+        center = (0.0, 0.0, z)
+        return (r, 0.0, z)
+
+    return [position_to_ring_ray(position) for position in positions]
+
+
+nr = 1024
+nz = 1024
+
+positions_azymuthal = make_azymuthal_coords(nr, nz)
+ring_rays_azymuthal = make_ring_rays(positions_azymuthal)
+slice_coords_azymuthal = make_slice_coord_for_azymuthal(positions_azymuthal)
+
+arr_rho_azymuthal = model.render_azymuthal_integ("rho", "f64", ring_rays_azymuthal)
+arr_rho_slice_azymuthal = model.render_slice("rho", "f64", slice_coords_azymuthal)
+
+arr_vxyz_azymuthal = model.render_azymuthal_integ("vxyz", "f64_3", ring_rays_azymuthal)
+arr_vxyz_slice_azymuthal = model.render_slice("vxyz", "f64_3", slice_coords_azymuthal)
+
+
+def plot_rho_integ_azymuthal(metadata, arr_rho_azymuthal):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_rho_azymuthal = np.array(arr_rho_azymuthal).reshape(nr, nz)
+
+    res = plt.imshow(
+        arr_rho_azymuthal, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-5, vmax=1
+    )
+    plt.xlabel("r")
+    plt.ylabel("z")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int \rho \, \mathrm{d}\theta$ [code unit]")
+
+
+def plot_rho_slice_azymuthal(metadata, arr_rho_slice_azymuthal):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_rho_slice_azymuthal = np.array(arr_rho_slice_azymuthal).reshape(nr, nz)
+
+    res = plt.imshow(
+        arr_rho_slice_azymuthal,
+        cmap=my_cmap,
+        origin="lower",
+        extent=ext,
+        norm="log",
+        vmin=1e-5,
+        vmax=1,
+    )
+    plt.xlabel("r")
+    plt.ylabel("z")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\rho$ [code unit]")
+
+
+def plot_vz_integ_azymuthal(metadata, arr_vxyz_azymuthal):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["seismic"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vz_azymuthal = np.array(arr_vxyz_azymuthal).reshape(nr, nz, 3)[:, :, 2]
+
+    res = plt.imshow(
+        arr_vz_azymuthal, cmap=my_cmap, origin="lower", extent=ext, vmin=-1e-6, vmax=1e-6
+    )
+    plt.xlabel("r")
+    plt.ylabel("z")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$\int v_z \, \mathrm{d}\theta$ [code unit]")
+
+
+def plot_vz_slice_azymuthal(metadata, arr_vxyz_slice_azymuthal):
+    ext = metadata["extent"]
+
+    my_cmap = matplotlib.colormaps["seismic"].copy()  # copy the default cmap
+    my_cmap.set_bad(color="black")
+
+    arr_vz_slice_azymuthal = np.array(arr_vxyz_slice_azymuthal).reshape(nr, nz, 3)[:, :, 2]
+
+    res = plt.imshow(
+        arr_vz_slice_azymuthal, cmap=my_cmap, origin="lower", extent=ext, vmin=-5e-6, vmax=5e-6
+    )
+    plt.xlabel("r")
+    plt.ylabel("z")
+    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+    cbar = plt.colorbar(res, extend="both")
+    cbar.set_label(r"$v_z$ [code unit]")
+
+
+metadata = {"extent": [0, ext, -ext * H_r_render, ext * H_r_render], "time": model.get_time()}
+fig_size = (6, 3)
+plt.figure(dpi=dpi, figsize=fig_size)
+plot_rho_integ_azymuthal(metadata, arr_rho_azymuthal)
+
+plt.figure(dpi=dpi, figsize=fig_size)
+plot_rho_slice_azymuthal(metadata, arr_rho_slice_azymuthal)
+
+plt.figure(dpi=dpi, figsize=fig_size)
+plot_vz_integ_azymuthal(metadata, arr_vxyz_azymuthal)
+
+plt.figure(dpi=dpi, figsize=fig_size)
+plot_vz_slice_azymuthal(metadata, arr_vxyz_slice_azymuthal)
 
 plt.show()

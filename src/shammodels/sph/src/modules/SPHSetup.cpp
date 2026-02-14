@@ -29,6 +29,7 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
 #include "shammodels/sph/modules/setup/CombinerAdd.hpp"
+#include "shammodels/sph/modules/setup/GeneratorFromOtherContext.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeCubic.hpp"
 #include "shammodels/sph/modules/setup/GeneratorLatticeHCP.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
@@ -36,6 +37,7 @@
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
+#include "shammodels/sph/modules/setup/ModifierSplitPart.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -80,6 +82,13 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         cs_profile,
         eng,
         init_h_factor));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_generator_from_context(ShamrockCtx &context_other) {
+    return std::shared_ptr<ISPHSetupNode>(
+        new GeneratorFromOtherContext<Tvec>(context, context_other));
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -879,6 +888,14 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierFilter<Tvec, SPHKernel>(context, parent, filter));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_split_part(
+        SetupNodePtr parent, u64 n_split, u64 seed, Tscal h_scaling) {
+    return std::shared_ptr<ISPHSetupNode>(
+        new ModifierSplitPart<Tvec>(context, parent, n_split, seed, h_scaling));
 }
 
 using namespace shammath;

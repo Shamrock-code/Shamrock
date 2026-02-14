@@ -75,7 +75,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             &TConfig::set_smoothing_length_density_based_neigh_lim)
         .def("set_enable_particle_reordering", &TConfig::set_enable_particle_reordering)
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
+        .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
         .def("use_luminosity", &TConfig::use_luminosity)
+        .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
+        .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
         .def("set_eos_adiabatic", &TConfig::set_eos_adiabatic)
         .def("set_eos_polytropic", &TConfig::set_eos_polytropic)
@@ -402,6 +405,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("random_seed"),
             py::arg("init_h_factor") = 0.8)
         .def(
+            "make_generator_from_context",
+            [](TSPHSetup &self, ShamrockCtx &context_other) {
+                return self.make_generator_from_context(context_other);
+            })
+        .def(
             "make_combiner_add",
             [](TSPHSetup &self,
                shammodels::sph::modules::SetupNodePtr parent1,
@@ -460,6 +468,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("parent"),
             py::arg("filter"))
+        .def(
+            "make_modifier_split_part",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               u64 n_split,
+               u64 seed,
+               Tscal h_scaling) {
+                return self.make_modifier_split_part(parent, n_split, seed, h_scaling);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("n_split"),
+            py::arg("seed"),
+            py::arg("h_scaling") = 0.6)
         .def(
             "apply_setup",
             [](TSPHSetup &self,
@@ -542,6 +564,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("target_time"),
             py::kw_only(),
             py::arg("niter_max") = -1)
+        .def("set_dt", [](T &self, f64 dt) {
+            self.solver.solver_config.set_next_dt(dt);
+        })
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -798,7 +823,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "render_slice",
-            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
 
                     if(custom_getter.has_value()) {
@@ -831,7 +856,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::string name,
                std::string field_type,
                std::vector<shammath::Ray<Tvec>> rays,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
 
                     if(custom_getter.has_value()) {
@@ -859,6 +884,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "render_azymuthal_integ",
+            [](T &self,
+                std::string name,
+                std::string field_type,
+                std::vector<shammath::RingRay<Tvec>> ring_rays,
+                std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+                -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+
+                    if(custom_getter.has_value()) {
+                        if(!( name == "custom" && field_type == "f64")) {
+                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+                        }
+                    }
+
+                if (field_type == "f64") {
+                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_azymuthal_integ(name, ring_rays, custom_getter).copy_to_stdvec();
+                }
+
+                if (field_type == "f64_3") {
+                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render.compute_azymuthal_integ(name, ring_rays, std::nullopt).copy_to_stdvec();
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("ring_rays"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
             "render_cartesian_slice",
             [](T &self,
                std::string name,
@@ -868,7 +926,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                -> std::variant<py::array_t<Tscal>> {
 
                 if(custom_getter.has_value()) {
@@ -938,7 +996,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<f64(size_t,pybind11::dict&)>> custom_getter )
+               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
                -> std::variant<py::array_t<Tscal>> {
 
                 if(custom_getter.has_value()) {

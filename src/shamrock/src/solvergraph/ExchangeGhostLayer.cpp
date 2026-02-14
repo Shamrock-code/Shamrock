@@ -19,6 +19,7 @@
 
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
 void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {

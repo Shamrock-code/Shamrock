@@ -25,7 +25,7 @@ namespace shammodels::sph::modules {
     auto RenderFieldGetter<Tvec, Tfield, SPHKernel>::runner_function(
         std::string field_name,
         lamda_runner lambda,
-        std::optional<std::function<Tfield(size_t, pybind11::dict &)>> custom_getter)
+        std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
         -> sham::DeviceBuffer<Tfield> {
 
         if (field_name != "custom" && custom_getter.has_value()) {
@@ -77,6 +77,47 @@ namespace shammodels::sph::modules {
                 };
 
                 return lambda(field_source_getter);
+            } else if (field_name == "inv_hpart" && std::is_same_v<Tscal, Tfield>) {
+                using namespace shamrock;
+                using namespace shamrock::patch;
+                shamrock::SchedulerUtility utility(scheduler());
+                shamrock::ComputeField<Tscal> inv_hpart
+                    = utility.make_compute_field<Tscal>("inv_hpart", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    shamlog_debug_ln("sph::vtk", "compute inv_hpart field for patch ", p.id_patch);
+
+                    auto &buf_h
+                        = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("hpart")).get_buf();
+                    auto &buf_inv_hpart = inv_hpart.get_buf(p.id_patch);
+
+                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                    sham::EventList depends_list;
+
+                    auto acc_h         = buf_h.get_read_access(depends_list);
+                    auto acc_inv_hpart = buf_inv_hpart.get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                u32 gid = (u32) item.get_id();
+                                using namespace shamrock::sph;
+                                acc_inv_hpart[gid] = 1.0 / acc_h[gid];
+                            });
+                    });
+
+                    buf_h.complete_event_state(e);
+                    buf_inv_hpart.complete_event_state(e);
+                });
+
+                auto field_source_getter
+                    = [&](const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat)
+                    -> const sham::DeviceBuffer<Tfield> & {
+                    return inv_hpart.get_buf(cur_p.id_patch);
+                };
+
+                return lambda(field_source_getter);
             } else if (field_name == "unity" && std::is_same_v<Tscal, Tfield>) {
                 using namespace shamrock;
                 using namespace shamrock::patch;
@@ -95,13 +136,16 @@ namespace shammodels::sph::modules {
         }
 
         if (field_name == "custom" && custom_getter.has_value()) {
-            std::function<Tfield(size_t, pybind11::dict &)> &field_source_getter
+            std::function<py::array_t<Tfield>(size_t, pybind11::dict &)> &field_source_getter
                 = custom_getter.value();
 
             using namespace shamrock;
             using namespace shamrock::patch;
             shamrock::SchedulerUtility utility(scheduler());
             shamrock::ComputeField<Tfield> custom = utility.make_compute_field<Tfield>("custom", 1);
+
+            shambase::Timer timer;
+            timer.start();
 
             scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
                 shamlog_debug_ln("sph::vtk", "compute custom field for patch ", p.id_patch);
@@ -113,12 +157,26 @@ namespace shammodels::sph::modules {
                 py::dict dic_out = shamrock::pdat_to_dic(pdat);
                 auto acc_custom  = buf_custom.copy_to_stdvec();
 
-                for (size_t i = 0; i < acc_custom.size(); i++) {
-                    acc_custom[i] = field_source_getter(i, dic_out);
+                py::array_t<Tfield> custom_array = field_source_getter(pdat.get_obj_cnt(), dic_out);
+
+                if (acc_custom.size() != custom_array.size()) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "custom_array size does not match the number of particles");
                 }
+
+                acc_custom = custom_array.template cast<std::vector<Tfield>>();
 
                 buf_custom.copy_from_stdvec(acc_custom);
             });
+
+            timer.end();
+
+            f64 worse_time_rank = shamalgs::collective::allreduce_max(timer.elasped_sec());
+
+            if (shamcomm::world_rank() == 0) {
+                logger::raw_ln(
+                    "sph::RenderFieldGetter", "compute custom field took : ", worse_time_rank, "s");
+            }
 
             auto custom_field_source_getter
                 = [&](const shamrock::patch::Patch cur_p,

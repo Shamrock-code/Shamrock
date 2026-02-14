@@ -187,8 +187,6 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4"
 
 # %%
 # Dump handling
-def get_dump_name(idump):
-    return dump_prefix + f"{idump:07}" + ".sham"
 
 
 def get_vtk_dump_name(idump):
@@ -199,48 +197,15 @@ def get_ph_dump_name(idump):
     return dump_prefix + f"{idump:07}" + ".phdump"
 
 
-def get_last_dump():
-    res = glob.glob(dump_prefix + "*.sham")
-
-    num_max = -1
-
-    for f in res:
-        try:
-            dump_num = int(f[len(dump_prefix) : -5])
-            if dump_num > num_max:
-                num_max = dump_num
-        except ValueError:
-            pass
-
-    if num_max == -1:
-        return None
-    else:
-        return num_max
-
-
-def purge_old_dumps():
-    if shamrock.sys.world_rank() == 0:
-        res = glob.glob(dump_prefix + "*.sham")
-        res.sort()
-
-        # The list of dumps to remove (keep the first and last 3 dumps)
-        to_remove = res[1:-3]
-
-        for f in to_remove:
-            os.remove(f)
-
-
-idump_last_dump = get_last_dump()
-
-if shamrock.sys.world_rank() == 0:
-    print("Last dump:", idump_last_dump)
+dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_prefix)
 
 # %%
 # Load the last dump if it exists, setup otherwise
 
-if idump_last_dump is not None:
-    model.load_from_dump(get_dump_name(idump_last_dump))
-else:
+
+def setup_model():
+    global disc_mass
+
     # Generate the default config
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
@@ -260,10 +225,14 @@ else:
     # Standard way to set the smoothing length (e.g. Price et al. 2018)
     cfg.set_smoothing_length_density_based()
 
+    cfg.set_save_dt_to_fields(True)
+
     # Standard density based smoothing lenght but with a neighbor count limit
     # Use it if you have large slowdowns due to giant particles
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
+
+    cfg.set_save_dt_to_fields(True)
 
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
@@ -347,6 +316,9 @@ else:
     model.change_htolerances(coarse=1.1, fine=1.1)
 
 
+dump_helper.load_last_dump_or(setup_model)
+
+
 # %%
 # On the fly analysis
 def save_rho_integ(ext, arr_rho, iplot):
@@ -375,8 +347,13 @@ def save_analysis_data(filename, key, value, ianalysis):
 
 from shamrock.utils.analysis import (
     ColumnDensityPlot,
+    ColumnParticleCount,
     PerfHistory,
     SliceDensityPlot,
+    SliceDiffVthetaProfile,
+    SliceDtPart,
+    SliceVzPlot,
+    VerticalShearGradient,
 )
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
@@ -417,11 +394,82 @@ vertical_density_plot = SliceDensityPlot(
     analysis_prefix="rho_slice",
 )
 
+v_z_slice_plot = SliceVzPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="v_z_slice",
+    do_normalization=True,
+)
+
+relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="relative_azy_velocity_slice",
+    velocity_profile=kep_profile,
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+vertical_shear_gradient_slice_plot = VerticalShearGradient(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="vertical_shear_gradient_slice",
+    do_normalization=True,
+    min_normalization=1e-9,
+)
+
+dt_part_slice_plot = SliceDtPart(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="dt_part_slice",
+)
+
+column_particle_count_plot = ColumnParticleCount(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="particle_count",
+)
+
 
 def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
     column_density_plot_hollywood.analysis_save(ianalysis)
     vertical_density_plot.analysis_save(ianalysis)
+    v_z_slice_plot.analysis_save(ianalysis)
+    relative_azy_velocity_slice_plot.analysis_save(ianalysis)
+    vertical_shear_gradient_slice_plot.analysis_save(ianalysis)
+    dt_part_slice_plot.analysis_save(ianalysis)
+    column_particle_count_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -461,12 +509,10 @@ for ttarg in t_stop:
 
         if istop % dump_freq_stop == 0:
             model.do_vtk_dump(get_vtk_dump_name(idump), True)
-            model.dump(get_dump_name(idump))
+            dump_helper.write_dump(idump, purge_old_dumps=True, keep_first=1, keep_last=3)
 
             # dump = model.make_phantom_dump()
             # dump.save_dump(get_ph_dump_name(idump))
-
-            purge_old_dumps()
 
         if istop % plot_freq_stop == 0:
             analysis(iplot)
@@ -488,10 +534,106 @@ for ttarg in t_stop:
 import matplotlib
 import matplotlib.pyplot as plt
 
-column_density_plot.render_all(vmin=1, vmax=1e4, norm="log")
-column_density_plot_hollywood.render_all(vmin=1, vmax=1e4, norm="log", holywood_mode=True)
-vertical_density_plot.render_all(vmin=1e-10, vmax=1e-6, norm="log")
+face_on_render_kwargs = {
+    "x_unit": "au",
+    "y_unit": "au",
+    "time_unit": "year",
+    "x_label": "x",
+    "y_label": "y",
+}
 
+sink_params = {
+    "sink_scale_factor": 5,
+    "sink_color": "green",
+    "sink_linewidth": 1,
+    "sink_fill": False,
+}
+
+column_density_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e4,
+    norm="log",
+    **sink_params,
+)
+
+column_density_plot_hollywood.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e4,
+    norm="log",
+    holywood_mode=True,
+    **sink_params,
+)
+
+vertical_density_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-3",
+    field_label="$\\rho$",
+    vmin=1e-10,
+    vmax=1e-6,
+    norm="log",
+    **sink_params,
+)
+
+v_z_slice_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="m.s^-1",
+    field_label="$\\mathrm{v}_z$",
+    cmap="seismic",
+    cmap_bad_color="white",
+    vmin=-300,
+    vmax=300,
+    **sink_params,
+)
+
+relative_azy_velocity_slice_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="m.s^-1",
+    field_label="$\\mathrm{v}_{\\theta} - v_k$",
+    cmap="seismic",
+    cmap_bad_color="white",
+    vmin=-300,
+    vmax=300,
+    **sink_params,
+)
+
+vertical_shear_gradient_slice_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="yr^-1",
+    field_label="${{\\partial R \\Omega}}/{{\\partial z}}$",
+    cmap="seismic",
+    cmap_bad_color="white",
+    vmin=-1,
+    vmax=1,
+    **sink_params,
+)
+
+dt_part_slice_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="year",
+    field_label="$\\Delta t$",
+    vmin=1e-4,
+    vmax=1,
+    norm="log",
+    contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1],
+    **sink_params,
+)
+
+column_particle_count_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit=None,
+    field_label="$\\int \\frac{1}{h_\\mathrm{part}} \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e2,
+    norm="log",
+    contour_list=[1, 10, 100, 1000],
+    **sink_params,
+)
 # %%
 # Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -504,26 +646,68 @@ render_gif = True
 
 # %%
 # Do it for rho integ
-
 if render_gif:
-    ani = column_density_plot.render_gif(save_animation=True)
+    ani = column_density_plot.render_gif(gif_filename="rho_integ.gif", save_animation=True)
     if ani is not None:
         plt.show()
 
 
 # %%
 # Same but in hollywood
-
 if render_gif:
-    ani = column_density_plot_hollywood.render_gif(save_animation=True)
+    ani = column_density_plot_hollywood.render_gif(
+        gif_filename="rho_integ_hollywood.gif", save_animation=True
+    )
     if ani is not None:
         plt.show()
 
 # %%
 # For the vertical density plot
-
 if render_gif and shamrock.sys.world_rank() == 0:
-    ani = vertical_density_plot.render_gif(save_animation=True)
+    ani = vertical_density_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = v_z_slice_plot.render_gif(gif_filename="v_z_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = relative_azy_velocity_slice_plot.render_gif(
+        gif_filename="relative_azy_velocity_slice.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = vertical_shear_gradient_slice_plot.render_gif(
+        gif_filename="vertical_shear_gradient_slice.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = dt_part_slice_plot.render_gif(gif_filename="dt_part_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = column_particle_count_plot.render_gif(
+        gif_filename="particle_count.gif", save_animation=True
+    )
     if ani is not None:
         plt.show()
 

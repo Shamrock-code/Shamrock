@@ -43,6 +43,7 @@ Register_pymod(pysham_mathinit) {
 
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
+    shampylib::init_shamrock_math_RingRay<f64_3>(math_module, "RingRay_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
     shampylib::init_shamrock_math_sphkernels(math_module);
 

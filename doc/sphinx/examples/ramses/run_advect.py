@@ -15,10 +15,6 @@ import shamrock
 tmax = 1.0
 timestamps = 40
 
-sim_folder = "_to_trash/advect_test/"
-os.makedirs(sim_folder, exist_ok=True)
-
-
 multx = 1
 multy = 1
 multz = 1

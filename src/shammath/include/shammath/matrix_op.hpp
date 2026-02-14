@@ -704,7 +704,7 @@ namespace shammath {
 
     /**
      * @brief This function performs Cholesky decomposition. From a (real) symmetric,
-     definite-positive square matrix $M$, return a lower triangular matrix $L$ such that
+     definite-positive square matrix \f$ M \f$, return a lower triangular matrix \f$ L \f$ such that
      \f[
         M = L L^T
      \f]
@@ -751,7 +751,7 @@ namespace shammath {
     \f[
         Mx = y
     \f]
-    where $M$ is a (real) symmetric, definite-positive square matrix.
+    where \f$ M \f$ is a (real) symmetric, definite-positive square matrix.
     * @param M a square symmetric, definite-positive matrix
     * @param y a vector, right hand side of the system
     * @param x the ouput vector to store the solution of the system

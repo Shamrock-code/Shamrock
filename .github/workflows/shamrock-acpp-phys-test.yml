@@ -138,6 +138,10 @@ jobs:
         include:
           - testfile: "examples/ramses/run_kh.py"
             artifact_name: gallery_ramses_run_kh
+          - testfile: "examples/ramses/run_linear_wave_with_bc.py"
+            artifact_name: gallery_ramses_run_linear_wave_with_bc
+          - testfile: "examples/ramses/run_advect.py"
+            artifact_name: gallery_ramses_run_advect
 
       fail-fast: false
 
@@ -187,18 +191,13 @@ jobs:
             ls -la /work
             bash /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
 
-      - name: extract the changed files
-        run: |
-          tar -xvf /tmp/changed_files.tar -C ./doc
-          ls -la ./doc
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ./doc
 
-      # upload the artifact from the example gallery
+
 
   shamrock_sphinx_doc:
     name: run sphinx doc
@@ -242,6 +241,12 @@ jobs:
       #### End Checkout part ####
 
       # download the artifact from the example gallery
+      - name: Download example gallery artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gallery_*
+          path: ./doc
+          merge-multiple: true
 
       - name: run test
         # see https://github.com/NomicFoundation/edr/pull/1293

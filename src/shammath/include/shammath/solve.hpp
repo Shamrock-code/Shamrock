@@ -49,7 +49,8 @@ namespace shammath {
      * @brief This function determines the best fit parameters \f$ \vec p \f$ for a given
      function \f$ f(\vec p, \mathbf X) \f$ with least squares.
      *
-     * @param f         Function (1d values)
+     * @param f         Function (1d values). Must takes a vector (\f$ \vec p \f$) and a scalar (\f$
+     x \f$) as parameters.
      * @param X         Data to fit \f$ x \f$
      * @param Y         Data to fit \f$ y \f$
      * @param p0        Initial parameters guessed
@@ -57,6 +58,7 @@ namespace shammath {
      1000
      * @param tolerance Convergence condition in the Levenberg-Marquardt procedure. Default: 1e-6
      *
+     * @return tuple: \f$ (\vec p, R^2) \f$
      * @details The Levenberg-Marquardt method is used. Therefore, the number of observations needs
      * to be greater than the number of parameters. At every iteration, a new parameters array \f$
      \vec p' \f$ is estimated. The convergence condition is

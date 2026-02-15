@@ -73,7 +73,7 @@ namespace shammath {
         const std::vector<T> &Y,
         const std::vector<T> &p0,
         int maxits  = 1000,
-        T tolerance = 1e-6) {
+        T tolerance = 1e-9) {
         SHAM_ASSERT(X.size() == Y.size());
         SHAM_ASSERT(X.size() >= p0.size());
         SHAM_ASSERT(p0.size() > 0);
@@ -85,18 +85,19 @@ namespace shammath {
         T mu             = 1e-2; // damping parameter
         T beta           = 0.1;  // decay rate
         int it           = 0;
-        T sse            = 0.0;
-        for (int k = 0; k < X.size(); k++) {
-            T r = Y[k] - f(p, X[k]);
-            sse += r * r;
-        };
-        T sse_trial = 999.0;
-        while (it < maxits and sham::abs(sse_trial - sse) > tolerance) {
-            sse = 0.0;
-            for (int k = 0; k < X.size(); k++) {
-                T r = Y[k] - f(p, X[k]);
+
+        auto evaluate_sse = [&](const std::vector<T> &params) -> T {
+            T sse = 0.0;
+            for (int k = 0; k < data_size; k++) {
+                T r = Y[k] - f(params, X[k]);
                 sse += r * r;
-            };
+            }
+            return sse;
+        };
+        T sse       = evaluate_sse(p);
+        T sse_trial = sse + 2 * tolerance;
+        while (it < maxits and sham::abs(sse_trial - sse) > tolerance) {
+            sse = evaluate_sse(p);
 
             // Construct the Jacobian (finite differences)
             shammath::mat_d<T> J(data_size, params_nb);
@@ -105,6 +106,7 @@ namespace shammath {
                 f_at_p[i] = f(p, X[i]);
             }
             mat_set_vals(J.get_mdspan(), [&](auto i, auto j) -> T {
+                // This part can be improved if necessary (p is modified then restored).
                 T original_p_j                  = p[j];
                 const T MIN_STEP_SCALE_EPSILON  = 1e-6;
                 T step_scale                    = (std::abs(original_p_j) < MIN_STEP_SCALE_EPSILON)
@@ -144,26 +146,26 @@ namespace shammath {
             };
 
             sse_trial = 0.0;
-            for (int k = 0; k < X.size(); k++) {
+            for (int k = 0; k < data_size; k++) {
                 T residual = Y[k] - f(p_trial, X[k]);
                 sse_trial += residual * residual;
             };
             if (sse_trial > sse) { // Fail -> gradient descent
                 mu /= beta;
             } else { // Not bad -> Gauss-Newton
-                it++;
                 mu *= beta;
                 p = p_trial;
             }
+            it++;
         };
 
         T total_sum_squares = 0.0;
         T mean_Y            = 0.0;
-        for (int k = 0; k < Y.size(); k++) {
+        for (int k = 0; k < data_size; k++) {
             mean_Y += Y[k];
         }
-        mean_Y /= Y.size();
-        for (int k = 0; k < Y.size(); k++) {
+        mean_Y /= data_size;
+        for (int k = 0; k < data_size; k++) {
             total_sum_squares += (Y[k] - mean_Y) * (Y[k] - mean_Y);
         }
         T R2 = 1 - sse / total_sum_squares;

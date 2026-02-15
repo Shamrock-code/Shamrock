@@ -137,6 +137,7 @@ jobs:
       matrix:
         include:
           - testfile: "examples/ramses/run_kh.py"
+            artifact_name: gallery_ramses_run_kh
 
       fail-fast: false
 
@@ -192,6 +193,19 @@ jobs:
             python3 -c "import shamrock"
 
             bash /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
+
+            mv /tmp/changed_files.tar /work
+
+      - name: extract the changed files
+        run: |
+          tar -xvf /tmp/changed_files.tar -C ./doc
+          ls -la ./doc
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ./doc
 
       # upload the artifact from the example gallery
 

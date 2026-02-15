@@ -189,7 +189,7 @@ def run_test(
     return results, tmax
 
 
-def plot_results(data, tmax, test_number):
+def plot_results(data, cases, tmax, test_number):
 
     arr_x = [x[0] for x in positions_plot]
 
@@ -213,6 +213,8 @@ def plot_results(data, tmax, test_number):
 
     for limiter, solver in cases:
         key = f"{limiter}_{solver}"
+        print(key)
+        print(data)
         if key in data:
             # Get the last timestep
 
@@ -305,32 +307,33 @@ def run_and_plot(cases, test_number, case_anim):
         data[key], tmax = run_test(
             test_number, slope_limiter, riemann_solver, only_last_step=only_last_step
         )
-    plot_results(data, tmax, test_number)
+    print(data)
+    plot_results(data, cases, tmax, test_number)
     return gif_results(data[case_anim], tmax, test_number, case_anim)
 
 
 # %%
 
 cases = [
-    ("none", "rusanov"),
-    ("none", "hll"),
-    ("none", "hllc"),
-    ("minmod", "rusanov"),
-    ("minmod", "hll"),
+    #("none", "rusanov"),
+    #("none", "hll"),
+    #("none", "hllc"),
+    #("minmod", "rusanov"),
+    #("minmod", "hll"),
     ("minmod", "hllc"),
 ]
 
 cases_no_hllc = [
-    ("none", "rusanov"),
-    ("none", "hll"),
-    ("minmod", "rusanov"),
+    #("none", "rusanov"),
+    #("none", "hll"),
+    #("minmod", "rusanov"),
     ("minmod", "hll"),
 ]
 
 run_and_plot(cases_no_hllc, 1, "minmod_hll")
 run_and_plot(cases_no_hllc, 2, "minmod_hll")
-run_and_plot(cases, 3, "minmod_hll")
-run_and_plot(cases, 4, "minmod_hll")
-run_and_plot(cases, 5, "minmod_hll")
-run_and_plot(cases, 6, "minmod_hll")
-run_and_plot(cases, 7, "minmod_hll")
+run_and_plot(cases, 3, "minmod_hllc")
+run_and_plot(cases, 4, "minmod_hllc")
+run_and_plot(cases, 5, "minmod_hllc")
+run_and_plot(cases, 6, "minmod_hllc")
+run_and_plot(cases, 7, "minmod_hllc")

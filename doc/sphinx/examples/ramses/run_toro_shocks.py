@@ -29,32 +29,47 @@ import shamrock
 
 def toro_initial_conditions(test_number: int):
     def cond(i):
-        if i == 1:
-            return 0.3, 1.0, 0.75, 1.0, 0.125, 0.0, 0.1, 0.2
-        elif i == 2:
-            return 0.5, 1.0, -2.0, 0.4, 1.0, 2.0, 0.4, 0.15
-        elif i == 3:
-            return 0.5, 1.0, 0.0, 1000.0, 1.0, 0.0, 0.01, 0.012
-        elif i == 4:
-            return 0.4, 5.99924, 19.5975, 460.894, 5.99242, -6.19633, 46.0950, 0.035
-        elif i == 5:
-            return 0.8, 1.0, -19.59745, 1000.0, 1.0, -19.59745, 0.01, 0.012
-        elif i == 6:
-            return 0.5, 1.4, 0.0, 1.0, 1.0, 0.0, 1.0, 2.0
-        elif i == 7:
-            return 0.5, 1.4, 0.1, 1.0, 1.0, 0.1, 1.0, 2.0
-        else:
+        conditions = {
+            1: (0.3, 1.0, 0.75, 1.0, 0.125, 0.0, 0.1, 0.2),
+            2: (0.5, 1.0, -2.0, 0.4, 1.0, 2.0, 0.4, 0.15),
+            3: (0.5, 1.0, 0.0, 1000.0, 1.0, 0.0, 0.01, 0.012),
+            4: (0.4, 5.99924, 19.5975, 460.894, 5.99242, -6.19633, 46.0950, 0.035),
+            5: (0.8, 1.0, -19.59745, 1000.0, 1.0, -19.59745, 0.01, 0.012),
+            6: (0.5, 1.4, 0.0, 1.0, 1.0, 0.0, 1.0, 2.0),
+            7: (0.5, 1.4, 0.1, 1.0, 1.0, 0.1, 1.0, 2.0),
+        }
+        if i not in conditions:
             raise ValueError(f"Invalid test number: {i}")
+        return conditions[i]
 
     x_0, rho_L, vx_L, p_L, rho_R, vx_R, p_R, tend = cond(test_number)
+
+    etot_L = p_L / (gamma - 1) + 0.5 * rho_L * vx_L**2
+    etot_R = p_R / (gamma - 1) + 0.5 * rho_R * vx_R**2
+
+    def rho(x):
+        if x < x_0:
+            return rho_L
+        else:
+            return rho_R
+
+    def rhoetot(x):
+        if x < x_0:
+            return etot_L
+        else:
+            return etot_R
+
+    def rhovel(x):
+        if x < x_0:
+            return (rho_L * vx_L, 0, 0)
+        else:
+            return (rho_R * vx_R, 0, 0)
+
     return {
         "x_0": x_0,
-        "rho_L": rho_L,
-        "vx_L": vx_L,
-        "p_L": p_L,
-        "rho_R": rho_R,
-        "vx_R": vx_R,
-        "p_R": p_R,
+        "lambda_rho": rho,
+        "lambda_rhoetot": rhoetot,
+        "lambda_rhovel": rhovel,
         "tend": tend,
     }
 
@@ -66,7 +81,7 @@ output_folder = "_to_trash/toro_tests/"
 os.makedirs(output_folder, exist_ok=True)
 
 
-multx = 4
+multx = 2
 multy = 1
 multz = 1
 
@@ -123,41 +138,21 @@ def run_test(
 
     dic = toro_initial_conditions(test_number)
     tmax = dic["tend"]
-    x_0 = dic["x_0"]
-    rho_L = dic["rho_L"]
-    vx_L = dic["vx_L"]
-    p_L = dic["p_L"]
-    rho_R = dic["rho_R"]
-    vx_R = dic["vx_R"]
-    p_R = dic["p_R"]
+    lambda_rho = dic["lambda_rho"]
+    lambda_rhoetot = dic["lambda_rhoetot"]
+    lambda_rhovel = dic["lambda_rhovel"]
 
     def rho_map(rmin, rmax):
         x, y, z = rmin
-        if x < x_0:
-            return rho_L
-        else:
-            return rho_R
-
-    etot_L = p_L / (gamma - 1) + 0.5 * rho_L * vx_L**2
-    etot_R = p_R / (gamma - 1) + 0.5 * rho_R * vx_R**2
+        return lambda_rho(x)
 
     def rhoetot_map(rmin, rmax):
-        rho = rho_map(rmin, rmax)
-
         x, y, z = rmin
-        if x < x_0:
-            return etot_L
-        else:
-            return etot_R
+        return lambda_rhoetot(x)
 
     def rhovel_map(rmin, rmax):
-        rho = rho_map(rmin, rmax)
-
         x, y, z = rmin
-        if x < x_0:
-            return (rho_L * vx_L, 0, 0)
-        else:
-            return (rho_R * vx_R, 0, 0)
+        return lambda_rhovel(x)
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
@@ -240,26 +235,56 @@ def gif_results(data, tmax, test_number, case_anim):
 
     import matplotlib.animation as animation
 
-    fig2, ax2 = plt.subplots()
-    ax2.set_xlabel("$x$")
-    ax2.set_ylabel("$\\rho$")
-    # ax2.set_ylim(-2, 2)
-    # ax2.set_xlim(0.5, 1.5)
-    ax2.grid(True, alpha=0.3)
+    fig2, axes = plt.subplots(3, 1, figsize=(8, 10))
+    fig2.suptitle(f"{case_anim} - t = {0.0:.3f} s", fontsize=14)
 
-    (line_rho,) = ax2.plot(arr_x, data[0]["rho"], label="rho", linewidth=2)
-    (line_vx,) = ax2.plot(arr_x, data[0]["vx"], label="vx", linewidth=2)
-    (line_P,) = ax2.plot(arr_x, data[0]["P"], label="P", linewidth=2)
+    ax_rho, ax_vx, ax_P = axes
 
-    ax2.legend()
-    ax2.set_title(f"{case_anim} - t = {0.0:.3f} s")
+    # Calculate global min/max across all frames for fixed y-axis limits
+    rho_min = min(np.min(frame["rho"]) for frame in data)
+    rho_max = max(np.max(frame["rho"]) for frame in data)
+    vx_min = min(np.min(frame["vx"]) for frame in data)
+    vx_max = max(np.max(frame["vx"]) for frame in data)
+    P_min = min(np.min(frame["P"]) for frame in data)
+    P_max = max(np.max(frame["P"]) for frame in data)
+
+    # Add 5% margin to y-axis limits
+    rho_margin = (rho_max - rho_min) * 0.05
+    vx_margin = (vx_max - vx_min) * 0.05
+    P_margin = (P_max - P_min) * 0.05
+
+    # Configure each axis
+    ax_rho.set_xlabel("$x$")
+    ax_rho.set_ylabel("$\\rho$")
+    ax_rho.set_ylim(rho_min - rho_margin, rho_max + rho_margin)
+    ax_rho.grid(True, alpha=0.3)
+
+    ax_vx.set_xlabel("$x$")
+    ax_vx.set_ylabel("$v_x$")
+    ax_vx.set_ylim(vx_min - vx_margin, vx_max + vx_margin)
+    ax_vx.grid(True, alpha=0.3)
+
+    ax_P.set_xlabel("$x$")
+    ax_P.set_ylabel("$P$")
+    ax_P.set_ylim(P_min - P_margin, P_max + P_margin)
+    ax_P.grid(True, alpha=0.3)
+
+    # Create lines for each variable on its own axis
+    (line_rho,) = ax_rho.plot(arr_x, data[0]["rho"], label="$\\rho$", linewidth=2, color="C0")
+    (line_vx,) = ax_vx.plot(arr_x, data[0]["vx"], label="$v_x$", linewidth=2, color="C1")
+    (line_P,) = ax_P.plot(arr_x, data[0]["P"], label="$P$", linewidth=2, color="C2")
+
+    ax_rho.legend()
+    ax_vx.legend()
+    ax_P.legend()
 
     def animate(frame):
         t = tmax * frame / timestamps
         line_rho.set_ydata(data[frame]["rho"])
         line_vx.set_ydata(data[frame]["vx"])
         line_P.set_ydata(data[frame]["P"])
-        ax2.set_title(f"{case_anim} - t = {t:.3f} s")
+
+        fig2.suptitle(f"{case_anim} - t = {t:.3f} s", fontsize=14)
         return (line_rho, line_vx, line_P)
 
     anim = animation.FuncAnimation(
@@ -292,11 +317,18 @@ cases = [
     ("none", "hllc"),
     ("minmod", "rusanov"),
     ("minmod", "hll"),
-    # ("minmod", "hllc"), # Crash for now
+    ("minmod", "hllc"),
 ]
 
-run_and_plot(cases, 1, "minmod_hll")
-run_and_plot(cases, 2, "minmod_hll")
+cases_no_hllc = [
+    ("none", "rusanov"),
+    ("none", "hll"),
+    ("minmod", "rusanov"),
+    ("minmod", "hll"),
+]
+
+run_and_plot(cases_no_hllc, 1, "minmod_hll")
+run_and_plot(cases_no_hllc, 2, "minmod_hll")
 run_and_plot(cases, 3, "minmod_hll")
 run_and_plot(cases, 4, "minmod_hll")
 run_and_plot(cases, 5, "minmod_hll")

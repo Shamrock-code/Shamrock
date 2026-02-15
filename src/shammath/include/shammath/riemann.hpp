@@ -406,14 +406,17 @@ namespace shammath {
          * wave speed estimates based on the Roe average eigenvalues
          **/
 
-        const Tscal HL = (etotL + pressL) / sqrt(rhoL); // left enthalpy  times left state density
-        const Tscal HR = (etotR + pressR) / sqrt(rhoR); // right enthalpy times right state density
-        const Tscal H_tot   = (HL + HR) / (sqrt(rhoL) + sqrt(rhoR)); // average total enthalpy
-        const Tscal vel_roe = (sqrt(rhoL) * velxL + sqrt(rhoR) * velxR)
-                              / (sqrt(rhoL) + sqrt(rhoR)); // Roe-average velocity
+        const Tscal sqrt_rhoL = sycl::sqrt(rhoL);
+        const Tscal sqrt_rhoR = sycl::sqrt(rhoR);
+
+        const Tscal HL = (etotL + pressL) / sqrt_rhoL; // left enthalpy  times left state density
+        const Tscal HR = (etotR + pressR) / sqrt_rhoR; // right enthalpy times right state density
+        const Tscal H_tot   = (HL + HR) / (sqrt_rhoL + sqrt_rhoR); // average total enthalpy
+        const Tscal vel_roe = (sqrt_rhoL * velxL + sqrt_rhoR * velxR)
+                              / (sqrt_rhoL + sqrt_rhoR); // Roe-average velocity
         // ============= [Einfeldt's HLLR solver]
-        const Tscal cs_roe
-            = sqrt((gamma - 1.0) * (H_tot - 0.5 * vel_roe * vel_roe)); // Roe-average sound speed
+        const Tscal cs_roe = sycl::sqrt(
+            (gamma - 1.0) * (H_tot - 0.5 * vel_roe * vel_roe)); // Roe-average sound speed
         const Tscal SL = vel_roe - cs_roe;
         const Tscal SR = vel_roe + cs_roe;
 
@@ -434,9 +437,10 @@ namespace shammath {
             = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
               / (var_L - var_R);
         // P* pression estimate
-        const Tscal press_star = (primR.press * var_L - primL.press * var_R
-                                  + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
-                                 / (var_L - var_R);
+        Tscal press_star = (primR.press * var_L - primL.press * var_R
+                            + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
+                           / (var_L - var_R);
+        press_star = sycl::max(press_star, 0.0);
         Tvec D{1, 0, 0};
         Tcons D_star{0, S_star, D};
         // Left intermediate conservative state in the star region

@@ -184,6 +184,9 @@ jobs:
           options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
           run: |
             ls -la /work
+            pip3 list
+            shamrock --smi
+            python3 -c "import shamrock;shamrock.sys.init('0:0')"
             sh /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
 
       # upload the artifact from the example gallery

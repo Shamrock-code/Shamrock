@@ -41,32 +41,7 @@ cd "$(dirname "$0")"
 EXAMPLE_FILE="$1"
 echo "Using example file: ${EXAMPLE_FILE}"
 
-snapshot() {
-  find . -type f -print0 \
-    | sort -z \
-    | xargs -0 sha256sum
-}
-
-make html SPHINXOPTS="-D sphinx_gallery_conf.filename_pattern=do_not_run_annything_dammit"
-
-snapshot > /tmp/before.sha
 make html SPHINXOPTS="-D sphinx_gallery_conf.filename_pattern=${EXAMPLE_FILE}"
-snapshot > /tmp/after.sha
-
-echo "Diffing the snapshots :"
-
-# The only think AI is good for is to generate regex BS
-awk 'NR==FNR {a[$2]=$1; next}
-     !($2 in a) || a[$2] != $1 {print $2}' \
-     /tmp/before.sha /tmp/after.sha > /tmp/diff
-
-# print the list of files that changed
-echo "Files that changed :"
-cat /tmp/diff
-
-# tar the changed files
-echo "Tarring the changed files :"
-tar -cvf /tmp/changed_files.tar -T /tmp/diff
 
 set +e
 

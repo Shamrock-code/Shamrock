@@ -58,7 +58,7 @@ namespace shammath {
      1000
      * @param tolerance Convergence condition in the Levenberg-Marquardt procedure. Default: 1e-6
      *
-     * @return tuple: \f$ (\vec p, R^2) \f$
+     * @return pair: \f$ (\vec p, R^2) \f$
      * @details The Levenberg-Marquardt method is used. Therefore, the number of observations needs
      * to be greater than the number of parameters. At every iteration, a new parameters array \f$
      \vec p' \f$ is estimated. The convergence condition is
@@ -67,7 +67,7 @@ namespace shammath {
      \f] where \f$ S \f$ is the residual sum of squares and \f$ \epsilon \f$ is the tolerance.
      */
     template<class T, class Lambda>
-    std::tuple<std::vector<T>, T> least_squares(
+    std::pair<std::vector<T>, T> least_squares(
         const Lambda &f,
         const std::vector<T> &X,
         const std::vector<T> &Y,

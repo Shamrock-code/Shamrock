@@ -111,10 +111,11 @@ bool PatchDataField<T>::check_field_match(PatchDataField<T> &f2) {
 
     match = match && (field_name == f2.field_name);
     match = match && (nvar == f2.nvar);
-    match = match && (obj_cnt == f2.obj_cnt);
 
-    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-    match     = match && shamalgs::primitives::equals(sptr, buf, f2.buf, obj_cnt * nvar);
+    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+    // it will also check that the size is the same
+    match = match && shamalgs::primitives::equals(dev_sched, buf, f2.buf);
 
     return match;
 }
@@ -223,38 +224,7 @@ class PdatField_insert;
 
 template<class T>
 void PatchDataField<T>::insert(const PatchDataField<T> &f2) {
-
-    u32 f2_len = f2.get_obj_cnt();
-
-    if (f2_len > 0) {
-        shamlog_debug_sycl_ln("PatchDataField", "expand field buf by N =", f2_len);
-
-        const u32 old_val_cnt = get_val_cnt(); // field_data.size();
-        expand(f2.obj_cnt);
-
-        auto sptr = shamsys::instance::get_compute_scheduler_ptr();
-        auto &q   = sptr->get_queue();
-
-        sham::EventList depends_list;
-        T *acc          = get_buf().get_write_access(depends_list);
-        const T *acc_f2 = f2.get_buf().get_read_access(depends_list);
-
-        shamlog_debug_sycl_ln("PatchDataField", "write values");
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            const u32 idx_st = old_val_cnt;
-
-            cgh.parallel_for<PdatField_insert<T>>(
-                sycl::range<1>{f2.get_val_cnt()}, [=](sycl::id<1> idx) {
-                    acc[idx_st + idx] = acc_f2[idx];
-                });
-        });
-
-        get_buf().complete_event_state(e);
-        f2.get_buf().complete_event_state(e);
-
-    } else {
-        shamlog_debug_sycl_ln("PatchDataField", "expand field buf (skip f2 is empty)");
-    }
+    get_buf().append(f2.get_buf());
 }
 
 template<class T>
@@ -274,16 +244,17 @@ void PatchDataField<T>::index_remap_resize(sham::DeviceBuffer<u32> &index_map, u
 
         buf = get_new_buf();
     }
-
-    obj_cnt = len;
 }
 
 template<class T>
 void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len) {
 
     if (len != get_obj_cnt()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "the match of the new index map does not match with the patchdatafield obj count");
+        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            "the match of the new index map does not match with the patchdatafield obj count: {} "
+            "!= {}",
+            len,
+            get_obj_cnt()));
     }
 
     index_remap_resize(index_map, len);
@@ -387,10 +358,11 @@ PatchDataField<T> PatchDataField<T>::mock_field(u64 seed, u32 obj_cnt, std::stri
 template<class T>
 void PatchDataField<T>::serialize_buf(shamalgs::SerializeHelper &serializer) {
     StackEntry stack_loc{false};
+    u32 obj_cnt = get_obj_cnt();
     serializer.write(obj_cnt);
     shamlog_debug_sycl_ln("PatchDataField", "serialize patchdatafield len=", obj_cnt);
     if (obj_cnt > 0) {
-        serializer.write_buf(buf, obj_cnt * nvar);
+        serializer.write_buf(buf, get_val_cnt());
     }
 }
 
@@ -405,7 +377,7 @@ PatchDataField<T> PatchDataField<T>::deserialize_buf(
     if (cnt > 0) {
         sham::DeviceBuffer<T> buf(cnt * nvar, serializer.get_device_scheduler());
         serializer.load_buf(buf, cnt * nvar);
-        return PatchDataField<T>(std::move(buf), cnt, field_name, nvar);
+        return PatchDataField<T>(std::move(buf), field_name, nvar);
     } else {
         return PatchDataField<T>(field_name, nvar, cnt);
     }
@@ -415,7 +387,7 @@ template<class T>
 shamalgs::SerializeSize PatchDataField<T>::serialize_buf_byte_size() {
 
     using H = shamalgs::SerializeHelper;
-    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(obj_cnt * nvar);
+    return H::serialize_byte_size<u32>() + H::serialize_byte_size<T>(get_val_cnt());
 }
 
 template<class T>
@@ -452,7 +424,7 @@ T PatchDataField<T>::compute_max() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::max(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::max(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -463,7 +435,7 @@ T PatchDataField<T>::compute_min() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::min(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::min(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -474,7 +446,7 @@ T PatchDataField<T>::compute_sum() const {
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    return shamalgs::primitives::sum(dev_sched, buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::sum(dev_sched, buf, 0, get_val_cnt());
 }
 
 template<class T>
@@ -484,7 +456,7 @@ shambase::VecComponent<T> PatchDataField<T>::compute_dot_sum() {
         throw shambase::make_except_with_loc<std::invalid_argument>("the field is empty");
     }
 
-    return shamalgs::primitives::dot_sum(buf, 0, obj_cnt * nvar);
+    return shamalgs::primitives::dot_sum(buf, 0, get_val_cnt());
 }
 
 template<class T>

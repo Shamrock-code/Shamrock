@@ -32,30 +32,9 @@ namespace shamrock::solvergraph {
         public:
         NodeFreeAlloc() {}
 
-        /// Utility struct to list the refs to the edges
-        struct Edges {
-            /**
-             * @brief The node to free
-             *
-             * The node to free must be an instance of IFreeable
-             */
-            IFreeable &to_free;
-        };
-
-        /**
-         * @brief Set the edges of the node
-         *
-         * Set the edge that will be freed by this node
-         *
-         * @param to_free The node to free
-         */
-        inline void set_edges(std::shared_ptr<IEdge> to_free) {
-            __internal_set_ro_edges({});
-            __internal_set_rw_edges({to_free});
-        }
-
-        /// Get the edges of the node
-        inline Edges get_edges() { return Edges{get_rw_edge<IFreeable>(0)}; }
+#define NODE_FREE_ALLOC_EDGES(X_RO, X_RW) X_RW(shamrock::solvergraph::IEdge, to_free)
+        EXPAND_NODE_EDGES(NODE_FREE_ALLOC_EDGES)
+#undef NODE_FREE_ALLOC_EDGES
 
         /// Evaluate the node
         inline void _impl_evaluate_internal() { get_edges().to_free.free_alloc(); }

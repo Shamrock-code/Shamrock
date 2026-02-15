@@ -17,7 +17,7 @@ import shamrock
 if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
-    
+
 tmax = 1.0
 timestamps = 40
 

@@ -128,6 +128,122 @@ jobs:
                 --rscript /opt/Shamrock_src/exemples/ci_tests/${{ matrix.testfile }}
 
 
+  shamrock_example_gallery:
+    name: run example ${{ matrix.testfile }}
+    runs-on: ubuntu-latest
+    needs: [ build_docker ]
+
+    strategy:
+      matrix:
+        include:
+          - testfile: "examples/ramses/run_kh.py"
+
+      fail-fast: false
+
+
+    timeout-minutes: 60
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-phys-test-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load --input /tmp/ci-phys-test-image.tar
+
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name: run test
+        # see https://github.com/NomicFoundation/edr/pull/1293
+        uses: NomicFoundation/docker-run-action@63f044457cfb71a5c63fa589218c89a418565d9c # Fork of v3 with updated Docker (https://github.com/addnab/docker-run-action/issues/62)
+        with:
+          image: ci-phys-test-image
+          options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
+          run: |
+            ls -la /work
+            sh /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
+
+      # upload the artifact from the example gallery
+
+  shamrock_sphinx_doc:
+    name: run sphinx doc
+    runs-on: ubuntu-latest
+    needs: [ shamrock_example_gallery ]
+
+
+    timeout-minutes: 60
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-phys-test-image
+          path: /tmp
+
+      - name: Load image
+        run: docker load --input /tmp/ci-phys-test-image.tar
+
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      # download the artifact from the example gallery
+
+      - name: run test
+        # see https://github.com/NomicFoundation/edr/pull/1293
+        uses: NomicFoundation/docker-run-action@63f044457cfb71a5c63fa589218c89a418565d9c # Fork of v3 with updated Docker (https://github.com/addnab/docker-run-action/issues/62)
+        with:
+          image: ci-phys-test-image
+          options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
+          run: |
+            ls -la /work
+            sh /work/doc/sphinx/gen_sphinx_doc.sh
+
+
+
+
   remove-image:
     name: Remove image
     runs-on: ubuntu-latest

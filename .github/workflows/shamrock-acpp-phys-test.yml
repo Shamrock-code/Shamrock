@@ -256,6 +256,7 @@ jobs:
           options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
           run: |
             ls -la /work
+            ls -la /work/doc
             sh /work/doc/sphinx/gen_sphinx_doc.sh
 
 

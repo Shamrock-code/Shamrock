@@ -191,7 +191,7 @@ jobs:
             python3 -c "import shamrock;shamrock.sys.init('0:0');shamrock.change_loglevel(125)"
             python3 -c "import shamrock"
 
-            sh /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
+            bash /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
 
       # upload the artifact from the example gallery
 

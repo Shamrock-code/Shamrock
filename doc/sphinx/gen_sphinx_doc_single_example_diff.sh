@@ -21,9 +21,17 @@ awk 'NR==FNR {a[$2]=$1; next}
 echo "Files that changed :"
 cat /tmp/diff
 
-# tar the changed files
-echo "Tarring the changed files :"
-tar -cvf /tmp/changed_files.tar -T /tmp/diff
+# Keep only files listed in /tmp/diff inside source/ and examples/
+for dir in source examples; do
+  find "$dir" -type f | while read -r file; do
+    if ! grep -Fxq "$file" /tmp/diff; then
+      rm -f "$file"
+    fi
+  done
+done
+
+echo "Tree of the current directory :"
+tree .
 
 set +e
 

@@ -199,7 +199,7 @@ jobs:
           options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
           run: |
             ls -la /work
-            bash /work/doc/sphinx/gen_sphinx_doc_single_example.sh ${{ matrix.testfile }}
+            bash /work/doc/sphinx/gen_sphinx_doc_single_example_diff.sh ${{ matrix.testfile }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

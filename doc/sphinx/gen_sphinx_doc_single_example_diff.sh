@@ -36,10 +36,13 @@ cat /tmp/diff
 for dir in source examples; do
   find "$dir" -type f | while read -r file; do
     if ! grep -Fxq "$file" /tmp/diff; then
+      echo "Removing $file"
       rm -f "$file"
     fi
   done
 done
+echo "Removing build directory"
+rm -rf build
 
 echo "Tree of the current directory :"
 tree .

@@ -73,29 +73,81 @@ namespace shammodels::basegodunov {
                     self.riemman_config = Rusanov;
                 })
             .def(
+                "set_slope_limiter",
+                [](TConfig &self, std::string slope_mode) {
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", slope_mode},
+                        });
+                },
+                py::arg("slope_mode"),
+                R"==(
+                Set the slope limiter mode.
+                )==")
+            .def(
                 "set_slope_lim_none",
                 [](TConfig &self) {
-                    self.slope_config = None;
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Ramses::SolverConfig",
+                            ".set_slope_lim_none() is deprecated, use .set_slope_limiter(\"none\") "
+                            "instead"));
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", "none"},
+                        });
                 })
             .def(
                 "set_slope_lim_vanleer_f",
                 [](TConfig &self) {
-                    self.slope_config = VanLeer_f;
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Ramses::SolverConfig",
+                            ".set_slope_lim_vanleer_f() is deprecated, use "
+                            ".set_slope_limiter(\"vanleer_f\") instead"));
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", "vanleer_f"},
+                        });
                 })
             .def(
                 "set_slope_lim_vanleer_std",
                 [](TConfig &self) {
-                    self.slope_config = VanLeer_std;
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Ramses::SolverConfig",
+                            ".set_slope_lim_vanleer_std() is deprecated, use "
+                            ".set_slope_limiter(\"vanleer_std\") instead"));
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", "vanleer_std"},
+                        });
                 })
             .def(
                 "set_slope_lim_vanleer_sym",
                 [](TConfig &self) {
-                    self.slope_config = VanLeer_sym;
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Ramses::SolverConfig",
+                            ".set_slope_lim_vanleer_sym() is deprecated, use "
+                            ".set_slope_limiter(\"vanleer_sym\") instead"));
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", "vanleer_sym"},
+                        });
                 })
             .def(
                 "set_slope_lim_minmod",
                 [](TConfig &self) {
-                    self.slope_config = Minmod;
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "Ramses::SolverConfig",
+                            ".set_slope_lim_minmod() is deprecated, use "
+                            ".set_slope_limiter(\"minmod\") instead"));
+                    self.set_slope_limiter(
+                        nlohmann::json{
+                            {"slope_mode", "minmod"},
+                        });
                 })
             .def(
                 "set_face_time_interpolation",

@@ -34,11 +34,8 @@ cfg.set_eos_gamma(gamma)
 # cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
 
-# cfg.set_slope_lim_none()
-# cfg.set_slope_lim_vanleer_f()
-# cfg.set_slope_lim_vanleer_std()
-# cfg.set_slope_lim_vanleer_sym()
-cfg.set_slope_lim_minmod()
+# Set the slope limiter (among "none", "vanleer_f", "vanleer_std", "vanleer_sym", "minmod")
+cfg.set_slope_limiter("minmod")
 cfg.set_face_time_interpolation(True)
 mass_crit = 0.0000001 * 5 * 2 * 1.2
 cfg.set_amr_mode_density_based(crit_mass=mass_crit)

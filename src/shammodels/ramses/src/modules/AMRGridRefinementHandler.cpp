@@ -361,6 +361,124 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 }
 
 template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    enforce_two_to_one_for_derefinement(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list) {
+
+    using namespace shamrock::patch;
+    using AMRGraph             = shammodels::basegodunov::modules::AMRGraph;
+    using Direction_           = shammodels::basegodunov::modules::Direction;
+    using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
+    using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+
+    u64 tot_derefine     = 0;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        u64 id_patch = cur_p.id_patch;
+
+        sham::DeviceBuffer<u32> &derefine_flags_buf = derefine_flags.get(id_patch);
+        u32 obj_cnt                                 = pdat.get_obj_cnt();
+
+        // blocks graph in each direction for the current patch
+        AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_xm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xm)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_yp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::yp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_ym = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::ym)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zm)
+                                              .get(id_patch);
+
+        // get the current buffer of block levels in the current patch
+        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
+            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
+
+        sham::EventList depend_list;
+        auto acc_amr_levels                 = buf_amr_block_levels.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_xp = block_graph_neighs_xp.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_xm = block_graph_neighs_xm.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_yp = block_graph_neighs_yp.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_ym = block_graph_neighs_ym.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_zp = block_graph_neighs_zp.get_read_access(depend_list);
+        AMRGraphLinkiterator block_graph_zm = block_graph_neighs_zm.get_read_access(depend_list);
+
+        auto acc_deref_flags = derefine_flags_buf.get_write_access(depend_list);
+
+        auto e = q.submit(depend_list, [&](sycl::handler &cgh) {
+            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                auto lid           = gid.get_linear_id();
+                auto cur_block_lev = acc_amr_levels[lid];
+
+                auto check_2_to_1_rule = [&](u32 nid) {
+                    if (nid < obj_cnt && (acc_amr_levels[lid] < acc_amr_levels[nid])) {
+                        // // No atomic operation is required. We only need to check whether the
+                        // // rule is violated for at least one neighbor.
+                        acc_deref_flags[lid] = 0;
+                    }
+                };
+
+                if (acc_deref_flags[lid]) {
+
+                    // // The 2:1 rule must be enforced at the parent level. However, since we do
+                    // //  not have direct access to the neighbors of the parent,
+                    // //  we instead check the rule against all neighbors of the eight siblings,
+                    // // which collectively correspond to the neighbors of the parent block.
+                    for (auto i = 0; i < AMRBlock::block_size; i++) {
+                        block_graph_xp.for_each_object_link(lid + i, check_2_to_1_rule);
+                        block_graph_xm.for_each_object_link(lid + i, check_2_to_1_rule);
+                        block_graph_yp.for_each_object_link(lid + i, check_2_to_1_rule);
+                        block_graph_ym.for_each_object_link(lid + i, check_2_to_1_rule);
+                        block_graph_zp.for_each_object_link(lid + i, check_2_to_1_rule);
+                        block_graph_zm.for_each_object_link(lid + i, check_2_to_1_rule);
+                    }
+                }
+            });
+        });
+
+        block_graph_neighs_xp.complete_event_state(e);
+        block_graph_neighs_xm.complete_event_state(e);
+        block_graph_neighs_yp.complete_event_state(e);
+        block_graph_neighs_ym.complete_event_state(e);
+        block_graph_neighs_zp.complete_event_state(e);
+        block_graph_neighs_zm.complete_event_state(e);
+        buf_amr_block_levels.complete_event_state(e);
+        derefine_flags_buf.complete_event_state(e);
+
+        ////////////////////////////////////////////////////////////////////////////////
+        // refinement
+        ////////////////////////////////////////////////////////////////////////////////
+
+        // perform stream compactions on the refinement flags
+        auto buf_derefine
+            = shamalgs::numeric::stream_compact(dev_sched, derefine_flags_buf, obj_cnt);
+
+        logger::raw_ln(
+            " Count block's flag for derefinement [After geometry validity check and after 2:1 "
+            "check] \t : ",
+            buf_derefine.get_size(),
+            "\n");
+        tot_derefine += buf_derefine.get_size();
+        // add the results to the map
+        derefine_list.add_obj(id_patch, std::move(buf_derefine));
+    });
+    logger::info_ln(
+        "AMRGrid", "on this process", tot_derefine * split_count, "blocks will be derefined");
+}
+
+template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list) {
@@ -853,6 +971,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         ///// Check geometrical validity for derefinement ///////
         check_geometrical_validity_for_derefinement(derefine_flags, refine_flags);
+
+        ////// 2:1 for derefinement  /////
+        enforce_two_to_one_for_derefinement(derefine_flags, derefine_list);
 
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata

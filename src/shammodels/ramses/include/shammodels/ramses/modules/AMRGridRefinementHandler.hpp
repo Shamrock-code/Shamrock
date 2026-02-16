@@ -104,6 +104,18 @@ namespace shammodels::basegodunov::modules {
             shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
             shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags);
 
+        /**
+         * @brief Enforces the 2:1 derefinement ratio for blocks.
+         *
+         * This function iterates through blocks marked for derefinement and ensures that
+         * after  derefinement the 2:1 is still valid.
+         * @param derefine_flags derefinement flags
+         * @param derefine_list        derefinement maps
+         */
+        void enforce_two_to_one_for_derefinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list);
+
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
 

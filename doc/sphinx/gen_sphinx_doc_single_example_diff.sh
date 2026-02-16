@@ -6,8 +6,19 @@ EXAMPLE_FILE="$1"
 
 bash gen_sphinx_doc_single_example.sh do_not_run_annything_dammit
 
+snapshot() {
+  find . -type f -print0 \
+    | sort -z \
+    | xargs -0 sha256sum
+}
+
+echo "Snapshotting the current directory :"
 snapshot > /tmp/before.sha
+
+echo "Generating the sphinx doc for the example :"
 bash gen_sphinx_doc_single_example.sh "${EXAMPLE_FILE}"
+
+echo "Snapshotting the current directory :"
 snapshot > /tmp/after.sha
 
 echo "Diffing the snapshots :"

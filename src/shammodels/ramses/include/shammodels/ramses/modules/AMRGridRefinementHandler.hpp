@@ -24,11 +24,6 @@
 
 namespace shammodels::basegodunov::modules {
 
-    struct OptIndexList {
-        std::optional<sycl::buffer<u32>> idx;
-        u32 count;
-    };
-
     template<class Tvec, class TgridVec>
     class AMRGridRefinementHandler {
 
@@ -74,8 +69,8 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<sycl::buffer<u32>> &refine_flags,
-            shambase::DistributedData<sycl::buffer<u32>> &derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
             T &&...args);
 
         /**
@@ -92,10 +87,11 @@ namespace shammodels::basegodunov::modules {
             shambase::DistributedData<OptIndexList> &refine_list);
 
         template<class UserAcc>
-        bool internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
+        bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
 
         template<class UserAcc>
-        bool internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list);
+        bool internal_derefine_grid(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
         void internal_update_refinement();

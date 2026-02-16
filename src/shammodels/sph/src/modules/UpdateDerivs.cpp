@@ -238,7 +238,6 @@ void NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_evaluate_internal() {
         sham::DDMultiRef{edges.axyz.get_spans(), edges.duint.get_spans()},
         edges.part_counts.indexes,
         Kernel{pmass, alpha_u, beta_AV});
-    // kernel2);
 }
 
 template<class Tvec, template<class> class SPHKernel>

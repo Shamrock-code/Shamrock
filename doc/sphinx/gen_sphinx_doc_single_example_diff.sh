@@ -35,9 +35,12 @@ cat /tmp/diff
 # Keep only files listed in /tmp/diff inside source/ and examples/
 for dir in source examples; do
   find "$dir" -type f | while read -r file; do
-    if ! grep -Fxq "$file" /tmp/diff; then
+    # Add ./ prefix to match the format in /tmp/diff
+    if ! grep -Fxq "./$file" /tmp/diff; then
       echo "Removing $file"
       rm -f "$file"
+    else
+      echo "Keeping $file"
     fi
   done
 done

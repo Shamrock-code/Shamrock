@@ -4,6 +4,9 @@ cd "$(dirname "$0")"
 
 EXAMPLE_FILE="$1"
 
+echo "Moving the example file to .tmp :"
+mv ${EXAMPLE_FILE} .tmp
+
 bash gen_sphinx_doc_single_example.sh do_not_run_annything_dammit
 
 snapshot() {
@@ -14,6 +17,10 @@ snapshot() {
 
 echo "Snapshotting the current directory :"
 snapshot > /tmp/before.sha
+
+
+echo "Moving the example file back to the original location :"
+mv .tmp ${EXAMPLE_FILE}
 
 echo "Generating the sphinx doc for the example :"
 bash gen_sphinx_doc_single_example.sh "${EXAMPLE_FILE}"

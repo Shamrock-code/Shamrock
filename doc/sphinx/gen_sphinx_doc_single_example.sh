@@ -39,9 +39,12 @@ set -e
 cd "$(dirname "$0")"
 
 EXAMPLE_FILE="$1"
+# Autodetect number of CPU cores, fallback to 1 if nproc is not available
+PARALLEL_JOBS=$(nproc 2>/dev/null || echo "1")
 echo "Using example file: ${EXAMPLE_FILE}"
+echo "Using parallel jobs: ${PARALLEL_JOBS}"
 
-make html SPHINXOPTS="-D sphinx_gallery_conf.filename_pattern=${EXAMPLE_FILE}"
+make html SPHINXOPTS="-D sphinx_gallery_conf.filename_pattern=${EXAMPLE_FILE} -j ${PARALLEL_JOBS}"
 
 set +e
 

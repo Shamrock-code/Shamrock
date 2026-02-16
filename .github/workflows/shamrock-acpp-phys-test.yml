@@ -142,6 +142,16 @@ jobs:
             artifact_name: gallery_ramses_run_linear_wave_with_bc
           - testfile: "examples/ramses/run_advect.py"
             artifact_name: gallery_ramses_run_advect
+          - testfile: "examples/sph/run_circular_disc_lense_thirring.py"
+            artifact_name: gallery_sph_run_circular_disc_lense_thirring
+          - testfile: "examples/sph/run_circular_disc_central_pot.py"
+            artifact_name: gallery_sph_run_circular_disc_central_pot
+          - testfile: "examples/sph/run_circular_disc_sink.py"
+            artifact_name: gallery_sph_run_circular_disc_sink
+          - testfile: "examples/sph/run_kelvin_helmholtz.py"
+            artifact_name: gallery_sph_run_kelvin_helmholtz
+          - testfile: "examples/sph/run_sph_shear_test.py"
+            artifact_name: gallery_sph_run_sph_shear_test
 
       fail-fast: false
 
@@ -205,7 +215,7 @@ jobs:
     needs: [ shamrock_example_gallery ]
 
 
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -258,6 +268,12 @@ jobs:
             ls -la /work
             ls -la /work/doc
             bash /work/doc/sphinx/gen_sphinx_doc.sh
+
+      - name: Upload doc artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sphinx_doc
+          path: doc/sphinx/build/html
 
 
 

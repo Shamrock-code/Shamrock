@@ -198,6 +198,7 @@ jobs:
           image: ci-phys-test-image
           options: -v ${{ github.workspace }}:/work # map cwd to /work in the container
           run: |
+            sudo apt install -y tree
             ls -la /work
             bash /work/doc/sphinx/gen_sphinx_doc_single_example_diff.sh ${{ matrix.testfile }}
 

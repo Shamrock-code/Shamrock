@@ -257,7 +257,7 @@ jobs:
           run: |
             ls -la /work
             ls -la /work/doc
-            sh /work/doc/sphinx/gen_sphinx_doc.sh
+            bash /work/doc/sphinx/gen_sphinx_doc.sh
 
 
 

@@ -34,36 +34,6 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define DECL_RO(type, name) const type &name;
-#define DECL_RW(type, name) type & name;
-#define PARAM_RO(type, name) std::shared_ptr<type> name,
-#define PARAM_RW(type, name) std::shared_ptr<type> name,
-#define PUSH_RO1(type, name) name,
-#define PUSH_RW1(type, name)
-#define PUSH_RO2(type, name)
-#define PUSH_RW2(type, name) name,
-#define GET_RO(type, name) get_ro_edge<type>(ro++),
-#define GET_RW(type, name) get_rw_edge<type>(rw++),
-
-#define EXPAND_NODE_EDGES(EDGES)                                                                   \
-                                                                                                   \
-    struct Edges {                                                                                 \
-        EDGES(DECL_RO, DECL_RW)                                                                    \
-    };                                                                                             \
-                                                                                                   \
-    inline void set_edges(EDGES(PARAM_RO, PARAM_RW) SourceLocation loc = SourceLocation{}) {       \
-        __shamrock_log_callsite(loc);                                                              \
-                                                                                                   \
-        __internal_set_ro_edges({EDGES(PUSH_RO1, PUSH_RW1)});                                      \
-        __internal_set_rw_edges({EDGES(PUSH_RO2, PUSH_RW2)});                                      \
-    }                                                                                              \
-                                                                                                   \
-    inline Edges get_edges() {                                                                     \
-        int ro = 0;                                                                                \
-        int rw = 0;                                                                                \
-        return Edges{EDGES(GET_RO, GET_RW)};                                                       \
-    }
-
 #define NODE_UPDATE_DERIVS_CD10_EDGES(X_RO, X_RW)                                                  \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \

@@ -18,6 +18,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
+#include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/EventList.hpp"
 #include "shamcomm/logs.hpp"
@@ -51,16 +52,16 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // create the refine and derefine flags buffers
         u32 obj_cnt = pdat.get_obj_cnt();
 
-        sham::DeviceBuffer<u32> refine_flags(obj_cnt, dev_sched);
-        sham::DeviceBuffer<u32> derefine_flags(obj_cnt, dev_sched);
+        sham::DeviceBuffer<u32> refine_flag(obj_cnt, dev_sched);
+        sham::DeviceBuffer<u32> derefine_flag(obj_cnt, dev_sched);
 
         {
             sham::EventList depends_list;
 
             UserAcc uacc(depends_list, id_patch, cur_p, pdat, args...);
 
-            auto refine_acc   = refine_flags.get_write_access(depends_list);
-            auto derefine_acc = derefine_flags.get_write_access(depends_list);
+            auto refine_acc   = refine_flag.get_write_access(depends_list);
+            auto derefine_acc = derefine_flag.get_write_access(depends_list);
 
             // fill in the flags
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
@@ -82,14 +83,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             sham::EventList resulting_events;
             resulting_events.add_event(e);
 
-            refine_flags.complete_event_state(resulting_events);
-            derefine_flags.complete_event_state(resulting_events);
+            refine_flag.complete_event_state(resulting_events);
+            derefine_flag.complete_event_state(resulting_events);
 
             uacc.finalize(resulting_events, id_patch, cur_p, pdat, args...);
         }
 
-        refn_flags.add_obj(id_patch, std::move(refine_flags));
-        derfn_flags.add_obj(id_patch, std::move(derefine_flags));
+        refine_flags.add_obj(id_patch, std::move(refine_flag));
+        derefine_flags.add_obj(id_patch, std::move(derefine_flag));
     });
 }
 
@@ -103,8 +104,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     enforce_two_to_one_for_refinement(
-        shambase::DistributedData<sycl::buffer<u32>> &&refine_flags,
-        shambase::DistributedData<OptIndexList> &refine_list) {
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list) {
 
     using namespace shamrock::patch;
     using AMRGraph             = shammodels::basegodunov::modules::AMRGraph;
@@ -112,14 +113,15 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
     using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
 
-    u64 tot_refine = 0;
+    u64 tot_refine       = 0;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        u64 id_patch         = cur_p.id_patch;
+        u64 id_patch = cur_p.id_patch;
 
-        sycl::buffer<u32> &refn_flags = refine_flags.get(id_patch);
-        u32 obj_cnt                   = pdat.get_obj_cnt();
+        sham::DeviceBuffer<u32> &refine_flags_buf = refine_flags.get(id_patch);
+        u32 obj_cnt                               = pdat.get_obj_cnt();
 
         // blocks graph in each direction for the current patch
         AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
@@ -162,9 +164,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             AMRGraphLinkiterator block_graph_zm
                 = block_graph_neighs_zm.get_read_access(depend_list);
             auto acc_amr_levels = buf_amr_block_levels.get_read_access(depend_list);
+            auto acc_ref_flags  = refine_flags_buf.get_write_access(depend_list);
 
             auto e_all_dir = q.submit(depend_list, [&](sycl::handler &cgh) {
-                sycl::accessor acc_ref_flags{refn_flags, cgh, sycl::read_write};
                 cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                     u32 block_id = gid.get_linear_id();
 
@@ -203,17 +205,19 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             block_graph_neighs_zp.complete_event_state(e_all_dir);
             block_graph_neighs_zm.complete_event_state(e_all_dir);
             buf_amr_block_levels.complete_event_state(e_all_dir);
+            refine_flags_buf.complete_event_state(e_all_dir);
         }
         ////////////////////////////////////////////////////////////////////////////////
         // refinement
         ////////////////////////////////////////////////////////////////////////////////
 
         // perform stream compactions on the refinement flags
-        auto [buf_refine, len_refine] = shamalgs::numeric::stream_compact(q.q, refn_flags, obj_cnt);
-        shamlog_debug_ln("AMRGrid", "patch ", id_patch, len_refine, "marked for refinement + 2:1");
-        tot_refine += len_refine;
+        auto buf_refine = shamalgs::numeric::stream_compact(dev_sched, refine_flags_buf, obj_cnt);
+        shamlog_debug_ln(
+            "AMRGrid", "patch ", id_patch, buf_refine.get_size(), "marked for refinement + 2:1");
+        tot_refine += buf_refine.get_size();
         // add the results to the map
-        refine_list.add_obj(id_patch, OptIndexList{std::move(buf_refine), len_refine});
+        refine_list.add_obj(id_patch, std::move(buf_refine));
     });
     logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks will be refined");
 }
@@ -221,18 +225,19 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     check_geometrical_validity_for_derefinement(
-        shambase::DistributedData<sycl::buffer<u32>> &&derefine_flags,
-        shambase::DistributedData<sycl::buffer<u32>> &&refine_flags) {
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags) {
 
     using namespace shamrock::patch;
-    using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+    using TgridUint      = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
 
     scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-        u64 id_patch         = cur_p.id_patch;
+        u64 id_patch = cur_p.id_patch;
 
-        sycl::buffer<u32> &derfn_flags = derefine_flags.get(id_patch);
-        sycl::buffer<u32> &refn_flags  = refine_flags.get(id_patch);
+        sham::DeviceBuffer<u32> &derefine_flag_buf = derefine_flags.get(id_patch);
+        sham::DeviceBuffer<u32> &refine_flag_buf   = refine_flags.get(id_patch);
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
@@ -247,12 +252,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto acc_min        = buf_cell_min.get_read_access(depends_list);
         auto acc_max        = buf_cell_max.get_read_access(depends_list);
         auto acc_amr_levels = buf_amr_block_levels.get_read_access(depends_list);
-        auto acc_merge_flag = derefine_flags.get_write_access(depends_list);
+        auto acc_merge_flag = derefine_flag_buf.get_write_access(depends_list);
+        auto acc_ref_flag   = refine_flag_buf.get_write_access(depends_list);
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            sycl::accessor acc_merge_flag{derfn_flags, cgh, sycl::read_write};
-            sycl::accessor acc_refine_flag{refn_flags, cgh, sycl::read_only};
-
             cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                 u32 id = gid.get_linear_id();
 
@@ -325,7 +328,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     // if a block is marked both for refinement and derefinement then the last is
                     // aborted.
-                    if (acc_refine_flag[id] && do_merge) {
+                    if (acc_ref_flag[id] && do_merge) {
                         do_merge = false;
                     }
 
@@ -339,9 +342,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         buf_cell_min.complete_event_state(e);
         buf_cell_max.complete_event_state(e);
         buf_amr_block_levels.complete_event_state(e);
+        refine_flag_buf.complete_event_state(e);
+        derefine_flag_buf.complete_event_state(e);
 
-        auto [buf_derefine, len_derefine]
-            = shamalgs::numeric::stream_compact(q.q, derfn_flags, obj_cnt);
+        auto buf_derefine
+            = shamalgs::numeric::stream_compact(dev_sched, derefine_flag_buf, obj_cnt);
 
         logger::raw_ln(
             " Count block's flag for derefinement [After geometry validity check and before 2:1 "
@@ -350,39 +355,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             "patch id \t",
             id_patch,
             "\t",
-            len_derefine,
+            buf_derefine.get_size(),
             "\n");
-        derefine_flags.complete_event_state(e);
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // refinement
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // perform stream compactions on the refinement flags
-        auto buf_refine = shamalgs::numeric::stream_compact(dev_sched, refine_flags, obj_cnt);
-
-        shamlog_debug_ln(
-            "AMRGrid", "patch ", id_patch, "refine block count = ", buf_refine.get_size());
-
-        tot_refine += buf_refine.get_size();
-
-        // add the results to the map
-        refine_list.add_obj(id_patch, std::move(buf_refine));
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // derefinement
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // perform stream compactions on the derefinement flags
-        auto buf_derefine = shamalgs::numeric::stream_compact(dev_sched, derefine_flags, obj_cnt);
-
-        shamlog_debug_ln(
-            "AMRGrid", "patch ", id_patch, "merge block count = ", buf_derefine.get_size());
-
-        tot_derefine += buf_derefine.get_size();
-
-        // add the results to the map
-        derefine_list.add_obj(id_patch, std::move(buf_derefine));
     });
 }
 
@@ -865,10 +839,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
 
         // get refine and derefine list
-        shambase::DistributedData<sycl::buffer<u32>> refine_flags;
-        shambase::DistributedData<sycl::buffer<u32>> derefine_flags;
-        shambase::DistributedData<OptIndexList> refine_list;
-        shambase::DistributedData<OptIndexList> derefine_list;
+        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_flags;
+        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_flags;
+
         shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
         shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
 
@@ -876,11 +849,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             refine_flags, derefine_flags, dxfact, cfg->crit_mass);
 
         ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_for_refinement(std::move(refine_flags), refine_list);
+        enforce_two_to_one_for_refinement(refine_flags, refine_list);
 
         ///// Check geometrical validity for derefinement ///////
-        check_geometrical_validity_for_derefinement(
-            std::move(refine_flags), std::move(derefine_flags));
+        check_geometrical_validity_for_derefinement(derefine_flags, refine_flags);
 
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata

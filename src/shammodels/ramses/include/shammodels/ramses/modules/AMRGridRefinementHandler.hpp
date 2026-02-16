@@ -83,8 +83,8 @@ namespace shammodels::basegodunov::modules {
          * @param refine_list        refinement maps
          */
         void enforce_two_to_one_for_refinement(
-            shambase::DistributedData<sycl::buffer<u32>> &&refine_flags,
-            shambase::DistributedData<OptIndexList> &refine_list);
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list);
 
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);

@@ -77,7 +77,10 @@ namespace shammodels::sph {
         SPHUtilities(PatchScheduler &sched) : sched(sched) {}
 
         inline InterfBuildCache build_interf_cache(
-            GhostHndl &interf_handle, SerialPatchTree<vec> &sptree, flt h_evol_max) {
+            GhostHndl &interf_handle,
+            SerialPatchTree<vec> &sptree,
+            flt h_evol_max,
+            bool filter_empty_patch_gz) {
 
             using namespace shamrock::patch;
 
@@ -100,7 +103,8 @@ namespace shammodels::sph {
                     return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);
                 });
 
-            return interf_handle.make_interface_cache(sptree, interactR_mpi_tree, interactR_patch);
+            return interf_handle.make_interface_cache(
+                sptree, interactR_mpi_tree, interactR_patch, filter_empty_patch_gz);
         }
 
         static void iterate_smoothing_length_cache(

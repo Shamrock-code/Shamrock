@@ -69,6 +69,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is a no-op,\n"
                               "    -> you can remove the call to that function"););
             })
+        .def("set_filter_empty_patch_gz", &TConfig::set_filter_empty_patch_gz)
         .def("set_smoothing_length_density_based", &TConfig::set_smoothing_length_density_based)
         .def(
             "set_smoothing_length_density_based_neigh_lim",

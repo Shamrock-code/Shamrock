@@ -104,7 +104,8 @@ namespace shammodels::sph {
         GeneratorMap find_interfaces(
             SerialPatchTree<vec> &sptree,
             shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max);
+            shamrock::patch::PatchField<flt> &int_range_max,
+            bool filter_empty_patch_gz);
 
         /**
          * @brief precompute interfaces members and cache result in the return
@@ -130,11 +131,12 @@ namespace shammodels::sph {
         CacheMap make_interface_cache(
             SerialPatchTree<vec> &sptree,
             shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-            shamrock::patch::PatchField<flt> &int_range_max) {
+            shamrock::patch::PatchField<flt> &int_range_max,
+            bool filter_empty_patch_gz) {
             StackEntry stack_loc{};
 
             return gen_id_table_interfaces(
-                find_interfaces(sptree, int_range_max_tree, int_range_max));
+                find_interfaces(sptree, int_range_max_tree, int_range_max, filter_empty_patch_gz));
         }
 
         /**

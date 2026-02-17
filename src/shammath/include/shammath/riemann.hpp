@@ -396,14 +396,14 @@ namespace shammath {
         const auto velxR  = primR.vel[0];
 
         /////////////////// Pressure based wave speed estimation //////////////
-        //// First compute the pressure estimation in the star region using the primitive variable
-        ///solver
-        ////
-        //// Toro from section 9.3 or Equation (10.67).
-        ////  It will be interresting to implement and test various pressure estimate algorithms
-        ///such as : /  Two-Rarefaction Riemann Solver (TRRS), Two-Shock Riemann Solver (TSRS) and
-        ///Adaptive /  Riemann Solvers(AIRS or ANRS)
-        ////
+        // First compute the pressure estimation in the star region using the primitive variable
+        // solver
+        //
+        // Toro from section 9.3 or Equation (10.67).
+        //
+        // TODO: It will be interresting to implement and test various pressure estimate algorithms
+        // such as : / Two-Rarefaction Riemann Solver (TRRS), Two-Shock Riemann Solver (TSRS) and
+        // Adaptive / Riemann Solvers(AIRS or ANRS)
         ////////////////////////////////////////////////////////////////////////
         Tscal rho_bar = 0.5 * (rhoL + rhoR);
         Tscal cs_bar  = 0.5 * (csL + csR);

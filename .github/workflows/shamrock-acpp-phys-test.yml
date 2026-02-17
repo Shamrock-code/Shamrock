@@ -7,7 +7,7 @@ jobs:
 
   build_docker:
     name: build
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

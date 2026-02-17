@@ -408,7 +408,7 @@ namespace shammath {
         Tscal rho_bar = 0.5 * (rhoL + rhoR);
         Tscal cs_bar  = 0.5 * (csL + csR);
         Tscal p_pvrs  = 0.5 * (pressL + pressR) - 0.5 * (velxR - velxL) * rho_bar * cs_bar;
-        // //  pressure in the star region estimate
+        // Pressure in the star region estimate
         Tscal press_star = sham::max(0., p_pvrs);
 
         // Once the pressure in the star region is known, we then estimates the wave speeds

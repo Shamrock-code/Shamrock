@@ -450,7 +450,7 @@ namespace shammath {
         Tvec D{1, 0, 0};
         Tcons D_star{0, S_star, D};
 
-        //  Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Left intermediate conservative state in the star region
         // Tcons cL_star = (SL * cL - FL + press_star * D_star) * (1.0 / (SL - S_star));
         Tcons cL_star = (SL * cL - FL + press_LR * D_star) * (1.0 / (SL - S_star));

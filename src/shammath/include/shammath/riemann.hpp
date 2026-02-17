@@ -369,9 +369,8 @@ namespace shammath {
     template<class Tcons>
     inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         Tcons flux;
-        using Tscal  = typename Tcons::Tscal;
-        using Tvec   = typename Tcons::Tvec;
-        Tscal smallr = 1e-7, smallp = 1e-7, smallc = 1e-7;
+        using Tscal = typename Tcons::Tscal;
+        using Tvec  = typename Tcons::Tvec;
 
         // const to prim
         const auto primL = cons_to_prim(cL, gamma);
@@ -386,13 +385,13 @@ namespace shammath {
         const auto FR = hydro_flux_x(cR, gamma);
 
         // Left variables
-        const auto rhoL   = sham::max(primL.rho, smallr);
-        const auto pressL = sham::max(primL.press, smallp);
+        const auto rhoL   = primL.rho;
+        const auto pressL = primL.press;
         const auto velxL  = primL.vel[0];
 
         // Right variables
-        const auto rhoR   = sham::max(primR.rho, smallr);
-        const auto pressR = sham::max(primR.press, smallp);
+        const auto rhoR   = primR.rho;
+        const auto pressR = primR.press;
         const auto velxR  = primR.vel[0];
 
         /////////////////// Pressure based wave speed estimation //////////////
@@ -417,14 +416,14 @@ namespace shammath {
         Tscal qL = 0, qR = 0;
         if (press_star <= pressL) {
             qL = 1.;
-        } else if (pressL < press_star) {
+        } else {
             qL = sycl::sqrt(
                 1. + (0.5 * (1. + gamma) / (Tscal) gamma) * (press_star / (Tscal) pressL - 1.));
         }
 
         if (press_star <= pressR) {
             qR = 1.;
-        } else if (pressR < press_star) {
+        } else {
             qR = sycl::sqrt(
                 1. + (0.5 * (1. + gamma) / (Tscal) gamma) * (press_star / (Tscal) pressR - 1.));
         }
@@ -457,7 +456,8 @@ namespace shammath {
 
         // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Right intermediate conservative state in the star region
-        Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
+        // Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
+        Tcons cR_star = (SR * cR - FR + press_LR * D_star) * (1.0 / (SR - S_star));
 
         // intemediate Flux in the star region
         // Equation (10.38) from Toro 3rd Edition , Springer 2009

@@ -77,8 +77,7 @@ def toro_initial_conditions(test_number: int):
 timestamps = 40
 gamma = 1.4
 
-# output_folder = "_to_trash/toro_tests/"
-output_folder = "/Users/lsewanou/SHAMROCK_DIR_AMR_POISSON/Shamrock/build/"
+output_folder = "_to_trash/toro_tests/"
 os.makedirs(output_folder, exist_ok=True)
 
 
@@ -334,7 +333,7 @@ cases = [
 
 
 run_and_plot(cases, 1, "minmod_hll")
-run_and_plot(cases, 2, "minmod_hll")
+run_and_plot(cases, 2, "minmod_hllc")
 run_and_plot(cases, 3, "minmod_hllc")
 run_and_plot(cases, 4, "minmod_hllc")
 run_and_plot(cases, 5, "minmod_hllc")

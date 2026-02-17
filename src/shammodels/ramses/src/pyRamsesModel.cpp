@@ -52,7 +52,7 @@ namespace shammodels::basegodunov {
             .def(
                 "from_json",
                 [](TConfig &self, py::object json_data) {
-                    return shammodels::common::from_py_json<TConfig>(json_data);
+                    self = shammodels::common::from_py_json<TConfig>(json_data);
                 },
                 "Converts a json like dictionary to a config")
             .def(

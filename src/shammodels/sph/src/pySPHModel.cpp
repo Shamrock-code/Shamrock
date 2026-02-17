@@ -65,7 +65,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "from_json",
             [](TConfig &self, py::object json_data) {
-                return shammodels::common::from_py_json<TConfig>(json_data);
+                self = shammodels::common::from_py_json<TConfig>(json_data);
             },
             "Converts a json like dictionary to a config")
         .def("print_status", &TConfig::print_status)

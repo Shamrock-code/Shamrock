@@ -321,18 +321,18 @@ def run_and_plot(cases, test_number, case_anim):
 # %%
 
 cases = [
-    # ("none", "rusanov"),
-    # ("none", "hll"),
-    # ("none", "hllc"),
-    # ("minmod", "rusanov"),
-    # ("minmod", "hll"),
+    ("none", "rusanov"),
+    ("none", "hll"),
+    ("none", "hllc"),
+    ("minmod", "rusanov"),
+    ("minmod", "hll"),
     ("minmod", "hllc"),
 ]
 
 cases_no_hllc = [
-    # ("none", "rusanov"),
-    # ("none", "hll"),
-    # ("minmod", "rusanov"),
+    ("none", "rusanov"),
+    ("none", "hll"),
+    ("minmod", "rusanov"),
     ("minmod", "hll"),
 ]
 

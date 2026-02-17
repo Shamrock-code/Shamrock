@@ -106,11 +106,9 @@ namespace shammodels::basegodunov {
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() {
-            if (gravity_mode != NoGravity) {
-                return true;
-            }
-            return false;
+            return gravity_mode != NoGravity;
         }
+        bool analytical_gravity = false; // whether to use an external analytical gravity
     };
 
     template<class Tvec>

@@ -25,8 +25,21 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/NodeMacro.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+
+
+namespace shammodels::basegodunov::modules {
+
+    template<class Tvec, class TgridVec>
+    class NodeComputeCoordinates : public shamrock::solvergraph::INode {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        u32 block_size;
+        Tscal grid_coord_to_pos_fact;
+
+        public:
+        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact)
+            : block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
 #define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                       \
     /* inputs */                                                                                   \
@@ -49,20 +62,9 @@
         shamrock::solvergraph::Field<Tvec>,                                                        \
         spans_coordinates) /* center coordinates of each cell */
 
-namespace shammodels::basegodunov::modules {
-
-    template<class Tvec, class TgridVec>
-    class NodeComputeCoordinates : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
-
-        u32 block_size;
-        Tscal grid_coord_to_pos_fact;
-
-        public:
-        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact)
-            : block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
-
         EXPAND_NODE_EDGES(NODE_COMPUTE_COORDINATES)
+
+#undef NODE_COMPUTE_COORDINATES
 
         void _impl_evaluate_internal();
 

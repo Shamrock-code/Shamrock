@@ -29,6 +29,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -51,17 +52,13 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def(
             "to_json",
             [](TConfig &self) {
-                auto json_loads  = py::module_::import("json").attr("loads");
-                nlohmann::json j = self;
-                return json_loads(j.dump());
+                return shammodels::common::to_py_json(self);
             },
             "Converts the config to a json like dictionary")
         .def(
             "from_json",
             [](TConfig &self, py::object json_data) {
-                auto json_dumps = py::module_::import("json").attr("dumps");
-                std::string j   = json_dumps(json_data).cast<std::string>();
-                return nlohmann::json::parse(j).get<TConfig>();
+                return shammodels::common::from_py_json<TConfig>(json_data);
             },
             "Converts a json like dictionary to a config")
         .def("print_status", &TConfig::print_status)

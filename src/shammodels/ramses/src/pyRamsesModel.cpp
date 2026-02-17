@@ -19,6 +19,7 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
@@ -45,17 +46,13 @@ namespace shammodels::basegodunov {
             .def(
                 "to_json",
                 [](TConfig &self) {
-                    auto json_loads  = py::module_::import("json").attr("loads");
-                    nlohmann::json j = self;
-                    return json_loads(j.dump());
+                    return shammodels::common::to_py_json(self);
                 },
                 "Converts the config to a json like dictionary")
             .def(
                 "from_json",
                 [](TConfig &self, py::object json_data) {
-                    auto json_dumps = py::module_::import("json").attr("dumps");
-                    std::string j   = json_dumps(json_data).cast<std::string>();
-                    return nlohmann::json::parse(j).get<TConfig>();
+                    return shammodels::common::from_py_json<TConfig>(json_data);
                 },
                 "Converts a json like dictionary to a config")
             .def(

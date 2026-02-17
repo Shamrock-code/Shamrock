@@ -52,8 +52,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     shammodels::common::add_json_defs<TConfig>(config_cls);
 
-    config_cls
-        .def("print_status", &TConfig::print_status)
+    config_cls.def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         // Riemann solver config

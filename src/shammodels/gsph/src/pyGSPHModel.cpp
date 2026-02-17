@@ -167,11 +167,9 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal cfl_force) {
                 self.cfl_config.cfl_force = cfl_force;
             })
-        .def(
-            "set_particle_mass",
-            [](TConfig &self, Tscal gpart_mass) {
-                self.gpart_mass = gpart_mass;
-            });
+        .def("set_particle_mass", [](TConfig &self, Tscal gpart_mass) {
+            self.gpart_mass = gpart_mass;
+        });
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

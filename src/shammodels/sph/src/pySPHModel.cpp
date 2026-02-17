@@ -55,20 +55,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-    py::class_<TConfig>(m, name_config.c_str())
-        .def(
-            "to_json",
-            [](TConfig &self) {
-                return shammodels::common::to_py_json(self);
-            },
-            "Converts the config to a json like dictionary")
-        .def(
-            "from_json",
-            [](TConfig &self, py::object json_data) {
-                self = shammodels::common::from_py_json<TConfig>(json_data);
-            },
-            "Converts a json like dictionary to a config")
-        .def("print_status", &TConfig::print_status)
+    py::class_<TConfig> config_cls(m, name_config.c_str());
+
+    shammodels::common::add_json_defs<TConfig>(config_cls);
+
+    config_cls.def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)

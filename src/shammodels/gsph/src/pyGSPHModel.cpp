@@ -48,7 +48,11 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-    py::class_<TConfig>(m, name_config.c_str())
+    py::class_<TConfig> config_cls(m, name_config.c_str());
+
+    shammodels::common::add_json_defs<TConfig>(config_cls);
+
+    config_cls
         .def(
             "to_json",
             [](TConfig &self) {

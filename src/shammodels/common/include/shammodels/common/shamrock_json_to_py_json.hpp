@@ -35,4 +35,21 @@ namespace shammodels::common {
         std::string j   = json_dumps(json_data).cast<std::string>();
         return nlohmann::json::parse(j).get<T>();
     }
+
+    template<class TConfig>
+    inline void add_json_defs(py::class_<TConfig> &cls) {
+        cls.def(
+            "to_json",
+            [](TConfig &self) {
+                return shammodels::common::to_py_json(self);
+            },
+            "Converts the config to a json like dictionary");
+
+        cls.def(
+            "from_json",
+            [](TConfig &self, py::object json_data) {
+                self = shammodels::common::from_py_json<TConfig>(json_data);
+            },
+            "Converts a json like dictionary to a config");
+    }
 } // namespace shammodels::common

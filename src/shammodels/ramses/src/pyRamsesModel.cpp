@@ -42,19 +42,11 @@ namespace shammodels::basegodunov {
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str())
-            .def(
-                "to_json",
-                [](TConfig &self) {
-                    return shammodels::common::to_py_json(self);
-                },
-                "Converts the config to a json like dictionary")
-            .def(
-                "from_json",
-                [](TConfig &self, py::object json_data) {
-                    self = shammodels::common::from_py_json<TConfig>(json_data);
-                },
-                "Converts a json like dictionary to a config")
+        py::class_<TConfig> config_cls(m, name_config.c_str());
+
+        shammodels::common::add_json_defs<TConfig>(config_cls);
+
+        config_cls
             .def(
                 "set_scale_factor",
                 [](TConfig &self, Tscal scale_factor) {

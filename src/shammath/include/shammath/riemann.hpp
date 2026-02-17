@@ -442,9 +442,9 @@ namespace shammath {
         const Tscal S_star
             = (primR.press - primL.press + velxL * var_L - velxR * var_R) / (var_L - var_R);
 
-        // // New pressure estimate in the star region as average the pressure estimate at rigt
-        // // and left of S_star in the star region
-        // //   Equation (10.42) from Toro 3rd Edition , Springer 2009
+        // New pressure estimate in the star region as average the pressure estimate at right
+        // and left of S_star in the star region
+        // Equation (10.42) from Toro 3rd Edition , Springer 2009
         const Tscal press_LR
             = 0.5 * (pressL + pressR + var_L * (S_star - velxL) + var_R * (S_star - velxR));
         Tvec D{1, 0, 0};

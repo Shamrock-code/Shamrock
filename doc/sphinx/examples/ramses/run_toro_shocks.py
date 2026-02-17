@@ -10,11 +10,17 @@ Initial conditions from Toro "Riemann Solvers and Numerical Methods for Fluid Dy
 | Test | x_0   | rho_L   | vx_L       | p_L       | rho_R   | vx_R      | p_R       | tend  |
 +======+=======+=========+============+===========+=========+===========+===========+=======+
 | 1    | 0.3   | 1.0     | 0.75       | 1.0       | 0.125   | 0.0       | 0.1       | 0.2   |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 2    | 0.5   | 1.0     | -2.0       | 0.4       | 1.0     | 2.0       | 0.4       | 0.15  |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 3    | 0.5   | 1.0     | 0.0        | 1000.0    | 1.0     | 0.0       | 0.01      | 0.012 |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 4    | 0.4   | 5.99924 | 19.5975    | 460.894   | 5.99242 | -6.19633  | 46.0950   | 0.035 |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 5    | 0.8   | 1.0     | -19.59745  | 1000.0    | 1.0     | -19.59745 | 0.01      | 0.012 |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 6    | 0.5   | 1.4     | 0.0        | 1.0       | 1.0     | 0.0       | 1.0       | 2.0   |
++------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 | 7    | 0.5   | 1.4     | 0.1        | 1.0       | 1.0     | 0.1       | 1.0       | 2.0   |
 +------+-------+---------+------------+-----------+---------+-----------+-----------+-------+
 """
@@ -234,7 +240,7 @@ def plot_results(data, cases, tmax, test_number):
 
     plt.tight_layout()
     plt.savefig(os.path.join(output_folder, f"toro_shocks_test_{test_number}.png"))
-    plt.close()
+    return fig
 
 
 def gif_results(data, tmax, test_number, case_anim):
@@ -301,7 +307,7 @@ def gif_results(data, tmax, test_number, case_anim):
     plt.tight_layout()
     writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
     anim.save(os.path.join(output_folder, f"toro_shocks_test_{test_number}.gif"), writer=writer)
-    plt.close()
+    return anim
 
 
 def run_and_plot(cases, test_number, case_anim):
@@ -313,12 +319,15 @@ def run_and_plot(cases, test_number, case_anim):
         data[key], tmax = run_test(
             test_number, slope_limiter, riemann_solver, only_last_step=only_last_step
         )
-    print(data)
-    plot_results(data, cases, tmax, test_number)
-    return gif_results(data[case_anim], tmax, test_number, case_anim)
+
+    return plot_results(data, cases, tmax, test_number), gif_results(
+        data[case_anim], tmax, test_number, case_anim
+    )
 
 
 # %%
+
+# sphinx_gallery_multi_image = "single"
 
 cases = [
     # ("none", "rusanov"),
@@ -336,10 +345,26 @@ cases_no_hllc = [
     ("minmod", "hll"),
 ]
 
-run_and_plot(cases_no_hllc, 1, "minmod_hll")
-run_and_plot(cases_no_hllc, 2, "minmod_hll")
-run_and_plot(cases, 3, "minmod_hllc")
-run_and_plot(cases, 4, "minmod_hllc")
-run_and_plot(cases, 5, "minmod_hllc")
-run_and_plot(cases, 6, "minmod_hllc")
-run_and_plot(cases, 7, "minmod_hllc")
+# %%
+plot, anim = run_and_plot(cases_no_hllc, 1, "minmod_hll")
+
+# %%
+plot, anim = run_and_plot(cases_no_hllc, 2, "minmod_hll")
+
+# %%
+plot, anim = run_and_plot(cases, 3, "minmod_hllc")
+
+# %%
+plot, anim = run_and_plot(cases, 4, "minmod_hllc")
+
+# %%
+plot, anim = run_and_plot(cases, 5, "minmod_hllc")
+
+# %%
+plot, anim = run_and_plot(cases, 6, "minmod_hllc")
+
+# %%
+plot, anim = run_and_plot(cases, 7, "minmod_hllc")
+
+# %%
+plt.show()

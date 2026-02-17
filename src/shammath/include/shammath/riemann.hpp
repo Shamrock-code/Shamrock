@@ -460,7 +460,7 @@ namespace shammath {
         Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
 
         // intemediate Flux in the star region
-        //   Equation (10.38) from Toro 3rd Edition , Springer 2009
+        // Equation (10.38) from Toro 3rd Edition , Springer 2009
         Tcons FL_star = FL + SL * (cL_star - cL);
         Tcons FR_star = FR + SR * (cR_star - cR);
 

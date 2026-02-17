@@ -411,8 +411,8 @@ namespace shammath {
         // //  pressure in the star region estimate
         Tscal press_star = sham::max(0., p_pvrs);
 
-        // // once the pressure in the star region is known, we then estimates the wave speeds
-        // // folowing https://ui.adsabs.harvard.edu/abs/1994ShWav...4...25T/abstract or Equations
+        // Once the pressure in the star region is known, we then estimates the wave speeds
+        // following https://ui.adsabs.harvard.edu/abs/1994ShWav...4...25T/abstract or Equations
         // (10.59 - 10.60) from Toro
         Tscal qL = 0, qR = 0;
         if (press_star <= pressL) {

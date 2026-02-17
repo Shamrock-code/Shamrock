@@ -55,6 +55,22 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
     py::class_<TConfig>(m, name_config.c_str())
+        .def(
+            "to_json",
+            [](TConfig &self) {
+                auto json_loads  = py::module_::import("json").attr("loads");
+                nlohmann::json j = self;
+                return json_loads(j.dump());
+            },
+            "Converts the config to a json like dictionary")
+        .def(
+            "from_json",
+            [](TConfig &self, py::object json_data) {
+                auto json_dumps = py::module_::import("json").attr("dumps");
+                std::string j   = json_dumps(json_data).cast<std::string>();
+                return nlohmann::json::parse(j).get<TConfig>();
+            },
+            "Converts a json like dictionary to a config")
         .def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)

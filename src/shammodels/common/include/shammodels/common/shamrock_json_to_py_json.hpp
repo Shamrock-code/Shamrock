@@ -23,7 +23,7 @@
 namespace shammodels::common {
 
     template<class T>
-    inline py::object to_py_json(T &self) {
+    inline py::object to_py_json(const T &self) {
         auto json_loads  = py::module_::import("json").attr("loads");
         nlohmann::json j = self;
         return json_loads(j.dump());

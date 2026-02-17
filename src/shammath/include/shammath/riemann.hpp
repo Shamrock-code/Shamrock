@@ -438,7 +438,7 @@ namespace shammath {
         const Tscal var_R = rhoR * (SR - velxR);
 
         // S* speed estimate
-        //  Equation (10.37) from Toro 3rd Edition , Springer 2009
+        // Equation (10.37) from Toro 3rd Edition , Springer 2009
         const Tscal S_star
             = (primR.press - primL.press + velxL * var_L - velxR * var_R) / (var_L - var_R);
 

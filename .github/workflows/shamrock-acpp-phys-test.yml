@@ -136,12 +136,15 @@ jobs:
     strategy:
       matrix:
         include:
+          # Ramses examples
           - testfile: "examples/ramses/run_kh.py"
             artifact_name: gallery_ramses_run_kh
           - testfile: "examples/ramses/run_linear_wave_with_bc.py"
             artifact_name: gallery_ramses_run_linear_wave_with_bc
           - testfile: "examples/ramses/run_advect.py"
             artifact_name: gallery_ramses_run_advect
+
+          # SPH examples
           - testfile: "examples/sph/run_circular_disc_lense_thirring.py"
             artifact_name: gallery_sph_run_circular_disc_lense_thirring
           - testfile: "examples/sph/run_circular_disc_central_pot.py"
@@ -152,6 +155,15 @@ jobs:
             artifact_name: gallery_sph_run_kelvin_helmholtz
           - testfile: "examples/sph/run_sph_shear_test.py"
             artifact_name: gallery_sph_run_sph_shear_test
+          - testfile: "examples/sph/run_advect_sphere_domain_decomp.py"
+            artifact_name: gallery_sph_run_advect_sphere_domain_decomp
+          - testfile: "examples/sph/run_sphsetup_logs.py"
+            artifact_name: gallery_sph_run_sphsetup_logs
+
+          # Tests CI
+          - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
+            artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
+
 
       fail-fast: false
 

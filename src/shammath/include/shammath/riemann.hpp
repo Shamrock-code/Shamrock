@@ -464,7 +464,7 @@ namespace shammath {
         Tcons FL_star = FL + SL * (cL_star - cL);
         Tcons FR_star = FR + SR * (cR_star - cR);
 
-        // // HLLC flux
+        // HLLC flux
         auto hllc_flux = [=]() {
             if (SL >= 0) {
                 return FL;

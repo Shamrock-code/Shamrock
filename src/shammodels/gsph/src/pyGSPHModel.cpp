@@ -171,10 +171,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             "set_particle_mass",
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
-            })
-        .def("to_json", [](TConfig &self) {
-            return nlohmann::json{self}.dump(4);
-        });
+            });
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {

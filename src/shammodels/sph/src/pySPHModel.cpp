@@ -122,11 +122,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("mu_e"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
         .def(
-            "to_json",
-            [](TConfig &self) {
-                return nlohmann::json{self}.dump(4);
-            })
-        .def(
             "set_artif_viscosity_Constant",
             [](TConfig &self, Tscal alpha_u, Tscal alpha_AV, Tscal beta_AV) {
                 self.set_artif_viscosity_Constant({alpha_u, alpha_AV, beta_AV});

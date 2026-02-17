@@ -455,7 +455,7 @@ namespace shammath {
         // Tcons cL_star = (SL * cL - FL + press_star * D_star) * (1.0 / (SL - S_star));
         Tcons cL_star = (SL * cL - FL + press_LR * D_star) * (1.0 / (SL - S_star));
 
-        //  Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Right intermediate conservative state in the star region
         Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
 

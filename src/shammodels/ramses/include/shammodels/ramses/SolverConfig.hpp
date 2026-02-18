@@ -321,6 +321,27 @@ struct shammodels::basegodunov::SolverConfig {
     }
 };
 
+namespace nlohmann {
+    template<typename T>
+    struct adl_serializer<std::optional<T>> {
+        static void to_json(json &j, const std::optional<T> &opt) {
+            if (opt.has_value()) {
+                j = *opt;
+            } else {
+                j = nullptr;
+            }
+        }
+
+        static void from_json(const json &j, std::optional<T> &opt) {
+            if (j.is_null()) {
+                opt = std::nullopt;
+            } else {
+                opt = j.get<T>();
+            }
+        }
+    };
+} // namespace nlohmann
+
 namespace shammodels::basegodunov {
 
     template<class Tvec>
@@ -344,8 +365,6 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
 
-        nlohmann::json junit;
-
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
             {"RiemmanSolverMode", p.riemman_config},
@@ -356,7 +375,7 @@ namespace shammodels::basegodunov {
             {"eos_gamma", p.eos_gamma},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
             {"DustRiemannSolverMode", p.Csafe},
-            {"unit_sys", junit},
+            {"unit_sys", p.unit_sys},
             {"time_state", p.time_state}};
     }
 
@@ -370,25 +389,92 @@ namespace shammodels::basegodunov {
     inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p) {
         using T = SolverConfig<Tvec, TgridVec>;
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
 
+        bool has_used_defaults = false;
+
+        auto get_to_if_contains = [&](const std::string &key, auto &value) {
+            if (j.contains(key)) {
+                j.at(key).get_to(value);
+            } else {
+                has_used_defaults = true;
+            }
+        };
+
         // actual data stored in the json
-        j.at("RiemmanSolverMode").get_to(p.riemman_config);
-        j.at("SlopeMode").get_to(p.slope_config);
-        j.at("GravityMode").get_to(p.gravity_config.gravity_mode);
-        j.at("PassiveScalarMode").get_to(p.npscal_gas_config.npscal_gas);
-        j.at("face_half_time_interpolation").get_to(p.face_half_time_interpolation);
-        j.at("eos_gamma").get_to(p.eos_gamma);
-        j.at("grid_coord_to_pos_fact").get_to(p.grid_coord_to_pos_fact);
-        j.at("DustRiemannSolverMode").get_to(p.Csafe);
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
-        j.at("time_state").get_to(p.time_state);
+        get_to_if_contains("RiemmanSolverMode", p.riemman_config);
+        get_to_if_contains("SlopeMode", p.slope_config);
+        get_to_if_contains("GravityMode", p.gravity_config.gravity_mode);
+        get_to_if_contains("PassiveScalarMode", p.npscal_gas_config.npscal_gas);
+        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
+        get_to_if_contains("eos_gamma", p.eos_gamma);
+        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
+        get_to_if_contains("DustRiemannSolverMode", p.Csafe);
+        get_to_if_contains("time_state", p.time_state);
+        get_to_if_contains("unit_sys", p.unit_sys);
+
+        if (has_used_defaults) {
+
+            std::string json_user    = j.dump(4);
+            nlohmann::json j_current = p;
+            std::string json_current = j_current.dump(4);
+
+            std::vector<std::string> json_user_lines    = shambase::split_str(json_user, "\n");
+            std::vector<std::string> json_current_lines = shambase::split_str(json_current, "\n");
+
+            auto &v1 = json_user_lines;
+            auto &v2 = json_current_lines;
+
+            int dash_count = 50;
+
+            std::string faint_line = shambase::format(
+                "{}{:-^{}}{}\n",
+                shambase::term_colors::faint(),
+                "",         // empty string
+                dash_count, // dynamic width
+                shambase::term_colors::reset());
+
+            std::stringstream ss;
+            ss << "The supplied json is incomplete, some default values were used.\n";
+            ss << "Differences between the supplied json and the current config :\n";
+            ss << faint_line;
+
+            // Equivalent to diff since the json entries are sorted
+            auto it1 = v1.begin();
+            auto it2 = v2.begin();
+
+            auto green = shambase::term_colors::col8b_green();
+            auto red   = shambase::term_colors::col8b_red();
+            auto reset = shambase::term_colors::reset();
+
+            while (it1 != v1.end() || it2 != v2.end()) {
+                if (it1 == v1.end()) {
+                    ss << shambase::format("{}+ {}{}\n", green, *it2++, reset);
+                } else if (it2 == v2.end()) {
+                    ss << shambase::format("{}- {}{}\n", red, *it1++, reset);
+                } else if (*it1 < *it2) {
+                    ss << shambase::format("{}- {}{}\n", red, *it1++, reset);
+                } else if (*it2 < *it1) {
+                    ss << shambase::format("{}+ {}{}\n", green, *it2++, reset);
+                } else {
+                    ss << shambase::format("  {}\n", *it1); // unchanged
+                    ++it1;
+                    ++it2;
+                }
+            }
+            ss << faint_line;
+
+            logger::warn_ln("Ramses::SolverConfig", ss.str());
+        }
     }
 
 } // namespace shammodels::basegodunov

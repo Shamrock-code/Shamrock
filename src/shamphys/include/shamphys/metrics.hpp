@@ -30,7 +30,7 @@ namespace shamphys {
         Tscal bh_mass;
         Tscal rs;
 
-        Kerr(Tscal spin = 1, Tscal mass = 1) : a(spin), bh_mass(bh_mass), rs(2. * bh_mass) {}
+        Kerr(Tscal spin = 1, Tscal mass = 1) : a(spin), bh_mass(mass), rs(2. * mass) {}
     };
 
     struct Schwarzschild {};
@@ -50,8 +50,8 @@ namespace shamphys {
         std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
 
         // metric params
-        static constexpr Tscal a  = kerr.a;
-        static constexpr Tscal rs = kerr.rs;
+        const Tscal a  = kerr.a;
+        const Tscal rs = kerr.rs;
 
         // pos coords
         Tscal x = pos(0), y = pos(1), z = pos(2);
@@ -116,8 +116,8 @@ namespace shamphys {
         std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
 
         // metric params
-        static constexpr Tscal a  = kerr.a;
-        static constexpr Tscal rs = kerr.rs;
+        const Tscal a  = kerr.a;
+        const Tscal rs = kerr.rs;
 
         // pos coords
         Tscal x = pos(0), y = pos(1), z = pos(2);
@@ -186,8 +186,8 @@ namespace shamphys {
         std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &dgcovdz) {
 
         // metric params
-        static constexpr Tscal a  = kerr.a;
-        static constexpr Tscal rs = kerr.rs;
+        const Tscal a  = kerr.a;
+        const Tscal rs = kerr.rs;
         // position coords
         Tscal x = pos(0);
         Tscal y = pos(1);
@@ -480,7 +480,7 @@ namespace shamphys {
     inline void get_cartesian_covariant_metric(
         const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> pos,
         std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
-        return get_cartesian_covariant_metric_impl<
+        get_cartesian_covariant_metric_impl<
             Tscal,
             SizeType,
             Layout1,
@@ -500,7 +500,7 @@ namespace shamphys {
     inline void get_cartesian_contravariant_metric(
         const std::mdspan<Tscal, std::extents<SizeType, 4>, Layout1, Accessor1> pos,
         std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> &g) {
-        return get_cartesian_contravariant_metric_impl<
+        get_cartesian_contravariant_metric_impl<
             Tscal,
             SizeType,
             Layout1,

@@ -143,6 +143,8 @@ jobs:
             artifact_name: gallery_ramses_run_linear_wave_with_bc
           - testfile: "examples/ramses/run_advect.py"
             artifact_name: gallery_ramses_run_advect
+          - testfile: "examples/ramses/run_toro_shocks.py"
+            artifact_name: gallery_ramses_run_toro_shocks
 
           # SPH examples
           - testfile: "examples/sph/run_circular_disc_lense_thirring.py"

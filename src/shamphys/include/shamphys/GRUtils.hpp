@@ -23,35 +23,42 @@
 
 namespace shamphys {
 
-    template<class Tvec, class Tscal, class SizeType,
+    template<
+        class Tvec,
+        class Tscal,
+        class SizeType,
         class Layout1,
         class Layout2,
         class Accessor1,
         class Accessor2>
-     struct GR_physics {
+    struct GR_physics {
 
-    inline static constexpr Tscal GR_dot(Tvec a, Tvec b, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov)
-    { return 0;}
+        inline static constexpr Tscal GR_dot(
+            Tvec a,
+            Tvec b,
+            std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            return 0;
+        }
 
-    inline static constexpr Tscal get_U0(Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) 
-    { return 0; }
+        inline static constexpr Tscal get_U0(
+            Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            return 0;
+        }
 
-    inline static constexpr Tvec get_V(Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) 
-    { return 0; }
+        inline static constexpr Tvec get_V(
+            Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            return 0;
+        }
 
-    inline static constexpr Tscal get_sqrt_g(Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) 
-    { return 0; }
+        inline static constexpr Tscal get_sqrt_g(
+            Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            return 0;
+        }
 
-    inline static constexpr Tscal get_sqrt_gamma(Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) 
-    { return 0; }
-
+        inline static constexpr Tscal get_sqrt_gamma(
+            Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+            return 0;
+        }
     };
-   
-
-   
-
-    
-
-
 
 } // namespace shamphys

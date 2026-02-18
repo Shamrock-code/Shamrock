@@ -34,12 +34,141 @@ namespace shamalgs::collective {
 
     using SerializedDDataComm = shambase::DistributedDataShared<sham::DeviceBuffer<u8>>;
 
+    template<sham::USMKindTarget target>
+    struct DDSCommCacheTarget {
+        std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> cache1;
+        std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> cache2;
+
+        void set_sizes(
+            sham::DeviceScheduler_ptr dev_sched,
+            const std::vector<size_t> &sizes_cache1,
+            const std::vector<size_t> &sizes_cache2) {
+
+            __shamrock_stack_entry();
+
+            // ensure correct length
+            cache1.resize(sizes_cache1.size());
+            cache2.resize(sizes_cache2.size());
+
+            // if size is different, resize
+            for (size_t i = 0; i < sizes_cache1.size(); i++) {
+                if (cache1[i]) {
+                    cache1[i]->resize(sizes_cache1[i], false);
+                } else {
+                    cache1[i] = std::make_unique<sham::DeviceBuffer<u8, target>>(
+                        sizes_cache1[i], dev_sched);
+                }
+            }
+            for (size_t i = 0; i < sizes_cache2.size(); i++) {
+                if (cache2[i]) {
+                    cache2[i]->resize(sizes_cache2[i], false);
+                } else {
+                    cache2[i] = std::make_unique<sham::DeviceBuffer<u8, target>>(
+                        sizes_cache2[i], dev_sched);
+                }
+            }
+        }
+
+        inline void send_cache_write_buf_at(
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
+            buf.copy_range_offset(
+                0, buf.get_size(), shambase::get_check_ref(cache1[buf_id]), offset);
+        }
+
+        inline void send_cache_read_buf_at(
+            size_t buf_id, size_t offset, size_t size, sham::DeviceBuffer<u8> &buf) {
+            buf.resize(size);
+            shambase::get_check_ref(cache1[buf_id]).copy_range(offset, offset + size, buf);
+        }
+
+        inline void recv_cache_write_buf_at(
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
+            buf.copy_range_offset(
+                0, buf.get_size(), shambase::get_check_ref(cache2[buf_id]), offset);
+        }
+
+        inline void recv_cache_read_buf_at(
+            size_t buf_id, size_t offset, size_t size, sham::DeviceBuffer<u8> &buf) {
+            buf.resize(size);
+            shambase::get_check_ref(cache2[buf_id]).copy_range(offset, offset + size, buf);
+        }
+    };
+
+    struct DDSCommCache {
+        std::variant<DDSCommCacheTarget<sham::device>, DDSCommCacheTarget<sham::host>> cache;
+
+        template<sham::USMKindTarget target>
+        std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &get_cache1() {
+            return shambase::get_check_ref(std::get_if<DDSCommCacheTarget<target>>(&cache)).cache1;
+        }
+
+        template<sham::USMKindTarget target>
+        std::vector<std::unique_ptr<sham::DeviceBuffer<u8, target>>> &get_cache2() {
+            return shambase::get_check_ref(std::get_if<DDSCommCacheTarget<target>>(&cache)).cache2;
+        }
+
+        template<sham::USMKindTarget target>
+        void set_sizes(
+            sham::DeviceScheduler_ptr dev_sched,
+            const std::vector<size_t> &sizes_cache1,
+            const std::vector<size_t> &sizes_cache2) {
+
+            __shamrock_stack_entry();
+
+            // init if not there
+            if (std::get_if<DDSCommCacheTarget<target>>(&cache) == nullptr) {
+                cache = DDSCommCacheTarget<target>{};
+            }
+
+            std::get<DDSCommCacheTarget<target>>(cache).set_sizes(
+                dev_sched, sizes_cache1, sizes_cache2);
+        }
+
+        inline void send_cache_write_buf_at(
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
+            std::visit(
+                [&](auto &cache) {
+                    cache.send_cache_write_buf_at(buf_id, offset, buf);
+                },
+                cache);
+        }
+
+        inline void send_cache_read_buf_at(
+            size_t buf_id, size_t offset, size_t size, sham::DeviceBuffer<u8> &buf) {
+            std::visit(
+                [&](auto &cache) {
+                    cache.send_cache_read_buf_at(buf_id, offset, size, buf);
+                },
+                cache);
+        }
+
+        inline void recv_cache_write_buf_at(
+            size_t buf_id, size_t offset, const sham::DeviceBuffer<u8> &buf) {
+            std::visit(
+                [&](auto &cache) {
+                    cache.recv_cache_write_buf_at(buf_id, offset, buf);
+                },
+                cache);
+        }
+
+        inline void recv_cache_read_buf_at(
+            size_t buf_id, size_t offset, size_t size, sham::DeviceBuffer<u8> &buf) {
+            std::visit(
+                [&](auto &cache) {
+                    cache.recv_cache_read_buf_at(buf_id, offset, size, buf);
+                },
+                cache);
+        }
+    };
+
     void distributed_data_sparse_comm(
         std::shared_ptr<sham::DeviceScheduler> dev_sched,
         SerializedDDataComm &send_ddistrib_data,
         SerializedDDataComm &recv_distrib_data,
         std::function<i32(u64)> rank_getter,
-        std::optional<SparseCommTable> comm_table = {});
+        DDSCommCache &cache,
+        std::optional<SparseCommTable> comm_table = {},
+        size_t max_comm_size                      = i32_max - 1); // MPI msg size limit
 
     template<class T>
     inline void serialize_sparse_comm(
@@ -49,6 +178,7 @@ namespace shamalgs::collective {
         std::function<i32(u64)> rank_getter,
         std::function<sham::DeviceBuffer<u8>(T &)> serialize,
         std::function<T(sham::DeviceBuffer<u8> &&)> deserialize,
+        DDSCommCache &cache,
         std::optional<SparseCommTable> comm_table = {}) {
 
         StackEntry stack_loc{};
@@ -68,7 +198,7 @@ namespace shamalgs::collective {
 
         SerializedDDataComm dcomm_recv;
 
-        distributed_data_sparse_comm(dev_sched, dcomm_send, dcomm_recv, rank_getter);
+        distributed_data_sparse_comm(dev_sched, dcomm_send, dcomm_recv, rank_getter, cache);
 
         recv_distrib_data = dcomm_recv.map<T>([&](u64, u64, sham::DeviceBuffer<u8> &buf) {
             // exchange the buffer held by the distrib data and give it to the deserializer

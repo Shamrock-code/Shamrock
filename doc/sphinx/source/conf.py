@@ -82,6 +82,7 @@ sphinx_gallery_conf = {
     # By default it is js/html5 where you can toggle and do frame by frame
     # However, this is huge in the resulting do so i opt to using mp4 instead for the compression
     "matplotlib_animations": (True, "mp4"),
+    "parallel": False,
 }
 
 # -- Options for HTML output -------------------------------------------------

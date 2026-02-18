@@ -19,6 +19,7 @@
  * domains in the Shamrock hydrodynamics framework.
  */
 
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
@@ -57,57 +58,22 @@ namespace shamrock::solvergraph {
     template<class T>
     class ExchangeGhostField : public shamrock::solvergraph::INode {
 
+        shamalgs::collective::DDSCommCache cache;
+
         public:
         /**
          * @brief Default constructor for ExchangeGhostField node
          */
         ExchangeGhostField() {}
 
-        /**
-         * @brief Structure containing references to input and output data edges
-         *
-         * This structure provides convenient access to the solver graph edges
-         * that this node operates on. It encapsulates both read-only input data
-         * and read-write output data used during ghost field exchange.
-         *
-         * @var rank_owner Read-only edge containing rank ownership information for each patch ID
-         * @var ghost_layer Read-write edge containing shared distributed ghost field data
-         */
-        struct Edges {
-            const shamrock::solvergraph::ScalarsEdge<u32> &rank_owner;
-            shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_layer;
-        };
+#define NODE_EXCHANGE_GHOST_FIELD_EDGES(X_RO, X_RW)                                                \
+    /* input */                                                                                    \
+    X_RO(shamrock::solvergraph::ScalarsEdge<u32>, rank_owner)                                      \
+    /* output */                                                                                   \
+    X_RW(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_layer)
 
-        /**
-         * @brief Sets the input and output data edges for this node
-         *
-         * This method connects the node to its required data dependencies in the
-         * solver graph. It establishes the read-only connection to rank ownership
-         * data and the read-write connection to ghost field data.
-         *
-         * @param rank_owner Shared pointer to edge containing rank ownership mapping for patch IDs
-         * @param ghost_layer Shared pointer to edge containing distributed ghost field data to be
-         * exchanged
-         */
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> rank_owner,
-            std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_layer) {
-            __internal_set_ro_edges({rank_owner});
-            __internal_set_rw_edges({ghost_layer});
-        }
-
-        /**
-         * @brief Retrieves references to the connected data edges
-         *
-         * @return Edges structure containing references to the rank ownership
-         *         and ghost field data edges used by this node
-         */
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<u32>>(0),
-                get_rw_edge<shamrock::solvergraph::PatchDataFieldDDShared<T>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EXCHANGE_GHOST_FIELD_EDGES)
+#undef NODE_EXCHANGE_GHOST_FIELD_EDGES
 
         /**
          * @brief Performs the ghost field data exchange computation

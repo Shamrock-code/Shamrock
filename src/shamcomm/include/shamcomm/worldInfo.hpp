@@ -18,6 +18,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include <string>
 
 namespace shamcomm {
 
@@ -41,6 +42,13 @@ namespace shamcomm {
      * @return the maximum value of the MPI tag
      */
     i32 mpi_max_tag_value();
+
+    /**
+     * @brief Gets the name of the MPI process
+     *
+     * @return the name of the MPI process
+     */
+    std::string mpi_process_name();
 
     /**
      * @brief Gets the information about the MPI communicator

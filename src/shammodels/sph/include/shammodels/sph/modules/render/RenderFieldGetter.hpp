@@ -21,7 +21,9 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <pybind11/pytypes.h>
 
 namespace shammodels::sph::modules {
 
@@ -48,7 +50,12 @@ namespace shammodels::sph::modules {
         using lamda_runner
             = std::function<sham::DeviceBuffer<Tfield>(std::function<field_getter_t>)>;
 
-        sham::DeviceBuffer<Tfield> runner_function(std::string field_name, lamda_runner lambda);
+        sham::DeviceBuffer<Tfield> runner_function(
+            std::string field_name,
+            lamda_runner lambda,
+            std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
+                custom_getter
+            = std::nullopt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

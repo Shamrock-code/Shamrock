@@ -28,10 +28,6 @@ namespace shamphys {
         class Tvec,
         class Tscal,
         class SizeType,
-    template<
-        class Tvec,
-        class Tscal,
-        class SizeType,
         class Layout1,
         class Layout2,
         class Accessor1,
@@ -62,14 +58,17 @@ namespace shamphys {
             Tvec b,
             std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
             return 0;
+            // TODO
         }
 
         inline static constexpr Tscal get_U0(
             Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
-            return 0;
-        }
-        inline static constexpr Tscal get_U0(
-            Tvec vxyz, std::mdspan<Tscal, std::extents<SizeType, 4, 4>, Layout2, Accessor2> gcov) {
+
+            // U0 = gamma / alpha
+            Tscal alpha = get_alpha(gcov);
+
+            // Tscal gamma = mat_inv_33 ... submdspan would be nice ... it's in the 26 standard
+            // though ...;
             return 0;
         }
 

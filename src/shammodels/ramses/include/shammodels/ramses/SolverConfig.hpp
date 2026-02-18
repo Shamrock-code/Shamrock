@@ -348,13 +348,14 @@ namespace shammodels::basegodunov {
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
             {"RiemmanSolverMode", p.riemman_config},
+            {"DustRiemannSolverMode", p.dust_config.dust_riemann_config},
             {"SlopeMode", p.slope_config},
             {"GravityMode", p.gravity_config.gravity_mode},
             {"PassiveScalarMode", p.npscal_gas_config.npscal_gas},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"eos_gamma", p.eos_gamma},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"DustRiemannSolverMode", p.Csafe},
+            {"courant_safety_factor", p.Csafe},
             {"unit_sys", p.unit_sys},
             {"time_state", p.time_state}};
     }
@@ -392,13 +393,14 @@ namespace shammodels::basegodunov {
 
         // actual data stored in the json
         get_to_if_contains("RiemmanSolverMode", p.riemman_config);
+        get_to_if_contains("DustRiemannSolverMode", p.dust_config.dust_riemann_config);
         get_to_if_contains("SlopeMode", p.slope_config);
         get_to_if_contains("GravityMode", p.gravity_config.gravity_mode);
         get_to_if_contains("PassiveScalarMode", p.npscal_gas_config.npscal_gas);
         get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
         get_to_if_contains("eos_gamma", p.eos_gamma);
         get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
-        get_to_if_contains("DustRiemannSolverMode", p.Csafe);
+        get_to_if_contains("courant_safety_factor", p.Csafe);
         get_to_if_contains("time_state", p.time_state);
         get_to_if_contains("unit_sys", p.unit_sys);
 

@@ -338,18 +338,11 @@ cases = [
     ("minmod", "hllc"),
 ]
 
-cases_no_hllc = [
-    # ("none", "rusanov"),
-    ("none", "hll"),
-    ("minmod", "rusanov"),
-    ("minmod", "hll"),
-]
+# %%
+plot, anim = run_and_plot(cases, 1, "minmod_hll")
 
 # %%
-plot, anim = run_and_plot(cases_no_hllc, 1, "minmod_hll")
-
-# %%
-plot, anim = run_and_plot(cases_no_hllc, 2, "minmod_hll")
+plot, anim = run_and_plot(cases, 2, "minmod_hll")
 
 # %%
 plot, anim = run_and_plot(cases, 3, "minmod_hllc")

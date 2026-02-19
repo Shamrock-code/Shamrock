@@ -27,7 +27,7 @@
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec, class TgridVec>
+    template<class TgridVec>
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:
         ComputeLevel0CellSize() {}
@@ -64,38 +64,8 @@ namespace shammodels::basegodunov::modules {
             auto edges               = get_edges();
             edges.level0_size.values = edges.refs.get_const_refs().template map<TgridVec>(
                 [&](u64 id_patch, const shamrock::patch::PatchDataLayer &pdat) {
-                    auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
-                    sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-                    sham::DeviceBuffer<TgridVec> block_size_buf(pdat.get_obj_cnt(), dev_sched);
-
-                    sham::EventList depends_list;
-                    auto block_min_acc
-                        = edges.spans_block_min.get_field(id_patch).get_buf().get_read_access(
-                            depends_list);
-                    auto block_max_acc
-                        = edges.spans_block_max.get_field(id_patch).get_buf().get_read_access(
-                            depends_list);
-                    auto block_size_acc = block_size_buf.get_write_access(depends_list);
-
-                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        cgh.parallel_for(
-                            sycl::range<1>(pdat.get_obj_cnt()), [=](sycl::item<1> gid) {
-                                u32 id             = gid.get_linear_id();
-                                block_size_acc[id] = block_max_acc[id] - block_min_acc[id];
-                            });
-                    });
-                    edges.spans_block_min.get_field(id_patch).get_buf().complete_event_state(e);
-                    edges.spans_block_max.get_field(id_patch).get_buf().complete_event_state(e);
-                    block_size_buf.complete_event_state(e);
-
-                    auto patch_min = shamalgs::primitives::min(
-                        dev_sched, block_size_buf, 0, pdat.get_obj_cnt());
-                    auto patch_max = shamalgs::primitives::max(
-                        dev_sched, block_size_buf, 0, pdat.get_obj_cnt());
-
-                    // shammath::AABB<TgridVec> patch_box = edges.patch_boxes.values.get(id_patch);
-                    // return patch_box.delt();
-                    return patch_max;
+                    shammath::AABB<TgridVec> patch_box = edges.patch_boxes.values.get(id_patch);
+                    return patch_box.delt();
                 });
         }
 

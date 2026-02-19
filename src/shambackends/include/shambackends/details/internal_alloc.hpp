@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -47,6 +47,8 @@ namespace sham::details {
     /// @brief Retrieve the memory performance information.
     /// @return A MemPerfInfos object containing the memory performance data.
     MemPerfInfos get_mem_perf_info();
+
+    std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched);
 
     /// @brief Reset the memory information for the maximum allocated bytes.
     void reset_mem_info_max();

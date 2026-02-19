@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -85,7 +85,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
 
 template<class Tvec, class TgridVec, RiemannSolverMode mode, Direction dir>
 std::string shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, dir>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -137,7 +137,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxDustDirMode<Tvec, TgridVec
 
 template<class Tvec, class TgridVec, DustRiemannSolverMode mode, Direction dir>
 std::string shammodels::basegodunov::modules::
-    NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, dir>::_impl_get_tex() {
+    NodeComputeFluxDustDirMode<Tvec, TgridVec, mode, dir>::_impl_get_tex() const {
     return "TODO";
 }
 

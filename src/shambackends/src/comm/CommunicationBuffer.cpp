@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -26,13 +26,14 @@ namespace shamcomm {
     bool validate_comm_internal(std::shared_ptr<sham::DeviceScheduler> &device_sched) {
 
         u32 nbytes = 1e5;
-        sycl::buffer<u8> buf_comp(nbytes);
+        sham::DeviceBuffer<u8> buf_comp(nbytes, device_sched);
 
         {
-            sycl::host_accessor acc1{buf_comp, sycl::write_only, sycl::no_init};
+            std::vector<u8> host_data(nbytes);
             for (u32 i = 0; i < nbytes; i++) {
-                acc1[i] = i % 100;
+                host_data[i] = i % 100;
             }
+            buf_comp.copy_from_stdvec(host_data);
         }
 
         shamcomm::CommunicationBuffer cbuf{buf_comp, device_sched};
@@ -62,18 +63,19 @@ namespace shamcomm {
             shamcomm::mpi::Wait(&rq2, MPI_STATUS_IGNORE);
         }
 
-        sycl::buffer<u8> recv = shamcomm::CommunicationBuffer::convert(std::move(cbuf_recv));
+        sham::DeviceBuffer<u8> recv
+            = shamcomm::CommunicationBuffer::convert_usm(std::move(cbuf_recv));
 
         bool valid = true;
 
         if (shamcomm::world_rank() == 0) {
-            sycl::host_accessor acc1{buf_comp};
-            sycl::host_accessor acc2{recv};
+            std::vector<u8> acc1 = buf_comp.copy_to_stdvec();
+            std::vector<u8> acc2 = recv.copy_to_stdvec();
 
             std::string id_err_list = "errors in id : ";
 
             bool eq = true;
-            for (u32 i = 0; i < recv.size(); i++) {
+            for (u32 i = 0; i < acc1.size(); i++) {
                 if (!sham::equals(acc1[i], acc2[i])) {
                     eq = false;
                     // id_err_list += std::to_string(i) + " ";
@@ -88,7 +90,6 @@ namespace shamcomm {
 
     void validate_comm(std::shared_ptr<sham::DeviceScheduler> &sched) {
         u32 nbytes = 1e5;
-        sycl::buffer<u8> buf_comp(nbytes);
 
         bool call_abort = false;
 

@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -38,6 +38,7 @@ set(Sources
     src/modules/UpdateDerivs.cpp
     src/modules/ComputeLoadBalanceValue.cpp
     src/modules/ComputeOmega.cpp
+    src/modules/ComputeLuminosity.cpp
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp
     src/modules/AnalysisSodTube.cpp
@@ -54,6 +55,11 @@ set(Sources
     src/modules/setup/ModifierApplyCustomWarp.cpp
     src/modules/setup/ModifierOffset.cpp
     src/modules/setup/ModifierFilter.cpp
+    src/modules/setup/ModifierSplitPart.cpp
+    src/modules/self_gravity/SGDirectPlummer.cpp
+    src/modules/self_gravity/SGMMPlummer.cpp
+    src/modules/self_gravity/SGFMMPlummer.cpp
+    src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
 
@@ -76,6 +82,7 @@ target_link_libraries(shammodels_sph PUBLIC shammath)
 target_link_libraries(shammodels_sph PUBLIC shamphys)
 target_link_libraries(shammodels_sph PUBLIC shamsys)
 target_link_libraries(shammodels_sph PUBLIC shammodels_common)
+target_link_libraries(shammodels_sph PUBLIC shampylib)
 target_link_libraries(shammodels_sph PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shammodels_sph PUBLIC

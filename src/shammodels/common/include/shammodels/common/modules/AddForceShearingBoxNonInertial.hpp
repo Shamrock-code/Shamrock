@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -97,8 +97,10 @@ namespace shammodels::common::modules {
                 });
         }
 
-        inline virtual std::string _impl_get_label() { return "AddForceShearingBoxNonInertial"; };
+        inline virtual std::string _impl_get_label() const {
+            return "AddForceShearingBoxNonInertial";
+        };
 
-        virtual std::string _impl_get_tex() { return "TODO"; }
+        virtual std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shammodels::common::modules

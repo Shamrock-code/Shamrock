@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -100,7 +100,7 @@ namespace shammodels::sph {
         }
 
         SolverConfig gen_config_from_phantom_dump(PhantomDump &phdump, bool bypass_error);
-        void init_from_phantom_dump(PhantomDump &phdump);
+        void init_from_phantom_dump(PhantomDump &phdump, Tscal hpart_fact_load = 1.0);
         PhantomDump make_phantom_dump();
 
         void do_vtk_dump(std::string filename, bool add_patch_world_id) {

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,10 +19,13 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
+#include "shammodels/ramses/modules/render/GridRender.hpp"
 #include <pybind11/functional.h>
+#include <pybind11/numpy.h>
 #include <memory>
 
 namespace shammodels::basegodunov {
@@ -39,7 +42,11 @@ namespace shammodels::basegodunov {
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str())
+        py::class_<TConfig> config_cls(m, name_config.c_str());
+
+        shammodels::common::add_json_defs<TConfig>(config_cls);
+
+        config_cls
             .def(
                 "set_scale_factor",
                 [](TConfig &self, Tscal scale_factor) {
@@ -100,7 +107,33 @@ namespace shammodels::basegodunov {
                 [](TConfig &self, bool face_time_interpolate) {
                     self.face_half_time_interpolation = face_time_interpolate;
                 })
+            .def(
+                "set_boundary_condition",
+                [](TConfig &self, const std::string &axis, const std::string &bc_type) {
+                    BCConfig::GhostType ghost_type;
+                    if (bc_type == "periodic") {
+                        ghost_type = BCConfig::GhostType::Periodic;
+                    } else if (bc_type == "reflective") {
+                        ghost_type = BCConfig::GhostType::Reflective;
+                    } else if (bc_type == "outflow") {
+                        ghost_type = BCConfig::GhostType::Outflow;
+                    } else {
+                        throw std::invalid_argument(
+                            "Unsupported boundary condition type: " + bc_type);
+                    }
 
+                    if (axis == "x") {
+                        self.bc_config.set_x(ghost_type);
+                    } else if (axis == "y") {
+                        self.bc_config.set_y(ghost_type);
+                    } else if (axis == "z") {
+                        self.bc_config.set_z(ghost_type);
+                    } else {
+                        throw std::invalid_argument("Unsupported axis: " + axis);
+                    }
+                },
+                py::arg("axis"),
+                py::arg("bc_type"))
             .def(
                 "set_dust_mode_dhll",
                 [](TConfig &self, u32 ndust) {
@@ -276,9 +309,30 @@ namespace shammodels::basegodunov {
                 [](T &self) {
                     return shambase::get_check_ref(self.solver.storage.solver_sequence).get_tex();
                 })
-            .def("get_solver_dot_graph", [](T &self) {
-                return shambase::get_check_ref(self.solver.storage.solver_sequence).get_dot_graph();
-            });
+            .def(
+                "get_solver_dot_graph",
+                [](T &self) {
+                    return shambase::get_check_ref(self.solver.storage.solver_sequence)
+                        .get_dot_graph();
+                })
+            .def(
+                "render_slice",
+                [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions)
+                    -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                    if (field_type == "f64") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    if (field_type == "f64_3") {
+                        ramses::modules::GridRender<Tvec, TgridVec, f64_3> render(
+                            self.ctx, self.solver.solver_config, self.solver.storage);
+                        return render.compute_slice(name, positions).copy_to_stdvec();
+                    }
+
+                    throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+                });
     }
 } // namespace shammodels::basegodunov
 

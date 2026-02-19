@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -40,6 +40,7 @@ Register_pymod(pysham_mathinit) {
 
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
+    shampylib::init_shamrock_math_RingRay<f64_3>(math_module, "RingRay_f64_3");
     shampylib::init_shamrock_math_sfc(math_module);
     shampylib::init_shamrock_math_sphkernels(math_module);
 
@@ -86,7 +87,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_periodic_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_periodic_3d<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_periodic_3d<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_periodic_3d<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_periodic_3d<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_periodic_3d<f64_3>::get_paving_index_intersecting);
 
     py::class_<shammath::paving_function_general_3d<f64_3>>(
         math_module, "paving_function_general_3d")
@@ -103,7 +107,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_general_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_general_3d<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_general_3d<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_general_3d<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_general_3d<f64_3>::get_paving_index_intersecting);
 
     py::class_<shammath::paving_function_general_3d_shear_x<f64_3>>(
         math_module, "paving_function_general_3d_shear_x")
@@ -126,7 +133,10 @@ Register_pymod(pysham_mathinit) {
         .def("f", &shammath::paving_function_general_3d_shear_x<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv)
         .def("f_aabb", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb)
-        .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv);
+        .def("f_aabb_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_aabb_inv)
+        .def(
+            "get_paving_index_intersecting",
+            &shammath::paving_function_general_3d_shear_x<f64_3>::get_paving_index_intersecting);
 
     py::class_<f64_4x4>(math_module, "f64_4x4")
         .def(py::init([]() {

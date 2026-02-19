@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,11 +9,13 @@
 
 /**
  * @file PatchDataLayer.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
  */
 
+#include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
@@ -22,6 +24,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
+#include <vector>
 
 namespace shamrock::patch {
 
@@ -67,6 +70,29 @@ namespace shamrock::patch {
                         field.extract_element(pidx, out_field);
                     } else {
                         throw shambase::make_except_with_loc<std::invalid_argument>("missmatch");
+                    }
+                },
+                fields[idx].value,
+                out_pdat.fields[idx].value);
+        }
+    }
+
+    void PatchDataLayer::extract_elements(
+        const sham::DeviceBuffer<u32> &idxs, PatchDataLayer &out_pdat) {
+        StackEntry stack_loc{};
+
+        for (u32 idx = 0; idx < fields.size(); idx++) {
+
+            std::visit(
+                [&](auto &field, auto &out_field) {
+                    using t1 = typename std::remove_reference<decltype(field)>::type::Field_type;
+                    using t2 =
+                        typename std::remove_reference<decltype(out_field)>::type::Field_type;
+
+                    if constexpr (std::is_same<t1, t2>::value) {
+                        field.extract_elements(idxs, out_field);
+                    } else {
+                        throw shambase::make_except_with_loc<std::invalid_argument>("mismatch");
                     }
                 },
                 fields[idx].value,
@@ -313,9 +339,19 @@ namespace shamrock::patch {
 
         PatchDataField<T> &main_field = fields[0].get_if_ref_throw<T>();
 
+        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
+        //     return main_field.get_elements_with_range(
+        //         [&](T val, T vmin, T vmax) {
+        //             return Patch::is_in_patch_converted(val, vmin, vmax);
+        //         },
+        //         vmin,
+        //         vmax);
+        // };
+
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-            return main_field.get_elements_with_range(
-                [&](T val, T vmin, T vmax) {
+            return main_field.get_ids_vec_where(
+                [&](const auto &acc, u32 idx, T vmin, T vmax) {
+                    T val = acc[idx];
                     return Patch::is_in_patch_converted(val, vmin, vmax);
                 },
                 vmin,

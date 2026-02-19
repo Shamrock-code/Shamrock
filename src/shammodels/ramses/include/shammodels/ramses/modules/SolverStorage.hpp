@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -197,9 +197,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_zp;
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<Tvec>> flux_rhov_dust_face_zm;
 
-        Component<shamrock::ComputeField<Tscal>> dtrho;
-        Component<shamrock::ComputeField<Tvec>> dtrhov;
-        Component<shamrock::ComputeField<Tscal>> dtrhoe;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> dtrho;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dtrhov;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> dtrhoe;
 
         Component<shamrock::ComputeField<Tscal>> rho_next_no_drag;
         Component<shamrock::ComputeField<Tvec>> rhov_next_no_drag;
@@ -231,9 +231,9 @@ namespace shammodels::basegodunov {
         std::shared_ptr<solvergraph::NeighGraphLinkFieldEdge<std::array<Tvec, 2>>> vel_dust_face_zm;
 
         // time derivative dust density
-        Component<shamrock::ComputeField<Tscal>> dtrho_dust;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> dtrho_dust;
         // time derivative dust momemtum
-        Component<shamrock::ComputeField<Tvec>> dtrhov_dust;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dtrhov_dust;
 
         struct Timings {
             f64 interface = 0;

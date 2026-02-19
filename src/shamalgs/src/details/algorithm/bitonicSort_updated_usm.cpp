@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -349,11 +349,9 @@ namespace shamalgs::algorithm::details {
                             sham::MultiRef{},
                             sham::MultiRef{buf_key, buf_values},
                             nThreads,
-                            [](u64 gid, Tkey *m, Tval *id, u32 inc, u32 length) {
+                            [=](u64 gid, Tkey *m, Tval *id) {
                                 B::template order_kernel<8>(m, id, inc, length, gid);
-                            },
-                            inc,
-                            length);
+                            });
 
                         // sort_kernel_B8(arg_eq,* buf_key->buf,*
                         // particles::buf_ids->buf,inc,length<<1);//.wait();

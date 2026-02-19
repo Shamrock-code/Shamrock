@@ -21,9 +21,11 @@ import shamrock
 
 # -- Project information -----------------------------------------------------
 
+# start allow utf-8
 project = "python bindings"
 copyright = f"2020 -- {datetime.datetime.now().year} Timothee David--Cléris"
 author = "Timothee David--Cléris"
+# end allow utf-8
 
 release = shamrock.version_string()
 
@@ -80,6 +82,7 @@ sphinx_gallery_conf = {
     # By default it is js/html5 where you can toggle and do frame by frame
     # However, this is huge in the resulting do so i opt to using mp4 instead for the compression
     "matplotlib_animations": (True, "mp4"),
+    "parallel": False,
 }
 
 # -- Options for HTML output -------------------------------------------------

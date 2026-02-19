@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -48,7 +48,7 @@ namespace shambase {
          *
          * @return The uuid of the class
          */
-        inline Tint get_uuid() { return uuid; }
+        inline Tint get_uuid() const { return uuid; }
 
         /**
          * @brief Constructor of the class

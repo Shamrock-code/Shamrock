@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -49,11 +49,13 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
     shamrock::ComputeField<Tvec> cfield_rhov_d_next_bf_drag
         = utility.make_compute_field<Tvec>("rhov_d_next_bf_drag", ndust * AMRBlock::block_size);
 
-    shamrock::ComputeField<Tscal> &cfield_dtrho   = storage.dtrho.get();
-    shamrock::ComputeField<Tvec> &cfield_dtrhov   = storage.dtrhov.get();
-    shamrock::ComputeField<Tscal> &cfield_dtrhoe  = storage.dtrhoe.get();
-    shamrock::ComputeField<Tscal> &cfield_dtrho_d = storage.dtrho_dust.get();
-    shamrock::ComputeField<Tvec> &cfield_dtrhov_d = storage.dtrhov_dust.get();
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
+    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
+    shamrock::solvergraph::Field<Tscal> &cfield_dtrho_d
+        = shambase::get_check_ref(storage.dtrho_dust);
+    shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_d
+        = shambase::get_check_ref(storage.dtrhov_dust);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl();
@@ -75,11 +77,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::involve_w
         sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
         u32 id               = p.id_patch;
 
-        sham::DeviceBuffer<Tscal> &dt_rho_patch   = cfield_dtrho.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_patch   = cfield_dtrhov.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &dt_rhoe_patch  = cfield_dtrhoe.get_buf_check(id);
-        sham::DeviceBuffer<Tscal> &dt_rho_d_patch = cfield_dtrho_d.get_buf_check(id);
-        sham::DeviceBuffer<Tvec> &dt_rhov_d_patch = cfield_dtrhov_d.get_buf_check(id);
+        sham::DeviceBuffer<Tscal> &dt_rho_patch   = cfield_dtrho.get_buf(id);
+        sham::DeviceBuffer<Tvec> &dt_rhov_patch   = cfield_dtrhov.get_buf(id);
+        sham::DeviceBuffer<Tscal> &dt_rhoe_patch  = cfield_dtrhoe.get_buf(id);
+        sham::DeviceBuffer<Tscal> &dt_rho_d_patch = cfield_dtrho_d.get_buf(id);
+        sham::DeviceBuffer<Tvec> &dt_rhov_d_patch = cfield_dtrhov_d.get_buf(id);
 
         sham::DeviceBuffer<Tscal> &buf_rho   = pdat.get_field_buf_ref<Tscal>(irho);
         sham::DeviceBuffer<Tvec> &buf_rhov   = pdat.get_field_buf_ref<Tvec>(irhovel);

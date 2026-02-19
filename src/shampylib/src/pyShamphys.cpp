@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,6 +9,7 @@
 
 /**
  * @file pyShamphys.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -23,6 +24,8 @@
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamphys/collapse.hpp"
+#include "shamphys/eos.hpp"
 #include "shamphys/fmm/GreenFuncGravCartesian.hpp"
 #include "shamphys/fmm/contract_grav_moment.hpp"
 #include "shamphys/fmm/grav_moment_offset.hpp"
@@ -245,6 +248,32 @@ Register_pymod(shamphyslibinit) {
         py::arg("pitch"),
         py::arg("yaw"));
 
+    shamphys_module.def(
+        "free_fall_time",
+        [](f64 rho, f64 G) {
+            return shamphys::free_fall_time(rho, G);
+        },
+        py::arg("rho"),
+        py::arg("G"),
+        R"pbdoc(
+        Compute the free fall time
+        rho : Density
+        G : Gravitational constant
+    )pbdoc");
+
+    shamphys_module.def(
+        "free_fall_time",
+        [](f64 rho, const shamunits::UnitSystem<f64> usys) {
+            return shamphys::free_fall_time(rho, usys);
+        },
+        py::arg("rho"),
+        py::arg("units"),
+        R"pbdoc(
+        Compute the free fall time
+        rho : Density
+        units : unit system
+    )pbdoc");
+
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.HydroSoundwave");
     py::class_<shamphys::HydroSoundwave>(shamphys_module, "HydroSoundwave")
         .def(
@@ -409,4 +438,36 @@ Register_pymod(shamphyslibinit) {
         py::arg("dM"),
         py::arg("from"),
         py::arg("to"));
+
+    // EOS
+
+    py::module eos_module = shamphys_module.def_submodule("eos");
+
+    eos_module.def(
+        "eos_Machida06",
+        [](f64 cs, f64 rho, f64 rho_c1, f64 rho_c2, f64 rho_c3, f64 mu, f64 mh, f64 kb) {
+            auto P   = shamphys::EOS_Machida06<f64>::pressure(cs, rho, rho_c1, rho_c2, rho_c3);
+            auto _cs = shamphys::EOS_Machida06<f64>::soundspeed(P, rho, rho_c1, rho_c2, rho_c3);
+            auto T   = shamphys::EOS_Machida06<f64>::temperature(P, rho, mu, mh, kb);
+            return std::tuple<f64, f64, f64>{P, _cs, T};
+        },
+        py::kw_only(),
+        py::arg("cs"),
+        py::arg("rho"),
+        py::arg("rho_c1"),
+        py::arg("rho_c2"),
+        py::arg("rho_c3"),
+        py::arg("mu"),
+        py::arg("mh"),
+        py::arg("kb"));
+
+    eos_module.def(
+        "eos_Fermi",
+        [](f64 mu_e, f64 rho) {
+            auto P_cs = shamphys::EOS_Fermi<f64>::pressure_and_soundspeed(mu_e, rho);
+            return std::tuple<f64, f64>{P_cs.pressure, P_cs.soundspeed};
+        },
+        py::kw_only(),
+        py::arg("mu_e"),
+        py::arg("rho"));
 }

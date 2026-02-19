@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -25,6 +25,8 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
+#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 #include <fstream>
@@ -471,6 +473,19 @@ class PatchScheduler {
 
         field.build_global(dtype);
     }
+
+    inline auto get_node_set_edge_patchdata_layer_refs() {
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::PatchDataLayerRefs> node_set_edge(
+            [&](shamrock::solvergraph::PatchDataLayerRefs &edge) {
+                edge.free_alloc();
+                using namespace shamrock::patch;
+                for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    edge.patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
+                });
+            });
+
+        return std::make_shared<decltype(node_set_edge)>(std::move(node_set_edge));
+    };
 
     /**
      * @brief add a root patch to the scheduler

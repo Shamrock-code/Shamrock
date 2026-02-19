@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -74,7 +74,8 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
 }
 
 template<class TgridVec>
-std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>::_impl_get_tex() {
+std::string shammodels::basegodunov::modules::FindGhostLayerCandidates<TgridVec>::_impl_get_tex()
+    const {
     auto sim_box                 = get_ro_edge_base(0).get_tex_symbol();
     auto patch_tree              = get_ro_edge_base(1).get_tex_symbol();
     auto patch_boxes             = get_ro_edge_base(2).get_tex_symbol();

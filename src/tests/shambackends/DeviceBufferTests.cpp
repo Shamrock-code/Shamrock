@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -117,7 +117,13 @@ TestStart(
     REQUIRE_EQUAL(b1.size(), b2.size());
     REQUIRE_EQUAL(b.get_size(), b1.size());
 
-    REQUIRE(shamalgs::primitives::equals(q, b1, b2));
+    if (b1.size() == b2.size() && b.get_size() == b1.size()) {
+        sycl::host_accessor acc1(b1, sycl::read_only);
+        sycl::host_accessor acc2(b2, sycl::read_only);
+        for (size_t i = 0; i < b1.size(); ++i) {
+            REQUIRE_EQUAL(acc1[i], acc2[i]);
+        }
+    }
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:fill", DeviceBuffer_fill1, 1) {
@@ -178,6 +184,75 @@ TestStart(Unittest, "shambackends/DeviceBuffer:fill(exception)", DeviceBuffer_fi
 
     // Try to fill the buffer with value 5, starting from index 15, with count 5
     REQUIRE_EXCEPTION_THROW(buffer.fill(5, {15, 20}), std::invalid_argument);
+}
+
+TestStart(Unittest, "shambackends/DeviceBuffer:fill_lambda", DeviceBuffer_fill_lambda1, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create a device buffer with size 10
+    sham::DeviceBuffer<int> buffer(10, dev_sched);
+
+    // Fill the buffer with i^2
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 10);
+
+        // Check that the buffer is filled with the correct value (i^2)
+        for (int i = 0; i < 10; i++) {
+            REQUIRE_EQUAL(b[i], i * i);
+        }
+    }
+}
+
+TestStart(
+    Unittest,
+    "shambackends/DeviceBuffer:fill_lambda(different size)",
+    DeviceBuffer_fill_lambda2,
+    1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create a device buffer with size 20
+    sham::DeviceBuffer<int> buffer(20, dev_sched);
+
+    // Fill the buffer with i^2
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 20);
+
+        // Check that the buffer is filled with the correct value (i^2)
+        for (int i = 0; i < 20; i++) {
+            REQUIRE_EQUAL(b[i], i * i);
+        }
+    }
+}
+
+TestStart(
+    Unittest, "shambackends/DeviceBuffer:fill_lambda(empty buffer)", DeviceBuffer_fill_lambda3, 1) {
+    std::shared_ptr<sham::DeviceScheduler> dev_sched
+        = shamsys::instance::get_compute_scheduler_ptr();
+
+    // Create an empty device buffer
+    sham::DeviceBuffer<int> buffer(0, dev_sched);
+
+    // Fill the buffer with i^2 (should handle empty buffer gracefully)
+    buffer.fill_lambda([](size_t i) {
+        return i * i;
+    });
+
+    {
+        std::vector<int> b = buffer.copy_to_stdvec();
+        REQUIRE_EQUAL(b.size(), 0);
+    }
 }
 
 TestStart(Unittest, "shambackends/DeviceBuffer:resize", DeviceBuffer_resize, 1) {

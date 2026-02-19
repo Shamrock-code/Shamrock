@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -138,5 +138,14 @@ namespace shamtree {
         const LeafCellIterator &cell_it,
         KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
         sham::DeviceBuffer<Tvec> &positions);
+
+    /// same but for position ranges
+    template<class Tvec>
+    KarrasRadixTreeAABB<Tvec> compute_tree_aabb_from_position_ranges(
+        const KarrasRadixTree &tree,
+        const LeafCellIterator &cell_it,
+        KarrasRadixTreeAABB<Tvec> &&recycled_tree_aabb,
+        sham::DeviceBuffer<Tvec> &min,
+        sham::DeviceBuffer<Tvec> &max);
 
 } // namespace shamtree

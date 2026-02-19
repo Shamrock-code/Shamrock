@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -153,7 +153,8 @@ std::vector<u64> PatchScheduler::add_root_patches(
         //);
     }
 
-    patch_list.build_local();
+    // build_local() is declared as nodiscard
+    (void) patch_list.build_local();
     patch_list.reset_local_pack_index();
     patch_list.build_local_idx_map();
     patch_list.build_global_idx_map();

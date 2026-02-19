@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -1224,7 +1224,8 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump &phdump) {
+void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
+    PhantomDump &phdump, Tscal hpart_fact_load) {
     StackEntry stack_loc{};
 
     bool has_coord_in_header = true;
@@ -1353,7 +1354,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(PhantomDump
                 ins_vxyz.push_back(vxyz[i]);
             }
             for (u64 i : sel_index) {
-                ins_h.push_back(h[i]);
+                ins_h.push_back(h[i] * hpart_fact_load);
             }
             if (u.size() > 0) {
                 for (u64 i : sel_index) {

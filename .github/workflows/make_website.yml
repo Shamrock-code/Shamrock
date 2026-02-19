@@ -47,11 +47,21 @@ jobs:
           name: code-coverage-report-acpp_omp_debug
           path: coverage
 
+      - name: 'Download tidy report'
+        uses: actions/download-artifact@v4
+        with:
+          name: clang-tidy.html
+          path: clang-tidy
+
       - name: 'Download Py doc'
         uses: actions/download-artifact@v4
         with:
           name: sphinx_doc
           path: sphinx
+
+
+      - name: ls local
+        run : ls -la
 
       - name: Create documentation archive
         run: tar -cf shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar .

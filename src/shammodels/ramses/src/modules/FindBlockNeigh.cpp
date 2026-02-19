@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -141,7 +141,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class Tvec, class TgridVec, class Tmorton>
-    std::string FindBlockNeigh<Tvec, TgridVec, Tmorton>::_impl_get_tex() {
+    std::string FindBlockNeigh<Tvec, TgridVec, Tmorton>::_impl_get_tex() const {
 
         std::string sizes             = get_ro_edge_base(0).get_tex_symbol();
         std::string block_min         = get_ro_edge_base(1).get_tex_symbol();

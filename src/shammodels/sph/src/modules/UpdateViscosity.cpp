@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -15,9 +15,10 @@
  *
  */
 
-#include "shammodels/sph/modules/UpdateViscosity.hpp"
+#include "shambase/memory.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/forces.hpp"
+#include "shammodels/sph/modules/UpdateViscosity.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <variant>
 
@@ -67,7 +68,11 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
         sham::DeviceBuffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
 
         sham::DeviceBuffer<Tscal> &buf_alpha_AV_updated
-            = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.alpha_av_updated)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
@@ -137,7 +142,11 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
         sham::DeviceBuffer<Tscal> &buf_h        = pdat.get_field_buf_ref<Tscal>(ihpart);
         sham::DeviceBuffer<Tscal> &buf_alpha_AV = pdat.get_field_buf_ref<Tscal>(ialpha_AV);
         sham::DeviceBuffer<Tscal> &buf_alpha_AV_updated
-            = storage.alpha_av_updated.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.alpha_av_updated)
+                  .get_refs()
+                  .get(cur_p.id_patch)
+                  .get()
+                  .get_buf();
 
         u32 obj_cnt = pdat.get_obj_cnt();
 

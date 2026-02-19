@@ -1,7 +1,7 @@
 ## -------------------------------------------------------
 ##
 ## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 ## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 ## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 ##
@@ -89,9 +89,11 @@ message( STATUS "CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
 
 include(ShamBuildAsan)
 include(ShamBuildUBsan)
+include(ShamBuildMsan)
+include(ShamBuildTsan)
 include(ShamBuildCoverage)
 
-set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "COVERAGE")
+set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "MSAN" "TSAN" "COVERAGE")
 if(NOT CMAKE_BUILD_TYPE)
     #set default build to release
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)

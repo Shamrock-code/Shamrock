@@ -1,19 +1,20 @@
 import os
 import sys
 
-comp_db = open("build/compile_commands.json", "r")
+print("Current working directory:", os.getcwd())
+comp_db = open("compile_commands.json", "r")
 db = comp_db.read()
+
+print("Database opened, replacing non standard flags ...")
 
 db = db.replace("--acpp-targets='omp'", "")
 # print(db)
 
 
 def remove_plugin_flags(cmd):
-
     new_cmd = ""
 
     for a in cmd.split():
-
         if not (a.startswith("-fplugin=") or a.startswith("-fpass-plugin")):
             new_cmd += a
             new_cmd += " "
@@ -43,12 +44,17 @@ def remove_external_files():
     db = json.dumps(ret_dic, indent=4)
 
 
+print("Removing external files ...")
 remove_external_files()
 
+print("Creating clang-tidy.mod directory ...")
 try:
-    os.mkdir("build/clang-tidy.mod")
+    os.mkdir("clang-tidy.mod")
 except:
     pass
 
-comp_db = open("build/clang-tidy.mod/compile_commands.json", "w")
+print("Writing compile_commands.json to clang-tidy.mod directory ...")
+comp_db = open("clang-tidy.mod/compile_commands.json", "w")
 comp_db.write(db)
+
+print("Done !")

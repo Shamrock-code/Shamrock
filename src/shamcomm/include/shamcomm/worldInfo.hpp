@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include <string>
 
 namespace shamcomm {
 
@@ -41,6 +42,13 @@ namespace shamcomm {
      * @return the maximum value of the MPI tag
      */
     i32 mpi_max_tag_value();
+
+    /**
+     * @brief Gets the name of the MPI process
+     *
+     * @return the name of the MPI process
+     */
+    std::string mpi_process_name();
 
     /**
      * @brief Gets the information about the MPI communicator

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,6 +19,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <cmath>
 #include <vector>
 
 template<class Ker>
@@ -82,13 +83,17 @@ inline void validate_kernel_3d(
     // is df = f' ?
     Tscal L2_sum = 0;
     Tscal step   = 0.01;
-    for (Tscal x = 0; x < Ker::Rkern; x += step) {
-        Tscal diff = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
+
+    const int num_steps = static_cast<int>(std::ceil(Ker::Rkern / step));
+    for (int i = 0; i < num_steps; i++) {
+        const Tscal x = i * step;
+        Tscal diff    = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
                          return Ker::f(x);
                      });
         diff *= gen_norm3d;
         L2_sum += diff * diff * step;
     }
+
     REQUIRE_FLOAT_EQUAL(L2_sum, 0, tol);
 }
 
@@ -181,6 +186,16 @@ TestStart(Unittest, "shammath/sphkernels/C4", validateC4kernel, 1) {
 TestStart(Unittest, "shammath/sphkernels/C6", validateC6kernel, 1) {
     validate_kernel_3d<shammath::C6<f32>>(1e-3, 1e-3, 1e-3);
     validate_kernel_3d<shammath::C6<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/TGauss3", validateTGauss3kernel, 1) {
+    validate_kernel_3d<shammath::TGauss3<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss3<f64>>(1e-5, 1e-5, 1e-5);
+}
+
+TestStart(Unittest, "shammath/sphkernels/TGauss5", validateTGauss5kernel, 1) {
+    validate_kernel_3d<shammath::TGauss5<f32>>(1e-3, 1e-4, 1e-3);
+    validate_kernel_3d<shammath::TGauss5<f64>>(1e-5, 1e-5, 1e-5);
 }
 
 struct Outplot {

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -21,7 +21,13 @@
 #include <map>
 #include <memory>
 
-void distribdata_sparse_comm_test(std::string prefix) {
+void distribdata_sparse_comm_test(
+    u32 npatch,
+    u32 nbuf_p_patch,
+    u64 max_msg_len,
+    u64 seed,
+    std::string prefix,
+    u64 max_comm_size) {
 
     using namespace shamalgs::collective;
     using namespace shamsys::instance;
@@ -29,12 +35,6 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
     const i32 wsize = shamcomm::world_size();
     const i32 wrank = shamcomm::world_rank();
-
-    u32 npatch       = wsize * 5;
-    u32 nbuf_p_patch = 2;
-    u64 max_msg_len  = 1e4;
-
-    u64 seed = 0x123;
 
     std::mt19937 eng(seed);
 
@@ -71,9 +71,17 @@ void distribdata_sparse_comm_test(std::string prefix) {
     });
 
     shamalgs::collective::SerializedDDataComm recv_data;
-    distributed_data_sparse_comm(get_compute_scheduler_ptr(), send_data, recv_data, [&](u64 id) {
-        return rank_owner[id];
-    });
+    shamalgs::collective::DDSCommCache cache;
+    distributed_data_sparse_comm(
+        get_compute_scheduler_ptr(),
+        send_data,
+        recv_data,
+        [&](u64 id) {
+            return rank_owner[id];
+        },
+        cache,
+        {},
+        max_comm_size);
 
     shamalgs::collective::SerializedDDataComm recv_data_ref;
     dat_ref.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
@@ -100,5 +108,18 @@ void distribdata_sparse_comm_test(std::string prefix) {
 
 TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
 
-    distribdata_sparse_comm_test("");
+    const i32 wsize = shamcomm::world_size();
+    const i32 wrank = shamcomm::world_rank();
+
+    u32 npatch       = wsize * 5;
+    u32 nbuf_p_patch = 2;
+    u64 max_msg_len  = 1e4;
+
+    u64 seed = 0x123;
+
+    distribdata_sparse_comm_test(npatch, nbuf_p_patch, max_msg_len, seed, "", i32_max - 1);
+
+    // test with lowered limit to test splitting
+    distribdata_sparse_comm_test(
+        npatch, nbuf_p_patch, max_msg_len, seed, "", 1e4); // max message len in test
 }

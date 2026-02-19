@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -94,8 +94,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -295,10 +296,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_alpha_AV
             = storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf();
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -508,10 +510,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
         sham::DeviceBuffer<Tscal> &buf_alpha_AV
             = storage.alpha_av_ghost.get().get(cur_p.id_patch).get_buf();
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -710,8 +713,9 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -891,6 +895,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
     const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
     const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    const u32 idrho_dt    = pdl.get_field_idx<Tscal>("drho/dt");
 
     bool do_MHD_debug       = solver_config.do_MHD_debug();
     const u32 imag_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure") : -1;
@@ -932,11 +937,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
         sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
         sham::DeviceBuffer<Tscal> &buf_pressure
-            = storage.pressure.get().get_buf_check(cur_p.id_patch);
-        sham::DeviceBuffer<Tscal> &buf_cs = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
 
         sham::DeviceBuffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
         sham::DeviceBuffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
+        sham::DeviceBuffer<Tscal> &buf_drho_dt    = pdat.get_field_buf_ref<Tscal>(idrho_dt);
         // logger::raw_ln("charged dB dpsi");
 
         sham::DeviceBuffer<Tvec> &buf_B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
@@ -969,6 +976,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         auto psi_on_ch  = buf_psi_on_ch.get_read_access(depends_list);
         auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
         auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
+        auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
 
         Tvec *mag_pressure
             = (do_MHD_debug)
@@ -1050,7 +1058,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 Tvec force_pressure{0, 0, 0};
                 Tscal tmpdU_pressure = 0;
                 Tvec magnetic_eq{0, 0, 0};
-                Tscal psi_eq = 0;
+                Tscal psi_eq  = 0;
+                Tscal drho_eq = 0;
 
                 Tvec mag_pressure_term{0, 0, 0};
                 Tvec mag_tension_term{0, 0, 0};
@@ -1131,6 +1140,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                         tmpdU_pressure,
                         magnetic_eq,
                         psi_eq,
+                        drho_eq,
                         mag_pressure_term,
                         mag_tension_term,
                         gas_pressure_term,
@@ -1145,7 +1155,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
                 axyz[id_a]       = force_pressure;
                 du[id_a]         = tmpdU_pressure;
                 dB_on_rho[id_a]  = magnetic_eq;
-                dpsi_on_ch[id_a] = psi_eq;
+                dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
+                drho_dt[id_a]    = drho_eq;
 
                 if (do_MHD_debug) {
                     mag_pressure[id_a] = mag_pressure_term;
@@ -1155,7 +1166,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
                     psi_propag[id_a] = psi_propag_term;
                     psi_diff[id_a]   = psi_diff_term;
-                    psi_cons[id_a]   = psi_cons_term;
+                    psi_cons[id_a]   = -psi_a / h_a;
 
                     u_mhd[id_a] = u_mhd_term;
                 }
@@ -1175,6 +1186,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         buf_psi_on_ch.complete_event_state(e);
         buf_dB_on_rho.complete_event_state(e);
         buf_dpsi_on_ch.complete_event_state(e);
+        buf_drho_dt.complete_event_state(e);
 
         if (do_MHD_debug) {
             pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);

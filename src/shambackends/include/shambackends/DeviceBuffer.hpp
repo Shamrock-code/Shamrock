@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,8 @@
 
 #include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
+#include "shambase/type_traits.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/USMPtrHolder.hpp"
 #include "shambackends/details/BufferEventHandler.hpp"
@@ -26,6 +28,70 @@
 #include <memory>
 
 namespace sham {
+
+    template<class T>
+    inline sham::EventList safe_copy(
+        sham::DeviceQueue &q, sham::EventList &depends_list, const T *src, T *dest, size_t count) {
+        __shamrock_stack_entry();
+        u64 max_copy_len = (1 << 30) / sizeof(T); // 1GB to avoid memcpy above i32_max bytes
+
+        sham::EventList events;
+
+        for (size_t i = 0; i < count; i += max_copy_len) {
+            i32 copy_len
+                = shambase::narrow_or_throw<i32>(std::min<size_t>(max_copy_len, count - i));
+            sycl::event e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.copy(src + i, dest + i, copy_len);
+            });
+            events.add_event(e);
+        }
+
+        return events;
+    }
+
+    template<class T>
+    inline sham::EventList safe_fill(
+        sham::DeviceQueue &q, sham::EventList &depends_list, T *dest, size_t count, T value) {
+        __shamrock_stack_entry();
+        u64 max_copy_len = (1 << 30); // 1G elements, this garanteee indexing below i32_max
+
+        sham::EventList events;
+
+        for (size_t i = 0; i < count; i += max_copy_len) {
+            i32 copy_len
+                = shambase::narrow_or_throw<i32>(std::min<size_t>(max_copy_len, count - i));
+            sycl::event e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>(copy_len), [dest, i, value](sycl::item<1> gid) {
+                    dest[i + gid.get_linear_id()] = value;
+                });
+            });
+            events.add_event(e);
+        }
+
+        return events;
+    }
+
+    template<class T, class Fct>
+    inline sham::EventList safe_fill_lambda(
+        sham::DeviceQueue &q, sham::EventList &depends_list, T *dest, size_t count, Fct &&fct) {
+        __shamrock_stack_entry();
+        u64 max_copy_len = (1 << 30); // 1G elements, this garanteee indexing below i32_max
+
+        sham::EventList events;
+
+        for (size_t i = 0; i < count; i += max_copy_len) {
+            i32 copy_len
+                = shambase::narrow_or_throw<i32>(std::min<size_t>(max_copy_len, count - i));
+            sycl::event e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>(copy_len), [dest, i, fct](sycl::item<1> gid) {
+                    dest[i + gid.get_linear_id()] = fct(i + gid.get_linear_id());
+                });
+            });
+            events.add_event(e);
+        }
+
+        return events;
+    }
 
     template<class T, USMKindTarget target = host, USMKindTarget orgin_target = device>
     class BufferMirror;
@@ -446,11 +512,10 @@ namespace sham {
                 sham::EventList depends_list;
                 const T *ptr = get_read_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr, ret.data(), size);
-                });
+                sham::EventList events
+                    = safe_copy(get_queue(), depends_list, ptr, ret.data(), size);
 
-                e.wait_and_throw();
+                events.wait_and_throw();
                 complete_event_state(sycl::event{});
             }
 
@@ -492,11 +557,10 @@ namespace sham {
                 sham::EventList depends_list;
                 const T *ptr = get_read_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr + begin, ret.data(), size_cp);
-                });
+                sham::EventList events
+                    = safe_copy(get_queue(), depends_list, ptr + begin, ret.data(), size_cp);
 
-                e.wait_and_throw();
+                events.wait_and_throw();
                 complete_event_state(sycl::event{});
             }
 
@@ -514,20 +578,46 @@ namespace sham {
          * @param dest The destination buffer to copy to.
          */
         template<USMKindTarget dest_target>
-        inline void copy_range(
-            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+        inline void copy_range_offset(
+            size_t begin,
+            size_t end,
+            sham::DeviceBuffer<T, dest_target> &dest,
+            size_t dest_offset) const {
 
             if (begin > end) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: begin > end\n  begin = {},\n  end = {}", begin, end));
+                    "copy_range_offset: begin > end\n  begin = {},\n  end = {}", begin, end));
             }
 
-            if (end - begin > dest.get_size()) {
+            if (end > get_size()) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                    "copy_range: end - begin > dest.get_size()\n  end - begin = {},\n  "
+                    "copy_range_offset: end index is out of bounds\n  end = {},\n  source buffer "
+                    "size = {}",
+                    end,
+                    get_size()));
+            }
+
+            if (dest_offset > dest.get_size()) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: dest_offset > dest.get_size()\n  dest_offset = {},\n  "
                     "dest.get_size() = {}",
-                    end - begin,
+                    dest_offset,
                     dest.get_size()));
+            }
+
+            if (end - begin > (dest.get_size() - dest_offset)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "copy_range_offset: end - begin > dest.get_size() - dest_offset\n  end - begin "
+                    "= {},\n  "
+                    "dest.get_size() - dest_offset = {},\n  dest_offset = {}",
+                    end - begin,
+                    dest.get_size() - dest_offset,
+                    dest_offset));
+            }
+
+            if (static_cast<const void *>(this) == static_cast<const void *>(&dest)) {
+                shambase::throw_with_loc<std::invalid_argument>(
+                    "the source and destination buffers must not be the same");
             }
 
             if (begin == end) {
@@ -538,14 +628,29 @@ namespace sham {
 
             sham::EventList depends_list;
             const T *ptr_src = get_read_access(depends_list) + begin;
-            T *ptr_dest      = dest.get_write_access(depends_list);
+            T *ptr_dest      = dest.get_write_access(depends_list) + dest_offset;
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(ptr_src, ptr_dest, len);
-            });
+            sham::EventList events = safe_copy(get_queue(), depends_list, ptr_src, ptr_dest, len);
 
-            complete_event_state(e);
-            dest.complete_event_state(e);
+            complete_event_state(events);
+            dest.complete_event_state(events);
+        }
+
+        /**
+         * @brief Copy a range of elements from the buffer to another buffer
+         *
+         * This function copies a range of elements from the buffer to another buffer.
+         * The range is specified by the begin and end indices.
+         *
+         * @param begin The starting index of the range to copy, inclusive.
+         * @param end The ending index of the range to copy, exclusive.
+         * @param dest The destination buffer to copy to.
+         */
+        template<USMKindTarget dest_target>
+        inline void copy_range(
+            size_t begin, size_t end, sham::DeviceBuffer<T, dest_target> &dest) const {
+
+            copy_range_offset(begin, end, dest, 0);
         }
 
         /**
@@ -569,11 +674,10 @@ namespace sham {
                 sham::EventList depends_list;
                 T *ptr = get_write_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(vec.data(), ptr, size);
-                });
+                sham::EventList events
+                    = safe_copy(get_queue(), depends_list, vec.data(), ptr, size);
 
-                e.wait_and_throw();
+                events.wait_and_throw();
                 complete_event_state(sycl::event{});
             }
         }
@@ -602,11 +706,9 @@ namespace sham {
                 sham::EventList depends_list;
                 T *ptr = get_write_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(vec.data(), ptr, sz);
-                });
+                sham::EventList events = safe_copy(get_queue(), depends_list, vec.data(), ptr, sz);
 
-                e.wait_and_throw();
+                events.wait_and_throw();
                 complete_event_state(sycl::event{});
             }
         }
@@ -623,6 +725,9 @@ namespace sham {
             sycl::buffer<T> ret(size);
 
             if (size > 0) {
+
+                shambase::narrow_or_throw<i32>(size);
+
                 sham::EventList depends_list;
                 const T *ptr = get_read_access(depends_list);
 
@@ -655,6 +760,8 @@ namespace sham {
             }
 
             if (size > 0) {
+                shambase::narrow_or_throw<i32>(size);
+
                 sham::EventList depends_list;
                 T *ptr = get_write_access(depends_list);
 
@@ -699,9 +806,10 @@ namespace sham {
                 sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
                     sycl::accessor acc(buf, cgh, sycl::read_only);
 
-                    shambase::parallel_for(cgh, sz, "copy field", [=](u32 gid) {
-                        ptr[gid] = acc[gid];
-                    });
+                    shambase::parallel_for(
+                        cgh, shambase::narrow_or_throw<i32>(sz), "copy field", [=](u32 gid) {
+                            ptr[gid] = acc[gid];
+                        });
                 });
 
                 complete_event_state(e);
@@ -725,12 +833,11 @@ namespace sham {
                 const T *ptr_src = get_read_access(depends_list);
                 T *ptr_dest      = ret.get_write_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr_src, ptr_dest, size);
-                });
+                sham::EventList events
+                    = safe_copy(get_queue(), depends_list, ptr_src, ptr_dest, size);
 
-                complete_event_state(e);
-                ret.complete_event_state(e);
+                complete_event_state(events);
+                ret.complete_event_state(events);
             }
 
             return ret;
@@ -763,12 +870,11 @@ namespace sham {
                 T *ptr_dest      = get_write_access(depends_list);
                 const T *ptr_src = other.get_read_access(depends_list);
 
-                sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                    cgh.copy(ptr_src, ptr_dest, copy_size);
-                });
+                sham::EventList events
+                    = safe_copy(get_queue(), depends_list, ptr_src, ptr_dest, copy_size);
 
-                complete_event_state(e);
-                other.complete_event_state(e);
+                complete_event_state(events);
+                other.complete_event_state(events);
             }
         }
 
@@ -854,17 +960,15 @@ namespace sham {
                     get_size()));
             }
 
+            shambase::narrow_or_throw<i32>(idx_count);
+
             sham::EventList depends_list;
             T *ptr = get_write_access(depends_list);
 
-            sycl::event e1 = get_queue().submit(
-                depends_list, [&, ptr, value, start_index, idx_count](sycl::handler &cgh) {
-                    shambase::parallel_for(cgh, idx_count, "fill field", [=](u32 gid) {
-                        ptr[start_index + gid] = value;
-                    });
-                });
+            sham::EventList events
+                = safe_fill(get_queue(), depends_list, ptr + start_index, idx_count, value);
 
-            complete_event_state(e1);
+            complete_event_state(events);
         }
 
         /**
@@ -889,6 +993,21 @@ namespace sham {
          * @param value The value to fill the buffer with.
          */
         inline void fill(T value) { fill(value, get_size()); }
+
+        template<class Fct>
+        inline void fill_lambda(Fct &&fct) {
+            if (get_size() == 0) {
+                return;
+            }
+
+            sham::EventList depends_list;
+            T *__restrict ptr = get_write_access(depends_list);
+
+            sham::EventList events
+                = safe_fill_lambda(get_queue(), depends_list, ptr, get_size(), fct);
+
+            complete_event_state(events);
+        }
 
         ///////////////////////////////////////////////////////////////////////
         // Filler fcts (END)
@@ -956,12 +1075,30 @@ namespace sham {
         // Size manipulation
         ///////////////////////////////////////////////////////////////////////
 
+        inline size_t get_max_alloc_size() const {
+            auto &dev_prop = hold.get_dev_scheduler().get_queue().get_device_prop();
+
+            if constexpr (target == device) {
+                return dev_prop.max_mem_alloc_size_dev;
+            } else if constexpr (target == host) {
+                return dev_prop.max_mem_alloc_size_host;
+            } else if constexpr (target == shared) {
+                return sycl::min(dev_prop.max_mem_alloc_size_dev, dev_prop.max_mem_alloc_size_host);
+            } else {
+                static_assert(
+                    shambase::always_false_v<decltype(target)>,
+                    "get_max_alloc_size: invalid target");
+            }
+        }
+
         /**
          * @brief Resizes the buffer to a given size.
          *
          * @param new_size The new size of the buffer.
+         * @param keep_data If `true`, the content of the  buffer is preserved up to the minimum of
+         * the old and new sizes. If `false`, the content may be discarded if a reallocation occurs.
          */
-        inline void resize(u32 new_size) {
+        inline void resize(size_t new_size, bool keep_data = true) {
 
             auto dev_sched = hold.get_dev_scheduler_ptr();
 
@@ -970,7 +1107,34 @@ namespace sham {
             if (alloc_request_size_fct(new_size, dev_sched) > hold.get_bytesize()) {
                 // expand storage
 
-                size_t new_storage_size = alloc_request_size_fct(new_size * 1.5, dev_sched);
+                size_t max_alloc_size           = get_max_alloc_size();
+                std::optional<size_t> alignment = get_alignment(dev_sched);
+                size_t min_size_new_alloc       = alloc_request_size_fct(new_size, dev_sched);
+                size_t wanted_size_new_alloc
+                    = alloc_request_size_fct(new_size + new_size / 2, dev_sched);
+                size_t max_possible_alloc = max_alloc_size;
+
+                if (alignment) {
+                    max_possible_alloc = max_possible_alloc - (max_possible_alloc % *alignment);
+                }
+
+                size_t new_storage_size = wanted_size_new_alloc;
+                if (new_storage_size > max_alloc_size) {
+                    new_storage_size = sycl::max(max_possible_alloc, min_size_new_alloc);
+                }
+
+                if (new_storage_size > max_alloc_size) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "new_storage_size > max_alloc_size\n"
+                        "  new_storage_size      = {}\n"
+                        "  max_alloc_size  = {}\n"
+                        "  min_size_new_alloc    = {}\n"
+                        "  wanted_size_new_alloc = {}",
+                        new_storage_size,
+                        max_alloc_size,
+                        min_size_new_alloc,
+                        wanted_size_new_alloc));
+                }
 
                 DeviceBuffer new_buf(
                     new_size,
@@ -978,7 +1142,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, get_size());
+                if (keep_data) {
+                    new_buf.copy_from(*this, get_size());
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -994,7 +1160,9 @@ namespace sham {
                         new_storage_size, get_dev_scheduler_ptr(), get_alignment(dev_sched)));
 
                 // copy data
-                new_buf.copy_from(*this, new_size);
+                if (keep_data) {
+                    new_buf.copy_from(*this, new_size);
+                }
 
                 // override old buffer
                 std::swap(new_buf, *this);
@@ -1005,10 +1173,13 @@ namespace sham {
             }
         }
 
+        /// same as resize but data will not be copied if reallocation is needed
+        inline void resize_discard_data(size_t new_size) { resize(new_size, false); }
+
         /**
-         * @brief Alias for resize(0).
+         * @brief Alias for resize_discard_data(0).
          */
-        inline void free_alloc() { resize(0); }
+        inline void free_alloc() { resize_discard_data(0); }
 
         /**
          * @brief Expand the buffer by `add_sz` elements.
@@ -1065,12 +1236,11 @@ namespace sham {
             T *ptr             = get_write_access(depends_list);
             const T *other_ptr = other.get_read_access(depends_list);
 
-            sycl::event e = get_queue().submit(depends_list, [&](sycl::handler &cgh) {
-                cgh.copy(other_ptr, ptr + old_size, other_size);
-            });
+            sham::EventList events
+                = safe_copy(get_queue(), depends_list, other_ptr, ptr + old_size, other_size);
 
-            complete_event_state(e);
-            other.complete_event_state(e);
+            complete_event_state(events);
+            other.complete_event_state(events);
         }
 
         ///////////////////////////////////////////////////////////////////////

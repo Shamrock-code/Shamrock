@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,6 +30,9 @@ namespace shammodels::sph::solvergraph {
 
         shamrock::tree::ObjectCache &get_cache(u64 id) { return neigh_cache.get(id); }
         const shamrock::tree::ObjectCache &get_cache(u64 id) const { return neigh_cache.get(id); }
+
+        shamrock::tree::ObjectCache &get(u64 id) { return neigh_cache.get(id); }
+        const shamrock::tree::ObjectCache &get(u64 id) const { return neigh_cache.get(id); }
 
         inline void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(

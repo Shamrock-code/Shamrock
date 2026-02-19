@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 /**
  * @file NeighGraph.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -97,6 +98,14 @@ namespace shammodels::basegodunov::modules {
         }
 
         void complete_event_state(sycl::event &e) {
+            node_link_offset.complete_event_state(e);
+            node_links.complete_event_state(e);
+        }
+
+        /**
+         * @brief Complete event state based on sham::EventList
+         */
+        void complete_event_state(sham::EventList &e) {
             node_link_offset.complete_event_state(e);
             node_links.complete_event_state(e);
         }

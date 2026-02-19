@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -44,6 +44,13 @@ namespace shamtree {
 
 template<class Tmorton, class Tvec, u32 dim>
 class shamtree::CompressedLeafBVH {
+
+    void internal_rebuild_from_positions_no_aabb(
+        sham::DeviceBuffer<Tvec> &positions,
+        u32 obj_cnt,
+        const shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
     public:
     /// Get internal cell count
     inline u32 get_total_cell_count() { return structure.get_total_cell_count(); }
@@ -115,13 +122,18 @@ class shamtree::CompressedLeafBVH {
         const shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
 
-#if false
+    void rebuild_from_position_range(
+        sham::DeviceBuffer<Tvec> &min,
+        sham::DeviceBuffer<Tvec> &max,
+        u32 obj_cnt,
+        shammath::AABB<Tvec> &bounding_box,
+        u32 compression_level);
+
     void rebuild_from_position_range(
         sham::DeviceBuffer<Tvec> &min,
         sham::DeviceBuffer<Tvec> &max,
         shammath::AABB<Tvec> &bounding_box,
         u32 compression_level);
-#endif
 
     inline shamtree::CLBVHTraverser<Tmorton, Tvec, dim> get_traverser() const {
         return {structure.get_structure_traverser(), aabbs.buf_aabb_min, aabbs.buf_aabb_max};

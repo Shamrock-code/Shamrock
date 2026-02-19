@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -24,6 +24,11 @@
 
 namespace shammath {
 
+    /**
+     * @brief Ray representation for intersection testing
+     *
+     * @tparam T Vector type for coordinates
+     */
     template<class T>
     struct Ray {
         using T_prop = shambase::VectorProperties<T>;
@@ -33,6 +38,12 @@ namespace shammath {
         T direction;
         T inv_direction;
 
+        /**
+         * @brief Construct a normalized ray from origin and direction
+         *
+         * @param origin Starting point of the ray
+         * @param direction Direction vector (will be normalized)
+         */
         inline Ray(T origin, T direction)
             : origin(origin), direction(direction), inv_direction(1 / direction) {
 
@@ -42,6 +53,35 @@ namespace shammath {
             this->direction /= f;
             this->inv_direction *= f;
         }
+    };
+
+    /**
+     * @brief Ring ray representation for intersection testing
+     *
+     * A = {center + radius * (e_x * cos(theta) + e_y * sin(theta)) | theta in [0, 2*pi]}
+     *
+     * @tparam T Vector type for coordinates
+     */
+    template<class T>
+    struct RingRay {
+        using T_prop = shambase::VectorProperties<T>;
+        using Tscal  = typename T_prop::component_type;
+
+        T center;
+        Tscal radius;
+        T e_x;
+        T e_y;
+
+        T get_ez() { return sycl::cross(e_x, e_y); }
+        /**
+         * @brief Construct a ring ray from center, e_x, and e_y
+         *
+         * @param center Center of the ring
+         * @param e_x Unit vector along the x-axis of the ring
+         * @param e_y Unit vector along the y-axis of the ring
+         */
+        inline RingRay(T center, Tscal radius, T e_x, T e_y)
+            : center(center), radius(radius), e_x(e_x), e_y(e_y) {}
     };
 
     /**
@@ -109,6 +149,8 @@ namespace shammath {
          * @return The delta of the AABB
          */
         inline T delt() const { return upper - lower; }
+
+        inline Tscal get_radius() const { return sycl::length(delt()) / 2; }
 
         /**
          * @brief Returns the volume of the AABB
@@ -192,10 +234,26 @@ namespace shammath {
             return {sham::max(lower, other.lower), sham::min(upper, other.upper)};
         }
 
+        /**
+         * @brief Check if AABB fully contains another AABB
+         *
+         * @param other AABB to check for containment
+         * @return true if this AABB fully contains other
+         */
         inline bool contains(AABB other) const noexcept {
             // return lower <= other.lower && upper >= other.upper;
             return sham::vec_compare_leq(lower, other.lower)
                    && sham::vec_compare_geq(upper, other.upper);
+        }
+
+        /**
+         * @brief Check if point is in AABB using half-open interval [lower, upper)
+         *
+         * @param point Point to test
+         * @return true if point is in [lower, upper)
+         */
+        inline bool contains_asymmetric(T point) const noexcept {
+            return sham::vec_compare_leq(lower, point) && sham::vec_compare_g(upper, point);
         }
 
         /**
@@ -273,6 +331,17 @@ namespace shammath {
          */
         [[nodiscard]] inline bool intersect_ray(Ray<T> ray) const noexcept;
 
+        /**
+         * @brief Check if the ring ray intersect the AABB
+         *
+         * This function perform a ring ray-AABB intersection test.
+         * It return true if the ring ray intersect the AABB and false otherwise.
+         *
+         * @param[in] ring_ray The ring ray to test
+         * @return true if the ring ray intersect the AABB
+         */
+        [[nodiscard]] inline bool intersect_ring_ray_approx(RingRay<T> ring_ray) const noexcept;
+
         /// equal operator
         inline bool operator==(const AABB<T> &other) const noexcept {
             return sham::equals(lower, other.lower) && sham::equals(upper, other.upper);
@@ -305,6 +374,25 @@ namespace shammath {
         tmax = sycl::min(tmax, sycl::max(tz1, tz2));
 
         return tmax >= tmin;
+    }
+
+    template<class T>
+    [[nodiscard]] inline bool AABB<T>::intersect_ring_ray_approx(
+        RingRay<T> ring_ray) const noexcept {
+        T aabb_center     = get_center();
+        Tscal aabb_radius = get_radius();
+
+        T r_center = ring_ray.center - aabb_center;
+
+        Tscal x_val = sycl::dot(r_center, ring_ray.e_x);
+        Tscal y_val = sycl::dot(r_center, ring_ray.e_y);
+        Tscal z_val = sycl::dot(r_center, ring_ray.get_ez());
+
+        Tscal r_val     = sycl::sqrt(x_val * x_val + y_val * y_val);
+        Tscal delta_r   = r_val - ring_ray.radius;
+        Tscal rab2_ring = z_val * z_val + delta_r * delta_r;
+
+        return rab2_ring <= aabb_radius * aabb_radius;
     }
 
 } // namespace shammath

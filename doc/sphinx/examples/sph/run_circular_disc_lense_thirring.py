@@ -41,7 +41,6 @@ then after the run is done (or while it is running), one can run the following t
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 # The runscript is the actual simulation with on the fly analysis & rolling dumps
 
-
 import glob
 import json
 import os  # for makedirs
@@ -198,8 +197,6 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4"
 
 # %%
 # Dump handling
-def get_dump_name(idump):
-    return dump_prefix + f"{idump:07}" + ".sham"
 
 
 def get_vtk_dump_name(idump):
@@ -210,48 +207,15 @@ def get_ph_dump_name(idump):
     return dump_prefix + f"{idump:07}" + ".phdump"
 
 
-def get_last_dump():
-    res = glob.glob(dump_prefix + "*.sham")
-
-    num_max = -1
-
-    for f in res:
-        try:
-            dump_num = int(f[len(dump_prefix) : -5])
-            if dump_num > num_max:
-                num_max = dump_num
-        except ValueError:
-            pass
-
-    if num_max == -1:
-        return None
-    else:
-        return num_max
-
-
-def purge_old_dumps():
-    if shamrock.sys.world_rank() == 0:
-        res = glob.glob(dump_prefix + "*.sham")
-        res.sort()
-
-        # The list of dumps to remove (keep the first and last 3 dumps)
-        to_remove = res[1:-3]
-
-        for f in to_remove:
-            os.remove(f)
-
-
-idump_last_dump = get_last_dump()
-
-if shamrock.sys.world_rank() == 0:
-    print("Last dump:", idump_last_dump)
+dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_prefix)
 
 # %%
 # Load the last dump if it exists, setup otherwise
 
-if idump_last_dump is not None:
-    model.load_from_dump(get_dump_name(idump_last_dump))
-else:
+
+def setup_model():
+    global disc_mass
+
     # Generate the default config
     cfg = model.gen_default_config()
     cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
@@ -288,6 +252,8 @@ else:
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
 
+    cfg.set_save_dt_to_fields(True)
+
     # Set the solver config to be the one stored in cfg
     model.set_solver_config(cfg)
 
@@ -313,7 +279,7 @@ else:
         rot_profile=rot_profile,
         cs_profile=cs_profile,
         random_seed=666,
-        init_h_factor=0.06,
+        init_h_factor=0.03,
     )
 
     # Print the dot graph of the setup
@@ -368,6 +334,9 @@ else:
     model.change_htolerances(coarse=1.1, fine=1.1)
 
 
+dump_helper.load_last_dump_or(setup_model)
+
+
 # %%
 # On the fly analysis
 def save_rho_integ(ext, arr_rho, iplot):
@@ -403,34 +372,89 @@ def save_analysis_data(filename, key, value, ianalysis):
             json.dump(data, fp, indent=4)
 
 
-def analysis(ianalysis):
+from shamrock.utils.analysis import (
+    ColumnAverageVzPlot,
+    ColumnDensityPlot,
+    PerfHistory,
+    SliceDensityPlot,
+    SliceDtPart,
+)
 
+perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
+
+column_density_plot = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_normal",
+)
+
+column_density_plot_hollywood = ColumnDensityPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_integ_hollywood",
+)
+
+vertical_density_plot = SliceDensityPlot(
+    model,
+    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="rho_slice",
+)
+
+
+dt_part_slice_plot = SliceDtPart(
+    model,
+    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    nx=1920,
+    ny=1080,
+    ex=(1, 0, 0),
+    ey=(0, 0, 1),
+    center=((rin + rout) / 2, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="dt_part_slice",
+)
+
+
+column_average_vz_plot = ColumnAverageVzPlot(
+    model,
+    ext_r=rout * 1.5,
+    nx=1024,
+    ny=1024,
+    ex=(1, 0, 0),
+    ey=(0, 1, 0),
+    center=(0, 0, 0),
+    analysis_folder=analysis_folder,
+    analysis_prefix="column_average_vz",
+)
+
+
+def analysis(ianalysis):
     ext = rout * 1.5
     nx = 1024
     ny = 1024
 
-    arr_rho2 = model.render_cartesian_column_integ(
-        "rho",
-        "f64",
-        center=(0.0, 0.0, 0.0),
-        delta_x=(ext * 2, 0, 0.0),
-        delta_y=(0.0, ext * 2, 0.0),
-        nx=nx,
-        ny=ny,
-    )
-
-    arr_vxyz = model.render_cartesian_column_integ(
-        "vxyz",
-        "f64_3",
-        center=(0.0, 0.0, 0.0),
-        delta_x=(ext * 2, 0, 0.0),
-        delta_y=(0.0, ext * 2, 0.0),
-        nx=nx,
-        ny=ny,
-    )
-
-    save_rho_integ(ext, arr_rho2, ianalysis)
-    save_vxyz_integ(ext, arr_vxyz, ianalysis)
+    column_density_plot.analysis_save(ianalysis)
+    column_density_plot_hollywood.analysis_save(ianalysis)
+    vertical_density_plot.analysis_save(ianalysis)
+    dt_part_slice_plot.analysis_save(ianalysis)
+    column_average_vz_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -448,17 +472,7 @@ def analysis(ianalysis):
     save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
     save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
 
-    sim_time_delta = model.solver_logs_cumulated_step_time()
-    scount = model.solver_logs_step_count()
-
-    save_analysis_data("sim_time_delta.json", "sim_time_delta", sim_time_delta, ianalysis)
-    save_analysis_data("sim_step_count_delta.json", "sim_step_count_delta", scount, ianalysis)
-
-    model.solver_logs_reset_cumulated_step_time()
-    model.solver_logs_reset_step_count()
-
-    part_count = model.get_total_part_count()
-    save_analysis_data("part_count.json", "part_count", part_count, ianalysis)
+    perf_analysis.analysis_save(ianalysis)
 
 
 # %%
@@ -472,18 +486,15 @@ idump = 0
 iplot = 0
 istop = 0
 for ttarg in t_stop:
-
     if ttarg >= t_start:
         model.evolve_until(ttarg)
 
         if istop % dump_freq_stop == 0:
             model.do_vtk_dump(get_vtk_dump_name(idump), True)
-            model.dump(get_dump_name(idump))
+            dump_helper.write_dump(idump, purge_old_dumps=True, keep_first=1, keep_last=3)
 
             # dump = model.make_phantom_dump()
             # dump.save_dump(get_ph_dump_name(idump))
-
-            purge_old_dumps()
 
         if istop % plot_freq_stop == 0:
             analysis(iplot)
@@ -509,89 +520,61 @@ import matplotlib.pyplot as plt
 # dump_folder = "my_masterpiece"
 # dump_folder += "/"
 
+face_on_render_kwargs = {
+    "x_unit": "au",
+    "y_unit": "au",
+    "time_unit": "second",
+    "x_label": "x",
+    "y_label": "y",
+}
 
-def plot_rho_integ(metadata, arr_rho, iplot):
+column_density_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e7,
+    norm="log",
+)
 
-    ext = metadata["extent"]
+column_density_plot_hollywood.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-2",
+    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
+    vmin=1,
+    vmax=1e7,
+    norm="log",
+    holywood_mode=True,
+)
 
-    dpi = 200
+vertical_density_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="kg.m^-3",
+    field_label="$\\rho$",
+    vmin=1e-5,
+    vmax=1e-2,
+    norm="log",
+)
 
-    # Reset the figure using the same memory as the last one
-    plt.figure(num=1, clear=True, dpi=dpi)
-    import copy
+dt_part_slice_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="second",
+    field_label="$\\Delta t$",
+    vmin=1e-2,
+    vmax=1e2,
+    norm="log",
+    contour_list=[1e-2, 1e-1, 1, 1e1, 1e2],
+)
 
-    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
-    my_cmap.set_bad(color="black")
-
-    res = plt.imshow(
-        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-6, vmax=1e-2
-    )
-
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
-
-    cbar = plt.colorbar(res, extend="both")
-    cbar.set_label(r"$\int \rho \, \mathrm{d}z$ [code unit]")
-
-    plt.savefig(plot_folder + "rho_integ_{:04}.png".format(iplot))
-    plt.close()
-
-
-def plot_vz_integ(metadata, arr_vz, iplot):
-    ext = metadata["extent"]
-    dpi = 200
-    plt.figure(num=1, clear=True, dpi=dpi)
-
-    # if you want an adaptive colorbar
-    # v_ext = np.max(arr_vz)
-    # v_ext = max(v_ext, np.abs(np.min(arr_vz)))
-    v_ext = 1e-6
-
-    res = plt.imshow(arr_vz, cmap="seismic", origin="lower", extent=ext, vmin=-v_ext, vmax=v_ext)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title(f"t = {metadata['time']:0.3f} [seconds]")
-
-    cbar = plt.colorbar(res, extend="both")
-    cbar.set_label(r"$\int v_z \, \mathrm{d}z$ [code unit]")
-
-    plt.savefig(plot_folder + "vz_integ_{:04}.png".format(iplot))
-    plt.close()
-
-
-def get_list_dumps_id():
-    import glob
-
-    list_files = glob.glob(plot_folder + "rho_integ_*.npy")
-    list_files.sort()
-    list_dumps_id = []
-    for f in list_files:
-        list_dumps_id.append(int(f.split("_")[-1].split(".")[0]))
-    return list_dumps_id
-
-
-def load_rho_integ(iplot):
-    with open(plot_folder + f"rho_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"rho_integ_{iplot:07}.npy"), metadata
-
-
-def load_vxyz_integ(iplot):
-    with open(plot_folder + f"vxyz_integ_{iplot:07}.json") as fp:
-        metadata = json.load(fp)
-    return np.load(plot_folder + f"vxyz_integ_{iplot:07}.npy"), metadata
-
-
-if shamrock.sys.world_rank() == 0:
-    for iplot in get_list_dumps_id():
-        print("Rendering rho integ plot for dump", iplot)
-        arr_rho, metadata = load_rho_integ(iplot)
-        plot_rho_integ(metadata, arr_rho, iplot)
-
-        print("Rendering vxyz integ plot for dump", iplot)
-        arr_vxyz, metadata = load_vxyz_integ(iplot)
-        plot_vz_integ(metadata, arr_vxyz[:, :, 2], iplot)
+column_average_vz_plot.render_all(
+    **face_on_render_kwargs,
+    field_unit="lightspeed",
+    field_label="$\\langle v_z \\rangle_z$",
+    cmap="seismic",
+    cmap_bad_color="white",
+    vmin=-0.5,
+    vmax=0.5,
+)
 
 
 # %%
@@ -602,87 +585,50 @@ if shamrock.sys.world_rank() == 0:
 # sphinx_gallery_multi_image = "single"
 
 import matplotlib.animation as animation
+from shamrock.utils.plot import show_image_sequence
 
-
-def show_image_sequence(glob_str, render_gif):
-
-    if render_gif and shamrock.sys.world_rank() == 0:
-
-        import glob
-
-        files = sorted(glob.glob(glob_str))
-
-        from PIL import Image
-
-        image_array = []
-        for my_file in files:
-            image = Image.open(my_file)
-            image_array.append(image)
-
-        if not image_array:
-            raise RuntimeError(f"Warning: No images found for glob pattern: {glob_str}")
-
-        pixel_x, pixel_y = image_array[0].size
-
-        # Create the figure and axes objects
-        # Remove axes, ticks, and frame & set aspect ratio
-        dpi = 200
-        fig = plt.figure(dpi=dpi)
-        plt.gca().set_position((0, 0, 1, 1))
-        plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
-        plt.axis("off")
-
-        # Set the initial image with correct aspect ratio
-        im = plt.imshow(image_array[0], animated=True, aspect="auto")
-
-        def update(i):
-            im.set_array(image_array[i])
-            return (im,)
-
-        # Create the animation object
-        ani = animation.FuncAnimation(
-            fig,
-            update,
-            frames=len(image_array),
-            interval=50,
-            blit=True,
-            repeat_delay=10,
-        )
-
-        return ani
-
+render_gif = True
 
 # %%
 # Do it for rho integ
-render_gif = True
-glob_str = os.path.join(plot_folder, "rho_integ_*.png")
+if render_gif:
+    ani = column_density_plot.render_gif(gif_filename="rho_integ.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
 
-# If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str, render_gif)
-
-if render_gif and shamrock.sys.world_rank() == 0:
-    # To save the animation using Pillow as a gif
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(analysis_folder + "rho_integ.gif", writer=writer)
-
-    # Show the animation
-    plt.show()
 
 # %%
-# Do it for rho integ
-render_gif = True
-glob_str = os.path.join(plot_folder, "vz_integ_*.png")
+# Same but in hollywood
+if render_gif:
+    ani = column_density_plot_hollywood.render_gif(
+        gif_filename="rho_integ_hollywood.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
 
-# If the animation is not returned only a static image will be shown in the doc
-ani = show_image_sequence(glob_str, render_gif)
 
+# %%
+# For the vertical density plot
 if render_gif and shamrock.sys.world_rank() == 0:
-    # To save the animation using Pillow as a gif
-    writer = animation.PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-    ani.save(analysis_folder + "vz_integ.gif", writer=writer)
+    ani = vertical_density_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
 
-    # Show the animation
-    plt.show()
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = dt_part_slice_plot.render_gif(gif_filename="dt_part_slice.gif", save_animation=True)
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = column_average_vz_plot.render_gif(
+        gif_filename="column_average_vz.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
 
 
 # %%
@@ -761,63 +707,8 @@ plt.legend(["potential_energy", "kinetic_energy", "total_energy"])
 plt.savefig(analysis_folder + "energies.png")
 plt.show()
 
-# %%
-# load the json file for sim_time_delta
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_time_delta)
-plt.xlabel("t [seconds]")
-plt.ylabel("sim_time_delta")
-plt.savefig(analysis_folder + "sim_time_delta.png")
-plt.show()
 
 # %%
-# load the json file for sim_step_count_delta
-t, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, sim_step_count_delta)
-plt.xlabel("t [seconds]")
-plt.ylabel("sim_step_count_delta")
-plt.savefig(analysis_folder + "sim_step_count_delta.png")
-plt.show()
-
-# %%
-# Time per step
-t, sim_time_delta = load_data_from_json("sim_time_delta.json", "sim_time_delta")
-_, sim_step_count_delta = load_data_from_json("sim_step_count_delta.json", "sim_step_count_delta")
-_, part_count = load_data_from_json("part_count.json", "part_count")
-
-time_per_step = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        time_per_step.append(td / sc)
-    else:
-        # NAN here because the step count is 0
-        time_per_step.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, time_per_step, "+-")
-plt.xlabel("t [seconds]")
-plt.ylabel("time_per_step")
-plt.savefig(analysis_folder + "time_per_step.png")
-plt.show()
-
-rate = []
-
-for td, sc, pc in zip(sim_time_delta, sim_step_count_delta, part_count):
-    if sc > 0:
-        rate.append(pc / (td / sc))
-    else:
-        # NAN here because the step count is 0
-        rate.append(np.nan)
-
-plt.figure(figsize=(8, 5), dpi=200)
-plt.plot(t, rate, "+-")
-plt.xlabel("t [seconds]")
-plt.ylabel("Particles / second")
-plt.yscale("log")
-plt.savefig(analysis_folder + "rate.png")
+# Plot the performance history (Switch close_plots to True if doing a long run)
+perf_analysis.plot_perf_history(close_plots=False)
 plt.show()

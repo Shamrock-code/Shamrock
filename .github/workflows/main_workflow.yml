@@ -1,0 +1,276 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      run_build_push_docker:
+        description: "Whether to run the Dockerfiles build workflow"
+        required: true
+        type: boolean
+      light_ci:
+        description: "Whether to run the light CI"
+        required: true
+        type: boolean
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository_owner }}
+
+jobs:
+
+  make_code_archive:
+    name: Make Code Archive
+    uses: ./.github/workflows/make_code_archive.yml
+
+  upload_pr_detail:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Save PR number
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          mkdir -p ./pr
+          echo $PR_NUMBER > ./pr_number.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_pr_number
+          path: ./pr_number.txt
+
+  email_check:
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Extract author email
+        id: author
+        run: |
+          git log -1
+          echo "email=$(git show -s --format='%ae' HEAD~0)" >> $GITHUB_OUTPUT
+
+      - name: Show email
+        run: echo "Commiter email is ${{ steps.author.outputs.email }}" > report_______email.md
+
+      - name: Validate author email
+        if: ${{ endsWith(steps.author.outputs.EMAIL, 'noreply.github.com')  }}
+        run: echo "You are using github private e-mail. This prevent proper tracing of who contributed what, please disable it (see [Keep my email addresses private](https://github.com/settings/emails))." >> report_______email.md
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report_email
+          path: ./report_______email.md
+
+  src_check:
+    name: Linting
+    #needs: [detect_changes]
+    uses: ./.github/workflows/source_checks.yml
+
+  make_documentation:
+    name: Doc
+    needs: [src_check]
+    uses: ./.github/workflows/make_documentation.yml
+
+  env_tests:
+    name: Tests
+    needs: [src_check]
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/env_tests.yml
+
+  shamrock_linux_acpp_conda:
+    name: Tests
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-acpp-conda.yml
+
+  shamrock_linux_acpp_asan:
+    name: Tests
+    needs: [src_check]
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-asan.yml
+
+  shamrock_linux_acpp_ubsan:
+    name: Tests
+    needs: [src_check]
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-ubsan.yml
+
+  shamrock_linux_acpp_tidy:
+    needs: [src_check]
+    name: Tests
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
+
+  shamrock_linux_acpp_cov:
+    needs: [src_check]
+    name: Tests
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
+
+  shamrock_linux_dpcpp:
+    name: Tests
+    needs: [src_check]
+    uses: ./.github/workflows/shamrock-dpcpp.yml
+    with:
+      light_ci: ${{ inputs.light_ci }}
+
+  build_push_docker:
+    name: Build dockerfiles
+    needs: [src_check, shamrock_linux_dpcpp]
+    if: ${{ inputs.run_build_push_docker && !inputs.light_ci }}
+    uses: ./.github/workflows/build-dockerfiles.yml
+
+  shamrock_linux_acpp_phystests:
+    name: Tests (Phys)
+    needs: [src_check]
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+
+  shamrock_linux_acpp_pylib:
+    needs: [src_check]
+    name: Tests
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-py.yml
+
+  doxygen_warn_main:
+    name: Doxygen Main branch
+    needs: [make_documentation]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+
+    container:
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name : Install pck (doxygen)
+        run: |
+          sudo apt update && \
+          sudo apt install -y -qq doxygen graphviz
+
+      - name : Modify texlive packages
+        run: |
+          sudo apt install -y \
+            texlive-full \
+            dvipng \
+            ghostscript \
+            latexmk
+
+      - name : Run doxygen
+        run: |
+          cd doc/doxygen
+          doxygen dox.conf
+
+      - name: Archive doxygen warnings
+        uses: actions/upload-artifact@v4
+        with:
+          name: doxygen_warning_main
+          path: doc/doxygen/warn_doxygen.txt
+
+  doxygen_diff:
+    name: Doxygen Diff
+    needs: [doxygen_warn_main]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' }}
+
+    steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 'Download PR doxygen warning'
+        uses: actions/download-artifact@v4
+        with:
+          name: doxygen_warning
+          path: PR_dox_output
+
+      - name: 'Download PR doxygen warning'
+        uses: actions/download-artifact@v4
+        with:
+          name: doxygen_warning_main
+          path: main_dox_output
+
+      - name: 'ls PR_dox_output'
+        run: |
+          ls PR_dox_output
+
+      - name: 'ls main_dox_output'
+        run: |
+          ls main_dox_output
+
+      - name: 'Diff'
+        run: |
+          python3 buildbot/doxygen_diff.py main_dox_output/warn_doxygen.txt PR_dox_output/warn_doxygen.txt > report_doc_diff.md
+
+      - name: 'cat diff'
+        run: |
+          cat report_doc_diff.md
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report_doc_diff
+          path: ./report_doc_diff.md
+
+
+  make_github_page:
+    name: "GithubPage"
+    needs: [make_documentation, shamrock_linux_acpp_phystests, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
+    uses: ./.github/workflows/make_website.yml
+    with:
+      upload-page-artifact: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+
+  deploy_page:
+
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+
+    # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: make_github_page
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

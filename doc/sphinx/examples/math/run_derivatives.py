@@ -7,12 +7,10 @@ This example shows how to use Shamrock math derivatives functions
 
 # sphinx_gallery_multi_image = "single"
 
-
 from math import *
 
 import matplotlib.pyplot as plt
 import numpy as np
-
 from shamrock.math import *
 
 # %%

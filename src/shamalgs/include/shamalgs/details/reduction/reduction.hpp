@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -28,10 +28,6 @@
 #include "shambackends/vec.hpp"
 
 namespace shamalgs::reduction {
-
-    template<class T>
-    shambase::VecComponent<T> dot_sum(
-        sycl::queue &q, sycl::buffer<T> &buf1, u32 start_id, u32 end_id);
 
     template<class T>
     bool has_nan(sycl::queue &q, sycl::buffer<T> &buf, u64 cnt);

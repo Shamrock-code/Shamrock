@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -15,6 +15,7 @@
  */
 
 #include "shamalgs/serialize.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shamcomm/logs.hpp"
@@ -147,7 +148,7 @@ void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
     StackEntry stack_loc{false};
     u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_length();
 
-    storage.resize(bytelen);
+    storage.resize(shambase::narrow_or_throw<u32>(bytelen));
     header_size = szinfo.head_size;
     storage_header.resize(header_size);
 

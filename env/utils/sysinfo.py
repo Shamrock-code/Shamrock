@@ -70,7 +70,6 @@ def should_limit_comp_cores():
 
 
 def select_generator(args, buildtype):
-
     limit_cores, cores = should_limit_comp_cores()
 
     gen = "make"
@@ -107,6 +106,10 @@ def select_generator(args, buildtype):
         cmake_buildt = "ASAN"
     elif buildtype == "ubsan":
         cmake_buildt = "UBSAN"
+    elif buildtype == "msan":
+        cmake_buildt = "MSAN"
+    elif buildtype == "tsan":
+        cmake_buildt = "TSAN"
     elif buildtype == "coverage":
         cmake_buildt = "COVERAGE"
     else:

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,7 +16,7 @@
 #include "shambackends/EventList.hpp"
 #include "shamcomm/logs.hpp"
 
-sham::EventList::~EventList() {
+sham::EventList::~EventList() noexcept(false) {
     if (!consumed && !events.empty()) {
         std::string log_str = shambase::format(
             "EventList destroyed without being consumed :\n    -> creation : {}",
@@ -25,6 +25,6 @@ sham::EventList::~EventList() {
         for (auto &e : events) {
             e.wait();
         }
-        shambase::throw_with_loc<std::runtime_error>(log_str);
+        throw shambase::make_except_with_loc<std::runtime_error>(log_str);
     }
 }

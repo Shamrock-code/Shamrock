@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -144,7 +144,7 @@ namespace sham {
          * still contains events. If so, it logs an error message and throws
          * a runtime exception after waiting for all events.
          */
-        ~EventList();
+        ~EventList() noexcept(false);
 
         /// Get the list of events
         inline std::vector<sycl::event> &get_events() { return events; }

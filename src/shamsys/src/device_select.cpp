@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,7 +19,7 @@
 #include "shambackends/Device.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
-#include "shamsys/EnvVariables.hpp"
+#include "shamcomm/env_variables.hpp"
 #include "shamsys/device_select.hpp"
 #include "shamsys/for_each_device.hpp"
 
@@ -29,7 +29,7 @@ shamsys::DeviceSelectRet_t init_queues_auto(std::string search_key) {
 
     shamsys::DeviceSelectRet_t ret;
 
-    std::optional<u32> local_id = shamsys::env::get_local_rank();
+    std::optional<u32> local_id = shamcomm::get_local_rank();
 
     if (local_id) {
 

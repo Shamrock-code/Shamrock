@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -43,6 +43,15 @@ namespace shammodels::sph {
             f64 cs0, q, r0;
             phdump::eos3_load(phdump, cs0, q, r0);
             cfg.set_locally_isothermalLP07(cs0, q, r0);
+        } else if (ieos == 13) {
+            f64 cs0, q, r0;
+            phdump::eos13_load(phdump, cs0, q, r0);
+            // u32_max implies all sinks
+            cfg.set_locally_isothermalFA2014_extended(cs0, q, r0, u32_max);
+        } else if (ieos == 14) {
+            f64 cs0, q, r0;
+            phdump::eos14_load(phdump, cs0, q, r0);
+            cfg.set_locally_isothermalFA2014_extended(cs0, q, r0, 2);
         } else {
             const std::string msg = "loading phantom ieos=" + std::to_string(ieos)
                                     + " is not implemented in shamrock";
@@ -65,6 +74,8 @@ namespace shammodels::sph {
         using EOS_LocallyIsothermal       = typename EOSConfig<Tvec>::LocallyIsothermal;
         using EOS_LocallyIsothermalLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
         using EOS_LocallyIsothermalFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using EOS_LocallyIsothermalFA2014Extended =
+            typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
 
         if (EOS_Isothermal *eos_config = std::get_if<EOS_Isothermal>(&cfg.config)) {
             phdump::eos1_write(dump, eos_config->cs);
@@ -74,6 +85,23 @@ namespace shammodels::sph {
             EOS_LocallyIsothermalLP07 *eos_config
             = std::get_if<EOS_LocallyIsothermalLP07>(&cfg.config)) {
             phdump::eos3_write(dump, eos_config->cs0, eos_config->q, eos_config->r0);
+        } else if (
+            EOS_LocallyIsothermalFA2014Extended *eos_config
+            = std::get_if<EOS_LocallyIsothermalFA2014Extended>(&cfg.config)) {
+
+            if (eos_config->n_sinks == u32_max) {
+                phdump::eos13_write(dump, eos_config->cs0, eos_config->q, eos_config->r0);
+            } else if (eos_config->n_sinks == 2) {
+                phdump::eos14_write(dump, eos_config->cs0, eos_config->q, eos_config->r0);
+            } else {
+                const std::string msg
+                    = "Phantom only support all or 2 sinks for this EOS configuration";
+                if (bypass_error) {
+                    logger::warn_ln("SPH", msg);
+                } else {
+                    shambase::throw_unimplemented(msg);
+                }
+            }
         } else {
             const std::string msg
                 = "The current shamrock EOS is not implemented in phantom dump conversion";
@@ -100,6 +128,7 @@ namespace shammodels::sph {
 } // namespace shammodels::sph
 
 namespace shammodels::sph {
+
     template<class Tvec>
     AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump) {
         AVConfig<Tvec> cfg{};

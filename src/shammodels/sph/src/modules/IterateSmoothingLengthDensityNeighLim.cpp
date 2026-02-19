@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -111,7 +111,7 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
                 using namespace shamrock::sph;
 
                 Tscal rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                Tscal new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                Tscal new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                 bool exceed_inner_threshold = count_within > trigger_threshold;
                 bool exceed_outer_threshold = count_within_next > trigger_threshold;
@@ -149,7 +149,7 @@ void IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_evaluate_inte
 }
 
 template<class Tvec, class SPHKernel>
-std::string IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_get_tex() {
+std::string IterateSmoothingLengthDensityNeighLim<Tvec, SPHKernel>::_impl_get_tex() const {
     auto sizes       = get_ro_edge_base(0).get_tex_symbol();
     auto neigh_cache = get_ro_edge_base(1).get_tex_symbol();
     auto positions   = get_ro_edge_base(2).get_tex_symbol();

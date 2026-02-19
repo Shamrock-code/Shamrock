@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 /**
  * @file PatchDataLayer.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -99,6 +100,15 @@ namespace shamrock::patch {
             }
         }
 
+        template<class Functor>
+        inline void for_each_field_any(Functor &&func) const {
+            for (auto &f : fields) {
+                f.visit([&](const auto &arg) {
+                    func(arg);
+                });
+            }
+        }
+
         template<class Func>
         inline PatchDataLayer(const std::shared_ptr<PatchDataLayerLayout> &pdl, Func &&fct_init)
             : pdl_ptr(pdl) {
@@ -125,6 +135,8 @@ namespace shamrock::patch {
          * @param out_pdat
          */
         void extract_element(u32 pidx, PatchDataLayer &out_pdat);
+
+        void extract_elements(const sham::DeviceBuffer<u32> &idxs, PatchDataLayer &out_pdat);
 
         void keep_ids(sycl::buffer<u32> &index_map, u32 len);
 
@@ -530,10 +542,13 @@ namespace shamrock::patch {
 
         PatchDataField<T> &main_field = pdat.get_field<T>(0);
 
+        // Note that using get_ids_vec_where here is safe since nvar for main_field is equal to 1
+        // hence the Lambda cd_true will be applied to each block on the patch. e.g : i * nvar = i
         auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
-            return main_field.get_elements_with_range(
-                [&](T val, T vmin, T vmax) {
+            return main_field.get_ids_vec_where(
+                [&](const auto &acc, u32 idx, T vmin, T vmax) {
                     if (shambase::VectorProperties<T>::dimension == 3) {
+                        T val = acc[idx];
                         return shammath::is_in_half_open(val, vmin, vmax);
                     } else {
                         throw shambase::make_except_with_loc<std::runtime_error>(
@@ -543,6 +558,20 @@ namespace shamrock::patch {
                 vmin,
                 vmax);
         };
+
+        // auto get_vec_idx = [&](T vmin, T vmax) -> std::vector<u32> {
+        //     return main_field.get_elements_with_range(
+        //         [&](T val, T vmin, T vmax) {
+        //             if (shambase::VectorProperties<T>::dimension == 3) {
+        //                 return shammath::is_in_half_open(val, vmin, vmax);
+        //             } else {
+        //                 throw shambase::make_except_with_loc<std::runtime_error>(
+        //                     "dimension != 3 is not handled");
+        //             }
+        //         },
+        //         vmin,
+        //         vmax);
+        // };
 
         std::vector<u32> idx_lst = get_vec_idx(bmin, bmax);
 

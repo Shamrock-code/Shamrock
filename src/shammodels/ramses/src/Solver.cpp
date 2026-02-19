@@ -928,7 +928,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
                                                             // enabled later when needed)
-        modules::ComputeLevel0CellSize< TgridVec> node_level0_sizes{};
+        modules::ComputeLevel0CellSize<TgridVec> node_level0_sizes{};
         node_level0_sizes.set_edges(
             graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
             storage.source_patches,

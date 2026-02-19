@@ -26,39 +26,24 @@
 #include <memory>
 
 namespace shammodels::basegodunov::modules {
+#define NODE_ComputeLevel0CellSize_EDGES(X_RO, X_RW)                                               \
+    /* inputs */                                                                                   \
+    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes_mass)           \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_min)                             \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_max)                             \
+    X_RO(shamrock::solvergraph::ScalarsEdge<TgridVec> level0_size)                                 \
+                                                                                                   \
+    /* outputs */                                                                                  \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, duint)
 
     template<class TgridVec>
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:
         ComputeLevel0CellSize() {}
 
-        struct Edges {
-            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes;
-            const shamrock::solvergraph::IPatchDataLayerRefs &refs;
-            const shamrock::solvergraph::IFieldRefs<TgridVec> &spans_block_min;
-            const shamrock::solvergraph::IFieldRefs<TgridVec> &spans_block_max;
-            shamrock::solvergraph::ScalarsEdge<TgridVec> &level0_size;
-        };
-
-        void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
-                patch_boxes,
-            std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> refs,
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<TgridVec>> spans_block_min,
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<TgridVec>> spans_block_max,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size) {
-            __internal_set_ro_edges({patch_boxes, refs, spans_block_min, spans_block_max});
-            __internal_set_rw_edges({level0_size});
-        }
-
-        Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(0),
-                get_ro_edge<shamrock::solvergraph::IPatchDataLayerRefs>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<TgridVec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<TgridVec>>(3),
-                get_rw_edge<shamrock::solvergraph::ScalarsEdge<TgridVec>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_ComputeLevel0CellSize_EDGES);
 
         void _impl_evaluate_internal() {
             auto edges               = get_edges();

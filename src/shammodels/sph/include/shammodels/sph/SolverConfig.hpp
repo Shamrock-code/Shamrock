@@ -33,6 +33,7 @@
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -1254,56 +1255,12 @@ namespace shammodels::sph {
         get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
         get_to_if_contains("particle_killing", p.particle_killing);
 
-        if (has_used_defaults) {
-
-            nlohmann::json j_current = p;
-
-            int dash_count = 50;
-
-            std::string faint_line = shambase::format(
-                "{}{:-^{}}{}\n",
-                shambase::term_colors::faint(),
-                "",         // empty string
-                dash_count, // dynamic width
-                shambase::term_colors::reset());
-
-            auto green = shambase::term_colors::col8b_green();
-            auto reset = shambase::term_colors::reset();
-            auto red   = shambase::term_colors::col8b_red();
-
-            std::string new_text = shambase::format("[{}+ | added{}]", green, reset);
-            std::string newold_text
-                = shambase::format("[{}+ | added{}] [{}- | removed{}]", green, reset, red, reset);
-
-            std::string log = "";
-            if (has_used_defaults && has_updated_config) {
-                log = shambase::format(
-                    "Used config parameters are listed below;\n      "
-                    "highlighted entries are default-added or updated values {}.\n",
-                    newold_text);
-            } else if (has_updated_config) {
-                log = shambase::format(
-                    "Used config parameters are listed below;\n      "
-                    "highlighted entries are update values {}.\n",
-                    green,
-                    reset,
-                    red,
-                    newold_text);
-            } else if (has_used_defaults) {
-                log = shambase::format(
-                    "Used config parameters are listed below;\n      "
-                    "highlighted entries are default-added values {}.\n",
-                    new_text);
+        if (has_used_defaults || has_updated_config) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
             }
-
-            std::stringstream ss;
-            ss << log;
-
-            ss << faint_line;
-            ss << shamrock::json_diff_str(j, j_current);
-            ss << faint_line;
-
-            logger::info_ln("Ramses::SolverConfig", ss.str());
         }
     }
 

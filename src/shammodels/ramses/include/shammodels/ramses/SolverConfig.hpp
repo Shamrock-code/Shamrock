@@ -28,6 +28,7 @@
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
@@ -383,7 +384,8 @@ namespace shammodels::basegodunov {
             }
         }
 
-        bool has_used_defaults = false;
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
 
         auto get_to_if_contains = [&](const std::string &key, auto &value) {
             if (j.contains(key)) {
@@ -407,32 +409,11 @@ namespace shammodels::basegodunov {
         get_to_if_contains("unit_sys", p.unit_sys);
 
         if (has_used_defaults) {
-
-            nlohmann::json j_current = p;
-
-            int dash_count = 50;
-
-            std::string faint_line = shambase::format(
-                "{}{:-^{}}{}\n",
-                shambase::term_colors::faint(),
-                "",         // empty string
-                dash_count, // dynamic width
-                shambase::term_colors::reset());
-
-            auto green = shambase::term_colors::col8b_green();
-            auto reset = shambase::term_colors::reset();
-
-            std::stringstream ss;
-            ss << shambase::format(
-                "Used config parameters are listed below;\n      "
-                "highlighted entries are default-added values [{}+ | text{}].\n",
-                green,
-                reset);
-            ss << faint_line;
-            ss << shamrock::json_diff_str(j, j_current);
-            ss << faint_line;
-
-            logger::info_ln("Ramses::SolverConfig", ss.str());
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Ramses::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
         }
     }
 

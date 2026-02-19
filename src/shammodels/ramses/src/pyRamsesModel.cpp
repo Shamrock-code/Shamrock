@@ -19,6 +19,7 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
@@ -41,7 +42,11 @@ namespace shammodels::basegodunov {
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str())
+        py::class_<TConfig> config_cls(m, name_config.c_str());
+
+        shammodels::common::add_json_defs<TConfig>(config_cls);
+
+        config_cls
             .def(
                 "set_scale_factor",
                 [](TConfig &self, Tscal scale_factor) {

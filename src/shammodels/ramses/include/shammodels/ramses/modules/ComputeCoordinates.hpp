@@ -55,7 +55,7 @@ namespace shammodels::basegodunov::modules {
                                                                                                    \
     /* outputs */                                                                                  \
     X_RW(                                                                                          \
-        shamrock::solvergraph::Field<Tvec>,                                                        \
+        shamrock::solvergraph::IFieldSpan<Tvec>,                                                        \
         spans_coordinates) /* center coordinates of each cell */
 
         EXPAND_NODE_EDGES(NODE_COMPUTE_COORDINATES)

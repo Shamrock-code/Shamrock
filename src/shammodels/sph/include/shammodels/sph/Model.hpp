@@ -591,6 +591,7 @@ namespace shammodels::sph {
 
         void push_particle_mhd(
             std::vector<Tvec> &part_pos_insert,
+            std::vector<Tvec> &part_vel_insert,
             std::vector<Tscal> &part_hpart_insert,
             std::vector<Tscal> &part_u_insert,
             std::vector<Tvec> &part_B_on_rho_insert,

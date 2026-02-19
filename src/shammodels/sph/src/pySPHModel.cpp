@@ -613,11 +613,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "push_particle_mhd",
             [](T &self,
                std::vector<f64_3> pos,
+               std::vector<f64_3> vel,
                std::vector<f64> hpart,
                std::vector<f64> upart,
                std::vector<f64_3> B_on_rho,
                std::vector<f64> psi_on_ch) {
-                return self.push_particle_mhd(pos, hpart, upart, B_on_rho, psi_on_ch);
+                return self.push_particle_mhd(pos, vel, hpart, upart, B_on_rho, psi_on_ch);
             })
         .def(
             "add_cube_fcc_3d",

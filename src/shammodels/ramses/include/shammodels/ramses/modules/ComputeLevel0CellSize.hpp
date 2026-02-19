@@ -26,24 +26,19 @@
 #include <memory>
 
 namespace shammodels::basegodunov::modules {
-#define NODE_ComputeLevel0CellSize_EDGES(X_RO, X_RW)                                               \
-    /* inputs */                                                                                   \
-    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes_mass)           \
-    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
-    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_min)                             \
-    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_max)                             \
-    X_RO(shamrock::solvergraph::ScalarsEdge<TgridVec> level0_size)                                 \
-                                                                                                   \
-    /* outputs */                                                                                  \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, duint)
-
     template<class TgridVec>
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:
         ComputeLevel0CellSize() {}
+#define NODE_ComputeLevel0CellSize_EDGES(X_RO, X_RW)                                               \
+    /* inputs */                                                                                   \
+    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes)                \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
+    /* outputs */                                                                                  \
+    X_RW(shamrock::solvergraph::ScalarsEdge<TgridVec>, level0_size)
 
-        EXPAND_NODE_EDGES(NODE_ComputeLevel0CellSize_EDGES);
+        EXPAND_NODE_EDGES(NODE_ComputeLevel0CellSize_EDGES)
+#undef NODE_ComputeLevel0CellSize_EDGES
 
         void _impl_evaluate_internal() {
             auto edges               = get_edges();

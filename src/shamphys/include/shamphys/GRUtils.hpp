@@ -47,8 +47,8 @@ namespace shamphys {
             Tvec betaUP  = {0., 0., 0.};
 
             betaUP[0] = gcov(0, 1) * alpha2;
-            betaUP[1] = gcov(0, 1) * alpha2;
-            betaUP[2] = gcov(0, 1) * alpha2;
+            betaUP[1] = gcov(0, 2) * alpha2;
+            betaUP[2] = gcov(0, 3) * alpha2;
 
             return betaUP;
         }

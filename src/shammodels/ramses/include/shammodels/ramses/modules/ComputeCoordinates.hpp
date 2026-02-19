@@ -47,15 +47,11 @@ namespace shammodels::basegodunov::modules {
         shamrock::solvergraph::Indexes<u32>,                                                       \
         sizes) /* number of blocks per patch for all patches on the current MPI process*/          \
     X_RO(                                                                                          \
-        shamrock::solvergraph::Field<Tscal>,                                                       \
-        spans_block_cell_sizes) /* sizes of the cells within each block for all patches on the     \
-                                   current MPI process*/                                           \
+        shamrock::solvergraph::IFieldSpan<TgridVec>,                                                       \
+        spans_block_min) /* min int coordinate of the block*/                                           \
     X_RO(                                                                                          \
-        shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>,                              \
-        patch_boxes) /* bounding boxes of the patches  */                                          \
-    X_RO(                                                                                          \
-        shamrock::solvergraph::Field<Tvec>,                                                        \
-        spans_cell0block_aabb_lower) /* coordinates of the lower left corner of each block */      \
+        shamrock::solvergraph::IFieldSpan<TgridVec>,                                                       \
+        spans_block_max) /* max int coordinate of the block*/                                           \
                                                                                                    \
     /* outputs */                                                                                  \
     X_RW(                                                                                          \

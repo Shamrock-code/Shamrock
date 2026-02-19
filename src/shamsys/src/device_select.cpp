@@ -19,7 +19,7 @@
 #include "shambackends/Device.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
-#include "shamsys/EnvVariables.hpp"
+#include "shamcomm/env_variables.hpp"
 #include "shamsys/device_select.hpp"
 #include "shamsys/for_each_device.hpp"
 
@@ -29,7 +29,7 @@ shamsys::DeviceSelectRet_t init_queues_auto(std::string search_key) {
 
     shamsys::DeviceSelectRet_t ret;
 
-    std::optional<u32> local_id = shamsys::env::get_local_rank();
+    std::optional<u32> local_id = shamcomm::get_local_rank();
 
     if (local_id) {
 

@@ -18,11 +18,37 @@
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/sparse_exchange.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include "shamcmdopt/env.hpp"
 #include <memory>
 #include <vector>
+
+auto SPARSE_COMM_MODE = shamcmdopt::getenv_str_default_register(
+    "SPARSE_COMM_MODE", "new", "Sparse communication mode (new=with cache, old=without cache)");
+
+namespace {
+    struct SparseCommMode {
+        enum Mode { NEW, OLD };
+    };
+
+    constexpr auto parse_sparse_comm_mode = []() {
+        if (SPARSE_COMM_MODE == "new") {
+            return SparseCommMode::NEW;
+        } else if (SPARSE_COMM_MODE == "old") {
+            return SparseCommMode::OLD;
+        } else {
+            throw std::invalid_argument(
+                "Invalid sparse communication mode, valid modes are: new, old");
+        }
+    };
+
+    bool use_old_sparse_comm_mode = parse_sparse_comm_mode() == SparseCommMode::OLD;
+
+    bool warning_printed = false;
+} // namespace
 
 namespace shamalgs::collective {
 
@@ -71,9 +97,108 @@ namespace shamalgs::collective {
             return serializers;
         }
 
+        class PrepareCommUtil {
+            public:
+            i32 sender_rank, receiver_rank;
+            SerializeSize sz;
+            std::vector<std::reference_wrapper<DataTmp>> sources;
+            std::unique_ptr<SerializeHelper> serializer      = {};
+            std::unique_ptr<sham::DeviceBuffer<u8>> send_buf = {};
+
+            void allocate_serializer(std::shared_ptr<sham::DeviceScheduler> dev_sched) {
+                serializer = std::make_unique<SerializeHelper>(dev_sched);
+                serializer->allocate(sz);
+            }
+
+            void write_sources() {
+                SerializeHelper &ser = shambase::get_check_ref(serializer);
+                ser.write<u64>(sources.size());
+                for (DataTmp &d : sources) {
+                    ser.write(d.sender);
+                    ser.write(d.receiver);
+                    ser.write(d.length);
+                    ser.write_buf(d.data, d.length);
+                }
+            }
+
+            void finalize_serializer() {
+                SerializeHelper &ser = shambase::get_check_ref(serializer);
+                send_buf             = std::make_unique<sham::DeviceBuffer<u8>>(ser.finalize());
+            }
+        };
+
+        auto serialize_group_data_max_size(
+            std::shared_ptr<sham::DeviceScheduler> dev_sched,
+            std::map<std::pair<i32, i32>, std::vector<DataTmp>> &send_data,
+            u64 max_comm_size) -> std::vector<PrepareCommUtil> {
+
+            StackEntry stack_loc{};
+
+            std::vector<PrepareCommUtil> ret;
+
+            auto add_to_ret = [&](std::pair<i32, i32> key,
+                                  SerializeSize &byte_sz,
+                                  std::vector<std::reference_wrapper<DataTmp>> &sources) {
+                if (byte_sz.get_total_size() > max_comm_size) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        shambase::format("comm size too large: {}", byte_sz.get_total_size()));
+                }
+
+                auto [sender_rank, receiver_rank] = key;
+
+                if (sources.size() > 0) {
+                    PrepareCommUtil next{sender_rank, receiver_rank, byte_sz, sources};
+                    ret.push_back(std::move(next));
+                }
+
+                byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
+                sources = {};
+            };
+
+            for (auto &[key, vect] : send_data) {
+                SerializeSize byte_sz = SerializeHelper::serialize_byte_size<u64>(); // vec length
+                std::vector<std::reference_wrapper<DataTmp>> sources = {};
+
+                for (DataTmp &d : vect) {
+                    std::reference_wrapper<DataTmp> d_ref = d;
+                    auto dbyte_sz                         = d.get_ser_sz();
+
+                    if ((dbyte_sz + byte_sz).get_total_size() > max_comm_size) {
+                        add_to_ret(key, byte_sz, sources);
+                        //  logger::raw_ln("comm split at", d.sender, d.receiver, d.length);
+                    }
+
+                    //   logger::raw_ln(
+                    //       "add to sources", dbyte_sz.get_total_size(), byte_sz.get_total_size());
+
+                    byte_sz += d.get_ser_sz();
+                    sources.push_back(d_ref);
+                }
+
+                add_to_ret(key, byte_sz, sources);
+            }
+
+            for (auto &c : ret) {
+                //    logger::raw_ln(
+                //        "allocate serializer", c.sender_rank, c.receiver_rank,
+                //        c.sz.get_total_size());
+                c.allocate_serializer(dev_sched);
+            }
+
+            for (auto &c : ret) {
+                c.write_sources();
+            }
+
+            for (auto &c : ret) {
+                c.finalize_serializer();
+            }
+
+            return ret;
+        }
+
     } // namespace details
 
-    void distributed_data_sparse_comm(
+    void distributed_data_sparse_comm_old(
         sham::DeviceScheduler_ptr dev_sched,
         SerializedDDataComm &send_distrib_data,
         SerializedDDataComm &recv_distrib_data,
@@ -169,6 +294,194 @@ namespace shamalgs::collective {
                         if (supposed_sender_rank != real_sender_rank) {
                             throw make_except_with_loc<std::runtime_error>(
                                 "the rank do not matches");
+                        }
+                    }
+
+                    auto it = recv_distrib_data.add_obj(
+                        sender, receiver, sham::DeviceBuffer<u8>(length, dev_sched));
+
+                    recv.ser.load_buf(it->second, length);
+                }
+            }
+        }
+    }
+
+    void distributed_data_sparse_comm(
+        sham::DeviceScheduler_ptr dev_sched,
+        SerializedDDataComm &send_distrib_data,
+        SerializedDDataComm &recv_distrib_data,
+        std::function<i32(u64)> rank_getter,
+        DDSCommCache &cache,
+        std::optional<SparseCommTable> comm_table,
+        size_t max_comm_size) {
+
+        if (use_old_sparse_comm_mode) {
+            if (shamcomm::world_rank() == 0 && !warning_printed) {
+                logger::warn_ln("SparseComm", "using old sparse communication mode");
+                warning_printed = true;
+            }
+            return distributed_data_sparse_comm_old(
+                dev_sched, send_distrib_data, recv_distrib_data, rank_getter, comm_table);
+        }
+
+        __shamrock_stack_entry();
+
+        using namespace shambase;
+        using DataTmp = details::DataTmp;
+
+        size_t max_alloc_size;
+        if (dev_sched->ctx->device->mpi_prop.is_mpi_direct_capable) {
+            max_alloc_size = dev_sched->ctx->device->prop.max_mem_alloc_size_dev;
+        } else {
+            max_alloc_size = dev_sched->ctx->device->prop.max_mem_alloc_size_host;
+        }
+        max_alloc_size -= 1; // keep a bit of space for safety
+
+        if (max_alloc_size > max_comm_size) {
+            max_alloc_size = max_comm_size;
+        }
+
+        // prepare map
+        std::map<std::pair<i32, i32>, std::vector<DataTmp>> send_data;
+        send_distrib_data.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
+            std::pair<i32, i32> key = {rank_getter(sender), rank_getter(receiver)};
+
+            send_data[key].push_back(DataTmp{sender, receiver, buf.get_size(), buf});
+        });
+
+        std::vector<details::PrepareCommUtil> prepared_comms
+            = details::serialize_group_data_max_size(dev_sched, send_data, max_comm_size);
+
+        std::vector<shamalgs::collective::CommMessageInfo> messages_send;
+        std::vector<std::unique_ptr<sham::DeviceBuffer<u8>>> data_send;
+
+        for (auto &cms : prepared_comms) {
+
+            auto sender   = cms.sender_rank;
+            auto receiver = cms.receiver_rank;
+            auto size     = shambase::get_check_ref(cms.send_buf).get_size();
+
+            messages_send.push_back(
+                shamalgs::collective::CommMessageInfo{
+                    size,
+                    sender,
+                    receiver,
+                    std::nullopt,
+                    std::nullopt,
+                    std::nullopt,
+                });
+
+            data_send.push_back(std::move(cms.send_buf));
+        }
+
+        shamalgs::collective::CommTable comm_table2
+            = shamalgs::collective::build_sparse_exchange_table(messages_send, max_alloc_size);
+
+        if (dev_sched->ctx->device->mpi_prop.is_mpi_direct_capable) {
+            cache.set_sizes<sham::device>(
+                dev_sched, comm_table2.send_total_sizes, comm_table2.recv_total_sizes);
+        } else {
+            cache.set_sizes<sham::host>(
+                dev_sched, comm_table2.send_total_sizes, comm_table2.recv_total_sizes);
+        }
+
+        if (comm_table2.messages_send.size() != data_send.size()) {
+            std::vector<size_t> tmp1{};
+            for (size_t i = 0; i < data_send.size(); i++) {
+                tmp1.push_back(comm_table2.messages_send[i].message_size);
+            }
+
+            std::vector<size_t> tmp2{};
+            for (size_t i = 0; i < data_send.size(); i++) {
+                tmp2.push_back(data_send[i]->get_size());
+            }
+
+            throw make_except_with_loc<std::runtime_error>(
+                shambase::format("message send mismatch : {} != {}", tmp1, tmp2));
+        }
+
+        if (comm_table2.messages_send.size() != messages_send.size()) {
+            std::vector<size_t> tmp1{};
+            for (size_t i = 0; i < comm_table2.messages_send.size(); i++) {
+                tmp1.push_back(comm_table2.messages_send[i].message_size);
+            }
+
+            std::vector<size_t> tmp2{};
+            for (size_t i = 0; i < messages_send.size(); i++) {
+                tmp2.push_back(messages_send[i].message_size);
+            }
+            throw make_except_with_loc<std::runtime_error>(
+                shambase::format("message send mismatch : {} != {}", tmp1, tmp2));
+        }
+
+        for (size_t i = 0; i < comm_table2.messages_send.size(); i++) {
+            auto &msg_info   = comm_table2.messages_send[i];
+            auto offset_info = shambase::get_check_ref(msg_info.message_bytebuf_offset_send);
+            auto &buf_src    = shambase::get_check_ref(data_send.at(i));
+
+            SHAM_ASSERT(buf_src.get_size() == msg_info.message_size);
+
+            cache.send_cache_write_buf_at(offset_info.buf_id, offset_info.data_offset, buf_src);
+        }
+
+        if (dev_sched->ctx->device->mpi_prop.is_mpi_direct_capable) {
+            shamalgs::collective::sparse_exchange<sham::device>(
+                dev_sched,
+                cache.get_cache1<sham::device>(),
+                cache.get_cache2<sham::device>(),
+                comm_table2);
+        } else {
+            shamalgs::collective::sparse_exchange<sham::host>(
+                dev_sched,
+                cache.get_cache1<sham::host>(),
+                cache.get_cache2<sham::host>(),
+                comm_table2);
+        }
+
+        // make serializers from recv buffs
+        struct RecvPayloadSer {
+            i32 sender_ranks;
+            SerializeHelper ser;
+        };
+
+        std::vector<RecvPayloadSer> recv_payload_bufs;
+
+        for (auto &msg : comm_table2.messages_recv) {
+
+            u64 size     = msg.message_size;
+            i32 sender   = msg.rank_sender;
+            i32 receiver = msg.rank_receiver;
+
+            auto offset_info = shambase::get_check_ref(msg.message_bytebuf_offset_recv);
+
+            sham::DeviceBuffer<u8> recov(size, dev_sched);
+            cache.recv_cache_read_buf_at(offset_info.buf_id, offset_info.data_offset, size, recov);
+
+            recv_payload_bufs.push_back(
+                RecvPayloadSer{sender, SerializeHelper(dev_sched, std::move(recov))});
+        }
+
+        {
+            NamedStackEntry stack_loc2{"split recv comms"};
+            // deserialize into the shared distributed data
+            for (RecvPayloadSer &recv : recv_payload_bufs) {
+                u64 cnt_obj;
+                recv.ser.load(cnt_obj);
+                for (u32 i = 0; i < cnt_obj; i++) {
+                    u64 sender, receiver, length;
+
+                    recv.ser.load(sender);
+                    recv.ser.load(receiver);
+                    recv.ser.load(length);
+
+                    { // check correctness ranks
+                        i32 supposed_sender_rank = rank_getter(sender);
+                        i32 real_sender_rank     = recv.sender_ranks;
+                        if (supposed_sender_rank != real_sender_rank) {
+                            throw make_except_with_loc<std::runtime_error>(shambase::format(
+                                "the rank do not matches {} != {}",
+                                supposed_sender_rank,
+                                real_sender_rank));
                         }
                     }
 

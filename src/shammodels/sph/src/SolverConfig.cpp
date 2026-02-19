@@ -107,6 +107,10 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("psi_cons", 1);
             pdl.add_field<Tscal>("u_mhd", 1);
         }
+
+        if (should_save_dt_to_fields()) {
+            pdl.add_field<Tscal>("dt_part", 1);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>

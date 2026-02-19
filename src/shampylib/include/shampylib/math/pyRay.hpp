@@ -22,4 +22,7 @@ namespace shampylib {
     template<class T>
     void init_shamrock_math_Ray(py::module &m, std::string name);
 
-}
+    template<class T>
+    void init_shamrock_math_RingRay(py::module &m, std::string name);
+
+} // namespace shampylib

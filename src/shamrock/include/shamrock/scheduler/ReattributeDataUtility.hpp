@@ -16,6 +16,7 @@
  */
 
 #include "shambase/string.hpp"
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -229,6 +230,8 @@ namespace shamrock {
 
             DistributedDataShared<patch::PatchDataLayer> recv_dat;
 
+            shamalgs::collective::DDSCommCache cache;
+
             shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::move(part_exchange),
@@ -248,7 +251,8 @@ namespace shamrock {
                         shamsys::instance::get_compute_scheduler_ptr(),
                         std::forward<sham::DeviceBuffer<u8>>(buf));
                     return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-                });
+                },
+                cache);
 
             recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
                 shamlog_debug_ln("Part Exchanges", format("send = {} recv = {}", sender, receiver));

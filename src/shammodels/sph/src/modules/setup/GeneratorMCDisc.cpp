@@ -22,23 +22,25 @@
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next()
+auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next(u64 seed)
     -> DiscOutput {
+
+    std::mt19937_64 eng_local(seed); // ensure that 1 part = 1 random draw
 
     Tscal fmax = f_func(r_out);
 
     auto find_r = [&]() {
         while (true) {
-            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng, 0, fmax);
-            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng, r_in, r_out);
+            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, fmax);
+            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng_local, r_in, r_out);
             if (u2 < f_func(r)) {
                 return r;
             }
         }
     };
 
-    auto theta = shamalgs::primitives::mock_value<Tscal>(eng, 0, _2pi);
-    auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
+    auto theta = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, _2pi);
+    auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng_local);
 
     Tscal r = find_r();
 
@@ -86,27 +88,9 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
     std::vector<DiscOutput> pos_data;
 
     // Fill pos_data if the scheduler has some patchdata in this rank
-    if (!is_done()) {
+    if (!generator.is_done()) {
         u64 loc_gen_count = nmax;
-
-        auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
-
-        u64 skip_start = gen_info.head_offset;
-        u64 gen_cnt    = loc_gen_count;
-        u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
-
-        shamlog_debug_ln(
-            "GeneratorMCDisc",
-            "generate : ",
-            skip_start,
-            gen_cnt,
-            skip_end,
-            "total",
-            skip_start + gen_cnt + skip_end);
-
-        generator.skip(skip_start);
-        pos_data = generator.next_n(gen_cnt);
-        generator.skip(skip_end);
+        pos_data          = generator.next_n(loc_gen_count);
     }
 
     // extract the pos from part_list

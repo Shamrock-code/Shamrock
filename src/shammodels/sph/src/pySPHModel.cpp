@@ -555,10 +555,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("t_curr"),
             py::arg("dt_input"))
         .def("evolve_once", &T::evolve_once)
+        .def("evolve_once_substep", &T::evolve_once_substep)
         .def(
             "evolve_until",
             [](T &self, f64 target_time, i32 niter_max) {
                 return self.evolve_until(target_time, niter_max);
+            },
+            py::arg("target_time"),
+            py::kw_only(),
+            py::arg("niter_max") = -1)
+        .def(
+            "evolve_until_substep",
+            [](T &self, f64 target_time, i32 niter_max) {
+                return self.evolve_until_substep(target_time, niter_max);
             },
             py::arg("target_time"),
             py::kw_only(),

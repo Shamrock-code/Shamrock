@@ -24,10 +24,12 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/EventList.hpp"
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/details/memoryHandle.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
+#include "shambackends/sycl_utils.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -900,6 +902,190 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::do_kick_substep(Tscal dt_sph) {
+
+    StackEntry stack_loc{};
+    using namespace shamrock::patch;
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz_sph       = pdl.get_field_idx<Tvec>("axyz_sph");
+    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
+
+    shamrock::SchedulerUtility utility(scheduler());
+
+    // forward euler step f dt_sph /2 with long range interactions
+    // @@@ is there really just hydro acc in a ?
+    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2, long range interactions");
+    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_sph, dt_sph / 2);
+    utility.fields_forward_euler<Tscal>(iuint, iduint, dt_sph / 2);
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::do_substep() {
+
+    StackEntry stack_loc{};
+    using namespace shamrock::patch;
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+
+    const u32 ixyz      = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz     = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 ihpart    = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iaxyz_ext = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iuint     = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint    = pdl.get_field_idx<Tscal>("duint");
+
+    shamrock::SchedulerUtility utility(scheduler());
+    int n_substeps = 0;
+    bool done      = false;
+
+    Tscal dt_sph    = solver_config.get_dt_true_sph();
+    Tscal t_current = solver_config.get_time();
+    Tscal t_end     = t_current + dt_sph;
+
+    while (t_current < t_end && !done) {
+        Tscal dt_force = solver_config.get_dt_force();
+        // kick
+        // accrete particles+ update sinks
+        sink_update.kick(dt_force / 2, true); // only external acc)
+        shamlog_debug_ln("Substep", "kick");
+        utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
+        utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
+        // sink_update.accrete_particles();
+        // ext_forces.point_mass_accrete_particles();
+
+        // drift + drift sinks
+        shamlog_debug_ln("Substep", "drift");
+        utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt_force);
+        sink_update.drift(dt_force / 2);
+        // sink_update.accrete_particles();
+        // ext_forces.point_mass_accrete_particles();
+
+        // compute short range accelerations
+        // reset axyz_ext to zero ?
+        modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+        // axyz_ext.reset();
+        ext_forces.compute_ext_forces_indep_v(); // @@@ pb here ?
+
+        // kick
+        shamlog_debug_ln("Substep", "kick");
+        sink_update.kick(dt_force / 2, true);
+        utility.fields_forward_euler<Tvec>(ivxyz, iaxyz_ext, dt_force / 2);
+        utility.fields_forward_euler<Tscal>(iuint, iduint, dt_force / 2);
+        // sink_update.accrete_particles();
+        // ext_forces.point_mass_accrete_particles();
+
+        logger::raw_ln("Kick 2 passed, now updating dt");
+        // update dtforce
+        Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+        if (!storage.sinks.is_empty()) {
+            // sink sink CFL
+            Tscal G = solver_config.get_constant_G();
+            Tscal C_force
+                = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+            Tscal eta_phi                               = solver_config.cfl_config.eta_sink;
+            std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+            for (u32 i = 0; i < sink_parts.size(); i++) {
+                SinkParticle<Tvec> &s_i = sink_parts[i];
+                Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
+                Tvec f_i                = s_i.ext_acceleration;
+                Tscal grad_phi_i_sq     = sham::dot(f_i, f_i); // m^2.s^-4
+                if (grad_phi_i_sq == 0) {
+                    continue;
+                }
+
+                for (u32 j = 0; j < sink_parts.size(); j++) {
+                    SinkParticle<Tvec> &s_j = sink_parts[j];
+
+                    if (i == j) {
+                        continue;
+                    }
+
+                    Tvec rij       = s_i.pos - s_j.pos;
+                    Tscal rij_scal = sycl::length(rij);
+
+                    Tscal phi_ij  = G * s_j.mass / rij_scal;                 // J / kg = m^2.s^-2
+                    Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq;       // s^2
+                    Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
+
+                    sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+                }
+
+                sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+            }
+
+            sink_sink_cfl = shamalgs::collective::allreduce_min(sink_sink_cfl);
+        }
+
+        shamrock::ComputeField<Tscal> dt_force_arr
+            = utility.make_compute_field<Tscal>("dt_force_arr", 1);
+
+        logger::raw_ln("before loop on patches");
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field<Tvec>(iaxyz_ext).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_hpart   = pdat.get_field<Tscal>(ihpart).get_buf();
+            sham::DeviceBuffer<Tscal> &buf_dt_force_arr
+                = dt_force_arr.get_buf_check(cur_p.id_patch);
+
+            auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+            sham::EventList depends_list;
+
+            auto hpart        = buf_hpart.get_read_access(depends_list);
+            auto aext         = buf_axyz_ext.get_read_access(depends_list);
+            auto dt_force_arr = buf_dt_force_arr.get_write_access(depends_list);
+
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                Tscal C_force
+                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+
+                cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                    Tscal h_a        = hpart[item];
+                    Tscal abs_aext_a = sycl::length(aext[item]);
+
+                    Tscal dt_f = C_force * sycl::sqrt(h_a / abs_aext_a);
+
+                    dt_force_arr[item] = dt_f;
+                });
+            });
+
+            buf_hpart.complete_event_state(e);
+            buf_axyz_ext.complete_event_state(e);
+            buf_dt_force_arr.complete_event_state(e);
+        });
+
+        logger::raw_ln("after loop on patches");
+
+        Tscal rank_dt        = dt_force_arr.compute_rank_min();
+        Tscal next_force_cfl = shamalgs::collective::allreduce_min(rank_dt);
+        logger::raw_ln("all reduce passed");
+        next_force_cfl = sycl::min(next_force_cfl, sink_sink_cfl);
+        logger::raw_ln("min passed");
+        solver_config.set_next_dt_force(next_force_cfl);
+
+        logger::raw_ln("after asigned next dt force");
+        // update time
+        // solver_config.set_time(t_current + dt_force);
+        // t_current = solver_config.get_time();
+        t_current = t_current + dt_force;
+        n_substeps++;
+
+        bool last_step = dt_force >= dt_sph;
+        if (last_step) {
+            // last step
+            done = true;
+        } else {
+            if (t_current + dt_force > t_end) {
+                dt_force  = t_end - t_current;
+                last_step = true;
+            }
+        }
+    }
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
@@ -1536,13 +1722,19 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs_ext_forces() {
+
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.add_ext_forces();
+}
+
+template<class Tvec, template<class> class Kern>
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs_sph() {
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
     derivs.update_derivs();
 
-    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-    ext_forces.add_ext_forces();
+    // ext forces already added
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1569,9 +1761,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
-
-    Tscal t_current = solver_config.get_time();
-    Tscal dt        = solver_config.get_dt_sph();
+    bool substepping                        = false;
+    Tscal t_current                         = solver_config.get_time();
+    Tscal dt                                = solver_config.get_dt_sph();
+    Tscal dt_force = solver_config.get_dt_force();    // dt due to external forces
+    Tscal dt_sph   = solver_config.get_dt_true_sph(); // dt due to pure hydro
 
     StackEntry stack_loc{};
 
@@ -1613,6 +1807,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_sph   = (substepping) ? pdl.get_field_idx<Tvec>("axyz_sph") : 0;
+    const u32 iaxyz_ext   = (substepping) ? pdl.get_field_idx<Tvec>("axyz_ext") : 0;
     const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
     const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
     const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
@@ -1633,7 +1829,130 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.accrete_particles();
     ext_forces.point_mass_accrete_particles();
 
+    bool did_substep = false;
+    if (substepping and dt_force < dt_sph) {
+        sink_update.kick(dt_sph, false);
+        do_kick_substep(dt_sph); // with axyz_sph
+        do_substep();
+        logger::raw_ln("finished substepping, moving to update_derivs_sph");
+
+        part_killing_step();
+        gen_serial_patch_tree();
+
+        apply_position_boundary(t_current + dt_sph);
+
+        u64 Npart_all = scheduler().get_total_obj_count();
+        sph_prestep(t_current, dt_sph);
+        using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
+
+        sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
+        auto &merged_xyzh                             = storage.merged_xyzh.get();
+        shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
+        // ComputeField<Tscal> &omega                    = storage.omega.get();
+
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
+        u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>("hpart");
+        u32 iuint_interf       = ghost_layout.get_field_idx<Tscal>("uint");
+        u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>("vxyz");
+        u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>("omega");
+        u32 iB_on_rho_interf   = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+        u32 ipsi_on_rho_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
+
+        reset_merge_ghosts_fields();
+        reset_eos_fields();
+        communicate_merge_ghosts_fields();
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::SchedulerUtility utility(scheduler());
+            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+            storage.alpha_av_updated.set(utility.save_field<Tscal>(ialpha_AV, "alpha_AV_new"));
+        }
+        update_artificial_viscosity(dt);
+
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::ComputeField<Tscal> &comp_field_send = storage.alpha_av_updated.get();
+
+            using InterfaceBuildInfos =
+                typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+
+            shambase::Timer time_interf;
+            time_interf.start();
+
+            auto field_interf = ghost_handle.template build_interface_native<PatchDataField<Tscal>>(
+                storage.ghost_patch_cache.get(),
+                [&](u64 sender,
+                    u64 /*receiver*/,
+                    InterfaceBuildInfos binfo,
+                    sham::DeviceBuffer<u32> &buf_idx,
+                    u32 cnt) -> PatchDataField<Tscal> {
+                    PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
+
+                    return sender_field.make_new_from_subset(buf_idx, cnt);
+                });
+
+            shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat
+                = ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+
+            shambase::DistributedData<PatchDataField<Tscal>> merged_field
+                = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
+                    std::move(interf_pdat),
+                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                        PatchDataField<Tscal> &receiver_field
+                            = comp_field_send.get_field(p.id_patch);
+                        return receiver_field.duplicate();
+                    },
+                    [](PatchDataField<Tscal> &mpdat, PatchDataField<Tscal> &pdat_interf) {
+                        mpdat.insert(pdat_interf);
+                    });
+
+            time_interf.end();
+            storage.timings_details.interface += time_interf.elasped_sec();
+
+            storage.alpha_av_ghost.set(std::move(merged_field));
+        }
+
+        // compute pressure
+        compute_eos_fields();
+
+        update_derivs_sph(); // @ need to save this SPH acceleration for next substepping loop
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(
+                pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
+
+        did_substep = true;
+        do_kick_substep(dt_sph); // @@@ just recompute axyz only putting SPH accelerations, so OK
+        logger::info_ln("SPH", "moving to corrector");
+
+        if (solver_config.has_field_alphaAV()) {
+            storage.alpha_av_ghost.reset();
+            storage.alpha_av_updated.reset();
+        }
+        reset_serial_patch_tree();
+        reset_ghost_handler();
+
+        shambase::get_check_ref(storage.part_counts).free_alloc();
+        shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+        shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+        shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+        storage.merged_xyzh.reset();
+        shambase::get_check_ref(storage.omega).free_alloc();
+        clear_merged_pos_trees();
+        clear_ghost_cache();
+        reset_presteps_rint();
+        reset_neighbors_cache();
+
+        shambase::get_check_ref(storage.neigh_cache).free_alloc();
+
+    } else {
+        do_predictor_leapfrog(dt);
+        sink_update.predictor_step(dt);
+    }
+
     sink_update.predictor_step(dt);
+
 
     {
         // begining of SolverGraph migration
@@ -1857,7 +2176,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     using RTreeField = RadixTreeField<Tscal>;
     shambase::DistributedData<RTreeField> rtree_field_h;
 
-    Tscal next_cfl = 0;
+    Tscal next_cfl      = 0;
+    Tscal next_dt_force = 0;
+    Tscal next_dt_sph   = 0;
 
     u32 corrector_iter_cnt    = 0;
     bool need_rerun_corrector = false;
@@ -2029,7 +2350,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         // save old acceleration
         prepare_corrector();
 
-        update_derivs();
+        // compute new acceleration
+        update_derivs_sph();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(
+                pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
+        update_derivs_ext_forces();
 
         bool has_luminosity = solver_config.compute_luminosity;
 
@@ -2127,8 +2454,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
         // corrector
         shamlog_debug_ln("sph::BasicGas", "leapfrog corrector");
+        u32 aindex
+            = (substepping ? iaxyz_sph
+                           : iaxyz); // in case of substepping, only use SPH forces in corrector
         utility.fields_leapfrog_corrector<Tvec>(
-            ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
+            ivxyz, aindex, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
         utility.fields_leapfrog_corrector<Tscal>(
             iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
 
@@ -2427,24 +2757,32 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             });
 
-            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> cfl_dt   = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> dt_sph   = utility.make_compute_field<Tscal>("dt_sph", 1);
+            ComputeField<Tscal> dt_force = utility.make_compute_field<Tscal>("dt_force", 1);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
-                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field<Tvec>(iaxyz_ext).get_buf();
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
-                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf   = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_sph_buf   = dt_sph.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_force_buf = dt_force.get_buf_check(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
                 sham::EventList depends_list;
 
-                auto hpart  = buf_hpart.get_read_access(depends_list);
-                auto a      = buf_axyz.get_read_access(depends_list);
-                auto vsig   = vsig_buf.get_read_access(depends_list);
-                auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
+                auto hpart    = buf_hpart.get_read_access(depends_list);
+                auto a        = buf_axyz.get_read_access(depends_list);
+                auto aext     = buf_axyz_ext.get_read_access(depends_list);
+                auto vsig     = vsig_buf.get_read_access(depends_list);
+                auto cfl_dt   = cfl_dt_buf.get_write_access(depends_list);
+                auto dt_force = dt_force_buf.get_write_access(depends_list);
+                auto dt_sph   = dt_sph_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     Tscal C_cour = solver_config.cfl_config.cfl_cour
@@ -2453,14 +2791,24 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                     * solver_config.time_state.cfl_multiplier;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        Tscal h_a     = hpart[item];
-                        Tscal vsig_a  = vsig[item];
-                        Tscal abs_a_a = sycl::length(a[item]);
+                        Tscal h_a        = hpart[item];
+                        Tscal vsig_a     = vsig[item];
+                        Tscal abs_a_a    = sycl::length(a[item]);
+                        Tscal abs_aext_a = sycl::length(aext[item]);
+                        Tvec a_sph       = a[item] - aext[item]; // use the one in the table
+                        Tscal abs_a_sph  = sycl::length(a_sph);
 
                         Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
 
-                        cfl_dt[item] = sycl::min(dt_c, dt_f);
+                        Tscal dt_fext
+                            = C_force * sycl::sqrt(h_a / abs_aext_a); // only external accelerations
+                        Tscal dt_fsph
+                            = C_force * sycl::sqrt(h_a / (abs_a_sph)); // only sph accelerations
+
+                        cfl_dt[item]   = sycl::min(dt_c, dt_f);
+                        dt_force[item] = dt_fext;
+                        dt_sph[item]   = sycl::min(dt_c, dt_fsph);
                     });
                 });
 
@@ -2487,11 +2835,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 buf_hpart.complete_event_state(e);
                 buf_axyz.complete_event_state(e);
+                buf_axyz_ext.complete_event_state(e);
                 vsig_buf.complete_event_state(e);
                 cfl_dt_buf.complete_event_state(e);
+                dt_force_buf.complete_event_state(e);
+                dt_sph_buf.complete_event_state(e);
             });
 
-            Tscal rank_dt = cfl_dt.compute_rank_min();
+            Tscal rank_dt       = cfl_dt.compute_rank_min();
+            Tscal rank_force_dt = dt_force.compute_rank_min();
+            Tscal rank_sph_dt   = dt_sph.compute_rank_min();
 
             if (solver_config.should_save_dt_to_fields()) {
 
@@ -2554,12 +2907,17 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
 
             shamlog_debug_ln("BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
+            // @@@ a print of substepping
 
             Tscal hydro_cfl = shamalgs::collective::allreduce_min(rank_dt);
+            next_dt_force   = shamalgs::collective::allreduce_min(rank_force_dt);
+            next_dt_force   = sycl::min(next_dt_force, sink_sink_cfl);
+            next_dt_sph     = shamalgs::collective::allreduce_min(rank_sph_dt);
 
             if (shamcomm::world_rank() == 0) {
                 shamlog_info_ln("SPH", "CFL hydro =", hydro_cfl, "sink sink =", sink_sink_cfl);
             }
+            // @@@ ad dt force dt sph
 
             next_cfl = sham::min(hydro_cfl, sink_sink_cfl);
 
@@ -2689,6 +3047,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     solver_config.set_next_dt(next_cfl);
     solver_config.set_time(t_current + dt);
+    solver_config.set_next_dt_sph(next_dt_sph);
+    solver_config.set_time(t_current + dt);
 
     auto get_next_cfl_mult = [&]() {
         Tscal cfl_m = solver_config.time_state.cfl_multiplier;
@@ -2708,6 +3068,1017 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     return log;
 }
 
+template<class Tvec, template<class> class Kern>
+shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once_substep() {
+
+    sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
+
+    Tscal t_current = solver_config.get_time();
+    Tscal dt        = solver_config.get_dt_sph();      // current dt
+    Tscal dt_force  = solver_config.get_dt_force();    // dt due to external forces
+    Tscal dt_sph    = solver_config.get_dt_true_sph(); // dt due to pure hydro
+
+    StackEntry stack_loc{};
+
+    if (shamcomm::world_rank() == 0) {
+        shamcomm::logs::raw_ln(
+            shambase::format("---------------- t = {}, dt = {} ----------------", t_current, dt));
+    }
+
+    shambase::Timer tstep;
+    tstep.start();
+
+    // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
+    modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
+    scheduler().scheduler_step(true, true);
+    modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
+    // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
+    scheduler().scheduler_step(false, false);
+    // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
+
+    // give to the solvergraph the patch rank owners
+    storage.patch_rank_owner->values = {};
+    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        storage.patch_rank_owner->values.add_obj(
+            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
+    });
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    bool has_B_field       = solver_config.has_field_B_on_rho();
+    bool has_psi_field     = solver_config.has_field_psi_on_ch();
+    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
+    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+
+    PatchDataLayerLayout &pdl = scheduler().pdl();
+
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iaxyz_sph   = pdl.get_field_idx<Tvec>("axyz_sph");
+    const u32 iaxyz_ext   = pdl.get_field_idx<Tvec>("axyz_ext");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
+    const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
+    const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
+    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
+    const u32 iepsilon    = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
+    const u32 idtepsilon  = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
+    const u32 ideltav     = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 idtdeltav   = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
+
+    shamrock::SchedulerUtility utility(scheduler());
+
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+
+    sink_update.accrete_particles();
+    ext_forces.point_mass_accrete_particles();
+    bool did_substep = false;
+    if (dt_force < dt_sph) {
+        sink_update.kick(dt_sph, false);
+        do_kick_substep(dt_sph); // with axyz_sph
+        do_substep();
+        logger::raw_ln("finished substepping, moving to update_derivs_sph");
+
+        part_killing_step();
+        gen_serial_patch_tree();
+
+        apply_position_boundary(t_current + dt_sph);
+
+        u64 Npart_all = scheduler().get_total_obj_count();
+        sph_prestep(t_current, dt_sph);
+        using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
+
+        sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
+        auto &merged_xyzh                             = storage.merged_xyzh.get();
+        shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
+        // ComputeField<Tscal> &omega                    = storage.omega.get();
+
+        shamrock::patch::PatchDataLayerLayout &ghost_layout
+            = shambase::get_check_ref(storage.ghost_layout.get());
+        u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>("hpart");
+        u32 iuint_interf       = ghost_layout.get_field_idx<Tscal>("uint");
+        u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>("vxyz");
+        u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>("omega");
+        u32 iB_on_rho_interf   = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+        u32 ipsi_on_rho_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
+
+        reset_merge_ghosts_fields();
+        reset_eos_fields();
+        communicate_merge_ghosts_fields();
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::SchedulerUtility utility(scheduler());
+            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+            storage.alpha_av_updated.set(utility.save_field<Tscal>(ialpha_AV, "alpha_AV_new"));
+        }
+        update_artificial_viscosity(dt);
+
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::ComputeField<Tscal> &comp_field_send = storage.alpha_av_updated.get();
+
+            using InterfaceBuildInfos =
+                typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+
+            shambase::Timer time_interf;
+            time_interf.start();
+
+            auto field_interf = ghost_handle.template build_interface_native<PatchDataField<Tscal>>(
+                storage.ghost_patch_cache.get(),
+                [&](u64 sender,
+                    u64 /*receiver*/,
+                    InterfaceBuildInfos binfo,
+                    sham::DeviceBuffer<u32> &buf_idx,
+                    u32 cnt) -> PatchDataField<Tscal> {
+                    PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
+
+                    return sender_field.make_new_from_subset(buf_idx, cnt);
+                });
+
+            shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat
+                = ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+
+            shambase::DistributedData<PatchDataField<Tscal>> merged_field
+                = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
+                    std::move(interf_pdat),
+                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                        PatchDataField<Tscal> &receiver_field
+                            = comp_field_send.get_field(p.id_patch);
+                        return receiver_field.duplicate();
+                    },
+                    [](PatchDataField<Tscal> &mpdat, PatchDataField<Tscal> &pdat_interf) {
+                        mpdat.insert(pdat_interf);
+                    });
+
+            time_interf.end();
+            storage.timings_details.interface += time_interf.elasped_sec();
+
+            storage.alpha_av_ghost.set(std::move(merged_field));
+        }
+
+        // compute pressure
+        compute_eos_fields();
+
+        update_derivs_sph(); // @ need to save this SPH acceleration for next substepping loop
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(
+                pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
+
+        did_substep = true;
+        do_kick_substep(dt_sph); // @@@ just recompute axyz only putting SPH accelerations, so OK
+        logger::info_ln("SPH", "moving to corrector");
+
+        if (solver_config.has_field_alphaAV()) {
+            storage.alpha_av_ghost.reset();
+            storage.alpha_av_updated.reset();
+        }
+        reset_serial_patch_tree();
+        reset_ghost_handler();
+
+        shambase::get_check_ref(storage.part_counts).free_alloc();
+        shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+        shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+        shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+        storage.merged_xyzh.reset();
+        shambase::get_check_ref(storage.omega).free_alloc();
+        clear_merged_pos_trees();
+        clear_ghost_cache();
+        reset_presteps_rint();
+        reset_neighbors_cache();
+
+        shambase::get_check_ref(storage.neigh_cache).free_alloc();
+
+    } else {
+        do_predictor_leapfrog(dt);
+        sink_update.predictor_step(dt);
+    }
+
+    part_killing_step();
+
+    sink_update.compute_ext_forces();
+
+    ext_forces.compute_ext_forces_indep_v();
+
+    gen_serial_patch_tree();
+
+    apply_position_boundary(t_current + dt);
+
+    u64 Npart_all = scheduler().get_total_obj_count();
+
+    if (solver_config.enable_particle_reordering
+        && solve_logs.step_count % solver_config.particle_reordering_step_freq == 0) {
+        logger::info_ln("SPH", "Reordering particles at step ", solve_logs.step_count);
+        modules::ParticleReordering<Tvec, u_morton, Kern>(context, solver_config, storage)
+            .reorder_particles();
+    }
+
+    sph_prestep(t_current, dt);
+
+    using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
+
+    sph::BasicSPHGhostHandler<Tvec> &ghost_handle = storage.ghost_handler.get();
+    auto &merged_xyzh                             = storage.merged_xyzh.get();
+    shambase::DistributedData<RTree> &trees       = storage.merged_pos_trees.get();
+    // ComputeField<Tscal> &omega                    = storage.omega.get();
+
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ihpart_interf      = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf       = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf       = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf      = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iB_on_rho_interf   = (has_B_field) ? ghost_layout.get_field_idx<Tvec>("B/rho") : 0;
+    u32 ipsi_on_rho_interf = (has_psi_field) ? ghost_layout.get_field_idx<Tscal>("psi/ch") : 0;
+
+    using RTreeField = RadixTreeField<Tscal>;
+    shambase::DistributedData<RTreeField> rtree_field_h;
+
+    Tscal next_cfl      = 0;
+    Tscal next_dt_force = 0;
+    Tscal next_dt_sph   = 0;
+
+    u32 corrector_iter_cnt    = 0;
+    bool need_rerun_corrector = false;
+    do {
+
+        reset_merge_ghosts_fields();
+        reset_eos_fields();
+
+        if (corrector_iter_cnt == 50) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "the corrector has made over 50 loops, either their is a bug, either you are using "
+                "a dt that is too large");
+        }
+
+        // communicate fields
+        communicate_merge_ghosts_fields();
+
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::SchedulerUtility utility(scheduler());
+            const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+            storage.alpha_av_updated.set(utility.save_field<Tscal>(ialpha_AV, "alpha_AV_new"));
+        }
+
+        if (solver_config.has_field_dtdivv()) {
+
+            if (solver_config.combined_dtdiv_divcurlv_compute) {
+                if (solver_config.has_field_dtdivv()) {
+                    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                        .update_dtdivv(true);
+                }
+            } else {
+
+                if (solver_config.has_field_divv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_divv();
+                }
+
+                if (solver_config.has_field_curlv()) {
+                    sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                        .update_curlv();
+                }
+
+                if (solver_config.has_field_dtdivv()) {
+                    sph::modules::DiffOperatorDtDivv<Tvec, Kern>(context, solver_config, storage)
+                        .update_dtdivv(false);
+                }
+            }
+
+        } else {
+            if (solver_config.has_field_divv()) {
+                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                    .update_divv();
+            }
+
+            if (solver_config.has_field_curlv()) {
+                sph::modules::DiffOperators<Tvec, Kern>(context, solver_config, storage)
+                    .update_curlv();
+            }
+        }
+
+        // if (solver_config.has_field_divB()) {
+        //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
+        //         .update_divB();
+        // }
+
+        // if (solver_config.has_field_curlB()) {
+        //     sph::modules::DiffOperatorsB<Tvec, Kern>(context, solver_config, storage)
+        //         .update_curlB();
+        // }
+        update_artificial_viscosity(dt);
+
+        if (solver_config.has_field_alphaAV()) {
+
+            shamrock::ComputeField<Tscal> &comp_field_send = storage.alpha_av_updated.get();
+
+            using InterfaceBuildInfos =
+                typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
+
+            shambase::Timer time_interf;
+            time_interf.start();
+
+            auto field_interf = ghost_handle.template build_interface_native<PatchDataField<Tscal>>(
+                storage.ghost_patch_cache.get(),
+                [&](u64 sender,
+                    u64 /*receiver*/,
+                    InterfaceBuildInfos binfo,
+                    sham::DeviceBuffer<u32> &buf_idx,
+                    u32 cnt) -> PatchDataField<Tscal> {
+                    PatchDataField<Tscal> &sender_field = comp_field_send.get_field(sender);
+
+                    return sender_field.make_new_from_subset(buf_idx, cnt);
+                });
+
+            shambase::DistributedDataShared<PatchDataField<Tscal>> interf_pdat
+                = ghost_handle.communicate_pdatfield(std::move(field_interf), 1);
+
+            shambase::DistributedData<PatchDataField<Tscal>> merged_field
+                = ghost_handle.template merge_native<PatchDataField<Tscal>, PatchDataField<Tscal>>(
+                    std::move(interf_pdat),
+                    [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                        PatchDataField<Tscal> &receiver_field
+                            = comp_field_send.get_field(p.id_patch);
+                        return receiver_field.duplicate();
+                    },
+                    [](PatchDataField<Tscal> &mpdat, PatchDataField<Tscal> &pdat_interf) {
+                        mpdat.insert(pdat_interf);
+                    });
+
+            time_interf.end();
+            storage.timings_details.interface += time_interf.elasped_sec();
+
+            storage.alpha_av_ghost.set(std::move(merged_field));
+        }
+
+        // compute pressure
+        compute_eos_fields();
+
+        constexpr bool debug_interfaces = false;
+        if constexpr (debug_interfaces) {
+
+            if (solver_config.do_debug_dump) {
+
+                shambase::DistributedData<MergedPatchData> &mpdat
+                    = storage.merged_patchdata_ghost.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    MergedPatchData &merged_patch = mpdat.get(cur_p.id_patch);
+                    PatchDataLayer &mpdat         = merged_patch.pdat;
+
+                    sycl::buffer<Tvec> &buf_xyz = shambase::get_check_ref(
+                        merged_xyzh.get(cur_p.id_patch).field_pos.get_buf());
+                    sycl::buffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                    sycl::buffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+
+                    u32 total_elements = shambase::get_check_ref(storage.part_counts_with_ghost)
+                                             .indexes.get(cur_p.id_patch);
+                    SHAM_ASSERT(merged_patch.total_elements == total_elements);
+
+                    Debug_ph_dump<Tvec> info{
+                        total_elements,
+                        solver_config.gpart_mass,
+
+                        buf_xyz,
+                        buf_hpart,
+                        buf_vxyz};
+
+                    make_interface_debug_phantom_dump(info).gen_file().write_to_file(
+                        solver_config.debug_dump_filename);
+                    logger::raw_ln("writing : ", solver_config.debug_dump_filename);
+                });
+            }
+        }
+
+        // compute force
+        shamlog_debug_ln("sph::BasicGas", "compute force");
+
+        // save old acceleration
+        prepare_corrector();
+
+        update_derivs_sph();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            pdat.get_field<Tvec>(iaxyz_sph).get_buf().copy_from(
+                pdat.get_field<Tvec>(iaxyz).get_buf());
+        });
+        update_derivs_ext_forces();
+
+        modules::ConservativeCheck<Tvec, Kern> cv_check(context, solver_config, storage);
+        cv_check.check_conservation();
+
+        ComputeField<Tscal> vepsilon_v_sq
+            = utility.make_compute_field<Tscal>("vmean epsilon_v^2", 1);
+        ComputeField<Tscal> uepsilon_u_sq
+            = utility.make_compute_field<Tscal>("umean epsilon_u^2", 1);
+
+        // corrector
+        shamlog_debug_ln("sph::BasicGas", "leapfrog corrector");
+        utility.fields_leapfrog_corrector<Tvec>(
+            ivxyz, iaxyz, storage.old_axyz.get(), vepsilon_v_sq, dt / 2);
+        utility.fields_leapfrog_corrector<Tscal>(
+            iuint, iduint, storage.old_duint.get(), uepsilon_u_sq, dt / 2);
+
+        if (solver_config.has_field_B_on_rho()) {
+            ComputeField<Tscal> BOR_epsilon_BOR_sq
+                = utility.make_compute_field<Tscal>("B/rho epsilon_B/rho^2", 1);
+            utility.fields_leapfrog_corrector<Tvec>(
+                iB_on_rho, idB_on_rho, storage.old_dB_on_rho.get(), BOR_epsilon_BOR_sq, dt / 2);
+        }
+        if (solver_config.has_field_B_on_rho()) {
+            ComputeField<Tscal> POC_epsilon_POC_sq
+                = utility.make_compute_field<Tscal>("psi/ch epsilon_psi/ch^2", 1);
+            utility.fields_leapfrog_corrector<Tscal>(
+                ipsi_on_ch, idpsi_on_ch, storage.old_dpsi_on_ch.get(), POC_epsilon_POC_sq, dt / 2);
+        }
+
+        if (solver_config.dust_config.has_epsilon_field()) {
+            ComputeField<Tscal> epsilon_epsilon_sq
+                = utility.make_compute_field<Tscal>("epsilon epsilon^2", 1);
+            utility.fields_leapfrog_corrector<Tscal>(
+                iepsilon, idtepsilon, storage.old_dtepsilon.get(), epsilon_epsilon_sq, dt / 2);
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            ComputeField<Tscal> epsilon_deltav_sq
+                = utility.make_compute_field<Tscal>("deltav deltav^2", 1);
+            utility.fields_leapfrog_corrector<Tvec>(
+                ideltav, idtdeltav, storage.old_dtdeltav.get(), epsilon_deltav_sq, dt / 2);
+        }
+
+        storage.old_axyz.reset();
+        storage.old_duint.reset();
+        if (solver_config.has_field_B_on_rho()) {
+            storage.old_dB_on_rho.reset();
+        }
+        if (solver_config.has_field_B_on_rho()) {
+            storage.old_dpsi_on_ch.reset();
+        }
+
+        if (solver_config.dust_config.has_epsilon_field()) {
+            storage.old_dtepsilon.reset();
+        }
+
+        if (solver_config.dust_config.has_deltav_field()) {
+            storage.old_dtdeltav.reset();
+        }
+
+        Tscal rank_veps_v = sycl::sqrt(vepsilon_v_sq.compute_rank_max());
+        ///////////////////////////////////////////
+        // compute means //////////////////////////
+        ///////////////////////////////////////////
+
+        Tscal sum_vsq = utility.compute_rank_dot_sum<Tvec>(ivxyz);
+
+        Tscal vmean_sq = shamalgs::collective::allreduce_sum(sum_vsq) / Tscal(Npart_all);
+
+        Tscal vmean = sycl::sqrt(vmean_sq);
+
+        Tscal rank_eps_v = rank_veps_v / vmean;
+
+        if (vmean <= 0) {
+            rank_eps_v = 0;
+        }
+
+        Tscal eps_v = shamalgs::collective::allreduce_max(rank_eps_v);
+
+        shamlog_debug_ln("BasicGas", "epsilon v :", eps_v);
+
+        if (eps_v > 1e-2) {
+            if (shamcomm::world_rank() == 0) {
+                logger::warn_ln(
+                    "BasicGasSPH",
+                    shambase::format(
+                        "the corrector tolerance are broken the step will "
+                        "be re rerunned\n    eps_v = {}",
+                        eps_v));
+            }
+            need_rerun_corrector = true;
+            solver_config.time_state.cfl_multiplier /= 2;
+
+            // logger::info_ln("rerun corrector ...");
+        } else {
+            need_rerun_corrector = false;
+        }
+
+        if (!need_rerun_corrector) {
+
+            sink_update.corrector_step(dt);
+
+            // write back alpha av field
+            if (solver_config.has_field_alphaAV()) {
+
+                const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
+                shamrock::ComputeField<Tscal> &alpha_av_updated = storage.alpha_av_updated.get();
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    sham::DeviceBuffer<Tscal> &buf_alpha_av
+                        = pdat.get_field<Tscal>(ialpha_AV).get_buf();
+                    sham::DeviceBuffer<Tscal> &buf_alpha_av_updated
+                        = alpha_av_updated.get_buf_check(cur_p.id_patch);
+
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
+
+                    auto alpha_av         = buf_alpha_av.get_write_access(depends_list);
+                    auto alpha_av_updated = buf_alpha_av_updated.get_read_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        shambase::parallel_for(
+                            cgh, pdat.get_obj_cnt(), "write back alpha_av", [=](i32 id_a) {
+                                alpha_av[id_a] = alpha_av_updated[id_a];
+                            });
+                    });
+
+                    buf_alpha_av.complete_event_state(e);
+                    buf_alpha_av_updated.complete_event_state(e);
+                });
+            }
+
+            shamlog_debug_ln("BasicGas", "computing next CFL");
+
+            ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
+            std::unique_ptr<ComputeField<Tscal>> vclean_dt;
+            if (has_psi_field) {
+                vclean_dt = std::make_unique<ComputeField<Tscal>>(
+                    utility.make_compute_field<Tscal>("vclean_a", 1));
+            }
+
+            shambase::DistributedData<PatchDataLayer> &mpdats
+                = storage.merged_patchdata_ghost.get();
+
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+                sham::DeviceBuffer<Tvec> &buf_xyz
+                    = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
+                sham::DeviceBuffer<Tvec> &buf_vxyz = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+                sham::DeviceBuffer<Tscal> &buf_hpart
+                    = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+                sham::DeviceBuffer<Tscal> &buf_uint = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+                sham::DeviceBuffer<Tscal> &buf_pressure
+                    = storage.pressure.get().get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cs_buf
+                    = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+
+                sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
+
+                sycl::range range_npart{pdat.get_obj_cnt()};
+
+                tree::ObjectCache &pcache
+                    = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
+
+                /////////////////////////////////////////////
+
+                {
+
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
+
+                    auto xyz                  = buf_xyz.get_read_access(depends_list);
+                    auto vxyz                 = buf_vxyz.get_read_access(depends_list);
+                    auto hpart                = buf_hpart.get_read_access(depends_list);
+                    auto u                    = buf_uint.get_read_access(depends_list);
+                    auto pressure             = buf_pressure.get_read_access(depends_list);
+                    auto cs                   = cs_buf.get_read_access(depends_list);
+                    auto vsig                 = vsig_buf.get_write_access(depends_list);
+                    auto particle_looper_ptrs = pcache.get_read_access(depends_list);
+
+                    NamedStackEntry tmppp{"compute vsig"};
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        const Tscal pmass    = solver_config.gpart_mass;
+                        const Tscal alpha_u  = 1.0;
+                        const Tscal alpha_AV = 1.0;
+                        const Tscal beta_AV  = 2.0;
+
+                        tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+
+                        constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                        shambase::parallel_for(
+                            cgh, pdat.get_obj_cnt(), "compute vsig", [=](i32 id_a) {
+                                using namespace shamrock::sph;
+
+                                Tvec sum_axyz  = {0, 0, 0};
+                                Tscal sum_du_a = 0;
+                                Tscal h_a      = hpart[id_a];
+
+                                Tvec xyz_a  = xyz[id_a];
+                                Tvec vxyz_a = vxyz[id_a];
+
+                                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                                Tscal rho_a_sq  = rho_a * rho_a;
+                                Tscal rho_a_inv = 1. / rho_a;
+
+                                Tscal P_a = pressure[id_a];
+
+                                const Tscal u_a = u[id_a];
+
+                                Tscal cs_a = cs[id_a];
+
+                                Tscal vsig_max = 0;
+
+                                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                                    // compute only omega_a
+                                    Tvec dr    = xyz_a - xyz[id_b];
+                                    Tscal rab2 = sycl::dot(dr, dr);
+                                    Tscal h_b  = hpart[id_b];
+
+                                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                                        return;
+                                    }
+
+                                    Tscal rab       = sycl::sqrt(rab2);
+                                    Tvec vxyz_b     = vxyz[id_b];
+                                    Tvec v_ab       = vxyz_a - vxyz_b;
+                                    const Tscal u_b = u[id_b];
+
+                                    Tvec r_ab_unit = dr / rab;
+
+                                    if (rab < 1e-9) {
+                                        r_ab_unit = {0, 0, 0};
+                                    }
+
+                                    Tscal rho_b         = rho_h(pmass, h_b, Kernel::hfactd);
+                                    Tscal P_b           = pressure[id_b];
+                                    Tscal cs_b          = cs[id_b];
+                                    Tscal v_ab_r_ab     = sycl::dot(v_ab, r_ab_unit);
+                                    Tscal abs_v_ab_r_ab = sycl::fabs(v_ab_r_ab);
+
+                                    /////////////////
+                                    // internal energy update
+                                    //  scalar : f32  | vector : f32_3
+                                    const Tscal alpha_a = alpha_AV;
+                                    const Tscal alpha_b = alpha_AV;
+
+                                    Tscal vsig_a = alpha_a * cs_a + beta_AV * abs_v_ab_r_ab;
+
+                                    vsig_max = sycl::fmax(vsig_max, vsig_a);
+                                });
+
+                                vsig[id_a] = vsig_max;
+                            });
+                    });
+
+                    if (has_psi_field) {
+                        NamedStackEntry tmppp{"compute vclean"};
+                        Tscal const mu_0 = solver_config.get_constant_mu_0();
+                        sham::DeviceBuffer<Tscal> &vclean_buf
+                            = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
+
+                        Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
+                                             .get_write_access(depends_list);
+
+                        auto vclean = vclean_buf.get_write_access(depends_list);
+
+                        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                            const Tscal pmass = solver_config.gpart_mass;
+
+                            tree::ObjectCacheIterator particle_looper(particle_looper_ptrs);
+
+                            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+                            shambase::parallel_for(
+                                cgh, pdat.get_obj_cnt(), "compute vclean", [=](i32 id_a) {
+                                    using namespace shamrock::sph;
+
+                                    Tscal h_a       = hpart[id_a];
+                                    Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                                    const Tscal u_a = u[id_a];
+                                    Tscal cs_a      = cs[id_a];
+                                    Tvec B_a        = B_on_rho[id_a] * rho_a;
+
+                                    Tscal vclean_a = shamphys::MHD_physics<Tvec, Tscal>::v_shock(
+                                        cs_a, B_a, rho_a, mu_0);
+
+                                    vclean[id_a] = vclean_a;
+                                });
+                        });
+                        mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf).complete_event_state(e);
+                        vclean_buf.complete_event_state(e);
+                    };
+
+                    buf_xyz.complete_event_state(e);
+                    buf_vxyz.complete_event_state(e);
+                    buf_hpart.complete_event_state(e);
+                    buf_uint.complete_event_state(e);
+                    buf_pressure.complete_event_state(e);
+                    cs_buf.complete_event_state(e);
+                    vsig_buf.complete_event_state(e);
+
+                    sham::EventList resulting_events;
+                    resulting_events.add_event(e);
+                    pcache.complete_event_state(resulting_events);
+                }
+            });
+
+            ComputeField<Tscal> cfl_dt   = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            ComputeField<Tscal> dt_sph   = utility.make_compute_field<Tscal>("dt_sph", 1);
+            ComputeField<Tscal> dt_force = utility.make_compute_field<Tscal>("dt_force", 1);
+
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+                sham::DeviceBuffer<Tvec> &buf_axyz     = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz_ext = pdat.get_field<Tvec>(iaxyz_ext).get_buf();
+                sham::DeviceBuffer<Tscal> &buf_hpart
+                    = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
+                sham::DeviceBuffer<Tscal> &vsig_buf     = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf   = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_sph_buf   = dt_sph.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &dt_force_buf = dt_force.get_buf_check(cur_p.id_patch);
+
+                auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                sham::EventList depends_list;
+
+                auto hpart    = buf_hpart.get_read_access(depends_list);
+                auto a        = buf_axyz.get_read_access(depends_list);
+                auto aext     = buf_axyz_ext.get_read_access(depends_list);
+                auto vsig     = vsig_buf.get_read_access(depends_list);
+                auto cfl_dt   = cfl_dt_buf.get_write_access(depends_list);
+                auto dt_force = dt_force_buf.get_write_access(depends_list);
+                auto dt_sph   = dt_sph_buf.get_write_access(depends_list);
+
+                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                    Tscal C_cour = solver_config.cfl_config.cfl_cour
+                                   * solver_config.time_state.cfl_multiplier;
+                    Tscal C_force = solver_config.cfl_config.cfl_force
+                                    * solver_config.time_state.cfl_multiplier;
+
+                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                        Tscal h_a        = hpart[item];
+                        Tscal vsig_a     = vsig[item];
+                        Tscal abs_a_a    = sycl::length(a[item]);
+                        Tscal abs_aext_a = sycl::length(aext[item]);
+                        Tvec a_sph       = a[item] - aext[item];
+                        Tscal abs_a_sph  = sycl::length(a_sph);
+
+                        // at this point a contains both ext and sph accelerations, hence cfl_dt can
+                        // be computed like this. For substepping, we need the two separated dt
+                        // values.
+                        Tscal dt_c = C_cour * h_a / vsig_a;
+                        Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a); // all accelerations
+                        Tscal dt_fext
+                            = C_force * sycl::sqrt(h_a / abs_aext_a); // only external accelerations
+                        Tscal dt_fsph
+                            = C_force * sycl::sqrt(h_a / (abs_a_sph)); // only sph accelerations
+
+                        cfl_dt[item]   = sycl::min(dt_c, dt_f);
+                        dt_force[item] = dt_fext;
+                        dt_sph[item]   = sycl::min(dt_c, dt_fsph);
+                    });
+                });
+
+                if (has_psi_field) {
+                    sham::DeviceBuffer<Tscal> &vclean_buf
+                        = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
+                    auto vclean = vclean_buf.get_read_access(depends_list);
+                    auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        Tscal C_cour = solver_config.cfl_config.cfl_cour
+                                       * solver_config.time_state.cfl_multiplier;
+
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                Tscal h_a      = hpart[item];
+                                Tscal vclean_a = vclean[item];
+
+                                Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
+
+                                cfl_dt[item]   = sycl::min(cfl_dt[item], dt_divB_cleaning);
+                                dt_force[item] = sycl::min(dt_force[item], dt_divB_cleaning);
+                            });
+                    });
+                    vclean_buf.complete_event_state(e);
+                };
+
+                buf_hpart.complete_event_state(e);
+                buf_axyz.complete_event_state(e);
+                buf_axyz_ext.complete_event_state(e);
+                vsig_buf.complete_event_state(e);
+                cfl_dt_buf.complete_event_state(e);
+                dt_force_buf.complete_event_state(e);
+                dt_sph_buf.complete_event_state(e);
+            });
+
+            Tscal rank_dt       = cfl_dt.compute_rank_min();
+            Tscal rank_force_dt = dt_force.compute_rank_min();
+            Tscal rank_sph_dt   = dt_sph.compute_rank_min();
+
+            Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+            if (!storage.sinks.is_empty()) {
+                // sink sink CFL
+
+                Tscal G = solver_config.get_constant_G();
+
+                Tscal C_force
+                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+                Tscal eta_phi = solver_config.cfl_config.eta_sink;
+
+                std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+                for (u32 i = 0; i < sink_parts.size(); i++) {
+                    SinkParticle<Tvec> &s_i = sink_parts[i];
+                    Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
+
+                    Tvec f_i = s_i.ext_acceleration;
+
+                    Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+
+                    if (grad_phi_i_sq == 0) {
+                        continue;
+                    }
+
+                    for (u32 j = 0; j < sink_parts.size(); j++) {
+                        SinkParticle<Tvec> &s_j = sink_parts[j];
+
+                        if (i == j) {
+                            continue;
+                        }
+
+                        Tvec rij       = s_i.pos - s_j.pos;
+                        Tscal rij_scal = sycl::length(rij);
+
+                        Tscal phi_ij  = G * s_j.mass / rij_scal;           // J / kg = m^2.s^-2
+                        Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
+                        Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
+
+                        sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+                    }
+
+                    sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+                }
+
+                sink_sink_cfl = shamalgs::collective::allreduce_min(sink_sink_cfl);
+            }
+
+            shamlog_debug_ln("BasigGas", "rank", shamcomm::world_rank(), "found cfl dt =", rank_dt);
+
+            Tscal hydro_cfl = shamalgs::collective::allreduce_min(rank_dt);
+            next_dt_force   = shamalgs::collective::allreduce_min(rank_force_dt);
+            next_dt_force   = sycl::min(next_dt_force, sink_sink_cfl);
+            next_dt_sph     = shamalgs::collective::allreduce_min(rank_sph_dt);
+
+            if (shamcomm::world_rank() == 0) {
+                shamlog_info_ln(
+                    "SPH",
+                    "CFL hydro =",
+                    hydro_cfl,
+                    "sink sink =",
+                    sink_sink_cfl,
+                    "next force =",
+                    next_dt_force,
+                    "next sph =",
+                    next_dt_sph);
+            }
+
+            next_cfl = sham::min(hydro_cfl, sink_sink_cfl);
+
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "sph::Model",
+                    "cfl dt =",
+                    next_cfl,
+                    "cfl multiplier :",
+                    solver_config.time_state.cfl_multiplier);
+            }
+
+            // this should not be needed idealy, but we need the pressure on the ghosts and
+            // we don't want to communicate it as it can be recomputed from the other fields
+            // hence we copy the soundspeed at the end of the step to a field in the patchdata
+            if (solver_config.has_field_soundspeed()) {
+
+                const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
+
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    sham::DeviceBuffer<Tscal> &buf_cs = pdat.get_field_buf_ref<Tscal>(isoundspeed);
+                    sham::DeviceBuffer<Tscal> &buf_cs_in
+                        = storage.soundspeed.get().get_buf_check(cur_p.id_patch);
+
+                    sycl::range range_npart{pdat.get_obj_cnt()};
+
+                    /////////////////////////////////////////////
+
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::EventList depends_list;
+
+                    auto cs_in = buf_cs_in.get_read_access(depends_list);
+                    auto cs    = buf_cs.get_write_access(depends_list);
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        const Tscal pmass = solver_config.gpart_mass;
+
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                cs[item] = cs_in[item];
+                            });
+                    });
+
+                    buf_cs_in.complete_event_state(e);
+                    buf_cs.complete_event_state(e);
+                });
+            }
+
+        } // if (!need_rerun_corrector) {
+
+        corrector_iter_cnt++;
+
+        if (solver_config.has_field_alphaAV()) {
+            storage.alpha_av_ghost.reset();
+            storage.alpha_av_updated.reset();
+        }
+
+    } while (need_rerun_corrector);
+
+    reset_merge_ghosts_fields();
+    reset_eos_fields();
+
+    // if delta too big jump to compute force
+
+    tstep.end();
+
+    sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
+
+    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
+    f64 t_dev_alloc
+        = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
+          + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);
+
+    u64 rank_count = scheduler().get_rank_count();
+    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+
+    // logger::info_ln("SPHSolver", "process rate : ", rate, "particle.s-1");
+
+    std::string log_step = report_perf_timestep(
+        rate,
+        rank_count,
+        tstep.elasped_sec(),
+        delta_mpi_timer,
+        t_dev_alloc,
+        mem_perf_infos_end.max_allocated_byte_device);
+
+    if (shamcomm::world_rank() == 0) {
+        logger::info_ln("sph::Model", log_step);
+        logger::info_ln(
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
+    }
+
+    solve_logs.register_log(
+        {t_current,              // f64 solver_t;
+         dt,                     // f64 solver_dt;
+         shamcomm::world_rank(), // i32 world_rank;
+         rank_count,             // u64 rank_count;
+         rate,                   // f64 rate;
+         tstep.elasped_sec(),    // f64 elasped_sec;
+         shambase::details::get_wtime()});
+
+    storage.timings_details.reset();
+
+    reset_serial_patch_tree();
+    reset_ghost_handler();
+
+    shambase::get_check_ref(storage.part_counts).free_alloc();
+    shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+    shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+    shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+    storage.merged_xyzh.reset();
+    shambase::get_check_ref(storage.omega).free_alloc();
+    clear_merged_pos_trees();
+    clear_ghost_cache();
+    reset_presteps_rint();
+    reset_neighbors_cache();
+
+    shambase::get_check_ref(storage.neigh_cache).free_alloc();
+
+    solver_config.set_next_dt(next_cfl);
+    solver_config.set_next_dt_force(next_dt_force);
+    solver_config.set_next_dt_sph(next_dt_sph);
+    solver_config.set_time(t_current + dt);
+
+    auto get_next_cfl_mult = [&]() {
+        Tscal cfl_m = solver_config.time_state.cfl_multiplier;
+        Tscal stiff = solver_config.cfl_config.cfl_multiplier_stiffness;
+
+        return (cfl_m * stiff + 1.) / (stiff + 1.);
+    };
+
+    solver_config.time_state.cfl_multiplier = get_next_cfl_mult();
+
+    TimestepLog log;
+    log.rank     = shamcomm::world_rank();
+    log.rate     = rate;
+    log.npart    = rank_count;
+    log.tcompute = tstep.elasped_sec();
+
+    return log;
+}
 using namespace shammath;
 
 template class shammodels::sph::Solver<f64_3, M4>;

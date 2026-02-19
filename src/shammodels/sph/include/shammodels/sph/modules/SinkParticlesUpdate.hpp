@@ -12,6 +12,7 @@
 /**
  * @file SinkParticlesUpdate.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -46,6 +47,8 @@ namespace shammodels::sph::modules {
 
         void accrete_particles();
         void predictor_step(Tscal dt);
+        void kick(Tscal dt, bool force);
+        void drift(Tscal dt);
         void compute_sph_forces();
         void compute_ext_forces();
         void corrector_step(Tscal dt);

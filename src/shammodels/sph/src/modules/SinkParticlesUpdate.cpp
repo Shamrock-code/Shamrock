@@ -170,6 +170,46 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_s
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::kick(Tscal dt, bool force) {
+    // only external accelerations
+    StackEntry stack_loc{};
+
+    if (storage.sinks.is_empty()) {
+        return;
+    }
+
+    // compute_ext_forces();
+
+    std::vector<Sink> &sink_parts = storage.sinks.get();
+
+    for (Sink &s : sink_parts) {
+        if (!force) {
+            s.velocity += (dt / 2) * s.sph_acceleration;
+        } else {
+            s.velocity += (dt / 2) * s.ext_acceleration;
+        }
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::drift(Tscal dt) {
+
+    StackEntry stack_loc{};
+
+    if (storage.sinks.is_empty()) {
+        return;
+    }
+
+    // compute_ext_forces();
+
+    std::vector<Sink> &sink_parts = storage.sinks.get();
+
+    for (Sink &s : sink_parts) {
+        s.pos += (dt) *s.velocity;
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_step(Tscal dt) {
 
     StackEntry stack_loc{};

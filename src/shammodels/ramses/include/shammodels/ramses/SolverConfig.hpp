@@ -26,6 +26,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/units_json.hpp"
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
@@ -355,7 +356,7 @@ namespace shammodels::basegodunov {
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"eos_gamma", p.eos_gamma},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"courant_safety_factor", p.Csafe},
+            {"Csafe", p.Csafe},
             {"unit_sys", p.unit_sys},
             {"time_state", p.time_state}};
     }

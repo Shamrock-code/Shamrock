@@ -190,9 +190,9 @@ struct shammodels::sph::SolverStatusVar {
     /// The type of the scalar used to represent the quantities
     using Tscal = shambase::VecComponent<Tvec>;
 
-    Tscal time     = 0; ///< Current time
-    Tscal dt_sph   = 0; ///< Current time step
-    Tscal dt_force = 0; ///< Current force time step
+    Tscal time                    = 0; ///< Current time
+    Tscal dt_sph                  = 0; ///< Current time step
+    std::optional<Tscal> dt_force = 0; ///< Current force time step
     Tscal dt_true_sph
         = 0; ///< Current "true" sph time step, ie Courant condition + SPH acceleration
 
@@ -310,7 +310,7 @@ struct shammodels::sph::SolverConfig {
     inline Tscal get_dt_sph() { return time_state.dt_sph; }
 
     /// Get the force dt
-    inline Tscal get_dt_force() { return time_state.dt_force; }
+    inline Tscal get_dt_force() { return time_state.dt_force.value(); }
 
     /// Get the true sph dt
     inline Tscal get_dt_true_sph() { return time_state.dt_true_sph; }

@@ -26,6 +26,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/units_json.hpp"
 #include <shamrock/io/json_std_optional.hpp>
@@ -407,15 +408,7 @@ namespace shammodels::basegodunov {
 
         if (has_used_defaults) {
 
-            std::string json_user    = j.dump(4);
             nlohmann::json j_current = p;
-            std::string json_current = j_current.dump(4);
-
-            std::vector<std::string> json_user_lines    = shambase::split_str(json_user, "\n");
-            std::vector<std::string> json_current_lines = shambase::split_str(json_current, "\n");
-
-            auto &v1 = json_user_lines;
-            auto &v2 = json_current_lines;
 
             int dash_count = 50;
 
@@ -427,59 +420,16 @@ namespace shammodels::basegodunov {
                 shambase::term_colors::reset());
 
             auto green = shambase::term_colors::col8b_green();
-            auto red   = shambase::term_colors::col8b_red();
             auto reset = shambase::term_colors::reset();
 
             std::stringstream ss;
             ss << shambase::format(
-                "The following parameters are used. Default values are shown in [{}COLOR{}].\n",
+                "Used config parameters are listed below;\n      "
+                "highlighted entries are default-added values [{}+ | text{}].\n",
                 green,
                 reset);
             ss << faint_line;
-
-            // Equivalent to diff since the json entries are sorted
-            auto it1 = v1.begin();
-            auto it2 = v2.begin();
-
-            // Helper lambda to check if two strings differ only by a trailing character
-            auto differ_by_trailing_char
-                = [](const std::string &s1, const std::string &s2) -> bool {
-                if (s1 == s2)
-                    return false;
-                size_t len1 = s1.length();
-                size_t len2 = s2.length();
-
-                // Check if s1 equals s2 with last char removed
-                if (len1 == len2 + 1 && s1.substr(0, len2) == s2)
-                    return true;
-
-                // Check if s2 equals s1 with last char removed
-                if (len2 == len1 + 1 && s2.substr(0, len1) == s1)
-                    return true;
-
-                return false;
-            };
-
-            while (it1 != v1.end() || it2 != v2.end()) {
-                if (it1 == v1.end()) {
-                    ss << shambase::format("{}+ | {}{}\n", green, *it2++, reset);
-                } else if (it2 == v2.end()) {
-                    ss << shambase::format("{}- | {}{}\n", red, *it1++, reset);
-                } else if (differ_by_trailing_char(*it1, *it2)) {
-                    auto &longest = (*it1).length() > (*it2).length() ? *it1 : *it2;
-                    ss << shambase::format("  | {}\n", longest); // unchanged
-                    ++it1;
-                    ++it2;
-                } else if (*it1 < *it2) {
-                    ss << shambase::format("{}- | {}{}\n", red, *it1++, reset);
-                } else if (*it2 < *it1) {
-                    ss << shambase::format("{}+ | {}{}\n", green, *it2++, reset);
-                } else {
-                    ss << shambase::format("  | {}\n", *it1); // unchanged
-                    ++it1;
-                    ++it2;
-                }
-            }
+            ss << shamrock::json_diff_str(j, j_current);
             ss << faint_line;
 
             logger::info_ln("Ramses::SolverConfig", ss.str());

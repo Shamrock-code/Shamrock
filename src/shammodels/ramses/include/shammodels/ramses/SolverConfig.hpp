@@ -83,7 +83,6 @@ namespace shammodels::basegodunov {
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
-        Tscal point_mass_GM = 1;
     };
 
     template<class Tvec>
@@ -94,7 +93,7 @@ namespace shammodels::basegodunov {
         // parameters for analytical gravity can be added here
         Tscal point_mass_GM     = 1;
         Tvec point_mass_pos     = Tvec(0.5, 0.5, 0.5);
-        Tscal epsilon_softening = 1e-10;
+        Tscal epsilon_softening = 0.1;
         inline bool is_analytical_gravity_on() {
             return analytical_gravity_mode != NoAnalyticalGravity;
         }

@@ -47,7 +47,7 @@ namespace shammodels::basegodunov::modules {
                 sham::DDMultiRef{coordinates_spans},
                 sham::DDMultiRef{gravitational_force_spans},
                 cell_counts,
-                [this](
+                [config = this->config, block_size = this->block_size](
                     u32 i, const Tvec *__restrict cell_coor, Tvec *__restrict gravitational_force) {
                     u32 block_id  = i / block_size;
                     Tvec cell_pos = cell_coor[i];
@@ -56,18 +56,15 @@ namespace shammodels::basegodunov::modules {
                     Tvec r_vec = cell_pos - config.point_mass_pos;
 
                     // compute distance to the point mass
-                    Tscal r = 0;
+                    Tscal r_squared = 0;
                     for (u32 d = 0; d < dim; d++) {
-                        r += r_vec[d] * r_vec[d];
+                        r_squared += r_vec[d] * r_vec[d];
                     }
-                    r = sqrt(r);
+
+                    Tscal one_over_r_cube_soft = pow(r_squared + config.epsilon_softening, -1.5f);
 
                     // compute gravitational acceleration using softened point mass potential
-                    // add small term to avoid division by zero
-                    Tvec g_vec
-                        = -config.point_mass_GM * r_vec / (r * r * r + config.epsilon_softening);
-
-                    gravitational_force[i] = g_vec;
+                    gravitational_force[i] = -config.point_mass_GM * r_vec * one_over_r_cube_soft;
                 });
         }
     }

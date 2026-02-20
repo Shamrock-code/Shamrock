@@ -21,12 +21,13 @@
 
 namespace shammodels::basegodunov {
 
+    /// Slope limiter modes
     enum SlopeMode {
-        None        = 0,
-        VanLeer_f   = 1,
-        VanLeer_std = 2,
-        VanLeer_sym = 3,
-        Minmod      = 4,
+        None        = 0, //< slope is zero (fallback to order 1 reconstruction)
+        VanLeer_f   = 1, //< Van Leer flux limiter (Toro form, see slope_function_van_leer_f_form)
+        VanLeer_std = 2, //< Van Leer standard flux limiter (see shammath::van_leer_slope)
+        VanLeer_sym = 3, //< Van Leer symmetric flux limiter (see shammath::van_leer_slope_symetric)
+        Minmod      = 4, //< Minmod flux limiter (see shammath::minmod)
     };
 
     SHAMROCK_JSON_SERIALIZE_ENUM(

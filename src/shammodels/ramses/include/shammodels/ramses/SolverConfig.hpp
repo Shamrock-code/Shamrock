@@ -112,7 +112,6 @@ namespace shammodels::basegodunov {
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
-        Tscal point_mass_GM = 1;
     };
 
     template<class Tvec>

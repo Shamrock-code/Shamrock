@@ -70,20 +70,34 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhoe = buf_rhoe.get_write_access(depends_list);
 
             if (solver_config.is_analytical_gravity_on()) {
-                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                auto grav_event = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
                     shambase::parallel_for(
                         cgh, cell_count, "add analytical gravity", [=](u32 id_a) {
-                            rhov[id_a] += dt * acc_gravitational_force_patch[id_a] * rho[id_a];
-                            Tscal force_squared = 0;
-                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
-                                force_squared += acc_gravitational_force_patch[id_a][d]
-                                                 * acc_gravitational_force_patch[id_a][d];
-                            }
+                            Tvec g_vec    = acc_gravitational_force_patch[id_a];
+                            Tvec rhov_old = rhov[id_a];
 
-                            rhoe[id_a] += 0.5 * dt * dt * force_squared * rho[id_a];
-                            ;
+                            Tscal ekin_old = 0;
+                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
+                                ekin_old += rhov_old[d] * rhov_old[d];
+                            }
+                            ekin_old *= 0.5 / rho[id_a];
+
+                            Tscal e_other = rhoe[id_a] - ekin_old;
+
+                            // Update momentum
+                            rhov[id_a] += dt * g_vec * rho[id_a];
+
+                            Tscal ekin_new = 0;
+                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
+                                ekin_new += rhov[id_a][d] * rhov[id_a][d];
+                            }
+                            ekin_new *= 0.5 / rho[id_a];
+
+                            rhoe[id_a] = e_other + ekin_new;
                         });
                 });
+
+                depends_list.add_event(grav_event);
             }
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {

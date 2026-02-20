@@ -1160,7 +1160,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> flux_sequence;
 
-        if (solver_config.Riemann_config == Rusanov) {
+        if (solver_config.riemann_config == Rusanov) {
             modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::Rusanov>
                 node(
                     "Gas flux compute",
@@ -1203,7 +1203,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                     storage.flux_rhoe_face_zp,
                     storage.flux_rhoe_face_zm);
             flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        } else if (solver_config.Riemann_config == HLL) {
+        } else if (solver_config.riemann_config == HLL) {
             modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLL> node(
                 "Gas flux compute",
                 solver_config.eos_gamma,
@@ -1245,7 +1245,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.flux_rhoe_face_zp,
                 storage.flux_rhoe_face_zm);
             flux_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
-        } else if (solver_config.Riemann_config == HLLC) {
+        } else if (solver_config.riemann_config == HLLC) {
             modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLLC> node(
                 "Gas flux compute",
                 solver_config.eos_gamma,

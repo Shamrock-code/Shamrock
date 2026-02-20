@@ -157,7 +157,7 @@ struct shammodels::basegodunov::SolverConfig {
 
     inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
-    RiemannSolverMode Riemann_config  = HLL;
+    RiemannSolverMode riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
@@ -330,7 +330,7 @@ namespace shammodels::basegodunov {
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"gravity_solver", p.gravity_config.gravity_mode},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"hydro_riemann_solver", p.Riemann_config},
+            {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
             {"slope_limiter", p.slope_config},
             {"time_state", p.time_state},
@@ -376,7 +376,7 @@ namespace shammodels::basegodunov {
         get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
         get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
         get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
-        get_to_if_contains("hydro_riemann_solver", p.Riemann_config);
+        get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
         get_to_if_contains("slope_limiter", p.slope_config);
         get_to_if_contains("time_state", p.time_state);

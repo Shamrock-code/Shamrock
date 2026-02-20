@@ -24,6 +24,7 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAnalyticalGravity.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeCoordinates.hpp"
@@ -413,6 +414,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // will be filled by NodeComputeCoordinates
         storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");
+    }
+
+    if (solver_config.is_analytical_gravity_on()) {
+        // will be filled by NodeComputeAnalyticalGravity
+        storage.gravitational_force = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "gravitational_force", "\\mathbf{f}_a");
     }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -944,6 +951,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         solver_sequence.push_back(
             std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
+    }
+
+    if (solver_config.is_analytical_gravity_on()) {
+        modules::NodeComputeAnalyticalGravity<Tvec> node_analytical_gravity{
+            AMRBlock::block_size, solver_config.analytical_gravity_config};
+        node_analytical_gravity.set_edges(
+            storage.block_counts, storage.coordinates, storage.gravitational_force);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_analytical_gravity)>(
+                std::move(node_analytical_gravity)));
     }
 
     if (solver_config.should_compute_rho_mean()) {

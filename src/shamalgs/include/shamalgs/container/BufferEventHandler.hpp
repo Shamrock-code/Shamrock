@@ -39,9 +39,9 @@ namespace shamalgs {
 
         void add_read_write_dependancies(std::vector<sycl::event> &depends_list);
 
-        void register_read_event(sycl::event e);
+        void register_read_event(const sycl::event &e);
 
-        void register_read_write_event(sycl::event e);
+        void register_read_write_event(const sycl::event &e);
 
         void synchronize();
     };

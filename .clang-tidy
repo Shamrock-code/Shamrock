@@ -8,6 +8,10 @@ Checks: >
   -clang-analyzer-optin.mpi*,
   -performance-noexcept-destructor,
   -readability-magic-numbers,
+  performance-unnecessary-value-param,
+  performance-unnecessary-copy-initialization
+  performance-for-range-copy,
+  performance-no-automatic-move
 
 # Future options that are likely to be added:
 #

@@ -40,7 +40,7 @@ namespace shammodels::basegodunov {
 
     inline void from_json(const nlohmann::json &j, DustRiemannSolverMode &p) {
         std::string dust_solver;
-        j.at("dust_solver").get_to(dust_solver);
+        j.get_to(dust_solver);
         if (dust_solver == "no_dust") {
             p = DustRiemannSolverMode::NoDust;
         } else if (dust_solver == "dhll") {

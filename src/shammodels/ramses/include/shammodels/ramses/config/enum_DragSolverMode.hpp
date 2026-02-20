@@ -42,7 +42,7 @@ namespace shammodels::basegodunov {
 
     inline void from_json(const nlohmann::json &j, DragSolverMode &p) {
         std::string drag_solver;
-        j.at("drag_solver").get_to(drag_solver);
+        j.get_to(drag_solver);
         if (drag_solver == "no_drag") {
             p = DragSolverMode::NoDrag;
         } else if (drag_solver == "irk1") {

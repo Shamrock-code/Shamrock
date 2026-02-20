@@ -43,7 +43,7 @@ namespace shammodels::basegodunov {
 
     inline void from_json(const nlohmann::json &j, SlopeMode &p) {
         std::string slope_mode;
-        j.at("slope_mode").get_to(slope_mode);
+        j.get_to(slope_mode);
         if (slope_mode == "none") {
             p = SlopeMode::None;
         } else if (slope_mode == "vanleer_f") {

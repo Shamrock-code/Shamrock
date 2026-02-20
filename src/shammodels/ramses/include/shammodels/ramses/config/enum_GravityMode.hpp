@@ -44,7 +44,7 @@ namespace shammodels::basegodunov {
 
     inline void from_json(const nlohmann::json &j, GravityMode &p) {
         std::string gravity_mode;
-        j.at("gravity_mode").get_to(gravity_mode);
+        j.get_to(gravity_mode);
         if (gravity_mode == "no_gravity") {
             p = GravityMode::NoGravity;
         } else if (gravity_mode == "cg") {

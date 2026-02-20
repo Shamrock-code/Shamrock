@@ -36,7 +36,7 @@ namespace shammodels::basegodunov {
 
     inline void from_json(const nlohmann::json &j, RiemannSolverMode &p) {
         std::string riemann_solver;
-        j.at("riemann_solver").get_to(riemann_solver);
+        j.get_to(riemann_solver);
         if (riemann_solver == "rusanov") {
             p = RiemannSolverMode::Rusanov;
         } else if (riemann_solver == "hll") {

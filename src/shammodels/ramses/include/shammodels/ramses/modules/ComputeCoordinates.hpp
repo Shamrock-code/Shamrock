@@ -33,6 +33,7 @@ namespace shammodels::basegodunov::modules {
     class NodeComputeCoordinates : public shamrock::solvergraph::INode {
         using Tscal    = shambase::VecComponent<Tvec>;
         using AMRBlock = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
+        
 
         u32 block_size;
         u32 block_nside;
@@ -41,7 +42,13 @@ namespace shammodels::basegodunov::modules {
         public:
         NodeComputeCoordinates(u32 block_size, u32 block_nside, Tscal grid_coord_to_pos_fact)
             : block_size(block_size), block_nside(block_nside),
-              grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
+              grid_coord_to_pos_fact(grid_coord_to_pos_fact) {
+
+            if(block_nside != 2){
+                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "this module assume block_nside=2, got {}", block_nside));
+                }
+              }
 
 #define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                       \
     /* inputs */                                                                                   \

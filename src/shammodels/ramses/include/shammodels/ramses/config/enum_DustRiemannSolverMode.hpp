@@ -13,44 +13,30 @@
  * @file enum_DustRiemannSolverMode.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @brief
+ * @brief Dust Riemann solver mode enum + json serialization/deserialization
  *
  */
 
 #include "shambase/exception.hpp"
 #include "nlohmann/json.hpp"
+#include "shamrock/io/json_utils.hpp"
 
 namespace shammodels::basegodunov {
 
+    /// Dust Riemann solver mode enum
     enum DustRiemannSolverMode {
+        /// No dust, so no Riemann solver is used
         NoDust = 0,
-        DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-        HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
+        /// Dust HLL. This is merely the HLL solver for dust. It's then a Rusanov like
+        DHLL = 1,
+        /// Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
+        HB = 2
     };
 
-    inline void to_json(nlohmann::json &j, const DustRiemannSolverMode &p) {
-        switch (p) {
-        case DustRiemannSolverMode::NoDust: j = "no_dust"; return;
-        case DustRiemannSolverMode::DHLL  : j = "dhll"; return;
-        case DustRiemannSolverMode::HB    : j = "hb"; return;
-        }
-        throw shambase::make_except_with_loc<std::runtime_error>(
-            "Invalid dust Riemann solver mode: " + std::to_string(p));
-    }
-
-    inline void from_json(const nlohmann::json &j, DustRiemannSolverMode &p) {
-        std::string dust_solver;
-        j.get_to(dust_solver);
-        if (dust_solver == "no_dust") {
-            p = DustRiemannSolverMode::NoDust;
-        } else if (dust_solver == "dhll") {
-            p = DustRiemannSolverMode::DHLL;
-        } else if (dust_solver == "hb") {
-            p = DustRiemannSolverMode::HB;
-        } else {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "Invalid dust Riemann solver mode: " + dust_solver);
-        }
-    }
+    SHAMROCK_JSON_SERIALIZE_ENUM(
+        DustRiemannSolverMode,
+        {{DustRiemannSolverMode::NoDust, "no_dust"},
+         {DustRiemannSolverMode::DHLL, "dhll"},
+         {DustRiemannSolverMode::HB, "hb"}});
 
 } // namespace shammodels::basegodunov

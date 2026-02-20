@@ -13,12 +13,12 @@
  * @file enum_GravityMode.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @brief
- *
+ * @brief Gravity mode enum + json serialization/deserialization
  */
 
 #include "shambase/exception.hpp"
 #include "nlohmann/json.hpp"
+#include "shamrock/io/json_utils.hpp"
 
 namespace shammodels::basegodunov {
 
@@ -30,35 +30,12 @@ namespace shammodels::basegodunov {
         MULTIGRID = 4  // multigrid
     };
 
-    inline void to_json(nlohmann::json &j, const GravityMode &p) {
-        switch (p) {
-        case GravityMode::NoGravity: j = "no_gravity"; return;
-        case GravityMode::CG       : j = "cg"; return;
-        case GravityMode::PCG      : j = "pcg"; return;
-        case GravityMode::BICGSTAB : j = "bicgstab"; return;
-        case GravityMode::MULTIGRID: j = "multigrid"; return;
-        }
-        throw shambase::make_except_with_loc<std::runtime_error>(
-            "Invalid gravity mode: " + std::to_string(p));
-    }
-
-    inline void from_json(const nlohmann::json &j, GravityMode &p) {
-        std::string gravity_mode;
-        j.get_to(gravity_mode);
-        if (gravity_mode == "no_gravity") {
-            p = GravityMode::NoGravity;
-        } else if (gravity_mode == "cg") {
-            p = GravityMode::CG;
-        } else if (gravity_mode == "pcg") {
-            p = GravityMode::PCG;
-        } else if (gravity_mode == "bicgstab") {
-            p = GravityMode::BICGSTAB;
-        } else if (gravity_mode == "multigrid") {
-            p = GravityMode::MULTIGRID;
-        } else {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "Invalid gravity mode: " + gravity_mode);
-        }
-    }
+    SHAMROCK_JSON_SERIALIZE_ENUM(
+        GravityMode,
+        {{GravityMode::NoGravity, "no_gravity"},
+         {GravityMode::CG, "cg"},
+         {GravityMode::PCG, "pcg"},
+         {GravityMode::BICGSTAB, "bicgstab"},
+         {GravityMode::MULTIGRID, "multigrid"}});
 
 } // namespace shammodels::basegodunov

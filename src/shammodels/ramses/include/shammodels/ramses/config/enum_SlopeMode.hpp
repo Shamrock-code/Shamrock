@@ -12,12 +12,12 @@
 /**
  * @file enum_SlopeMode.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
- *
+ * @brief Slope mode enum + json serialization/deserialization
  */
 
 #include "shambase/exception.hpp"
 #include "nlohmann/json.hpp"
+#include "shamrock/io/json_utils.hpp"
 
 namespace shammodels::basegodunov {
 
@@ -29,35 +29,12 @@ namespace shammodels::basegodunov {
         Minmod      = 4,
     };
 
-    inline void to_json(nlohmann::json &j, const SlopeMode &p) {
-        switch (p) {
-        case SlopeMode::None       : j = "none"; return;
-        case SlopeMode::VanLeer_f  : j = "vanleer_f"; return;
-        case SlopeMode::VanLeer_std: j = "vanleer_std"; return;
-        case SlopeMode::VanLeer_sym: j = "vanleer_sym"; return;
-        case SlopeMode::Minmod     : j = "minmod"; return;
-        }
-        throw shambase::make_except_with_loc<std::runtime_error>(
-            "Invalid slope mode: " + std::to_string(p));
-    }
-
-    inline void from_json(const nlohmann::json &j, SlopeMode &p) {
-        std::string slope_mode;
-        j.get_to(slope_mode);
-        if (slope_mode == "none") {
-            p = SlopeMode::None;
-        } else if (slope_mode == "vanleer_f") {
-            p = SlopeMode::VanLeer_f;
-        } else if (slope_mode == "vanleer_std") {
-            p = SlopeMode::VanLeer_std;
-        } else if (slope_mode == "vanleer_sym") {
-            p = SlopeMode::VanLeer_sym;
-        } else if (slope_mode == "minmod") {
-            p = SlopeMode::Minmod;
-        } else {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "Invalid slope mode: " + slope_mode);
-        }
-    }
+    SHAMROCK_JSON_SERIALIZE_ENUM(
+        SlopeMode,
+        {{SlopeMode::None, "none"},
+         {SlopeMode::VanLeer_f, "vanleer_f"},
+         {SlopeMode::VanLeer_std, "vanleer_std"},
+         {SlopeMode::VanLeer_sym, "vanleer_sym"},
+         {SlopeMode::Minmod, "minmod"}});
 
 } // namespace shammodels::basegodunov

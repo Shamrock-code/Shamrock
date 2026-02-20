@@ -13,12 +13,13 @@
  * @file enum_DragSolverMode.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @brief
+ * @brief Drag solver mode enum + json serialization/deserialization
  *
  */
 
 #include "shambase/exception.hpp"
 #include "nlohmann/json.hpp"
+#include "shamrock/io/json_utils.hpp"
 
 namespace shammodels::basegodunov {
 
@@ -29,32 +30,11 @@ namespace shammodels::basegodunov {
         EXPO   = 3  // Matrix exponential
     };
 
-    inline void to_json(nlohmann::json &j, const DragSolverMode &p) {
-        switch (p) {
-        case DragSolverMode::NoDrag: j = "no_drag"; return;
-        case DragSolverMode::IRK1  : j = "irk1"; return;
-        case DragSolverMode::IRK2  : j = "irk2"; return;
-        case DragSolverMode::EXPO  : j = "expo"; return;
-        }
-        throw shambase::make_except_with_loc<std::runtime_error>(
-            "Invalid drag solver mode: " + std::to_string(p));
-    }
-
-    inline void from_json(const nlohmann::json &j, DragSolverMode &p) {
-        std::string drag_solver;
-        j.get_to(drag_solver);
-        if (drag_solver == "no_drag") {
-            p = DragSolverMode::NoDrag;
-        } else if (drag_solver == "irk1") {
-            p = DragSolverMode::IRK1;
-        } else if (drag_solver == "irk2") {
-            p = DragSolverMode::IRK2;
-        } else if (drag_solver == "expo") {
-            p = DragSolverMode::EXPO;
-        } else {
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "Invalid drag solver mode: " + drag_solver);
-        }
-    }
+    SHAMROCK_JSON_SERIALIZE_ENUM(
+        DragSolverMode,
+        {{DragSolverMode::NoDrag, "no_drag"},
+         {DragSolverMode::IRK1, "irk1"},
+         {DragSolverMode::IRK2, "irk2"},
+         {DragSolverMode::EXPO, "expo"}});
 
 } // namespace shammodels::basegodunov

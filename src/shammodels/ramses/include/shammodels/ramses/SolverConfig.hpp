@@ -26,8 +26,11 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
+#include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <stdexcept>
@@ -370,26 +373,48 @@ namespace shammodels::basegodunov {
     inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p) {
         using T = SolverConfig<Tvec, TgridVec>;
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
 
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto get_to_if_contains = [&](const std::string &key, auto &value) {
+            if (j.contains(key)) {
+                j.at(key).get_to(value);
+            } else {
+                has_used_defaults = true;
+            }
+        };
+
         // actual data stored in the json
-        j.at("RiemmanSolverMode").get_to(p.riemman_config);
-        j.at("DustRiemannSolverMode").get_to(p.dust_config.dust_riemann_config);
-        j.at("SlopeMode").get_to(p.slope_config);
-        j.at("GravityMode").get_to(p.gravity_config.gravity_mode);
-        j.at("PassiveScalarMode").get_to(p.npscal_gas_config.npscal_gas);
-        j.at("face_half_time_interpolation").get_to(p.face_half_time_interpolation);
-        j.at("eos_gamma").get_to(p.eos_gamma);
-        j.at("grid_coord_to_pos_fact").get_to(p.grid_coord_to_pos_fact);
-        j.at("Csafe").get_to(p.Csafe);
-        j.at("unit_sys").get_to(p.unit_sys);
-        j.at("time_state").get_to(p.time_state);
+        get_to_if_contains("RiemmanSolverMode", p.riemman_config);
+        get_to_if_contains("DustRiemannSolverMode", p.dust_config.dust_riemann_config);
+        get_to_if_contains("SlopeMode", p.slope_config);
+        get_to_if_contains("GravityMode", p.gravity_config.gravity_mode);
+        get_to_if_contains("PassiveScalarMode", p.npscal_gas_config.npscal_gas);
+        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
+        get_to_if_contains("eos_gamma", p.eos_gamma);
+        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
+        get_to_if_contains("courant_safety_factor", p.Csafe);
+        get_to_if_contains("time_state", p.time_state);
+        get_to_if_contains("unit_sys", p.unit_sys);
+
+        if (has_used_defaults) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Ramses::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
+        }
     }
 
 } // namespace shammodels::basegodunov

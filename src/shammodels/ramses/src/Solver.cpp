@@ -26,6 +26,7 @@
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
@@ -407,6 +408,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         1, "block_cell_sizes", "s_{\\rm cell}");
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
+
+    if (solver_config.amr_mode.need_level_zero_compute()) {
+        // get blocks at level0 sizes for all patches
+        storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
+            "level0_amr", "level0_amr");
+    }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_rho", "\\nabla \\rho");
@@ -919,6 +926,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
+                                                            // enabled later when needed)
+        modules::ComputeLevel0CellSize<TgridVec> node_level0_sizes{};
+        node_level0_sizes.set_edges(
+            graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
+            storage.source_patches,
+            storage.level0_size);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
     }
 
     if (solver_config.should_compute_rho_mean()) {

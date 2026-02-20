@@ -926,6 +926,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.is_coordinate_field_required()) { // Compute coordinates
 
         modules::NodeComputeCoordinates<Tvec, TgridVec> node_coordinates{
             AMRBlock::block_size,

@@ -21,11 +21,11 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 
 
 namespace shammodels::basegodunov::modules {
@@ -33,13 +33,15 @@ namespace shammodels::basegodunov::modules {
     template<class Tvec, class TgridVec>
     class NodeComputeCoordinates : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
+        using AMRBlock = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
 
         u32 block_size;
+        u32 block_nside;  
         Tscal grid_coord_to_pos_fact;
 
         public:
-        NodeComputeCoordinates(u32 block_size, Tscal grid_coord_to_pos_fact)
-            : block_size(block_size), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
+        NodeComputeCoordinates(u32 block_size, u32 block_nside, Tscal grid_coord_to_pos_fact)
+            : block_size(block_size), block_nside(block_nside), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
 #define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                       \
     /* inputs */                                                                                   \

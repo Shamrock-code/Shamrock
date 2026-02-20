@@ -103,12 +103,10 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity = false; // whether to use an external analytical gravity  
+        bool analytical_gravity  = false; // whether to use an external analytical gravity
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
-        inline bool is_gravity_on() {
-            return gravity_mode != NoGravity;
-        }
+        inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };
 
     template<class Tvec>
@@ -235,8 +233,7 @@ struct shammodels::basegodunov::SolverConfig {
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required(){return gravity_config.analytical_gravity;}    
-
+    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

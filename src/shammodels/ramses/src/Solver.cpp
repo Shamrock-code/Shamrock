@@ -409,10 +409,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
 
-    if(solver_config.is_coordinate_field_required()){  
-    // will be filled by NodeComputeCoordinates  
-        storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(  
-            AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");  
+    if (solver_config.is_coordinate_field_required()) {
+        // will be filled by NodeComputeCoordinates
+        storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");
     }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -928,7 +928,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
 
         modules::NodeComputeCoordinates<Tvec, TgridVec> node_coordinates{
-            AMRBlock::block_size, AMRBlock::Nside, solver_config.grid_coord_to_pos_fact,};
+            AMRBlock::block_size,
+            AMRBlock::Nside,
+            solver_config.grid_coord_to_pos_fact,
+        };
 
         node_coordinates.set_edges(
             storage.block_counts,

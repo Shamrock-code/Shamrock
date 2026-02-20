@@ -21,27 +21,27 @@
  */
 
 #include "shambackends/vec.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shammodels/common/amr/AMRBlock.hpp"
-
 
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
     class NodeComputeCoordinates : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal    = shambase::VecComponent<Tvec>;
         using AMRBlock = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
 
         u32 block_size;
-        u32 block_nside;  
+        u32 block_nside;
         Tscal grid_coord_to_pos_fact;
 
         public:
         NodeComputeCoordinates(u32 block_size, u32 block_nside, Tscal grid_coord_to_pos_fact)
-            : block_size(block_size), block_nside(block_nside), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
+            : block_size(block_size), block_nside(block_nside),
+              grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
 #define NODE_COMPUTE_COORDINATES(X_RO, X_RW)                                                       \
     /* inputs */                                                                                   \
@@ -49,15 +49,15 @@ namespace shammodels::basegodunov::modules {
         shamrock::solvergraph::Indexes<u32>,                                                       \
         sizes) /* number of blocks per patch for all patches on the current MPI process*/          \
     X_RO(                                                                                          \
-        shamrock::solvergraph::IFieldSpan<TgridVec>,                                                       \
-        spans_block_min) /* min int coordinate of the block*/                                           \
+        shamrock::solvergraph::IFieldSpan<TgridVec>,                                               \
+        spans_block_min) /* min int coordinate of the block*/                                      \
     X_RO(                                                                                          \
-        shamrock::solvergraph::IFieldSpan<TgridVec>,                                                       \
-        spans_block_max) /* max int coordinate of the block*/                                           \
+        shamrock::solvergraph::IFieldSpan<TgridVec>,                                               \
+        spans_block_max) /* max int coordinate of the block*/                                      \
                                                                                                    \
     /* outputs */                                                                                  \
     X_RW(                                                                                          \
-        shamrock::solvergraph::IFieldSpan<Tvec>,                                                        \
+        shamrock::solvergraph::IFieldSpan<Tvec>,                                                   \
         spans_coordinates) /* center coordinates of each cell */
 
         EXPAND_NODE_EDGES(NODE_COMPUTE_COORDINATES)

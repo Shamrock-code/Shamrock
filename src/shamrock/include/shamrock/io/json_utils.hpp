@@ -59,10 +59,7 @@ namespace shamrock {
         } else if (has_updated_config) {
             log = shambase::format(
                 "Used config parameters are listed below;\n      "
-                "highlighted entries are update values {}.\n",
-                green,
-                reset,
-                red,
+                "highlighted entries are updated values {}.\n",
                 newold_text);
         } else if (has_used_defaults) {
             log = shambase::format(

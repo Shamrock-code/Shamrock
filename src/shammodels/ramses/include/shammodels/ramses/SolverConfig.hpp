@@ -25,6 +25,11 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/config/enum_DragSolverMode.hpp"
+#include "shammodels/ramses/config/enum_DustRiemannSolverMode.hpp"
+#include "shammodels/ramses/config/enum_GravityMode.hpp"
+#include "shammodels/ramses/config/enum_RiemannSolverMode.hpp"
+#include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
@@ -36,29 +41,6 @@
 #include <stdexcept>
 
 namespace shammodels::basegodunov {
-
-    enum RiemmanSolverMode { Rusanov = 0, HLL = 1, HLLC = 2 };
-
-    enum SlopeMode {
-        None        = 0,
-        VanLeer_f   = 1,
-        VanLeer_std = 2,
-        VanLeer_sym = 3,
-        Minmod      = 4,
-    };
-
-    enum DustRiemannSolverMode {
-        NoDust = 0,
-        DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-        HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
-    };
-
-    enum DragSolverMode {
-        NoDrag = 0,
-        IRK1   = 1, // Implicit RK1
-        IRK2   = 2, // Implicit RK2
-        EXPO   = 3  // Matrix exponential
-    };
 
     /**
      * @brief alphas is the dust collision rate (the inverse of the stopping time)
@@ -93,14 +75,6 @@ namespace shammodels::basegodunov {
         u32 npscal_gas = 0;
 
         inline bool is_gas_passive_scalar_on() { return npscal_gas > 0; }
-    };
-
-    enum GravityMode {
-        NoGravity = 0,
-        CG        = 1, // conjuguate gradient
-        PCG       = 2, // preconditioned conjuguate gradient
-        BICGSTAB  = 3, // bicgstab
-        MULTIGRID = 4  // multigrid
     };
 
     template<class Tvec>
@@ -183,7 +157,7 @@ struct shammodels::basegodunov::SolverConfig {
 
     inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
-    RiemmanSolverMode riemman_config  = HLL;
+    RiemannSolverMode Riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
@@ -350,17 +324,17 @@ namespace shammodels::basegodunov {
 
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
-            {"RiemmanSolverMode", p.riemman_config},
-            {"DustRiemannSolverMode", p.dust_config.dust_riemann_config},
-            {"SlopeMode", p.slope_config},
-            {"GravityMode", p.gravity_config.gravity_mode},
-            {"PassiveScalarMode", p.npscal_gas_config.npscal_gas},
-            {"face_half_time_interpolation", p.face_half_time_interpolation},
+            {"courant_safety_factor", p.Csafe},
+            {"dust_riemann_solver", p.dust_config.dust_riemann_config},
             {"eos_gamma", p.eos_gamma},
+            {"face_half_time_interpolation", p.face_half_time_interpolation},
+            {"gravity_solver", p.gravity_config.gravity_mode},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"Csafe", p.Csafe},
-            {"unit_sys", p.unit_sys},
-            {"time_state", p.time_state}};
+            {"hydro_riemann_solver", p.Riemann_config},
+            {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
+            {"slope_limiter", p.slope_config},
+            {"time_state", p.time_state},
+            {"unit_sys", p.unit_sys}};
     }
 
     /**
@@ -396,15 +370,15 @@ namespace shammodels::basegodunov {
         };
 
         // actual data stored in the json
-        get_to_if_contains("RiemmanSolverMode", p.riemman_config);
-        get_to_if_contains("DustRiemannSolverMode", p.dust_config.dust_riemann_config);
-        get_to_if_contains("SlopeMode", p.slope_config);
-        get_to_if_contains("GravityMode", p.gravity_config.gravity_mode);
-        get_to_if_contains("PassiveScalarMode", p.npscal_gas_config.npscal_gas);
-        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
-        get_to_if_contains("eos_gamma", p.eos_gamma);
-        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
         get_to_if_contains("courant_safety_factor", p.Csafe);
+        get_to_if_contains("dust_riemann_solver", p.dust_config.dust_riemann_config);
+        get_to_if_contains("eos_gamma", p.eos_gamma);
+        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
+        get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
+        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
+        get_to_if_contains("hydro_riemann_solver", p.Riemann_config);
+        get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
+        get_to_if_contains("slope_limiter", p.slope_config);
         get_to_if_contains("time_state", p.time_state);
         get_to_if_contains("unit_sys", p.unit_sys);
 

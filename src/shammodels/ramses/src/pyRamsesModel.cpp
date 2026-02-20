@@ -65,17 +65,17 @@ namespace shammodels::basegodunov {
             .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
-                    self.riemman_config = HLL;
+                    self.Riemann_config = HLL;
                 })
             .def(
                 "set_riemann_solver_hllc",
                 [](TConfig &self) {
-                    self.riemman_config = HLLC;
+                    self.Riemann_config = HLLC;
                 })
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {
-                    self.riemman_config = Rusanov;
+                    self.Riemann_config = Rusanov;
                 })
             .def(
                 "set_slope_lim_none",

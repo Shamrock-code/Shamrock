@@ -409,11 +409,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
 
-if (solver_config.amr_mode.need_level_zero_compute()) {
-    // get blocks at level0 sizes for all patches
-    storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
-        "level0_amr", "level0_amr");
-        }
+    if (solver_config.amr_mode.need_level_zero_compute()) {
+        // get blocks at level0 sizes for all patches
+        storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
+            "level0_amr", "level0_amr");
+    }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_rho", "\\nabla \\rho");

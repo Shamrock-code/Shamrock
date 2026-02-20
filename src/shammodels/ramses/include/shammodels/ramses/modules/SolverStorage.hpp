@@ -94,6 +94,7 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> coordinates;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> gravitational_force;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_rho;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dx_v;

@@ -27,6 +27,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
     shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
     shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
+    shamrock::solvergraph::Field<Tvec> &cfield_gravitational_force
+        = shambase::get_check_ref(storage.gravitational_force);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
@@ -47,6 +49,8 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf(id);
             sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf(id);
             sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf(id);
+            sham::DeviceBuffer<Tvec> &gravitational_force_patch
+                = cfield_gravitational_force.get_buf(id);
 
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
@@ -58,10 +62,29 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto acc_dt_rho_patch  = dt_rho_patch.get_read_access(depends_list);
             auto acc_dt_rhov_patch = dt_rhov_patch.get_read_access(depends_list);
             auto acc_dt_rhoe_patch = dt_rhoe_patch.get_read_access(depends_list);
+            auto acc_gravitational_force_patch
+                = gravitational_force_patch.get_read_access(depends_list);
 
             auto rho  = buf_rho.get_write_access(depends_list);
             auto rhov = buf_rhov.get_write_access(depends_list);
             auto rhoe = buf_rhoe.get_write_access(depends_list);
+
+            if (solver_config.is_analytical_gravity_on()) {
+                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                    shambase::parallel_for(
+                        cgh, cell_count, "add analytical gravity", [=](u32 id_a) {
+                            rhov[id_a] += dt * acc_gravitational_force_patch[id_a] * rho[id_a];
+                            Tscal force_squared = 0;
+                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
+                                force_squared += acc_gravitational_force_patch[id_a][d]
+                                                 * acc_gravitational_force_patch[id_a][d];
+                            }
+
+                            rhoe[id_a] += 0.5 * dt * dt * force_squared * rho[id_a];
+                            ;
+                        });
+                });
+            }
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
@@ -76,6 +99,7 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             dt_rho_patch.complete_event_state(e);
             dt_rhov_patch.complete_event_state(e);
             dt_rhoe_patch.complete_event_state(e);
+            gravitational_force_patch.complete_event_state(e);
 
             buf_rho.complete_event_state(e);
             buf_rhov.complete_event_state(e);

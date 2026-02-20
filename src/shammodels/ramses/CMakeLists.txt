@@ -45,6 +45,7 @@ set(Sources
     src/modules/FuseGhostLayer.cpp
     src/modules/render/GridRender.cpp
     src/modules/ComputeCoordinates.cpp
+    src/modules/ComputeAnalyticalGravity.cpp
 
     src/SolverConfig.cpp
 )

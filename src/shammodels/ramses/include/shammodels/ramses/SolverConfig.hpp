@@ -26,6 +26,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/units_json.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -341,19 +342,18 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
 
-        nlohmann::json junit;
-
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
             {"RiemmanSolverMode", p.riemman_config},
+            {"DustRiemannSolverMode", p.dust_config.dust_riemann_config},
             {"SlopeMode", p.slope_config},
             {"GravityMode", p.gravity_config.gravity_mode},
             {"PassiveScalarMode", p.npscal_gas_config.npscal_gas},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"eos_gamma", p.eos_gamma},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"DustRiemannSolverMode", p.Csafe},
-            {"unit_sys", junit},
+            {"Csafe", p.Csafe},
+            {"unit_sys", p.unit_sys},
             {"time_state", p.time_state}};
     }
 
@@ -377,14 +377,15 @@ namespace shammodels::basegodunov {
 
         // actual data stored in the json
         j.at("RiemmanSolverMode").get_to(p.riemman_config);
+        j.at("DustRiemannSolverMode").get_to(p.dust_config.dust_riemann_config);
         j.at("SlopeMode").get_to(p.slope_config);
         j.at("GravityMode").get_to(p.gravity_config.gravity_mode);
         j.at("PassiveScalarMode").get_to(p.npscal_gas_config.npscal_gas);
         j.at("face_half_time_interpolation").get_to(p.face_half_time_interpolation);
         j.at("eos_gamma").get_to(p.eos_gamma);
         j.at("grid_coord_to_pos_fact").get_to(p.grid_coord_to_pos_fact);
-        j.at("DustRiemannSolverMode").get_to(p.Csafe);
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
+        j.at("Csafe").get_to(p.Csafe);
+        j.at("unit_sys").get_to(p.unit_sys);
         j.at("time_state").get_to(p.time_state);
     }
 

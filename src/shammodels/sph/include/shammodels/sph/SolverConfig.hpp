@@ -31,6 +31,7 @@
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -1119,9 +1120,6 @@ namespace shammodels::sph {
         std::string kernel_id = shambase::get_type_name<Tkernel>();
         std::string type_id   = shambase::get_type_name<Tvec>();
 
-        nlohmann::json junit;
-        to_json_optional(junit, p.unit_sys);
-
         j = nlohmann::json{
             // used for type checking
             {"kernel_id", kernel_id},
@@ -1129,7 +1127,7 @@ namespace shammodels::sph {
             // actual data stored in the json
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
-            {"unit_sys", junit},
+            {"unit_sys", p.unit_sys},
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
@@ -1199,7 +1197,7 @@ namespace shammodels::sph {
         j.at("gpart_mass").get_to(p.gpart_mass);
         j.at("cfl_config").get_to(p.cfl_config);
 
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
+        j.at("unit_sys").get_to(p.unit_sys);
 
         j.at("time_state").get_to(p.time_state);
 

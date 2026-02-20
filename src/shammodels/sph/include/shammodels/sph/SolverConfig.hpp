@@ -31,7 +31,9 @@
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -1177,142 +1179,88 @@ namespace shammodels::sph {
         using Tkernel = typename T::Kernel;
 
         // type checking
-        std::string kernel_id = j.at("kernel_id").get<std::string>();
+        if (j.contains("kernel_id")) {
 
-        if (kernel_id != shambase::get_type_name<Tkernel>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tkernel>()
-                + " but got " + kernel_id);
+            std::string kernel_id = j.at("kernel_id").get<std::string>();
+
+            if (kernel_id != shambase::get_type_name<Tkernel>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + kernel_id);
+            }
         }
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
+
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto get_to_if_contains = [&](const std::string &key, auto &value) {
+            if (j.contains(key)) {
+                j.at(key).get_to(value);
+            } else {
+                has_used_defaults = true;
+            }
+        };
 
         // actual data stored in the json
-        j.at("gpart_mass").get_to(p.gpart_mass);
-        j.at("cfl_config").get_to(p.cfl_config);
-
-        j.at("unit_sys").get_to(p.unit_sys);
-
-        j.at("time_state").get_to(p.time_state);
-
-        // mhd config
-        try {
-            j.at("mhd_config").get_to(p.mhd_config);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
-            p.mhd_config.set(typename T::MHDConfig::None{});
-        }
-
-        // self gravity config
-        if (j.contains("self_grav_config")) {
-            j.at("self_grav_config").get_to(p.self_grav_config);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "self_grav_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.self_grav_config}.dump(4));
-        }
-
-        j.at("tree_reduction_level").get_to(p.tree_reduction_level);
-        j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-
-        if (j.contains("show_neigh_stats")) {
-            j.at("show_neigh_stats").get_to(p.show_neigh_stats);
-        } else {
-            // Already set to default value
-            ON_RANK_0(shamlog_warn_ln(
-                "SPHConfig",
-                "show_neigh_stats not found when deserializing, defaulting to ",
-                p.show_neigh_stats));
-        }
-
-        j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
+        get_to_if_contains("gpart_mass", p.gpart_mass);
+        get_to_if_contains("cfl_config", p.cfl_config);
+        get_to_if_contains("unit_sys", p.unit_sys);
+        get_to_if_contains("time_state", p.time_state);
+        get_to_if_contains("mhd_config", p.mhd_config);
+        get_to_if_contains("self_grav_config", p.self_grav_config);
+        get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
+        get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
+        get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 
         // Try new names first, fall back to old names for backward compatibility
         if (j.contains("htol_up_coarse_cycle")) {
             j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
         } else {
             j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
+            has_updated_config = true;
         }
 
         if (j.contains("htol_up_fine_cycle")) {
             j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
         } else {
             j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
+            has_updated_config = true;
         }
 
-        j.at("epsilon_h").get_to(p.epsilon_h);
+        get_to_if_contains("epsilon_h", p.epsilon_h);
+        get_to_if_contains("smoothing_length_config", p.smoothing_length_config);
+        get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
+        get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+        get_to_if_contains("enable_particle_reordering", p.enable_particle_reordering);
+        get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
+        get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
+        get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        get_to_if_contains("eos_config", p.eos_config);
+        get_to_if_contains("artif_viscosity", p.artif_viscosity);
+        get_to_if_contains("boundary_config", p.boundary_config);
+        get_to_if_contains("ext_force_config", p.ext_force_config);
+        get_to_if_contains("do_debug_dump", p.do_debug_dump);
+        get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
+        get_to_if_contains("particle_killing", p.particle_killing);
 
-        if (j.contains("smoothing_length_config")) {
-            j.at("smoothing_length_config").get_to(p.smoothing_length_config);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "smoothing_length_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.smoothing_length_config}.dump(4));
-        }
-
-        j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
-        j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
-
-        if (j.contains("enable_particle_reordering")) {
-            j.at("enable_particle_reordering").get_to(p.enable_particle_reordering);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "enable_particle_reordering not found when deserializing, defaulting to ",
-                p.enable_particle_reordering);
-        }
-
-        if (j.contains("particle_reordering_step_freq")) {
-            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "particle_reordering_step_freq not found when deserializing, defaulting to ",
-                p.particle_reordering_step_freq);
-        }
-
-        if (j.contains("save_dt_to_fields")) {
-            j.at("save_dt_to_fields").get_to(p.save_dt_to_fields);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "save_dt_to_fields not found when deserializing, defaulting to ",
-                p.save_dt_to_fields);
-        }
-
-        if (j.contains("show_ghost_zone_graph")) {
-            j.at("show_ghost_zone_graph").get_to(p.show_ghost_zone_graph);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "show_ghost_zone_graph not found when deserializing, defaulting to ",
-                p.show_ghost_zone_graph);
-        }
-
-        j.at("eos_config").get_to(p.eos_config);
-        j.at("artif_viscosity").get_to(p.artif_viscosity);
-        j.at("boundary_config").get_to(p.boundary_config);
-        j.at("ext_force_config").get_to(p.ext_force_config);
-
-        j.at("do_debug_dump").get_to(p.do_debug_dump);
-        j.at("debug_dump_filename").get_to(p.debug_dump_filename);
-
-        // particle killing config
-        try {
-            j.at("particle_killing").get_to(p.particle_killing);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "particle_killing not found when deserializing, defaulting to None");
-            p.particle_killing.kill_list = {};
+        if (has_used_defaults || has_updated_config) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
         }
     }
 

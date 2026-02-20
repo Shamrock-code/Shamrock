@@ -54,14 +54,14 @@ namespace shammodels::basegodunov::modules {
             sham::DDMultiRef{block_min_spans, block_max_spans},
             sham::DDMultiRef{cell_coord_spans},
             cell_counts,
-            [this, one_over_Nside, dxfact](
+            [one_over_Nside, dxfact](
                 u32 i,
                 const TgridVec *__restrict index_block_min,
                 const TgridVec *__restrict index_block_max,
                 Tvec *__restrict cell_coord) {
-                u32 block_id
-                    = i / block_size; // index of the block to which the current cell belongs
-                u32 cell_loc_id = i % block_size; // index of the cell within the block
+                u32 block_id = i / AMRBlock::block_size; // index of the block to which the current
+                                                         // cell belongs
+                u32 cell_loc_id = i % AMRBlock::block_size; // index of the cell within the block
 
                 Tvec pos_block_min = index_block_min[block_id].template convert<Tscal>() * dxfact;
                 Tvec pos_block_max = index_block_max[block_id].template convert<Tscal>() * dxfact;

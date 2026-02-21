@@ -19,6 +19,7 @@
 #include "shamcomm/logs.hpp"
 #include <shambackends/details/BufferEventHandler.hpp>
 #include <stdexcept>
+#include <utility>
 
 namespace sham::details {
 
@@ -65,7 +66,7 @@ namespace sham::details {
         up_to_date_events = false;
         last_access       = READ;
 
-        for (sycl::event e : write_events) {
+        for (const sycl::event &e : write_events) {
             depends_list.add_event(e);
         }
 
@@ -90,10 +91,10 @@ namespace sham::details {
         up_to_date_events = false;
         last_access       = WRITE;
 
-        for (sycl::event e : write_events) {
+        for (const sycl::event &e : write_events) {
             depends_list.add_event(e);
         }
-        for (sycl::event e : read_events) {
+        for (const sycl::event &e : read_events) {
             depends_list.add_event(e);
         }
 
@@ -101,7 +102,7 @@ namespace sham::details {
     }
 
     void BufferEventHandler::complete_state(sycl::event e, SourceLocation src_loc) {
-        complete_state(std::vector<sycl::event>{e}, src_loc);
+        complete_state(std::vector<sycl::event>{std::move(e)}, src_loc);
     }
 
     void BufferEventHandler::complete_state(
@@ -120,7 +121,7 @@ namespace sham::details {
 
         if (last_access == READ) {
 
-            for (auto e : events) {
+            for (const auto &e : events) {
                 read_events.push_back(e);
             }
 
@@ -132,7 +133,7 @@ namespace sham::details {
             write_events.clear();
             read_events.clear();
 
-            for (auto e : events) {
+            for (const auto &e : events) {
                 write_events.push_back(e);
             }
 

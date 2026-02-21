@@ -25,6 +25,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
@@ -79,7 +80,7 @@ namespace shamcmdopt {
      * @return false  the option is not registered
      */
     bool is_name_registered(const std::string_view &name) {
-        for (auto opt : registered_opts) {
+        for (const auto &opt : registered_opts) {
             if (opt.name == name) {
                 return true;
             }
@@ -169,7 +170,7 @@ namespace shamcmdopt {
             }
         }
 
-        registered_opts.push_back({name, args, description});
+        registered_opts.push_back({name, std::move(args), std::move(description)});
     }
 
     /// supplied argc from main
@@ -226,12 +227,6 @@ namespace shamcmdopt {
         print_help_env_var();
     }
 
-    bool is_help_mode() {
-        if (has_option("--help")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    bool is_help_mode() { return has_option("--help"); }
 
 } // namespace shamcmdopt

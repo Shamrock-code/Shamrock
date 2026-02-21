@@ -24,14 +24,14 @@ namespace shambase {
     void (*_printerln)(std::string) = nullptr; ///< The println function pointer to use if not null
     void (*_flush)()                = nullptr; ///< The flush function pointer to use if not null
 
-    void print(std::string s) {
+    void print(const std::string &s) {
         if (_printer == nullptr) {
             std::cout << s;
         } else {
             _printer(s);
         }
     }
-    void println(std::string s) {
+    void println(const std::string &s) {
         if (_printerln == nullptr) {
             std::cout << s << "\n";
         } else {

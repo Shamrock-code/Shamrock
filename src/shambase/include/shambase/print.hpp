@@ -25,14 +25,14 @@ namespace shambase {
      *
      * @param s The string to be printed.
      */
-    void print(std::string s);
+    void print(const std::string &s);
 
     /**
      * @brief Prints a string to the console followed by a newline.
      *
      * @param s The string to be printed.
      */
-    void println(std::string s);
+    void println(const std::string &s);
 
     /**
      * @brief Flushes the output buffer.

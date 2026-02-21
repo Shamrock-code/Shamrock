@@ -105,7 +105,7 @@ namespace shamrock::sfc {
 
     template<class morton_t, class _pos_t, u32 dim>
     void MortonKernels<morton_t, _pos_t, dim>::sycl_xyz_to_morton(
-        sham::DeviceScheduler_ptr dev_sched,
+        const sham::DeviceScheduler_ptr &dev_sched,
         u32 pos_count,
         sham::DeviceBuffer<pos_t> &in_positions,
         pos_t bounding_box_min,

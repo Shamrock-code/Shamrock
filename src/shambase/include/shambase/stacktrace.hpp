@@ -60,7 +60,7 @@ namespace shambase::details {
      * @param process_prefix The prefix of the process name.
      * @param world_rank The rank of the process.
      */
-    void dump_profilings(std::string process_prefix, u32 world_rank);
+    void dump_profilings(const std::string &process_prefix, u32 world_rank);
 
     /**
      * @brief Dump the profiling data in a Chrome Tracing format.
@@ -68,7 +68,7 @@ namespace shambase::details {
      * @param process_prefix The prefix of the process name.
      * @param world_rank The rank of the process.
      */
-    void dump_profilings_chrome(std::string process_prefix, u32 world_rank);
+    void dump_profilings_chrome(const std::string &process_prefix, u32 world_rank);
 
     /**
      * @brief Clear the profiling data. (should be done in large run to avoid out-of-memory)

@@ -350,31 +350,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         shambase::get_check_ref(alpha_av_refs).set_refs(refs);
     }
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> axyz_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
-    {
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tvec>>> refs{};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(iaxyz)));
-        });
-        shambase::get_check_ref(axyz_refs).set_refs(refs);
-    }
+    shamrock::solvergraph::SolverGraph &solver_graph = storage.solver_graph;
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> duint_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    {
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tscal>(iduint)));
-        });
-        shambase::get_check_ref(duint_refs).set_refs(refs);
-    }
+    auto axyz_refs  = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tvec>>("axyz");
+    auto duint_refs = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("duint");
+    auto gpart_mass
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
 
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> gpart_mass
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-    {
-        shambase::get_check_ref(gpart_mass).value = solver_config.gpart_mass;
-    }
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
     {
@@ -493,31 +475,13 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         shambase::get_check_ref(alpha_av_refs).set_refs(refs);
     }
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> axyz_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
-    {
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tvec>>> refs{};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tvec>(iaxyz)));
-        });
-        shambase::get_check_ref(axyz_refs).set_refs(refs);
-    }
+    shamrock::solvergraph::SolverGraph &solver_graph = storage.solver_graph;
 
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> duint_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
-    {
-        shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            refs.add_obj(cur_p.id_patch, std::ref(pdat.get_field<Tscal>(iduint)));
-        });
-        shambase::get_check_ref(duint_refs).set_refs(refs);
-    }
+    auto axyz_refs  = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tvec>>("axyz");
+    auto duint_refs = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("duint");
+    auto gpart_mass
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
 
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> gpart_mass
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-    {
-        shambase::get_check_ref(gpart_mass).value = solver_config.gpart_mass;
-    }
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
     {

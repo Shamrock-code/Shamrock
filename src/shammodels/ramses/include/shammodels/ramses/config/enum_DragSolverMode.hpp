@@ -11,8 +11,8 @@
 
 /**
  * @file enum_DragSolverMode.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief Drag solver mode enum + json serialization/deserialization
  *
  */

@@ -11,8 +11,8 @@
 
 /**
  * @file enum_GravityMode.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief Gravity mode enum + json serialization/deserialization
  */
 

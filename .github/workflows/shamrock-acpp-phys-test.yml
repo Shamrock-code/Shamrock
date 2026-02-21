@@ -125,7 +125,7 @@ jobs:
                 shamrock \
                 --sycl-cfg 0:0 \
                 --loglevel 1 \
-                --rscript /opt/Shamrock_src/exemples/ci_tests/${{ matrix.testfile }}
+                --rscript /opt/Shamrock_src/examples/test_ci/${{ matrix.testfile }}
 
 
   shamrock_example_gallery:

@@ -9,9 +9,10 @@
 
 /**
  * @file ComputeCoordinates.cpp
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Noé Brucy (noe.brucy@ens-lyon.fr)
- * @author Adnan-Ali Ahmad (adnan-ali.ahmad@cnrs.fr)
+ * @author Adnan-Ali Ahmad (adnan-ali.ahmad@cnrs.fr) --no git blame--
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
+ * @author Noé Brucy (nbrucy@users.noreply.github.com)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
 
  * @brief Computes the coordinates of each cell

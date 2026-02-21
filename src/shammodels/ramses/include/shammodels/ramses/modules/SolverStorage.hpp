@@ -12,6 +12,7 @@
 /**
  * @file SolverStorage.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (nbrucy@users.noreply.github.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

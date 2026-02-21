@@ -300,7 +300,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     auto &soundspeed_field       = storage.soundspeed;
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> uint_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("uint", "u");
     {
         shambase::get_check_ref(uint_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -310,7 +310,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> vxyz_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("vxyz", "v");
     {
         shambase::get_check_ref(vxyz_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tvec>>>(
@@ -320,7 +320,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "h");
     { // if was just reset before this call
         shambase::get_check_ref(hpart_refs)
             .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -330,7 +330,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("omega", "omega");
     {
         shambase::get_check_ref(omega_refs)
             .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -340,7 +340,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> alpha_av_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("alpha_av", "alpha_av");
     {
         shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -358,12 +358,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
         = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
 
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
     {
         shambase::get_check_ref(alpha_u).value = cfg.alpha_u;
     }
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("beta_AV", "beta_AV");
     {
         shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
     }
@@ -425,7 +425,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     auto &soundspeed_field       = storage.soundspeed;
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> uint_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("uint", "u");
     {
         shambase::get_check_ref(uint_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -435,7 +435,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> vxyz_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("vxyz", "v");
     {
         shambase::get_check_ref(vxyz_refs).set_refs(
             mpdats.map<std::reference_wrapper<PatchDataField<Tvec>>>(
@@ -445,7 +445,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "h");
     { // if was just reset before this call
         shambase::get_check_ref(hpart_refs)
             .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -455,7 +455,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("omega", "omega");
     {
         shambase::get_check_ref(omega_refs)
             .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
@@ -465,7 +465,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     }
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> alpha_av_refs
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("alpha_av", "alpha_av");
     {
         shambase::DistributedData<std::reference_wrapper<PatchDataField<Tscal>>> refs{};
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -483,12 +483,12 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
 
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
     {
         shambase::get_check_ref(alpha_u).value = cfg.alpha_u;
     }
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("beta_AV", "beta_AV");
     {
         shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
     }

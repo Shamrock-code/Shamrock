@@ -1683,6 +1683,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             .reorder_particles();
     }
 
+    {
+        // update part counts and spans since particles have been moved and thus
+        // new patch can be non-empty/empty
+        using namespace shamrock::solvergraph;
+        SolverGraph &solver_graph = storage.solver_graph;
+        solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
+    }
+
     sph_prestep(t_current, dt);
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;

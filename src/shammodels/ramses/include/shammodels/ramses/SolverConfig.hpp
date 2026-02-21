@@ -14,7 +14,7 @@
  * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Noé Brucy (nbrucy@users.noreply.github.com)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief

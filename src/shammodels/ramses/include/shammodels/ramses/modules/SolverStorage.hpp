@@ -11,6 +11,8 @@
 
 /**
  * @file SolverStorage.hpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */
@@ -56,9 +58,10 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec, class Tmorton_>
     class SolverStorage {
         public:
-        using Tmorton            = Tmorton_;
-        using Tscal              = shambase::VecComponent<Tvec>;
-        using Tgridscal          = shambase::VecComponent<TgridVec>;
+        using Tmorton   = Tmorton_;
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using RTree = RadixTree<Tmorton, TgridVec>;
@@ -74,6 +77,8 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_min;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<TgridVec>> refs_block_max;
 
+        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size;
+
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts;
         std::shared_ptr<shamrock::solvergraph::Indexes<u32>> block_counts_with_ghost;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho;
@@ -88,6 +93,7 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> block_cell_sizes;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> cell0block_aabb_lower;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> coordinates;
 
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_rho;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> dx_v;

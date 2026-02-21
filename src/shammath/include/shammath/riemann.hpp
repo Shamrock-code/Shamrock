@@ -388,75 +388,95 @@ namespace shammath {
         const auto rhoL   = primL.rho;
         const auto pressL = primL.press;
         const auto velxL  = primL.vel[0];
-        const auto velyL  = primL.vel[1];
-        const auto velzL  = primL.vel[2];
-        const auto ekinL  = 0.5 * rhoL * (velxL * velxL + velyL * velyL + velzL * velzL);
-        const auto etotL  = pressL / (gamma - 1.0) + ekinL;
 
         // Right variables
         const auto rhoR   = primR.rho;
         const auto pressR = primR.press;
         const auto velxR  = primR.vel[0];
-        const auto velyR  = primR.vel[1];
-        const auto velzR  = primR.vel[2];
-        const auto ekinR  = 0.5 * rhoR * (velxR * velxR + velyR * velyR + velzR * velzR);
-        const auto etotR  = pressR / (gamma - 1.0) + ekinR;
 
-        /**
-         * wave speed estimates based on the Roe average eigenvalues
-         **/
-
-        const Tscal HL = (etotL + pressL) / sqrt(rhoL); // left enthalpy  times left state density
-        const Tscal HR = (etotR + pressR) / sqrt(rhoR); // right enthalpy times right state density
-        const Tscal H_tot   = (HL + HR) / (sqrt(rhoL) + sqrt(rhoR)); // average total enthalpy
-        const Tscal vel_roe = (sqrt(rhoL) * velxL + sqrt(rhoR) * velxR)
-                              / (sqrt(rhoL) + sqrt(rhoR)); // Roe-average velocity
-        // ============= [Einfeldt's HLLR solver]
-        const Tscal cs_roe
-            = sqrt((gamma - 1.0) * (H_tot - 0.5 * vel_roe * vel_roe)); // Roe-average sound speed
-        const Tscal SL = vel_roe - cs_roe;
-        const Tscal SR = vel_roe + cs_roe;
-
-        // // ============= [Einfeldt's HLLE solver]
-        // const Tscal etha2 = 0.5 * sqrt(rhoL * rhoR) / (rhoL + rhoR + 2 * sqrt(rhoL * rhoR));
-        // const Tscal d     = sqrt(
-        //     (velxR - velxL) * (velxR - velxL) * etha2
-        //     + (sqrt(rhoL) * csL * csL + sqrt(rhoR) * csR * csR) / (sqrt(rhoL) + sqrt(rhoR)));
-        // const Tscal SL = vel_roe - d;
-        // const Tscal SR = vel_roe + d;
-
+        /////////////////// Pressure based wave speed estimation //////////////
+        // First compute the pressure estimation in the star region using the primitive variable
+        // solver
         //
-        const Tscal var_L = rhoL * (SL - primL.vel[0]);
-        const Tscal var_R = rhoR * (SR - primR.vel[0]);
+        // Toro from section 9.3 or Equation (10.67).
+        //
+        // TODO: It will be interresting to implement and test various pressure estimate algorithms
+        // such as : / Two-Rarefaction Riemann Solver (TRRS), Two-Shock Riemann Solver (TSRS) and
+        // Adaptive / Riemann Solvers(AIRS or ANRS)
+        ////////////////////////////////////////////////////////////////////////
+        Tscal rho_bar = 0.5 * (rhoL + rhoR);
+        Tscal cs_bar  = 0.5 * (csL + csR);
+        Tscal p_pvrs  = 0.5 * (pressL + pressR) - 0.5 * (velxR - velxL) * rho_bar * cs_bar;
+        // Pressure in the star region estimate
+        Tscal press_star = sham::max(0., p_pvrs);
+
+        // Once the pressure in the star region is known, we then estimates the wave speeds
+        // following https://ui.adsabs.harvard.edu/abs/1994ShWav...4...25T/abstract or Equations
+        // (10.59 - 10.60) from Toro
+        Tscal qL = 0, qR = 0;
+        if (press_star <= pressL) {
+            qL = 1.;
+        } else {
+            qL = sycl::sqrt(
+                1. + (0.5 * (1. + gamma) / (Tscal) gamma) * (press_star / (Tscal) pressL - 1.));
+        }
+
+        if (press_star <= pressR) {
+            qR = 1.;
+        } else {
+            qR = sycl::sqrt(
+                1. + (0.5 * (1. + gamma) / (Tscal) gamma) * (press_star / (Tscal) pressR - 1.));
+        }
+
+        // wave speed Toro from Equation (10.59)
+        Tscal SL = velxL - csL * qL;
+        Tscal SR = velxR + csR * qR;
+
+        // lagrangian sound speed
+        const Tscal var_L = rhoL * (SL - velxL);
+        const Tscal var_R = rhoR * (SR - velxR);
 
         // S* speed estimate
+        // Equation (10.37) from Toro 3rd Edition , Springer 2009
         const Tscal S_star
-            = (primR.press - primL.press + primL.vel[0] * var_L - primR.vel[0] * var_R)
-              / (var_L - var_R);
-        // P* pression estimate
-        const Tscal press_star = (primR.press * var_L - primL.press * var_R
-                                  + (primL.vel[0] - primR.vel[0]) * var_L * var_R)
-                                 / (var_L - var_R);
+            = (primR.press - primL.press + velxL * var_L - velxR * var_R) / (var_L - var_R);
+
+        // New pressure estimate in the star region as average the pressure estimate at right
+        // and left of S_star in the star region
+        // Equation (10.42) from Toro 3rd Edition , Springer 2009
+        const Tscal press_LR
+            = 0.5 * (pressL + pressR + var_L * (S_star - velxL) + var_R * (S_star - velxR));
         Tvec D{1, 0, 0};
         Tcons D_star{0, S_star, D};
-        // Left intermediate conservative state in the star region
-        Tcons cL_star = (SL * cL - FL + press_star * D_star) * (1.0 / (SL - S_star));
 
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Left intermediate conservative state in the star region
+        // Tcons cL_star = (SL * cL - FL + press_star * D_star) * (1.0 / (SL - S_star));
+        Tcons cL_star = (SL * cL - FL + press_LR * D_star) * (1.0 / (SL - S_star));
+
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
         // Right intermediate conservative state in the star region
-        Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
+        // Tcons cR_star = (SR * cR - FR + press_star * D_star) * (1.0 / (SR - S_star));
+        Tcons cR_star = (SR * cR - FR + press_LR * D_star) * (1.0 / (SR - S_star));
 
         // intemediate Flux in the star region
+        // Equation (10.38) from Toro 3rd Edition , Springer 2009
         Tcons FL_star = FL + SL * (cL_star - cL);
         Tcons FR_star = FR + SR * (cR_star - cR);
 
-        if (SL >= 0) {
-            return FL;
-        } else if (S_star >= 0) {
-            return FL_star;
-        } else if (SR >= 0) {
-            return FR_star;
-        } else
-            return FR;
+        // HLLC flux
+        auto hllc_flux = [=]() {
+            if (SL >= 0) {
+                return FL;
+            } else if (S_star >= 0) {
+                return FL_star;
+            } else if (SR >= 0) {
+                return FR_star;
+            } else
+                return FR;
+        };
+
+        return hllc_flux();
     }
 
     /**

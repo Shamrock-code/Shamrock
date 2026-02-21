@@ -14,6 +14,7 @@
  * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -25,36 +26,22 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
+#include "shammodels/ramses/config/enum_DragSolverMode.hpp"
+#include "shammodels/ramses/config/enum_DustRiemannSolverMode.hpp"
+#include "shammodels/ramses/config/enum_GravityMode.hpp"
+#include "shammodels/ramses/config/enum_RiemannSolverMode.hpp"
+#include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
+#include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
+#include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <stdexcept>
 
 namespace shammodels::basegodunov {
-
-    enum RiemmanSolverMode { Rusanov = 0, HLL = 1, HLLC = 2 };
-
-    enum SlopeMode {
-        None        = 0,
-        VanLeer_f   = 1,
-        VanLeer_std = 2,
-        VanLeer_sym = 3,
-        Minmod      = 4,
-    };
-
-    enum DustRiemannSolverMode {
-        NoDust = 0,
-        DHLL   = 1, // Dust HLL . This is merely the HLL solver for dust. It's then a Rusanov like
-        HB     = 2 // Huang and Bai. Pressureless Riemann solver by Huang and Bai (2022) in Athena++
-    };
-
-    enum DragSolverMode {
-        NoDrag = 0,
-        IRK1   = 1, // Implicit RK1
-        IRK2   = 2, // Implicit RK2
-        EXPO   = 3  // Matrix exponential
-    };
 
     /**
      * @brief alphas is the dust collision rate (the inverse of the stopping time)
@@ -91,26 +78,14 @@ namespace shammodels::basegodunov {
         inline bool is_gas_passive_scalar_on() { return npscal_gas > 0; }
     };
 
-    enum GravityMode {
-        NoGravity = 0,
-        CG        = 1, // conjuguate gradient
-        PCG       = 2, // preconditioned conjuguate gradient
-        BICGSTAB  = 3, // bicgstab
-        MULTIGRID = 4  // multigrid
-    };
-
     template<class Tvec>
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
+        bool analytical_gravity  = false; // whether to use an external analytical gravity
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
-        inline bool is_gravity_on() {
-            if (gravity_mode != NoGravity) {
-                return true;
-            }
-            return false;
-        }
+        inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };
 
     template<class Tvec>
@@ -129,9 +104,9 @@ namespace shammodels::basegodunov {
         using mode = std::variant<None, DensityBased>;
 
         mode config = None{};
-
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        bool need_level_zero_compute() { return false; }
     };
 
     struct BCConfig {
@@ -179,7 +154,7 @@ struct shammodels::basegodunov::SolverConfig {
 
     inline void set_eos_gamma(Tscal gamma) { eos_gamma = gamma; }
 
-    RiemmanSolverMode riemman_config  = HLL;
+    RiemannSolverMode riemann_config  = HLL;
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
@@ -237,6 +212,7 @@ struct shammodels::basegodunov::SolverConfig {
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)
@@ -344,20 +320,19 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
 
-        nlohmann::json junit;
-
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
-            {"RiemmanSolverMode", p.riemman_config},
-            {"SlopeMode", p.slope_config},
-            {"GravityMode", p.gravity_config.gravity_mode},
-            {"PassiveScalarMode", p.npscal_gas_config.npscal_gas},
-            {"face_half_time_interpolation", p.face_half_time_interpolation},
+            {"courant_safety_factor", p.Csafe},
+            {"dust_riemann_solver", p.dust_config.dust_riemann_config},
             {"eos_gamma", p.eos_gamma},
+            {"face_half_time_interpolation", p.face_half_time_interpolation},
+            {"gravity_solver", p.gravity_config.gravity_mode},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"DustRiemannSolverMode", p.Csafe},
-            {"unit_sys", junit},
-            {"time_state", p.time_state}};
+            {"hydro_riemann_solver", p.riemann_config},
+            {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
+            {"slope_limiter", p.slope_config},
+            {"time_state", p.time_state},
+            {"unit_sys", p.unit_sys}};
     }
 
     /**
@@ -370,25 +345,48 @@ namespace shammodels::basegodunov {
     inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p) {
         using T = SolverConfig<Tvec, TgridVec>;
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
 
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto get_to_if_contains = [&](const std::string &key, auto &value) {
+            if (j.contains(key)) {
+                j.at(key).get_to(value);
+            } else {
+                has_used_defaults = true;
+            }
+        };
+
         // actual data stored in the json
-        j.at("RiemmanSolverMode").get_to(p.riemman_config);
-        j.at("SlopeMode").get_to(p.slope_config);
-        j.at("GravityMode").get_to(p.gravity_config.gravity_mode);
-        j.at("PassiveScalarMode").get_to(p.npscal_gas_config.npscal_gas);
-        j.at("face_half_time_interpolation").get_to(p.face_half_time_interpolation);
-        j.at("eos_gamma").get_to(p.eos_gamma);
-        j.at("grid_coord_to_pos_fact").get_to(p.grid_coord_to_pos_fact);
-        j.at("DustRiemannSolverMode").get_to(p.Csafe);
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
-        j.at("time_state").get_to(p.time_state);
+        get_to_if_contains("courant_safety_factor", p.Csafe);
+        get_to_if_contains("dust_riemann_solver", p.dust_config.dust_riemann_config);
+        get_to_if_contains("eos_gamma", p.eos_gamma);
+        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
+        get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
+        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
+        get_to_if_contains("hydro_riemann_solver", p.riemann_config);
+        get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
+        get_to_if_contains("slope_limiter", p.slope_config);
+        get_to_if_contains("time_state", p.time_state);
+        get_to_if_contains("unit_sys", p.unit_sys);
+
+        if (has_used_defaults) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Ramses::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
+        }
     }
 
 } // namespace shammodels::basegodunov

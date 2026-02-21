@@ -8,13 +8,13 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeUpdateDerivsCD10.cpp
+ * @file NodeUpdateDerivsVaryingAlphaAV.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "shammodels/sph/modules/NodeUpdateDerivsCD10.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
@@ -23,7 +23,7 @@
 #include "shamrock/patch/PatchDataField.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-struct KernelUpdateDerivsCD10 {
+struct KernelUpdateDerivsVaryingAlphaAV {
     using Tscal                   = shambase::VecComponent<Tvec>;
     using Kernel                  = SPHKernel<Tscal>;
     static constexpr Tscal hfactd = Kernel::hfactd;
@@ -139,7 +139,8 @@ struct KernelUpdateDerivsCD10 {
 };
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_evaluate_internal() {
+void shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>::
+    _impl_evaluate_internal() {
 
     __shamrock_stack_entry();
 
@@ -166,7 +167,7 @@ void shammodels::sph::modules::NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_eval
     const Tscal alpha_u = edges.alpha_u.value;
     const Tscal beta_AV = edges.beta_AV.value;
 
-    using ComputeKernel = KernelUpdateDerivsCD10<Tvec, SPHKernel>;
+    using ComputeKernel = KernelUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>;
 
     // call the kernel for each patches with part_counts.get(id_patch) threads of patch id_patch
     sham::distributed_data_kernel_call(
@@ -187,10 +188,10 @@ void shammodels::sph::modules::NodeUpdateDerivsCD10<Tvec, SPHKernel>::_impl_eval
 }
 
 using namespace shammath;
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, M4>;
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, M6>;
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, M8>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, M4>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, M6>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, M8>;
 
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, C2>;
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, C4>;
-template class shammodels::sph::modules::NodeUpdateDerivsCD10<f64_3, C6>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, C2>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, C4>;
+template class shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAV<f64_3, C6>;

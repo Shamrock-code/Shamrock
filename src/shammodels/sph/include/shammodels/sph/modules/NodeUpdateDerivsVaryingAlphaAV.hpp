@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeUpdateDerivsCD10.hpp
+ * @file NodeUpdateDerivsVaryingAlphaAV.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -23,7 +23,7 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define NODE_UPDATE_DERIVS_CD10_EDGES(X_RO, X_RW)                                                  \
+#define NODE_UPDATE_DERIVS_VARYING_ALPHA_AV_EDGES(X_RO, X_RW)                                      \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_u)                                        \
@@ -53,20 +53,20 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class NodeUpdateDerivsCD10 : public shamrock::solvergraph::INode {
+    class NodeUpdateDerivsVaryingAlphaAV : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
 
         public:
-        NodeUpdateDerivsCD10() {}
+        NodeUpdateDerivsVaryingAlphaAV() {}
 
-        EXPAND_NODE_EDGES(NODE_UPDATE_DERIVS_CD10_EDGES)
+        EXPAND_NODE_EDGES(NODE_UPDATE_DERIVS_VARYING_ALPHA_AV_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "UpdateDerivsCD10"; };
+        inline virtual std::string _impl_get_label() const { return "UpdateDerivsVaryingAlphaAV"; };
 
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };

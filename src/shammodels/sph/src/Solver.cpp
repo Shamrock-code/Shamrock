@@ -121,6 +121,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));
     solver_graph.register_edge("dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
+    solver_graph.register_edge("gpart_mass", ScalarEdge<Tscal>("m", "m"));
 
     solver_graph.register_edge("xyz", FieldRefs<Tvec>("xyz", "\\mathbf{r}"));
     solver_graph.register_edge("vxyz", FieldRefs<Tvec>("vxyz", "\\mathbf{v}"));
@@ -144,6 +145,15 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     if (has_deltav_field) {
         solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
         solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
+    }
+
+    {
+        auto set_gpart_mass = solver_graph.register_node(
+            "set_gpart_mass", NodeSetEdge<ScalarEdge<Tscal>>([&](ScalarEdge<Tscal> &gpart_mass) {
+                gpart_mass.value = solver_config.gpart_mass;
+            }));
+        shambase::get_check_ref(set_gpart_mass)
+            .set_edges(solver_graph.get_edge_ptr<ScalarEdge<Tscal>>("gpart_mass"));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -489,6 +499,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
 
+        seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
         seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
         seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
         if (do_part_killing_step) {
@@ -1670,6 +1681,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         logger::info_ln("SPH", "Reordering particles at step ", solve_logs.step_count);
         modules::ParticleReordering<Tvec, u_morton, Kern>(context, solver_config, storage)
             .reorder_particles();
+    }
+
+    {
+        // update part counts and spans since particles have been moved and thus
+        // new patch can be non-empty/empty
+        using namespace shamrock::solvergraph;
+        SolverGraph &solver_graph = storage.solver_graph;
+        solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
     }
 
     sph_prestep(t_current, dt);

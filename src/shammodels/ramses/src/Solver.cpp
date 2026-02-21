@@ -414,8 +414,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // will be filled by NodeComputeCoordinates
         storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");
-            }
-            
+    }
+
     if (solver_config.amr_mode.need_level_zero_compute()) {
         // get blocks at level0 sizes for all patches
         storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
@@ -951,8 +951,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         solver_sequence.push_back(
             std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
-            }
-            
+    }
+
     if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
                                                             // enabled later when needed)
         modules::ComputeLevel0CellSize<TgridVec> node_level0_sizes{};

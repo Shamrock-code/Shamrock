@@ -338,7 +338,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");

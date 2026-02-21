@@ -1204,56 +1204,49 @@ namespace shammodels::sph {
         bool has_used_defaults  = false;
         bool has_updated_config = false;
 
-        auto get_to_if_contains = [&](const std::string &key, auto &value) {
-            if (j.contains(key)) {
-                j.at(key).get_to(value);
-            } else {
-                has_used_defaults = true;
-            }
+        auto _get_to_if_contains = [&](const std::string &key, auto &value) {
+            shamrock::get_to_if_contains(j, key, value, has_used_defaults);
+        };
+
+        auto _get_to_if_contains_fallbacks = [&](const std::string &key,
+                                                 auto &value,
+                                                 std::initializer_list<const char *> fallbacks) {
+            shamrock::get_to_if_contains_fallbacks(
+                j, key, value, fallbacks, has_used_defaults, has_updated_config);
         };
 
         // actual data stored in the json
-        get_to_if_contains("gpart_mass", p.gpart_mass);
-        get_to_if_contains("cfl_config", p.cfl_config);
-        get_to_if_contains("unit_sys", p.unit_sys);
-        get_to_if_contains("time_state", p.time_state);
-        get_to_if_contains("mhd_config", p.mhd_config);
-        get_to_if_contains("self_grav_config", p.self_grav_config);
-        get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
-        get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
-        get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
-        get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
+        _get_to_if_contains("gpart_mass", p.gpart_mass);
+        _get_to_if_contains("cfl_config", p.cfl_config);
+        _get_to_if_contains("unit_sys", p.unit_sys);
+        _get_to_if_contains("time_state", p.time_state);
+        _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("self_grav_config", p.self_grav_config);
+        _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
+        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        _get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
+        _get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 
         // Try new names first, fall back to old names for backward compatibility
-        if (j.contains("htol_up_coarse_cycle")) {
-            j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
-        } else {
-            j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
-            has_updated_config = true;
-        }
+        _get_to_if_contains_fallbacks(
+            "htol_up_coarse_cycle", p.htol_up_coarse_cycle, {"htol_up_tol"});
+        _get_to_if_contains_fallbacks("htol_up_fine_cycle", p.htol_up_fine_cycle, {"htol_up_iter"});
 
-        if (j.contains("htol_up_fine_cycle")) {
-            j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
-        } else {
-            j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
-            has_updated_config = true;
-        }
-
-        get_to_if_contains("epsilon_h", p.epsilon_h);
-        get_to_if_contains("smoothing_length_config", p.smoothing_length_config);
-        get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
-        get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
-        get_to_if_contains("enable_particle_reordering", p.enable_particle_reordering);
-        get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
-        get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
-        get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
-        get_to_if_contains("eos_config", p.eos_config);
-        get_to_if_contains("artif_viscosity", p.artif_viscosity);
-        get_to_if_contains("boundary_config", p.boundary_config);
-        get_to_if_contains("ext_force_config", p.ext_force_config);
-        get_to_if_contains("do_debug_dump", p.do_debug_dump);
-        get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
-        get_to_if_contains("particle_killing", p.particle_killing);
+        _get_to_if_contains("epsilon_h", p.epsilon_h);
+        _get_to_if_contains("smoothing_length_config", p.smoothing_length_config);
+        _get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
+        _get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+        _get_to_if_contains("enable_particle_reordering", p.enable_particle_reordering);
+        _get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
+        _get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
+        _get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        _get_to_if_contains("eos_config", p.eos_config);
+        _get_to_if_contains("artif_viscosity", p.artif_viscosity);
+        _get_to_if_contains("boundary_config", p.boundary_config);
+        _get_to_if_contains("ext_force_config", p.ext_force_config);
+        _get_to_if_contains("do_debug_dump", p.do_debug_dump);
+        _get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
+        _get_to_if_contains("particle_killing", p.particle_killing);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

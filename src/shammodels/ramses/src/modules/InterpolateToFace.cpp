@@ -15,7 +15,10 @@
  */
 
 #include "shambase/assert.hpp"
+#include "shammath/AABB.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 
 namespace {
 

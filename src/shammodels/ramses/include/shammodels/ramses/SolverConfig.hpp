@@ -32,14 +32,12 @@
 #include "shammodels/ramses/config/enum_RiemannSolverMode.hpp"
 #include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
-#include "shamrock/io/json_print_diff.hpp"
-#include "shamrock/io/json_std_optional.hpp"
-#include "shamrock/io/json_utils.hpp"
-#include "shamrock/io/units_json.hpp"
+#include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
 #include <stdexcept>
+#include <variant>
 
 namespace shammodels::basegodunov {
 
@@ -295,6 +293,8 @@ struct shammodels::basegodunov::SolverConfig {
             }
         }
     }
+
+    void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
 };
 
 namespace shammodels::basegodunov {
@@ -318,23 +318,7 @@ namespace shammodels::basegodunov {
      * @param[in] p  The SolverConfig to serialize
      */
     template<class Tvec, class TgridVec>
-    inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p) {
-
-        j = nlohmann::json{
-            {"type_id", shambase::get_type_name<Tvec>()},
-            {"courant_safety_factor", p.Csafe},
-            {"dust_riemann_solver", p.dust_config.dust_riemann_config},
-            {"eos_gamma", p.eos_gamma},
-            {"face_half_time_interpolation", p.face_half_time_interpolation},
-            {"gravity_solver", p.gravity_config.gravity_mode},
-            {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
-            {"hydro_riemann_solver", p.riemann_config},
-            {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
-            {"slope_limiter", p.slope_config},
-            {"time_state", p.time_state},
-            {"unit_sys", p.unit_sys}};
-    }
-
+    void to_json(nlohmann::json &j, const SolverConfig<Tvec, TgridVec> &p);
     /**
      * @brief Deserializes a SolverConfig object from a JSON object.
      *
@@ -342,51 +326,6 @@ namespace shammodels::basegodunov {
      * @param p The SolverConfig object to populate.
      */
     template<class Tvec, class TgridVec>
-    inline void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p) {
-        using T = SolverConfig<Tvec, TgridVec>;
-
-        if (j.contains("type_id")) {
-
-            std::string type_id = j.at("type_id").get<std::string>();
-
-            if (type_id != shambase::get_type_name<Tvec>()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                    + " but got " + type_id);
-            }
-        }
-
-        bool has_used_defaults  = false;
-        bool has_updated_config = false;
-
-        auto get_to_if_contains = [&](const std::string &key, auto &value) {
-            if (j.contains(key)) {
-                j.at(key).get_to(value);
-            } else {
-                has_used_defaults = true;
-            }
-        };
-
-        // actual data stored in the json
-        get_to_if_contains("courant_safety_factor", p.Csafe);
-        get_to_if_contains("dust_riemann_solver", p.dust_config.dust_riemann_config);
-        get_to_if_contains("eos_gamma", p.eos_gamma);
-        get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
-        get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
-        get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
-        get_to_if_contains("hydro_riemann_solver", p.riemann_config);
-        get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
-        get_to_if_contains("slope_limiter", p.slope_config);
-        get_to_if_contains("time_state", p.time_state);
-        get_to_if_contains("unit_sys", p.unit_sys);
-
-        if (has_used_defaults) {
-            if (shamcomm::world_rank() == 0) {
-                logger::info_ln(
-                    "Ramses::SolverConfig",
-                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
-            }
-        }
-    }
+    void from_json(const nlohmann::json &j, SolverConfig<Tvec, TgridVec> &p);
 
 } // namespace shammodels::basegodunov

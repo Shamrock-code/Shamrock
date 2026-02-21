@@ -2,7 +2,7 @@
 Test the Phantom dump writer
 ============================
 
-This example compare a phantom dump with one re-produced by Shamrock.
+This example compares a phantom dump with one reproduced by Shamrock.
 """
 
 import shamrock

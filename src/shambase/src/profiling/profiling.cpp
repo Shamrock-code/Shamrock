@@ -132,7 +132,7 @@ void shambase::profiling::stack_entry_end(
                 src_loc_to_name(fileloc), fileloc.loc.function_name(), tend, 0, 0);
         }
     }
-    stack_entry_end_no_time(fileloc, std::move(name), std::move(category_name));
+    stack_entry_end_no_time(fileloc, name, category_name);
 }
 
 void shambase::profiling::stack_entry_start_no_time(

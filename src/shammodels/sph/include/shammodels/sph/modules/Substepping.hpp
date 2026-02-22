@@ -49,7 +49,7 @@ namespace shammodels::common::modules {
         std::shared_ptr<INode> do_foward_euler_u_ptr;
         std::shared_ptr<INode> do_foward_euler_xyz_ptr;
         Solver &solver;
-        shamrock::SchedulerUtility utility(scheduler());
+        ShamrockCtx &ctx;
 
         public:
         Substepping() = default;
@@ -83,6 +83,10 @@ namespace shammodels::common::modules {
         void _impl_evaluate_internal() {
 
             __shamrock_stack_entry();
+            using namespace shamrock;
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
+            SchedulerUtility utility(sched);
 
             auto edges = get_edges();
 
@@ -176,16 +180,19 @@ namespace shammodels::common::modules {
                 shamrock::ComputeField<Tscal> dt_force_arr
                     = utility.make_compute_field<Tscal>("dt_force_arr", 1);
 
+                const u32 iaxyz     = sched.pdl().template get_field_idx<Tvec>("axyz");
+                const u32 iaxyz_ext = sched.pdl().template get_field_idx<Tvec>("axyz_ext");
+                const u32 ihpart    = sched.pdl().template get_field_idx<Tvec>("hpart");
                 logger::raw_ln("before loop on patches");
-                scheduler().for_each_patchdata_nonempty([&](shamrock::patch::Patch cur_p,
-                                                            shamrock::patch::PatchDataLayer &pdat) {
+                sched.for_each_patchdata_nonempty([&](shamrock::patch::Patch cur_p,
+                                                      shamrock::patch::PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tvec> &buf_axyz_ext
                         = pdat.get_field<Tvec>(iaxyz_ext).get_buf();
                     sham::DeviceBuffer<Tscal> &buf_hpart = pdat.get_field<Tscal>(ihpart).get_buf();
                     sham::DeviceBuffer<Tscal> &buf_dt_force_arr
                         = dt_force_arr.get_buf_check(cur_p.id_patch);
 
-                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                    sham::DeviceQueue &q = shambase::get_check_ref(dev_sched_ptr).get_queue();
                     sham::EventList depends_list;
 
                     auto hpart        = buf_hpart.get_read_access(depends_list);

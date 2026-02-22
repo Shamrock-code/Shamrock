@@ -193,8 +193,8 @@ namespace shammodels::common::modules {
                     auto dt_force_arr = buf_dt_force_arr.get_write_access(depends_list);
 
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        Tscal C_force = solver_config.cfl_config.cfl_force
-                                        * solver_config.time_state.cfl_multiplier;
+                        Tscal C_force = solver.olver_config.cfl_config.cfl_force
+                                        * solver.solver_config.time_state.cfl_multiplier;
 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {

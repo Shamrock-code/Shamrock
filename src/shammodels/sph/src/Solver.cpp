@@ -105,7 +105,7 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
-    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
     bool has_B_field                           = solver_config.has_field_B_on_rho();
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
@@ -736,7 +736,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val
     shamrock::SchedulerUtility integrators(sched);
     shamrock::ReattributeDataUtility reatrib(sched);
 
-    auto &pdl = sched.pdl();
+    auto &pdl = sched.pdl_old();
 
     const u32 ixyz    = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz   = pdl.get_field_idx<Tvec>("vxyz");
@@ -851,7 +851,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
@@ -923,7 +923,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     SPHUtils sph_utils(scheduler());
     shamrock::SchedulerUtility utility(scheduler());
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     ComputeField<Tscal> _epsilon_h, _h_old;
@@ -1264,7 +1264,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
@@ -1514,7 +1514,7 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
@@ -1619,7 +1619,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
@@ -1905,7 +1905,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             node_set_edge->evaluate();
 
             shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tscal> node_copy(
-                scheduler().get_layout_ptr(), "alpha_AV");
+                scheduler().get_layout_ptr_old(), "alpha_AV");
             node_copy.set_edges(patchdatas, storage.alpha_av_updated);
             node_copy.evaluate();
         }

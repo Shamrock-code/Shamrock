@@ -73,7 +73,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cons
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
@@ -273,7 +273,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
@@ -398,7 +398,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
@@ -525,7 +525,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz  = pdl.get_field_idx<Tvec>("vxyz");
@@ -727,7 +727,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");

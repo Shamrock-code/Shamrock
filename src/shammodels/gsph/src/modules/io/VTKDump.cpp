@@ -35,7 +35,7 @@ namespace {
 
         shamlog_debug_mpi_ln("gsph::vtk", "rank count =", num_obj);
 
-        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
+        const u32 ixyz = sched.pdl_old().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
         std::unique_ptr<sycl::buffer<Tvec>> pos = sched.rankgather_field<Tvec>(ixyz);
 
         writer.write_points(pos, num_obj);
@@ -138,7 +138,7 @@ namespace shammodels::gsph::modules {
 
         using namespace gsph::names;
 
-        PatchDataLayerLayout &pdl = scheduler().pdl();
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
         const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
         const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
         const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);

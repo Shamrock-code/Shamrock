@@ -9,6 +9,7 @@
 
 /**
  * @file SPHSetup.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -16,6 +17,7 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/assert.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/tabulate.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
@@ -35,6 +37,7 @@
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyDiscWarp.hpp"
+#include "shammodels/sph/modules/setup/ModifierApplyStretchMapping.hpp"
 #include "shammodels/sph/modules/setup/ModifierFilter.hpp"
 #include "shammodels/sph/modules/setup/ModifierOffset.hpp"
 #include "shammodels/sph/modules/setup/ModifierSplitPart.hpp"
@@ -879,6 +882,22 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
 
     return std::shared_ptr<ISPHSetupNode>(
         new ModifierOffset<Tvec>(context, parent, offset_postion, offset_velocity));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
+    SPHSetup<Tvec, SPHKernel>::make_modifier_apply_stretch_mapping(
+        SetupNodePtr parent,
+        std::vector<Tscal> tabrho,
+        std::vector<Tscal> tabx,
+        std::string system,
+        std::string axis,
+        std::pair<Tvec, Tvec> box,
+        Tscal mtot) {
+
+    // SHAM_ASSERT(tabrho.size() == tabx.size()); //TODO
+    return std::shared_ptr<ISPHSetupNode>(new ModifierApplyStretchMapping<Tvec, SPHKernel>(
+        context, solver_config, parent, tabrho, tabx, system, axis, box, mtot));
 }
 
 template<class Tvec, template<class> class SPHKernel>

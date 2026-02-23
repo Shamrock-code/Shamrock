@@ -55,6 +55,7 @@ set(Sources
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierApplyCustomWarp.cpp
     src/modules/setup/ModifierOffset.cpp
+    src/modules/setup/ModifierApplyStretchMapping.cpp
     src/modules/setup/ModifierFilter.cpp
     src/modules/setup/ModifierSplitPart.cpp
     src/modules/self_gravity/SGDirectPlummer.cpp

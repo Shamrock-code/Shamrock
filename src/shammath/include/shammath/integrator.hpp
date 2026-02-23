@@ -11,6 +11,7 @@
 
 /**
  * @file integrator.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -26,6 +27,19 @@ namespace shammath {
 
         for (T x = start; x < end; x += step) {
             acc += fct(x) * step;
+        }
+        return acc;
+    }
+
+    template<class T, class Lambda>
+    inline constexpr T integ_trapezoidal(T start, T end, T step, Lambda &&fct) {
+        T acc   = {};
+        T fprev = 0;
+        T f     = 0;
+        for (T x = start; x < end; x += step) {
+            f = fct(x);
+            acc += 0.5 * (f + fprev) * step;
+            fprev = f;
         }
         return acc;
     }

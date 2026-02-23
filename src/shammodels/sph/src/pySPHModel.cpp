@@ -373,7 +373,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "make_generator_disc_mc",
             [](TSPHSetup &self,
                Tscal part_mass,
-               Tscal disc_mass,
+               Tscal tot_mass,
                Tscal r_in,
                Tscal r_out,
                std::function<Tscal(Tscal)> sigma_profile,
@@ -384,7 +384,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal init_h_factor) {
                 return self.make_generator_disc_mc(
                     part_mass,
-                    disc_mass,
+                    tot_mass,
                     r_in,
                     r_out,
                     sigma_profile,
@@ -459,6 +459,29 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("parent"),
             py::arg("offset_position"),
             py::arg("offset_velocity"))
+        .def(
+            "make_modifier_stretch_mapping",
+            [](TSPHSetup &self,
+               shammodels::sph::modules::SetupNodePtr parent,
+               std::vector<Tscal> tabrho,
+               std::vector<Tscal> tabx,
+               std::string system,
+               std::string axis,
+               Tvec box_min,
+               Tvec box_max,
+               Tscal mtot) {
+                return self.make_modifier_apply_stretch_mapping(
+                    parent, tabrho, tabx, system, axis, {box_min, box_max}, mtot);
+            },
+            py::kw_only(),
+            py::arg("parent"),
+            py::arg("tabrho"),
+            py::arg("tabx"),
+            py::arg("system"),
+            py::arg("axis"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("mtot"))
         .def(
             "make_modifier_filter",
             [](TSPHSetup &self,

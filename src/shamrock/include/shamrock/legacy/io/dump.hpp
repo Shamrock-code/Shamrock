@@ -420,13 +420,13 @@ inline void dump_simbox(std::string prefix, PatchScheduler &sched) {
 
         MPI_Status st;
 
-        if (sched.pdl().check_main_field_type<f32_3>()) {
+        if (sched.pdl_old().check_main_field_type<f32_3>()) {
             u8 f              = 0;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);
             shamcomm::mpi::File_write(simbox_file, &bmin, 1, mpi_type_f32_3, &st);
             shamcomm::mpi::File_write(simbox_file, &bmax, 1, mpi_type_f32_3, &st);
-        } else if (sched.pdl().check_main_field_type<f64_3>()) {
+        } else if (sched.pdl_old().check_main_field_type<f64_3>()) {
             u8 f              = 1;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f64_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);

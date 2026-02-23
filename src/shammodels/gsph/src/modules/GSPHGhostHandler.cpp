@@ -300,7 +300,7 @@ auto GSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
     std::map<u64, f64> send_count_stats;
 
-    const u32 ixyz = sched.pdl().template get_field_idx<vec>("xyz");
+    const u32 ixyz = sched.pdl_old().template get_field_idx<vec>("xyz");
 
     gen.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
         shamrock::patch::PatchDataLayer &src = sched.patch_data.get_pdat(sender);

@@ -744,7 +744,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         auto &ghost_layout_ptr = storage.ghost_layout;
         {
             auto copy_fields = std::make_shared<shamrock::solvergraph::CopyPatchDataLayerFields>(
-                scheduler().get_layout_ptr(), ghost_layout_ptr);
+                scheduler().get_layout_ptr_old(), ghost_layout_ptr);
 
             copy_fields->set_edges(storage.source_patches, storage.merged_patchdata_ghost);
             gz_xchg_sequence.push_back(std::move(copy_fields));

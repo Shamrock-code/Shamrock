@@ -321,7 +321,8 @@ namespace sham {
      * @return A structure containing the MPI-related properties of the
      *         given SYCL device.
      */
-    DeviceMPIProperties fetch_mpi_properties(const sycl::device &dev, DeviceProperties prop) {
+    DeviceMPIProperties fetch_mpi_properties(
+        const sycl::device &dev, const DeviceProperties &prop) {
         bool dgpu_capable = false;
 
         // If CUDA-aware MPI is enabled, and the device is a CUDA device,

@@ -39,6 +39,7 @@
 #include "shammodels/gsph/config/RiemannConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
 #include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -410,21 +411,36 @@ namespace shammodels::gsph {
                 + type_id);
         }
 
-        j.at("gpart_mass").get_to(p.gpart_mass);
-        j.at("cfl_config").get_to(p.cfl_config);
-        j.at("unit_sys").get_to(p.unit_sys);
-        j.at("time_state").get_to(p.time_state);
-        j.at("riemann_config").get_to(p.riemann_config);
-        j.at("reconstruct_config").get_to(p.reconstruct_config);
-        j.at("eos_config").get_to(p.eos_config);
-        j.at("boundary_config").get_to(p.boundary_config);
-        j.at("tree_reduction_level").get_to(p.tree_reduction_level);
-        j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-        j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
-        j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
-        j.at("epsilon_h").get_to(p.epsilon_h);
-        j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
-        j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto _get_to_if_contains = [&](const std::string &key, auto &value) {
+            shamrock::get_to_if_contains(j, key, value, has_used_defaults);
+        };
+
+        _get_to_if_contains("gpart_mass", p.gpart_mass);
+        _get_to_if_contains("cfl_config", p.cfl_config);
+        _get_to_if_contains("unit_sys", p.unit_sys);
+        _get_to_if_contains("time_state", p.time_state);
+        _get_to_if_contains("riemann_config", p.riemann_config);
+        _get_to_if_contains("reconstruct_config", p.reconstruct_config);
+        _get_to_if_contains("eos_config", p.eos_config);
+        _get_to_if_contains("boundary_config", p.boundary_config);
+        _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
+        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        _get_to_if_contains("htol_up_coarse_cycle", p.htol_up_coarse_cycle);
+        _get_to_if_contains("htol_up_fine_cycle", p.htol_up_fine_cycle);
+        _get_to_if_contains("epsilon_h", p.epsilon_h);
+        _get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
+        _get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+
+        if (has_used_defaults || has_updated_config) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "GSPH::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
+        }
     }
 
 } // namespace shammodels::gsph

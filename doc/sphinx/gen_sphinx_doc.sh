@@ -38,7 +38,9 @@ set -e
 
 cd "$(dirname "$0")"
 
-make html
+echo "Using parallel jobs: ${PARALLEL_JOBS}"
+
+make html SPHINXOPTS="-j ${PARALLEL_JOBS}"
 
 set +e
 

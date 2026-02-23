@@ -12,7 +12,6 @@ def setup(arg: SetupArg, envgen: EnvGen):
     builddir = arg.builddir
     shamrockdir = arg.shamrockdir
     buildtype = arg.buildtype
-    lib_mode = arg.lib_mode
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 

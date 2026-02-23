@@ -972,15 +972,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.level0_size);
         solver_sequence.push_back(
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
-        if (solver_config.is_analytical_gravity_on()) {
-            modules::NodeComputeAnalyticalGravity<Tvec> node_analytical_gravity{
-                AMRBlock::block_size, solver_config.analytical_gravity_config};
-            node_analytical_gravity.set_edges(
-                storage.block_counts, storage.coordinates, storage.gravitational_force);
-            solver_sequence.push_back(
-                std::make_shared<decltype(node_analytical_gravity)>(
-                    std::move(node_analytical_gravity)));
-        }
+    }
+
+    if (solver_config.is_analytical_gravity_on()) {
+        modules::NodeComputeAnalyticalGravity<Tvec> node_analytical_gravity{
+            AMRBlock::block_size, solver_config.analytical_gravity_config};
+        node_analytical_gravity.set_edges(
+            storage.block_counts, storage.coordinates, storage.gravitational_force);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_analytical_gravity)>(
+                std::move(node_analytical_gravity)));
     }
 
     if (solver_config.should_compute_rho_mean()) {

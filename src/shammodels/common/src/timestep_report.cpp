@@ -23,6 +23,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/timestep_report.hpp"
+#include <numeric>
 #include <string>
 #include <variant>
 

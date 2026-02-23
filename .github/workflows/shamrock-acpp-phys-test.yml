@@ -52,9 +52,9 @@ jobs:
           - worldsize: 1
             testfile: sod_tube_sph.py
           - worldsize: 1
-            testfile: gsph/sod_tube_gsph.py
+            testfile: gsph_sod_tube_gsph.py
           - worldsize: 2
-            testfile: gsph/sod_tube_gsph.py
+            testfile: gsph_sod_tube_gsph.py
           - worldsize: 1
             testfile: comp_phantom_sedov_1patch.py
           - worldsize: 2
@@ -125,7 +125,7 @@ jobs:
                 shamrock \
                 --sycl-cfg 0:0 \
                 --loglevel 1 \
-                --rscript /opt/Shamrock_src/exemples/ci_tests/${{ matrix.testfile }}
+                --rscript /opt/Shamrock_src/examples/tests_ci/${{ matrix.testfile }}
 
 
   shamrock_example_gallery:

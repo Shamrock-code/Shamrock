@@ -1,3 +1,10 @@
+"""
+Test the Phantom dump writer
+============================
+
+This example compares a phantom dump with one reproduced by Shamrock.
+"""
+
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,

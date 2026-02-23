@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -19,6 +19,7 @@
 
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
+#include "shamalgs/collective/exchanges.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
 void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
@@ -49,12 +50,13 @@ void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchDataLayer::deserialize_buf(ser, ghost_layer_layout);
-        });
+        },
+        cache);
 
     ghost_layer.patchdatas = std::move(recv_dat);
 }
 
-std::string shamrock::solvergraph::ExchangeGhostLayer::_impl_get_tex() {
+std::string shamrock::solvergraph::ExchangeGhostLayer::_impl_get_tex() const {
     auto rank_owner  = get_ro_edge_base(0).get_tex_symbol();
     auto ghost_layer = get_rw_edge_base(0).get_tex_symbol();
 

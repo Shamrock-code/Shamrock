@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -159,7 +159,8 @@ namespace sham::details {
     }
 
     template<USMKindTarget target>
-    void internal_free(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
+    void internal_free(
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
         StackEntry __st{};
 
@@ -190,7 +191,9 @@ namespace sham::details {
 
     template<USMKindTarget target>
     void *internal_alloc(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment) {
 
         StackEntry __st{};
         f64 start_time = shambase::details::get_wtime();
@@ -216,14 +219,44 @@ namespace sham::details {
             }
         };
 
-        if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size) {
-            std::string err_log = shambase::format(
-                "You are trying to allocate more than the maximum allocation size allowed by the "
-                "device\n"
-                "  size = {} | max_alloc_size = {}",
-                sz,
-                ds.get_queue().get_device_prop().max_mem_alloc_size);
-            shambase::throw_with_loc<std::runtime_error>(err_log);
+        // check max alloc sizes
+        if constexpr (target == device) {
+            if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size_dev) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "device\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    ds.get_queue().get_device_prop().max_mem_alloc_size_dev);
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else if constexpr (target == shared) {
+            size_t max_alloc_size_dev  = ds.get_queue().get_device_prop().max_mem_alloc_size_dev;
+            size_t max_alloc_size_host = ds.get_queue().get_device_prop().max_mem_alloc_size_host;
+            if (sz > sycl::min(max_alloc_size_dev, max_alloc_size_host)) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "device\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    sycl::min(max_alloc_size_dev, max_alloc_size_host));
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else if constexpr (target == host) {
+            if (sz > ds.get_queue().get_device_prop().max_mem_alloc_size_host) {
+                std::string err_log = shambase::format(
+                    "You are trying to allocate more than the maximum allocation size allowed by "
+                    "the "
+                    "host\n"
+                    "  size = {} | max_alloc_size = {}",
+                    sz,
+                    ds.get_queue().get_device_prop().max_mem_alloc_size_host);
+                shambase::throw_with_loc<std::runtime_error>(err_log);
+            }
+        } else {
+            shambase::throw_unimplemented();
         }
 
         if (alignment) {
@@ -333,17 +366,23 @@ namespace sham::details {
 
 #ifndef DOXYGEN
     template void internal_free<host>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<host>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
     template void internal_free<device>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<device>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
     template void internal_free<shared>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<shared>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
 #endif
 
 } // namespace sham::details

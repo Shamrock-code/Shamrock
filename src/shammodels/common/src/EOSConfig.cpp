@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -9,6 +9,7 @@
 
 /**
  * @file EOSConfig.cpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
  * @brief
@@ -54,16 +55,25 @@ namespace shammodels {
             static_assert(shambase::always_false_v<Tvec>, "This Tvec type is not handled");
         }
 
-        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
-        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
-        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
-        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using Isothermal            = typename EOSConfig<Tvec>::Isothermal;
+        using Adiabatic             = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic            = typename EOSConfig<Tvec>::Polytropic;
+        using LocIsoT               = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07           = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
+        using Fermi                 = typename EOSConfig<Tvec>::Fermi;
 
         if (const Isothermal *eos_config = std::get_if<Isothermal>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "isothermal"}, {"cs", eos_config->cs}};
         } else if (const Adiabatic *eos_config = std::get_if<Adiabatic>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "adiabatic"}, {"gamma", eos_config->gamma}};
+        } else if (const Polytropic *eos_config = std::get_if<Polytropic>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "polytropic"},
+                {"K", eos_config->K},
+                {"gamma", eos_config->gamma}};
         } else if (const LocIsoT *eos_config = std::get_if<LocIsoT>(&p.config)) {
             j = json{{"Tvec", type_id}, {"eos_type", "locally_isothermal"}};
         } else if (const LocIsoTLP07 *eos_config = std::get_if<LocIsoTLP07>(&p.config)) {
@@ -78,6 +88,18 @@ namespace shammodels {
                 {"Tvec", type_id},
                 {"eos_type", "locally_isothermal_fa2014"},
                 {"h_over_r", eos_config->h_over_r}};
+        } else if (
+            const LocIsoTFA2014Extended *eos_config
+            = std::get_if<LocIsoTFA2014Extended>(&p.config)) {
+            j = json{
+                {"Tvec", type_id},
+                {"eos_type", "locally_isothermal_fa2014_extended"},
+                {"cs0", eos_config->cs0},
+                {"q", eos_config->q},
+                {"r0", eos_config->r0},
+                {"n_sinks", eos_config->n_sinks}};
+        } else if (const Fermi *eos_config = std::get_if<Fermi>(&p.config)) {
+            j = json{{"Tvec", type_id}, {"eos_type", "fermi"}, {"mu_e", eos_config->mu_e}};
         } else {
             shambase::throw_unimplemented(); // should never be reached
         }
@@ -124,16 +146,21 @@ namespace shammodels {
         std::string eos_type;
         j.at("eos_type").get_to(eos_type);
 
-        using Isothermal    = typename EOSConfig<Tvec>::Isothermal;
-        using Adiabatic     = typename EOSConfig<Tvec>::Adiabatic;
-        using LocIsoT       = typename EOSConfig<Tvec>::LocallyIsothermal;
-        using LocIsoTLP07   = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
-        using LocIsoTFA2014 = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using Isothermal            = typename EOSConfig<Tvec>::Isothermal;
+        using Adiabatic             = typename EOSConfig<Tvec>::Adiabatic;
+        using Polytropic            = typename EOSConfig<Tvec>::Polytropic;
+        using LocIsoT               = typename EOSConfig<Tvec>::LocallyIsothermal;
+        using LocIsoTLP07           = typename EOSConfig<Tvec>::LocallyIsothermalLP07;
+        using LocIsoTFA2014         = typename EOSConfig<Tvec>::LocallyIsothermalFA2014;
+        using LocIsoTFA2014Extended = typename EOSConfig<Tvec>::LocallyIsothermalFA2014Extended;
+        using Fermi                 = typename EOSConfig<Tvec>::Fermi;
 
         if (eos_type == "isothermal") {
             p.config = Isothermal{j.at("cs").get<Tscal>()};
         } else if (eos_type == "adiabatic") {
             p.config = Adiabatic{j.at("gamma").get<Tscal>()};
+        } else if (eos_type == "polytropic") {
+            p.config = Polytropic{j.at("K").get<Tscal>(), j.at("gamma").get<Tscal>()};
         } else if (eos_type == "locally_isothermal") {
             p.config = LocIsoT{};
         } else if (eos_type == "locally_isothermal_lp07") {
@@ -141,8 +168,16 @@ namespace shammodels {
                 j.at("cs0").get<Tscal>(), j.at("q").get<Tscal>(), j.at("r0").get<Tscal>()};
         } else if (eos_type == "locally_isothermal_fa2014") {
             p.config = LocIsoTFA2014{j.at("h_over_r").get<Tscal>()};
+        } else if (eos_type == "locally_isothermal_fa2014_extended") {
+            p.config = LocIsoTFA2014Extended{
+                j.at("cs0").get<Tscal>(),
+                j.at("q").get<Tscal>(),
+                j.at("r0").get<Tscal>(),
+                j.at("n_sinks").get<u32>()};
+        } else if (eos_type == "fermi") {
+            p.config = Fermi{j.at("mu_e").get<Tscal>()};
         } else {
-            shambase::throw_unimplemented("wtf !");
+            shambase::throw_unimplemented("Unknown or unsupported eos_type found in json");
         }
     }
 

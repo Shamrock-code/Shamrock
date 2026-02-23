@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -54,16 +54,26 @@ namespace shamrock::solvergraph {
             on_distributeddata_diff(
                 field_refs,
                 sizes,
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Missing field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Missing field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 },
                 [](u64 id) {
                     // TODO
                 },
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Extra field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Extra field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 });
         }
 

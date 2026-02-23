@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -49,29 +49,7 @@ namespace shammodels::basegodunov {
 
         SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
-        inline void init_required_fields() {
-            context.pdata_layout_add_field<TgridVec>("cell_min", 1);
-            context.pdata_layout_add_field<TgridVec>("cell_max", 1);
-            context.pdata_layout_add_field<Tscal>("rho", AMRBlock::block_size);
-            context.pdata_layout_add_field<Tvec>("rhovel", AMRBlock::block_size);
-            context.pdata_layout_add_field<Tscal>("rhoetot", AMRBlock::block_size);
-
-            if (solver_config.is_dust_on()) {
-                u32 ndust = solver_config.dust_config.ndust;
-
-                context.pdata_layout_add_field<Tscal>("rho_dust", (ndust * AMRBlock::block_size));
-                context.pdata_layout_add_field<Tvec>("rhovel_dust", (ndust * AMRBlock::block_size));
-            }
-
-            if (solver_config.is_gravity_on()) {
-                context.pdata_layout_add_field<Tscal>("phi", AMRBlock::block_size);
-            }
-            if (solver_config.is_gas_passive_scalar_on()) {
-                u32 npscal_gas = solver_config.npscal_gas_config.npscal_gas;
-                context.pdata_layout_add_field<Tscal>(
-                    "rho_gas_pscal", (npscal_gas * AMRBlock::block_size));
-            }
-        }
+        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
         Solver(ShamrockCtx &context) : context(context) {}
 

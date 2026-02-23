@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,11 +30,11 @@ namespace shamcomm {
      * @param[out] fh The MPI file handle to open
      * @param fname The name of the file to open
      */
-    void open_reset_file(MPI_File &fh, std::string fname);
+    void open_reset_file(MPI_File &fh, const std::string &fname);
 
     /**
      * @brief Open a mpi file in read only mode
      */
-    void open_read_only_file(MPI_File &fh, std::string fname);
+    void open_read_only_file(MPI_File &fh, const std::string &fname);
 
 } // namespace shamcomm

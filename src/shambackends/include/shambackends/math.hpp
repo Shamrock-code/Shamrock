@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -524,6 +524,35 @@ namespace sham {
     template<class T>
     inline T max(T a, T b) {
         return sham::details::g_sycl_max(a, b);
+    }
+
+    template<class T>
+    inline shambase::VecComponent<T> max_component(T a) {
+
+        using Tscal = shambase::VecComponent<T>;
+
+        if constexpr (std::is_same_v<T, sycl::vec<Tscal, 2>>) {
+            return sycl::max(a.x(), a.y());
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 3>>) {
+            return sycl::max(a.x(), sycl::max(a.y(), a.z()));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 4>>) {
+            return sycl::max(sycl::max(a.x(), a.y()), sycl::max(a.z(), a.w()));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 8>>) {
+            return sycl::max(
+                sycl::max(sycl::max(a.s0(), a.s1()), sycl::max(a.s2(), a.s3())),
+                sycl::max(sycl::max(a.s4(), a.s5()), sycl::max(a.s6(), a.s7())));
+        } else if constexpr (std::is_same_v<T, sycl::vec<Tscal, 16>>) {
+            return sycl::max(
+                sycl::max(
+                    sycl::max(sycl::max(a.s0(), a.s1()), sycl::max(a.s2(), a.s3())),
+                    sycl::max(sycl::max(a.s4(), a.s5()), sycl::max(a.s6(), a.s7()))),
+                sycl::max(
+                    sycl::max(sycl::max(a.s8(), a.s9()), sycl::max(a.sA(), a.sB())),
+                    sycl::max(sycl::max(a.sC(), a.sD()), sycl::max(a.sE(), a.sF()))));
+        } else {
+            static_assert(
+                shambase::always_false_v<T>, "max_component is not implemented for this type");
+        }
     }
 
     template<class T>

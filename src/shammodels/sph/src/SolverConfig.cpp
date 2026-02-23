@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -65,6 +65,7 @@ namespace shammodels::sph {
 
             pdl.add_field<Tvec>("B/rho", 1);
             pdl.add_field<Tvec>("dB/rho", 1);
+            pdl.add_field<Tscal>("drho/dt", 1);
         }
 
         if (has_field_psi_on_ch()) {
@@ -90,6 +91,11 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("deltav", ndust);
             pdl.add_field<Tvec>("dtdeltav", ndust);
         }
+
+        if (compute_luminosity) {
+            pdl.add_field<Tscal>("luminosity", 1);
+        }
+
         if (do_MHD_debug()) {
             pdl.add_field<Tvec>("gas_pressure", 1);
             pdl.add_field<Tvec>("mag_pressure", 1);
@@ -100,6 +106,10 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("psi_diff", 1);
             pdl.add_field<Tscal>("psi_cons", 1);
             pdl.add_field<Tscal>("u_mhd", 1);
+        }
+
+        if (should_save_dt_to_fields()) {
+            pdl.add_field<Tscal>("dt_part", 1);
         }
     }
 

@@ -1,7 +1,35 @@
 ---
 Checks: >
+  bugprone-use-after-move,
+  misc-static-assert,
+  readability-simplify-boolean-expr,
+  readability-static-accessed-through-instance,
+  readability-suspicious-call-argument,
   -clang-analyzer-optin.mpi*,
+  -performance-noexcept-destructor,
   -readability-magic-numbers,
+  performance-unnecessary-value-param,
+  performance-unnecessary-copy-initialization,
+  performance-for-range-copy,
+  performance-no-automatic-move,
+
+# Future options that are likely to be added:
+#
+# hicpp-signed-bitwise,
+# bugprone-throwing-static-initialization
+# readability-redundant-inline-specifier,
+# readability-redundant-parentheses, (not available yet in llvm 20)
+#  cppcoreguidelines-narrowing-conversions,
+#  google-build-namespaces,
+#  modernize-use-nullptr,
+#  modernize-use-override,
+#  performance-*,
+#  performance-move-const-arg,
+#  readability-else-after-return,
+#  readability-math-missing-parentheses,
+#  readability-named-parameter,
+#  readability-non-const-parameter,
+#  readability-string-compare,
 
 # -clang-analyzer-optin.mpi* to avoid crash from llvm 15 to 17
 # -readability-magic-numbers, to avoid false positives

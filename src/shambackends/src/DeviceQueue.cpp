@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -48,44 +48,5 @@ namespace sham {
         : queue_name(std::move(queue_name)), ctx(std::move(_ctx)), in_order(in_order),
           q(build_queue(ctx->ctx, ctx->device->dev, in_order)),
           wait_after_submit(env_var_wait_after_submit_set) {}
-
-    void DeviceQueue::test() {
-        auto test_kernel = [&](sycl::queue &q) {
-            sycl::buffer<u32> b(10);
-
-            submit([&b](sycl::handler &cgh) {
-                sycl::accessor acc{b, cgh, sycl::write_only, sycl::no_init};
-
-                cgh.parallel_for(sycl::range<1>{10}, [=](sycl::item<1> i) {
-                    acc[i] = i.get_linear_id();
-                });
-            });
-
-            q.wait();
-
-            {
-                sycl::host_accessor acc{b, sycl::read_only};
-                if (acc[9] != 9) {
-                    throw shambase::make_except_with_loc<std::runtime_error>(
-                        "The chosen SYCL queue cannot execute a basic kernel");
-                }
-            }
-        };
-
-        std::exception_ptr eptr;
-        try {
-            test_kernel(q);
-            // logger::info_ln("NodeInstance", "selected queue
-            // :",q.get_device().get_info<sycl::info::device::name>()," working !");
-        } catch (...) {
-            eptr = std::current_exception(); // capture
-        }
-
-        if (eptr) {
-            // logger::err_ln("NodeInstance", "selected queue
-            // :",q.get_device().get_info<sycl::info::device::name>(),"does not function properly");
-            std::rethrow_exception(eptr);
-        }
-    }
 
 } // namespace sham

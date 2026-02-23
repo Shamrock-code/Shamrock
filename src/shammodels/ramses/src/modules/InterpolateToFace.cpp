@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -15,7 +15,10 @@
  */
 
 #include "shambase/assert.hpp"
+#include "shammath/AABB.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 
 namespace {
 
@@ -791,8 +794,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::
-    _impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceRho<Tvec, TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 
@@ -947,8 +950,8 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
 }
 
 template<class Tvec, class TgridVec>
-std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
-    _impl_get_tex() {
+std::string shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::_impl_get_tex()
+    const {
     return "TODO";
 }
 
@@ -1105,7 +1108,7 @@ void shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFacePress<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -1287,7 +1290,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFaceRhoDust<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 
@@ -1467,7 +1470,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 std::string shammodels::basegodunov::modules::InterpolateToFaceVelDust<Tvec, TgridVec>::
-    _impl_get_tex() {
+    _impl_get_tex() const {
     return "TODO";
 }
 

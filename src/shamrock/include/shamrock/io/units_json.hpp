@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -20,42 +20,6 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
-
-/**
- * @brief Converts an optional value to a JSON object.
- *
- * @param j The JSON object to be populated.
- * @param p The optional value to be converted.
- *
- *
- * @throws std::bad_optional_access if p is not engaged
- */
-template<class T>
-inline void to_json_optional(nlohmann::json &j, const std::optional<T> &p) {
-    if (p) {
-        j = *p;
-    } else {
-        j = {};
-    }
-}
-
-/**
- * @brief Deserializes an optional value from a JSON object.
- *
- * @param j The JSON object to deserialize from.
- * @param p The optional value to populate.
- *
- *
- * @throws std::bad_optional_access if j is not a valid JSON object
- */
-template<class T>
-inline void from_json_optional(const nlohmann::json &j, std::optional<T> &p) {
-    if (j.is_null()) {
-        p = std::nullopt;
-    } else {
-        p = j.get<T>();
-    }
-}
 
 namespace shamunits {
 

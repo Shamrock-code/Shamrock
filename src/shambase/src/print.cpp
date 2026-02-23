@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -24,14 +24,14 @@ namespace shambase {
     void (*_printerln)(std::string) = nullptr; ///< The println function pointer to use if not null
     void (*_flush)()                = nullptr; ///< The flush function pointer to use if not null
 
-    void print(std::string s) {
+    void print(const std::string &s) {
         if (_printer == nullptr) {
             std::cout << s;
         } else {
             _printer(s);
         }
     }
-    void println(std::string s) {
+    void println(const std::string &s) {
         if (_printerln == nullptr) {
             std::cout << s << "\n";
         } else {

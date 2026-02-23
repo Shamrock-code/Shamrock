@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -64,14 +64,6 @@ namespace shamcomm {
                 : dev_sched(dev_sched), usm_buf(bytelen, dev_sched) {}
 
             inline CommunicationBuffer(
-                sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched), usm_buf(obj_ref, dev_sched) {}
-
-            inline CommunicationBuffer(
-                sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched), usm_buf(moved_obj, dev_sched) {}
-
-            inline CommunicationBuffer(
                 sham::DeviceBuffer<u8, sham::host> &&moved_obj,
                 std::shared_ptr<sham::DeviceScheduler> dev_sched)
                 : dev_sched(dev_sched),
@@ -84,9 +76,6 @@ namespace shamcomm {
             }
 
             inline u64 get_size() { return usm_buf.get_size(); }
-
-            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
-            static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
 
             inline sham::DeviceBuffer<u8> copy_back_usm() {
                 return usm_buf.copy_to<sham::device>();
@@ -118,14 +107,6 @@ namespace shamcomm {
                 : dev_sched(dev_sched), usm_buf(bytelen, dev_sched) {}
 
             inline CommunicationBuffer(
-                sycl::buffer<u8> &obj_ref, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched), usm_buf(obj_ref, dev_sched) {}
-
-            inline CommunicationBuffer(
-                sycl::buffer<u8> &&moved_obj, std::shared_ptr<sham::DeviceScheduler> dev_sched)
-                : dev_sched(dev_sched), usm_buf(moved_obj, dev_sched) {}
-
-            inline CommunicationBuffer(
                 sham::DeviceBuffer<u8, sham::device> &&moved_obj,
                 std::shared_ptr<sham::DeviceScheduler> dev_sched)
                 : dev_sched(dev_sched),
@@ -137,14 +118,12 @@ namespace shamcomm {
                 return ret;
             }
 
-            inline sycl::buffer<u8> copy_back() { return usm_buf.copy_to_sycl_buffer(); }
             inline sham::DeviceBuffer<u8> copy_back_usm() {
                 return usm_buf.copy_to<sham::device>();
             }
 
             inline u64 get_size() { return usm_buf.get_size(); }
 
-            static sycl::buffer<u8> convert(CommunicationBuffer &&buf) { return buf.copy_back(); }
             static sham::DeviceBuffer<u8> convert_usm(CommunicationBuffer &&buf) {
                 return std::move(buf.usm_buf);
             }

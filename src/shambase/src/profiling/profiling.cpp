@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -20,6 +20,7 @@
 #include "fmt/base.h"
 #include <fstream>
 #include <iostream>
+#include <utility>
 
 #ifdef SHAMROCK_USE_NVTX
     #include <nvtx3/nvtx3.hpp>
@@ -100,8 +101,8 @@ void shambase::profiling::set_event_record_threshold(f64 threshold_) { threshold
 void shambase::profiling::stack_entry_start(
     const SourceLocation &fileloc,
     f64 t_start,
-    std::optional<std::string> name,
-    std::optional<std::string> category_name) {
+    const std::optional<std::string> &name,
+    const std::optional<std::string> &category_name) {
 
     if (enable_profiling) {
 
@@ -117,8 +118,8 @@ void shambase::profiling::stack_entry_end(
     const SourceLocation &fileloc,
     f64 t_start,
     f64 tend,
-    std::optional<std::string> name,
-    std::optional<std::string> category_name) {
+    const std::optional<std::string> &name,
+    const std::optional<std::string> &category_name) {
 
     if (enable_profiling) {
         if (use_complete_event) {
@@ -136,8 +137,8 @@ void shambase::profiling::stack_entry_end(
 
 void shambase::profiling::stack_entry_start_no_time(
     const SourceLocation &fileloc,
-    std::optional<std::string> name,
-    std::optional<std::string> category_name) {
+    const std::optional<std::string> &name,
+    const std::optional<std::string> &category_name) {
 
     if (enable_profiling && enable_nvtx) {
 #ifdef SHAMROCK_USE_NVTX
@@ -149,8 +150,8 @@ void shambase::profiling::stack_entry_start_no_time(
 
 void shambase::profiling::stack_entry_end_no_time(
     const SourceLocation &fileloc,
-    std::optional<std::string> name,
-    std::optional<std::string> category_name) {
+    const std::optional<std::string> &name,
+    const std::optional<std::string> &category_name) {
 
     if (enable_profiling && enable_nvtx) {
 #ifdef SHAMROCK_USE_NVTX

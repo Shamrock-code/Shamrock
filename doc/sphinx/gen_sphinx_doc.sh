@@ -17,6 +17,11 @@ pip_list=(
     "memory-profiler"
     "sphinx-copybutton"
     "sphinx_design"
+    "sphinxcontrib-video"
+    "sympy"
+    "matplotlib"
+    "numpy"
+    "scipy"
     )
 
 for package in "${pip_list[@]}"; do

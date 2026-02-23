@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -38,6 +38,9 @@ namespace shambase {
      */
     std::string exception_format(SourceLocation loc);
 
+    /// type of the exception generator callback
+    using exception_gen_callback_t = void (*)(std::string msg);
+
     /**
      * @brief Set the exception generator callback
      *
@@ -47,7 +50,34 @@ namespace shambase {
      *
      * @param callback The callback to set
      */
-    void set_exception_gen_callback(void (*callback)(std::string msg));
+    void set_exception_gen_callback(exception_gen_callback_t callback);
+
+    /**
+     * @brief Get the current exception generator callback
+     *
+     * This function returns the current exception generator callback.
+     *
+     * @return exception_gen_callback_t The current exception generator callback
+     */
+    exception_gen_callback_t get_exception_gen_callback();
+
+    /// Scoped exception generator callback
+    class scoped_exception_gen_callback {
+        private:
+        exception_gen_callback_t old_callback;
+
+        public:
+        scoped_exception_gen_callback(exception_gen_callback_t callback)
+            : old_callback(get_exception_gen_callback()) {
+            set_exception_gen_callback(callback);
+        }
+        ~scoped_exception_gen_callback() { set_exception_gen_callback(old_callback); }
+
+        scoped_exception_gen_callback(const scoped_exception_gen_callback &)            = delete;
+        scoped_exception_gen_callback &operator=(const scoped_exception_gen_callback &) = delete;
+        scoped_exception_gen_callback(scoped_exception_gen_callback &&)                 = delete;
+        scoped_exception_gen_callback &operator=(scoped_exception_gen_callback &&)      = delete;
+    };
 
     /**
      * @brief The callback called when an exception is thrown

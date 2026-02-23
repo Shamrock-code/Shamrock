@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -420,13 +420,13 @@ inline void dump_simbox(std::string prefix, PatchScheduler &sched) {
 
         MPI_Status st;
 
-        if (sched.pdl().check_main_field_type<f32_3>()) {
+        if (sched.pdl_old().check_main_field_type<f32_3>()) {
             u8 f              = 0;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f32_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);
             shamcomm::mpi::File_write(simbox_file, &bmin, 1, mpi_type_f32_3, &st);
             shamcomm::mpi::File_write(simbox_file, &bmax, 1, mpi_type_f32_3, &st);
-        } else if (sched.pdl().check_main_field_type<f64_3>()) {
+        } else if (sched.pdl_old().check_main_field_type<f64_3>()) {
             u8 f              = 1;
             auto [bmin, bmax] = sched.patch_data.sim_box.get_bounding_box<f64_3>();
             shamcomm::mpi::File_write(simbox_file, &f, 1, mpi_type_u8, &st);

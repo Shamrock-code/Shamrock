@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,13 +23,17 @@ namespace shamrock::sph {
 
     template<class Tscal>
     inline static constexpr Tscal vsig_hydro(
-        Tscal abs_v_ab_r_ab, Tscal cs_a, Tscal alpha_av, Tscal beta_av) {
+        const Tscal &abs_v_ab_r_ab,
+        const Tscal &cs_a,
+        const Tscal &alpha_av,
+        const Tscal &beta_av) {
         return alpha_av * cs_a + beta_av * abs_v_ab_r_ab;
         ;
     };
 
     template<class Tscal>
-    inline static constexpr Tscal vsig_u(Tscal P_a, Tscal P_b, Tscal rho_a, Tscal rho_b) {
+    inline static constexpr Tscal vsig_u(
+        const Tscal &P_a, const Tscal &P_b, const Tscal &rho_a, const Tscal &rho_b) {
         Tscal rho_avg = (rho_a + rho_b) * 0.5;
         Tscal abs_dp  = sham::abs(P_a - P_b);
         return sycl::sqrt(abs_dp / rho_avg);
@@ -54,15 +58,15 @@ namespace shamrock::sph {
      */
     template<class Tvec, class Tscal>
     inline Tvec sph_pressure_symetric(
-        Tscal m_b,
-        Tscal rho_a_sq,
-        Tscal rho_b_sq,
-        Tscal P_a,
-        Tscal P_b,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tvec nabla_Wab_ha,
-        Tvec nabla_Wab_hb) {
+        const Tscal &m_b,
+        const Tscal &rho_a_sq,
+        const Tscal &rho_b_sq,
+        const Tscal &P_a,
+        const Tscal &P_b,
+        const Tscal &omega_a,
+        const Tscal &omega_b,
+        const Tvec &nabla_Wab_ha,
+        const Tvec &nabla_Wab_hb) {
 
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
@@ -94,17 +98,17 @@ namespace shamrock::sph {
      */
     template<class Tvec, class Tscal>
     inline Tvec sph_pressure_symetric_av(
-        Tscal m_b,
-        Tscal rho_a_sq,
-        Tscal rho_b_sq,
-        Tscal P_a,
-        Tscal P_b,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tscal qa_ab,
-        Tscal qb_ab,
-        Tvec nabla_Wab_ha,
-        Tvec nabla_Wab_hb) {
+        const Tscal &m_b,
+        const Tscal &rho_a_sq,
+        const Tscal &rho_b_sq,
+        const Tscal &P_a,
+        const Tscal &P_b,
+        const Tscal &omega_a,
+        const Tscal &omega_b,
+        const Tscal &qa_ab,
+        const Tscal &qb_ab,
+        const Tvec &nabla_Wab_ha,
+        const Tvec &nabla_Wab_hb) {
         return sph_pressure_symetric(
             m_b,
             rho_a_sq,
@@ -132,7 +136,11 @@ namespace shamrock::sph {
      */
     template<class Tvec, class Tscal>
     inline Tscal duint_dt_pressure(
-        Tscal pmass, Tscal P_a, Tscal inv_omega_a_2_rho_a, Tvec v_ab, Tvec grad_W_ab) {
+        const Tscal &pmass,
+        const Tscal &P_a,
+        const Tscal &inv_omega_a_2_rho_a,
+        const Tvec &v_ab,
+        const Tvec &grad_W_ab) {
         return P_a * inv_omega_a_2_rho_a * pmass * sycl::dot(v_ab, grad_W_ab);
     }
 
@@ -151,39 +159,39 @@ namespace shamrock::sph {
      */
     template<class Tscal>
     inline Tscal lambda_shock_conductivity(
-        Tscal pmass,
-        Tscal alpha_u,
-        Tscal vsig_u,
-        Tscal u_ab,
-        Tscal Fab_inv_omega_a_rho_a,
-        Tscal Fab_inv_omega_b_rho_b) {
+        const Tscal &pmass,
+        const Tscal &alpha_u,
+        const Tscal &vsig_u,
+        const Tscal &u_ab,
+        const Tscal &Fab_inv_omega_a_rho_a,
+        const Tscal &Fab_inv_omega_b_rho_b) {
         return pmass * alpha_u * vsig_u * u_ab * Tscal(0.5)
                * (Fab_inv_omega_a_rho_a + Fab_inv_omega_b_rho_b);
     }
 
     template<class Tvec, class Tscal>
     inline void add_to_derivs_sph_artif_visco_cond(
-        Tscal pmass,
-        Tscal rho_a_sq,
-        Tscal omega_a_rho_a_inv,
-        Tscal rho_a_inv,
-        Tscal rho_b,
-        Tscal omega_a,
-        Tscal omega_b,
-        Tscal Fab_a,
-        Tscal Fab_b,
-        Tscal u_a,
-        Tscal u_b,
-        Tscal P_a,
-        Tscal P_b,
-        Tscal alpha_u,
+        const Tscal &pmass,
+        const Tscal &rho_a_sq,
+        const Tscal &omega_a_rho_a_inv,
+        const Tscal &rho_a_inv,
+        const Tscal &rho_b,
+        const Tscal &omega_a,
+        const Tscal &omega_b,
+        const Tscal &Fab_a,
+        const Tscal &Fab_b,
+        const Tscal &u_a,
+        const Tscal &u_b,
+        const Tscal &P_a,
+        const Tscal &P_b,
+        const Tscal &alpha_u,
 
-        Tvec v_ab,
-        Tvec r_ab_unit,
-        Tscal vsig_u,
+        const Tvec &v_ab,
+        const Tvec &r_ab_unit,
+        const Tscal &vsig_u,
 
-        Tscal qa_ab,
-        Tscal qb_ab,
+        const Tscal &qa_ab,
+        const Tscal &qb_ab,
 
         Tvec &dv_dt,
         Tscal &du_dt) {

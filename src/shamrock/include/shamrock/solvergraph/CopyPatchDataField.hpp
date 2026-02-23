@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -100,13 +100,13 @@ namespace shamrock::solvergraph {
          *
          * @return String identifier "CopyPatchDataField"
          */
-        std::string _impl_get_label() { return "CopyPatchDataField"; }
+        std::string _impl_get_label() const { return "CopyPatchDataField"; }
 
         /**
          * @brief Returns the LaTeX representation of this node for documentation.
          *
          * @return LaTeX string describing the copy operation with field symbols
          */
-        std::string _impl_get_tex();
+        std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph

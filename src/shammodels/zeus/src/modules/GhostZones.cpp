@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -210,6 +210,7 @@ shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> shammodels::zeu
 
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
+    shamalgs::collective::DDSCommCache cache;
     shamalgs::collective::serialize_sparse_comm<shamrock::patch::PatchDataLayer>(
         shamsys::instance::get_compute_scheduler_ptr(),
         std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(interf),
@@ -229,7 +230,8 @@ shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> shammodels::zeu
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return shamrock::patch::PatchDataLayer::deserialize_buf(ser, pdl_ptr);
-        });
+        },
+        cache);
 
     return recv_dat;
 }
@@ -242,6 +244,8 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
     StackEntry stack_loc{};
 
     shambase::DistributedDataShared<PatchDataField<T>> recv_dat;
+
+    shamalgs::collective::DDSCommCache cache;
 
     shamalgs::collective::serialize_sparse_comm<PatchDataField<T>>(
         shamsys::instance::get_compute_scheduler_ptr(),
@@ -262,7 +266,8 @@ shambase::DistributedDataShared<PatchDataField<T>> shammodels::zeus::modules::Gh
                 shamsys::instance::get_compute_scheduler_ptr(),
                 std::forward<sham::DeviceBuffer<u8>>(buf));
             return PatchDataField<T>::deserialize_full(ser);
-        });
+        },
+        cache);
 
     return recv_dat;
 }
@@ -333,7 +338,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     u32 ivel_interf      = ghost_layout.get_field_idx<Tvec>("vel");
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -60,7 +60,7 @@ namespace shambase::details {
      * @param process_prefix The prefix of the process name.
      * @param world_rank The rank of the process.
      */
-    void dump_profilings(std::string process_prefix, u32 world_rank);
+    void dump_profilings(const std::string &process_prefix, u32 world_rank);
 
     /**
      * @brief Dump the profiling data in a Chrome Tracing format.
@@ -68,7 +68,7 @@ namespace shambase::details {
      * @param process_prefix The prefix of the process name.
      * @param world_rank The rank of the process.
      */
-    void dump_profilings_chrome(std::string process_prefix, u32 world_rank);
+    void dump_profilings_chrome(const std::string &process_prefix, u32 world_rank);
 
     /**
      * @brief Clear the profiling data. (should be done in large run to avoid out-of-memory)
@@ -83,6 +83,26 @@ namespace shambase::details {
      */
     inline std::stack<SourceLocation> call_stack;
 
+    /// Helper class to manage the call stack entry
+    struct CallStackEntry {
+        inline CallStackEntry(SourceLocation &loc) {
+            // Push the source location to the call stack
+            call_stack.emplace(loc);
+        }
+
+        // This class is not safe if copied or moved
+
+        CallStackEntry(const CallStackEntry &)            = delete;
+        CallStackEntry &operator=(const CallStackEntry &) = delete;
+        CallStackEntry(CallStackEntry &&)                 = delete;
+        CallStackEntry &operator=(CallStackEntry &&)      = delete;
+
+        inline ~CallStackEntry() {
+            // Pop the source location from the call stack
+            call_stack.pop();
+        }
+    };
+
     struct BasicStackEntry {
         SourceLocation loc; ///< Source location attached to the entry
         bool do_timer;      ///< is the timer enabled for this entry
@@ -90,6 +110,9 @@ namespace shambase::details {
 #ifdef SHAMROCK_USE_PROFILING
         f64 wtime_start; ///< start time of the entry
 #endif
+
+        CallStackEntry scoped_callstack_entry; ///< scoped call stack entry
+
         /**
          * @brief Construct a new Basic Stack Entry object.
          *
@@ -97,7 +120,7 @@ namespace shambase::details {
          * @param loc Source location attached to the entry (default: SourceLocation{})
          */
         inline BasicStackEntry(bool do_timer = true, SourceLocation &&loc = SourceLocation{})
-            : loc(loc), do_timer(do_timer) {
+            : loc(loc), do_timer(do_timer), scoped_callstack_entry(loc) {
 #ifdef SHAMROCK_USE_PROFILING
             if (do_timer) {
                 wtime_start = get_wtime();
@@ -106,8 +129,25 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_start_no_time(loc);
             }
 #endif
-            // Push the source location to the call stack
-            call_stack.emplace(loc);
+        }
+
+        /**
+         * @brief Construct a new Basic Stack Entry object.
+         *
+         * @param do_timer Is the timer enabled for this entry (default: true)
+         * @param loc Source location attached to the entry (default: SourceLocation{})
+         */
+        inline BasicStackEntry(
+            SourceLocation &callsite, bool do_timer = true, SourceLocation &&loc = SourceLocation{})
+            : loc(loc), do_timer(do_timer), scoped_callstack_entry(callsite) {
+#ifdef SHAMROCK_USE_PROFILING
+            if (do_timer) {
+                wtime_start = get_wtime();
+                shambase::profiling::stack_entry_start(loc, wtime_start);
+            } else {
+                shambase::profiling::stack_entry_start_no_time(loc);
+            }
+#endif
         }
 
         /**
@@ -124,8 +164,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_end_no_time(loc);
             }
 #endif
-            // Pop the source location from the call stack
-            call_stack.pop();
         }
     };
 
@@ -138,6 +176,8 @@ namespace shambase::details {
         f64 wtime_start; ///< start time of the entry
 #endif
 
+        CallStackEntry scoped_callstack_entry; ///< scoped call stack entry
+
         /**
          * @brief Construct a new Named Basic Stack Entry object
          *
@@ -147,7 +187,7 @@ namespace shambase::details {
          */
         inline NamedBasicStackEntry(
             std::string name, bool do_timer = true, SourceLocation &&loc = SourceLocation{})
-            : name(name), loc(loc), do_timer(do_timer) {
+            : name(name), loc(loc), do_timer(do_timer), scoped_callstack_entry(loc) {
 #ifdef SHAMROCK_USE_PROFILING
             if (do_timer) {
                 wtime_start = get_wtime();
@@ -156,7 +196,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_start_no_time(loc, name);
             }
 #endif
-            call_stack.emplace(loc);
         }
 
         /**
@@ -173,7 +212,6 @@ namespace shambase::details {
                 shambase::profiling::stack_entry_end_no_time(loc);
             }
 #endif
-            call_stack.pop();
         }
     };
 
@@ -189,6 +227,10 @@ namespace shambase {
      * @return The formatted call stack as a string.
      */
     std::string fmt_callstack();
+
+    void set_callstack_process_identifier(std::string identifier);
+
+    void add_callstack_gen_info_generator(std::string (*generator)());
 
 } // namespace shambase
 
@@ -214,3 +256,23 @@ using NamedStackEntry = shambase::details::NamedBasicStackEntry;
  */
 #define __shamrock_stack_entry()                                                                   \
     [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) {}
+
+/**
+ * @brief Macro to create a stack entry from a given location. Can be used only on SourceLocation &&
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_log_callsite(callsite)                                                          \
+    [[maybe_unused]] shambase::details::CallStackEntry __shamrock_unique_name(call_site_loc) {     \
+        callsite                                                                                   \
+    }
+
+/**
+ * @brief Macro to create a stack entry.
+ *
+ * This macro defines a `StackEntry` variable with a unique name by leveraging
+ * the `__shamrock_unique_name` macro.
+ */
+#define __shamrock_stack_entry_with_callsite(callsite)                                             \
+    [[maybe_unused]] StackEntry __shamrock_unique_name(stack_loc_) { callsite }

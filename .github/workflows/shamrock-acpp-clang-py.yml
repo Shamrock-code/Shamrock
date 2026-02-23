@@ -24,18 +24,16 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
-            label: "ubuntu 20"
-            upload_doc: false
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+            label: "ubuntu 22"
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
           - clang: 18
             backend: omp
             arch: none
             runtest: yes
             label: "ubuntu latest"
-            upload_doc: true
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
 
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
@@ -67,6 +65,7 @@ jobs:
       - name: install LLVM
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
+          sudo apt update && \
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{matrix.clang}}
@@ -75,6 +74,29 @@ jobs:
             sudo rm -r /usr/lib/clang/16*
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
+
+      # if ubuntu container
+      - name : Install ubuntu dependencies
+        run: |
+          sudo ln -fs /usr/share/zoneinfo/Europe/Paris /etc/localtime
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt update
+          sudo apt remove -y texlive-full
+          sudo apt-get install -y \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            dvipng \
+            ghostscript
+
+      - name: install ffmpeg
+        run: |
+          sudo apt install -y ffmpeg
+
+      - name: install gfortran (for run_compare_shamrock_ph_disc.py)
+        run: |
+          sudo apt install -y gfortran
 
       - name: Setup env
         run : |
@@ -99,33 +121,3 @@ jobs:
           ACPP_VISIBILITY_MASK=omp \
           ACPP_DEBUG_LEVEL=3 \
           python3 -c "import shamrock;shamrock.change_loglevel(125);shamrock.sys.init('0:0')"
-
-      - name: Try shamrock startup (executable)
-        shell: bash # In docker container github action default to sh
-        run: |
-          source .pyvenv/bin/activate
-          ACPP_VISIBILITY_MASK=omp \
-          ACPP_DEBUG_LEVEL=3 \
-          shamrock --smi --sycl-cfg 0:0 --loglevel 125
-
-      - name: Pip install package for doc
-        shell: bash # In docker container github action default to sh
-        run : |
-          source .pyvenv/bin/activate
-          cd build
-          pip install matplotlib numpy scipy
-
-      - name: Build sphinx documentation
-        shell: bash # In docker container github action default to sh
-        run: |
-          source .pyvenv/bin/activate
-          cd build
-          cd ../doc/sphinx
-          bash gen_sphinx_doc.sh #generate the doc in doc/sphinx/build/html
-
-      - name: Upload doc artifact
-        if: matrix.upload_doc
-        uses: actions/upload-artifact@v4
-        with:
-          name: sphinx_doc
-          path: doc/sphinx/build/html

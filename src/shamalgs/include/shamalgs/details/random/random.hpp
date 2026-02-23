@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -32,8 +32,8 @@
  */
 namespace shamalgs::random {
 
-    template<class T>
-    T mock_gaussian(std::mt19937 &eng) {
+    template<class T, class Engine = std::mt19937>
+    T mock_gaussian(Engine &eng) {
         using namespace shambase::constants;
 
         constexpr T _2pi = pi<T> * 2;
@@ -42,8 +42,8 @@ namespace shamalgs::random {
         return sycl::sqrt(-2 * sycl::log(r_3)) * sycl::cos(_2pi * r_4);
     }
 
-    template<class T>
-    T mock_gaussian_multidim(std::mt19937 &eng) {
+    template<class T, class Engine = std::mt19937>
+    T mock_gaussian_multidim(Engine &eng) {
         T ret;
         constexpr int n = shambase::VectorProperties<T>::dimension;
         using Tscal     = shambase::VecComponent<T>;
@@ -54,8 +54,8 @@ namespace shamalgs::random {
         return ret;
     }
 
-    template<class T>
-    T mock_unit_vector(std::mt19937 &eng) {
+    template<class T, class Engine = std::mt19937>
+    T mock_unit_vector(Engine &eng) {
         T ret    = mock_gaussian_multidim<T>(eng);
         auto len = sycl::length(ret);
 

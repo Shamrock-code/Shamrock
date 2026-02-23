@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -69,7 +69,7 @@ namespace shammodels::basegodunov {
                 sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
 
                 PatchDataField<T> &f
-                    = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                    = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                 auto acc = f.get_buf().copy_to_stdvec();
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -45,7 +45,7 @@
 //%Impl status : Should rewrite
 
 /// Call bindings init for the shamrock python module
-PYBIND11_EMBEDDED_MODULE(shamrock, m) { shambindings::init_embed(m); }
+PYBIND11_EMBEDDED_MODULE(pyshamrock, m) { shambindings::init_embed(m); }
 
 int main(int argc, char *argv[]) {
 
@@ -190,13 +190,13 @@ int main(int argc, char *argv[]) {
                         "cannot run ipython mode with > 1 processes");
                 }
 
-                shambindings::start_ipython(true);
+                shambindings::start_ipython(true, argc, argv);
 
             } else if (opts::has_option("--rscript")) {
                 __shamrock_stack_entry();
                 std::string fname = std::string(opts::get_option("--rscript"));
 
-                shambindings::run_py_file(fname, shamcomm::world_rank() == 0);
+                shambindings::run_py_file(fname, shamcomm::world_rank() == 0, argc, argv);
 
             } else {
                 if (shamcomm::world_rank() == 0) {

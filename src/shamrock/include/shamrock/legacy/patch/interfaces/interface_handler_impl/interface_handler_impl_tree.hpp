@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -150,7 +150,7 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
 
             PatchDataLayer &pdat_to_cut = sched.patch_data.get_pdat(comm.sender_patch_id);
 
-            src.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
+            src.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr_old()));
 
             pdat_to_cut.append_subset_to(
                 *ctree.list_pdat_extract_id[i],

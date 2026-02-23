@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -59,7 +59,7 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
     last_event_create = READ_WRITE;
 
     depends_list.push_back(event_last_write);
-    for (sycl::event e : event_last_read) {
+    for (const sycl::event &e : event_last_read) {
         depends_list.push_back(e);
     }
     shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependancy");
@@ -70,7 +70,7 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
     shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "reset event list");
 }
 
-void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
+void shamalgs::BufferEventHandler::register_read_event(const sycl::event &e) {
 
     if (up_to_date_events) {
         std::string err
@@ -94,7 +94,7 @@ void shamalgs::BufferEventHandler::register_read_event(sycl::event e) {
     shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "append last read");
 }
 
-void shamalgs::BufferEventHandler::register_read_write_event(sycl::event e) {
+void shamalgs::BufferEventHandler::register_read_write_event(const sycl::event &e) {
     shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "set last write");
     if (up_to_date_events) {
         std::string err

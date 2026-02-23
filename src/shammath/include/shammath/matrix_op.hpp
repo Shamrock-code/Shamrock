@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -13,6 +13,7 @@
  * @file matrix_op.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
  * @brief
  *
  */
@@ -301,7 +302,8 @@ namespace shammath {
      *   number of columns of the output matrix.
      */
     template<
-        class T,
+        class Ta,
+        class Tb,
         class Extents1,
         class Extents2,
         class Extents3,
@@ -312,9 +314,9 @@ namespace shammath {
         class Accessor2,
         class Accessor3>
     inline void mat_prod(
-        const std::mdspan<T, Extents1, Layout1, Accessor1> &input1,
-        const std::mdspan<T, Extents2, Layout2, Accessor2> &input2,
-        const std::mdspan<T, Extents3, Layout3, Accessor3> &output) {
+        const std::mdspan<Ta, Extents1, Layout1, Accessor1> &input1,
+        const std::mdspan<Ta, Extents2, Layout2, Accessor2> &input2,
+        const std::mdspan<Tb, Extents3, Layout3, Accessor3> &output) {
 
         SHAM_ASSERT(input1.extent(0) == output.extent(0));
         SHAM_ASSERT(input1.extent(1) == input2.extent(0));
@@ -323,7 +325,7 @@ namespace shammath {
         // output_ij = mat1_ik mat2_jk
         for (int i = 0; i < input1.extent(0); i++) {
             for (int j = 0; j < input2.extent(1); j++) {
-                T sum = 0;
+                Tb sum = 0;
                 for (int k = 0; k < input1.extent(1); k++) {
                     sum += input1(i, k) * input2(k, j);
                 }

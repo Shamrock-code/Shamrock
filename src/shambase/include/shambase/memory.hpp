@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -159,6 +159,35 @@ namespace shambase {
     inline T &get_check_ref(std::optional<T> &ptr, SourceLocation loc = SourceLocation()) {
         if (!bool(ptr)) {
             throw make_except_with_loc<std::runtime_error>("the ptr does not hold anything", loc);
+        }
+        return *ptr;
+    }
+
+    /**
+     * @brief Takes a raw pointer and returns a reference to the object it points to.
+     * It throws a std::runtime_error if the pointer is null.
+     *
+     * @tparam T The type of the object pointed to by the raw pointer.
+     * @param ptr The raw pointer.
+     * @param loc The source location where this function is called.
+     * @return A reference to the object pointed to by the raw pointer.
+     * @throws std::runtime_error If the raw pointer is null.
+     */
+    template<class T>
+    inline T &get_check_ref(T *ptr, SourceLocation loc = SourceLocation()) {
+        if (!ptr) {
+            throw make_except_with_loc<std::runtime_error>(
+                "Can not get reference to null pointer", loc);
+        }
+        return *ptr;
+    }
+
+    /// same overload but for const pointer
+    template<class T>
+    inline const T &get_check_ref(const T *ptr, SourceLocation loc = SourceLocation()) {
+        if (!ptr) {
+            throw make_except_with_loc<std::runtime_error>(
+                "Can not get reference to null pointer", loc);
         }
         return *ptr;
     }

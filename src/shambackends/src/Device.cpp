@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -20,9 +20,13 @@
 #include "shambase/numeric_limits.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sysinfo.hpp"
+#include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include <fmt/ranges.h>
+
+auto SHAM_MAX_ALLOC_SIZE
+    = shamcmdopt::getenv_str_register("SHAM_MAX_ALLOC_SIZE", "shamrock max alloc size if set");
 
 namespace sham {
 
@@ -102,6 +106,18 @@ namespace sham {
                 "Device",                                                                          \
                 "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
                 name);                                                                             \
+            return {};                                                                             \
+        }                                                                                          \
+    }();
+
+    /// Fetches a property of a SYCL device (for cases where multiple prop would have the same name)
+#define FETCH_PROPN_FULL(info_, info_type, n)                                                      \
+    std::optional<info_type> n = [&]() -> std::optional<info_type> {                               \
+        try {                                                                                      \
+            return {dev.get_info<info_>()};                                                        \
+        } catch (...) {                                                                            \
+            logger::warn_ln(                                                                       \
+                "Device", "dev.get_info<" #info_ ">() raised an exception for device", name);      \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -207,12 +223,13 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
+        auto physmem = sham::getPhysicalMemory();
+
 // On acpp 2^64-1 is returned, so we need to correct it
 // see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573
 #ifdef SYCL_COMP_ACPP
         if (get_device_backend(dev) == Backend::OPENMP) {
             // Correct memory size
-            auto physmem = sham::getPhysicalMemory();
             if (physmem) {
                 global_mem_size = {*physmem};
             }
@@ -250,19 +267,49 @@ namespace sham {
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
 
-        return DeviceProperties{
-            Vendor::UNKNOWN,         // We cannot determine the vendor
-            get_device_backend(dev), // Query the backend based on the platform name
-            get_device_type(dev),
-            shambase::get_check_ref(global_mem_size),
-            shambase::get_check_ref(global_mem_cache_line_size),
-            shambase::get_check_ref(global_mem_cache_size),
-            shambase::get_check_ref(local_mem_size),
-            shambase::get_check_ref(max_compute_units),
-            shambase::get_check_ref(max_mem_alloc_size),
-            shambase::get_check_ref(mem_base_addr_align),
-            shambase::get_check_ref(sub_group_sizes),
-            default_work_group_size};
+        size_t max_alloc_dev  = shambase::get_check_ref(max_mem_alloc_size);
+        size_t max_alloc_host = ((physmem) ? *physmem : i64_max);
+        if (SHAM_MAX_ALLOC_SIZE) {
+            try {
+                const auto max_alloc = std::stoull(SHAM_MAX_ALLOC_SIZE.value());
+                max_alloc_dev        = max_alloc;
+                max_alloc_host       = max_alloc;
+            } catch (const std::exception &e) {
+                logger::warn_ln(
+                    "Backends",
+                    shambase::format(
+                        "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
+                        "Ignoring override.",
+                        SHAM_MAX_ALLOC_SIZE.value(),
+                        e.what()));
+            }
+        }
+
+        DeviceProperties ret
+            = {Vendor::UNKNOWN,         // We cannot determine the vendor
+               get_device_backend(dev), // Query the backend based on the platform name
+               get_device_type(dev),
+               shambase::get_check_ref(global_mem_size),
+               shambase::get_check_ref(global_mem_cache_line_size),
+               shambase::get_check_ref(global_mem_cache_size),
+               shambase::get_check_ref(local_mem_size),
+               shambase::get_check_ref(max_compute_units),
+               max_alloc_dev,
+               max_alloc_host,
+               shambase::get_check_ref(mem_base_addr_align),
+               shambase::get_check_ref(sub_group_sizes),
+               default_work_group_size};
+
+        { // PCI id infos
+#if defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 5
+            FETCH_PROPN_FULL(sycl::ext::intel::info::device::pci_address, std::string, pci_address)
+            if (pci_address) {
+                ret.pci_address = *pci_address;
+            }
+#endif
+        }
+
+        return ret;
     }
 
     /**
@@ -274,7 +321,8 @@ namespace sham {
      * @return A structure containing the MPI-related properties of the
      *         given SYCL device.
      */
-    DeviceMPIProperties fetch_mpi_properties(const sycl::device &dev, DeviceProperties prop) {
+    DeviceMPIProperties fetch_mpi_properties(
+        const sycl::device &dev, const DeviceProperties &prop) {
         bool dgpu_capable = false;
 
         // If CUDA-aware MPI is enabled, and the device is a CUDA device,

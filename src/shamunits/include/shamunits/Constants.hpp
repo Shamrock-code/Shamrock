@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,12 +11,13 @@
 
 /**
  * @file Constants.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
-#include "ConvertionConstants.hpp"
+#include "ConversionConstants.hpp"
 #include "Names.hpp"
 #include "UnitSystem.hpp"
 #include "details/utils.hpp"
@@ -60,6 +61,8 @@
     X(astronomical_unit /**/, Uget(m, 1))                                                          \
     X(light_year /*********/, Uget(m, 1))                                                          \
     X(parsec /*************/, Uget(m, 1))                                                          \
+    X(solar_radius /*******/, Uget(m, 1))                                                          \
+    X(earth_radius /*******/, Uget(m, 1))                                                          \
     X(planck_length /******/, Uget(m, 1))                                                          \
     /* masses */                                                                                   \
     X(proton_mass /****/, Uget(kg, 1))                                                             \
@@ -68,6 +71,7 @@
     X(jupiter_mass /***/, Uget(kg, 1))                                                             \
     X(sol_mass /*******/, Uget(kg, 1))                                                             \
     X(planck_mass /****/, Uget(kg, 1))                                                             \
+    X(dalton /*********/, Uget(kg, 1))                                                             \
     /* densities */                                                                                \
     X(guiness_density, Uget(kg, 1) * Uget(m, -1))                                                  \
     /* derived ctes  */                                                                            \
@@ -108,7 +112,7 @@ namespace shamunits {
     struct Constants {
 
         /// Alias to the conversion constants
-        using Conv = ConvertionConstants<T>;
+        using Conv = ConversionConstants<T>;
 
         /// Physical constant in SI units
         struct Si {
@@ -144,6 +148,8 @@ namespace shamunits {
             static constexpr T au                = astronomical_unit; //(m)
             static constexpr T light_year        = Conv::ly_to_m;     //(m)
             static constexpr T parsec            = Conv::pc_to_m;     //(m)
+            static constexpr T solar_radius      = Conv::rsol_to_m;   //(m)
+            static constexpr T earth_radius      = Conv::rearth_to_m; //(m)
             static constexpr T planck_length     = 1.61625518e-35;    //(m)
 
             static constexpr T proton_mass   = 1.67262192e-27;                         //(kg)
@@ -152,6 +158,7 @@ namespace shamunits {
             static constexpr T jupiter_mass  = 1.898e27;                               //(kg)
             static constexpr T sol_mass      = 1.98847e30;                             //(kg)
             static constexpr T planck_mass   = 2.17643424e-8;                          //(kg)
+            static constexpr T dalton        = 1.66053906892e-27;                      //(kg)
 
             static constexpr T guiness_density = Conv::gcm3_to_guiness_density * 1000; //(kg.m-3)
         };
@@ -313,6 +320,20 @@ namespace shamunits {
  *
  * \fn shamunits::Constants::Si::parsec()
  * \brief get the value of a parsec in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::solar_radius()
+ * \brief get the value of a solar radius in the distance unit of the current unit system @ref units
+ *
+ * \fn shamunits::Constants::Si::solar_radius()
+ * \brief get the value of a solar radius in the distance unit of the si unit system (m)
+ *
+ * \fn shamunits::Constants::earth_radius()
+ * \brief get the value of one earth equatorial radius in the distance unit of the current unit
+ * system @ref units
+ *
+ * \fn shamunits::Constants::Si::earth_radius()
+ * \brief get the value of one earth equatorial radius in the distance unit of the si unit system
+ * (m)
  *
  * \fn shamunits::Constants::planck_length()
  * \brief get the value of a planck_length in the distance unit of the current unit system @ref

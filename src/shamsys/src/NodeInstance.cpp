@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -30,11 +30,11 @@
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
 #include "shamcomm/collectives.hpp"
+#include "shamcomm/env_variables.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shamsys/EnvVariables.hpp"
 #include "shamsys/MpiDataTypeHandler.hpp"
 #include "shamsys/MpiWrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -106,6 +106,13 @@ namespace syclinit {
     std::shared_ptr<sham::DeviceScheduler> sched_compute;
     std::shared_ptr<sham::DeviceScheduler> sched_alt;
 
+    std::string callback_mem_perf_info() {
+        // in principle we should do it for both sched_compute and sched_alt
+        // but for now we only do one since it will return the same info
+        return "Memory usage & performance info:\n"
+               + sham::details::log_mem_perf_info(sched_compute);
+    }
+
     void init_device_scheduling() {
         StackEntry stack_loc{false};
         ctx_compute = std::make_shared<sham::DeviceContext>(device_compute);
@@ -114,8 +121,10 @@ namespace syclinit {
         sched_compute = std::make_shared<sham::DeviceScheduler>(ctx_compute);
         sched_alt     = std::make_shared<sham::DeviceScheduler>(ctx_alt);
 
-        sched_compute->test();
-        sched_alt->test();
+        test_device_scheduler(sched_compute);
+        test_device_scheduler(sched_alt);
+
+        shambase::add_callstack_gen_info_generator(callback_mem_perf_info);
 
         // logger::raw_ln("--- Compute ---");
         // sched_compute->print_info();
@@ -162,7 +171,7 @@ namespace shamsys::instance {
 
         std::string print_buf = "";
 
-        std::optional<u32> loc = env::get_local_rank();
+        std::optional<u32> loc = shamcomm::get_local_rank();
         if (loc) {
             print_buf = shambase::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
@@ -263,7 +272,7 @@ namespace shamsys::instance {
         shamlog_debug_ln(
             "Sys",
             shambase::format(
-                "[{:03}]: \x1B[32mMPI_Init : node n°{:03} | world size : {} | name = {}\033[0m",
+                "[{:03}]: \x1B[32mMPI_Init : node n {:03} | world size : {} | name = {}\033[0m",
                 shamcomm::world_rank(),
                 shamcomm::world_rank(),
                 shamcomm::world_size(),

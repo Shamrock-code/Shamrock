@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -207,10 +207,10 @@ namespace shamtest::details {
  */
 #define REQUIRE_EQUAL_CUSTOM_COMP_NAMED(name, _a, _b, comp)                                        \
     do {                                                                                           \
-        auto a = _a;                                                                               \
-        auto b = _b;                                                                               \
+        auto _______a = _a;                                                                        \
+        auto _______b = _b;                                                                        \
         using namespace shamtest::details;                                                         \
-        bool eval               = comp(a, b);                                                      \
+        bool eval               = comp(_______a, _______b);                                        \
         std::string assert_name = format_assert_name(name) + #_a " == " #_b;                       \
         if (eval) {                                                                                \
             shamtest::asserts().assert_bool_with_log(assert_name, eval, "");                       \
@@ -218,8 +218,9 @@ namespace shamtest::details {
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
-                    + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
+                assert_name + " evaluated to false\n\n"                                            \
+                    + shambase::format(" -> " #_a " = {}", _______a) + "\n"                        \
+                    + shambase::format(" -> " #_b " = {}", _______b) + "\n"                        \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)

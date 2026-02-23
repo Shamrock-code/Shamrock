@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -58,6 +58,7 @@ namespace sham::benchmarks {
         std::string func_name; ///< Name of the function
         f64 milliseconds;      ///< Computation time in milliseconds
         f64 flops;             ///< Flops per second
+        u32 nrotations;        ///< Number of rotation performed
     };
 
     /**
@@ -71,7 +72,7 @@ namespace sham::benchmarks {
      * @param init_y the initial value of the second input vector
      * @param cs the cosine of the rotation angle
      * @param sn the sine of the rotation angle
-     * @param nrotation the number of rotations to apply
+     * @param time_threshold the minimum time to run the benchmark in milliseconds
      * @param float_count the number of floats per element
      * @return the result of the benchmark as an add_mul_result
      */
@@ -83,8 +84,8 @@ namespace sham::benchmarks {
         T init_y,
         T cs,
         T sn,
-        int nrotation,
-        int float_count) {
+        int float_count,
+        f64 time_threshold) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
@@ -103,29 +104,52 @@ namespace sham::benchmarks {
 
         depends_list.wait();
 
-        sham::EventList empty_list{};
+        u32 nrotation       = 8;
+        double milliseconds = 0;
 
-        shambase::Timer t;
-        t.start();
-        auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
-                add_mul(item.get_linear_id(), nrotation, cs, sn, x_ptr, y_ptr, out_ptr);
+        auto run_bench = [&q, &N, &cs, &sn, &x_ptr, &y_ptr, &out_ptr](u32 nrotation) -> f64 {
+            sham::EventList empty_list{};
+
+            shambase::Timer t;
+            t.start();
+            auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
+                    add_mul(item.get_linear_id(), nrotation, cs, sn, x_ptr, y_ptr, out_ptr);
+                });
             });
-        });
-        e.wait();
-        t.end();
+            e.wait();
+            t.end();
+
+            return t.elasped_sec() * 1e3;
+        };
+
+        // warmup kernel
+        run_bench(4);
+
+        double ref = run_bench(0);
+
+        for (;;) {
+
+            milliseconds = run_bench(nrotation);
+
+            if (milliseconds >= time_threshold || nrotation >= 256 * 256 * 4) {
+                break;
+            }
+
+            nrotation *= 2;
+        }
 
         x.complete_event_state(sycl::event{});
         y.complete_event_state(sycl::event{});
         out.complete_event_state(sycl::event{});
 
-        double milliseconds = t.elasped_sec() * 1e3;
+        milliseconds -= ref;
 
         int flop_per_thread = nrotation * 6 * float_count;
         double flop_count   = double(N) * flop_per_thread;
         double flops        = flop_count / (milliseconds / 1e3);
 
-        return {SourceLocation{}.loc.function_name(), milliseconds, flops};
+        return {SourceLocation{}.loc.function_name(), milliseconds, flops, nrotation};
     }
 
 } // namespace sham::benchmarks

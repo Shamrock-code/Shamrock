@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -115,7 +115,7 @@ namespace shamcomm {
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
 
-        auto print_state = [](std::string log, StateMPI_Aware state) {
+        auto print_state = [](const std::string &log, StateMPI_Aware state) {
             switch (mpi_cuda_aware) {
             case Yes: logs::print_ln(" - " + log + " :", col8b_green() + "Yes" + reset()); break;
             case No : logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;

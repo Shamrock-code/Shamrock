@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,7 +18,7 @@
 
 namespace sham {
 
-    auto exception_handler = [](sycl::exception_list exceptions) {
+    auto exception_handler = [](const sycl::exception_list &exceptions) {
         for (std::exception_ptr const &e : exceptions) {
             try {
                 std::rethrow_exception(e);
@@ -61,11 +61,7 @@ namespace sham {
         }
 
         auto &dev = *device;
-        if (dev.mpi_prop.is_mpi_direct_capable) {
-            return true;
-        } else {
-            return false;
-        }
+        return dev.mpi_prop.is_mpi_direct_capable;
     }
 
 } // namespace sham

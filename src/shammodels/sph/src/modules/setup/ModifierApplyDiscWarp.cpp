@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -41,7 +41,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyDiscWarp<
     Tscal posangle       = posangle_;
 
     ////////////////////////// load data //////////////////////////
-    auto &pdl                         = sched.pdl();
+    auto &pdl                         = sched.pdl_old();
     sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
         = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("vxyz"));

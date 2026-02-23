@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -11,6 +11,7 @@
 
 /**
  * @file SolverConfig.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
@@ -30,6 +31,9 @@
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
+#include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -179,6 +183,73 @@ namespace shammodels::sph {
 
         bool is_density_based_neigh_lim() const {
             return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
+    struct SelfGravConfig {
+
+        struct SFMM {
+            u32 order;
+            f64 opening_angle;
+            bool leaf_lowering;
+            u32 reduction_level;
+        };
+
+        struct FMM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
+        struct MM {
+            u32 order;
+            f64 opening_angle;
+            u32 reduction_level;
+        };
+
+        struct Direct {
+            bool reference_mode = false;
+        };
+
+        struct None {};
+
+        using mode = std::variant<SFMM, FMM, MM, Direct, None>;
+
+        mode config = None{};
+
+        void set_none() { config = None{}; }
+        void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
+        void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
+            config = MM{mm_order, opening_angle, reduction_level};
+        }
+        void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
+            config = FMM{order, opening_angle, reduction_level};
+        }
+        void set_sfmm(u32 order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
+            config = SFMM{order, opening_angle, leaf_lowering, reduction_level};
+        }
+
+        bool is_none() const { return std::holds_alternative<None>(config); }
+        bool is_direct() const { return std::holds_alternative<Direct>(config); }
+        bool is_mm() const { return std::holds_alternative<MM>(config); }
+        bool is_fmm() const { return std::holds_alternative<FMM>(config); }
+        bool is_sfmm() const { return std::holds_alternative<SFMM>(config); }
+
+        bool is_sg_on() const { return !is_none(); }
+        bool is_sg_off() const { return is_none(); }
+
+        struct SofteningPlummer {
+            f64 epsilon;
+        };
+
+        using mode_soft          = std::variant<SofteningPlummer>;
+        mode_soft softening_mode = SofteningPlummer{1e-9};
+
+        void set_softening_plummer(f64 epsilon) { softening_mode = SofteningPlummer{epsilon}; }
+        void set_softening_none() { set_softening_plummer(0.); }
+
+        bool is_softening_plummer() const {
+            return std::holds_alternative<SofteningPlummer>(softening_mode);
         }
     };
 
@@ -353,6 +424,16 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    SelfGravConfig self_grav_config = SelfGravConfig{};
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Self gravity config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
     // Tree config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -404,6 +485,13 @@ struct shammodels::sph::SolverConfig {
         particle_reordering_step_freq = freq;
     }
 
+    bool save_dt_to_fields = false;
+    inline void set_save_dt_to_fields(bool enable) { save_dt_to_fields = enable; }
+    inline bool should_save_dt_to_fields() const { return save_dt_to_fields; }
+
+    bool show_ghost_zone_graph = false;
+    inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -430,9 +518,21 @@ struct shammodels::sph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    /// Check if the EOS is a polytropic equation of state
+    inline bool is_eos_polytropic() {
+        using T = typename EOSConfig::Polytropic;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /// Check if the EOS is an isothermal equation of state
     inline bool is_eos_isothermal() {
         using T = typename EOSConfig::Isothermal;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is a Fermi equation of state
+    inline bool is_eos_fermi() {
+        using T = typename EOSConfig::Fermi;
         return bool(std::get_if<T>(&eos_config.config));
     }
 
@@ -449,6 +549,13 @@ struct shammodels::sph::SolverConfig {
      * @param gamma The adiabatic index
      */
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+
+    /**
+     * @brief Set the EOS configuration to an polytropic equation of state
+     *
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_polytropic(Tscal K, Tscal gamma) { eos_config.set_polytropic(K, gamma); }
 
     /**
      * @brief Set the EOS configuration to a locally isothermal equation of state
@@ -477,6 +584,27 @@ struct shammodels::sph::SolverConfig {
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);
     }
+
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     * extended to q != 1/2
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     * @param n_sinks Number of sinks to consider for the equation of state
+     */
+    inline void set_eos_locally_isothermalFA2014_extended(
+        Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+        eos_config.set_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a Fermi equation of state
+     *
+     * @param mu_e The mean molecular weight
+     */
+    inline void set_eos_fermi(Tscal mu_e) { eos_config.set_fermi(mu_e); }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
@@ -728,6 +856,10 @@ struct shammodels::sph::SolverConfig {
     /// @brief Whether the solver has a field for dt divB
     inline bool has_field_dtdivB() { return mhd_config.has_dtdivB_field(); }
 
+    /// @brief Whether to store luminosity
+    bool compute_luminosity = false;
+    inline void use_luminosity(bool enable) { compute_luminosity = enable; }
+
     /// Print the current status of the solver config
     inline void print_status() {
         if (shamcomm::world_rank() != 0) {
@@ -751,6 +883,13 @@ struct shammodels::sph::SolverConfig {
         if (track_particles_id) {
             if (!shamrock::are_experimental_features_allowed()) {
                 shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
+            }
+        }
+
+        if (!self_grav_config.is_none()) {
+            if (!shamrock::are_experimental_features_allowed()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Self gravity is experimental, please enable experimental features to use it");
             }
         }
     }
@@ -884,6 +1023,91 @@ namespace shammodels::sph {
         }
     }
 
+    /// JSON serialization for SelfGravConfig
+    inline void to_json(nlohmann::json &j, const SelfGravConfig &p) {
+        if (const SelfGravConfig::SFMM *conf = std::get_if<SelfGravConfig::SFMM>(&p.config)) {
+            j = {
+                {"type", "sfmm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+                {"leaf_lowering", conf->leaf_lowering},
+            };
+        } else if (const SelfGravConfig::FMM *conf = std::get_if<SelfGravConfig::FMM>(&p.config)) {
+            j = {
+                {"type", "fmm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (const SelfGravConfig::MM *conf = std::get_if<SelfGravConfig::MM>(&p.config)) {
+            j = {
+                {"type", "mm"},
+                {"order", conf->order},
+                {"opening_angle", conf->opening_angle},
+                {"reduction_level", conf->reduction_level},
+            };
+        } else if (
+            const SelfGravConfig::Direct *conf = std::get_if<SelfGravConfig::Direct>(&p.config)) {
+            j = {
+                {"type", "direct"},
+                {"reference_mode", conf->reference_mode},
+            };
+        } else if (
+            const SelfGravConfig::None *conf = std::get_if<SelfGravConfig::None>(&p.config)) {
+            j = {
+                {"type", "none"},
+            };
+        }
+
+        if (const SelfGravConfig::SofteningPlummer *conf
+            = std::get_if<SelfGravConfig::SofteningPlummer>(&p.softening_mode)) {
+            j["softening_mode"]   = "plummer";
+            j["softening_length"] = conf->epsilon;
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    /// JSON deserialization for SelfGravConfig
+    inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
+        if (j.at("type").get<std::string>() == "sfmm") {
+            p.config = SelfGravConfig::SFMM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("leaf_lowering").get<bool>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "fmm") {
+            p.config = SelfGravConfig::FMM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "mm") {
+            p.config = SelfGravConfig::MM{
+                j.at("order").get<u32>(),
+                j.at("opening_angle").get<f64>(),
+                j.at("reduction_level").get<u32>()};
+        } else if (j.at("type").get<std::string>() == "direct") {
+            p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
+        } else if (j.at("type").get<std::string>() == "none") {
+            p.config = SelfGravConfig::None{};
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "Invalid self gravity type: " + j.at("type").get<std::string>());
+        }
+
+        if (j.contains("softening_mode")) {
+            std::string softening_mode = j.at("softening_mode").get<std::string>();
+            if (softening_mode == "plummer") {
+                p.softening_mode
+                    = SelfGravConfig::SofteningPlummer{j.at("softening_length").get<f64>()};
+            } else {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "Invalid softening mode: " + softening_mode);
+            }
+        }
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -898,9 +1122,6 @@ namespace shammodels::sph {
         std::string kernel_id = shambase::get_type_name<Tkernel>();
         std::string type_id   = shambase::get_type_name<Tvec>();
 
-        nlohmann::json junit;
-        to_json_optional(junit, p.unit_sys);
-
         j = nlohmann::json{
             // used for type checking
             {"kernel_id", kernel_id},
@@ -908,10 +1129,12 @@ namespace shammodels::sph {
             // actual data stored in the json
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
-            {"unit_sys", junit},
+            {"unit_sys", p.unit_sys},
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // self gravity config
+            {"self_grav_config", p.self_grav_config},
             // tree config
             {"tree_reduction_level", p.tree_reduction_level},
             {"use_two_stage_search", p.use_two_stage_search},
@@ -927,6 +1150,9 @@ namespace shammodels::sph {
 
             {"enable_particle_reordering", p.enable_particle_reordering},
             {"particle_reordering_step_freq", p.particle_reordering_step_freq},
+
+            {"save_dt_to_fields", p.save_dt_to_fields},
+            {"show_ghost_zone_graph", p.show_ghost_zone_graph},
 
             {"eos_config", p.eos_config},
 
@@ -953,114 +1179,81 @@ namespace shammodels::sph {
         using Tkernel = typename T::Kernel;
 
         // type checking
-        std::string kernel_id = j.at("kernel_id").get<std::string>();
+        if (j.contains("kernel_id")) {
 
-        if (kernel_id != shambase::get_type_name<Tkernel>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tkernel>()
-                + " but got " + kernel_id);
+            std::string kernel_id = j.at("kernel_id").get<std::string>();
+
+            if (kernel_id != shambase::get_type_name<Tkernel>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + kernel_id);
+            }
         }
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
+
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto _get_to_if_contains = [&](const std::string &key, auto &value) {
+            shamrock::get_to_if_contains(j, key, value, has_used_defaults);
+        };
+
+        auto _get_to_if_contains_fallbacks = [&](const std::string &key,
+                                                 auto &value,
+                                                 std::initializer_list<const char *> fallbacks) {
+            shamrock::get_to_if_contains_fallbacks(
+                j, key, value, fallbacks, has_used_defaults, has_updated_config);
+        };
 
         // actual data stored in the json
-        j.at("gpart_mass").get_to(p.gpart_mass);
-        j.at("cfl_config").get_to(p.cfl_config);
-
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
-
-        j.at("time_state").get_to(p.time_state);
-
-        // mhd config
-        try {
-            j.at("mhd_config").get_to(p.mhd_config);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
-            p.mhd_config.set(typename T::MHDConfig::None{});
-        }
-
-        j.at("tree_reduction_level").get_to(p.tree_reduction_level);
-        j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-
-        if (j.contains("show_neigh_stats")) {
-            j.at("show_neigh_stats").get_to(p.show_neigh_stats);
-        } else {
-            // Already set to default value
-            ON_RANK_0(shamlog_warn_ln(
-                "SPHConfig",
-                "show_neigh_stats not found when deserializing, defaulting to ",
-                p.show_neigh_stats));
-        }
-
-        j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
+        _get_to_if_contains("gpart_mass", p.gpart_mass);
+        _get_to_if_contains("cfl_config", p.cfl_config);
+        _get_to_if_contains("unit_sys", p.unit_sys);
+        _get_to_if_contains("time_state", p.time_state);
+        _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("self_grav_config", p.self_grav_config);
+        _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
+        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        _get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
+        _get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 
         // Try new names first, fall back to old names for backward compatibility
-        if (j.contains("htol_up_coarse_cycle")) {
-            j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
-        } else {
-            j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
-        }
+        _get_to_if_contains_fallbacks(
+            "htol_up_coarse_cycle", p.htol_up_coarse_cycle, {"htol_up_tol"});
+        _get_to_if_contains_fallbacks("htol_up_fine_cycle", p.htol_up_fine_cycle, {"htol_up_iter"});
 
-        if (j.contains("htol_up_fine_cycle")) {
-            j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
-        } else {
-            j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
-        }
+        _get_to_if_contains("epsilon_h", p.epsilon_h);
+        _get_to_if_contains("smoothing_length_config", p.smoothing_length_config);
+        _get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
+        _get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+        _get_to_if_contains("enable_particle_reordering", p.enable_particle_reordering);
+        _get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
+        _get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
+        _get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        _get_to_if_contains("eos_config", p.eos_config);
+        _get_to_if_contains("artif_viscosity", p.artif_viscosity);
+        _get_to_if_contains("boundary_config", p.boundary_config);
+        _get_to_if_contains("ext_force_config", p.ext_force_config);
+        _get_to_if_contains("do_debug_dump", p.do_debug_dump);
+        _get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
+        _get_to_if_contains("particle_killing", p.particle_killing);
 
-        j.at("epsilon_h").get_to(p.epsilon_h);
-
-        if (j.contains("smoothing_length_config")) {
-            j.at("smoothing_length_config").get_to(p.smoothing_length_config);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "smoothing_length_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.smoothing_length_config}.dump(4));
-        }
-
-        j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
-        j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
-
-        if (j.contains("enable_particle_reordering")) {
-            j.at("enable_particle_reordering").get_to(p.enable_particle_reordering);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "enable_particle_reordering not found when deserializing, defaulting to ",
-                p.enable_particle_reordering);
-        }
-
-        if (j.contains("particle_reordering_step_freq")) {
-            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "particle_reordering_step_freq not found when deserializing, defaulting to ",
-                p.particle_reordering_step_freq);
-        }
-
-        j.at("eos_config").get_to(p.eos_config);
-        j.at("artif_viscosity").get_to(p.artif_viscosity);
-        j.at("boundary_config").get_to(p.boundary_config);
-        j.at("ext_force_config").get_to(p.ext_force_config);
-
-        j.at("do_debug_dump").get_to(p.do_debug_dump);
-        j.at("debug_dump_filename").get_to(p.debug_dump_filename);
-
-        // particle killing config
-        try {
-            j.at("particle_killing").get_to(p.particle_killing);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "particle_killing not found when deserializing, defaulting to None");
-            p.particle_killing.kill_list = {};
+        if (has_used_defaults || has_updated_config) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,4 +18,4 @@
 #include <pybind11/pybind11.h>
 
 /// Call bindings init for the shamrock python module
-PYBIND11_MODULE(shamrock, m) { shambindings::init_lib(m); }
+PYBIND11_MODULE(pyshamrock, m) { shambindings::init_lib(m); }

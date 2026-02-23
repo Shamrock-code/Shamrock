@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -164,7 +164,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         if (solver.solver_config.is_dust_on()) {
             u32 ndust = solver.solver_config.dust_config.ndust;
 
-            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl();
+            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl_old();
             const u32 irho_dust                        = pdl.get_field_idx<Tscal>("rho_dust");
             const u32 irhovel_dust                     = pdl.get_field_idx<Tvec>("rhovel_dust");
 

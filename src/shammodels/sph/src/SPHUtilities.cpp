@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -96,7 +96,7 @@ namespace shammodels::sph {
                     using namespace shamrock::sph;
 
                     flt rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                    flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                    flt new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                     if (new_h < h_a * h_max_evol_m)
                         new_h = h_max_evol_m * h_a;
@@ -192,7 +192,7 @@ namespace shammodels::sph {
                         using namespace shamrock::sph;
 
                         flt rho_ha = rho_h(part_mass, h_a, SPHKernel::hfactd);
-                        flt new_h  = newtown_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
+                        flt new_h  = newton_iterate_new_h(rho_ha, rho_sum, sumdWdh, h_a);
 
                         if (new_h < h_a * h_max_evol_m)
                             new_h = h_max_evol_m * h_a;

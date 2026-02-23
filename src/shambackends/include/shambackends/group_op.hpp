@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,6 +23,17 @@
 namespace sham {
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
+    /**
+     * @brief Apply function to each component of a vector
+     *
+     * @tparam T Vector type
+     * @tparam Func Function type
+     * @tparam Args Variadic argument types
+     * @param in Input vector
+     * @param f Function to apply to each component
+     * @param args Additional arguments to forward to the function
+     * @return T Vector with function applied to each component
+     */
     template<class T, class Func, class... Args>
     inline T map_vector(const T &in, Func &&f, Args... args) {
 
@@ -81,6 +92,14 @@ namespace sham {
     // This messes up the reduction and every component will be reduced by the same value
     // I have no feaking idea why
 
+    /**
+     * @brief Sum reduction across work-group
+     *
+     * @tparam T Value type to reduce
+     * @param g SYCL work-group
+     * @param v Value to reduce
+     * @return T Sum of values across all work-items in the group
+     */
     template<class T>
     inline T sum_over_group(const sycl::group<1> &g, const T &v) {
     #ifdef SYCL_COMP_INTEL_LLVM
@@ -96,6 +115,14 @@ namespace sham {
     #endif
     }
 
+    /**
+     * @brief Minimum reduction across work-group
+     *
+     * @tparam T Value type to reduce
+     * @param g SYCL work-group
+     * @param v Value to reduce
+     * @return T Minimum value across all work-items in the group
+     */
     template<class T>
     inline T min_over_group(const sycl::group<1> &g, const T &v) {
     #ifdef SYCL_COMP_INTEL_LLVM
@@ -111,6 +138,14 @@ namespace sham {
     #endif
     }
 
+    /**
+     * @brief Maximum reduction across work-group
+     *
+     * @tparam T Value type to reduce
+     * @param g SYCL work-group
+     * @param v Value to reduce
+     * @return T Maximum value across all work-items in the group
+     */
     template<class T>
     inline T max_over_group(const sycl::group<1> &g, const T &v) {
     #ifdef SYCL_COMP_INTEL_LLVM

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -120,4 +120,35 @@ TestStart(Unittest, "shambackends/math.hpp:log2_pow2_num", shambackendsmathlog2_
     for (u64 i = 0; i < 64; i++) {
         REQUIRE_EQUAL(sham::log2_pow2_num<u64>(bitshift_noinline(1_u64, i)), i);
     }
+}
+
+TestStart(Unittest, "shambackends/math.hpp:max_component", shambackendsmathmax_component, 1) {
+
+    sycl::vec<f32, 2> a = {1._f32, 2._f32};
+    sycl::vec<f32, 3> b = {1._f32, 2._f32, 3._f32};
+    sycl::vec<f32, 4> c = {1._f32, 2._f32, 3._f32, 4._f32};
+    sycl::vec<f32, 8> d = {1._f32, 2._f32, 3._f32, 4._f32, 5._f32, 6._f32, 7._f32, 8._f32};
+    sycl::vec<f32, 16> e
+        = {1._f32,
+           2._f32,
+           3._f32,
+           4._f32,
+           5._f32,
+           6._f32,
+           7._f32,
+           8._f32,
+           9._f32,
+           10._f32,
+           11._f32,
+           12._f32,
+           13._f32,
+           14._f32,
+           15._f32,
+           16._f32};
+
+    REQUIRE_EQUAL(sham::max_component(a), 2._f32);
+    REQUIRE_EQUAL(sham::max_component(b), 3._f32);
+    REQUIRE_EQUAL(sham::max_component(c), 4._f32);
+    REQUIRE_EQUAL(sham::max_component(d), 8._f32);
+    REQUIRE_EQUAL(sham::max_component(e), 16._f32);
 }

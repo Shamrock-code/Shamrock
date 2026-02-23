@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -21,7 +21,9 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include <pybind11/pytypes.h>
 
 namespace shammodels::sph::modules {
 
@@ -48,7 +50,12 @@ namespace shammodels::sph::modules {
         using lamda_runner
             = std::function<sham::DeviceBuffer<Tfield>(std::function<field_getter_t>)>;
 
-        sham::DeviceBuffer<Tfield> runner_function(std::string field_name, lamda_runner lambda);
+        sham::DeviceBuffer<Tfield> runner_function(
+            std::string field_name,
+            lamda_runner lambda,
+            std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
+                custom_getter
+            = std::nullopt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

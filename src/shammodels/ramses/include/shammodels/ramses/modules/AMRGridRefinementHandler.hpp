@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -23,11 +23,6 @@
 #include "shamrock/amr/AMRCell.hpp"
 
 namespace shammodels::basegodunov::modules {
-
-    struct OptIndexList {
-        std::optional<sycl::buffer<u32>> idx;
-        u32 count;
-    };
 
     template<class Tvec, class TgridVec>
     class AMRGridRefinementHandler {
@@ -74,15 +69,16 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<OptIndexList> &refine_list,
-            shambase::DistributedData<OptIndexList> &derefine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
             T &&...args);
 
         template<class UserAcc>
-        void internal_refine_grid(shambase::DistributedData<OptIndexList> &&refine_list);
+        bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
 
         template<class UserAcc>
-        void internal_derefine_grid(shambase::DistributedData<OptIndexList> &&derefine_list);
+        bool internal_derefine_grid(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
         void internal_update_refinement();

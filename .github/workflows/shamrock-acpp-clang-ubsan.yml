@@ -23,7 +23,7 @@ jobs:
           - clang: 17
             cuda: 11.0.2
             rocm: 5.4.3
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu20
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
     #if: false
 
     timeout-minutes: 120
@@ -58,6 +58,7 @@ jobs:
       - name: install LLVM
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
+          sudo apt update && \
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
           sudo ./llvm.sh ${{matrix.clang}}
@@ -67,6 +68,21 @@ jobs:
             sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
           fi
 
+      - uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ github.job }}-ubsan-acpp
+          verbose: 2
+
+      - name: Configure ccache
+        shell: bash
+        run: |
+          echo " ----- ccache configuration ----- "
+          echo " Old configuration: "
+          ccache -p
+          echo " ----- New configuration:   ----- "
+          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+          ccache -p
+          echo " ----- ccache configuration done ----- "
 
       - name: configure Shamrock
         run: |
@@ -82,6 +98,7 @@ jobs:
         shell: bash # In docker container github action default to sh
         run: |
           cd build
+          export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate && shammake
 
       - name: Pull reference files

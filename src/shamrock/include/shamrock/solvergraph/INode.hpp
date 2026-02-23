@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
 
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include <memory>
 #include <vector>
@@ -34,6 +35,17 @@ namespace shamrock::solvergraph {
         std::vector<std::shared_ptr<IEdge>> rw_edges;
 
         public:
+        INode() = default;
+
+        INode(const INode &)            = delete; /// would violate shared_from_this() & unique UUID
+        INode &operator=(const INode &) = delete; /// would violate shared_from_this() & unique UUID
+
+        /// Move constructor - automatically delegates to base classes and members
+        INode(INode &&) noexcept = default;
+
+        /// Move assignment - automatically delegates to base classes and members
+        INode &operator=(INode &&) noexcept = default;
+
         /// Get a shared pointer to this node
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
         /// Get a weak pointer to this node
@@ -80,8 +92,16 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(ro_edges.at(slot));
         }
 
+        inline const IEdge &get_ro_edge_base(int slot) const {
+            return shambase::get_check_ref(ro_edges.at(slot));
+        }
+
         /// Get a reference to a read write edge and cast it to the type IEdge
         inline IEdge &get_rw_edge_base(int slot) {
+            return shambase::get_check_ref(rw_edges.at(slot));
+        }
+
+        inline const IEdge &get_rw_edge_base(int slot) const {
             return shambase::get_check_ref(rw_edges.at(slot));
         }
 
@@ -105,7 +125,7 @@ namespace shamrock::solvergraph {
         inline std::string get_tex_partial() { return _impl_get_tex(); };
 
         /// print the node info
-        inline virtual std::string print_node_info() {
+        inline virtual std::string print_node_info() const {
             std::string node_info = shambase::format("Node info :\n");
             node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
             node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
@@ -135,17 +155,17 @@ namespace shamrock::solvergraph {
         virtual void _impl_evaluate_internal() = 0;
 
         /// get the label of the node
-        virtual std::string _impl_get_label() = 0;
+        virtual std::string _impl_get_label() const = 0;
 
         /// get the dot graph of the node partial
-        virtual std::string _impl_get_dot_graph_partial();
+        virtual std::string _impl_get_dot_graph_partial() const;
         /// get the dot graph of the node start
-        virtual std::string _impl_get_dot_graph_node_start();
+        virtual std::string _impl_get_dot_graph_node_start() const;
         /// get the dot graph of the node end
-        virtual std::string _impl_get_dot_graph_node_end();
+        virtual std::string _impl_get_dot_graph_node_end() const;
 
         /// get the tex of the node
-        virtual std::string _impl_get_tex() = 0;
+        virtual std::string _impl_get_tex() const = 0;
     };
 
     inline void INode::__internal_set_ro_edges(std::vector<std::shared_ptr<IEdge>> new_ro_edges) {
@@ -182,7 +202,7 @@ namespace shamrock::solvergraph {
         }
     }
 
-    inline std::string INode::_impl_get_dot_graph_partial() {
+    inline std::string INode::_impl_get_dot_graph_partial() const {
         std::string node_str
             = shambase::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
 
@@ -207,11 +227,42 @@ namespace shamrock::solvergraph {
         return shambase::format("{}{}", node_str, edge_str);
     };
 
-    inline std::string INode::_impl_get_dot_graph_node_start() {
+    inline std::string INode::_impl_get_dot_graph_node_start() const {
         return shambase::format("n_{}", this->get_uuid());
     }
-    inline std::string INode::_impl_get_dot_graph_node_end() {
+    inline std::string INode::_impl_get_dot_graph_node_end() const {
         return shambase::format("n_{}", this->get_uuid());
     }
 
 } // namespace shamrock::solvergraph
+
+#define INODE_DECL_RO(type, name) const type &name;
+#define INODE_DECL_RW(type, name) type & name;
+#define INODE_PARAM_RO(type, name) std::shared_ptr<type> name,
+#define INODE_PARAM_RW(type, name) std::shared_ptr<type> name,
+#define INODE_PUSH_RO1(type, name) name,
+#define INODE_PUSH_RW1(type, name)
+#define INODE_PUSH_RO2(type, name)
+#define INODE_PUSH_RW2(type, name) name,
+#define INODE_GET_RO(type, name) get_ro_edge<type>(ro++),
+#define INODE_GET_RW(type, name) get_rw_edge<type>(rw++),
+
+#define EXPAND_NODE_EDGES(EDGES)                                                                   \
+                                                                                                   \
+    struct Edges {                                                                                 \
+        EDGES(INODE_DECL_RO, INODE_DECL_RW)                                                        \
+    };                                                                                             \
+                                                                                                   \
+    inline void set_edges(                                                                         \
+        EDGES(INODE_PARAM_RO, INODE_PARAM_RW) SourceLocation loc = SourceLocation{}) {             \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        __internal_set_ro_edges({EDGES(INODE_PUSH_RO1, INODE_PUSH_RW1)});                          \
+        __internal_set_rw_edges({EDGES(INODE_PUSH_RO2, INODE_PUSH_RW2)});                          \
+    }                                                                                              \
+                                                                                                   \
+    inline Edges get_edges() {                                                                     \
+        int ro = 0;                                                                                \
+        int rw = 0;                                                                                \
+        return Edges{EDGES(INODE_GET_RO, INODE_GET_RW)};                                           \
+    }

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -37,8 +37,14 @@ namespace shamphys {
     class GreenFuncGravCartesian {
         public:
         inline static shammath::SymTensorCollection<T, low_order, high_order> get_der_tensors(
-            sycl::vec<T, 3> r);
+            const sycl::vec<T, 3> &r);
     };
+
+    template<class T, u32 low_order, u32 high_order>
+    inline shammath::SymTensorCollection<T, low_order, high_order> green_func_grav_cartesian(
+        const sycl::vec<T, 3> &r) {
+        return GreenFuncGravCartesian<T, low_order, high_order>::get_der_tensors(r);
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 // Implementations for all cases
@@ -49,7 +55,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 5> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 5> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 5> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
 
             T r1 = r.x();
@@ -156,7 +163,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 4> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 4> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 4> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
             T r1 = r.x();
             T r2 = r.y();
@@ -234,7 +242,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 3> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 3> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 3> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
 
             T r1 = r.x();
@@ -291,7 +300,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 2> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 2> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 2> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
 
             using namespace shammath;
 
@@ -336,7 +346,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 1> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 1> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 1> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
             T r1 = r.x();
             T r2 = r.y();
@@ -370,7 +381,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 0, 0> {
         public:
-        inline static shammath::SymTensorCollection<T, 0, 0> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 0, 0> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
             T r1 = r.x();
             T r2 = r.y();
@@ -402,7 +414,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 1, 5> {
         public:
-        inline static shammath::SymTensorCollection<T, 1, 5> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 1, 5> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
             T r1 = r.x();
             T r2 = r.y();
@@ -506,7 +519,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 1, 4> {
         public:
-        inline static shammath::SymTensorCollection<T, 1, 4> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 1, 4> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
 
             using namespace shammath;
 
@@ -584,7 +598,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 1, 3> {
         public:
-        inline static shammath::SymTensorCollection<T, 1, 3> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 1, 3> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
 
             using namespace shammath;
 
@@ -640,7 +655,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 1, 2> {
         public:
-        inline static shammath::SymTensorCollection<T, 1, 2> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 1, 2> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
 
             using namespace shammath;
 
@@ -683,7 +699,8 @@ namespace shamphys {
     template<class T>
     class GreenFuncGravCartesian<T, 1, 1> {
         public:
-        inline static shammath::SymTensorCollection<T, 1, 1> get_der_tensors(sycl::vec<T, 3> r) {
+        inline static shammath::SymTensorCollection<T, 1, 1> get_der_tensors(
+            const sycl::vec<T, 3> &r) {
             using namespace shammath;
             T r1 = r.x();
             T r2 = r.y();

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -501,7 +501,13 @@ namespace shamtest {
 
         ON_RANK_0(shamcomm::logs::print_faint_row());
         shambindings::modify_py_sys_path(shamcomm::world_rank() == 0);
+        shambindings::set_sys_argv(argc, argv);
         ON_RANK_0(shamcomm::logs::print_faint_row());
+
+        // import shamrock in pybind
+        py::exec(R"(
+            import shamrock
+        )");
 
         std::filesystem::create_directories("tests/figures");
 
@@ -516,6 +522,8 @@ namespace shamtest {
             shamtest::details::Test &test = static_init_vec_tests[i];
 
             _start_test_print(test, test_loc_cnt, selected_tests.size());
+
+            [[maybe_unused]] shambase::scoped_exception_gen_callback scoped_callback(nullptr);
 
             mpi::barrier(MPI_COMM_WORLD);
             shambase::Timer timer;

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -25,6 +25,8 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
+#include "shamrock/solvergraph/NodeSetEdge.hpp"
+#include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 #include <fstream>
@@ -75,9 +77,11 @@ class PatchScheduler {
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
     ///< (owned_patch_id = patch_list.build_local())
 
-    inline shamrock::patch::PatchDataLayerLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+    inline shamrock::patch::PatchDataLayerLayout &pdl_old() {
+        return shambase::get_check_ref(pdl_ptr);
+    }
 
-    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr() const {
+    inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr_old() const {
         return pdl_ptr;
     }
 
@@ -128,11 +132,11 @@ class PatchScheduler {
     template<class vectype>
     void set_coord_domain_bound(vectype bmin, vectype bmax) {
 
-        if (!pdl().check_main_field_type<vectype>()) {
+        if (!pdl_old().check_main_field_type<vectype>()) {
             std::invalid_argument(
                 std::string("the main field is not of the correct type to call this function\n")
                 + "fct called : " + __PRETTY_FUNCTION__
-                + "current patch data layout : " + pdl().get_description_str());
+                + "current patch data layout : " + pdl_old().get_description_str());
         }
 
         patch_data.sim_box.set_bounding_box<vectype>({bmin, bmax});
@@ -400,7 +404,7 @@ class PatchScheduler {
         StackEntry stack_loc{};
         std::unique_ptr<sycl::buffer<T>> ret;
 
-        auto fd  = pdl().get_field<T>(field_idx);
+        auto fd  = pdl_old().get_field<T>(field_idx);
         u64 nvar = fd.nvar;
 
         u64 num_obj = get_rank_count();
@@ -471,6 +475,19 @@ class PatchScheduler {
 
         field.build_global(dtype);
     }
+
+    inline auto get_node_set_edge_patchdata_layer_refs() {
+        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::PatchDataLayerRefs> node_set_edge(
+            [&](shamrock::solvergraph::PatchDataLayerRefs &edge) {
+                edge.free_alloc();
+                using namespace shamrock::patch;
+                for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    edge.patchdatas.add_obj(cur_p.id_patch, std::ref(pdat));
+                });
+            });
+
+        return std::make_shared<decltype(node_set_edge)>(std::move(node_set_edge));
+    };
 
     /**
      * @brief add a root patch to the scheduler

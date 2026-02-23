@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -48,7 +48,7 @@ auto shammodels::sph::modules::AnalysisSodTube<Tvec, SPHKernel>::compute_L2_dist
     auto &sched = scheduler();
 
     using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl = sched.pdl();
+    PatchDataLayerLayout &pdl = sched.pdl_old();
 
     const u32 ixyz   = pdl.get_field_idx<Tvec>("xyz");
     const u32 ihpart = pdl.get_field_idx<Tscal>("hpart");

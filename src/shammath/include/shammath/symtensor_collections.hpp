@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -120,7 +120,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + offset_t0] = t0;
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -130,7 +130,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 acc[offset + offset_t0],
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
@@ -162,6 +162,17 @@ namespace shammath {
             t5 += other.t5;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 5> operator-(
+            const SymTensorCollection<T, 0, 5> &other) const {
+            return {
+                t0 - other.t0,
+                t1 - other.t1,
+                t2 - other.t2,
+                t3 - other.t3,
+                t4 - other.t4,
+                t5 - other.t5};
         }
     };
 
@@ -247,7 +258,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + offset_t0] = t0;
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -256,7 +267,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 acc[offset + offset_t0],
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
@@ -285,6 +296,11 @@ namespace shammath {
             t4 += other.t4;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 4> operator-(
+            const SymTensorCollection<T, 0, 4> &other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4};
         }
     };
 
@@ -349,7 +365,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + offset_t0] = t0;
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -357,7 +373,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 acc[offset + offset_t0],
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
@@ -383,6 +399,11 @@ namespace shammath {
             t3 += other.t3;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 3> operator-(
+            const SymTensorCollection<T, 0, 3> &other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2, t3 - other.t3};
         }
     };
 
@@ -430,14 +451,14 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + offset_t0] = t0;
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 acc[offset + offset_t0],
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
@@ -460,6 +481,11 @@ namespace shammath {
             t2 += other.t2;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 2> operator-(
+            const SymTensorCollection<T, 0, 2> &other) const {
+            return {t0 - other.t0, t1 - other.t1, t2 - other.t2};
         }
     };
 
@@ -485,13 +511,13 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + offset_t0] = t0;
             t1.store(acc, offset + offset_t1);
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 acc[offset + offset_t0], SymTensor3d_1<T>::load(acc, offset + offset_t1)};
         }
@@ -511,6 +537,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 0, 1> operator-(
+            const SymTensorCollection<T, 0, 1> &other) const {
+            return {t0 - other.t0, t1 - other.t1};
+        }
     };
 
     template<class T>
@@ -523,12 +554,12 @@ namespace shammath {
         inline static SymTensorCollection zeros() { return {0}; }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
             acc[offset + 0] = t0;
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{acc[offset + 0]};
         }
 
@@ -544,6 +575,11 @@ namespace shammath {
             t0 += other.t0;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 0, 0> operator-(
+            const SymTensorCollection<T, 0, 0> &other) const {
+            return {t0 - other.t0};
         }
     };
 
@@ -618,7 +654,7 @@ namespace shammath {
                                        A4.v_1111 * A1.v_1, A4.v_1112 * A1.v_1, A4.v_1122 * A1.v_1,
                                        A4.v_1222 * A1.v_1, A4.v_2222 * A1.v_1, A4.v_2222 * A1.v_2};
 
-            return {1, A1, A2, A3, A4, A5};
+            return {A1, A2, A3, A4, A5};
         }
 
         inline static SymTensorCollection zeros() {
@@ -644,7 +680,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
 
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -654,7 +690,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
                 SymTensor3d_2<T>::load(acc, offset + offset_t2),
@@ -683,6 +719,11 @@ namespace shammath {
             t5 += other.t5;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 1, 5> operator-(
+            const SymTensorCollection<T, 1, 5> &other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4, t5 - other.t5};
         }
     };
 
@@ -767,7 +808,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
 
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -776,7 +817,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
                 SymTensor3d_2<T>::load(acc, offset + offset_t2),
@@ -802,6 +843,11 @@ namespace shammath {
             t4 += other.t4;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 1, 4> operator-(
+            const SymTensorCollection<T, 1, 4> &other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3, t4 - other.t4};
         }
     };
 
@@ -865,7 +911,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
 
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
@@ -873,7 +919,7 @@ namespace shammath {
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
                 SymTensor3d_2<T>::load(acc, offset + offset_t2),
@@ -896,6 +942,11 @@ namespace shammath {
             t3 += other.t3;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 1, 3> operator-(
+            const SymTensorCollection<T, 1, 3> &other) const {
+            return {t1 - other.t1, t2 - other.t2, t3 - other.t3};
         }
     };
 
@@ -923,7 +974,7 @@ namespace shammath {
                 A1.v_2 * A1.v_2,
             };
 
-            return {1, A1, A2};
+            return {A1, A2};
         }
 
         inline static SymTensorCollection zeros() {
@@ -938,18 +989,18 @@ namespace shammath {
                 0,
             };
 
-            return {0, A1, A2};
+            return {A1, A2};
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
 
             t1.store(acc, offset + offset_t1);
             t2.store(acc, offset + offset_t2);
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{
                 SymTensor3d_1<T>::load(acc, offset + offset_t1),
                 SymTensor3d_2<T>::load(acc, offset + offset_t2)};
@@ -970,6 +1021,11 @@ namespace shammath {
 
             return *this;
         }
+
+        inline SymTensorCollection<T, 1, 2> operator-(
+            const SymTensorCollection<T, 1, 2> &other) const {
+            return {t1 - other.t1, t2 - other.t2};
+        }
     };
 
     template<class T>
@@ -984,37 +1040,42 @@ namespace shammath {
         inline static SymTensorCollection from_vec(const sycl::vec<T, 3> &v) {
             auto A1 = SymTensor3d_1<T>{v.x(), v.y(), v.z()};
 
-            return {1, A1};
+            return {A1};
         }
         inline static SymTensorCollection zeros() {
             auto A1 = SymTensor3d_1<T>{0, 0, 0};
 
-            return {0, A1};
+            return {A1};
         }
 
         template<class Tacc>
-        inline void store(Tacc &acc, u32 offset) {
+        inline void store(Tacc &&acc, u32 offset) const {
 
             t1.store(acc, offset + offset_t1);
         }
 
         template<class Tacc>
-        inline static SymTensorCollection load(Tacc &acc, u32 offset) {
+        inline static SymTensorCollection load(Tacc &&acc, u32 offset) {
             return SymTensorCollection{SymTensor3d_1<T>::load(acc, offset + offset_t1)};
         }
 
-        inline SymTensorCollection<T, 0, 1> &operator*=(const T scal) {
+        inline SymTensorCollection<T, 1, 1> &operator*=(const T scal) {
 
             t1 *= scal;
 
             return *this;
         }
 
-        inline SymTensorCollection<T, 0, 1> &operator+=(const SymTensorCollection<T, 0, 1> other) {
+        inline SymTensorCollection<T, 1, 1> &operator+=(const SymTensorCollection<T, 1, 1> other) {
 
             t1 += other.t1;
 
             return *this;
+        }
+
+        inline SymTensorCollection<T, 1, 1> operator-(
+            const SymTensorCollection<T, 1, 1> &other) const {
+            return {t1 - other.t1};
         }
     };
 } // namespace shammath

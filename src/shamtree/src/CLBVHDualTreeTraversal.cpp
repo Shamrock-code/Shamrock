@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -70,7 +70,8 @@ namespace shamtree {
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<Tmorton, Tvec, dim> &bvh,
         shambase::VecComponent<Tvec> theta_crit,
-        bool ordered_result) {
+        bool ordered_result,
+        bool allow_leaf_lowering) {
 
         if (bvh.is_empty()) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -81,12 +82,13 @@ namespace shamtree {
         using ImplPar = details::DTTParallelSelect<Tmorton, Tvec, dim>;
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
-        bool ord = ordered_result;
+        bool ord  = ordered_result;
+        bool llow = allow_leaf_lowering;
 
         switch (dtt_impl) {
-        case DTTImpl::REFERENCE      : return ImplRef::dtt(dev_sched, bvh, theta_crit, ord);
-        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit, ord);
-        case DTTImpl::SCAN_MULTIPASS : return ImplSca::dtt(dev_sched, bvh, theta_crit, ord);
+        case DTTImpl::REFERENCE      : return ImplRef::dtt(dev_sched, bvh, theta_crit, ord, llow);
+        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit, ord, llow);
+        case DTTImpl::SCAN_MULTIPASS : return ImplSca::dtt(dev_sched, bvh, theta_crit, ord, llow);
         default                      : shambase::throw_unimplemented();
         }
     }
@@ -95,6 +97,14 @@ namespace shamtree {
         sham::DeviceScheduler_ptr dev_sched,
         const CompressedLeafBVH<u64, f64_3, 3> &bvh,
         shambase::VecComponent<f64_3> theta_crit,
-        bool ordered_result);
+        bool ordered_result,
+        bool allow_leaf_lowering);
+
+    template DTTResult clbvh_dual_tree_traversal<u32, f64_3, 3>(
+        sham::DeviceScheduler_ptr dev_sched,
+        const CompressedLeafBVH<u32, f64_3, 3> &bvh,
+        shambase::VecComponent<f64_3> theta_crit,
+        bool ordered_result,
+        bool allow_leaf_lowering);
 
 } // namespace shamtree

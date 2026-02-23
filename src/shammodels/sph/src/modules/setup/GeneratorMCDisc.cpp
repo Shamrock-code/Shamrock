@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -22,23 +22,25 @@
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next()
+auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::next(u64 seed)
     -> DiscOutput {
+
+    std::mt19937_64 eng_local(seed); // ensure that 1 part = 1 random draw
 
     Tscal fmax = f_func(r_out);
 
     auto find_r = [&]() {
         while (true) {
-            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng, 0, fmax);
-            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng, r_in, r_out);
+            Tscal u2 = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, fmax);
+            Tscal r  = shamalgs::primitives::mock_value<Tscal>(eng_local, r_in, r_out);
             if (u2 < f_func(r)) {
                 return r;
             }
         }
     };
 
-    auto theta = shamalgs::primitives::mock_value<Tscal>(eng, 0, _2pi);
-    auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng);
+    auto theta = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, _2pi);
+    auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng_local);
 
     Tscal r = find_r();
 
@@ -83,38 +85,12 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
     using namespace shamrock::patch;
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
-    auto has_pdat = [&]() {
-        bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
-            ret = true;
-        });
-        return ret;
-    };
-
     std::vector<DiscOutput> pos_data;
 
     // Fill pos_data if the scheduler has some patchdata in this rank
-    if (!is_done()) {
-        u64 loc_gen_count = (has_pdat()) ? nmax : 0;
-
-        auto gen_info = shamalgs::collective::fetch_view(loc_gen_count);
-
-        u64 skip_start = gen_info.head_offset;
-        u64 gen_cnt    = loc_gen_count;
-        u64 skip_end   = gen_info.total_byte_count - loc_gen_count - gen_info.head_offset;
-
-        shamlog_debug_ln(
-            "GeneratorMCDisc",
-            "generate : ",
-            skip_start,
-            gen_cnt,
-            skip_end,
-            "total",
-            skip_start + gen_cnt + skip_end);
-
-        generator.skip(skip_start);
-        pos_data = generator.next_n(gen_cnt);
-        generator.skip(skip_end);
+    if (!generator.is_done()) {
+        u64 loc_gen_count = nmax;
+        pos_data          = generator.next_n(loc_gen_count);
     }
 
     // extract the pos from part_list
@@ -134,28 +110,30 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
     }
 
     // Make a patchdata from pos_data
-    PatchDataLayer tmp(sched.get_layout_ptr());
+    PatchDataLayer tmp(sched.get_layout_ptr_old());
     if (!pos_data.empty()) {
         tmp.resize(pos_data.size());
         tmp.fields_raz();
 
         {
-            u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
             sycl::buffer<Tvec> buf(vec_pos.data(), len);
             f.override(buf, len);
         }
 
         {
-            u32 len                 = pos_data.size();
-            PatchDataField<Tvec> &f = tmp.get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
+            u32 len = pos_data.size();
+            PatchDataField<Tvec> &f
+                = tmp.get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
             sycl::buffer<Tvec> buf(vec_vel.data(), len);
             f.override(buf, len);
         }
         {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("hpart"));
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("hpart"));
             sycl::buffer<Tscal> buf(vec_h.data(), len);
             f.override(buf, len);
         }
@@ -163,7 +141,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
         if (solver_config.is_eos_locally_isothermal()) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
-                = tmp.get_field<Tscal>(sched.pdl().get_field_idx<Tscal>("soundspeed"));
+                = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));
             sycl::buffer<Tscal> buf(vec_cs.data(), len);
             f.override(buf, len);
         }

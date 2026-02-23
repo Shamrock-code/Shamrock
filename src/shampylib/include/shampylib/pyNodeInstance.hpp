@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -18,6 +18,7 @@
 #include "shambindings/pybindaliases.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcomm/mpiInfo.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace shamsys::instance {
@@ -78,6 +79,15 @@ namespace shamsys::instance {
             },
             R"pbdoc(
             Return true if the node instance is initialized
+            )pbdoc");
+
+        m.def(
+            "mpi_barrier",
+            []() {
+                shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+            },
+            R"pbdoc(
+            Call the MPI barrier
             )pbdoc");
     }
 } // namespace shamsys::instance

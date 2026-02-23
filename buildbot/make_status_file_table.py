@@ -39,7 +39,6 @@ def get_new_state(state1: str, state2: str):
         return dic_inv[0]
 
     else:
-
         return dic_inv[min(st[0], st[1])]
 
 
@@ -60,7 +59,6 @@ def path_to_dict(path):
                 if status == "":
                     status = c["implstatus"]
                 else:
-
                     status = get_new_state(c["implstatus"], status)
 
             else:
@@ -91,7 +89,6 @@ j_out = path_to_dict(abs_src_dir)
 
 
 def print_node(prefix, node):
-
     color = ""
     spacing = ""
 

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -105,7 +105,7 @@ namespace shamrock::sfc {
 
     template<class morton_t, class _pos_t, u32 dim>
     void MortonKernels<morton_t, _pos_t, dim>::sycl_xyz_to_morton(
-        sham::DeviceScheduler_ptr dev_sched,
+        const sham::DeviceScheduler_ptr &dev_sched,
         u32 pos_count,
         sham::DeviceBuffer<pos_t> &in_positions,
         pos_t bounding_box_min,

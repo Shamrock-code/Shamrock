@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -179,7 +179,7 @@ void shammodels::basegodunov::modules::AMRSetup<Tvec, TgridVec>::make_base_grid(
         }
 
         // Make a patchdata from pos_data
-        shamrock::patch::PatchDataLayer tmp(sched.get_layout_ptr());
+        shamrock::patch::PatchDataLayer tmp(sched.get_layout_ptr_old());
         if (!tmp_out.empty()) {
             tmp.resize(tmp_out.size());
             tmp.fields_raz();

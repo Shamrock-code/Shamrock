@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -66,7 +66,8 @@ namespace impl {
                         comm_pdat.push_back(std::move(pdat));
                     }
                 } else {
-                    comm_pdat.push_back(std::make_unique<PatchDataLayer>(sched.get_layout_ptr()));
+                    comm_pdat.push_back(
+                        std::make_unique<PatchDataLayer>(sched.get_layout_ptr_old()));
                 }
                 comm_vec.push_back(
                     u64_2{
@@ -78,7 +79,11 @@ namespace impl {
         }
 
         patch_data_exchange_object(
-            sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, interface_map);
+            sched.get_layout_ptr_old(),
+            sched.patch_list.global,
+            comm_pdat,
+            comm_vec,
+            interface_map);
     }
 
     template<class T, class vectype>

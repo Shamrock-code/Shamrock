@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -16,6 +16,7 @@
  */
 
 #include "shambase/string.hpp"
+#include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/comm/details/CommunicationBufferImpl.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -122,75 +123,77 @@ namespace shamrock {
 
             std::unordered_map<u64, u64> histogram_extract;
 
-            sched.patch_data.for_each_patchdata([&](u64 current_pid,
-                                                    shamrock::patch::PatchDataLayer &pdat) {
-                histogram_extract[current_pid] = 0;
-                if (!pdat.is_empty()) {
+            sched.patch_data.for_each_patchdata(
+                [&](u64 current_pid, shamrock::patch::PatchDataLayer &pdat) {
+                    histogram_extract[current_pid] = 0;
+                    if (!pdat.is_empty()) {
 
-                    sycl::host_accessor nid{new_pid.get(current_pid), sycl::read_only};
+                        sycl::host_accessor nid{new_pid.get(current_pid), sycl::read_only};
 
-                    if (false) {
+                        if (false) {
 
-                        const u32 cnt = pdat.get_obj_cnt();
+                            const u32 cnt = pdat.get_obj_cnt();
 
-                        for (u32 i = cnt - 1; i < cnt; i--) {
-                            u64 new_pid = nid[i];
-                            if (current_pid != new_pid) {
+                            for (u32 i = cnt - 1; i < cnt; i--) {
+                                u64 new_pid = nid[i];
+                                if (current_pid != new_pid) {
+
+                                    if (!part_exchange.has_key(current_pid, new_pid)) {
+                                        part_exchange.add_obj(
+                                            current_pid,
+                                            new_pid,
+                                            PatchDataLayer(sched.get_layout_ptr_old()));
+                                    }
+
+                                    part_exchange.for_each(
+                                        [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
+                                            if (_old_id == current_pid && _new_id == new_pid) {
+                                                pdat.extract_element(i, pdat_int);
+                                                histogram_extract[current_pid]++;
+                                            }
+                                        });
+                                }
+                            }
+                        } else {
+                            std::vector<u32> keep_ids;
+                            std::unordered_map<u64, std::vector<u32>> extract_indexes;
+
+                            const u32 cnt = pdat.get_obj_cnt();
+                            for (u32 i = 0; i < cnt; i++) {
+                                u64 new_pid = nid[i];
+                                if (current_pid != new_pid) {
+                                    extract_indexes[new_pid].push_back(i);
+                                    histogram_extract[current_pid]++;
+                                } else {
+                                    keep_ids.push_back(i);
+                                }
+                            }
+
+                            for (auto &[new_id, vec] : extract_indexes) {
+
+                                u64 new_pid                   = new_id;
+                                std::vector<u32> &idx_extract = vec;
 
                                 if (!part_exchange.has_key(current_pid, new_pid)) {
                                     part_exchange.add_obj(
                                         current_pid,
                                         new_pid,
-                                        PatchDataLayer(sched.get_layout_ptr()));
+                                        PatchDataLayer(sched.get_layout_ptr_old()));
                                 }
 
                                 part_exchange.for_each(
                                     [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
                                         if (_old_id == current_pid && _new_id == new_pid) {
-                                            pdat.extract_element(i, pdat_int);
-                                            histogram_extract[current_pid]++;
+                                            pdat.append_subset_to(idx_extract, pdat_int);
                                         }
                                     });
                             }
+
+                            sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
+                            pdat.keep_ids(keep_idx, keep_ids.size());
                         }
-                    } else {
-                        std::vector<u32> keep_ids;
-                        std::unordered_map<u64, std::vector<u32>> extract_indexes;
-
-                        const u32 cnt = pdat.get_obj_cnt();
-                        for (u32 i = 0; i < cnt; i++) {
-                            u64 new_pid = nid[i];
-                            if (current_pid != new_pid) {
-                                extract_indexes[new_pid].push_back(i);
-                                histogram_extract[current_pid]++;
-                            } else {
-                                keep_ids.push_back(i);
-                            }
-                        }
-
-                        for (auto &[new_id, vec] : extract_indexes) {
-
-                            u64 new_pid                   = new_id;
-                            std::vector<u32> &idx_extract = vec;
-
-                            if (!part_exchange.has_key(current_pid, new_pid)) {
-                                part_exchange.add_obj(
-                                    current_pid, new_pid, PatchDataLayer(sched.get_layout_ptr()));
-                            }
-
-                            part_exchange.for_each(
-                                [&](u64 _old_id, u64 _new_id, PatchDataLayer &pdat_int) {
-                                    if (_old_id == current_pid && _new_id == new_pid) {
-                                        pdat.append_subset_to(idx_extract, pdat_int);
-                                    }
-                                });
-                        }
-
-                        sycl::buffer<u32> keep_idx = shamalgs::memory::vec_to_buf(keep_ids);
-                        pdat.keep_ids(keep_idx, keep_ids.size());
                     }
-                }
-            });
+                });
 
             for (auto &[k, v] : histogram_extract) {
                 shamlog_debug_ln("ReattributeDataUtility", "patch", k, "extract=", v);
@@ -217,7 +220,7 @@ namespace shamrock {
             using namespace shambase;
             using namespace shamrock::patch;
 
-            u32 ipos = sched.pdl().get_field_idx<T>(position_field);
+            u32 ipos = sched.pdl_old().get_field_idx<T>(position_field);
 
             DistributedData<sycl::buffer<u64>> new_pid = compute_new_pid(sptree, ipos);
 
@@ -228,6 +231,8 @@ namespace shamrock {
             });
 
             DistributedDataShared<patch::PatchDataLayer> recv_dat;
+
+            shamalgs::collective::DDSCommCache cache;
 
             shamalgs::collective::serialize_sparse_comm<PatchDataLayer>(
                 shamsys::instance::get_compute_scheduler_ptr(),
@@ -247,8 +252,9 @@ namespace shamrock {
                     shamalgs::SerializeHelper ser(
                         shamsys::instance::get_compute_scheduler_ptr(),
                         std::forward<sham::DeviceBuffer<u8>>(buf));
-                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
-                });
+                    return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr_old());
+                },
+                cache);
 
             recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
                 shamlog_debug_ln("Part Exchanges", format("send = {} recv = {}", sender, receiver));

@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -48,7 +48,7 @@ namespace shammodels::sph::modules {
             auto dev_sched_ptr    = shamsys::instance::get_compute_scheduler_ptr();
             sham::DeviceQueue &q  = shambase::get_check_ref(dev_sched_ptr).get_queue();
 
-            const u32 ixyz    = sched.pdl().template get_field_idx<Tvec>("xyz");
+            const u32 ixyz    = sched.pdl_old().template get_field_idx<Tvec>("xyz");
             const Tscal pmass = solver.solver_config.gpart_mass;
 
             Tscal epot = 0;

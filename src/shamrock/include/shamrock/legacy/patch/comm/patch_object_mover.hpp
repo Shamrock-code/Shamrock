@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -41,7 +41,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f32_3>(
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -72,7 +72,7 @@ inline std::unordered_map<u64, sycl::buffer<u64>> get_new_id_map<f64_3>(
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -110,7 +110,7 @@ inline void reatribute_particles<f32_3>(
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -170,7 +170,7 @@ inline void reatribute_particles<f32_3>(
         f32_3 bmax = bmax_;
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
-            u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f32_3>("xyz");
             PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
             {
@@ -202,7 +202,7 @@ inline void reatribute_particles<f32_3>(
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
             if (!pdat.is_empty()) {
-                u32 ixyz                         = sched.pdl().get_field_idx<f32_3>("xyz");
+                u32 ixyz                         = sched.pdl_old().get_field_idx<f32_3>("xyz");
                 PatchDataField<f32_3> &xyz_field = pdat.get_field<f32_3>(ixyz);
 
                 if (xyz_field.get_nvar() != 1) {
@@ -243,7 +243,7 @@ inline void reatribute_particles<f32_3>(
                         std::unique_ptr<PatchDataLayer> &pdat_int = send_map[nid[i]];
 
                         if (!pdat_int) {
-                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr());
+                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr_old());
                         }
 
                         pdat.extract_element(i, *pdat_int);
@@ -290,7 +290,7 @@ inline void reatribute_particles<f32_3>(
     }
 
     patch_data_exchange_object(
-        sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
+        sched.get_layout_ptr_old(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
 
     for (auto &[recv_id, vec_r] : part_xchg_map) {
         // std::cout << "patch " << recv_id << "\n";
@@ -350,7 +350,7 @@ inline void reatribute_particles<f64_3>(
     sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
         if (!pdat.is_empty()) {
 
-            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             if (xyz_field.get_nvar() != 1) {
@@ -410,7 +410,7 @@ inline void reatribute_particles<f64_3>(
         f64_3 bmax = bmax_;
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
-            u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
+            u32 ixyz                         = sched.pdl_old().get_field_idx<f64_3>("xyz");
             PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
             {
@@ -443,7 +443,7 @@ inline void reatribute_particles<f64_3>(
 
         sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
             if (!pdat.is_empty()) {
-                u32 ixyz                         = sched.pdl().get_field_idx<f64_3>("xyz");
+                u32 ixyz                         = sched.pdl_old().get_field_idx<f64_3>("xyz");
                 PatchDataField<f64_3> &xyz_field = pdat.get_field<f64_3>(ixyz);
 
                 if (xyz_field.get_nvar() != 1) {
@@ -484,7 +484,7 @@ inline void reatribute_particles<f64_3>(
                         std::unique_ptr<PatchDataLayer> &pdat_int = send_map[nid[i]];
 
                         if (!pdat_int) {
-                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr());
+                            pdat_int = std::make_unique<PatchDataLayer>(sched.get_layout_ptr_old());
                         }
 
                         pdat.extract_element(i, *pdat_int);
@@ -531,7 +531,7 @@ inline void reatribute_particles<f64_3>(
     }
 
     patch_data_exchange_object(
-        sched.get_layout_ptr(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
+        sched.get_layout_ptr_old(), sched.patch_list.global, comm_pdat, comm_vec, part_xchg_map);
 
     for (auto &[recv_id, vec_r] : part_xchg_map) {
         // std::cout << "patch " << recv_id << "\n";

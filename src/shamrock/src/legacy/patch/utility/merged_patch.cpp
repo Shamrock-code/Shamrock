@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -27,7 +27,7 @@ auto MergedPatchData<flt>::merge_patches(
     std::unordered_map<u64, MergedPatchData<flt>> merged_data;
 
     sched.for_each_patch_data([&](u64 id_patch, Patch &p, PatchDataLayer &pdat) {
-        merged_data.emplace(id_patch, sched.get_layout_ptr());
+        merged_data.emplace(id_patch, sched.get_layout_ptr_old());
 
         auto pbox            = sched.patch_data.sim_box.get_box<flt>(p);
         u32 original_element = pdat.get_obj_cnt();

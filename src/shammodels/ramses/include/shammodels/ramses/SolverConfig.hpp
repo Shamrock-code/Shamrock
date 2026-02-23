@@ -91,9 +91,10 @@ namespace shammodels::basegodunov {
 
         AnalyticalGravityMode analytical_gravity_mode = POINTMASS;
         // parameters for analytical gravity can be added here
-        Tscal point_mass_GM     = 1;
-        Tvec point_mass_pos     = Tvec(0.5, 0.5, 0.5);
-        Tscal epsilon_softening = 0.1;
+        Tscal point_mass_GM                  = 1;
+        Tvec point_mass_pos                  = Tvec(0.5, 0.5, 0.5);
+        Tscal epsilon_softening              = 0.05;
+        Tscal min_rho_for_analytical_gravity = 1e-5; // minimum density to apply analytical gravity
         inline bool is_analytical_gravity_on() {
             return analytical_gravity_mode != NoAnalyticalGravity;
         }

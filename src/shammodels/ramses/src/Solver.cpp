@@ -1547,6 +1547,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
+    // apply gravity source term
+    {
+        modules::TimeIntegrator dt_integ(context, solver_config, storage);
+        dt_integ.forward_euler(dt_input, true);
+    }
+
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();

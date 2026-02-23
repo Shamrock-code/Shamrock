@@ -61,7 +61,8 @@ namespace shammodels::basegodunov::modules {
                         r_squared += r_vec[d] * r_vec[d];
                     }
 
-                    Tscal one_over_r_cube_soft = pow(r_squared + config.epsilon_softening, -1.5f);
+                    Tscal one_over_r_cube_soft = pow(
+                        r_squared + config.epsilon_softening * config.epsilon_softening, -1.5f);
 
                     // compute gravitational acceleration using softened point mass potential
                     gravitational_force[i] = -config.point_mass_GM * r_vec * one_over_r_cube_soft;

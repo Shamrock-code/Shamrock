@@ -247,9 +247,9 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
 const Tscal dt_alphas     = dt * acc_alphas[i];
 
-                    tmp_mom_1 = tmp_mom_1
-                                + static_cast<double>(dt_alphas * inv_dt_alphas)
-                                      * acc_rhov_d_new_patch[id_a * ndust + i];
+               tmp_mom_1
+                        = tmp_mom_1
+                          + dt_alphas * inv_dt_alphas * acc_rhov_d_new_patch[id_a * ndust + i];
                     tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
                 }
 

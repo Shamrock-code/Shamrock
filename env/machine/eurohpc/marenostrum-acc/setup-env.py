@@ -1,4 +1,3 @@
-
 import argparse
 
 import utils.sysinfo
@@ -36,4 +35,3 @@ def setup(arg: SetupArg, envgen: EnvGen):
     }
 
     envgen.gen_env_file("env_oneapi.sh")
-

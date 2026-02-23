@@ -298,7 +298,7 @@ const Tscal dt_alphas     = dt * acc_alphas[i];
                     const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                     const f32 dt_alphas     = dt * acc_alphas[i];
                     acc_rhov_d_old[id_a * ndust + i]
-                        = static_cast<double>(inv_dt_alphas)
+                        = inv_dt_alphas
                           * (acc_rhov_d_new_patch[id_a * ndust + i]
                              + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
                     acc_rho_d_old[id_a * ndust + i] = acc_rho_d_new_patch[id_a * ndust + i];

@@ -194,7 +194,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
     const u32 ndust = solver_config.dust_config.ndust;
     // alphas are dust collision rates
     auto alphas_vector = solver_config.drag_config.alphas;
-    std::vector<f32> inv_dt_alphas(ndust);
+    std::vector<Tscal> inv_dt_alphas(ndust);
     bool enable_frictional_heating = solver_config.drag_config.enable_frictional_heating;
     u32 friction_control           = (enable_frictional_heating == false) ? 1 : 0;
 
@@ -219,7 +219,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
         sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
 
-        sham::DeviceBuffer<f32> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+        sham::DeviceBuffer<f64> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
 
         alphas_buf.copy_from_stdvec(alphas_vector);
 
@@ -271,11 +271,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                                * (vg_bf[2] + vg_af[2]));
                 Tscal dissipation = 0.0;
                 for (u32 i = 0; i < ndust; i++) {
-                    const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const f32 dt_alphas     = dt * acc_alphas[i];
-                    Tscal inv_rho_d         = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
-                    Tvec vd_bf              = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
-                    Tvec vd_af              = inv_rho_d * inv_dt_alphas
+                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                    const Tscal dt_alphas     = dt * acc_alphas[i];
+                    Tscal inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
+                    Tvec vd_bf                = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
+                    Tvec vd_af                = inv_rho_d * inv_dt_alphas
                                  * (acc_rhov_d_new_patch[id_a * ndust + i]
                                     + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
                     dissipation += 0.5 * dt_alphas * inv_dt_alphas
@@ -296,8 +296,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                 acc_rhoe_old[id_a] = Eg;
                 acc_rho_old[id_a]  = acc_rho_new_patch[id_a];
                 for (u32 i = 0; i < ndust; i++) {
-                    const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const f32 dt_alphas     = dt * acc_alphas[i];
+                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                    const Tscal dt_alphas     = dt * acc_alphas[i];
                     acc_rhov_d_old[id_a * ndust + i]
                         = inv_dt_alphas
                           * (acc_rhov_d_new_patch[id_a * ndust + i]
@@ -353,7 +353,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
     // alphas are dust collision rates
     auto alphas_vector = solver_config.drag_config.alphas;
-    std::vector<f32> inv_dt_alphas(ndust);
+    std::vector<Tscal> inv_dt_alphas(ndust);
     bool enable_frictional_heating = solver_config.drag_config.enable_frictional_heating;
     u32 friction_control           = (enable_frictional_heating == false) ? 1 : 0;
 
@@ -378,7 +378,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
         sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
 
-        sham::DeviceBuffer<f32> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+        sham::DeviceBuffer<f64> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
 
         alphas_buf.copy_from_stdvec(alphas_vector);
 

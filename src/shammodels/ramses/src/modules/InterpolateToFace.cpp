@@ -367,6 +367,9 @@ namespace {
                 Tscal P_face_a = P_a + sycl::dot(grad_P_a, shift_a) + dtP_cell_a * dt_interp;
                 Tscal P_face_b = P_b + sycl::dot(grad_P_b, shift_b) + dtP_cell_b * dt_interp;
 
+                SHAM_ASSERT(P_face_a >= 0.0);
+                SHAM_ASSERT(P_face_b >= 0.0);
+
                 return {P_face_a, P_face_b};
             }
         };

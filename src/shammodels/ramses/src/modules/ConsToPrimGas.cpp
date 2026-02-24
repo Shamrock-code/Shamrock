@@ -18,6 +18,7 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/riemann.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shambase/assert.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
@@ -58,6 +59,8 @@ namespace {
                     auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
 
                     auto prim_state = shammath::cons_to_prim(conststate, gamma);
+
+                    SHAM_ASSERT(prim_state.press >= 0.0);
 
                     vel[i] = prim_state.vel;
                     P[i]   = prim_state.press;

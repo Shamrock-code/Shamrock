@@ -9,6 +9,7 @@
 
 /**
  * @file scan_exclusive_sum_in_place.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implementation of the in-place exclusive scan primitive.
  */

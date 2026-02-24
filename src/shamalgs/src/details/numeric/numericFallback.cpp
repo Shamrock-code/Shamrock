@@ -9,6 +9,7 @@
 
 /**
  * @file numericFallback.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

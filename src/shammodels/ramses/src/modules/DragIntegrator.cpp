@@ -244,8 +244,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                 f64 tmp_rho     = acc_rho_old[id_a];
 
                 for (u32 i = 0; i < ndust; i++) {
-                    const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
-                    const Tscal dt_alphas     = dt * acc_alphas[i];
+                    const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
+                    const f32 dt_alphas     = dt * acc_alphas[i];
 
                     tmp_mom_1
                         = tmp_mom_1

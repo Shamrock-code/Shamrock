@@ -9,6 +9,7 @@
 
 /**
  * @file numericFallback.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -17,6 +18,7 @@
 #include "shamalgs/details/numeric/numericFallback.hpp"
 #include "shamalgs/memory.hpp"
 #include "shambackends/DeviceBuffer.hpp"
+#include <numeric>
 
 namespace shamalgs::numeric::details {
 

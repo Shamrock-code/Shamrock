@@ -9,6 +9,7 @@
 
 /**
  * @file timestep_report.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -23,6 +24,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/common/timestep_report.hpp"
+#include <numeric>
 #include <string>
 #include <variant>
 

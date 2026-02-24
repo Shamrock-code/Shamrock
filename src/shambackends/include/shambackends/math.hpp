@@ -11,6 +11,7 @@
 
 /**
  * @file math.hpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -562,7 +563,7 @@ namespace sham {
 
     template<class T>
     inline shambase::VecComponent<T> length2(T a) {
-        return dot(a, a);
+        return sham::dot(a, a);
     }
 
     template<class T>

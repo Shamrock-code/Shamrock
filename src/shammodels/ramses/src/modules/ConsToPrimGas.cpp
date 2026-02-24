@@ -14,11 +14,11 @@
  *
  */
 
+#include "shambase/assert.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/riemann.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
-#include "shambase/assert.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {

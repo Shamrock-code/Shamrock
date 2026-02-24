@@ -240,8 +240,8 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
 
         auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
             shambase::parallel_for(cgh, cell_count, "add_drag [irk1]", [=](u32 id_a) {
-                f64_3 tmp_mom_1 = acc_rhov_new_patch[id_a];
-                f64 tmp_rho     = acc_rho_old[id_a];
+                Tvec tmp_mom_1 = acc_rhov_new_patch[id_a];
+                Tscal tmp_rho  = acc_rho_old[id_a];
 
                 for (u32 i = 0; i < ndust; i++) {
                     const Tscal inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
@@ -253,30 +253,31 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                     tmp_rho = tmp_rho + dt_alphas * inv_dt_alphas * acc_rho_d_old[id_a * ndust + i];
                 }
 
-                f64 tmp_inv_rho = 1.0 / tmp_rho;
-                f64_3 tmp_vel   = tmp_inv_rho * tmp_mom_1;
-                f64 Eg          = 0.0;
+                Tscal tmp_inv_rho = 1.0 / tmp_rho;
+                Tvec tmp_vel      = tmp_inv_rho * tmp_mom_1;
+                Tscal Eg          = 0.0;
 
-                f64 inv_rho_g = 1.0 / acc_rho_new_patch[id_a];
-                f64_3 vg_bf   = inv_rho_g * acc_rhov_new_patch[id_a];
-                f64_3 vg_af   = inv_rho_g * acc_rho_old[id_a] * tmp_vel;
+                Tscal inv_rho_g = 1.0 / acc_rho_new_patch[id_a];
+                Tvec vg_bf      = inv_rho_g * acc_rhov_new_patch[id_a];
+                Tvec vg_af      = inv_rho_g * acc_rho_old[id_a] * tmp_vel;
                 ;
-                f64 work_drag = 0.5
-                                * ((acc_rho_old[id_a] * tmp_vel[0] - acc_rhov_new_patch[id_a][0])
-                                       * (vg_bf[0] + vg_af[0])
-                                   + (acc_rho_old[id_a] * tmp_vel[1] - acc_rhov_new_patch[id_a][1])
-                                         * (vg_bf[1] + vg_af[1])
-                                   + (acc_rho_old[id_a] * tmp_vel[2] - acc_rhov_new_patch[id_a][2])
-                                         * (vg_bf[2] + vg_af[2]));
-                f64 dissipation = 0.0;
+                Tscal work_drag
+                    = 0.5
+                      * ((acc_rho_old[id_a] * tmp_vel[0] - acc_rhov_new_patch[id_a][0])
+                             * (vg_bf[0] + vg_af[0])
+                         + (acc_rho_old[id_a] * tmp_vel[1] - acc_rhov_new_patch[id_a][1])
+                               * (vg_bf[1] + vg_af[1])
+                         + (acc_rho_old[id_a] * tmp_vel[2] - acc_rhov_new_patch[id_a][2])
+                               * (vg_bf[2] + vg_af[2]));
+                Tscal dissipation = 0.0;
                 for (u32 i = 0; i < ndust; i++) {
                     const f32 inv_dt_alphas = 1.0 / (1.0 + acc_alphas[i] * dt);
                     const f32 dt_alphas     = dt * acc_alphas[i];
-                    f64 inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
-                    f64_3 vd_bf             = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
-                    f64_3 vd_af             = inv_rho_d * inv_dt_alphas
-                                  * (acc_rhov_d_new_patch[id_a * ndust + i]
-                                     + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
+                    Tscal inv_rho_d         = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
+                    Tvec vd_bf              = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
+                    Tvec vd_af              = inv_rho_d * inv_dt_alphas
+                                 * (acc_rhov_d_new_patch[id_a * ndust + i]
+                                    + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
                     dissipation += 0.5 * dt_alphas * inv_dt_alphas
                                    * ((acc_rho_d_old[id_a * ndust + i] * tmp_vel[0]
                                        - acc_rhov_d_new_patch[id_a * ndust + i][0])
@@ -399,10 +400,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         size_t mat_size         = ndust + 1;
         size_t mat_size_squared = mat_size * mat_size;
         size_t group_size
-            = (q.get_device_prop().local_mem_size) / (5 * mat_size_squared * sizeof(f64));
+            = (q.get_device_prop().local_mem_size) / (5 * mat_size_squared * sizeof(Tscal));
         size_t loc_acc_size = mat_size_squared * group_size;
 
-        size_t loc_mem_size = 5 * sizeof(f64) * loc_acc_size;
+        size_t loc_mem_size = 5 * sizeof(Tscal) * loc_acc_size;
 
         if (group_size < 8) {
             sham::DeviceBuffer<Tscal> scratch_expo(
@@ -415,10 +416,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         auto get_jacobian =
                             [=](u32 id,
                                 std::mdspan<
-                                    f64,
+                                    Tscal,
                                     std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                                     &jacobian) {
-                                mat_set_nul<f64>(jacobian);
+                                mat_set_nul<Tscal>(jacobian);
                                 // fill first row
                                 for (auto j = 1; j < jacobian.extent(1); j++)
                                     jacobian(0, j) = acc_alphas[j - 1];
@@ -434,7 +435,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                                     jacobian(i, i) = -acc_alphas[i - 1];
                                 // the rest of the buffer is set to zero
                             };
-                        f64 mu = 0;
+                        Tscal mu = 0;
                         for (auto i = 0; i < ndust; i++) {
                             mu += (1
                                    + (acc_rho_d_new_patch[id_a * ndust + i]
@@ -456,42 +457,42 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                         // create mdspan(s)
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_A(ptr_A, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_B(ptr_B, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_F(ptr_F, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_I(ptr_I, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_Id(ptr_Id, mat_size, mat_size);
 
                         get_jacobian(id_a, mdspan_A);
 
                         // pre-processing step
-                        shammath::mat_set_identity<f64>(mdspan_Id);
-                        shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
+                        shammath::mat_set_identity<Tscal>(mdspan_Id);
+                        shammath::mat_axpy_beta<Tscal, Tscal>(-mu, mdspan_Id, dt, mdspan_A);
 
                         // compute matrix exponential
                         const i32 K_exp = 9;
-                        shammath::mat_exp<f64, f64>(
+                        shammath::mat_exp<Tscal, Tscal>(
                             K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
 
                         // post-processing step
-                        shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
+                        shammath::mat_mul_scalar<Tscal>(mdspan_A, sycl::exp(mu));
 
                         // use the matrix exponential to for to updates momemtum
-                        f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
+                        Tvec r = {0., 0., 0.}, dd = {0., 0., 0.};
                         r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
                         for (auto j = 1; j < ndust + 1; j++) {
@@ -500,13 +501,13 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                         dd = r - acc_rhov_new_patch[id_a];
 
-                        f64 dissipation = 0, drag_work = 0;
+                        Tscal dissipation = 0, drag_work = 0;
 
                         // compute work of drag terms
-                        f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
+                        Tscal inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
 
-                        f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
-                        f64_3 v_af = inv_rho * r;
+                        Tvec v_bf = inv_rho * acc_rhov_new_patch[id_a];
+                        Tvec v_af = inv_rho * r;
 
                         drag_work = 0.5
                                     * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])
@@ -586,11 +587,11 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
             auto e = q.submit(depend_list, [&, dt, ndust, friction_control](sycl::handler &cgh) {
                 // local/shared memory alloc for each work-item
-                sycl::local_accessor<f64> local_A(loc_acc_size, cgh);
-                sycl::local_accessor<f64> local_B(loc_acc_size, cgh);
-                sycl::local_accessor<f64> local_F(loc_acc_size, cgh);
-                sycl::local_accessor<f64> local_I(loc_acc_size, cgh);
-                sycl::local_accessor<f64> local_Id(loc_acc_size, cgh);
+                sycl::local_accessor<Tscal> local_A(loc_acc_size, cgh);
+                sycl::local_accessor<Tscal> local_B(loc_acc_size, cgh);
+                sycl::local_accessor<Tscal> local_F(loc_acc_size, cgh);
+                sycl::local_accessor<Tscal> local_I(loc_acc_size, cgh);
+                sycl::local_accessor<Tscal> local_Id(loc_acc_size, cgh);
 
                 logger::debug_sycl_ln(
                     "SYCL", shambase::format("parallel_for add_drag [expo-shared-mem]"));
@@ -605,10 +606,10 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         auto get_jacobian =
                             [=](u32 id,
                                 std::mdspan<
-                                    f64,
+                                    Tscal,
                                     std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                                     &jacobian) {
-                                mat_set_nul<f64>(jacobian);
+                                mat_set_nul<Tscal>(jacobian);
                                 // fill first row
                                 for (auto j = 1; j < jacobian.extent(1); j++)
                                     jacobian(0, j) = acc_alphas[j - 1];
@@ -625,7 +626,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                                 // the rest of the buffer is set to zero
                             };
 
-                        f64 mu = 0;
+                        Tscal mu = 0;
                         for (auto i = 0; i < ndust; i++) {
                             mu += (1
                                    + (acc_rho_d_new_patch[id_a * ndust + i]
@@ -635,31 +636,31 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         mu *= (-dt / (ndust + 1));
 
                         // get ptr to datas
-                        f64 *ptr_loc_A  = &(local_A[0]) + mat_size_squared * loc_id;
-                        f64 *ptr_loc_B  = &(local_B[0]) + mat_size_squared * loc_id;
-                        f64 *ptr_loc_F  = &(local_F[0]) + mat_size_squared * loc_id;
-                        f64 *ptr_loc_I  = &(local_I[0]) + mat_size_squared * loc_id;
-                        f64 *ptr_loc_Id = &(local_Id[0]) + mat_size_squared * loc_id;
+                        Tscal *ptr_loc_A  = &(local_A[0]) + mat_size_squared * loc_id;
+                        Tscal *ptr_loc_B  = &(local_B[0]) + mat_size_squared * loc_id;
+                        Tscal *ptr_loc_F  = &(local_F[0]) + mat_size_squared * loc_id;
+                        Tscal *ptr_loc_I  = &(local_I[0]) + mat_size_squared * loc_id;
+                        Tscal *ptr_loc_Id = &(local_Id[0]) + mat_size_squared * loc_id;
 
                         // create mdspan(s)
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_A(ptr_loc_A, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_B(ptr_loc_B, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_F(ptr_loc_F, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_I(ptr_loc_I, mat_size, mat_size);
                         std::mdspan<
-                            f64,
+                            Tscal,
                             std::extents<size_t, std::dynamic_extent, std::dynamic_extent>>
                             mdspan_Id(ptr_loc_Id, mat_size, mat_size);
 
@@ -668,19 +669,19 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         get_jacobian(id_a, mdspan_A);
 
                         // pre-processing step
-                        shammath::mat_set_identity<f64>(mdspan_Id);
-                        shammath::mat_axpy_beta<f64, f64>(-mu, mdspan_Id, dt, mdspan_A);
+                        shammath::mat_set_identity<Tscal>(mdspan_Id);
+                        shammath::mat_axpy_beta<Tscal, Tscal>(-mu, mdspan_Id, dt, mdspan_A);
 
                         // compute matrix exponential
                         const i32 K_exp = 9;
-                        shammath::mat_exp<f64, f64>(
+                        shammath::mat_exp<Tscal, Tscal>(
                             K_exp, mdspan_A, mdspan_F, mdspan_B, mdspan_I, mdspan_Id, ndust + 1);
 
                         // post-processing step
-                        shammath::mat_mul_scalar<f64>(mdspan_A, sycl::exp(mu));
+                        shammath::mat_mul_scalar<Tscal>(mdspan_A, sycl::exp(mu));
 
                         // use the matrix exponential to for to updates momemtum
-                        f64_3 r = {0., 0., 0.}, dd = {0., 0., 0.};
+                        Tvec r = {0., 0., 0.}, dd = {0., 0., 0.};
                         r += mdspan_A(0, 0) * acc_rhov_new_patch[id_a];
 
                         for (auto j = 1; j < ndust + 1; j++) {
@@ -689,13 +690,13 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
 
                         dd = r - acc_rhov_new_patch[id_a];
 
-                        f64 dissipation = 0, drag_work = 0;
+                        Tscal dissipation = 0, drag_work = 0;
 
                         // compute work of drag terms
-                        f64 inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
+                        Tscal inv_rho = 1.0 / (acc_rho_new_patch[id_a]);
 
-                        f64_3 v_bf = inv_rho * acc_rhov_new_patch[id_a];
-                        f64_3 v_af = inv_rho * r;
+                        Tvec v_bf = inv_rho * acc_rhov_new_patch[id_a];
+                        Tvec v_af = inv_rho * r;
 
                         drag_work = 0.5
                                     * (dd[0] * (v_bf[0] + v_af[0]) + dd[1] * (v_bf[1] + v_af[1])

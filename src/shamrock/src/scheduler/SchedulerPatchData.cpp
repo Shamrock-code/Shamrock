@@ -83,11 +83,12 @@ namespace shamrock::scheduler {
             shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
             msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
-                u64(cnt) * 8_u64, shamsys::instance::get_compute_scheduler_ptr());
+                shambase::narrow_or_throw<u64>(cnt) * 8_u64,
+                shamsys::instance::get_compute_scheduler_ptr());
 
             shamcomm::mpi::Irecv(
                 msg.buf->get_ptr(),
-                shambase::narrow_or_throw<i32>(cnt),
+                cnt,
                 get_mpi_type<u64>(),
                 msg.rank,
                 msg.tag,

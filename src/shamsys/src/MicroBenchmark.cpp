@@ -227,7 +227,7 @@ void shamsys::microbench::saxpy() {
 
         auto result = bench_step(N);
 
-        for (; N <= (1 << 30) && N <= u32(max_size); N *= 2) {
+        for (; N <= (1 << 30) && static_cast<double>(N) <= max_size; N *= 2) {
             auto result_new = bench_step(N);
 
             // std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth

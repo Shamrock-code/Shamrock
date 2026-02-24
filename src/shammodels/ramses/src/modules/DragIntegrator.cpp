@@ -219,7 +219,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
         sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
         sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
 
-        sham::DeviceBuffer<f64> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+        sham::DeviceBuffer<Tscal> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
 
         alphas_buf.copy_from_stdvec(alphas_vector);
 
@@ -378,7 +378,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
         sham::DeviceBuffer<Tscal> &rho_d_old = pdat.get_field_buf_ref<Tscal>(irho_d);
         sham::DeviceBuffer<Tvec> &rhov_d_old = pdat.get_field_buf_ref<Tvec>(irhovel_d);
 
-        sham::DeviceBuffer<f64> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
+        sham::DeviceBuffer<Tscal> alphas_buf(ndust, shamsys::instance::get_compute_scheduler_ptr());
 
         alphas_buf.copy_from_stdvec(alphas_vector);
 

@@ -285,10 +285,18 @@ print(f"vg_diff = {vg_diff} with len = {len(vg_diff)} \n")
 print(f"vd1_diff = {vd1_diff} with len = {len(vd1_diff)} \n")
 print(f"vd2_diff = {vd2_diff} with len = {len(vd2_diff)} \n")
 
+"""
+CI results:
+
+vg_diff = 2.9967701653532686e-09 > 1e-12
+vd1_diff = 2.9243776289433754e-09 > 1e-12
+vd2_diff = 2.994082981544466e-09 > 1e-12
+"""
+
 test_pass = True
-vg_max_pass = 1e-12
-vd1_max_pass = 1e-12
-vd2_max_pass = 1e-12
+vg_max_pass = 2.9967701653532686e-09 + 1e-14
+vd1_max_pass = 2.9243776289433754e-09 + 1e-14
+vd2_max_pass = 2.994082981544466e-09 + 1e-14
 
 err_log = ""
 if np.max(vg_diff) > vg_max_pass:

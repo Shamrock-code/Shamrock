@@ -789,16 +789,16 @@ vg_diff = 7.118580030995858e-12 > 5.104230592916915e-12
 
 
 test_pass = True
-rd0_max_pass = 1.5265566588595902e-11 + 1e-14
-rd1_max_pass = 1.6653373124952964e-11 + 1e-14
-rd2_max_pass = 7.569696605647103e-12 + 1e-14
-rd3_max_pass = 1.1102230246251565e-11 + 1e-14
-rg_max_pass = 1.1102230246251565e-11 + 1e-14
-vd0_max_pass = 3.779143664672802e-12 + 1e-14
-vd1_max_pass = 2.7466917629226373e-12 + 1e-14
-vd2_max_pass = 1.936215077158465e-12 + 1e-14
-vd3_max_pass = 1.220287759728933e-12 + 1e-14
-vg_max_pass = 7.118580030995858e-12 + 1e-14
+rd0_max_pass = 1e-12
+rd1_max_pass = 1e-12
+rd2_max_pass = 1e-12
+rd3_max_pass = 1e-12
+rg_max_pass = 1e-12
+vd0_max_pass = 1e-12
+vd1_max_pass = 1e-12
+vd2_max_pass = 1e-12
+vd3_max_pass = 1e-12
+vg_max_pass = 1e-12
 
 err_log = ""
 if np.max(rd0_diff) > rd0_max_pass:

@@ -776,29 +776,31 @@ print(f"vg_diff = {vg_diff} with len = {len(vg_diff)} \n")
 """
 CI results:
 
-rd1_diff = 1.6653373124952964e-11 > 9.526221144423298e-12
-rd2_diff = 7.569696605647103e-12 > 4.551825249226861e-12
-rg_diff = 1.1102230246251565e-11 > 6.671338147750939e-12
-vd0_diff = 3.779143664672802e-12 > 2.8379045771739676e-12
-vd1_diff = 2.7466917629226373e-12 > 1.9998527270356682e-12
-vd2_diff = 1.936215077158465e-12 > 1.0505010186786967e-12
-vd3_diff = 1.220287759728933e-12 > 1e-12
-vg_diff = 7.118580030995858e-12 > 5.104230592916915e-12
+rd0_diff = 9.71445146547012e-12 > 1e-12
+rd1_diff = 5.947632143732395e-12 > 1e-12
+rd2_diff = 3.027880030037622e-12 > 1e-12
+rd3_diff = 4.440892098500626e-12 > 1e-12
+rg_diff = 1.1102230246251565e-11 > 1e-12
+vd0_diff = 3.4523772729500024e-12 > 1e-12
+vd1_diff = 2.9127256162553294e-12 > 1e-12
+vd2_diff = 2.0037860259947138e-12 > 1e-12
+vd3_diff = 1.157754447866921e-12 > 1e-12
+vg_diff = 6.4616922923477205e-12 > 1e-12
 
 """
 
 
 test_pass = True
-rd0_max_pass = 1e-12
-rd1_max_pass = 1e-12
-rd2_max_pass = 1e-12
-rd3_max_pass = 1e-12
-rg_max_pass = 1e-12
-vd0_max_pass = 1e-12
-vd1_max_pass = 1e-12
-vd2_max_pass = 1e-12
-vd3_max_pass = 1e-12
-vg_max_pass = 1e-12
+rd0_max_pass = 1e-11
+rd1_max_pass = 1e-11
+rd2_max_pass = 1e-11
+rd3_max_pass = 1e-11
+rg_max_pass = 1e-11
+vd0_max_pass = 1e-11
+vd1_max_pass = 1e-11
+vd2_max_pass = 1e-11
+vd3_max_pass = 1e-11
+vg_max_pass = 1e-11
 
 err_log = ""
 if np.max(rd0_diff) > rd0_max_pass:

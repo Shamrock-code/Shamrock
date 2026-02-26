@@ -181,7 +181,6 @@ namespace shammodels::basegodunov {
             .def(
                 "set_amr_mode_none",
                 [](TConfig &self) {
-                    self.amr_mode.no_none_cfg = false;
                     self.amr_mode.set_refine_none();
                 })
             .def(

@@ -92,7 +92,7 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     struct AMRMode {
 
-        using Tscal      = shambase::VecComponent<Tvec>;
+        using Tscal = shambase::VecComponent<Tvec>;
 
         struct None {};
         struct DensityBased {

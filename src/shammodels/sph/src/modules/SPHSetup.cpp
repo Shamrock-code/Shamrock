@@ -581,6 +581,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             // build the vector of structs
             std::vector<tmp> tmp_vec;
+            tmp_vec.reserve(send_msg.size() / 2);
             for (u64 i = 0; i < send_msg.size(); i += 2) {
                 tmp_vec.push_back({send_msg[i], send_msg[i + 1]});
             }
@@ -592,13 +593,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             // build the new send_msg
             std::vector<u64> send_msg_new;
+            send_msg_new.reserve(max_send);
             for (auto &t : tmp_vec) {
-                send_msg_new.push_back(t.ranks);
-                send_msg_new.push_back(t.size);
-
-                if (send_msg_new.size() > max_send) {
+                if (send_msg_new.size() >= max_send) {
                     break;
                 }
+                send_msg_new.push_back(t.ranks);
+                send_msg_new.push_back(t.size);
             }
 
             send_msg     = send_msg_new;

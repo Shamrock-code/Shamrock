@@ -107,6 +107,7 @@ Register_pymod(pyshamrockctxinit) {
                         "collect_data is not supported for multiple layers");
                 }
 
+                using namespace shamrock;
                 for (auto fname : ctx.pdl->get_layer_ref(0).get_field_names()) {
                     append_to_map<f32>(fname, data, dic_out);
                     append_to_map<f32_2>(fname, data, dic_out);

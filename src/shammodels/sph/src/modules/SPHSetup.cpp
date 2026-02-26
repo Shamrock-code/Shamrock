@@ -645,11 +645,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < msg_limit
-                                               && msg_count_rank[sender_rank] < msg_limit;
+            bool msg_count_limit_not_reached = msg_count_rank.at(receiver_rank) < msg_limit
+                                               && msg_count_rank.at(sender_rank) < msg_limit;
 
-            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < data_count_limit
-                                               && comm_size_rank[sender_rank] < data_count_limit;
+            bool recv_size_limit_not_reached = comm_size_rank.at(receiver_rank) < data_count_limit
+                                               && comm_size_rank.at(sender_rank) < data_count_limit;
 
             was_count_limited = was_count_limited || !msg_count_limit_not_reached;
             was_size_limited  = was_size_limited || !recv_size_limit_not_reached;
@@ -670,10 +670,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 }
             }
 
-            msg_count_rank[receiver_rank] += 1;
-            msg_count_rank[sender_rank] += 1;
-            comm_size_rank[receiver_rank] += msg_size;
-            comm_size_rank[sender_rank] += msg_size;
+            msg_count_rank.at(receiver_rank) += 1;
+            msg_count_rank.at(sender_rank) += 1;
+            comm_size_rank.at(receiver_rank) += msg_size;
+            comm_size_rank.at(sender_rank) += msg_size;
         }
 
         // logger::raw_ln(

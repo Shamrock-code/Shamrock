@@ -93,7 +93,6 @@ namespace shammodels::basegodunov {
     struct AMRMode {
 
         using Tscal      = shambase::VecComponent<Tvec>;
-        bool no_none_cfg = false;
 
         struct None {};
         struct DensityBased {

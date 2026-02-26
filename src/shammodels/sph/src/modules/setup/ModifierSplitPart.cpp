@@ -38,13 +38,13 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierSplitPart<Tvec
     shamrock::patch::PatchDataLayer original_pdat = parent->next_n(nmax);
     u32 npart                                     = original_pdat.get_obj_cnt();
 
-    u32 ixyz   = sched.pdl().get_field_idx<Tvec>("xyz");
-    u32 ihpart = sched.pdl().get_field_idx<Tscal>("hpart");
+    u32 ixyz   = sched.pdl_old().get_field_idx<Tvec>("xyz");
+    u32 ihpart = sched.pdl_old().get_field_idx<Tscal>("hpart");
 
     std::vector<Tvec> xyz    = original_pdat.get_field_buf_ref<Tvec>(ixyz).copy_to_stdvec();
     std::vector<Tscal> hpart = original_pdat.get_field_buf_ref<Tscal>(ihpart).copy_to_stdvec();
 
-    PatchDataLayer tmp(sched.get_layout_ptr());
+    PatchDataLayer tmp(sched.get_layout_ptr_old());
 
     // perform the split and insert
     for (u64 i = 0; i < n_split; i++) {

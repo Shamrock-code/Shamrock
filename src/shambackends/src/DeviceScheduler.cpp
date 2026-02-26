@@ -70,7 +70,7 @@ namespace sham {
 
     bool DeviceScheduler::use_direct_comm() { return ctx->use_direct_comm(); }
 
-    void test_device_scheduler(sham::DeviceScheduler_ptr dev_sched) {
+    void test_device_scheduler(const sham::DeviceScheduler_ptr &dev_sched) {
         for (auto &q : dev_sched->queues) {
 
             sham::DeviceQueue &qref     = shambase::get_check_ref(q);

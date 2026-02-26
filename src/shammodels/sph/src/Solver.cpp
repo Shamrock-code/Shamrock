@@ -105,7 +105,7 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
-    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
     bool has_B_field                           = solver_config.has_field_B_on_rho();
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
@@ -121,6 +121,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));
     solver_graph.register_edge("dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
+    solver_graph.register_edge("gpart_mass", ScalarEdge<Tscal>("m", "m"));
 
     solver_graph.register_edge("xyz", FieldRefs<Tvec>("xyz", "\\mathbf{r}"));
     solver_graph.register_edge("vxyz", FieldRefs<Tvec>("vxyz", "\\mathbf{v}"));
@@ -144,6 +145,15 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     if (has_deltav_field) {
         solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
         solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
+    }
+
+    {
+        auto set_gpart_mass = solver_graph.register_node(
+            "set_gpart_mass", NodeSetEdge<ScalarEdge<Tscal>>([&](ScalarEdge<Tscal> &gpart_mass) {
+                gpart_mass.value = solver_config.gpart_mass;
+            }));
+        shambase::get_check_ref(set_gpart_mass)
+            .set_edges(solver_graph.get_edge_ptr<ScalarEdge<Tscal>>("gpart_mass"));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -489,6 +499,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
 
+        seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
         seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
         seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
         if (do_part_killing_step) {
@@ -725,7 +736,7 @@ void shammodels::sph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_val
     shamrock::SchedulerUtility integrators(sched);
     shamrock::ReattributeDataUtility reatrib(sched);
 
-    auto &pdl = sched.pdl();
+    auto &pdl = sched.pdl_old();
 
     const u32 ixyz    = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz   = pdl.get_field_idx<Tvec>("vxyz");
@@ -840,7 +851,7 @@ void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
 
     StackEntry stack_loc{};
     using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
@@ -912,7 +923,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
     SPHUtils sph_utils(scheduler());
     shamrock::SchedulerUtility utility(scheduler());
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
 
     ComputeField<Tscal> _epsilon_h, _h_old;
@@ -1253,7 +1264,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
     const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
@@ -1503,7 +1514,7 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     using namespace shamrock;
     using namespace shamrock::patch;
     shamrock::SchedulerUtility utility(scheduler());
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     bool has_B_field       = solver_config.has_field_B_on_rho();
     bool has_psi_field     = solver_config.has_field_psi_on_ch();
@@ -1608,7 +1619,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
     const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
@@ -1670,6 +1681,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         logger::info_ln("SPH", "Reordering particles at step ", solve_logs.step_count);
         modules::ParticleReordering<Tvec, u_morton, Kern>(context, solver_config, storage)
             .reorder_particles();
+    }
+
+    {
+        // update part counts and spans since particles have been moved and thus
+        // new patch can be non-empty/empty
+        using namespace shamrock::solvergraph;
+        SolverGraph &solver_graph = storage.solver_graph;
+        solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
     }
 
     sph_prestep(t_current, dt);
@@ -1886,7 +1905,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             node_set_edge->evaluate();
 
             shamrock::solvergraph::CopyPatchDataFieldFromLayer<Tscal> node_copy(
-                scheduler().get_layout_ptr(), "alpha_AV");
+                scheduler().get_layout_ptr_old(), "alpha_AV");
             node_copy.set_edges(patchdatas, storage.alpha_av_updated);
             node_copy.evaluate();
         }

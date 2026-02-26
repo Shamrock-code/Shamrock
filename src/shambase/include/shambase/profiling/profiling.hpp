@@ -69,8 +69,8 @@ namespace shambase::profiling {
     void stack_entry_start(
         const SourceLocation &fileloc,
         f64 t_start,
-        std::optional<std::string> name          = std::nullopt,
-        std::optional<std::string> category_name = std::nullopt);
+        const std::optional<std::string> &name          = std::nullopt,
+        const std::optional<std::string> &category_name = std::nullopt);
 
     /**
      * @brief Register the end of a profiling event
@@ -85,8 +85,8 @@ namespace shambase::profiling {
         const SourceLocation &fileloc,
         f64 t_start,
         f64 tend,
-        std::optional<std::string> name          = std::nullopt,
-        std::optional<std::string> category_name = std::nullopt);
+        const std::optional<std::string> &name          = std::nullopt,
+        const std::optional<std::string> &category_name = std::nullopt);
 
     /**
      * @brief Start a profiling event without a time info
@@ -97,8 +97,8 @@ namespace shambase::profiling {
      */
     void stack_entry_start_no_time(
         const SourceLocation &fileloc,
-        std::optional<std::string> name          = std::nullopt,
-        std::optional<std::string> category_name = std::nullopt);
+        const std::optional<std::string> &name          = std::nullopt,
+        const std::optional<std::string> &category_name = std::nullopt);
 
     /**
      * @brief End a profiling event without a time info
@@ -109,8 +109,8 @@ namespace shambase::profiling {
      */
     void stack_entry_end_no_time(
         const SourceLocation &fileloc,
-        std::optional<std::string> name          = std::nullopt,
-        std::optional<std::string> category_name = std::nullopt);
+        const std::optional<std::string> &name          = std::nullopt,
+        const std::optional<std::string> &category_name = std::nullopt);
 
     /**
      * @brief Register a counter value

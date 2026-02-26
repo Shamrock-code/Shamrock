@@ -85,6 +85,7 @@ function shamconfigure {
         ${CCACHE_CMAKE_ARG} \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=ACPPDirect \
+        -DCMAKE_C_COMPILER="${LLVM_INSTALL_DIR}/bin/clang" \
         -DCMAKE_CXX_COMPILER="${ACPP_INSTALL_DIR}/bin/acpp" \
         -DCMAKE_CXX_FLAGS="${SHAMROCK_CXX_FLAGS}" \
         -DACPP_PATH="${ACPP_INSTALL_DIR}" \

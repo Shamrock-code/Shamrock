@@ -25,6 +25,7 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAnalyticalGravity.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeCoordinates.hpp"
@@ -423,6 +424,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             "level0_amr", "level0_amr");
     }
 
+    if (solver_config.is_analytical_gravity_on()) {
+        // will be filled by NodeComputeAnalyticalGravity
+        storage.gravitational_force = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "gravitational_force", "\\mathbf{f}_a");
+    }
+
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         AMRBlock::block_size, "grad_rho", "\\nabla \\rho");
     storage.dx_v = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -707,7 +714,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         cfg_bc_to_geom(solver_config.bc_config.get_y()),
         cfg_bc_to_geom(solver_config.bc_config.get_z())};
 
-    // if outflow we want zero gradient so we skip the vector transformation in TransformGhostLayer
+    // if outflow we want zero gradient so we skip the vector transformation in
+    // TransformGhostLayer
     bool transform_vec_x = solver_config.bc_config.get_x() != BCConfig::GhostType::Outflow;
     bool transform_vec_y = solver_config.bc_config.get_y() != BCConfig::GhostType::Outflow;
     bool transform_vec_z = solver_config.bc_config.get_z() != BCConfig::GhostType::Outflow;
@@ -792,7 +800,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         // enable this to debug GZ
         //{
-        //    auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
+        //    auto filename_edge =
+        //    std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
         //        "debug_fuse.vtk", "debug_fuse.vtk");
         //    filename_edge->data = "debug_fuse.vtk";
         //
@@ -954,8 +963,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
     }
 
-    if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
-                                                            // enabled later when needed)
+    if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to
+                                                            // be enabled later when needed)
         modules::ComputeLevel0CellSize<TgridVec> node_level0_sizes{};
         node_level0_sizes.set_edges(
             graph.get_edge_ptr<ScalarsEdge<shammath::AABB<TgridVec>>>("global_patch_boxes"),
@@ -963,6 +972,16 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.level0_size);
         solver_sequence.push_back(
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
+    }
+
+    if (solver_config.is_analytical_gravity_on()) {
+        modules::NodeComputeAnalyticalGravity<Tvec> node_analytical_gravity{
+            AMRBlock::block_size, solver_config.analytical_gravity_config};
+        node_analytical_gravity.set_edges(
+            storage.block_counts, storage.coordinates, storage.gravitational_force);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_analytical_gravity)>(
+                std::move(node_analytical_gravity)));
     }
 
     if (solver_config.should_compute_rho_mean()) {
@@ -1528,6 +1547,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
+    // apply gravity source term
+    {
+        modules::TimeIntegrator dt_integ(context, solver_config, storage);
+        dt_integ.forward_euler(dt_input, true);
+    }
+
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
     dt_compute.compute_dt_fields();
@@ -1707,8 +1732,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     */
 
     /*
-    std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
-    writer.write_field("dtrho", dtrho, num_obj * block_size);
+    std::unique_ptr<sycl::buffer<Tscal>> dtrho =
+    storage.dtrho.get().rankgather_computefield(sched); writer.write_field("dtrho", dtrho,
+    num_obj * block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dtrhov
         = storage.dtrhov.get().rankgather_computefield(sched);

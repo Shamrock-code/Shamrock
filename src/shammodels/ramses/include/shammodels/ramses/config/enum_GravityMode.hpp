@@ -38,4 +38,14 @@ namespace shammodels::basegodunov {
          {GravityMode::BICGSTAB, "bicgstab"},
          {GravityMode::MULTIGRID, "multigrid"}});
 
+    enum AnalyticalGravityMode {
+        NoAnalyticalGravity = 0,
+        POINTMASS           = 1, // point mass analytical gravity
+    };
+
+    SHAMROCK_JSON_SERIALIZE_ENUM(
+        AnalyticalGravityMode,
+        {{AnalyticalGravityMode::NoAnalyticalGravity, "no_analytical_gravity"},
+         {AnalyticalGravityMode::POINTMASS, "point_mass"}});
+
 } // namespace shammodels::basegodunov

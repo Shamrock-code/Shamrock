@@ -80,10 +80,24 @@ namespace shammodels::basegodunov {
     struct GravityConfig {
         using Tscal              = shambase::VecComponent<Tvec>;
         GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
         Tscal tol                = 1e-6;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
+    };
+
+    template<class Tvec>
+    struct AnalyticalGravityConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        AnalyticalGravityMode analytical_gravity_mode = POINTMASS;
+        // parameters for analytical gravity can be added here
+        Tscal point_mass_GM                  = 1;
+        Tvec point_mass_pos                  = Tvec(0.5, 0.5, 0.5);
+        Tscal epsilon_softening              = 0.05;
+        Tscal min_rho_for_analytical_gravity = 1e-5; // minimum density to apply analytical gravity
+        inline bool is_analytical_gravity_on() {
+            return analytical_gravity_mode != NoAnalyticalGravity;
+        }
     };
 
     template<class Tvec>
@@ -208,9 +222,15 @@ struct shammodels::basegodunov::SolverConfig {
         auto scal_G = get_constant_G();
         return 4 * M_PI * scal_G;
     }
+    AnalyticalGravityConfig<Tvec> analytical_gravity_config{};
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
-    inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
+    inline bool is_coordinate_field_required() {
+        return analytical_gravity_config.is_analytical_gravity_on();
+    }
+    inline bool is_analytical_gravity_on() {
+        return analytical_gravity_config.is_analytical_gravity_on();
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)

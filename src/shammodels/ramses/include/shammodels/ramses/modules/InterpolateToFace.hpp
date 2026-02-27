@@ -17,7 +17,7 @@
  */
 
 #include "shambackends/vec.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
+#include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shammodels/ramses/solvegraph/NeighGraphLinkFieldEdge.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"

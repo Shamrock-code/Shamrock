@@ -60,7 +60,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     // Get field indices from the patch data layout
     const u32 ixyz   = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
@@ -278,7 +278,7 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_hll
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     // Get field indices
     const u32 ixyz   = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);

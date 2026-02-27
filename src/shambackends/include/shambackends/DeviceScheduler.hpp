@@ -72,6 +72,6 @@ namespace sham {
 
     using DeviceScheduler_ptr = std::shared_ptr<DeviceScheduler>;
 
-    void test_device_scheduler(DeviceScheduler_ptr dev_sched);
+    void test_device_scheduler(const DeviceScheduler_ptr &dev_sched);
 
 } // namespace sham

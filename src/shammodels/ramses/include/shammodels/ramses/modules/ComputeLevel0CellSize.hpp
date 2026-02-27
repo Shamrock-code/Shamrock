@@ -12,7 +12,7 @@
 /**
  * @file ComputeLevel0CellSize.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
@@ -27,32 +27,19 @@
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec, class TgridVec>
+  template<class TgridVec>
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:
         ComputeLevel0CellSize() {}
+#define NODE_ComputeLevel0CellSize_EDGES(X_RO, X_RW)                                               \
+    /* inputs */                                                                                   \
+    X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes)                \
+    X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
+    /* outputs */                                                                                  \
+    X_RW(shamrock::solvergraph::ScalarsEdge<TgridVec>, level0_size)
 
-        struct Edges {
-            const shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>> &patch_boxes;
-            const shamrock::solvergraph::IPatchDataLayerRefs &refs;
-            shamrock::solvergraph::ScalarsEdge<TgridVec> &level0_size;
-        };
-
-        void set_edges(
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>
-                patch_boxes,
-            std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> refs,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size) {
-            __internal_set_ro_edges({patch_boxes, refs});
-            __internal_set_rw_edges({level0_size});
-        }
-
-        Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>>(0),
-                get_ro_edge<shamrock::solvergraph::IPatchDataLayerRefs>(1),
-                get_rw_edge<shamrock::solvergraph::ScalarsEdge<TgridVec>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_ComputeLevel0CellSize_EDGES)
+#undef NODE_ComputeLevel0CellSize_EDGES
 
         void _impl_evaluate_internal() {
             auto edges               = get_edges();

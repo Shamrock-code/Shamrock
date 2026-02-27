@@ -11,6 +11,7 @@
 
 /**
  * @file math.hpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -562,7 +563,7 @@ namespace sham {
 
     template<class T>
     inline shambase::VecComponent<T> length2(T a) {
-        return dot(a, a);
+        return sham::dot(a, a);
     }
 
     template<class T>
@@ -869,6 +870,28 @@ namespace sham {
     inline T inv_sat_zero(T v, T satval = T{0.}) noexcept {
         // return div only if v != 0 and is not NaN
         return (v != T{0} && v == v) ? T{1.} / v : satval;
+    }
+
+    namespace details {
+        template<class Tdest, class Tsource>
+        inline Tdest convert_internal(Tsource coord) {
+            return static_cast<Tdest>(coord);
+        }
+
+        template<class Tdest, class Tsource, int N>
+        inline sycl::vec<Tdest, N> convert_internal(sycl::vec<Tsource, N> coord) {
+            sycl::vec<Tdest, N> result;
+            for (int i = 0; i < N; ++i) {
+                result[i] = static_cast<Tdest>(coord[i]);
+            }
+            return result;
+        }
+    } // namespace details
+
+    /// Helper to avoid differences between SYCL implementations of convert, it always static cast
+    template<class Tdest, class Tsource>
+    inline Tdest convert(Tsource coord) {
+        return details::convert_internal<shambase::VecComponent<Tdest>>(coord);
     }
 
 } // namespace sham

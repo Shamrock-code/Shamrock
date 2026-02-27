@@ -154,10 +154,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (f.get_nvar() != 1) {
                         shambase::throw_unimplemented();
@@ -210,10 +210,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     u32 nvar = f.get_nvar();
 
@@ -268,10 +268,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (f.get_nvar() != 1) {
                         shambase::throw_unimplemented();
@@ -302,7 +302,7 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<T> &xyz
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(name));
 
                     sum += xyz.compute_sum();
                 });

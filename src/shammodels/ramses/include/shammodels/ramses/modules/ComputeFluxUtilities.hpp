@@ -26,7 +26,7 @@
 
 namespace shammodels::basegodunov::modules {
 
-    using RiemannSolverMode     = shammodels::basegodunov::RiemmanSolverMode;
+    using RiemannSolverMode     = shammodels::basegodunov::RiemannSolverMode;
     using DustRiemannSolverMode = shammodels::basegodunov::DustRiemannSolverMode;
     using Direction             = shammodels::basegodunov::modules::Direction;
 

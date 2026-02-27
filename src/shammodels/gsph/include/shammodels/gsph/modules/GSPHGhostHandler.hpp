@@ -185,8 +185,8 @@ namespace shammodels::gsph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ixyz   = sched.pdl_old().template get_field_idx<vec>("xyz");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             // Get field indices from xyzh_ghost_layout for accessing ghost data
             const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");
@@ -301,8 +301,8 @@ namespace shammodels::gsph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ixyz   = sched.pdl().template get_field_idx<vec>("xyz");
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ixyz   = sched.pdl_old().template get_field_idx<vec>("xyz");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             // Get field indices from xyzh_ghost_layout for accessing ghost data
             const u32 ixyz_ghost   = xyzh_ghost_layout->template get_field_idx<vec>("xyz");

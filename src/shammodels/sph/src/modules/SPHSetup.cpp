@@ -316,7 +316,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     shambase::Timer time_part_gen;
     time_part_gen.start();
 
-    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr());
+    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr_old());
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("SPH setup", "generating particles ...");
@@ -571,10 +571,38 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 max_send      = (1 << 24) / shamcomm::world_size();
         bool sync_limited = false;
         if (send_msg.size() > max_send) {
-            std::mt19937 eng_local_msg(
-                u64(golden_number * 1000 * step_count + shamcomm::world_rank()));
-            std::shuffle(send_msg.begin(), send_msg.end(), eng_local_msg);
-            send_msg.resize(max_send);
+
+            // here we must pack the send_msg infos in structs in order to keep
+            // them together during shuffle
+
+            struct tmp {
+                u64 ranks, size;
+            };
+
+            // build the vector of structs
+            std::vector<tmp> tmp_vec;
+            tmp_vec.reserve(send_msg.size() / 2);
+            for (u64 i = 0; i < send_msg.size(); i += 2) {
+                tmp_vec.push_back({send_msg[i], send_msg[i + 1]});
+            }
+
+            // shuffle the messages infos
+            u64 local_seed = u64(golden_number * 1000 * step_count + shamcomm::world_rank());
+            std::mt19937_64 eng_local_msg(local_seed);
+            std::shuffle(tmp_vec.begin(), tmp_vec.end(), eng_local_msg);
+
+            // build the new send_msg
+            std::vector<u64> send_msg_new;
+            send_msg_new.reserve(max_send);
+            for (auto &t : tmp_vec) {
+                if (send_msg_new.size() >= max_send) {
+                    break;
+                }
+                send_msg_new.push_back(t.ranks);
+                send_msg_new.push_back(t.size);
+            }
+
+            send_msg     = send_msg_new;
             sync_limited = true;
         }
 
@@ -617,11 +645,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < msg_limit
-                                               && msg_count_rank[sender_rank] < msg_limit;
+            bool msg_count_limit_not_reached = msg_count_rank.at(receiver_rank) < msg_limit
+                                               && msg_count_rank.at(sender_rank) < msg_limit;
 
-            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < data_count_limit
-                                               && comm_size_rank[sender_rank] < data_count_limit;
+            bool recv_size_limit_not_reached = comm_size_rank.at(receiver_rank) < data_count_limit
+                                               && comm_size_rank.at(sender_rank) < data_count_limit;
 
             was_count_limited = was_count_limited || !msg_count_limit_not_reached;
             was_size_limited  = was_size_limited || !recv_size_limit_not_reached;
@@ -642,10 +670,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 }
             }
 
-            msg_count_rank[receiver_rank] += 1;
-            msg_count_rank[sender_rank] += 1;
-            comm_size_rank[receiver_rank] += msg_size;
-            comm_size_rank[sender_rank] += msg_size;
+            msg_count_rank.at(receiver_rank) += 1;
+            msg_count_rank.at(sender_rank) += 1;
+            comm_size_rank.at(receiver_rank) += msg_size;
+            comm_size_rank.at(sender_rank) += msg_size;
         }
 
         // logger::raw_ln(
@@ -671,7 +699,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     _tmp.resize(indices_size);
                 }
 
-                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
+                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr_old());
                 to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
 
                 idx_to_rem.append(_tmp);
@@ -702,7 +730,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // exchange the buffer held by the distrib data and give it to the
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
-                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
+                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr_old());
             },
             comm_cache);
 

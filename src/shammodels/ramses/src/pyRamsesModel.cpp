@@ -186,7 +186,6 @@ namespace shammodels::basegodunov {
             .def(
                 "set_amr_mode_density_based",
                 [](TConfig &self, Tscal crit_mass) {
-                    self.amr_mode.no_none_cfg = true;
                     self.amr_mode.set_refine_density_based(crit_mass);
                 },
                 py::kw_only(),

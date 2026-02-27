@@ -9,6 +9,7 @@
 
 /**
  * @file scan_exclusive_sum_in_place.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implementation of the in-place exclusive scan primitive.
  */
@@ -20,6 +21,7 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
+#include <numeric>
 
 #if defined(__has_include)
     #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)

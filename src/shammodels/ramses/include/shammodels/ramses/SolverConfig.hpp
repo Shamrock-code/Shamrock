@@ -104,7 +104,9 @@ namespace shammodels::basegodunov {
         mode config = None{};
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+
         bool need_level_zero_compute() { return false; }
+        bool need_amr_level_compute() { return false; }
     };
 
     struct BCConfig {

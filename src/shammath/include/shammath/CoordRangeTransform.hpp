@@ -17,6 +17,7 @@
  */
 
 #include "CoordRange.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 
 namespace shammath {
@@ -73,16 +74,12 @@ namespace shammath {
 
         if (mode == multiply) {
             return {
-                ((pmin - source_coord_min).template convert<component_dest_t>()) * fact
-                    + dest_coord_min,
-                ((pmax - source_coord_min).template convert<component_dest_t>()) * fact
-                    + dest_coord_min};
+                sham::convert<Tdest>(pmin - source_coord_min) * fact + dest_coord_min,
+                sham::convert<Tdest>(pmax - source_coord_min) * fact + dest_coord_min};
         } else {
             return {
-                ((pmin - source_coord_min).template convert<component_dest_t>()) / fact
-                    + dest_coord_min,
-                ((pmax - source_coord_min).template convert<component_dest_t>()) / fact
-                    + dest_coord_min};
+                sham::convert<Tdest>(pmin - source_coord_min) / fact + dest_coord_min,
+                sham::convert<Tdest>(pmax - source_coord_min) / fact + dest_coord_min};
         }
     }
 
@@ -95,16 +92,12 @@ namespace shammath {
 
         if (mode == multiply) {
             return {
-                ((rnge.lower - dest_coord_min) / fact).template convert<component_source_t>()
-                    + source_coord_min,
-                ((rnge.upper - dest_coord_min) / fact).template convert<component_source_t>()
-                    + source_coord_min};
+                sham::convert<Tsource>((rnge.lower - dest_coord_min) / fact) + source_coord_min,
+                sham::convert<Tsource>((rnge.upper - dest_coord_min) / fact) + source_coord_min};
         } else {
             return {
-                ((rnge.lower - dest_coord_min) * fact).template convert<component_source_t>()
-                    + source_coord_min,
-                ((rnge.upper - dest_coord_min) * fact).template convert<component_source_t>()
-                    + source_coord_min};
+                sham::convert<Tsource>((rnge.lower - dest_coord_min) * fact) + source_coord_min,
+                sham::convert<Tsource>((rnge.upper - dest_coord_min) * fact) + source_coord_min};
         }
     }
 
@@ -112,11 +105,9 @@ namespace shammath {
     inline Tdest CoordRangeTransform<Tsource, Tdest>::transform(Tsource coord) const {
 
         if (mode == multiply) {
-            return ((coord - source_coord_min).template convert<component_dest_t>()) * fact
-                   + dest_coord_min;
+            return sham::convert<Tdest>(coord - source_coord_min) * fact + dest_coord_min;
         } else {
-            return ((coord - source_coord_min).template convert<component_dest_t>()) / fact
-                   + dest_coord_min;
+            return sham::convert<Tdest>(coord - source_coord_min) / fact + dest_coord_min;
         }
     }
 
@@ -124,11 +115,9 @@ namespace shammath {
     inline Tsource CoordRangeTransform<Tsource, Tdest>::reverse_transform(Tdest coord) const {
 
         if (mode == multiply) {
-            return ((coord - dest_coord_min) / fact).template convert<component_source_t>()
-                   + source_coord_min;
+            return sham::convert<Tsource>((coord - dest_coord_min) / fact) + source_coord_min;
         } else {
-            return ((coord - dest_coord_min) * fact).template convert<component_source_t>()
-                   + source_coord_min;
+            return sham::convert<Tsource>((coord - dest_coord_min) * fact) + source_coord_min;
         }
     }
 

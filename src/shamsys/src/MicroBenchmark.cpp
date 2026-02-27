@@ -215,7 +215,7 @@ void shamsys::microbench::saxpy() {
     };
 
     auto benchmark = [&]() {
-        int N = (1 << 15);
+        size_t N = (1 << 15);
 
         auto &dev_sched = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
         auto &dev_ptr   = dev_sched.device;
@@ -225,10 +225,10 @@ void shamsys::microbench::saxpy() {
             = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
         double max_size = double(max_alloc) / (vec4_size * 4); // there is 2 allocations so /4
 
-        auto result = bench_step(N);
+        auto result = bench_step(shambase::narrow_or_throw<i32>(N));
 
-        for (; N <= (1 << 30) && N <= max_size; N *= 2) {
-            auto result_new = bench_step(N);
+        for (; N <= (1 << 30) && static_cast<double>(N) <= max_size; N *= 2) {
+            auto result_new = bench_step(shambase::narrow_or_throw<i32>(N));
 
             // std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth
             //           << std::endl;

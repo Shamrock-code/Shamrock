@@ -25,6 +25,7 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeCoordinates.hpp"
@@ -963,6 +964,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.level0_size);
         solver_sequence.push_back(
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
+    }
+
+    if (solver_config.amr_mode.need_amr_level_compute()) { // compute block amr level in patch
+        modules::ComputeAMRLevel<TgridVec> node_amr_level{};
+        node_amr_level.set_edges(
+            storage.block_counts,
+            storage.level0_size,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.amr_block_levels);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_amr_level)>(std::move(node_amr_level)));
     }
 
     if (solver_config.should_compute_rho_mean()) {

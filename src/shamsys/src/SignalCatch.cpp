@@ -28,6 +28,7 @@ namespace shamsys::details {
         case SIGTERM: signame = "SIGTERM"; break;
         case SIGINT : signame = "SIGINT"; break;
         case SIGSEGV: signame = "SIGSEGV"; break;
+        case SIGIOT : signame = "SIGIOT"; break;
         default     : signame = "UNKNOWN"; break;
         }
 
@@ -69,6 +70,10 @@ namespace shamsys {
         if (sigaction(SIGSEGV, &sa, NULL) != 0) {
             shambase::throw_with_loc<std::runtime_error>(
                 "Failed to register SIGSEGV signal handler");
+        }
+        if (sigaction(SIGIOT, &sa, NULL) != 0) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Failed to register SIGIOT signal handler");
         }
     }
 } // namespace shamsys

@@ -107,7 +107,6 @@ namespace shammodels::basegodunov {
 
         bool need_level_zero_compute() { return false; }
         bool need_amr_level_compute() { return false; }
->>>>>>> main
     };
 
     struct BCConfig {

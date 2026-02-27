@@ -54,8 +54,8 @@ namespace shammodels::basegodunov::modules {
         void update_refinement();
 
         private:
-        /** @brief build histrogram for amr block levels
-         *
+        /** 
+         * @brief build histrogram for amr block levels
          */
         void amr_block_levels_histogram(
             const sham::DeviceScheduler_ptr &sched,

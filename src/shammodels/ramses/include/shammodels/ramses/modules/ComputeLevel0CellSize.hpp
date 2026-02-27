@@ -26,7 +26,6 @@
 #include <memory>
 
 namespace shammodels::basegodunov::modules {
-
     template<class TgridVec>
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:

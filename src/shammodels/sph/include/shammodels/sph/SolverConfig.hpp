@@ -130,6 +130,15 @@ namespace shammodels::sph {
         inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
+        inline bool is_monofluid_tvi() { return bool(std::get_if<MonofluidTVI>(&current_mode)); }
+        inline bool is_monofluid_complete() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline bool has_Sj_field() {
+            return is_monofluid_tvi(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
         inline bool has_epsilon_field() {
             return bool(std::get_if<MonofluidTVI>(&current_mode))
                    || bool(std::get_if<MonofluidComplete>(&current_mode));
@@ -158,10 +167,15 @@ namespace shammodels::sph {
             bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
                                || bool(std::get_if<MonofluidComplete>(&current_mode));
             if (is_not_none) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH::config",
-                        "Dust config != None is work in progress, use it at your own risk"));
+                if (!shamrock::are_experimental_features_allowed()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Dust config != None is experimental");
+                } else {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH::config",
+                            "Dust config != None is work in progress, use it at your own risk"));
+                }
             }
         }
     };

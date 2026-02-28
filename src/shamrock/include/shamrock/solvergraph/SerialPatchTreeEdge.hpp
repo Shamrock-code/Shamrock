@@ -46,4 +46,39 @@ namespace shamrock::solvergraph {
         inline void free_alloc() { patch_tree = std::nullopt; };
     };
 
+    template<class T>
+    class SerialPatchTreeFieldRefEdge : public IEdgeNamed {
+        public:
+        using IEdgeNamed::IEdgeNamed;
+
+        /**
+         * @brief The patch tree.
+         * @note this must be an optional because the edge needs to be freeable
+         */
+        std::unique_ptr<shamrock::patch::PatchtreeField<T>> patch_tree_field;
+
+        inline const shamrock::patch::PatchtreeField<T> &get_patch_tree_field() const {
+            return shambase::get_check_ref(patch_tree_field);
+        }
+
+        inline void free_alloc() { patch_tree_field.reset(); };
+    };
+
+    template<class T>
+    class SerialPatchFieldRefEdge : public IEdgeNamed {
+        public:
+        using IEdgeNamed::IEdgeNamed;
+
+        /**
+         * @brief The patch tree.
+         * @note this must be an optional because the edge needs to be freeable
+         */
+        std::unique_ptr<shamrock::patch::PatchField<T>> patch_tree_field;
+
+        inline const shamrock::patch::PatchField<T> &get_patch_tree_field() const {
+            return shambase::get_check_ref(patch_tree_field);
+        }
+
+        inline void free_alloc() { patch_tree_field.reset(); };
+    };
 } // namespace shamrock::solvergraph

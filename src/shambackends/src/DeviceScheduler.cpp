@@ -100,11 +100,12 @@ namespace sham {
         sham::DeviceQueue &qref     = shambase::get_check_ref(dev_sched).get_queue();
         sham::DeviceContext &ctxref = shambase::get_check_ref(qref.ctx);
 
+        u32 align = shambase::get_check_ref(ctxref.device).prop.mem_base_addr_align;
         USMPtrHolder<sham::device> ptr1024_dev
-            = USMPtrHolder<sham::device>::create(1024, dev_sched, 8);
+            = USMPtrHolder<sham::device>::create(1024, dev_sched, align);
         ptr1024_dev.free_ptr();
         USMPtrHolder<sham::host> ptr1024_host
-            = USMPtrHolder<sham::host>::create(1024, dev_sched, 8);
+            = USMPtrHolder<sham::host>::create(1024, dev_sched, align);
         ptr1024_host.free_ptr();
 
         auto &dev = shambase::get_check_ref(ctxref.device);
@@ -116,7 +117,7 @@ namespace sham {
             if (dev.prop.max_mem_alloc_size_dev > 2 * GBval) {
                 try {
                     USMPtrHolder<sham::device> ptr2G_dev
-                        = USMPtrHolder<sham::device>::create(2 * GBval + 1024, dev_sched, 8);
+                        = USMPtrHolder<sham::device>::create(2 * GBval + 1024, dev_sched, align);
                     ptr2G_dev.free_ptr();
                 } catch (std::runtime_error &e) {
                     logger::warn_ln(
@@ -131,7 +132,7 @@ namespace sham {
             if (dev.prop.max_mem_alloc_size_host > 2 * GBval) {
                 try {
                     USMPtrHolder<sham::host> ptr2G_host
-                        = USMPtrHolder<sham::host>::create(2 * GBval + 1024, dev_sched, 8);
+                        = USMPtrHolder<sham::host>::create(2 * GBval + 1024, dev_sched, align);
                     ptr2G_host.free_ptr();
                 } catch (std::runtime_error &e) {
                     logger::warn_ln(

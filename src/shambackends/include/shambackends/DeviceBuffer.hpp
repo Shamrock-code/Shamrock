@@ -130,10 +130,12 @@ namespace sham {
         static std::optional<size_t> get_alignment(DeviceScheduler_ptr dev_sched) {
             return upgrade_multiple(
                 alignof(T),
-                shambase::get_check_ref(dev_sched)
-                    .get_queue()
-                    .get_device_prop()
-                    .mem_base_addr_align);
+                std::max(
+                    shambase::get_check_ref(dev_sched)
+                        .get_queue()
+                        .get_device_prop()
+                        .mem_base_addr_align,
+                    8_u32));
         }
 
         /**

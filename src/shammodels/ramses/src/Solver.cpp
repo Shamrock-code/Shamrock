@@ -43,6 +43,7 @@
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shammodels/ramses/modules/SumFluxHydro.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
@@ -1422,6 +1423,37 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    {
+        modules::NodeSumFluxHydro<Tvec, TgridVec> node{AMRBlock::block_size};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_face_xp,
+            storage.flux_rho_face_xm,
+            storage.flux_rho_face_yp,
+            storage.flux_rho_face_ym,
+            storage.flux_rho_face_zp,
+            storage.flux_rho_face_zm,
+            storage.flux_rhov_face_xp,
+            storage.flux_rhov_face_xm,
+            storage.flux_rhov_face_yp,
+            storage.flux_rhov_face_ym,
+            storage.flux_rhov_face_zp,
+            storage.flux_rhov_face_zm,
+            storage.flux_rhoe_face_xp,
+            storage.flux_rhoe_face_xm,
+            storage.flux_rhoe_face_yp,
+            storage.flux_rhoe_face_ym,
+            storage.flux_rhoe_face_zp,
+            storage.flux_rhoe_face_zm,
+            storage.dtrho,
+            storage.dtrhov,
+            storage.dtrhoe);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -1543,7 +1575,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // compute dt fields
     modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    dt_compute.compute_dt_fields();
+    // dt_compute.compute_dt_fields();
     if (solver_config.is_dust_on()) {
         dt_compute.compute_dt_dust_fields();
     }

@@ -37,7 +37,7 @@ jobs:
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true
               }
             ]
           }
@@ -59,7 +59,7 @@ jobs:
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true
               }
             ]
           }

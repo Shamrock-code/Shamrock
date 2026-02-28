@@ -169,15 +169,12 @@ def run_case(set_bc_func, case_name):
         else:
             return rho_1
 
-    def rhovel_map(rmin, rmax):
-        rho = rho_map(rmin, rmax)
-
+    def vel_map(rmin, rmax):
         x, y, z = rmin
 
         ampl = 0.01
         n = 2
         pert = np.sin(2 * np.pi * n * x / (xs))
-
         sigma = 0.05 / (2**0.5)
         gauss1 = np.exp(-((y - y_interface) ** 2) / (2 * sigma * sigma))
         gauss2 = np.exp(-((y + y_interface) ** 2) / (2 * sigma * sigma))
@@ -186,28 +183,34 @@ def run_case(set_bc_func, case_name):
         # Alternative formula (See T. Tricco paper)
         # interf_sz = ys/32
         # vx = np.arctan(y/interf_sz)/np.pi
+        # return vx
 
-        vx = 0
-        if np.abs(y) > y_interface:
-            vx = vslip / 2
+        if y > y_interface:
+            return vslip / 2, ampl * pert, 0
         else:
-            vx = -vslip / 2
+            return -vslip / 2, ampl * pert, 0
 
-        return (vx * rho, ampl * pert * rho, 0)
+    def P_map(rmin, rmax):
+        x, y, z = rmin
+
+        if y > y_interface:
+            return P_2
+        else:
+            return P_1
+
+    def rhovel_map(rmin, rmax):
+        rho = rho_map(rmin, rmax)
+        vx, vy, vz = vel_map(rmin, rmax)
+
+        return (vx * rho, vy * rho, vz * rho)
 
     def rhoetot_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
         rhovel = rhovel_map(rmin, rmax)
+        P = P_map(rmin, rmax)
 
         rhovel2 = rhovel[0] * rhovel[0] + rhovel[1] * rhovel[1] + rhovel[2] * rhovel[2]
         rhoekin = 0.5 * rhovel2 / rho
-
-        x, y, z = rmin
-
-        if y > y_interface:
-            P = P_2
-        else:
-            P = P_1
 
         return rhoekin + P / (gamma - 1)
 

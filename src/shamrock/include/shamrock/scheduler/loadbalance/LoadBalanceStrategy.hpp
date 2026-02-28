@@ -191,6 +191,67 @@ namespace shamrock::scheduler::details {
         return new_owners;
     }
 
+    template<class Torder, class Tweight>
+    inline std::vector<i32> lb_startegy_parallel_sweep2(
+        const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector, i32 wsize) {
+
+        using LBTile       = TileWithLoad<Torder, Tweight>;
+        using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
+
+        std::vector<LBTileResult> res;
+        for (u64 i = 0; i < lb_vector.size(); i++) {
+            res.push_back(LBTileResult{lb_vector[i], i});
+        }
+
+        // apply the ordering
+        apply_ordering(res);
+
+        // compute increments for load
+        u64 accum = 0;
+        for (LBTileResult &tile : res) {
+            u64 cur_val                 = tile.load_value;
+            tile.accumulated_load_value = accum;
+            accum += cur_val;
+        }
+
+        double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
+
+        for (LBTileResult &tile : res) {
+            tile.new_owner = (target_datacnt == 0)
+                                 ? 0
+                                 : sycl::clamp(
+                                       i32((tile.accumulated_load_value / target_datacnt) + 0.5),
+                                       0,
+                                       wsize - 1);
+        }
+
+        if (shamcomm::world_rank() == 0) {
+            for (LBTileResult t : res) {
+                shamlog_debug_ln(
+                    "HilbertLoadBalance",
+                    t.ordering_val,
+                    t.load_value,
+                    t.accumulated_load_value,
+                    t.index,
+                    (target_datacnt == 0)
+                        ? 0
+                        : sycl::clamp(
+                              i32((t.accumulated_load_value / target_datacnt) + 0.5),
+                              0,
+                              i32(wsize) - 1),
+                    (target_datacnt == 0) ? 0
+                                          : ((t.accumulated_load_value / target_datacnt) + 0.5));
+            }
+        }
+
+        std::vector<i32> new_owners(res.size());
+        for (LBTileResult &tile : res) {
+            new_owners[tile.index] = tile.new_owner;
+        }
+
+        return new_owners;
+    }
+
     struct LBMetric {
         f64 min;
         f64 max;
@@ -260,32 +321,63 @@ namespace shamrock::scheduler {
         std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector,
         i32 world_size = shamcomm::world_size()) {
 
-        auto tmpres        = details::lb_startegy_parallel_sweep(lb_vector, world_size);
-        auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);
+        std::vector<i32> res_best{};
+        details::LBMetric metric_best{
+            shambase::VectorProperties<f64>::get_inf(),
+            shambase::VectorProperties<f64>::get_inf(),
+            shambase::VectorProperties<f64>::get_inf(),
+            shambase::VectorProperties<f64>::get_inf()};
+        std::string strategy_best = "";
 
-        auto tmpres_2      = details::lb_startegy_roundrobin(lb_vector, world_size);
-        auto metric_rrobin = details::compute_LB_metric(lb_vector, tmpres_2, world_size);
+        struct LBResult {
+            std::vector<i32> ranks;
+            details::LBMetric metric;
+            std::string strategy;
+        };
 
-        if (metric_rrobin.max < metric_psweep.max) {
-            tmpres = tmpres_2;
+        std::vector<LBResult> results;
+
+        {
+            auto tmpres = details::lb_startegy_parallel_sweep(lb_vector, world_size);
+            auto metric = details::compute_LB_metric(lb_vector, tmpres, world_size);
+            results.push_back(LBResult{tmpres, metric, "parallel sweep"});
+        }
+
+        {
+            auto tmpres = details::lb_startegy_roundrobin(lb_vector, world_size);
+            auto metric = details::compute_LB_metric(lb_vector, tmpres, world_size);
+            results.push_back(LBResult{tmpres, metric, "round robin"});
+        }
+
+        {
+            auto tmpres = details::lb_startegy_parallel_sweep2(lb_vector, world_size);
+            auto metric = details::compute_LB_metric(lb_vector, tmpres, world_size);
+            results.push_back(LBResult{tmpres, metric, "parallel sweep 2"});
+        }
+
+        for (const auto &result : results) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "LoadBalance",
+                    " - strategy \"",
+                    result.strategy,
+                    "\" : max =",
+                    result.metric.max,
+                    "min =",
+                    result.metric.min);
+            }
+            if (result.metric.max < metric_best.max) {
+                metric_best   = result.metric;
+                res_best      = result.ranks;
+                strategy_best = result.strategy;
+            }
         }
 
         if (shamcomm::world_rank() == 0) {
-            logger::info_ln("LoadBalance", "summary :");
-            logger::info_ln(
-                "LoadBalance",
-                " - strategy \"psweep\" : max =",
-                metric_psweep.max,
-                "min =",
-                metric_psweep.min);
-            logger::info_ln(
-                "LoadBalance",
-                " - strategy \"round robin\" : max =",
-                metric_rrobin.max,
-                "min =",
-                metric_rrobin.min);
+            logger::info_ln("LoadBalance", "best strategy :", strategy_best);
         }
-        return tmpres;
+
+        return res_best;
     }
 
 } // namespace shamrock::scheduler

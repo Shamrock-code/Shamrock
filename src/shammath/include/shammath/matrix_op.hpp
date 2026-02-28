@@ -11,6 +11,7 @@
 
 /**
  * @file matrix_op.hpp
+ * @author David Fang (david.fang@ikmail.com)
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yann Bernard (yann.bernard@univ-grenoble-alpes.fr)
@@ -49,6 +50,27 @@ namespace shammath {
             for (int j = 0; j < input.extent(1); j++) {
                 input(i, j) = func(i, j);
             }
+        }
+    }
+
+    /**
+     * @brief Set the elements of a vector according to a user-provided function
+     *
+     * @param input The vector to update the elements of
+     * @param func The function to use to update the elements of the matrix. The
+     * function must take one argument being the index.
+     *
+     * @details The function `func` is called for each element of the vector, and
+     * the value returned by the function is used to set the corresponding
+     * element of the vector.
+     */
+    template<class T, class Extents, class Layout, class Accessor, class Func>
+    inline void vec_set_vals(const std::mdspan<T, Extents, Layout, Accessor> &input, Func &&func) {
+
+        shambase::check_functor_signature<T, int>(func);
+
+        for (int i = 0; i < input.extent(0); i++) {
+            input(i) = func(i);
         }
     }
 
@@ -650,6 +672,129 @@ namespace shammath {
                 sum += M(i, j) * x(j);
             }
             y(i) = alpha * sum + beta * y(i);
+        }
+    }
+
+    /**
+     * @brief This function transposes a matrix
+     * @param input matrix to transpose
+     * @param output matrix to store the transposed matrix
+     */
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void mat_transpose(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &input,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &output) {
+
+        SHAM_ASSERT(input.extent(0) == output.extent(1));
+        SHAM_ASSERT(input.extent(1) == output.extent(0));
+
+        for (int i = 0; i < output.extent(0); i++) {
+            for (int j = 0; j < output.extent(1); j++) {
+                output(i, j) = input(j, i);
+            }
+        }
+    }
+
+    /**
+     * @brief This function performs Cholesky decomposition. From a (real) symmetric,
+     definite-positive square matrix \f$ M \f$, return a lower triangular matrix \f$ L \f$ such that
+     \f[
+        M = L L^T
+     \f]
+     * @param M a square symmetric, definite-positive matrix
+     * @param L the output matrix to store the lower triangular matrix obtained by Cholesky
+     decomposition
+     */
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Layout1,
+        class Layout2,
+        class Accessor1,
+        class Accessor2>
+    inline void Cholesky_decomp(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &L) {
+
+        SHAM_ASSERT(M.extent(1) == M.extent(0));
+        SHAM_ASSERT(M.extent(0) == L.extent(0));
+        SHAM_ASSERT(L.extent(1) == L.extent(0));
+
+        for (int i = 0; i < M.extent(0); i++) {
+            T sum_ik = 0.0;
+            for (int k = 0; k < i; k++) {
+                sum_ik += L(i, k) * L(i, k);
+            }
+            L(i, i) = sycl::sqrt(M(i, i) - sum_ik);
+            for (int j = i + 1; j < M.extent(1); j++) {
+                T sum_ikjk = 0.0;
+                for (int k = 0; k < i; k++) {
+                    sum_ikjk += L(i, k) * L(j, k);
+                }
+                L(j, i) = (M(i, j) - sum_ikjk) / L(i, i);
+                L(i, j) = 0.0;
+            }
+        }
+    }
+
+    /**
+    * @brief This function solves a system of linear equations with Cholesky decomposition. The
+    system must have the form
+    \f[
+        Mx = y
+    \f]
+    where \f$ M \f$ is a (real) symmetric, definite-positive square matrix.
+    * @param M a square symmetric, definite-positive matrix
+    * @param y a vector, right hand side of the system
+    * @param x the ouput vector to store the solution of the system
+    */
+    template<
+        class T,
+        class Extents1,
+        class Extents2,
+        class Extents3,
+        class Layout1,
+        class Layout2,
+        class Layout3,
+        class Accessor1,
+        class Accessor2,
+        class Accessor3>
+    inline void Cholesky_solve(
+        const std::mdspan<T, Extents1, Layout1, Accessor1> &M,
+        const std::mdspan<T, Extents2, Layout2, Accessor2> &y,
+        const std::mdspan<T, Extents3, Layout3, Accessor3> &x) {
+
+        SHAM_ASSERT(M.extent(1) == M.extent(0));
+        SHAM_ASSERT(M.extent(1) == x.extent(0));
+        SHAM_ASSERT(M.extent(0) == y.extent(0));
+
+        std::vector<T> a(M.extent(0));
+        std::vector<T> L_storage(M.extent(0) * M.extent(1));
+
+        std::mdspan<T, Extents1> L{L_storage.data(), M.extent(0), M.extent(1)};
+        Cholesky_decomp(M, L);
+
+        for (int i = 0; i < M.extent(0); i++) {
+            T sum = 0.0;
+            for (int k = 0; k < i; k++) {
+                sum += L(i, k) * a[k];
+            }
+            a[i] = (y(i) - sum) / L(i, i);
+        }
+        for (int i = M.extent(0) - 1; i >= 0; i--) {
+            T sum = 0.0;
+            for (int k = i + 1; k < M.extent(0); k++) {
+                sum += L(k, i) * x(k);
+            }
+            x(i) = (a[i] - sum) / L(i, i);
         }
     }
 

@@ -37,6 +37,11 @@ target_link_libraries(shamsys PUBLIC shambackends)
 target_link_libraries(shamsys PUBLIC shamalgs) #TODO shamsys should not depends on algs
 target_link_libraries(shamsys PUBLIC shamcmdopt)
 
+if(SHAMROCK_USE_CPPTRACE)
+    target_link_libraries(shamsys PUBLIC cpptrace::cpptrace)
+    target_compile_definitions(shamsys PUBLIC -DSHAMROCK_USE_CPPTRACE)
+endif()
+
 target_include_directories(shamsys PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")

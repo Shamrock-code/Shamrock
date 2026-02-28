@@ -15,10 +15,15 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamcmdopt/tty.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <csignal>
 #include <stdexcept>
+
+#ifdef SHAMROCK_USE_CPPTRACE
+    #include <cpptrace/cpptrace.hpp>
+#endif
 
 namespace shamsys::details {
     void signal_callback_handler(int signum) {
@@ -35,6 +40,18 @@ namespace shamsys::details {
         // ensure that we print in one block to avoid interleaving
         std::string log = fmt::format(
             "!!! Received signal : {} (code {}) from world rank {}\n"
+#ifdef SHAMROCK_USE_CPPTRACE
+            "Current stacktrace : \n"
+            "{}\n"
+            "Current cpptrace stacktrace : \n"
+            "{}\n"
+            "exiting ...",
+            signame,
+            signum,
+            shamcomm::world_rank(),
+            shambase::fmt_callstack(),
+            cpptrace::generate_trace().to_string(shamcmdopt::is_a_tty()));
+#else
             "Current stacktrace : \n"
             "{}\n"
             "exiting ...",
@@ -42,12 +59,14 @@ namespace shamsys::details {
             signum,
             shamcomm::world_rank(),
             shambase::fmt_callstack());
+#endif
 
         std::cout << log << std::endl;
 
         // raise signal again since the handler was reset to the default (see SA_RESETHAND)
         raise(signum);
     }
+
 } // namespace shamsys::details
 
 namespace shamsys {

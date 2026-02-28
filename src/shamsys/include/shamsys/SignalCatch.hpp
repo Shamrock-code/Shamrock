@@ -15,6 +15,7 @@
  * @brief
  */
 
+#include <csignal>
 namespace shamsys {
     namespace details {
         void signal_callback_handler(int signum);

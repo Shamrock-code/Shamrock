@@ -53,9 +53,10 @@ namespace shammodels::basegodunov {
         void dump_vtk(std::string filename);
 
         template<class T>
-        inline void set_field_value_lambda(
+        inline void set_field_value_lambda_all(
             std::string field_name,
-            const std::function<T(Tvec, Tvec)> pos_to_val,
+            const std::function<
+                std::vector<T>(const std::vector<Tvec> &, const std::vector<Tvec> &)> pos_to_val,
             const i32 offset) {
 
             StackEntry stack_loc{};
@@ -78,7 +79,34 @@ namespace shammodels::basegodunov {
                 auto cell_min = buf_cell_min.copy_to_stdvec();
                 auto cell_max = buf_cell_max.copy_to_stdvec();
 
+                std::vector<Tvec> in_min_cell(pdat.get_obj_cnt() * Block::block_size);
+                std::vector<Tvec> in_max_cell(pdat.get_obj_cnt() * Block::block_size);
+
                 Tscal scale_factor = solver.solver_config.grid_coord_to_pos_fact;
+                for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                    Tvec block_min  = cell_min[i].template convert<Tscal>() * scale_factor;
+                    Tvec block_max  = cell_max[i].template convert<Tscal>() * scale_factor;
+                    Tvec delta_cell = (block_max - block_min) / Block::side_size;
+
+                    Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
+                        Tvec bmin                                = block_min + delta;
+                        in_min_cell[i * Block::block_size + lid] = bmin;
+                        in_max_cell[i * Block::block_size + lid] = bmin + delta_cell;
+                    });
+                }
+
+                shambase::Timer timer;
+                timer.start();
+                std::vector<T> in_values = pos_to_val(in_min_cell, in_max_cell);
+                timer.end();
+                logger::info_ln(
+                    "Godunov",
+                    shambase::format(
+                        "Time to compute in_values: {} s for {} objects for field {}",
+                        timer.elasped_sec(),
+                        pdat.get_obj_cnt(),
+                        field_name));
+
                 for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
                     Tvec block_min  = cell_min[i].template convert<Tscal>() * scale_factor;
                     Tvec block_max  = cell_max[i].template convert<Tscal>() * scale_factor;
@@ -87,12 +115,32 @@ namespace shammodels::basegodunov {
                     Block::for_each_cell_in_block(delta_cell, [&](u32 lid, Tvec delta) {
                         Tvec bmin = block_min + delta;
                         acc[(i * Block::block_size + lid) * f_nvar + offset]
-                            = pos_to_val(bmin, bmin + delta_cell);
+                            = in_values[i * Block::block_size + lid];
                     });
                 }
 
                 f.get_buf().copy_from_stdvec(acc);
             });
+        }
+
+        template<class T>
+        inline void set_field_value_lambda(
+            std::string field_name,
+            const std::function<T(Tvec, Tvec)> pos_to_val,
+            const i32 offset) {
+
+            StackEntry stack_loc{};
+
+            auto lambda = [&](const std::vector<Tvec> &in_min_cell,
+                              const std::vector<Tvec> &in_max_cell) -> std::vector<T> {
+                std::vector<T> in_values(in_min_cell.size());
+                for (u32 i = 0; i < in_min_cell.size(); i++) {
+                    in_values[i] = pos_to_val(in_min_cell[i], in_max_cell[i]);
+                }
+                return in_values;
+            };
+
+            set_field_value_lambda_all<T>(field_name, lambda, offset);
         }
 
         inline std::pair<Tvec, Tvec> get_cell_coords(

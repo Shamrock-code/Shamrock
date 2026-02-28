@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from numba import njit
 
 import shamrock
 
@@ -25,7 +26,7 @@ if not shamrock.sys.is_initialized():
 # Setup parameters
 
 # plot
-nx, ny = 512, 512
+nx, ny = 1024, 1024
 
 # Physical parameters
 vslip = 1  # slip speed between the two layers
@@ -48,7 +49,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32
+base = 64
 
 sim_folder = "_to_trash/ramses_kh/"
 
@@ -211,9 +212,100 @@ def run_case(set_bc_func, case_name):
 
         return rhoekin + P / (gamma - 1)
 
+    print("no @njit")
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
+
+    rho_map = njit(rho_map)
+    rhovel_map = njit(rhovel_map)
+    rhoetot_map = njit(rhoetot_map)
+
+    print("with @njit")
+    model.set_field_value_lambda_f64("rho", rho_map)
+    model.set_field_value_lambda_f64("rhoetot", rhoetot_map)
+    model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
+
+    def rho_map_all(in_min_cell: np.ndarray, in_max_cell: np.ndarray) -> np.array:
+        ncells = in_min_cell.shape[0]
+        rho = np.zeros(ncells)
+        for i in range(ncells):
+            x, y, z = in_min_cell[i]
+            if y > y_interface:
+                rho[i] = rho_2
+            else:
+                rho[i] = rho_1
+        return rho
+
+    def rhovel_map_all(in_min_cell: np.ndarray, in_max_cell: np.ndarray) -> np.array:
+        rho = rho_map_all(in_min_cell, in_max_cell)
+
+        ncells = in_min_cell.shape[0]
+        rhovel = np.zeros((ncells, 3))
+        for i in range(ncells):
+            x, y, z = in_min_cell[i, 0], in_min_cell[i, 1], in_min_cell[i, 2]
+
+            ampl = 0.01
+            n = 2
+            pert = np.sin(2 * np.pi * n * x / (xs))
+
+            sigma = 0.05 / (2**0.5)
+            gauss1 = np.exp(-((y - y_interface) ** 2) / (2 * sigma * sigma))
+            gauss2 = np.exp(-((y + y_interface) ** 2) / (2 * sigma * sigma))
+            pert *= gauss1 + gauss2
+
+            # Alternative formula (See T. Tricco paper)
+            # interf_sz = ys/32
+            # vx = np.arctan(y/interf_sz)/np.pi
+
+            vx = 0
+            if np.abs(y) > y_interface:
+                vx = vslip / 2
+            else:
+                vx = -vslip / 2
+
+            rhovel[i, 0] = vx * rho[i]
+            rhovel[i, 1] = ampl * pert * rho[i]
+            rhovel[i, 2] = 0.0
+        return rhovel
+
+    def rhoetot_map_all(in_min_cell: np.ndarray, in_max_cell: np.ndarray) -> np.array:
+        rho = rho_map_all(in_min_cell, in_max_cell)
+        rhovel = rhovel_map_all(in_min_cell, in_max_cell)
+
+        ncells = in_min_cell.shape[0]
+        rhoekin = np.zeros(ncells)
+
+        for i in range(ncells):
+            x, y, z = in_min_cell[i]
+
+            rhovel2 = (
+                rhovel[i][0] * rhovel[i][0]
+                + rhovel[i][1] * rhovel[i][1]
+                + rhovel[i][2] * rhovel[i][2]
+            )
+            rhoekin[i] = 0.5 * rhovel2 / rho[i]
+
+            if y > y_interface:
+                P = P_2
+            else:
+                P = P_1
+
+            return rhoekin + P / (gamma - 1)
+
+    print("bulk")
+    model.set_field_value_lambda_f64_all("rho", rho_map_all)
+    model.set_field_value_lambda_f64_all("rhoetot", rhoetot_map_all)
+    model.set_field_value_lambda_f64_3_all("rhovel", rhovel_map_all)
+
+    rho_map_all = njit(rho_map_all)
+    rhovel_map_all = njit(rhovel_map_all)
+    rhoetot_map_all = njit(rhoetot_map_all)
+
+    print("bulk @njit")
+    model.set_field_value_lambda_f64_all("rho", rho_map_all)
+    model.set_field_value_lambda_f64_all("rhoetot", rhoetot_map_all)
+    model.set_field_value_lambda_f64_3_all("rhovel", rhovel_map_all)
 
     # model.evolve_once(0,0.1)
     fact = 25

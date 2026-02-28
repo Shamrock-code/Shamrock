@@ -28,6 +28,44 @@
 #include <pybind11/numpy.h>
 #include <memory>
 
+// Should be moved to a global utility
+template<class T>
+class VecToNumpy {
+    public:
+    static py::array_t<T> convert(const std::vector<T> &vec) {
+
+        u32 len = vec.size();
+
+        py::array_t<T> ret({len});
+        auto r = ret.mutable_unchecked();
+
+        for (u32 i = 0; i < len; i++) {
+            r(i) = vec[i];
+        }
+
+        return std::move(ret);
+    }
+};
+
+template<class T>
+class VecToNumpy<sycl::vec<T, 3>> {
+    public:
+    static py::array_t<T> convert(const std::vector<sycl::vec<T, 3>> &vec) {
+
+        u32 len = vec.size();
+
+        py::array_t<T> ret({len, 3U});
+        auto r = ret.mutable_unchecked();
+
+        for (u32 i = 0; i < len; i++) {
+            r(i, 0) = vec[i].x();
+            r(i, 1) = vec[i].y();
+            r(i, 2) = vec[i].z();
+        }
+        return std::move(ret);
+    }
+};
+
 namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -260,6 +298,67 @@ namespace shammodels::basegodunov {
                    const i32 offset) {
                     return self.template set_field_value_lambda<f64_3>(
                         field_name, pos_to_val, offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
+            .def(
+                "set_field_value_lambda_f64_all",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<pybind11::array_t<f64>(
+                       const pybind11::array_t<f64> &, const pybind11::array_t<f64> &)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda_all<f64>(
+                        field_name,
+                        [&](const std::vector<f64_3> &in_min_cell,
+                            const std::vector<f64_3> &in_max_cell) {
+                            auto flattened_in_min_cell_arr
+                                = VecToNumpy<f64_3>::convert(in_min_cell);
+                            auto flattened_in_max_cell_arr
+                                = VecToNumpy<f64_3>::convert(in_max_cell);
+
+                            pybind11::array_t<f64> ret
+                                = pos_to_val(flattened_in_min_cell_arr, flattened_in_max_cell_arr);
+
+                            return ret.template cast<std::vector<f64>>();
+                        },
+                        offset);
+                },
+                py::arg("field_name"),
+                py::arg("pos_to_val"),
+                py::arg("offset") = 0)
+            .def(
+                "set_field_value_lambda_f64_3_all",
+                [](T &self,
+                   std::string field_name,
+                   const std::function<pybind11::array_t<f64>(
+                       const pybind11::array_t<f64> &, const pybind11::array_t<f64> &)> pos_to_val,
+                   const i32 offset) {
+                    return self.template set_field_value_lambda_all<f64_3>(
+                        field_name,
+                        [&](const std::vector<f64_3> &in_min_cell,
+                            const std::vector<f64_3> &in_max_cell) {
+                            auto flattened_in_min_cell_arr
+                                = VecToNumpy<f64_3>::convert(in_min_cell);
+                            auto flattened_in_max_cell_arr
+                                = VecToNumpy<f64_3>::convert(in_max_cell);
+
+                            pybind11::array_t<f64> ret
+                                = pos_to_val(flattened_in_min_cell_arr, flattened_in_max_cell_arr);
+
+                            std::vector<f64> ret_vec = ret.reshape({in_min_cell.size() * 3})
+                                                           .template cast<std::vector<f64>>();
+
+                            std::vector<f64_3> ret2{};
+                            ret2.reserve(ret_vec.size() / 3);
+                            for (u32 i = 0; i < ret_vec.size(); i += 3) {
+                                ret2.push_back({ret_vec[i], ret_vec[i + 1], ret_vec[i + 2]});
+                            }
+
+                            return ret2;
+                        },
+                        offset);
                 },
                 py::arg("field_name"),
                 py::arg("pos_to_val"),

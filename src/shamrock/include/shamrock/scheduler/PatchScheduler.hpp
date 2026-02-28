@@ -25,6 +25,7 @@
 #include "shambase/time.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
+#include "shamrock/patch/PatchDataLayout.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include <nlohmann/json.hpp>
@@ -64,7 +65,7 @@ class PatchScheduler {
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
 
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr;
+    std::shared_ptr<shamrock::patch::PatchDataLayout> pdl_ptr;
 
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
@@ -77,12 +78,29 @@ class PatchScheduler {
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with
     ///< (owned_patch_id = patch_list.build_local())
 
+    inline shamrock::patch::PatchDataLayout &pdl() { return shambase::get_check_ref(pdl_ptr); }
+
+    inline std::shared_ptr<shamrock::patch::PatchDataLayout> get_layout_ptr() const {
+        return pdl_ptr;
+    }
+
+    /// Will be deprecated in favor of the new one with layout support
     inline shamrock::patch::PatchDataLayerLayout &pdl_old() {
-        return shambase::get_check_ref(pdl_ptr);
+        auto &ref = pdl();
+        if (ref.get_layer_count() != 1) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "pdl_old is not supported for multiple layers");
+        }
+        return ref.get_layer_ref(0);
     }
 
     inline std::shared_ptr<shamrock::patch::PatchDataLayerLayout> get_layout_ptr_old() const {
-        return pdl_ptr;
+        auto &ref = shambase::get_check_ref(pdl_ptr);
+        if (ref.get_layer_count() != 1) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "get_layout_ptr_old is not supported for multiple layers");
+        }
+        return ref.get_layer_ptr(0);
     }
 
     /**
@@ -98,7 +116,7 @@ class PatchScheduler {
     void free_mpi_required_types();
 
     PatchScheduler(
-        const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr,
+        const std::shared_ptr<shamrock::patch::PatchDataLayout> &pdl_ptr,
         u64 crit_split,
         u64 crit_merge);
 

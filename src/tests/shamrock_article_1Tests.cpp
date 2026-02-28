@@ -488,8 +488,9 @@ f64 amr_walk_perf(
     using namespace shamrock::patch;
     using namespace shamrock::scheduler;
 
-    std::shared_ptr<PatchDataLayerLayout> layout_ptr = std::make_shared<PatchDataLayerLayout>();
-    auto &layout                                     = *layout_ptr;
+    std::shared_ptr<PatchDataLayout> layout_ptr
+        = std::make_shared<PatchDataLayout>(std::vector<std::string>{"main"});
+    auto &layout = layout_ptr->get_layer_ref(0);
     layout.add_field<u64_3>("cell_min", 1);
     layout.add_field<u64_3>("cell_max", 1);
     PatchScheduler sched(layout_ptr, 1e9, 1);

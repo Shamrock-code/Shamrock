@@ -251,6 +251,22 @@ struct SetupLog {
 
 inline constexpr f64 golden_number = 1.61803398874989484820458683436563;
 
+namespace {
+    void sync_point(SourceLocation loc = SourceLocation{}) {
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        auto &q        = shambase::get_check_ref(dev_sched).get_queue();
+        q.wait_and_throw();
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+
+        if (shamcomm::world_rank() == 0) {
+            logger::raw_ln("sync point", loc.format_one_line());
+        }
+
+        shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+    }
+} // namespace
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     SetupNodePtr setup,
@@ -263,6 +279,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     bool do_setup_log) {
 
     __shamrock_stack_entry();
+
+    sync_point();
 
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");
@@ -326,7 +344,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         shambase::Timer timer_gen;
         timer_gen.start();
 
+        sync_point();
         shamrock::patch::PatchDataLayer tmp = setup->next_n(gen_step);
+
+        sync_point();
 
         if (solver_config.track_particles_id) {
             // This bit set the tracking id of the particles
@@ -367,8 +388,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     .overwrite(part_ids, loc_inj);
             }
         }
+        sync_point();
 
         to_insert.insert_elements(tmp);
+        sync_point();
 
         u64 sum_push = shamalgs::collective::allreduce_sum<u64>(tmp.get_obj_cnt());
         u64 sum_all  = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
@@ -416,6 +439,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     time_part_inject.start();
 
     auto log_inject_status = [&](std::string log_suffix = "") {
+        __shamrock_stack_entry();
         u64 sum_all = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
 
         u32 rank_without_patch
@@ -523,6 +547,14 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 err_id_in_newid = err_id_in_newid || (err);
 
                 i32 rank = sched.get_patch_rank_owner(patch_id);
+
+                if (rank >= shamcomm::world_size() || rank < 0) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                        "rank is out of bounds: rank = {}, world size = {}",
+                        rank,
+                        shamcomm::world_size()));
+                }
+
                 index_per_ranks[rank].push_back(i);
             }
         }
@@ -545,6 +577,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     u32 step_count = 0;
     while (!shamalgs::collective::are_all_rank_true(to_insert.is_empty(), MPI_COMM_WORLD)) {
 
+        __shamrock_stack_entry();
+
         // assume that the sched is synchronized and that there is at least a patch.
         // TODO actually check that
 
@@ -554,11 +588,15 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         inject_in_local_domains(to_insert);
 
+        __shamrock_stack_entry();
+
         f64 timer_get_index_per_ranks = 0;
         std::unordered_map<i32, std::vector<u32>> index_per_ranks
             = get_index_per_ranks(timer_get_index_per_ranks);
         total_time_rank_getter += timer_get_index_per_ranks;
         max_time_rank_getter = std::max(max_time_rank_getter, timer_get_index_per_ranks);
+
+        __shamrock_stack_entry();
 
         // allgather the list of messages
         // format:(u32_2(sender_rank, receiver_rank), u64(indices_size))
@@ -567,6 +605,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             send_msg.push_back(sham::pack32(shamcomm::world_rank(), rank));
             send_msg.push_back(indices.size());
         }
+
+        __shamrock_stack_entry();
 
         u64 max_send      = (1 << 24) / shamcomm::world_size();
         bool sync_limited = false;
@@ -606,6 +646,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             sync_limited = true;
         }
 
+        __shamrock_stack_entry();
+
         std::vector<u64> recv_msg;
         shamalgs::collective::vector_allgatherv(send_msg, recv_msg, MPI_COMM_WORLD);
 
@@ -616,6 +658,19 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             u32 sender_rank   = sender_receiver.x();
             u32 receiver_rank = sender_receiver.y();
+
+            if (receiver_rank >= shamcomm::world_size() || receiver_rank < 0) {
+                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    "receiver rank is out of bounds: rank = {}, world size = {}",
+                    receiver_rank,
+                    shamcomm::world_size()));
+            }
+            if (sender_rank >= shamcomm::world_size() || sender_rank < 0) {
+                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                    "sender rank is out of bounds: rank = {}, world size = {}",
+                    sender_rank,
+                    shamcomm::world_size()));
+            }
 
             if (sender_rank == receiver_rank) {
                 continue; // only mean that it was not fully inserted in the patch
@@ -628,9 +683,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             setup_log.value().update_msg_list(msg_list);
         }
 
+        __shamrock_stack_entry();
+
         // shuffle msg_list according to seed golden_number*1000*step_count
         std::mt19937 eng_global_msg(u64(golden_number * 1000 * step_count));
         std::shuffle(msg_list.begin(), msg_list.end(), eng_global_msg);
+
+        __shamrock_stack_entry();
 
         // now that we are in sync we can determine who should send to who
 
@@ -676,6 +735,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             comm_size_rank.at(sender_rank) += msg_size;
         }
 
+        __shamrock_stack_entry();
+
         // logger::raw_ln(
         //     shamcomm::world_rank(),
         //     was_count_limited,
@@ -708,7 +769,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             }
         }
 
+        __shamrock_stack_entry();
+
         to_insert.remove_ids(idx_to_rem, idx_to_rem.get_size());
+
+        __shamrock_stack_entry();
 
         // comm the data to the right ranks
         shambase::DistributedDataShared<PatchDataLayer> recv_dat;
@@ -734,10 +799,14 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             },
             comm_cache);
 
+        __shamrock_stack_entry();
+
         // insert the data into the data to be inserted
         recv_dat.for_each([&](u64 sender, u64 receiver, PatchDataLayer &pdat) {
             to_insert.insert_elements(pdat);
         });
+
+        __shamrock_stack_entry();
 
         was_count_limited
             = !shamalgs::collective::are_all_rank_true(!was_count_limited, MPI_COMM_WORLD);

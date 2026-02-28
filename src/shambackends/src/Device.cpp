@@ -88,10 +88,6 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -102,10 +98,6 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -116,8 +108,6 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<info_>()};                                                        \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device", "dev.get_info<" #info_ ">() raised an exception for device", name);      \
             return {};                                                                             \
         }                                                                                          \
     }();

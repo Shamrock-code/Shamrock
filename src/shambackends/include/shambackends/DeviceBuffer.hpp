@@ -75,7 +75,7 @@ namespace sham {
     inline sham::EventList safe_fill_lambda(
         sham::DeviceQueue &q, sham::EventList &depends_list, T *dest, size_t count, Fct &&fct) {
         __shamrock_stack_entry();
-        u64 max_copy_len = (1 << 30); // 1G elements, this garanteee indexing below i32_max
+        u64 max_copy_len = (1 << 30) / sizeof(T); // 1GB
 
         sham::EventList events;
 

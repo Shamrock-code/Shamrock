@@ -17,6 +17,7 @@
  */
 
 #include "shambase/source_location.hpp"
+#include <optional>
 #include <string>
 
 /**
@@ -32,8 +33,11 @@ struct SourceLocation {
     using srcloc = shambase::cxxstd::source_location;
 
     srcloc loc;
+    std::optional<std::string> message;
 
-    inline explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
+    inline explicit SourceLocation(
+        std::optional<std::string> _message = std::nullopt, srcloc _loc = srcloc::current())
+        : loc(_loc), message(_message) {}
 
     /**
      * @brief format the location in multiple lines

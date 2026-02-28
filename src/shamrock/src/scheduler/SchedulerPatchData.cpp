@@ -18,6 +18,7 @@
 #include "shambase/narrowing.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
@@ -88,7 +89,7 @@ namespace shamrock::scheduler {
 
             shamcomm::mpi::Irecv(
                 msg.buf->get_ptr(),
-                cnt,
+                shambase::narrow_or_throw<i32>(cnt),
                 get_mpi_type<u64>(),
                 msg.rank,
                 msg.tag,
@@ -106,6 +107,7 @@ namespace shamrock::scheduler {
         using ChangeOp = shamrock::scheduler::LoadBalancingChangeList::ChangeOp;
 
         auto serializer = [](shamrock::patch::PatchDataLayer &pdat) {
+            __shamrock_stack_entry();
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());
             ser.allocate(pdat.serialize_buf_byte_size());
             pdat.serialize_buf(ser);
@@ -113,6 +115,7 @@ namespace shamrock::scheduler {
         };
 
         auto deserializer = [&](sham::DeviceBuffer<u8> &&buf) {
+            __shamrock_stack_entry();
             // exchange the buffer held by the distrib data and give it to the serializer
             shamalgs::SerializeHelper ser(
                 shamsys::instance::get_compute_scheduler_ptr(),
@@ -122,6 +125,7 @@ namespace shamrock::scheduler {
 
         std::vector<Message> send_payloads;
         for (const ChangeOp op : change_list.change_ops) {
+            __shamrock_stack_entry();
             // if i'm sender
             if (op.rank_owner_old == shamcomm::world_rank()) {
                 auto &patchdata = owned_data.get(op.patch_id);
@@ -142,6 +146,7 @@ namespace shamrock::scheduler {
 
         std::vector<Message> recv_payloads;
         for (const ChangeOp op : change_list.change_ops) {
+            __shamrock_stack_entry();
             auto &id_patch = op.patch_id;
 
             // if i'm receiver
@@ -163,6 +168,7 @@ namespace shamrock::scheduler {
         u32 idx = 0;
         // receive
         for (const ChangeOp op : change_list.change_ops) {
+            __shamrock_stack_entry();
             auto &id_patch = op.patch_id;
 
             // if i'm receiver
@@ -182,6 +188,7 @@ namespace shamrock::scheduler {
 
         // erase old patchdata
         for (const ChangeOp op : change_list.change_ops) {
+            __shamrock_stack_entry();
             auto &id_patch = op.patch_id;
 
             patch_list.global[op.patch_idx].node_owner_id = op.rank_owner_new;

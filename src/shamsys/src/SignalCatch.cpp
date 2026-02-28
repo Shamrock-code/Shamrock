@@ -21,16 +21,68 @@
 #include <stdexcept>
 
 namespace shamsys::details {
-    void signal_callback_handler(int signum) {
 
+    /**
+     * @brief Name the received signal
+     * @note List made from <bits/signum-arch.h> and <bits/signum-generic.h>.
+     * @param signum The signal number
+     * @return const char* The name of the signal
+     */
+    const char *get_signal_name(int signum) {
         const char *signame = nullptr;
         switch (signum) {
-        case SIGTERM: signame = "SIGTERM"; break;
+
+        // ISO C99 signals.
         case SIGINT : signame = "SIGINT"; break;
+        case SIGILL : signame = "SIGILL"; break;
+        case SIGABRT: signame = "SIGABRT"; break;
+        case SIGFPE : signame = "SIGFPE"; break;
         case SIGSEGV: signame = "SIGSEGV"; break;
-        case SIGIOT : signame = "SIGIOT"; break;
-        default     : signame = "UNKNOWN"; break;
+        case SIGTERM: signame = "SIGTERM"; break;
+
+        // Historical signals specified by POSIX.
+        case SIGHUP : signame = "SIGHUP"; break;
+        case SIGQUIT: signame = "SIGQUIT"; break;
+        case SIGTRAP: signame = "SIGTRAP"; break;
+        case SIGKILL: signame = "SIGKILL"; break;
+        case SIGPIPE: signame = "SIGPIPE"; break;
+        case SIGALRM: signame = "SIGALRM"; break;
+
+        // Adjustments and additions to the signal number constants for  most Linux systems.
+        case SIGSTKFLT: signame = "SIGSTKFLT"; break;
+        case SIGPWR   : signame = "SIGPWR"; break;
+
+        // Historical signals specified by POSIX.
+        case SIGBUS: signame = "SIGBUS"; break;
+        case SIGSYS: signame = "SIGSYS"; break;
+
+        // New(er) POSIX signals (1003.1-2008, 1003.1-2013).
+        case SIGURG   : signame = "SIGURG"; break;
+        case SIGSTOP  : signame = "SIGSTOP"; break;
+        case SIGTSTP  : signame = "SIGTSTP"; break;
+        case SIGCONT  : signame = "SIGCONT"; break;
+        case SIGCHLD  : signame = "SIGCHLD"; break;
+        case SIGTTIN  : signame = "SIGTTIN"; break;
+        case SIGTTOU  : signame = "SIGTTOU"; break;
+        case SIGPOLL  : signame = "SIGPOLL"; break;
+        case SIGXFSZ  : signame = "SIGXFSZ"; break;
+        case SIGXCPU  : signame = "SIGXCPU"; break;
+        case SIGVTALRM: signame = "SIGVTALRM"; break;
+        case SIGPROF  : signame = "SIGPROF"; break;
+        case SIGUSR1  : signame = "SIGUSR1"; break;
+        case SIGUSR2  : signame = "SIGUSR2"; break;
+
+        // Nonstandard signals found in all modern POSIX systems (including both BSD and Linux).
+        case SIGWINCH: signame = "SIGWINCH"; break;
+
+        default: signame = "UNKNOWN"; break;
         }
+        return signame;
+    }
+
+    void signal_callback_handler(int signum) {
+
+        const char *signame = get_signal_name(signum);
 
         // ensure that we print in one block to avoid interleaving
         std::string log = fmt::format(

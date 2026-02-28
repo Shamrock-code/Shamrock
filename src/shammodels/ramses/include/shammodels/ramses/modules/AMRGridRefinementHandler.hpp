@@ -42,6 +42,7 @@ namespace shammodels::basegodunov::modules {
         using AMRBlock         = typename Config::AMRBlock;
         using BlockCoord       = shamrock::amr::AMRBlockCoord<TgridVec, 3>;
         using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
 
         ShamrockCtx &context;
         Config &solver_config;
@@ -53,6 +54,19 @@ namespace shammodels::basegodunov::modules {
         void update_refinement();
 
         private:
+        /**
+         * @brief build histrogram for amr block levels
+         */
+        void amr_block_levels_histogram(
+            const sham::DeviceScheduler_ptr &sched,
+            const sham::DeviceBuffer<TgridUint> &amr_levels,
+            const u32 nb_levels,
+            sham::DeviceBuffer<u32> &block_count_per_level,
+            sham::DeviceBuffer<u32> &block_reordered_indx_map,
+            const u32 len,
+            TgridUint level_min,
+            TgridUint level_max);
+
         /**
          * @brief Generate the list of blocks that need to be refined or derefined.
          *

@@ -92,6 +92,127 @@ namespace shammodels::basegodunov::modules {
 } // namespace shammodels::basegodunov::modules
 
 template<class Tvec, class TgridVec>
+struct KernelSumFluxHydro {
+    using Tscal    = shambase::VecComponent<Tvec>;
+    using AMRBlock = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
+
+    using AMRGraph = shammodels::basegodunov::modules::NeighGraph;
+
+    inline static shammath::AABB<Tvec> get_cell_aabb(
+        u32 id,
+        const Tvec *__restrict cell0block_aabb_lower,
+        const Tscal *__restrict block_cell_sizes) {
+        const u32 cell_global_id = (u32) id;
+
+        const u32 block_id    = cell_global_id / AMRBlock::block_size;
+        const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
+
+        // fetch current block info
+        const Tvec cblock_min  = cell0block_aabb_lower[block_id];
+        const Tscal delta_cell = block_cell_sizes[block_id];
+
+        std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
+        Tvec offset = Tvec{lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]} * delta_cell;
+
+        Tvec aabb_min = cblock_min + offset;
+        Tvec aabb_max = aabb_min + delta_cell;
+
+        return {aabb_min, aabb_max};
+    };
+
+    inline static Tscal get_face_surface(
+        u32 id_a,
+        u32 id_b,
+        const Tvec *__restrict cell0block_aabb_lower,
+        const Tscal *__restrict block_cell_sizes) {
+        shammath::AABB<Tvec> aabb_cell_a
+            = get_cell_aabb(id_a, cell0block_aabb_lower, block_cell_sizes);
+        shammath::AABB<Tvec> aabb_cell_b
+            = get_cell_aabb(id_b, cell0block_aabb_lower, block_cell_sizes);
+
+        shammath::AABB<Tvec> face_aabb = aabb_cell_a.get_intersect(aabb_cell_b);
+
+        Tvec delta_face = face_aabb.delt();
+
+        delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
+        delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
+        delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
+
+        return delta_face.x() * delta_face.y() * delta_face.z();
+    };
+
+    inline void operator()(
+        u32 id_a,
+        const Tscal *__restrict flux_rho_face_xp,
+        const Tscal *__restrict flux_rho_face_xm,
+        const Tscal *__restrict flux_rho_face_yp,
+        const Tscal *__restrict flux_rho_face_ym,
+        const Tscal *__restrict flux_rho_face_zp,
+        const Tscal *__restrict flux_rho_face_zm,
+        const Tvec *__restrict flux_rhov_face_xp,
+        const Tvec *__restrict flux_rhov_face_xm,
+        const Tvec *__restrict flux_rhov_face_yp,
+        const Tvec *__restrict flux_rhov_face_ym,
+        const Tvec *__restrict flux_rhov_face_zp,
+        const Tvec *__restrict flux_rhov_face_zm,
+        const Tscal *__restrict flux_rhoe_face_xp,
+        const Tscal *__restrict flux_rhoe_face_xm,
+        const Tscal *__restrict flux_rhoe_face_yp,
+        const Tscal *__restrict flux_rhoe_face_ym,
+        const Tscal *__restrict flux_rhoe_face_zp,
+        const Tscal *__restrict flux_rhoe_face_zm,
+        const Tscal *__restrict block_cell_sizes,
+        const Tvec *__restrict cell0block_aabb_lower,
+        const AMRGraph::ro_access graph_iter_xp,
+        const AMRGraph::ro_access graph_iter_xm,
+        const AMRGraph::ro_access graph_iter_yp,
+        const AMRGraph::ro_access graph_iter_ym,
+        const AMRGraph::ro_access graph_iter_zp,
+        const AMRGraph::ro_access graph_iter_zm,
+        Tscal *__restrict dt_rho,
+        Tvec *__restrict dt_rhov,
+        Tscal *__restrict dt_rhoe) const {
+        const u32 block_id    = id_a / AMRBlock::block_size;
+        const u32 cell_loc_id = id_a % AMRBlock::block_size;
+
+        Tscal V_i = block_cell_sizes[block_id];
+        V_i       = V_i * V_i * V_i;
+
+        Tscal dtrho  = 0;
+        Tvec dtrhov  = {0, 0, 0};
+        Tscal dtrhoe = 0;
+
+        auto add_flux = [&](const auto &graph_iter,
+                            const Tscal *flux_rho,
+                            const Tvec *flux_rhov,
+                            const Tscal *flux_rhoe) {
+            graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
+                Tscal S_ij = KernelSumFluxHydro<Tvec, TgridVec>::get_face_surface(
+                    id_a, id_b, cell0block_aabb_lower, block_cell_sizes);
+                dtrho -= flux_rho[link_id] * S_ij;
+                dtrhov -= flux_rhov[link_id] * S_ij;
+                dtrhoe -= flux_rhoe[link_id] * S_ij;
+            });
+        };
+
+        add_flux(graph_iter_xp, flux_rho_face_xp, flux_rhov_face_xp, flux_rhoe_face_xp);
+        add_flux(graph_iter_xm, flux_rho_face_xm, flux_rhov_face_xm, flux_rhoe_face_xm);
+        add_flux(graph_iter_yp, flux_rho_face_yp, flux_rhov_face_yp, flux_rhoe_face_yp);
+        add_flux(graph_iter_ym, flux_rho_face_ym, flux_rhov_face_ym, flux_rhoe_face_ym);
+        add_flux(graph_iter_zp, flux_rho_face_zp, flux_rhov_face_zp, flux_rhoe_face_zp);
+        add_flux(graph_iter_zm, flux_rho_face_zm, flux_rhov_face_zm, flux_rhoe_face_zm);
+
+        dtrho /= V_i;
+        dtrhov /= V_i;
+        dtrhoe /= V_i;
+
+        dt_rho[id_a]  = dtrho;
+        dt_rhov[id_a] = dtrhov;
+        dt_rhoe[id_a] = dtrhoe;
+    }
+};
+
+template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_evaluate_internal() {
     auto edges = get_edges();
 
@@ -165,107 +286,7 @@ void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_e
                            graph_neigh_zp,        graph_neigh_zm},
             sham::MultiRef{dt_rho_patch, dt_rhov_patch, dt_rhoe_patch},
             cell_count,
-            [](u32 id_a,
-               const Tscal *__restrict flux_rho_face_xp,
-               const Tscal *__restrict flux_rho_face_xm,
-               const Tscal *__restrict flux_rho_face_yp,
-               const Tscal *__restrict flux_rho_face_ym,
-               const Tscal *__restrict flux_rho_face_zp,
-               const Tscal *__restrict flux_rho_face_zm,
-               const Tvec *__restrict flux_rhov_face_xp,
-               const Tvec *__restrict flux_rhov_face_xm,
-               const Tvec *__restrict flux_rhov_face_yp,
-               const Tvec *__restrict flux_rhov_face_ym,
-               const Tvec *__restrict flux_rhov_face_zp,
-               const Tvec *__restrict flux_rhov_face_zm,
-               const Tscal *__restrict flux_rhoe_face_xp,
-               const Tscal *__restrict flux_rhoe_face_xm,
-               const Tscal *__restrict flux_rhoe_face_yp,
-               const Tscal *__restrict flux_rhoe_face_ym,
-               const Tscal *__restrict flux_rhoe_face_zp,
-               const Tscal *__restrict flux_rhoe_face_zm,
-               const Tscal *__restrict block_cell_sizes,
-               const Tvec *__restrict cell0block_aabb_lower,
-               const auto graph_iter_xp,
-               const auto graph_iter_xm,
-               const auto graph_iter_yp,
-               const auto graph_iter_ym,
-               const auto graph_iter_zp,
-               const auto graph_iter_zm,
-               Tscal *__restrict dt_rho,
-               Tvec *__restrict dt_rhov,
-               Tscal *__restrict dt_rhoe) {
-                auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
-                    const u32 cell_global_id = (u32) id;
-
-                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
-                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
-
-                    // fetch current block info
-                    const Tvec cblock_min  = cell0block_aabb_lower[block_id];
-                    const Tscal delta_cell = block_cell_sizes[block_id];
-
-                    std::array<u32, 3> lcoord_arr = AMRBlock::get_coord(cell_loc_id);
-                    Tvec offset = Tvec{lcoord_arr[0], lcoord_arr[1], lcoord_arr[2]} * delta_cell;
-
-                    Tvec aabb_min = cblock_min + offset;
-                    Tvec aabb_max = aabb_min + delta_cell;
-
-                    return {aabb_min, aabb_max};
-                };
-
-                auto get_face_surface = [=](u32 id_a, u32 id_b) -> Tscal {
-                    shammath::AABB<Tvec> aabb_cell_a = get_cell_aabb(id_a);
-                    shammath::AABB<Tvec> aabb_cell_b = get_cell_aabb(id_b);
-
-                    shammath::AABB<Tvec> face_aabb = aabb_cell_a.get_intersect(aabb_cell_b);
-
-                    Tvec delta_face = face_aabb.delt();
-
-                    delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
-                    delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
-                    delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
-
-                    return delta_face.x() * delta_face.y() * delta_face.z();
-                };
-
-                const u32 block_id    = id_a / AMRBlock::block_size;
-                const u32 cell_loc_id = id_a % AMRBlock::block_size;
-
-                Tscal V_i = block_cell_sizes[block_id];
-                V_i       = V_i * V_i * V_i;
-
-                Tscal dtrho  = 0;
-                Tvec dtrhov  = {0, 0, 0};
-                Tscal dtrhoe = 0;
-
-                auto add_flux = [&](const auto &graph_iter,
-                                    const Tscal *flux_rho,
-                                    const Tvec *flux_rhov,
-                                    const Tscal *flux_rhoe) {
-                    graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
-                        Tscal S_ij = get_face_surface(id_a, id_b);
-                        dtrho -= flux_rho[link_id] * S_ij;
-                        dtrhov -= flux_rhov[link_id] * S_ij;
-                        dtrhoe -= flux_rhoe[link_id] * S_ij;
-                    });
-                };
-
-                add_flux(graph_iter_xp, flux_rho_face_xp, flux_rhov_face_xp, flux_rhoe_face_xp);
-                add_flux(graph_iter_xm, flux_rho_face_xm, flux_rhov_face_xm, flux_rhoe_face_xm);
-                add_flux(graph_iter_yp, flux_rho_face_yp, flux_rhov_face_yp, flux_rhoe_face_yp);
-                add_flux(graph_iter_ym, flux_rho_face_ym, flux_rhov_face_ym, flux_rhoe_face_ym);
-                add_flux(graph_iter_zp, flux_rho_face_zp, flux_rhov_face_zp, flux_rhoe_face_zp);
-                add_flux(graph_iter_zm, flux_rho_face_zm, flux_rhov_face_zm, flux_rhoe_face_zm);
-
-                dtrho /= V_i;
-                dtrhov /= V_i;
-                dtrhoe /= V_i;
-
-                dt_rho[id_a]  = dtrho;
-                dt_rhov[id_a] = dtrhov;
-                dt_rhoe[id_a] = dtrhoe;
-            });
+            KernelSumFluxHydro<Tvec, TgridVec>{});
     });
 }
 

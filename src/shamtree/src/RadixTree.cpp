@@ -179,8 +179,8 @@ auto RadixTree<u_morton, vec>::compute_int_boxes(
         auto h_max_cell
             = buf_cell_int_rad_buf->template get_access<sycl::access::mode::discard_write>(cgh);
 
-        auto cell_particle_ids = tree_reduced_morton_codes.buf_reduc_index_map
-                                     ->template get_access<sycl::access::mode::read>(cgh);
+        auto cell_particle_ids  = tree_reduced_morton_codes.buf_reduc_index_map
+                                      ->template get_access<sycl::access::mode::read>(cgh);
         auto particle_index_map = tree_morton_codes.buf_particle_index_map
                                       ->template get_access<sycl::access::mode::read>(cgh);
 

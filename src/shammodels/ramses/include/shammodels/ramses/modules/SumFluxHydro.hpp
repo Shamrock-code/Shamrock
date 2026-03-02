@@ -198,8 +198,8 @@ void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_e
                 auto get_cell_aabb = [=](u32 id) -> shammath::AABB<Tvec> {
                     const u32 cell_global_id = (u32) id;
 
-                    const u32 block_id    = id_a / AMRBlock::block_size;
-                    const u32 cell_loc_id = id_a % AMRBlock::block_size;
+                    const u32 block_id    = cell_global_id / AMRBlock::block_size;
+                    const u32 cell_loc_id = cell_global_id % AMRBlock::block_size;
 
                     // fetch current block info
                     const Tvec cblock_min  = cell0block_aabb_lower[block_id];

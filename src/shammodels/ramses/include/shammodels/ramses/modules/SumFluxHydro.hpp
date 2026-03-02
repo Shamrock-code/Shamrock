@@ -239,10 +239,10 @@ void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_e
                 Tvec dtrhov  = {0, 0, 0};
                 Tscal dtrhoe = 0;
 
-                auto accumulate_flux = [&](const auto &graph_iter,
-                                           const Tscal *flux_rho,
-                                           const Tvec *flux_rhov,
-                                           const Tscal *flux_rhoe) {
+                auto add_flux = [&](const auto &graph_iter,
+                                    const Tscal *flux_rho,
+                                    const Tvec *flux_rhov,
+                                    const Tscal *flux_rhoe) {
                     graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                         Tscal S_ij = get_face_surface(id_a, id_b);
                         dtrho -= flux_rho[link_id] * S_ij;
@@ -251,14 +251,12 @@ void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_e
                     });
                 };
 
-                // clang-format off
-                accumulate_flux(graph_iter_xp, flux_rho_face_xp, flux_rhov_face_xp, flux_rhoe_face_xp);
-                accumulate_flux(graph_iter_xm, flux_rho_face_xm, flux_rhov_face_xm, flux_rhoe_face_xm);
-                accumulate_flux(graph_iter_yp, flux_rho_face_yp, flux_rhov_face_yp, flux_rhoe_face_yp);
-                accumulate_flux(graph_iter_ym, flux_rho_face_ym, flux_rhov_face_ym, flux_rhoe_face_ym);
-                accumulate_flux(graph_iter_zp, flux_rho_face_zp, flux_rhov_face_zp, flux_rhoe_face_zp);
-                accumulate_flux(graph_iter_zm, flux_rho_face_zm, flux_rhov_face_zm, flux_rhoe_face_zm);
-                // clang-format on
+                add_flux(graph_iter_xp, flux_rho_face_xp, flux_rhov_face_xp, flux_rhoe_face_xp);
+                add_flux(graph_iter_xm, flux_rho_face_xm, flux_rhov_face_xm, flux_rhoe_face_xm);
+                add_flux(graph_iter_yp, flux_rho_face_yp, flux_rhov_face_yp, flux_rhoe_face_yp);
+                add_flux(graph_iter_ym, flux_rho_face_ym, flux_rhov_face_ym, flux_rhoe_face_ym);
+                add_flux(graph_iter_zp, flux_rho_face_zp, flux_rhov_face_zp, flux_rhoe_face_zp);
+                add_flux(graph_iter_zm, flux_rho_face_zm, flux_rhov_face_zm, flux_rhoe_face_zm);
 
                 dtrho /= V_i;
                 dtrhov /= V_i;

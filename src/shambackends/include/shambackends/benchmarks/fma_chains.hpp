@@ -24,17 +24,18 @@
 namespace sham::benchmarks {
 
     /**
-     * @brief kernel for the fma_chains benchmark
+     * @brief Kernel for the fma_chains benchmark.
      *
-     * Saturate the fpu to hide away memory latency
-     * Since we now that there are 16*2 flops per iteration
-     * this kernel can be used to compute the flops
+     * Saturates the FPU to hide memory latency.
+     * Since we know that there are 16 * 2 flops per iteration,
+     * this kernel can be used to compute the achieved flops.
      *
-     * @param i the index of the element to rotate
-     * @param nrotation the number of rotations to apply
-     * @param y0 the initial value of the second input vector
-     * @param in the input vector
-     * @param out the output vector
+     * @tparam T value type of the input and output vectors
+     * @param i index of the element to process
+     * @param nrotation number of FMA-chain rotations to apply
+     * @param y0 initial value of the second input vector
+     * @param in input vector
+     * @param out output vector
      */
     template<class T>
     inline void fma_chains(u32 i, int nrotation, T y0, T *__restrict in, T *__restrict out) {
@@ -69,15 +70,16 @@ namespace sham::benchmarks {
     };
 
     /**
-     * @brief Run the fma_chains benchmark
+     * @brief Run the fma_chains benchmark.
      *
-     * From https://docs.alcf.anl.gov/aurora/node-performance-overview/node-performance-overview/
+     * Based on Argonne's Aurora node performance overview:
+     * https://docs.alcf.anl.gov/aurora/node-performance-overview/node-performance-overview/
      *
-     * @param sched the scheduler for the device
-     * @param N the number of elements to process
-     * @param time_threshold the minimum time to run the benchmark in milliseconds
-     * @param float_count the number of floats per element
-     * @return the result of the benchmark as an fma_chains_result
+     * @tparam T value type used in the benchmark
+     * @param sched scheduler for the target device
+     * @param N number of elements (independent FMA chains) to process
+     * @param time_threshold minimum wall-clock time to run the benchmark in seconds
+     * @return benchmark results as an fma_chains_result
      */
     template<class T>
     inline fma_chains_result fma_chains_bench(

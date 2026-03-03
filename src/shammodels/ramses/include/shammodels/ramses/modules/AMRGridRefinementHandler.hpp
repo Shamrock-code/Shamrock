@@ -69,9 +69,22 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
             T &&...args);
+
+        /**
+         * @brief Enforces the 2:1 refinement ratio for blocks.
+         *
+         * This function iterates through blocks marked for refinement and ensures that
+         * adjacent, coarser blocks are also marked for refinement to maintain the 2:1
+         * grid balance. This is done iteratively to propagate the refinement as needed.
+         * @param refine_flags refinement flags
+         * @param refine_list        refinement maps
+         */
+        void enforce_two_to_one_for_refinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list);
 
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);

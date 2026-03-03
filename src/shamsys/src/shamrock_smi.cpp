@@ -192,6 +192,13 @@ namespace shamsys {
                 shambase::readable_sizeof(dev.prop.max_mem_alloc_size_host),
                 dev.prop.pci_address ? *dev.prop.pci_address : "Unknown");
 
+            if (!dev.prop.warnings.empty()) {
+                dev_with_id += "\n      - Warnings:";
+                for (auto &warning : dev.prop.warnings) {
+                    dev_with_id += shambase::format("\n          - {}", warning);
+                }
+            }
+
             std::unordered_map<std::string, int> devicename_histogram
                 = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");
 

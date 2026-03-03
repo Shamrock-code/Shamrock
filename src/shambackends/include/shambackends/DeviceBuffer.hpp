@@ -127,13 +127,15 @@ namespace sham {
          *
          * @return The memory alignment of the type T in bytes
          */
-        static std::optional<size_t> get_alignment(DeviceScheduler_ptr dev_sched) {
+        static std::optional<size_t> get_alignment(const DeviceScheduler_ptr &dev_sched) {
             return upgrade_multiple(
                 alignof(T),
-                shambase::get_check_ref(dev_sched)
-                    .get_queue()
-                    .get_device_prop()
-                    .mem_base_addr_align);
+                std::max(
+                    shambase::get_check_ref(dev_sched)
+                        .get_queue()
+                        .get_device_prop()
+                        .mem_base_addr_align,
+                    8_u32));
         }
 
         /**
@@ -142,7 +144,7 @@ namespace sham {
          * @param sz The size in number of elements
          * @return The size in bytes
          */
-        static size_t alloc_request_size_fct(size_t sz, DeviceScheduler_ptr dev_sched) {
+        static size_t alloc_request_size_fct(size_t sz, const DeviceScheduler_ptr &dev_sched) {
             size_t ret = sz * sizeof(T);
 
             auto align = get_alignment(dev_sched);

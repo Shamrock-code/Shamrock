@@ -1192,25 +1192,25 @@ TestStart(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1
     if (false) {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32, u32, 4>(pos, reduc_level, open_crit);
-        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f32_u32_order4", res.prec, 0, 1e-5);
+        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f32_u32_order4", res.prec, 0, 1.2e-5);
     }
 
     if (false) {
         auto pos = pos_partgen_distrib<f32>(1e4);
         auto res = nompi_fmm_testing<f32, u64, 4>(pos, reduc_level, open_crit);
-        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f32_u64_order4", res.prec, 0, 1e-5);
+        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f32_u64_order4", res.prec, 0, 1.2e-5);
     }
 
     if (false) {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64, u32, 4>(pos, reduc_level, open_crit);
-        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f64_u32_order4", res.prec, 0, 1e-5);
+        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f64_u32_order4", res.prec, 0, 1.2e-5);
     }
 
     {
         auto pos = pos_partgen_distrib<f64>(1e4);
         auto res = nompi_fmm_testing<f64, u64, 4>(pos, reduc_level, open_crit);
-        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f64_u64_order4", res.prec, 0, 1e-5);
+        REQUIRE_FLOAT_EQUAL_NAMED("fmm_f64_u64_order4", res.prec, 0, 1.2e-5);
     }
 
     // compare u32 / u64

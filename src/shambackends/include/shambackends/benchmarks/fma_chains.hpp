@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file add_mul.hpp
+ * @file fma_chains.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Port of Argonne National Laboratory's FMA chains benchmark flops.cpp
  */
 
 #include "shambase/assert.hpp"
@@ -24,39 +24,46 @@
 namespace sham::benchmarks {
 
     /**
-     * @brief kernel for the add_mul benchmark
+     * @brief kernel for the fma_chains benchmark
      *
      * Saturate the fpu to hide away memory latency
-     * Since we now that there are 6 flops per iteration
+     * Since we now that there are 16*2 flops per iteration
      * this kernel can be used to compute the flops
      *
      * @param i the index of the element to rotate
      * @param nrotation the number of rotations to apply
-     * @param cs the cosine of the angle of rotation
-     * @param sn the sine of the angle of rotation
-     * @param in1 the first input vector
-     * @param in2 the second input vector
+     * @param y0 the initial value of the second input vector
+     * @param in the input vector
      * @param out the output vector
      */
     template<class T>
-    inline void add_mul(
-        u32 i, int nrotation, T cs, T sn, T *__restrict in1, T *__restrict in2, T *__restrict out) {
+    inline void fma_chains(u32 i, int nrotation, T y0, T *__restrict in, T *__restrict out) {
+#define MAD_4(x, y)                                                                                \
+    x = y * x + y;                                                                                 \
+    y = x * y + x;                                                                                 \
+    x = y * x + y;                                                                                 \
+    y = x * y + x;
+#define MAD_16(x, y)                                                                               \
+    MAD_4(x, y);                                                                                   \
+    MAD_4(x, y);                                                                                   \
+    MAD_4(x, y);                                                                                   \
+    MAD_4(x, y);
 
-        T x = in1[i];
-        T y = in2[i];
-        for (int i = 0; i < nrotation; i++) {
-            T xx = cs * x - sn * y;
-            T yy = cs * y + sn * x;
-            x    = xx;
-            y    = yy;
+        T x = in[i];
+        T y = y0;
+        for (int j = 0; j < nrotation; j++) {
+            MAD_16(x, y);
         }
-        out[i] = sham::dot(x, y);
+        out[i] = y;
+
+#undef MAD_4
+#undef MAD_16
     }
 
     /// Structure containing the results of an add_mul benchmark
-    struct add_mul_result {
+    struct fma_chains_result {
         std::string func_name; ///< Name of the function
-        f64 milliseconds;      ///< Computation time in milliseconds
+        f64 seconds;           ///< Computation time in seconds
         f64 flops;             ///< Flops per second
         u32 nrotations;        ///< Number of rotation performed
     };
@@ -77,50 +84,44 @@ namespace sham::benchmarks {
      * @return the result of the benchmark as an add_mul_result
      */
     template<class T>
-    inline add_mul_result add_mul_bench(
-        DeviceScheduler_ptr sched,
-        int N,
-        T init_x,
-        T init_y,
-        T cs,
-        T sn,
-        int float_count,
-        f64 time_threshold) {
+    inline fma_chains_result fma_chains_bench(
+        DeviceScheduler_ptr sched, int N, f64 time_threshold) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
-        sham::DeviceBuffer<T> x   = {size_t(N), sched};
-        sham::DeviceBuffer<T> y   = {size_t(N), sched};
-        sham::DeviceBuffer<T> out = {size_t(N), sched};
+        sham::DeviceBuffer<T> x = {size_t(N), sched};
+        sham::DeviceBuffer<T> y = {size_t(N), sched};
 
-        x.fill(init_x);
-        y.fill(init_y);
+        const T x0 = T{1.1};
+        const T y0 = -x0;
+
+        x.fill(x0);
+        y.fill(y0);
 
         sham::EventList depends_list;
 
-        auto x_ptr   = x.get_write_access(depends_list);
-        auto y_ptr   = y.get_write_access(depends_list);
-        auto out_ptr = out.get_write_access(depends_list);
+        auto x_ptr = x.get_write_access(depends_list);
+        auto y_ptr = y.get_write_access(depends_list);
 
         depends_list.wait();
 
-        u32 nrotation       = 8;
-        double milliseconds = 0;
+        u32 nrotation = 8;
+        double sec    = 0;
 
-        auto run_bench = [&q, &N, &cs, &sn, &x_ptr, &y_ptr, &out_ptr](u32 nrotation) -> f64 {
+        auto run_bench = [&q, &N, &x_ptr, &y_ptr, y0](u32 nrotation) -> f64 {
             sham::EventList empty_list{};
 
             shambase::Timer t;
             t.start();
-            auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
+            auto e = q.submit(empty_list, [=](sycl::handler &cgh) {
                 cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
-                    add_mul(item.get_linear_id(), nrotation, cs, sn, x_ptr, y_ptr, out_ptr);
+                    fma_chains(item.get_linear_id(), nrotation, y0, x_ptr, y_ptr);
                 });
             });
             e.wait();
             t.end();
 
-            return t.elasped_sec() * 1e3;
+            return t.elasped_sec();
         };
 
         // warmup kernel
@@ -130,9 +131,9 @@ namespace sham::benchmarks {
 
         for (;;) {
 
-            milliseconds = run_bench(nrotation);
+            sec = run_bench(nrotation);
 
-            if (milliseconds >= time_threshold || nrotation >= 256 * 256 * 4) {
+            if (sec >= time_threshold || nrotation >= 256 * 256 * 4) {
                 break;
             }
 
@@ -141,15 +142,14 @@ namespace sham::benchmarks {
 
         x.complete_event_state(sycl::event{});
         y.complete_event_state(sycl::event{});
-        out.complete_event_state(sycl::event{});
 
-        milliseconds -= ref;
+        sec -= ref;
 
-        int flop_per_thread = nrotation * 6 * float_count;
+        u64 flop_per_thread = u64(nrotation) * 2_u64 * 16_u64;
         double flop_count   = double(N) * flop_per_thread;
-        double flops        = flop_count / (milliseconds / 1e3);
+        double flops        = flop_count / (sec);
 
-        return {SourceLocation{}.loc.function_name(), milliseconds, flops, nrotation};
+        return {SourceLocation{}.loc.function_name(), sec, flops, nrotation};
     }
 
 } // namespace sham::benchmarks

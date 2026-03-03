@@ -137,7 +137,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name) {
         f64 gsz = shamsys::instance::get_compute_queue()
                       .get_device()
                       .get_info<sycl::info::device::global_mem_size>();
-        gsz = 1024 * 1024 * 1024 * 1;
+        gsz     = 1024 * 1024 * 1024 * 1;
 
         logger::raw_ln("limit = ", part_per_g * (gsz / 1.3) / (1024. * 1024. * 1024.));
     }
@@ -156,7 +156,7 @@ void benchmark_selfgrav_main(u32 npatch, std::string name) {
         f64 gsz = shamsys::instance::get_compute_queue()
                       .get_device()
                       .get_info<sycl::info::device::global_mem_size>();
-        gsz = 1024 * 1024 * 1024 * 1;
+        gsz     = 1024 * 1024 * 1024 * 1;
 
         f64 a = (Nesti / part_per_g) * 1024. * 1024. * 1024.;
         f64 b = multiplier * gsz / 1.3;

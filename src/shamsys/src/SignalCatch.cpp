@@ -20,17 +20,41 @@
 #include <csignal>
 #include <stdexcept>
 
-namespace shamsys::details {
-    void signal_callback_handler(int signum) {
+/*
+feature test for strsignal()
 
-        const char *signame = nullptr;
-        switch (signum) {
-        case SIGTERM: signame = "SIGTERM"; break;
-        case SIGINT : signame = "SIGINT"; break;
-        case SIGSEGV: signame = "SIGSEGV"; break;
-        case SIGIOT : signame = "SIGIOT"; break;
-        default     : signame = "UNKNOWN"; break;
-        }
+strsignal():
+    Since glibc 2.10:
+    _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+    Before glibc 2.10:
+    _GNU_SOURCE
+
+*/
+#if defined(_XOPEN_SOURCE) && defined(_POSIX_C_SOURCE) && _XOPEN_SOURCE >= 700                     \
+    && _POSIX_C_SOURCE >= 200809L
+    #define HAVE_STRSIGNAL
+#elif defined(_GNU_SOURCE)
+    #define HAVE_STRSIGNAL
+#endif
+
+namespace shamsys::details {
+
+    /**
+     * @brief Name the received signal
+     * @note List made from <bits/signum-arch.h> and <bits/signum-generic.h>.
+     * @param signum The signal number
+     * @return const char* The name of the signal
+     */
+    const char *get_signal_name(int signum) {
+#ifdef HAVE_STRSIGNAL
+        const char *signame = strsignal(signum);
+#else
+        const char *signame = "UNKNOWN";
+#endif
+        return signame;
+    }
+
+    void signal_callback_handler(int signum) {
 
         // ensure that we print in one block to avoid interleaving
         std::string log = fmt::format(
@@ -38,7 +62,7 @@ namespace shamsys::details {
             "Current stacktrace : \n"
             "{}\n"
             "exiting ...",
-            signame,
+            get_signal_name(signum),
             signum,
             shamcomm::world_rank(),
             shambase::fmt_callstack());
@@ -59,21 +83,12 @@ namespace shamsys {
         // SA_RESETHAND resets the signal action to the default before calling the handler.
         sa.sa_flags = SA_RESETHAND;
 
-        if (sigaction(SIGTERM, &sa, NULL) != 0) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Failed to register SIGTERM signal handler");
-        }
-        if (sigaction(SIGINT, &sa, NULL) != 0) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Failed to register SIGINT signal handler");
-        }
-        if (sigaction(SIGSEGV, &sa, NULL) != 0) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Failed to register SIGSEGV signal handler");
-        }
-        if (sigaction(SIGIOT, &sa, NULL) != 0) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Failed to register SIGIOT signal handler");
+        std::array catched_signals = {SIGTERM, SIGINT, SIGSEGV, SIGIOT};
+        for (auto signum : catched_signals) {
+            if (sigaction(signum, &sa, NULL) != 0) {
+                shambase::throw_with_loc<std::runtime_error>(fmt::format(
+                    "Failed to register {} signal handler", details::get_signal_name(signum)));
+            }
         }
     }
 } // namespace shamsys

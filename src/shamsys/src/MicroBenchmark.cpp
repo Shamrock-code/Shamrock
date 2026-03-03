@@ -48,6 +48,22 @@ namespace shamsys::microbench {
 
     /// Vector allgather benchmark
     void vector_allgather(u32 el_per_rank);
+
+    std::tuple<std::string, std::string> format_result(f64 val) {
+
+        std::array<char, 6> prefixes    = {'k', 'M', 'G', 'T', 'P', 'E'};
+        std::array<f64, 6> prefixes_val = {1.e3, 1.e6, 1.e9, 1.e12, 1.e15, 1.e18};
+
+        std::string prefix = "";
+        f64 val_out        = val;
+        for (size_t i = 0; i < prefixes.size(); i++) {
+            if (val > prefixes_val[i]) {
+                prefix  = prefixes[i];
+                val_out = val / prefixes_val[i];
+            }
+        }
+        return {prefix, shambase::format("{:.3}", val_out)};
+    }
 } // namespace shamsys::microbench
 
 void shamsys::run_micro_benchmark() {
@@ -130,10 +146,12 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
     } while (shamalgs::collective::allreduce_min(t) < 1);
 
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(f64(length * loops) / t);
         logger::raw_ln(
             shambase::format(
-                " - p2p bandwidth    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
-                (f64(length * loops) / t),
+                " - p2p bandwidth    : {} {}B.s^-1 (ranks : {} -> {}) (loops : {})",
+                val,
+                prefix,
                 wr_sender,
                 wr_receiv,
                 loops));
@@ -261,12 +279,14 @@ void shamsys::microbench::saxpy() {
     f64 avg_bw = sum_bw / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(sum_bw);
         logger::raw_ln(
             shambase::format(
-                " - saxpy (f32_4)   : {:.3e} B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                " - saxpy (f32_4)   : {} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
                 "({:.1e} "
                 "ms)",
-                sum_bw,
+                val,
+                prefix,
                 min_bw,
                 max_bw,
                 avg_bw,
@@ -278,37 +298,34 @@ template<typename T>
 void shamsys::microbench::fma_chains_rotation() {
     int N = (1 << 22);
 
-    auto result = sham::benchmarks::fma_chains_bench<T>(
-        instance::get_compute_scheduler_ptr(),
-        N,
-        0.2
-    );
+    auto result
+        = sham::benchmarks::fma_chains_bench<T>(instance::get_compute_scheduler_ptr(), N, 0.2);
 
     std::string type_name;
     f64 flops_multiplier = 1;
     if constexpr (std::is_same_v<T, f32>) {
-        type_name = "f32";
+        type_name        = "f32";
         flops_multiplier = 1;
     } else if constexpr (std::is_same_v<T, f64>) {
-        type_name = "f64";
+        type_name        = "f64";
         flops_multiplier = 1;
     } else if constexpr (std::is_same_v<T, f32_2>) {
-        type_name = "f32_2";
+        type_name        = "f32_2";
         flops_multiplier = 2;
     } else if constexpr (std::is_same_v<T, f64_2>) {
-        type_name = "f64_2";
+        type_name        = "f64_2";
         flops_multiplier = 2;
     } else if constexpr (std::is_same_v<T, f32_3>) {
-        type_name = "f32_3";
+        type_name        = "f32_3";
         flops_multiplier = 3;
     } else if constexpr (std::is_same_v<T, f64_3>) {
-        type_name = "f64_3";
+        type_name        = "f64_3";
         flops_multiplier = 3;
     } else if constexpr (std::is_same_v<T, f32_4>) {
-        type_name = "f32_4";
+        type_name        = "f32_4";
         flops_multiplier = 4;
     } else if constexpr (std::is_same_v<T, f64_4>) {
-        type_name = "f64_4";
+        type_name        = "f64_4";
         flops_multiplier = 4;
     } else {
         throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
@@ -320,20 +337,21 @@ void shamsys::microbench::fma_chains_rotation() {
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(sum_flop * flops_multiplier);
         logger::raw_ln(
             shambase::format(
-                " - fma_chains ({}) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                " - fma_chains ({}) : {} {}flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
                 "({:.1e} ms, rotations = {})",
                 type_name,
-                sum_flop * flops_multiplier,
+                val,
+                prefix,
                 min_flop * flops_multiplier,
                 max_flop * flops_multiplier,
                 avg_flop * flops_multiplier,
-                result.seconds*1e3,
+                result.seconds * 1e3,
                 result.nrotations));
     }
 }
-
 
 void shamsys::microbench::vector_allgather(u32 el_per_rank) {
 

@@ -60,7 +60,7 @@ namespace sham::benchmarks {
 #undef MAD_16
     }
 
-    /// Structure containing the results of an add_mul benchmark
+    /// Structure containing the results of an fma_chains benchmark
     struct fma_chains_result {
         std::string func_name; ///< Name of the function
         f64 seconds;           ///< Computation time in seconds
@@ -69,19 +69,15 @@ namespace sham::benchmarks {
     };
 
     /**
-     * @brief Run the add_mul benchmark
+     * @brief Run the fma_chains benchmark
      *
-     * From https://www.bealto.com/gpu-benchmarks_flops.html
+     * From https://docs.alcf.anl.gov/aurora/node-performance-overview/node-performance-overview/
      *
      * @param sched the scheduler for the device
      * @param N the number of elements to process
-     * @param init_x the initial value of the first input vector
-     * @param init_y the initial value of the second input vector
-     * @param cs the cosine of the rotation angle
-     * @param sn the sine of the rotation angle
      * @param time_threshold the minimum time to run the benchmark in milliseconds
      * @param float_count the number of floats per element
-     * @return the result of the benchmark as an add_mul_result
+     * @return the result of the benchmark as an fma_chains_result
      */
     template<class T>
     inline fma_chains_result fma_chains_bench(

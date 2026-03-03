@@ -38,7 +38,7 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "--bind-to socket:overload-allowed --oversubscribe"
+                "mpi_args": "--bind-to socket:overload-allowed"
               }
             ]
           }
@@ -63,7 +63,7 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "--bind-to socket:overload-allowed --oversubscribe"
+                "mpi_args": "--bind-to socket:overload-allowed"
               }
             ]
           }

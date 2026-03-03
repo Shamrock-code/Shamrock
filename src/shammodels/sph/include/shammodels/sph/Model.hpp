@@ -939,9 +939,9 @@ namespace shammodels::sph {
                         * (1.
                            + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp)))
                         * sycl::sin(incl_rad));
-                    psi = shambase::constants::pi<Tscal>
-                          * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                          / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
+                    psi          = shambase::constants::pi<Tscal>
+                                   * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
+                                   / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                     Tscal x      = pos[i].x();
                     Tscal y      = pos[i].y();

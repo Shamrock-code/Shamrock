@@ -40,6 +40,7 @@ namespace shamsys::microbench {
     void p2p_latency(u32 wr1, u32 wr2);
 
     /// SAXPY benchmark, to get the maximum bandwidth
+    template<typename T>
     void saxpy();
 
     /// FMA chains benchmark to get the maximum floating point performance
@@ -80,7 +81,14 @@ void shamsys::run_micro_benchmark() {
     if (shamcomm::world_size() > 1) {
         microbench::p2p_latency(wr1, wr2);
     }
-    microbench::saxpy();
+    microbench::saxpy<f32>();
+    microbench::saxpy<f64>();
+    microbench::saxpy<f32_2>();
+    microbench::saxpy<f64_2>();
+    microbench::saxpy<f32_3>();
+    microbench::saxpy<f64_3>();
+    microbench::saxpy<f32_4>();
+    microbench::saxpy<f64_4>();
     microbench::fma_chains_rotation<f32>();
     microbench::fma_chains_rotation<f64>();
     microbench::fma_chains_rotation<f32_2>();
@@ -219,20 +227,59 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
     }
 }
 
+template<typename T>
 void shamsys::microbench::saxpy() {
+    int Tsize = sizeof(T);
 
-    using vec4    = sycl::vec<float, 4>;
-    int vec4_size = sizeof(vec4);
+    std::string type_name;
+    T init_x, init_y, a;
+    if constexpr (std::is_same_v<T, f32>) {
+        type_name = "f32";
+        init_x    = 1.0f;
+        init_y    = 2.0f;
+        a         = 2.0f;
+    } else if constexpr (std::is_same_v<T, f64>) {
+        type_name = "f64";
+        init_x    = 1.0;
+        init_y    = 2.0;
+        a         = 2.0;
+    } else if constexpr (std::is_same_v<T, f32_2>) {
+        type_name = "f32_2";
+        init_x    = {1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f};
+        a         = {2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_2>) {
+        type_name = "f64_2";
+        init_x    = {1.0, 1.0};
+        init_y    = {2.0, 2.0};
+        a         = {2.0, 2.0};
+    } else if constexpr (std::is_same_v<T, f32_3>) {
+        type_name = "f32_3";
+        init_x    = {1.0f, 1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f, 2.0f};
+        a         = {2.0f, 2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_3>) {
+        type_name = "f64_3";
+        init_x    = {1.0, 1.0, 1.0};
+        init_y    = {2.0, 2.0, 2.0};
+        a         = {2.0, 2.0, 2.0};
+    } else if constexpr (std::is_same_v<T, f32_4>) {
+        type_name = "f32_4";
+        init_x    = {1.0f, 1.0f, 1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f, 2.0f, 2.0f};
+        a         = {2.0f, 2.0f, 2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_4>) {
+        type_name = "f64_4";
+        init_x    = {1.0, 1.0, 1.0, 1.0};
+        init_y    = {2.0, 2.0, 2.0, 2.0};
+        a         = {2.0, 2.0, 2.0, 2.0};
+    } else {
+        throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
+    }
 
     auto bench_step = [&](int N) {
-        return sham::benchmarks::saxpy_bench<vec4>(
-            instance::get_compute_scheduler_ptr(),
-            N,
-            {1.0f, 1.0f, 1.0f, 1.0f},
-            {2.0f, 2.0f, 2.0f, 2.0f},
-            {2.0f, 2.0f, 2.0f, 2.0f},
-            vec4_size,
-            N < (1 << 20));
+        return sham::benchmarks::saxpy_bench<T>(
+            instance::get_compute_scheduler_ptr(), N, init_x, init_y, a, Tsize, N < (1 << 20));
     };
 
     auto benchmark = [&]() {
@@ -244,7 +291,7 @@ void shamsys::microbench::saxpy() {
 
         size_t max_alloc
             = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
-        double max_size = double(max_alloc) / (vec4_size * 4); // there is 2 allocations so /4
+        double max_size = double(max_alloc) / (Tsize * 4); // there is 2 allocations so /4
 
         auto result = bench_step(shambase::narrow_or_throw<i32>(N));
 
@@ -282,9 +329,9 @@ void shamsys::microbench::saxpy() {
         auto [prefix, val] = format_result(sum_bw);
         logger::raw_ln(
             shambase::format(
-                " - saxpy (f32_4)   : {} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} "
-                "ms)",
+                " - saxpy ({})   : {} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} ms)",
+                type_name,
                 val,
                 prefix,
                 min_bw,

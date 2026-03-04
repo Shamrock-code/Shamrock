@@ -283,8 +283,8 @@ void shamsys::microbench::saxpy() {
 
     size_t max_alloc = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
     double max_size  = double(max_alloc) / (Tsize * 4); // there is 2 allocations so /4
-    if (max_size > (1 << 31)) {
-        max_size = (1 << 31);
+    if (max_size >= (1 << 30)) {
+        max_size = (1 << 30);
     }
 
     size_t N = (1 << 15);

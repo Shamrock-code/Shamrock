@@ -21,6 +21,10 @@ on:
 
 jobs:
 
+  # note that -genv MPIR_CVAR_NOLOCAL=1 is set for the intel/oneapi
+  # there are some issue on old runners with older docker if it is not set
+  # see https://github.com/pmodels/mpich/blob/main/doc/wiki/faq/Frequently_Asked_Questions.md#q-why-mpi_put-raises-sigbus-error-inside-docker
+
   set_matrix:
     name: Set Intel/LLVM matrix
     runs-on: ubuntu-latest

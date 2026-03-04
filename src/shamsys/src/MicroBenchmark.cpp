@@ -277,36 +277,25 @@ void shamsys::microbench::saxpy() {
         throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
     }
 
-    auto &dev_ctx = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
-    auto &dev_ptr = dev_ctx.device;
-    auto &dev     = shambase::get_check_ref(dev_ptr);
-
-    size_t max_alloc = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
-    double max_size  = double(max_alloc) / (Tsize * 4); // there is 2 allocations so /4
-    if (max_size >= (1 << 30)) {
-        max_size = (1 << 30);
-    }
-
-    size_t N = (1 << 15);
-
-    auto dev_sched_ptr = instance::get_compute_scheduler_ptr();
-    sham::DeviceBuffer<T> x{size_t(max_size), dev_sched_ptr};
-    sham::DeviceBuffer<T> y{size_t(max_size), dev_sched_ptr};
-
     auto bench_step = [&](int N) {
         return sham::benchmarks::saxpy_bench<T>(
-            instance::get_compute_scheduler_ptr(),
-            N,
-            init_x,
-            init_y,
-            a,
-            Tsize,
-            N < (1 << 17),
-            x,
-            y);
+            instance::get_compute_scheduler_ptr(), N, init_x, init_y, a, Tsize, N < (1 << 17));
     };
 
     auto benchmark = [&]() {
+        size_t N = (1 << 15);
+
+        auto &dev_ctx = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
+        auto &dev_ptr = dev_ctx.device;
+        auto &dev     = shambase::get_check_ref(dev_ptr);
+
+        size_t max_alloc
+            = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
+        double max_size = double(max_alloc) / (Tsize * 4); // there is 2 allocations so /4
+        if (max_size >= (1 << 30)) {
+            max_size = (1 << 30);
+        }
+
         auto result = bench_step(shambase::narrow_or_throw<i32>(N));
 
         for (; N <= (1 << 30) && static_cast<double>(N) <= max_size; N *= 2) {
@@ -315,7 +304,7 @@ void shamsys::microbench::saxpy() {
             // std::cout << N << " " << result_new.seconds << " " << result_new.bandwidth
             //           << std::endl;
 
-            if (result.seconds > 5e-3) {
+            if (result.seconds > 1e-3) {
                 break;
             }
         }

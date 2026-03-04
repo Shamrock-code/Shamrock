@@ -74,13 +74,14 @@ namespace sham::benchmarks {
         T init_y,
         T a,
         int load_size,
-        bool check_correctness,
-        sham::DeviceBuffer<T> &x,
-        sham::DeviceBuffer<T> &y) {
+        bool check_correctness) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
         double seconds = shambase::get_max<double>();
+
+        sham::DeviceBuffer<T> x{size_t(N), sched};
+        sham::DeviceBuffer<T> y{size_t(N), sched};
 
         x.fill(init_x);
         y.fill(init_y);

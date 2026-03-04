@@ -21,6 +21,9 @@ on:
 
 jobs:
 
+  # on older self-hosted runner we must start the container with --shm-size=512m
+  # otherwise we get bus errors with intel mpi
+
   set_matrix:
     name: Set Intel/LLVM matrix
     runs-on: ubuntu-latest
@@ -38,7 +41,8 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "--bind-to socket:overload-allowed"
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -63,7 +67,8 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "--bind-to socket:overload-allowed"
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -83,6 +88,7 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
+      options: ${{ matrix.docker_options }}
 
     strategy:
       matrix: ${{ fromJSON(needs.set_matrix.outputs.matrix) }}

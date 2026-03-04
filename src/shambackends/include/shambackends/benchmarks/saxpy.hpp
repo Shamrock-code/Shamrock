@@ -41,10 +41,12 @@ namespace sham::benchmarks {
     struct saxpy_result {
         /// Name of the function.
         std::string func_name;
-        /// Computation time in milliseconds.
-        f64 milliseconds;
+        /// Computation time in seconds.
+        f64 seconds;
         /// Bandwidth in gibibytes per second.
         f64 bandwidth;
+        /// Byte count used in the test
+        u64 byte_used;
     };
 
     /**
@@ -60,7 +62,7 @@ namespace sham::benchmarks {
      *
      *From https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/
      *
-     * @return saxpy_result containing the computation time in milliseconds,
+     * @return saxpy_result containing the computation time in seconds,
      *         the bandwidth in gibibytes per second, and the name of the
      *         function.
      */
@@ -105,7 +107,7 @@ namespace sham::benchmarks {
         x.complete_event_state(sycl::event{});
         y.complete_event_state(sycl::event{});
 
-        double milliseconds = t.elasped_sec() * 1e3;
+        double seconds = t.elasped_sec();
 
         auto y_res = y.copy_to_stdvec();
 
@@ -135,8 +137,9 @@ namespace sham::benchmarks {
 
         return {
             SourceLocation{}.loc.function_name(),
-            milliseconds,
-            double(N) * load_size * 3 / milliseconds / 1e6};
+            seconds,
+            double(N) * load_size * 3 / seconds / 1e9,
+            u64(N) * u64(load_size) * 2_u64};
     }
 
 } // namespace sham::benchmarks

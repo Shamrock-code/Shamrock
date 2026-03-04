@@ -308,7 +308,7 @@ void shamsys::microbench::saxpy() {
                 result = result_new;
             }
 
-            if (result.milliseconds > 5) {
+            if (result.seconds > 5e-3) {
                 break;
             }
         }
@@ -330,14 +330,15 @@ void shamsys::microbench::saxpy() {
         logger::raw_ln(
             shambase::format(
                 " - saxpy ({})   : {} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} ms)",
+                "({:.1e} ms, {})",
                 type_name,
                 val,
                 prefix,
                 min_bw,
                 max_bw,
                 avg_bw,
-                result.milliseconds));
+                result.seconds * 1e3,
+                shambase::readable_sizeof(result.byte_used)));
     }
 }
 

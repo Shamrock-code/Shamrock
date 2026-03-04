@@ -143,8 +143,7 @@ namespace shamrock::sfc {
 } // namespace shamrock::sfc
 
 [[deprecated]]
-constexpr u64 hilbert_box21_sz
-    = 2097152 - 1;
+constexpr u64 hilbert_box21_sz = 2097152 - 1;
 
 template<int bits>
 [[deprecated]]

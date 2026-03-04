@@ -88,10 +88,9 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
+            warnings.push_back(                                                                    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device "   \
+                + name);                                                                           \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -102,10 +101,9 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
+            warnings.push_back(                                                                    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device "   \
+                + name);                                                                           \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -116,8 +114,8 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<info_>()};                                                        \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device", "dev.get_info<" #info_ ">() raised an exception for device", name);      \
+            warnings.push_back(                                                                    \
+                "dev.get_info<" #info_ ">() raised an exception for device " + name);              \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -130,6 +128,8 @@ namespace sham {
      *         SYCL device.
      */
     DeviceProperties fetch_properties(const sycl::device &dev) {
+
+        std::vector<std::string> warnings;
 
         // Just to ensure that this one is not empty
         std::string name = "?";
@@ -236,34 +236,23 @@ namespace sham {
         }
 #endif
 
-        // with oneapi there can be some issues with this
-        // see:https://github.com/intel/llvm/blob/sycl/sycl/ReleaseNotes.md#sycl-library-50
-        // > Fixed sycl::device::get_info<sycl::info::device::mem_base_addr_align> query
-        // > which was returning incorrect result for CUDA plugin [a6d03f3]
-        //
-        // So easy fix since this is cuda and cuda default ot 8 i just default to 8 also
-        // Note: on the CRAL DGX it was reporting 4096 hence the check on 2048
-        if (*mem_base_addr_align && mem_base_addr_align > 2048) {
-            shamlog_warn_ln(
-                "Backends",
+        // with acpp 8 bit is returned for most backends so we default to 8 bytes (64 bits)
+        if (*mem_base_addr_align && mem_base_addr_align == 8) {
+            warnings.push_back(
                 shambase::format(
-                    "mem_base_addr_align for device {} is {}\n   I will assume that this is an "
-                    "issue and default to 8 instead",
-                    name,
+                    "mem_base_addr_align for is {} bits. I will assume that this is an "
+                    "issue and default to 64 bits (8 bytes) instead.",
                     *mem_base_addr_align));
-            mem_base_addr_align = 8;
+            mem_base_addr_align = CHAR_BIT * 8;
         }
 
         // Some backends do not report sub_group_sizes, so we default to {1}
         u32 default_work_group_size = 1;
         if (!sub_group_sizes) {
             sub_group_sizes = std::vector<size_t>{default_work_group_size};
-            shamlog_warn_ln(
-                "Backends",
+            warnings.push_back(
                 shambase::format(
-                    "cannot fetch sub_group_sizes for device {}, defaulting to {}",
-                    name,
-                    default_work_group_size));
+                    "cannot fetch sub_group_sizes, defaulting to {}", default_work_group_size));
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
 
@@ -275,8 +264,7 @@ namespace sham {
                 max_alloc_dev        = max_alloc;
                 max_alloc_host       = max_alloc;
             } catch (const std::exception &e) {
-                logger::warn_ln(
-                    "Backends",
+                warnings.push_back(
                     shambase::format(
                         "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
                         "Ignoring override.",
@@ -285,20 +273,23 @@ namespace sham {
             }
         }
 
-        DeviceProperties ret
-            = {Vendor::UNKNOWN,         // We cannot determine the vendor
-               get_device_backend(dev), // Query the backend based on the platform name
-               get_device_type(dev),
-               shambase::get_check_ref(global_mem_size),
-               shambase::get_check_ref(global_mem_cache_line_size),
-               shambase::get_check_ref(global_mem_cache_size),
-               shambase::get_check_ref(local_mem_size),
-               shambase::get_check_ref(max_compute_units),
-               max_alloc_dev,
-               max_alloc_host,
-               shambase::get_check_ref(mem_base_addr_align),
-               shambase::get_check_ref(sub_group_sizes),
-               default_work_group_size};
+        DeviceProperties ret = {
+            Vendor::UNKNOWN,         // We cannot determine the vendor
+            get_device_backend(dev), // Query the backend based on the platform name
+            get_device_type(dev),
+            shambase::get_check_ref(global_mem_size),
+            shambase::get_check_ref(global_mem_cache_line_size),
+            shambase::get_check_ref(global_mem_cache_size),
+            shambase::get_check_ref(local_mem_size),
+            shambase::get_check_ref(max_compute_units),
+            max_alloc_dev,
+            max_alloc_host,
+            // the SYCL standard returns the alignment in bits, we convert to bytes for convenience
+            shambase::get_check_ref(mem_base_addr_align) / CHAR_BIT,
+            shambase::get_check_ref(sub_group_sizes),
+            default_work_group_size,
+            std::nullopt,
+            warnings};
 
         { // PCI id infos
 #if defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 5

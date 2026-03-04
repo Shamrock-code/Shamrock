@@ -276,7 +276,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ir
                     const Tscal dt_alphas     = dt * acc_alphas[i];
                     Tscal inv_rho_d           = 1.0 / acc_rho_d_new_patch[id_a * ndust + i];
                     Tvec vd_bf                = inv_rho_d * acc_rhov_d_new_patch[id_a * ndust + i];
-                    Tvec vd_af                = inv_rho_d * inv_dt_alphas
+                    Tvec vd_af = inv_rho_d * inv_dt_alphas
                                  * (acc_rhov_d_new_patch[id_a * ndust + i]
                                     + dt_alphas * acc_rho_d_old[id_a * ndust + i] * tmp_vel);
                     dissipation += 0.5 * dt_alphas * inv_dt_alphas
@@ -446,13 +446,13 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         mu *= (-dt / (ndust + 1));
 
                         // get ptr to datas
-                        Tscal *ptr_A = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared);
-                        Tscal *ptr_B = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
-                                       + mat_size_squared;
-                        Tscal *ptr_F = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
-                                       + 2 * mat_size_squared;
-                        Tscal *ptr_I = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
-                                       + 3 * mat_size_squared;
+                        Tscal *ptr_A  = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared);
+                        Tscal *ptr_B  = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
+                                        + mat_size_squared;
+                        Tscal *ptr_F  = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
+                                        + 2 * mat_size_squared;
+                        Tscal *ptr_I  = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
+                                        + 3 * mat_size_squared;
                         Tscal *ptr_Id = exp_scratch_ptr_base + (id_a * 5 * mat_size_squared)
                                         + 4 * mat_size_squared;
 

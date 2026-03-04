@@ -37,7 +37,8 @@ jobs:
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true,
+                "mpi_args": "--bind-to socket:overload-allowed"
               }
             ]
           }
@@ -49,17 +50,20 @@ jobs:
               {
                 "machine": "ci.intel-llvm.cuda",
                 "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
-                "runtest": false
+                "runtest": false,
+                "mpi_args": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
               },
               {
                 "machine": "ci.intel-llvm.rocm",
                 "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
-                "runtest": false
+                "runtest": false,
+                "mpi_args": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
               },
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true,
+                "mpi_args": "--bind-to socket:overload-allowed"
               }
             ]
           }
@@ -188,19 +192,19 @@ jobs:
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun ${{ matrix.mpi_args }} -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 3
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun ${{ matrix.mpi_args }} -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: run Shamrock Unittests world_size = 4
         if: matrix.runtest
         run: |
           cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          mpirun ${{ matrix.mpi_args }} -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
 
       - name: Try starting Shamrock (installed version)
         shell: bash # In docker container github action default to sh

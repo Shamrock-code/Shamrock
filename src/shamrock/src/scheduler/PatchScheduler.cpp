@@ -829,8 +829,7 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
             patch_list
                 .global[patch_list.id_patch_to_global_idx
                             [patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid]]
-                .pack_node_index
-                = idx_pack;
+                .pack_node_index = idx_pack;
         } // std::cout << std::endl;
     }
 }

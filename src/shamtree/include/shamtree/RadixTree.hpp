@@ -279,8 +279,8 @@ inline typename RadixTree<u_morton, vec3>::template RadixTreeField<T> RadixTree<
         auto tree_field
             = sycl::accessor{*ret.radix_tree_field_buf, cgh, sycl::write_only, sycl::no_init};
 
-        auto cell_particle_ids = tree_reduced_morton_codes.buf_reduc_index_map
-                                     ->template get_access<sycl::access::mode::read>(cgh);
+        auto cell_particle_ids  = tree_reduced_morton_codes.buf_reduc_index_map
+                                      ->template get_access<sycl::access::mode::read>(cgh);
         auto particle_index_map = tree_morton_codes.buf_particle_index_map
                                       ->template get_access<sycl::access::mode::read>(cgh);
 
@@ -410,8 +410,8 @@ inline void RadixTree<u_morton, vec3>::for_each_leaf(
     queue.submit([&](sycl::handler &cgh) {
         auto particle_index_map = tree_morton_codes.buf_particle_index_map
                                       ->template get_access<sycl::access::mode::read>(cgh);
-        auto cell_index_map = tree_reduced_morton_codes.buf_reduc_index_map
-                                  ->template get_access<sycl::access::mode::read>(cgh);
+        auto cell_index_map     = tree_reduced_morton_codes.buf_reduc_index_map
+                                      ->template get_access<sycl::access::mode::read>(cgh);
         auto rchild_id
             = tree_struct.buf_rchild_id->template get_access<sycl::access::mode::read>(cgh);
         auto lchild_id

@@ -38,7 +38,7 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": ""
+                "mpi_args": "-genv MPIR_CVAR_NOLOCAL=1"
               }
             ]
           }
@@ -63,7 +63,7 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": ""
+                "mpi_args": "-genv MPIR_CVAR_NOLOCAL=1"
               }
             ]
           }

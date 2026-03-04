@@ -74,42 +74,60 @@ namespace sham::benchmarks {
         T init_y,
         T a,
         int load_size,
-        bool check_correctness) {
+        bool check_correctness,
+        sham::DeviceBuffer<T> &x,
+        sham::DeviceBuffer<T> &y) {
 
         sham::DeviceQueue &q = sched->get_queue();
 
-        sham::DeviceBuffer<T> x = {size_t(N), sched};
-        sham::DeviceBuffer<T> y = {size_t(N), sched};
+        double seconds = shambase::get_max<double>();
 
         x.fill(init_x);
         y.fill(init_y);
 
-        sham::EventList depends_list;
+        if (x.get_size() < N) {
+            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "x.get_size() < N\n  x.get_size() = {},\n  N = {}", x.get_size(), N));
+        }
 
-        auto x_ptr = x.get_write_access(depends_list);
-        auto y_ptr = y.get_write_access(depends_list);
+        if (y.get_size() < N) {
+            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "y.get_size() < N\n  y.get_size() = {},\n  N = {}", y.get_size(), N));
+        }
 
-        depends_list.wait();
+        std::vector<T> y_res = {};
 
-        sham::EventList empty_list{};
+        for (int i = 0; i < 5; i++) {
 
-        shambase::Timer t;
-        t.start();
-        auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
-                // printf("%d\n", item.get_linear_id());
-                saxpy(item.get_linear_id(), N, a, x_ptr, y_ptr);
+            sham::EventList depends_list;
+
+            auto x_ptr = x.get_write_access(depends_list);
+            auto y_ptr = y.get_write_access(depends_list);
+
+            depends_list.wait();
+
+            sham::EventList empty_list{};
+
+            shambase::Timer t;
+            t.start();
+            auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
+                    // printf("%d\n", item.get_linear_id());
+                    saxpy(item.get_linear_id(), N, a, x_ptr, y_ptr);
+                });
             });
-        });
-        e.wait();
-        t.end();
+            e.wait();
+            t.end();
 
-        x.complete_event_state(sycl::event{});
-        y.complete_event_state(sycl::event{});
+            x.complete_event_state(sycl::event{});
+            y.complete_event_state(sycl::event{});
 
-        double seconds = t.elasped_sec();
+            seconds = sham::min(seconds, t.elasped_sec());
 
-        auto y_res = y.copy_to_stdvec();
+            if (i == 0) {
+                y_res = y.copy_to_stdvec();
+            }
+        }
 
         T expected = a * init_x + init_y;
 

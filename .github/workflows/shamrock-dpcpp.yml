@@ -21,9 +21,8 @@ on:
 
 jobs:
 
-  # note that -genv MPIR_CVAR_NOLOCAL=1 is set for the intel/oneapi
-  # there are some issue on old runners with older docker if it is not set
-  # see https://github.com/pmodels/mpich/blob/main/doc/wiki/faq/Frequently_Asked_Questions.md#q-why-mpi_put-raises-sigbus-error-inside-docker
+  # on older self-hosted runner we must start the container with --shm-size=512m
+  # otherwise we get bus errors with intel mpi
 
   set_matrix:
     name: Set Intel/LLVM matrix
@@ -42,7 +41,8 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "-genv MPIR_CVAR_NOLOCAL=1"
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -67,7 +67,8 @@ jobs:
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
                 "runtest": true,
-                "mpi_args": "-genv MPIR_CVAR_NOLOCAL=1"
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -87,6 +88,7 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
+      options: ${{ matrix.docker_options }}
 
     strategy:
       matrix: ${{ fromJSON(needs.set_matrix.outputs.matrix) }}

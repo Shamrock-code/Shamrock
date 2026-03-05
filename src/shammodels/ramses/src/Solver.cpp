@@ -43,6 +43,7 @@
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shammodels/ramses/modules/SumFluxDust.hpp"
 #include "shammodels/ramses/modules/SumFluxHydro.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
@@ -1454,6 +1455,31 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
+    if (solver_config.is_dust_on()) {
+        modules::NodeSumFluxDust<Tvec, TgridVec> node{
+            AMRBlock::block_size, solver_config.dust_config.ndust};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_dust_face_xp,
+            storage.flux_rho_dust_face_xm,
+            storage.flux_rho_dust_face_yp,
+            storage.flux_rho_dust_face_ym,
+            storage.flux_rho_dust_face_zp,
+            storage.flux_rho_dust_face_zm,
+            storage.flux_rhov_dust_face_xp,
+            storage.flux_rhov_dust_face_xm,
+            storage.flux_rhov_dust_face_yp,
+            storage.flux_rhov_dust_face_ym,
+            storage.flux_rhov_dust_face_zp,
+            storage.flux_rhov_dust_face_zm,
+            storage.dtrho_dust,
+            storage.dtrhov_dust);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -1571,13 +1597,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // Solvergraph evaluation
     {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
-    }
-
-    // compute dt fields
-    modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    // dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on()) {
-        dt_compute.compute_dt_dust_fields();
     }
 
     // RK2 + flux lim

@@ -102,9 +102,12 @@ Register_pymod(pyshamrockctxinit) {
 
                 py::dict dic_out;
 
-                using namespace shamrock;
+                if (ctx.pdl->get_layer_count() > 1) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "collect_data is not supported for multiple layers");
+                }
 
-                for (auto fname : ctx.pdl->get_field_names()) {
+                for (auto fname : ctx.pdl->get_layer_ref(0).get_field_names()) {
                     append_to_map<f32>(fname, data, dic_out);
                     append_to_map<f32_2>(fname, data, dic_out);
                     append_to_map<f32_3>(fname, data, dic_out);

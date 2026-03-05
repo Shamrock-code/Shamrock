@@ -32,7 +32,6 @@
 #include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
-#include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"

@@ -93,10 +93,10 @@ struct KernelSumFluxDust {
         Tscal *__restrict dt_rho,
         Tvec *__restrict dt_rhov) const {
 
-            // cell id in the global space of index
-            const u32 id_a = tid / ndust;
-            // variable id in the cell of icell_a id
-            const u32 ndust_off_loc = tid % ndust;
+        // cell id in the global space of index
+        const u32 id_a = tid / ndust;
+        // variable id in the cell of icell_a id
+        const u32 ndust_off_loc = tid % ndust;
 
         const u32 block_id    = id_a / AMRBlock::block_size;
         const u32 cell_loc_id = id_a % AMRBlock::block_size;
@@ -104,17 +104,15 @@ struct KernelSumFluxDust {
         Tscal V_i = block_cell_sizes[block_id];
         V_i       = V_i * V_i * V_i;
 
-        Tscal dtrho  = 0;
-        Tvec dtrhov  = {0, 0, 0};
+        Tscal dtrho = 0;
+        Tvec dtrhov = {0, 0, 0};
 
-        auto add_flux = [&](const auto &graph_iter,
-                            const Tscal *flux_rho,
-                            const Tvec *flux_rhov) {
+        auto add_flux = [&](const auto &graph_iter, const Tscal *flux_rho, const Tvec *flux_rhov) {
             graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                 Tscal S_ij = KernelSumFluxDust<Tvec, TgridVec>::get_face_surface(
                     id_a, id_b, cell0block_aabb_lower, block_cell_sizes);
-                dtrho -= flux_rho[link_id* ndust + ndust_off_loc] * S_ij;
-                dtrhov -= flux_rhov[link_id* ndust + ndust_off_loc] * S_ij;
+                dtrho -= flux_rho[link_id * ndust + ndust_off_loc] * S_ij;
+                dtrhov -= flux_rhov[link_id * ndust + ndust_off_loc] * S_ij;
             });
         };
 
@@ -128,8 +126,8 @@ struct KernelSumFluxDust {
         dtrho /= V_i;
         dtrhov /= V_i;
 
-        dt_rho[id_a* ndust + ndust_off_loc]  = dtrho;
-        dt_rhov[id_a* ndust + ndust_off_loc] = dtrhov;
+        dt_rho[id_a * ndust + ndust_off_loc]  = dtrho;
+        dt_rhov[id_a * ndust + ndust_off_loc] = dtrhov;
     }
 };
 
@@ -177,7 +175,6 @@ void shammodels::basegodunov::modules::NodeSumFluxDust<Tvec, TgridVec>::_impl_ev
         const auto &buf_flux_rhov_face_ym = get_face_buf(edges.flux_rhov_face_ym);
         const auto &buf_flux_rhov_face_zp = get_face_buf(edges.flux_rhov_face_zp);
         const auto &buf_flux_rhov_face_zm = get_face_buf(edges.flux_rhov_face_zm);
-
 
         auto &block_cell_sizes      = edges.spans_block_cell_sizes.get_spans().get(patch_id);
         auto &cell0block_aabb_lower = edges.spans_cell0block_aabb_lower.get_spans().get(patch_id);

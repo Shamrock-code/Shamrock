@@ -24,7 +24,7 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-#define NODE_SUM_FLUX_DUST(X_RO, X_RW)                                                            \
+#define NODE_SUM_FLUX_DUST(X_RO, X_RW)                                                             \
     /* ------------------- inputs ------------------- */                                           \
     /* number of blocks     */                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, block_counts)                                        \
@@ -51,10 +51,10 @@
     X_RO(solvergraph::NeighGraphLinkFieldEdge<Tvec>, flux_rhov_face_ym)                            \
     X_RO(solvergraph::NeighGraphLinkFieldEdge<Tvec>, flux_rhov_face_zp)                            \
     X_RO(solvergraph::NeighGraphLinkFieldEdge<Tvec>, flux_rhov_face_zm)                            \
-                                                                                                \
+                                                                                                   \
     /* ------------------- outputs ------------------- */                                          \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dtrho)  /* time derivative of density*/   \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dtrhov)  /* time derivative of momentum*/  
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_dtrho) /* time derivative of density*/    \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_dtrhov) /* time derivative of momentum*/
 
 namespace shammodels::basegodunov::modules {
     template<class T>

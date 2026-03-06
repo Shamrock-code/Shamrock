@@ -22,7 +22,6 @@ set(Sources
     src/modules/AMRGridRefinementHandler.cpp
     src/modules/AnalysisSodTube.cpp
     src/modules/AMRSetup.cpp
-    src/modules/ComputeTimeDerivative.cpp
     src/modules/AMRSortBlocks.cpp
     src/modules/ComputeCFL.cpp
     src/modules/ConsToPrimGas.cpp
@@ -45,6 +44,8 @@ set(Sources
     src/modules/FuseGhostLayer.cpp
     src/modules/render/GridRender.cpp
     src/modules/ComputeCoordinates.cpp
+    src/modules/SumFluxHydro.cpp
+    src/modules/SumFluxDust.cpp
 
     src/SolverConfig.cpp
 )

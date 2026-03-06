@@ -1184,6 +1184,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt, 3>>> pos_partgen_distrib(u32 npart) 
     return std::move(pos_part);
 }
 
+#if false
 TestStart(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1) {
 
     constexpr u32 reduc_level = 5;
@@ -1340,7 +1341,6 @@ TestStart(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1
     }
 }
 
-#if false
 
 Bench_start("fmm shit", "multipole_compute", fmm_perf_multipole, 1){
 

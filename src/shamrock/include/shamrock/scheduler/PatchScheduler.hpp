@@ -50,15 +50,15 @@
 #include "shamsys/legacy/sycl_handler.hpp"
 
 struct PatchSchedulerConfig {
-    u64 split_load_value;
-    u64 merge_load_value;
+    u64 split_load_value = 0_u64;
+    u64 merge_load_value = 0_u64;
 };
 
 /**
- * @brief Converts a CFLConfig object to a JSON object.
+ * @brief Converts a PatchSchedulerConfig object to a JSON object.
  *
  * @param j The JSON object to be populated.
- * @param p The CFLConfig object to be converted.
+ * @param p The PatchSchedulerConfig object to be converted.
  */
 inline void to_json(nlohmann::json &j, const PatchSchedulerConfig &p) {
     j = nlohmann::json{
@@ -68,10 +68,10 @@ inline void to_json(nlohmann::json &j, const PatchSchedulerConfig &p) {
 }
 
 /**
- * @brief Deserializes a CFLConfig object from a JSON object.
+ * @brief Deserializes a PatchSchedulerConfig object from a JSON object.
  *
  * @param j The JSON object to deserialize from.
- * @param p The CFLConfig object to populate.
+ * @param p The PatchSchedulerConfig object to populate.
  */
 inline void from_json(const nlohmann::json &j, PatchSchedulerConfig &p) {
     j.at("split_load_value").get_to<u64>(p.split_load_value);

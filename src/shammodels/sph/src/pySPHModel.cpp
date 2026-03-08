@@ -36,6 +36,7 @@
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pytypes.h>
 #include <memory>
 #include <random>
 
@@ -63,6 +64,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     config_cls.def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
+        .def(
+            "set_scheduler_config",
+            [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                self.scheduler_conf.split_load_value = split_crit;
+                self.scheduler_conf.merge_load_value = merge_crit;
+            },
+            py::kw_only(),
+            py::arg("split_load_value"),
+            py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
@@ -549,6 +559,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def("init", &T::init)
         .def("init_scheduler", &T::init_scheduler)
 
         .def(

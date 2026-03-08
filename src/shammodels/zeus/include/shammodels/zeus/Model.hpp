@@ -50,7 +50,12 @@ namespace shammodels::zeus {
         /////// setup function
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        void init_scheduler(u32 crit_split, u32 crit_merge);
+        void init();
+        inline void init_scheduler(u32 crit_split, u32 crit_merge) {
+            solver.solver_config.scheduler_conf.split_load_value = crit_split;
+            solver.solver_config.scheduler_conf.merge_load_value = crit_merge;
+            init();
+        }
 
         void make_base_grid(TgridVec bmin, TgridVec cell_size, u32_3 cell_count);
 

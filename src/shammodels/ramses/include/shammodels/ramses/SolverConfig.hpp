@@ -33,6 +33,7 @@
 #include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -233,6 +234,8 @@ struct shammodels::basegodunov::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
+
+    PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables

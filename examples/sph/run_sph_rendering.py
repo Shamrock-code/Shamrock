@@ -260,13 +260,7 @@ def plot_rho_integ(metadata, arr_rho):
     my_cmap.set_bad(color="black")
 
     res = plt.imshow(
-        arr_rho,
-        cmap=my_cmap,
-        origin="lower",
-        extent=ext,
-        norm="log",
-        vmin=1e-6,
-        vmax=1e-2,
+        arr_rho, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-6, vmax=1e-2
     )
 
     plt.xlabel("x")
@@ -382,13 +376,7 @@ def plot_rho_slice_cylindrical(metadata, arr_rho_pos):
     arr_rho_pos = np.array(arr_rho_pos).reshape(nr, ntheta)
 
     res = plt.imshow(
-        arr_rho_pos,
-        cmap=my_cmap,
-        origin="lower",
-        extent=ext,
-        norm="log",
-        vmin=1e-8,
-        aspect="auto",
+        arr_rho_pos, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-8, aspect="auto"
     )
     plt.xlabel("r")
     plt.ylabel(r"$\theta$")
@@ -572,13 +560,7 @@ def plot_rho_integ_azymuthal(metadata, arr_rho_azymuthal):
     arr_rho_azymuthal = np.array(arr_rho_azymuthal).reshape(nr, nz)
 
     res = plt.imshow(
-        arr_rho_azymuthal,
-        cmap=my_cmap,
-        origin="lower",
-        extent=ext,
-        norm="log",
-        vmin=1e-5,
-        vmax=1,
+        arr_rho_azymuthal, cmap=my_cmap, origin="lower", extent=ext, norm="log", vmin=1e-5, vmax=1
     )
     plt.xlabel("r")
     plt.ylabel("z")
@@ -620,12 +602,7 @@ def plot_vz_integ_azymuthal(metadata, arr_vxyz_azymuthal):
     arr_vz_azymuthal = np.array(arr_vxyz_azymuthal).reshape(nr, nz, 3)[:, :, 2]
 
     res = plt.imshow(
-        arr_vz_azymuthal,
-        cmap=my_cmap,
-        origin="lower",
-        extent=ext,
-        vmin=-1e-6,
-        vmax=1e-6,
+        arr_vz_azymuthal, cmap=my_cmap, origin="lower", extent=ext, vmin=-1e-6, vmax=1e-6
     )
     plt.xlabel("r")
     plt.ylabel("z")
@@ -643,12 +620,7 @@ def plot_vz_slice_azymuthal(metadata, arr_vxyz_slice_azymuthal):
     arr_vz_slice_azymuthal = np.array(arr_vxyz_slice_azymuthal).reshape(nr, nz, 3)[:, :, 2]
 
     res = plt.imshow(
-        arr_vz_slice_azymuthal,
-        cmap=my_cmap,
-        origin="lower",
-        extent=ext,
-        vmin=-5e-6,
-        vmax=5e-6,
+        arr_vz_slice_azymuthal, cmap=my_cmap, origin="lower", extent=ext, vmin=-5e-6, vmax=5e-6
     )
     plt.xlabel("r")
     plt.ylabel("z")
@@ -657,10 +629,7 @@ def plot_vz_slice_azymuthal(metadata, arr_vxyz_slice_azymuthal):
     cbar.set_label(r"$v_z$ [code unit]")
 
 
-metadata = {
-    "extent": [0, ext, -ext * H_r_render, ext * H_r_render],
-    "time": model.get_time(),
-}
+metadata = {"extent": [0, ext, -ext * H_r_render, ext * H_r_render], "time": model.get_time()}
 fig_size = (6, 3)
 plt.figure(dpi=dpi, figsize=fig_size)
 plot_rho_integ_azymuthal(metadata, arr_rho_azymuthal)

@@ -73,7 +73,11 @@ namespace shammodels::sph {
         /////// setup function
         ////////////////////////////////////////////////////////////////////////////////////////////
 
+        /// Initialise the model and all the related data structures (patch scheduler in particular)
         void init();
+
+        /// Old way of doing it, for backward compatibility it just overrides the values in the
+        /// config before calling init()
         inline void init_scheduler(u32 crit_split, u32 crit_merge) {
             solver.solver_config.scheduler_conf.split_load_value = crit_split;
             solver.solver_config.scheduler_conf.merge_load_value = crit_merge;

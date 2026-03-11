@@ -33,16 +33,43 @@ namespace shammodels::sph {
         static constexpr std::string_view variant_type_name = "none";
     };
 
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_None<Tscal> &p) {}
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_None<Tscal> &p) {
+        p = {};
+    }
+
     /**
      * @brief Constant artificial viscosity: \f$ \alpha = cte\f$
      */
     template<class Tscal>
     struct AVConfig_Constant {
         static constexpr std::string_view variant_type_name = "constant";
-        Tscal alpha_u                                       = 1.0;
-        Tscal alpha_AV                                      = 1.0;
-        Tscal beta_AV                                       = 2.0;
+
+        Tscal alpha_u  = 1.0;
+        Tscal alpha_AV = 1.0;
+        Tscal beta_AV  = 2.0;
     };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_Constant<Tscal> &p) {
+        j = {
+            {"alpha_u", p.alpha_u},
+            {"alpha_AV", p.alpha_AV},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_Constant<Tscal> &p) {
+        p = {
+            j.at("alpha_u").get<Tscal>(),
+            j.at("alpha_AV").get<Tscal>(),
+            j.at("beta_AV").get<Tscal>(),
+        };
+    }
 
     /**
      * @brief Morris & Monaghan 1997
@@ -51,12 +78,35 @@ namespace shammodels::sph {
     template<class Tscal>
     struct AVConfig_VaryingMM97 {
         static constexpr std::string_view variant_type_name = "varying_mm97";
-        Tscal alpha_min                                     = 0.1;
-        Tscal alpha_max                                     = 1.0;
-        Tscal sigma_decay                                   = 0.1;
-        Tscal alpha_u                                       = 1.0;
-        Tscal beta_AV                                       = 2.0;
+
+        Tscal alpha_min   = 0.1;
+        Tscal alpha_max   = 1.0;
+        Tscal sigma_decay = 0.1;
+        Tscal alpha_u     = 1.0;
+        Tscal beta_AV     = 2.0;
     };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_VaryingMM97<Tscal> &p) {
+        j = {
+            {"alpha_min", p.alpha_min},
+            {"alpha_max", p.alpha_max},
+            {"sigma_decay", p.sigma_decay},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_VaryingMM97<Tscal> &p) {
+        p = {
+            j.at("alpha_min").get<Tscal>(),
+            j.at("alpha_max").get<Tscal>(),
+            j.at("sigma_decay").get<Tscal>(),
+            j.at("alpha_u").get<Tscal>(),
+            j.at("beta_AV").get<Tscal>(),
+        };
+    }
 
     /**
      * @brief Cullen & Dehnen 2010
@@ -65,12 +115,35 @@ namespace shammodels::sph {
     template<class Tscal>
     struct AVConfig_VaryingCD10 {
         static constexpr std::string_view variant_type_name = "varying_cd10";
-        Tscal alpha_min                                     = 0.1;
-        Tscal alpha_max                                     = 1.0;
-        Tscal sigma_decay                                   = 0.1;
-        Tscal alpha_u                                       = 1.0;
-        Tscal beta_AV                                       = 2.0;
+
+        Tscal alpha_min   = 0.1;
+        Tscal alpha_max   = 1.0;
+        Tscal sigma_decay = 0.1;
+        Tscal alpha_u     = 1.0;
+        Tscal beta_AV     = 2.0;
     };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_VaryingCD10<Tscal> &p) {
+        j = {
+            {"alpha_min", p.alpha_min},
+            {"alpha_max", p.alpha_max},
+            {"sigma_decay", p.sigma_decay},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_VaryingCD10<Tscal> &p) {
+        p = {
+            j.at("alpha_min").get<Tscal>(),
+            j.at("alpha_max").get<Tscal>(),
+            j.at("sigma_decay").get<Tscal>(),
+            j.at("alpha_u").get<Tscal>(),
+            j.at("beta_AV").get<Tscal>(),
+        };
+    }
 
     /**
      * @brief Constant artificial viscosity for alpha disc viscosity
@@ -78,10 +151,29 @@ namespace shammodels::sph {
     template<class Tscal>
     struct AVConfig_ConstantDisc {
         static constexpr std::string_view variant_type_name = "constant_disc";
-        Tscal alpha_AV                                      = 1.0;
-        Tscal alpha_u                                       = 1.0;
-        Tscal beta_AV                                       = 2.0;
+
+        Tscal alpha_AV = 1.0;
+        Tscal alpha_u  = 1.0;
+        Tscal beta_AV  = 2.0;
     };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_ConstantDisc<Tscal> &p) {
+        j = {
+            {"alpha_AV", p.alpha_AV},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_ConstantDisc<Tscal> &p) {
+        p = {
+            j.at("alpha_AV").get<Tscal>(),
+            j.at("alpha_u").get<Tscal>(),
+            j.at("beta_AV").get<Tscal>(),
+        };
+    }
 
     /**
      * @brief Configuration for the Artificial Viscosity (AV)
@@ -260,110 +352,6 @@ struct shammodels::sph::AVConfig {
 
 namespace shammodels::sph {
 
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const AVConfig_None<Tscal> &p) {}
-
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, AVConfig_None<Tscal> &p) {
-        p = {};
-    }
-
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const AVConfig_Constant<Tscal> &p) {
-        j = {
-            {"alpha_u", p.alpha_u},
-            {"alpha_AV", p.alpha_AV},
-            {"beta_AV", p.beta_AV},
-        };
-    }
-
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, AVConfig_Constant<Tscal> &p) {
-        p = {
-            j.at("alpha_u").get<Tscal>(),
-            j.at("alpha_AV").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
-    }
-
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const AVConfig_VaryingMM97<Tscal> &p) {
-        j = {
-            {"alpha_min", p.alpha_min},
-            {"alpha_max", p.alpha_max},
-            {"sigma_decay", p.sigma_decay},
-            {"alpha_u", p.alpha_u},
-            {"beta_AV", p.beta_AV},
-        };
-    }
-
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, AVConfig_VaryingMM97<Tscal> &p) {
-        p = {
-            j.at("alpha_min").get<Tscal>(),
-            j.at("alpha_max").get<Tscal>(),
-            j.at("sigma_decay").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
-    }
-
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const AVConfig_VaryingCD10<Tscal> &p) {
-        j = {
-            {"alpha_min", p.alpha_min},
-            {"alpha_max", p.alpha_max},
-            {"sigma_decay", p.sigma_decay},
-            {"alpha_u", p.alpha_u},
-            {"beta_AV", p.beta_AV},
-        };
-    }
-
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, AVConfig_VaryingCD10<Tscal> &p) {
-        p = {
-            j.at("alpha_min").get<Tscal>(),
-            j.at("alpha_max").get<Tscal>(),
-            j.at("sigma_decay").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
-    }
-
-    template<class Tscal>
-    inline void to_json(nlohmann::json &j, const AVConfig_ConstantDisc<Tscal> &p) {
-        j = {
-            {"alpha_AV", p.alpha_AV},
-            {"alpha_u", p.alpha_u},
-            {"beta_AV", p.beta_AV},
-        };
-    }
-
-    template<class Tscal>
-    inline void from_json(const nlohmann::json &j, AVConfig_ConstantDisc<Tscal> &p) {
-        p = {
-            j.at("alpha_AV").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
-    }
-
-    /**
-     * @brief Convert an AVConfig to a json object.
-     *
-     * @param j the json object to be filled
-     * @param p the AVConfig object
-     */
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const AVConfig<Tvec> &p) {
-        std::visit(
-            [&](const auto &value) {
-                j         = value;
-                j["type"] = value.variant_type_name;
-            },
-            p.config);
-    }
-
     // Primary template (undefined for non-variant types)
     template<typename T>
     struct variant_to_tuple;
@@ -410,6 +398,50 @@ namespace shammodels::sph {
             ...);
     }
 
+    template<typename... Ts>
+    inline void json_deserialize_variant(
+        const nlohmann::json &j, std::string type_id, std::variant<Ts...> &var) {
+
+        bool matched = on_variant_match(
+            type_id,
+            [&](auto tag) {
+                using Talt = typename decltype(tag)::type;
+                var        = std::variant<Ts...>{j.get<Talt>()};
+            },
+            var);
+
+        if (!matched) {
+            std::vector<std::string> available_types;
+            on_variant_cases(
+                [&](auto tag) {
+                    using Talt = typename decltype(tag)::type;
+                    available_types.push_back(std::string(Talt::variant_type_name));
+                },
+                var);
+
+            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "unknown type: {}\navailable types: {}\njson: {}",
+                type_id,
+                available_types,
+                j.dump(4)));
+        }
+    }
+
+    /**
+     * @brief Convert an AVConfig to a json object.
+     *
+     * @param j the json object to be filled
+     * @param p the AVConfig object
+     */
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const AVConfig<Tvec> &p) {
+        std::visit(
+            [&](const auto &value) {
+                j         = value;
+                j["type"] = value.variant_type_name;
+            },
+            p.config);
+    }
     /**
      * @brief Convert a json object to an AVConfig.
      *
@@ -430,29 +462,7 @@ namespace shammodels::sph {
         std::string av_type;
         j.at("av_type").get_to(av_type);
 
-        bool matched = on_variant_match(
-            av_type,
-            [&](auto tag) {
-                using Talt = typename decltype(tag)::type;
-                p.set(j.get<Talt>());
-            },
-            p.config);
-
-        if (!matched) {
-            std::vector<std::string> available_types;
-            on_variant_cases(
-                [&](auto tag) {
-                    using Talt = typename decltype(tag)::type;
-                    available_types.push_back(std::string(Talt::variant_type_name));
-                },
-                p.config);
-
-            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                "unknown unknown type: {}\navailable types: {}\njson: {}",
-                av_type,
-                available_types,
-                j.dump(4)));
-        }
+        json_deserialize_variant(j, av_type, p.config);
     }
 
 } // namespace shammodels::sph

@@ -174,6 +174,8 @@ cfg.set_smoothing_length_density_based()
 # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
 # cfg.set_smoothing_length_density_based_neigh_lim(500)
 
+cfg.set_scheduler_config(split_load_value=scheduler_split_val, merge_load_value=scheduler_merge_val)
+
 # Set the solver config to be the one stored in cfg
 model.set_solver_config(cfg)
 
@@ -181,7 +183,7 @@ model.set_solver_config(cfg)
 model.get_current_config().print_status()
 
 # Init the scheduler & fields
-model.init_scheduler(scheduler_split_val, scheduler_merge_val)
+model.init()
 
 # Set the simulation box size
 model.resize_simulation_box(bmin, bmax)

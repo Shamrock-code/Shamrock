@@ -54,8 +54,7 @@ namespace shammodels::sph::modules {
             std::string field_name,
             lamda_runner lambda,
             std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>>
-                custom_getter
-            = std::nullopt);
+                custom_getter = std::nullopt);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

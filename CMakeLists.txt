@@ -85,6 +85,7 @@ include(ShamConfigureFmtlib)
 include(ShamConfigureNlohmannJson)
 include(ShamConfigurePlfNanotimer)
 include(ShamConfigureMDSpan)
+include(ShamConfigureCppTrace)
 
 ####################################################################################################
 # Shamrock Configuration

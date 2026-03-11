@@ -54,8 +54,8 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyCustomWar
         Tvec w  = sycl::cross(k, xyz_a);
         Tvec wv = sycl::cross(k, vxyz_a);
         // Rodrigues' rotation formula
-        xyz_a = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
-                + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
+        xyz_a  = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
+                 + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
         vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
                  + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
     };

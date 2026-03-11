@@ -93,11 +93,11 @@ namespace shammodels::basegodunov::modules {
             }
         };
 
-        ro_access get_read_access(sham::EventList &e) {
+        ro_access get_read_access(sham::EventList &e) const {
             return ro_access{node_link_offset.get_read_access(e), node_links.get_read_access(e)};
         }
 
-        void complete_event_state(sycl::event &e) {
+        void complete_event_state(sycl::event &e) const {
             node_link_offset.complete_event_state(e);
             node_links.complete_event_state(e);
         }
@@ -105,7 +105,7 @@ namespace shammodels::basegodunov::modules {
         /**
          * @brief Complete event state based on sham::EventList
          */
-        void complete_event_state(sham::EventList &e) {
+        void complete_event_state(sham::EventList &e) const {
             node_link_offset.complete_event_state(e);
             node_links.complete_event_state(e);
         }

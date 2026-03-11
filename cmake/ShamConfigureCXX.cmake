@@ -23,6 +23,7 @@ check_cxx_compiler_flag("-Werror=return-type" COMPILER_SUPPORT_ERROR_RETURN_TYPE
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")# -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 
 if(COMPILER_SUPPORT_PEDANTIC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
@@ -79,9 +80,10 @@ if(NOT CXX_VALARRAY_COMPILE)
 endif()
 
 
-message( STATUS "CMAKE_CXX_FLAGS : ${CMAKE_CXX_FLAGS}")
-message( STATUS "CMAKE_CXX_FLAGS_DEBUG : ${CMAKE_CXX_FLAGS_DEBUG}")
-message( STATUS "CMAKE_CXX_FLAGS_RELEASE : ${CMAKE_CXX_FLAGS_RELEASE}")
+message( STATUS "CMAKE_CXX_FLAGS                : ${CMAKE_CXX_FLAGS}")
+message( STATUS "CMAKE_CXX_FLAGS_DEBUG          : ${CMAKE_CXX_FLAGS_DEBUG}")
+message( STATUS "CMAKE_CXX_FLAGS_RELEASE        : ${CMAKE_CXX_FLAGS_RELEASE}")
+message( STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO : ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
 ######################
 # add build types
@@ -93,7 +95,7 @@ include(ShamBuildMsan)
 include(ShamBuildTsan)
 include(ShamBuildCoverage)
 
-set(ValidShamBuildType "Debug" "Release" "ASAN" "UBSAN" "MSAN" "TSAN" "COVERAGE")
+set(ValidShamBuildType "Debug" "Release" "RelWithDebInfo" "ASAN" "UBSAN" "MSAN" "TSAN" "COVERAGE")
 if(NOT CMAKE_BUILD_TYPE)
     #set default build to release
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Cmake build type" FORCE)

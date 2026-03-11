@@ -21,6 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shammodels/zeus/modules/SolverStorage.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -42,6 +43,8 @@ namespace shammodels::zeus {
 
         bool use_consistent_transport = false;
         bool use_van_leer             = true;
+
+        PatchSchedulerConfig scheduler_conf = {};
 
         inline void check_config() {
             if (grid_coord_to_pos_fact <= 0) {

@@ -384,40 +384,47 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
                             tnode[cur_node.childs_id[0]].box_min,
                             tnode[cur_node.childs_id[0]].box_max)) {
                         current_node = cur_node.childs_id[0];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[1]].box_min,
-                                   tnode[cur_node.childs_id[1]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[1]].box_min,
+                            tnode[cur_node.childs_id[1]].box_max)) {
                         current_node = cur_node.childs_id[1];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[2]].box_min,
-                                   tnode[cur_node.childs_id[2]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[2]].box_min,
+                            tnode[cur_node.childs_id[2]].box_max)) {
                         current_node = cur_node.childs_id[2];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[3]].box_min,
-                                   tnode[cur_node.childs_id[3]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[3]].box_min,
+                            tnode[cur_node.childs_id[3]].box_max)) {
                         current_node = cur_node.childs_id[3];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[4]].box_min,
-                                   tnode[cur_node.childs_id[4]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[4]].box_min,
+                            tnode[cur_node.childs_id[4]].box_max)) {
                         current_node = cur_node.childs_id[4];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[5]].box_min,
-                                   tnode[cur_node.childs_id[5]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[5]].box_min,
+                            tnode[cur_node.childs_id[5]].box_max)) {
                         current_node = cur_node.childs_id[5];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[6]].box_min,
-                                   tnode[cur_node.childs_id[6]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[6]].box_min,
+                            tnode[cur_node.childs_id[6]].box_max)) {
                         current_node = cur_node.childs_id[6];
-                    } else if (Patch::is_in_patch_converted(
-                                   xyz,
-                                   tnode[cur_node.childs_id[7]].box_min,
-                                   tnode[cur_node.childs_id[7]].box_max)) {
+                    } else if (
+                        Patch::is_in_patch_converted(
+                            xyz,
+                            tnode[cur_node.childs_id[7]].box_min,
+                            tnode[cur_node.childs_id[7]].box_max)) {
                         current_node = cur_node.childs_id[7];
                     }
 

@@ -73,7 +73,16 @@ namespace shammodels::sph {
         /////// setup function
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        void init_scheduler(u32 crit_split, u32 crit_merge);
+        /// Initialise the model and all the related data structures (patch scheduler in particular)
+        void init();
+
+        /// Old way of doing it, for backward compatibility it just overrides the values in the
+        /// config before calling init()
+        inline void init_scheduler(u32 crit_split, u32 crit_merge) {
+            solver.solver_config.scheduler_conf.split_load_value = crit_split;
+            solver.solver_config.scheduler_conf.merge_load_value = crit_merge;
+            init();
+        }
 
         template<std::enable_if_t<dim == 3, int> = 0>
         inline Tvec get_box_dim_fcc_3d(Tscal dr, u32 xcnt, u32 ycnt, u32 zcnt) {
@@ -939,9 +948,9 @@ namespace shammodels::sph {
                         * (1.
                            + sycl::sin(shambase::constants::pi<Tscal> / (2. * Hwarp) * (R - Rwarp)))
                         * sycl::sin(incl_rad));
-                    psi = shambase::constants::pi<Tscal>
-                          * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
-                          / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
+                    psi          = shambase::constants::pi<Tscal>
+                                   * Rwarp / (4. * Hwarp) * sycl::sin(incl_rad)
+                                   / sycl::sqrt(1. - (0.5 * sycl::pow(sycl::sin(incl_rad), 2)));
                     Tscal psimax = sycl::max(psimax, psi);
                     Tscal x      = pos[i].x();
                     Tscal y      = pos[i].y();

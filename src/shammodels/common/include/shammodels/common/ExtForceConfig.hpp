@@ -68,7 +68,14 @@ namespace shammodels {
                 : shear_base(shear_base), shear_dir(shear_dir), Omega_0(Omega_0), eta(eta), q(q) {};
         };
 
-        using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
+        /// -GMy / sqrt(R0^2 + y^2)
+        struct VerticalDiscPotential {
+            Tscal central_mass;
+            Tscal R0;
+        };
+
+        using VariantForce
+            = std::variant<PointMass, LenseThirring, ShearingBoxForce, VerticalDiscPotential>;
         VariantForce val;
     };
 
@@ -78,9 +85,10 @@ namespace shammodels {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using PointMass        = typename ExtForceVariant<Tvec>::PointMass;
-        using LenseThirring    = typename ExtForceVariant<Tvec>::LenseThirring;
-        using ShearingBoxForce = typename ExtForceVariant<Tvec>::ShearingBoxForce;
+        using PointMass             = typename ExtForceVariant<Tvec>::PointMass;
+        using LenseThirring         = typename ExtForceVariant<Tvec>::LenseThirring;
+        using ShearingBoxForce      = typename ExtForceVariant<Tvec>::ShearingBoxForce;
+        using VerticalDiscPotential = typename ExtForceVariant<Tvec>::VerticalDiscPotential;
 
         using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
 
@@ -108,6 +116,10 @@ namespace shammodels {
 
             ext_forces.push_back(ExtForceVariant<Tvec>{ShearingBoxForce{Omega_0, eta, q}});
         }
+
+        inline void add_vertical_disc_potential(Tscal central_mass, Tscal R0) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{VerticalDiscPotential{central_mass, R0}});
+        }
     };
 
 } // namespace shammodels
@@ -117,9 +129,10 @@ namespace shammodels {
     inline void to_json(nlohmann::json &j, const ExtForceVariant<Tvec> &p) {
         using T = ExtForceVariant<Tvec>;
 
-        using PointMass        = typename T::PointMass;
-        using LenseThirring    = typename T::LenseThirring;
-        using ShearingBoxForce = typename T::ShearingBoxForce;
+        using PointMass             = typename T::PointMass;
+        using LenseThirring         = typename T::LenseThirring;
+        using ShearingBoxForce      = typename T::ShearingBoxForce;
+        using VerticalDiscPotential = typename T::VerticalDiscPotential;
 
         if (const PointMass *v = std::get_if<PointMass>(&p.val)) {
             j = {
@@ -141,6 +154,11 @@ namespace shammodels {
                 {"eta", v->eta},
                 {"q", v->q},
             };
+        } else if (const VerticalDiscPotential *v = std::get_if<VerticalDiscPotential>(&p.val)) {
+            j
+                = {{"force_type", "vertical_disc_potential"},
+                   {"central_mass", v->central_mass},
+                   {"R0", v->R0}};
         } else {
             shambase::throw_unimplemented();
         }
@@ -158,9 +176,10 @@ namespace shammodels {
         std::string force_type;
         j.at("force_type").get_to(force_type);
 
-        using PointMass        = typename T::PointMass;
-        using LenseThirring    = typename T::LenseThirring;
-        using ShearingBoxForce = typename T::ShearingBoxForce;
+        using PointMass             = typename T::PointMass;
+        using LenseThirring         = typename T::LenseThirring;
+        using ShearingBoxForce      = typename T::ShearingBoxForce;
+        using VerticalDiscPotential = typename T::VerticalDiscPotential;
 
         if (force_type == "point_mass") {
             p.val = PointMass{
@@ -181,6 +200,11 @@ namespace shammodels {
                 j.at("Omega_0").get<Tscal>(),
                 j.at("eta").get<Tscal>(),
                 j.at("q").get<Tscal>(),
+            };
+        } else if (force_type == "vertical_disc_potential") {
+            p.val = VerticalDiscPotential{
+                j.at("central_mass").get<Tscal>(),
+                j.at("R0").get<Tscal>(),
             };
         } else {
             shambase::throw_unimplemented("wtf !");

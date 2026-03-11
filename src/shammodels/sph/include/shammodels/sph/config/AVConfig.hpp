@@ -69,7 +69,6 @@ namespace shammodels::sph {
         j.at("alpha_AV").get_to(p.alpha_AV);
         j.at("beta_AV").get_to(p.beta_AV);
     }
-    }
 
     /**
      * @brief Morris & Monaghan 1997
@@ -99,13 +98,11 @@ namespace shammodels::sph {
 
     template<class Tscal>
     inline void from_json(const nlohmann::json &j, AVConfig_VaryingMM97<Tscal> &p) {
-        p = {
-            j.at("alpha_min").get<Tscal>(),
-            j.at("alpha_max").get<Tscal>(),
-            j.at("sigma_decay").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
+        j.at("alpha_min").get_to(p.alpha_min);
+        j.at("alpha_max").get_to(p.alpha_max);
+        j.at("sigma_decay").get_to(p.sigma_decay);
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("beta_AV").get_to(p.beta_AV);
     }
 
     /**
@@ -136,13 +133,11 @@ namespace shammodels::sph {
 
     template<class Tscal>
     inline void from_json(const nlohmann::json &j, AVConfig_VaryingCD10<Tscal> &p) {
-        p = {
-            j.at("alpha_min").get<Tscal>(),
-            j.at("alpha_max").get<Tscal>(),
-            j.at("sigma_decay").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
+        j.at("alpha_min").get_to(p.alpha_min);
+        j.at("alpha_max").get_to(p.alpha_max);
+        j.at("sigma_decay").get_to(p.sigma_decay);
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("beta_AV").get_to(p.beta_AV);
     }
 
     /**
@@ -168,11 +163,9 @@ namespace shammodels::sph {
 
     template<class Tscal>
     inline void from_json(const nlohmann::json &j, AVConfig_ConstantDisc<Tscal> &p) {
-        p = {
-            j.at("alpha_AV").get<Tscal>(),
-            j.at("alpha_u").get<Tscal>(),
-            j.at("beta_AV").get<Tscal>(),
-        };
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("alpha_AV").get_to(p.alpha_AV);
+        j.at("beta_AV").get_to(p.beta_AV);
     }
 
     /**
@@ -379,13 +372,18 @@ namespace shammodels::sph {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        if (!j.contains("av_type")) {
+        if (!j.contains("type") && !j.contains("av_type")) {
             throw shambase::make_except_with_loc<std::runtime_error>(
-                "av_type is not in this json, can not infer type json=\n" + j.dump(4));
+                "neither \"type\" nor \"av_type\" in this json, can not infer type json=\n"
+                + j.dump(4));
         }
 
         std::string av_type;
-        j.at("av_type").get_to(av_type);
+        if (j.contains("type")) {
+            j.at("type").get_to(av_type);
+        } else {
+            j.at("av_type").get_to(av_type);
+        }
 
         shamrock::json_deserialize_variant(j, av_type, p.config);
     }

@@ -163,8 +163,8 @@ namespace shammodels::sph {
 
     template<class Tscal>
     inline void from_json(const nlohmann::json &j, AVConfig_ConstantDisc<Tscal> &p) {
-        j.at("alpha_u").get_to(p.alpha_u);
         j.at("alpha_AV").get_to(p.alpha_AV);
+        j.at("alpha_u").get_to(p.alpha_u);
         j.at("beta_AV").get_to(p.beta_AV);
     }
 

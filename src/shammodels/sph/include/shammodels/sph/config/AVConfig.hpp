@@ -19,6 +19,7 @@
 
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
+#include "shamrock/io/json_variant.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 #include <variant>
@@ -352,81 +353,6 @@ struct shammodels::sph::AVConfig {
 
 namespace shammodels::sph {
 
-    // Primary template (undefined for non-variant types)
-    template<typename T>
-    struct variant_to_tuple;
-
-    // Specialization for std::variant
-    template<typename... Ts>
-    struct variant_to_tuple<std::variant<Ts...>> {
-        using type = std::tuple<Ts...>;
-    };
-
-    // Helper alias
-    template<typename T>
-    using variant_to_tuple_t = typename variant_to_tuple<T>::type;
-
-    template<class T>
-    struct type_tag {
-        using type = T;
-    };
-
-    template<class Functor, typename... Ts>
-    inline bool on_variant_match(
-        const std::string &type_id, Functor &&callback, const std::variant<Ts...> &var) {
-        bool matched = false;
-
-        (
-            [&] {
-                if (!matched && type_id == Ts::variant_type_name) {
-                    callback(type_tag<Ts>{});
-                    matched = true;
-                }
-            }(),
-            ...);
-
-        return matched;
-    }
-
-    template<class Functor, typename... Ts>
-    inline void on_variant_cases(Functor &&callback, const std::variant<Ts...> &var) {
-
-        (
-            [&] {
-                callback(type_tag<Ts>{});
-            }(),
-            ...);
-    }
-
-    template<typename... Ts>
-    inline void json_deserialize_variant(
-        const nlohmann::json &j, std::string type_id, std::variant<Ts...> &var) {
-
-        bool matched = on_variant_match(
-            type_id,
-            [&](auto tag) {
-                using Talt = typename decltype(tag)::type;
-                var        = std::variant<Ts...>{j.get<Talt>()};
-            },
-            var);
-
-        if (!matched) {
-            std::vector<std::string> available_types;
-            on_variant_cases(
-                [&](auto tag) {
-                    using Talt = typename decltype(tag)::type;
-                    available_types.push_back(std::string(Talt::variant_type_name));
-                },
-                var);
-
-            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                "unknown type: {}\navailable types: {}\njson: {}",
-                type_id,
-                available_types,
-                j.dump(4)));
-        }
-    }
-
     /**
      * @brief Convert an AVConfig to a json object.
      *
@@ -456,13 +382,13 @@ namespace shammodels::sph {
 
         if (!j.contains("av_type")) {
             throw shambase::make_except_with_loc<std::runtime_error>(
-                "no field av_type is found in this json");
+                "av_type is not in this json, can not infer type json=\n" + j.dump(4));
         }
 
         std::string av_type;
         j.at("av_type").get_to(av_type);
 
-        json_deserialize_variant(j, av_type, p.config);
+        shamrock::json_deserialize_variant(j, av_type, p.config);
     }
 
 } // namespace shammodels::sph

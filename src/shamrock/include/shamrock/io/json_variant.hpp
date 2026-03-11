@@ -71,7 +71,7 @@ namespace shamrock {
 
     template<typename... Ts>
     inline void json_deserialize_variant(
-        const nlohmann::json &j, std::string type_id, std::variant<Ts...> &var) {
+        const nlohmann::json &j, const std::string& type_id, std::variant<Ts...> &var) {
 
         bool matched = on_variant_match(
             type_id,

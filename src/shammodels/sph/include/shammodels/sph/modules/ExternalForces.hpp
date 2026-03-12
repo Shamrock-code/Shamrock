@@ -62,6 +62,7 @@ namespace shammodels::sph::modules {
         using EF_LenseThirring         = typename SolverConfigExtForce::LenseThirring;
         using EF_ShearingBoxForce      = typename SolverConfigExtForce::ShearingBoxForce;
         using EF_VerticalDiscPotential = typename SolverConfigExtForce::VerticalDiscPotential;
+        using EF_VelocityDissipation   = typename SolverConfigExtForce::VelocityDissipation;
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

@@ -24,6 +24,7 @@
 #include "shammodels/common/modules/AddForceLenseThirring.hpp"
 #include "shammodels/common/modules/AddForceShearingBoxInertialPart.hpp"
 #include "shammodels/common/modules/AddForceShearingBoxNonInertial.hpp"
+#include "shammodels/common/modules/AddForceVelocityDissipation.hpp"
 #include "shammodels/common/modules/AddForceVerticalDiscPotential.hpp"
 #include "shammodels/sph/modules/ExternalForces.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
@@ -234,6 +235,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
                         shambase::to_shared(std::move(set_central_mass)),
                         shambase::to_shared(std::move(add_force_vertical_disc_potential))}));
 
+        } else if (
+            EF_VelocityDissipation *ext_force
+            = std::get_if<EF_VelocityDissipation>(&var_force.val)) {
+
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");
         }
@@ -337,6 +342,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         } else if (
             EF_VerticalDiscPotential *ext_force
             = std::get_if<EF_VerticalDiscPotential>(&var_force.val)) {
+        } else if (
+            EF_VelocityDissipation *ext_force
+            = std::get_if<EF_VelocityDissipation>(&var_force.val)) {
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");
         }
@@ -491,6 +499,31 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         } else if (
             EF_VerticalDiscPotential *ext_force
             = std::get_if<EF_VerticalDiscPotential>(&var_force.val)) {
+        } else if (
+            EF_VelocityDissipation *ext_force
+            = std::get_if<EF_VelocityDissipation>(&var_force.val)) {
+            std::string prefix_eta                  = prefix + "eta_";
+            std::string prefix_velocity_dissipation = prefix + "velocity_dissipation_";
+
+            auto set_eta
+                = register_constant_set<Tscal>(solver_graph, prefix_eta, [eta = ext_force->eta]() {
+                      return eta;
+                  });
+
+            auto add_force_shearing_box_non_inertial = solver_graph.register_node(
+                prefix_velocity_dissipation,
+                shammodels::common::modules::AddForceVelocityDissipation<Tvec>());
+            shambase::get_check_ref(add_force_shearing_box_non_inertial)
+                .set_edges(
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_eta),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("field_sizes"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_axyz"));
+
+            add_ext_forces_seq.push_back(set_eta);
+            add_ext_forces_seq.push_back(
+                solver_graph.get_node_ptr_base(prefix_velocity_dissipation));
+
         } else {
             shambase::throw_unimplemented("this force is not handled, yet ...");
         }

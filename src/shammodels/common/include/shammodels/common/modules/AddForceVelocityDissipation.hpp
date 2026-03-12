@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file AddForceVerticalDiscPotential.hpp
+ * @file AddForceVelocityDissipation.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Adds the acceleration from a vertical disc potential.
  *
@@ -27,10 +27,8 @@
 /// declare the list of edges for this node
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* inputs */                                                                                   \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, constant_G)                                      \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, central_mass)                                    \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, R0)                                              \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_positions)                                 \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, eta)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_velocity)                                  \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
                                                                                                    \
     /* outputs */                                                                                  \
@@ -38,12 +36,12 @@
 
 namespace shammodels::common::modules {
     template<class Tvec>
-    class AddForceVerticalDiscPotential : public shamrock::solvergraph::INode {
+    class AddForceVelocityDissipation : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         public:
-        AddForceVerticalDiscPotential() = default;
+        AddForceVelocityDissipation() = default;
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -53,27 +51,24 @@ namespace shammodels::common::modules {
 
             auto edges = get_edges();
 
-            edges.spans_positions.check_sizes(edges.sizes.indexes);
+            edges.spans_velocity.check_sizes(edges.sizes.indexes);
             edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
 
-            Tscal cmass = edges.central_mass.data;
-            Tscal G     = edges.constant_G.data;
-            Tscal R0    = edges.R0.data;
+            Tscal eta = edges.eta.data;
 
             // call the GPU kernel for each patches
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{edges.spans_positions.get_spans()},
+                sham::DDMultiRef{edges.spans_velocity.get_spans()},
                 sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
                 edges.sizes.indexes,
-                [mGM = -cmass * G, R02 = R0 * R0](u32 gid, const Tvec *xyz, Tvec *axyz_ext) {
-                    Tscal y_a = xyz[gid].y();
-                    axyz_ext[gid].y() += mGM * y_a / sycl::sqrt(R02 + y_a * y_a);
+                [eta](u32 gid, const Tvec *vxyz, Tvec *axyz_ext) {
+                    axyz_ext[gid] -= eta * vxyz[gid];
                 });
         }
 
         inline virtual std::string _impl_get_label() const {
-            return "AddForceVerticalDiscPotential";
+            return "AddForceVelocityDissipation";
         };
 
         inline virtual std::string _impl_get_tex() const { return "TODO"; };

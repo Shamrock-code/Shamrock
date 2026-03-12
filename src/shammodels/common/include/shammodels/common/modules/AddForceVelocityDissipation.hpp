@@ -12,7 +12,7 @@
 /**
  * @file AddForceVelocityDissipation.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Adds the acceleration from a vertical disc potential.
+ * @brief Adds the acceleration from a velocity dissipation force.
  *
  */
 

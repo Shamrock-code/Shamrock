@@ -510,10 +510,10 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                       return eta;
                   });
 
-            auto add_force_shearing_box_non_inertial = solver_graph.register_node(
+            auto add_force_velocity_dissipation = solver_graph.register_node(
                 prefix_velocity_dissipation,
                 shammodels::common::modules::AddForceVelocityDissipation<Tvec>());
-            shambase::get_check_ref(add_force_shearing_box_non_inertial)
+            shambase::get_check_ref(add_force_velocity_dissipation)
                 .set_edges(
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_eta),
                     solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_vxyz"),

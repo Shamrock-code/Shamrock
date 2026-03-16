@@ -84,12 +84,20 @@ namespace shammodels::basegodunov::modules {
         void enforce_two_to_one_refinement(
             shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
 
+        /**
+         * @brief
+         */
+        void enforce_two_to_one_derefinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
+
         template<class UserAcc>
-        bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
+        bool internal_refine_grid(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
 
         template<class UserAcc>
         bool internal_derefine_grid(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list);
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
         void internal_update_refinement();

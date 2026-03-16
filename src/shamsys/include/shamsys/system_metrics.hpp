@@ -76,19 +76,33 @@ namespace shamsys {
     }
 
     struct SystemMetrics {
+        f64 wall_time;
         std::optional<f64> rank_energy_consummed;
         std::optional<f64> gpu_energy_consummed;
         std::optional<f64> cpu_energy_consummed;
         std::optional<f64> dram_energy_consummed;
     };
 
-    inline SystemMetrics get_system_metrics() {
-        return SystemMetrics{
-            get_rank_energy_consummed(),
-            get_gpu_energy_consummed(),
-            get_cpu_energy_consummed(),
-            get_dram_energy_consummed()};
-    }
+    SystemMetrics get_system_metrics(bool barrier = true);
+
+    std::vector<SystemMetrics> gather_rank_metrics(const SystemMetrics &input);
+
+    SystemMetrics aggregate_rank_metrics(const std::vector<SystemMetrics> &input);
+
+    struct FormattedSystemMetrics {
+        std::string wall_time;
+        std::optional<std::string> rank_energy_consummed;
+        std::optional<std::string> gpu_energy_consummed;
+        std::optional<std::string> cpu_energy_consummed;
+        std::optional<std::string> dram_energy_consummed;
+        std::optional<std::string> rank_power;
+        std::optional<std::string> gpu_power;
+        std::optional<std::string> cpu_power;
+        std::optional<std::string> dram_power;
+    };
+
+    /// Only to be used on deltas, not the raw one
+    FormattedSystemMetrics format_system_metrics(const SystemMetrics &input);
 
     inline SystemMetrics operator-(const SystemMetrics &lhs, const SystemMetrics &rhs) {
         auto optional_sub = [](const std::optional<f64> &lhs,
@@ -98,6 +112,7 @@ namespace shamsys {
                        : std::nullopt;
         };
         return SystemMetrics{
+            lhs.wall_time - rhs.wall_time,
             optional_sub(lhs.rank_energy_consummed, rhs.rank_energy_consummed),
             optional_sub(lhs.gpu_energy_consummed, rhs.gpu_energy_consummed),
             optional_sub(lhs.cpu_energy_consummed, rhs.cpu_energy_consummed),

@@ -15,7 +15,10 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/popen.hpp"
+#include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shamcomm/local_rank.hpp"
+#include "shamcomm/wrapper.hpp"
 #include "shamsys/system_metrics.hpp"
 #include <cstdlib>
 
@@ -144,5 +147,157 @@ namespace shamsys {
             test_reporter(reporter);
         }
         return reporter;
+    }
+
+    SystemMetrics get_system_metrics(bool barrier) {
+        if (barrier) {
+            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+        }
+        auto ret = SystemMetrics{
+            shambase::details::get_wtime(),
+            get_rank_energy_consummed(),
+            get_gpu_energy_consummed(),
+            get_cpu_energy_consummed(),
+            get_dram_energy_consummed()};
+        if (barrier) {
+            shamcomm::mpi::Barrier(MPI_COMM_WORLD);
+        }
+        return ret;
+    }
+
+    std::vector<SystemMetrics> gather_rank_metrics(const SystemMetrics &input) {
+        std::vector<SystemMetrics> ret(shamcomm::world_size());
+
+        auto optional_gather_power = [&](const std::optional<f64> &value) -> std::vector<f64> {
+            return shamalgs::collective::gather(value ? value.value() : 0._f64);
+        };
+
+        std::vector<f64> rank_energy_consummed_all_ranks
+            = optional_gather_power(input.rank_energy_consummed);
+        std::vector<f64> gpu_energy_consummed_all_ranks
+            = optional_gather_power(input.gpu_energy_consummed);
+        std::vector<f64> cpu_energy_consummed_all_ranks
+            = optional_gather_power(input.cpu_energy_consummed);
+        std::vector<f64> dram_energy_consummed_all_ranks
+            = optional_gather_power(input.dram_energy_consummed);
+        std::vector<f64> metric_time_all_ranks = shamalgs::collective::gather(input.wall_time);
+
+        for (u32 i = 0; i < shamcomm::world_size(); i++) {
+            ret[i] = SystemMetrics{
+                metric_time_all_ranks[i],
+                (shamsys::support_rank_energy_consummed())
+                    ? std::optional<f64>{rank_energy_consummed_all_ranks[i]}
+                    : std::nullopt,
+                (shamsys::support_gpu_energy_consummed())
+                    ? std::optional<f64>{gpu_energy_consummed_all_ranks[i]}
+                    : std::nullopt,
+                (shamsys::support_cpu_energy_consummed())
+                    ? std::optional<f64>{cpu_energy_consummed_all_ranks[i]}
+                    : std::nullopt,
+                (shamsys::support_dram_energy_consummed())
+                    ? std::optional<f64>{dram_energy_consummed_all_ranks[i]}
+                    : std::nullopt,
+            };
+        }
+
+        return ret;
+    }
+
+    SystemMetrics aggregate_rank_metrics(const std::vector<SystemMetrics> &input) {
+        f64 sum_rank_energy_consummed = 0._f64;
+        f64 sum_gpu_energy_consummed  = 0._f64;
+        f64 sum_cpu_energy_consummed  = 0._f64;
+        f64 sum_dram_energy_consummed = 0._f64;
+        f64 metric_time_all           = 0._f64;
+
+        for (const auto &m : input) {
+            sum_rank_energy_consummed
+                += (m.rank_energy_consummed ? m.rank_energy_consummed.value() : 0._f64);
+            sum_gpu_energy_consummed
+                += (m.gpu_energy_consummed ? m.gpu_energy_consummed.value() : 0._f64);
+            sum_cpu_energy_consummed
+                += (m.cpu_energy_consummed ? m.cpu_energy_consummed.value() : 0._f64);
+            sum_dram_energy_consummed
+                += (m.dram_energy_consummed ? m.dram_energy_consummed.value() : 0._f64);
+            metric_time_all = std::max(metric_time_all, m.wall_time);
+        }
+
+        SystemMetrics system_metrics;
+        system_metrics.wall_time             = metric_time_all;
+        system_metrics.rank_energy_consummed = (shamsys::support_rank_energy_consummed())
+                                                   ? sum_rank_energy_consummed
+                                                   : std::optional<f64>{};
+        system_metrics.gpu_energy_consummed  = (shamsys::support_gpu_energy_consummed())
+                                                   ? sum_gpu_energy_consummed
+                                                   : std::optional<f64>{};
+        system_metrics.cpu_energy_consummed  = (shamsys::support_cpu_energy_consummed())
+                                                   ? sum_cpu_energy_consummed
+                                                   : std::optional<f64>{};
+        system_metrics.dram_energy_consummed = (shamsys::support_dram_energy_consummed())
+                                                   ? sum_dram_energy_consummed
+                                                   : std::optional<f64>{};
+
+        return system_metrics;
+    }
+
+    FormattedSystemMetrics format_system_metrics(const SystemMetrics &input) {
+        FormattedSystemMetrics ret{
+            shambase::format("{:.1f} s", input.wall_time),
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+            std::nullopt,
+        };
+
+        if (input.rank_energy_consummed.has_value()) {
+            if (input.wall_time > 0._f64 && input.rank_energy_consummed.value() > 0._f64) {
+                f64 consumed_energy       = input.rank_energy_consummed.value();
+                f64 power                 = consumed_energy / input.wall_time;
+                ret.rank_power            = shambase::format("{:.1f} W", power);
+                ret.rank_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
+            } else {
+                ret.rank_power            = "N/A";
+                ret.rank_energy_consummed = "N/A";
+            }
+        }
+        if (input.gpu_energy_consummed.has_value()) {
+            if (input.wall_time > 0._f64 && input.gpu_energy_consummed.value() > 0._f64) {
+                f64 consumed_energy      = input.gpu_energy_consummed.value();
+                f64 power                = consumed_energy / input.wall_time;
+                ret.gpu_power            = shambase::format("{:.1f} W", power);
+                ret.gpu_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
+            } else {
+                ret.gpu_power            = "N/A";
+                ret.gpu_energy_consummed = "N/A";
+            }
+        }
+        if (input.cpu_energy_consummed.has_value()) {
+            if (input.wall_time > 0._f64 && input.cpu_energy_consummed.value() > 0._f64) {
+                f64 consumed_energy      = input.cpu_energy_consummed.value();
+                f64 power                = consumed_energy / input.wall_time;
+                ret.cpu_power            = shambase::format("{:.1f} W", power);
+                ret.cpu_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
+            } else {
+                ret.cpu_power            = "N/A";
+                ret.cpu_energy_consummed = "N/A";
+            }
+        }
+        if (input.dram_energy_consummed.has_value()) {
+            if (input.wall_time > 0._f64 && input.dram_energy_consummed.value() > 0._f64) {
+                f64 consumed_energy       = input.dram_energy_consummed.value();
+                f64 power                 = consumed_energy / input.wall_time;
+                ret.dram_power            = shambase::format("{:.1f} W", power);
+                ret.dram_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
+            } else {
+                ret.dram_power            = "N/A";
+                ret.dram_energy_consummed = "N/A";
+            }
+        }
+
+        return ret;
     }
 } // namespace shamsys

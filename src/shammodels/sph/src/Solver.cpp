@@ -1579,9 +1579,11 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
 template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
-    sham::MemPerfInfos mem_perf_infos_start     = sham::details::get_mem_perf_info();
-    f64 mpi_timer_start                         = shamcomm::mpi::get_timer("total");
+    // has to be first since there is a barrier that may mess the other timers
     shamsys::SystemMetrics system_metrics_start = shamsys::get_system_metrics();
+
+    sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
+    f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
@@ -2648,12 +2650,14 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     tstep.end();
 
-    sham::MemPerfInfos mem_perf_infos_end        = sham::details::get_mem_perf_info();
+    f64 delta_mpi_timer                   = shamcomm::mpi::get_timer("total") - mpi_timer_start;
+    sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
+
+    /// must be after the mpi timer to not count the barrier of the system metrics
     std::optional<f64> rank_energy_consummed_end = shamsys::get_rank_energy_consummed();
     shamsys::SystemMetrics system_metrics_end    = shamsys::get_system_metrics();
     shamsys::SystemMetrics system_metrics_delta  = system_metrics_end - system_metrics_start;
 
-    f64 delta_mpi_timer = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)
           + (mem_perf_infos_end.time_free_device - mem_perf_infos_start.time_free_device);

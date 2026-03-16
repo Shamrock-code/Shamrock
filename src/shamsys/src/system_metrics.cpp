@@ -241,6 +241,23 @@ namespace shamsys {
     }
 
     FormattedSystemMetrics format_system_metrics(const SystemMetrics &input) {
+        auto format_metric = [](const std::optional<f64> &energy,
+                                f64 wall_time,
+                                std::optional<std::string> &out_power,
+                                std::optional<std::string> &out_energy) {
+            if (energy.has_value()) {
+                if (wall_time > 0._f64 && energy.value() > 0._f64) {
+                    f64 consumed_energy = energy.value();
+                    f64 power           = consumed_energy / wall_time;
+                    out_power           = shambase::format("{:.1f} W", power);
+                    out_energy          = shambase::format("{:.1f} J", consumed_energy);
+                } else {
+                    out_power  = "N/A";
+                    out_energy = "N/A";
+                }
+            }
+        };
+
         FormattedSystemMetrics ret{
             shambase::format("{:.1f} s", input.wall_time),
             std::nullopt,
@@ -253,50 +270,26 @@ namespace shamsys {
             std::nullopt,
         };
 
-        if (input.rank_energy_consummed.has_value()) {
-            if (input.wall_time > 0._f64 && input.rank_energy_consummed.value() > 0._f64) {
-                f64 consumed_energy       = input.rank_energy_consummed.value();
-                f64 power                 = consumed_energy / input.wall_time;
-                ret.rank_power            = shambase::format("{:.1f} W", power);
-                ret.rank_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
-            } else {
-                ret.rank_power            = "N/A";
-                ret.rank_energy_consummed = "N/A";
-            }
-        }
-        if (input.gpu_energy_consummed.has_value()) {
-            if (input.wall_time > 0._f64 && input.gpu_energy_consummed.value() > 0._f64) {
-                f64 consumed_energy      = input.gpu_energy_consummed.value();
-                f64 power                = consumed_energy / input.wall_time;
-                ret.gpu_power            = shambase::format("{:.1f} W", power);
-                ret.gpu_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
-            } else {
-                ret.gpu_power            = "N/A";
-                ret.gpu_energy_consummed = "N/A";
-            }
-        }
-        if (input.cpu_energy_consummed.has_value()) {
-            if (input.wall_time > 0._f64 && input.cpu_energy_consummed.value() > 0._f64) {
-                f64 consumed_energy      = input.cpu_energy_consummed.value();
-                f64 power                = consumed_energy / input.wall_time;
-                ret.cpu_power            = shambase::format("{:.1f} W", power);
-                ret.cpu_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
-            } else {
-                ret.cpu_power            = "N/A";
-                ret.cpu_energy_consummed = "N/A";
-            }
-        }
-        if (input.dram_energy_consummed.has_value()) {
-            if (input.wall_time > 0._f64 && input.dram_energy_consummed.value() > 0._f64) {
-                f64 consumed_energy       = input.dram_energy_consummed.value();
-                f64 power                 = consumed_energy / input.wall_time;
-                ret.dram_power            = shambase::format("{:.1f} W", power);
-                ret.dram_energy_consummed = shambase::format("{:.1f} J", consumed_energy);
-            } else {
-                ret.dram_power            = "N/A";
-                ret.dram_energy_consummed = "N/A";
-            }
-        }
+        format_metric(
+            input.rank_energy_consummed,
+            input.wall_time,
+            ret.rank_power,
+            ret.rank_energy_consummed);
+        format_metric(
+            input.gpu_energy_consummed,
+            input.wall_time,
+            ret.gpu_power,
+            ret.gpu_energy_consummed /* */);
+        format_metric(
+            input.cpu_energy_consummed,
+            input.wall_time,
+            ret.cpu_power,
+            ret.cpu_energy_consummed /* */);
+        format_metric(
+            input.dram_energy_consummed,
+            input.wall_time,
+            ret.dram_power,
+            ret.dram_energy_consummed);
 
         return ret;
     }

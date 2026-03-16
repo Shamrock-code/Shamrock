@@ -24,14 +24,9 @@ template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     gen_refine_block_changes(
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_flags,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_derefine_flags,
         T &&...args) {
-
-    using namespace shamrock::patch;
-
-    u64 tot_refine   = 0;
-    u64 tot_derefine = 0;
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
     auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
@@ -79,81 +74,122 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             uacc.finalize(resulting_events, id_patch, cur_p, pdat, args...);
         }
 
-        sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
-        sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
+        dd_refine_flags.add_obj(id_patch, std::move(refine_flags));
+        dd_derefine_flags.add_obj(id_patch, std::move(derefine_flags));
+    });
+}
 
-        sham::EventList depends_list;
-        auto acc_min        = buf_cell_min.get_read_access(depends_list);
-        auto acc_max        = buf_cell_max.get_read_access(depends_list);
-        auto acc_merge_flag = derefine_flags.get_write_access(depends_list);
+/**
+ * @brief check and enforce 2:1 rule for refinement
+ * @tparam Tvec
+ * @tparam TgridVec
+ * @param dd_refine_flags
+ */
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    enforce_two_to_one_refinement(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags) {
 
-        // keep only derefine flags on only if the eight cells want to merge and if they can
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
-                u32 id = gid.get_linear_id();
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u64 id_patch         = cur_p.id_patch;
+        sham::DeviceBuffer<u32> &patch_refine_flags = dd_refine_flags.get(id_patch);
+        u32 obj_cnt                                 = pdat.get_obj_cnt();
 
-                std::array<BlockCoord, split_count> blocks;
-                bool do_merge = true;
+        // blocks graph in each direction for the current patch
+        AMRGraph &block_graph_neighs_xp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_xm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::xm)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_yp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::yp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_ym = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::ym)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zp = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zp)
+                                              .get(id_patch);
+        AMRGraph &block_graph_neighs_zm = shambase::get_check_ref(storage.block_graph_edge)
+                                              .get_refs_dir(Direction_::zm)
+                                              .get(id_patch);
+        // get levels in the current patch
+        sham::DeviceBuffer<TgridUint> &buf_amr_block_levels
+            = shambase::get_check_ref(storage.amr_block_levels).get_buf(id_patch);
 
-                // This avoid the case where we are in the last block of the buffer to avoid the
-                // out-of-bound read
-                if (id + split_count <= obj_cnt) {
-                    bool all_want_to_merge = true;
+        for (u32 pass = 0; pass < 100; pass++) {
+            sham::EventList depend_list;
+            AMRGraphLinkiterator block_graph_xp
+                = block_graph_neighs_xp.get_read_access(depend_list);
+            AMRGraphLinkiterator block_graph_xm
+                = block_graph_neighs_xm.get_read_access(depend_list);
+            AMRGraphLinkiterator block_graph_yp
+                = block_graph_neighs_yp.get_read_access(depend_list);
+            AMRGraphLinkiterator block_graph_ym
+                = block_graph_neighs_ym.get_read_access(depend_list);
+            AMRGraphLinkiterator block_graph_zp
+                = block_graph_neighs_zp.get_read_access(depend_list);
+            AMRGraphLinkiterator block_graph_zm
+                = block_graph_neighs_zm.get_read_access(depend_list);
+            auto acc_amr_levels = buf_amr_block_levels.get_read_access(depend_list);
+            auto acc_ref_flags  = patch_refine_flags.get_write_access(depend_list);
 
-                    for (u32 lid = 0; lid < split_count; lid++) {
-                        blocks[lid]       = BlockCoord{acc_min[gid + lid], acc_max[gid + lid]};
-                        all_want_to_merge = all_want_to_merge && acc_merge_flag[gid + lid];
-                    }
+            auto e = q.submit(depend_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
+                    u32 block_id = gid.get_linear_id();
+                    // get refinement flag and amr level of the current block
+                    u32 cur_ref_flag     = acc_ref_flags[block_id];
+                    auto cur_block_level = acc_amr_levels[block_id];
 
-                    do_merge = all_want_to_merge && BlockCoord::are_mergeable(blocks);
-
-                } else {
-                    do_merge = false;
-                }
-
-                acc_merge_flag[gid] = do_merge;
+                    auto check_2To1_ref = [&](u32 nid) {
+                        if (nid < obj_cnt) {
+                            // get refinement flag and amr level of the neighborh block
+                            u32 neigh_ref_flag     = acc_ref_flags[nid];
+                            auto neigh_block_level = acc_amr_levels[nid];
+                            if (cur_ref_flag
+                                && sycl::abs(cur_block_level + 1 - neigh_block_level) > 1) {
+                                sycl::atomic_ref<
+                                    u32,
+                                    sycl::memory_order::relaxed,
+                                    sycl::memory_scope::system>
+                                    atomic_flag(acc_ref_flags[nid]);
+                                atomic_flag.store(1);
+                            }
+                        }
+                    };
+                    block_graph_xp.for_each_object_link(block_id, check_2To1_ref);
+                    block_graph_xm.for_each_object_link(block_id, check_2To1_ref);
+                    block_graph_yp.for_each_object_link(block_id, check_2To1_ref);
+                    block_graph_ym.for_each_object_link(block_id, check_2To1_ref);
+                    block_graph_zp.for_each_object_link(block_id, check_2To1_ref);
+                    block_graph_zm.for_each_object_link(block_id, check_2To1_ref);
+                });
             });
-        });
-
-        buf_cell_min.complete_event_state(e);
-        buf_cell_max.complete_event_state(e);
-        derefine_flags.complete_event_state(e);
+            block_graph_neighs_xp.complete_event_state(e);
+            block_graph_neighs_xm.complete_event_state(e);
+            block_graph_neighs_yp.complete_event_state(e);
+            block_graph_neighs_ym.complete_event_state(e);
+            block_graph_neighs_zp.complete_event_state(e);
+            block_graph_neighs_zm.complete_event_state(e);
+            buf_amr_block_levels.complete_event_state(e);
+            patch_refine_flags.complete_event_state(e);
+        }
 
         ////////////////////////////////////////////////////////////////////////////////
         // refinement
         ////////////////////////////////////////////////////////////////////////////////
 
         // perform stream compactions on the refinement flags
-        auto buf_refine = shamalgs::numeric::stream_compact(dev_sched, refine_flags, obj_cnt);
-
+        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+        auto dev_buf_ref
+            = shamalgs::numeric::stream_compact(dev_sched, patch_refine_flags, obj_cnt);
         shamlog_debug_ln(
-            "AMRGrid", "patch ", id_patch, "refine block count = ", buf_refine.get_size());
-
-        tot_refine += buf_refine.get_size();
-
-        // add the results to the map
-        refine_list.add_obj(id_patch, std::move(buf_refine));
-
-        ////////////////////////////////////////////////////////////////////////////////
-        // derefinement
-        ////////////////////////////////////////////////////////////////////////////////
-
-        // perform stream compactions on the derefinement flags
-        auto buf_derefine = shamalgs::numeric::stream_compact(dev_sched, derefine_flags, obj_cnt);
-
-        shamlog_debug_ln(
-            "AMRGrid", "patch ", id_patch, "merge block count = ", buf_derefine.get_size());
-
-        tot_derefine += buf_derefine.get_size();
-
-        // add the results to the map
-        derefine_list.add_obj(id_patch, std::move(buf_derefine));
+            "AMRGrid", "patch ", id_patch, dev_buf_ref.get_size(), "marked for refinement + 2:1");
     });
-
-    logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks were refined");
-    logger::info_ln(
-        "AMRGrid", "on this process", tot_derefine * split_count, "blocks were derefined");
 }
+
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::

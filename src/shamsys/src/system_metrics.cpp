@@ -22,7 +22,51 @@
 #include "shamsys/system_metrics.hpp"
 #include <cstdlib>
 
+#ifdef SHAMROCK_USE_GEOPM
+    #include <geopm/PlatformIO.hpp>
+    #include <geopm/PlatformTopo.hpp>
+#endif
+
 namespace shamsys {
+
+#ifdef SHAMROCK_USE_GEOPM
+
+    class AuroraSystemMetricReporterLinked : public ISystemMetricReporter {
+        public:
+        std::optional<f64> get_rank_energy_consummed() override {
+            if (shamcomm::is_main_node_rank()) {
+                return geopm::platform_io().read_signal("BOARD_ENERGY", GEOPM_DOMAIN_BOARD, 0);
+            }
+            return std::nullopt;
+        }
+
+        std::optional<f64> get_gpu_energy_consummed() override {
+            if (shamcomm::is_main_node_rank()) {
+                return geopm::platform_io().read_signal("GPU_ENERGY", GEOPM_DOMAIN_BOARD, 0);
+            }
+            return std::nullopt;
+        }
+
+        std::optional<f64> get_cpu_energy_consummed() override {
+            if (shamcomm::is_main_node_rank()) {
+                return geopm::platform_io().read_signal("CPU_ENERGY", GEOPM_DOMAIN_BOARD, 0);
+            }
+            return std::nullopt;
+        }
+
+        std::optional<f64> get_dram_energy_consummed() override {
+            if (shamcomm::is_main_node_rank()) {
+                return geopm::platform_io().read_signal("DRAM_ENERGY", GEOPM_DOMAIN_BOARD, 0);
+            }
+            return std::nullopt;
+        }
+
+        bool support_rank_energy_consummed() override { return true; }
+        bool support_gpu_energy_consummed() override { return true; }
+        bool support_cpu_energy_consummed() override { return true; }
+        bool support_dram_energy_consummed() override { return true; }
+    };
+#endif
 
     class AuroraSystemMetricReporter : public ISystemMetricReporter {
         public:
@@ -112,14 +156,18 @@ namespace shamsys {
     std::unique_ptr<ISystemMetricReporter> make_reporter(std::string_view reporter_name) {
         if (reporter_name == "aurora") {
             return std::make_unique<AuroraSystemMetricReporter>();
+#ifdef SHAMROCK_USE_GEOPM
+        } else if (reporter_name == "aurora-linked") {
+            return std::make_unique<AuroraSystemMetricReporterLinked>();
+#endif
         } else if (reporter_name == "intel-rapl") {
             return std::make_unique<IntelRAPLSystemMetricReport>();
         } else if (reporter_name == "noop" || reporter_name == "none" || reporter_name == "") {
             return std::make_unique<NoopSystemMetricReporter>();
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
-                "Unknown system metrics reporter: {}, valid reporters are: aurora, intel-rapl, "
-                "noop",
+                "Unknown system metrics reporter: {}, valid reporters are: aurora, aurora-linked, "
+                "intel-rapl, noop",
                 reporter_name));
         }
         return std::make_unique<NoopSystemMetricReporter>();
@@ -150,11 +198,15 @@ namespace shamsys {
     }
 
     SystemMetrics get_system_metrics(bool barrier) {
+        // Ensure that barriers aren't used if there is no reporter
+        barrier = barrier && has_reporter();
+
         if (barrier) {
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
         }
-        auto ret = SystemMetrics{
-            shambase::details::get_wtime(),
+        f64 wall_time = shambase::details::get_wtime();
+        auto ret      = SystemMetrics{
+            wall_time,
             get_rank_energy_consummed(),
             get_gpu_energy_consummed(),
             get_cpu_energy_consummed(),

@@ -183,6 +183,8 @@ for N_target_base in [32e6]:
                 result_text += f"avg power {key} / step time : {value / metrics_duration} W\n"
                 dic_out[f"power_{key}"] = value / metrics_duration
 
+        dic_out["system_metric_duration"] = metrics_duration
+
         result_text += f"dic_out = {dic_out}\n"
 
         print("current results:")

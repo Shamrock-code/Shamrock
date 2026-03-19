@@ -17,8 +17,10 @@
 #include "shambase/memory.hpp"
 #include "shamalgs/details/algorithm/algorithm.hpp"
 #include "shamcomm/logs.hpp"
+#include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/AMRSortBlocks.hpp"
+#include "shammodels/ramses/modules/SlopeLimitedGradientUtilities.hpp"
 #include <stdexcept>
 
 template<class Tvec, class TgridVec>
@@ -44,7 +46,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         {
             sham::EventList depends_list;
 
-            UserAcc uacc(depends_list, id_patch, cur_p, pdat, args...);
+            UserAcc uacc(depends_list, storage, id_patch, cur_p, pdat, args...);
 
             auto refine_acc   = refine_flags.get_write_access(depends_list);
             auto derefine_acc = derefine_flags.get_write_access(depends_list);
@@ -72,7 +74,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             refine_flags.complete_event_state(resulting_events);
             derefine_flags.complete_event_state(resulting_events);
 
-            uacc.finalize(resulting_events, id_patch, cur_p, pdat, args...);
+            uacc.finalize(resulting_events, storage, id_patch, cur_p, pdat, args...);
         }
 
         dd_refine_flags.add_obj(id_patch, std::move(refine_flags));
@@ -458,7 +460,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, pdat);
+            UserAcc uacc(depends_list, storage, id_patch, pdat);
             auto index_to_ref = stream_compaction_result.get_read_access(depends_list);
 
             // Refine the block (set the positions) and fill the corresponding fields
@@ -509,7 +511,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
             stream_compaction_result.complete_event_state(e);
-            uacc.finalize(resulting_events, pdat);
+            uacc.finalize(resulting_events, storage, id_patch, pdat);
         }
         shamlog_debug_ln("AMRGrid", "patch ", id_patch, "new block count = ", pdat.get_obj_cnt());
         sum_block_count += pdat.get_obj_cnt();
@@ -540,21 +542,26 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             dev_sched, dd_derefine_flags.get(id_patch), old_obj_cnt_before_refinement);
         if (stream_compact_results.get_size() > 0) {
             // init flag table
+            sycl::buffer<u32> keep_block_flag
+                = shamalgs::algorithm::gen_buffer_device(q.q, old_obj_cnt, [](u32 i) -> u32 {
+                      return 1;
+                  });
 
-            sham::DeviceBuffer<u32> keep_block_flag(old_obj_cnt, dev_sched);
-            keep_block_flag.fill(1);
+            // sham::DeviceBuffer<u32> keep_block_flag(old_obj_cnt, dev_sched);
+            // keep_block_flag.fill(1);
 
             sham::DeviceBuffer<TgridVec> &buf_cell_min = pdat.get_field_buf_ref<TgridVec>(0);
             sham::DeviceBuffer<TgridVec> &buf_cell_max = pdat.get_field_buf_ref<TgridVec>(1);
             sham::EventList depends_list;
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, pdat);
+            UserAcc uacc(depends_list, storage, id_patch, pdat);
             auto index_to_deref = stream_compact_results.get_read_access(depends_list);
-            auto flag_keep      = keep_block_flag.get_write_access(depends_list);
+            // auto flag_keep      = keep_block_flag.get_write_access(depends_list);
 
             // edit block content + make flag of blocks to keep
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                sycl::accessor flag_keep{keep_block_flag, cgh, sycl::read_write};
                 cgh.parallel_for(
                     sycl::range<1>(stream_compact_results.get_size()), [=](sycl::item<1> gid) {
                         u32 tid = gid.get_linear_id();
@@ -601,29 +608,54 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
-            uacc.finalize(resulting_events, pdat);
-            stream_compact_results.complete_event_state(resulting_events);
-            keep_block_flag.complete_event_state(resulting_events);
-            // stream compact the flags
-            auto buf_keep
-                = shamalgs::numeric::stream_compact(dev_sched, keep_block_flag, old_obj_cnt);
+            uacc.finalize(resulting_events, storage, id_patch, pdat);
 
-            shamlog_debug_ln(
+            stream_compact_results.complete_event_state(resulting_events);
+
+            // stream compact the flags (get new block ids map after merged)
+            auto [opt_buf, len]
+                = shamalgs::numeric::stream_compact(q.q, keep_block_flag, old_obj_cnt);
+
+            logger::info_ln(
                 "AMR Grid",
                 "patch",
                 id_patch,
-                "derefine block count ",
-                old_obj_cnt - buf_keep.get_size(),
+                "derefine block count = ",
+                old_obj_cnt - len,
                 "new block count = ",
-                buf_keep.get_size());
+                len);
 
-            if (buf_keep.get_size() == 0) {
-                throw std::runtime_error("buf keep must contain something at this point");
+            if (!opt_buf) {
+                throw std::runtime_error("opt buf must contain something at this point");
             }
-            // remap pdat according to stream compact
-            pdat.index_remap_resize(buf_keep, buf_keep.get_size());
+
+            // remap pdat according to stream compact (for each field in patchdataleyer resize
+            // according to new block ids map)
+            pdat.index_remap_resize(*opt_buf, len);
 
             cell_were_removed = cell_were_removed || stream_compact_results.get_size() > 0;
+
+            // // keep_block_flag.complete_event_state(resulting_events);
+            // // stream compact the flags
+            // auto buf_keep
+            //     = shamalgs::numeric::stream_compact(dev_sched, keep_block_flag, old_obj_cnt);
+
+            // shamlog_debug_ln(
+            //     "AMR Grid",
+            //     "patch",
+            //     id_patch,
+            //     "derefine block count ",
+            //     old_obj_cnt - buf_keep.get_size(),
+            //     "new block count = ",
+            //     buf_keep.get_size());
+
+            // if (buf_keep.get_size() == 0) {
+            //     throw std::runtime_error("buf keep must contain something at this point");
+            // }
+            // // remap pdat according to stream compact
+            // pdat.index_remap_resize(buf_keep, buf_keep.get_size());
+
+            // cell_were_removed = cell_were_removed || stream_compact_results.get_size() > 0;
         }
     });
 
@@ -674,6 +706,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         RefineCritBlock(
             sham::EventList &depends_list,
+            Storage &storage,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchDataLayer &pdat,
@@ -690,6 +723,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         void finalize(
             sham::EventList &resulting_events,
+            Storage &storage,
             u64 id_patch,
             shamrock::patch::Patch p,
             shamrock::patch::PatchDataLayer &pdat,
@@ -742,18 +776,104 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         f64 *rho;
         f64_3 *rho_vel;
         f64 *rhoE;
+        u64 p_id;
 
-        RefineCellAccessor(sham::EventList &depends_list, shamrock::patch::PatchDataLayer &pdat) {
+        // this will be needed for interpolation during refinement
+        AMRGraphLinkiterator cell_graph_xp;
+        AMRGraphLinkiterator cell_graph_xm;
+        AMRGraphLinkiterator cell_graph_yp;
+        AMRGraphLinkiterator cell_graph_ym;
+        AMRGraphLinkiterator cell_graph_zp;
+        AMRGraphLinkiterator cell_graph_zm;
 
+        RefineCellAccessor(
+            sham::EventList &depends_list,
+            Storage &storage,
+            u64 &id_patch,
+            shamrock::patch::PatchDataLayer &pdat)
+            : cell_graph_xp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::xp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list)),
+              cell_graph_xm(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::xm)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list)),
+              cell_graph_yp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::yp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list)),
+              cell_graph_ym(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::ym)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list)),
+              cell_graph_zp(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::zp)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list)),
+              cell_graph_zm(
+                  shambase::get_check_ref(storage.cell_graph_edge)
+                      .get_refs_dir(Direction::zm)
+                      .get(id_patch)
+                      .get()
+                      .get_read_access(depends_list))
+
+        {
+            p_id    = id_patch;
             rho     = pdat.get_field<f64>(2).get_buf().get_write_access(depends_list);
             rho_vel = pdat.get_field<f64_3>(3).get_buf().get_write_access(depends_list);
             rhoE    = pdat.get_field<f64>(4).get_buf().get_write_access(depends_list);
         }
 
-        void finalize(sham::EventList &resulting_events, shamrock::patch::PatchDataLayer &pdat) {
+        void finalize(
+            sham::EventList &resulting_events,
+            Storage &storage,
+            u64 &id_patch,
+            shamrock::patch::PatchDataLayer &pdat) {
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
+
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::xp)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::xm)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::yp)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::ym)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::zp)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.cell_graph_edge)
+                .get_refs_dir(Direction_::zm)
+                .get(id_patch)
+                .get()
+                .complete_event_state(resulting_events);
         }
 
         void apply_refine(
@@ -1018,10 +1138,69 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get_buf(id_patch)
                 .complete_event_state(resulting_events);
         }
+
+        void refine_criterion(
+            u32 block_id,
+            RefineCritPseudoGradientAccessor acc,
+            bool &should_refine,
+            bool &should_derefine) const {
+            TgridVec low_bound  = acc.block_low_bound[block_id];
+            TgridVec high_bound = acc.block_high_bound[block_id];
+
+            Tscal block_rho_slope = shambase::VectorProperties<Tscal>::get_zero();
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                block_rho_slope = sham::details::g_sycl_max(
+                    block_rho_slope,
+                    baryonic_normalized_slope_criterion<Tscal>(
+                        i + block_id * AMRBlock::block_size,
+                        cell_graph_xp,
+                        cell_graph_xm,
+                        cell_graph_yp,
+                        cell_graph_ym,
+                        cell_graph_zp,
+                        cell_graph_zm,
+                        [=](u32 id) {
+                            return block_rho[id];
+                        }));
+            }
+
+            Tscal block_press_grad = shambase::VectorProperties<Tscal>::get_zero();
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                block_press_grad = sham::details::g_sycl_max(
+                    block_press_grad,
+                    get_pseudo_grad<Tscal, Tvec>(
+                        i + block_id * AMRBlock::block_size,
+                        cell_graph_xp,
+                        cell_graph_xm,
+                        cell_graph_yp,
+                        cell_graph_ym,
+                        cell_graph_zp,
+                        cell_graph_zm,
+                        [=](u32 id) {
+                            return block_pressure[id];
+                        }));
+            }
+
+            Tscal error = sham::details::g_sycl_max(
+                block_press_grad, sham::details::g_sycl_max(block_rho_slope, 0.0));
+
+            should_refine   = false;
+            should_derefine = false;
+            if (error > error_max) {
+                should_refine = true;
+            } else if (error < (error_min * error_max)) {
+                should_derefine = true;
+            }
+
+            should_refine = should_refine && (high_bound.x() - low_bound.x() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.y() - low_bound.y() > AMRBlock::Nside);
+            should_refine = should_refine && (high_bound.z() - low_bound.z() > AMRBlock::Nside);
+        }
     };
 
-    using AMRmode_None         = typename AMRMode<Tvec, TgridVec>::None;
-    using AMRmode_DensityBased = typename AMRMode<Tvec, TgridVec>::DensityBased;
+    using AMRmode_None                = typename AMRMode<Tvec, TgridVec>::None;
+    using AMRmode_DensityBased        = typename AMRMode<Tvec, TgridVec>::DensityBased;
+    using AMRmode_PseudoGradientBased = typename AMRMode<Tvec, TgridVec>::PseudoGradientBased;
 
     bool has_cell_order_changed = false;
 
@@ -1051,6 +1230,31 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
+    }
+
+    else if (
+        AMRmode_PseudoGradientBased *cfg
+        = std::get_if<AMRmode_PseudoGradientBased>(&solver_config.amr_mode.config)) {
+
+        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
+        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
+
+        gen_refine_block_changes<RefineCritPseudoGradientAccessor>(
+            refine_list, derefine_list, cfg->error_min, cfg->error_max);
+
+        ///// enforce 2:1 for refinement ///////
+        enforce_two_to_one_refinement(std::move(refine_list));
+
+        /////// enforce 2:1 for derefinement //////
+        enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
+
+        //////// apply refine ////////
+        // Note that this only add new blocks at the end of the patchdata
+        bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+
+        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+
+        has_cell_order_changed = has_cell_order_changed || (change_refine) || (change_derefine);
     }
 
     if (has_cell_order_changed) {

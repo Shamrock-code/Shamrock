@@ -297,6 +297,17 @@ class PatchScheduler {
         }
     }
 
+    inline void for_each_local_patch_parallel(
+        std::function<void(const shamrock::patch::Patch &)> fct) {
+#pragma omp parallel for
+        for (u32 i = 0; i < patch_list.local.size(); i++) {
+            const shamrock::patch::Patch &p = patch_list.local[i];
+            if (!p.is_err_mode()) {
+                fct(p);
+            }
+        }
+    }
+
     inline void for_each_local_patchdata(
         std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
         for (shamrock::patch::Patch p : patch_list.local) {

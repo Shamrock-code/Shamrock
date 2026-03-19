@@ -388,7 +388,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                     using PtNode = typename SerialPatchTree<vec>::PtNode;
 
-                    sptree.host_for_each_leafs(
+                    sptree.host_for_each_leafs_internal(
                         [&](u64 tree_id, PtNode n) {
                             flt receiv_h_max = acc_tf[tree_id];
                             CoordRange<vec> receiv_exp{
@@ -421,7 +421,9 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                             // logger::raw_ln("found :",offset, shift.shift_speed, vec{xoff, yoff,
                             // zoff});
-                        });
+                        },
+                        tree,
+                        lpid);
                 }
             }
         });
@@ -449,7 +451,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                 using PtNode = typename SerialPatchTree<vec>::PtNode;
 
-                sptree.host_for_each_leafs(
+                sptree.host_for_each_leafs_internal(
                     [&](u64 tree_id, PtNode n) {
                         flt receiv_h_max = acc_tf[tree_id];
                         CoordRange<vec> receiv_exp{
@@ -478,7 +480,9 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                              {0, 0, 0},
                              interf_volume,
                              interf_volume.get_volume() / sender_volume});
-                    });
+                    },
+                    tree,
+                    lpid);
             }
         }
     }

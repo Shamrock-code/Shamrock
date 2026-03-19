@@ -485,15 +485,15 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
     base_timer.end();
 
-    f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
-    if (shamcomm::world_rank() == 0) {
-        shamlog_info_ln(
-            "BasicSPHGhosts",
-            "find_interfaces time:",
-            base_timer.get_time_str(),
-            "worse time:",
-            worse_time);
-    }
+    // f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
+    //  if (shamcomm::world_rank() == 0) {
+    //      shamlog_info_ln(
+    //          "BasicSPHGhosts",
+    //          "find_interfaces time:",
+    //          base_timer.get_time_str(),
+    //          "worse time:",
+    //          worse_time);
+    //  }
 
     // interf_map.for_each([](u64 sender, u64 receiver, InterfaceBuildInfos build){
     //     logger::raw_ln("found interface

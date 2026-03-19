@@ -257,8 +257,6 @@ inline void for_each_patch_shift(
 
 using namespace shammodels::sph;
 
-#define Parralel_GZ
-
 template<class vec>
 auto BasicSPHGhostHandler<vec>::find_interfaces(
     SerialPatchTree<vec> &sptree,
@@ -302,14 +300,12 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                     // sender translation
                     vec periodic_offset = vec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-#ifdef Parralel_GZ
-
                     sycl::host_accessor tree{
                         shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
                     sycl::host_accessor lpid{
                         shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
 
-    #pragma omp parallel for
+#pragma omp parallel for
                     for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
                         const shamrock::patch::Patch &psender = sched.patch_list.local[i];
                         if (!psender.is_err_mode()) {
@@ -345,7 +341,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                     CoordRange<vec> interf_volume = sender_bsize.get_intersect(
                                         receiv_exp.add_offset(-periodic_offset));
 
-    #pragma omp critical
+#pragma omp critical
                                     interf_map.add_obj(
                                         psender.id_patch,
                                         id_found,
@@ -359,49 +355,6 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                 lpid);
                         }
                     }
-#else
-                    sched.for_each_local_patch([&](const Patch psender) {
-                        CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-                        CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
-
-                        flt sender_volume = sender_bsize.get_volume();
-
-                        flt sender_h_max = int_range_max.get(psender.id_patch);
-
-                        using PtNode = typename SerialPatchTree<vec>::PtNode;
-
-                        sptree.host_for_each_leafs(
-                            [&](u64 tree_id, PtNode n) {
-                                flt receiv_h_max = acc_tf[tree_id];
-                                CoordRange<vec> receiv_exp{
-                                    n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                                return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                            },
-                            [&](u64 id_found, PtNode n) {
-                                if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
-                                    && (zoff == 0)) {
-                                    return;
-                                }
-
-                                CoordRange<vec> receiv_exp
-                                    = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
-                                        int_range_max.get(id_found));
-
-                                CoordRange<vec> interf_volume = sender_bsize.get_intersect(
-                                    receiv_exp.add_offset(-periodic_offset));
-
-                                interf_map.add_obj(
-                                    psender.id_patch,
-                                    id_found,
-                                    {periodic_offset,
-                                     {0, 0, 0},
-                                     {xoff, yoff, zoff},
-                                     interf_volume,
-                                     interf_volume.get_volume() / sender_volume});
-                            });
-                    });
-#endif
                 }
             }
         }
@@ -416,13 +369,79 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
             vec offset = shift.shift;
 
-#ifdef Parralel_GZ
-            sched.for_each_local_patch_parallel([&](const Patch &psender) {
-#else
-            sched.for_each_local_patch([&](const Patch psender) {
-#endif
+            sycl::host_accessor tree{
+                shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
+            sycl::host_accessor lpid{
+                shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
+
+#pragma omp parallel for
+            for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
+                const shamrock::patch::Patch &psender = sched.patch_list.local[i];
+                if (!psender.is_err_mode()) {
+
+                    CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
+                    CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(offset);
+
+                    flt sender_volume = sender_bsize.get_volume();
+
+                    flt sender_h_max = int_range_max.get(psender.id_patch);
+
+                    using PtNode = typename SerialPatchTree<vec>::PtNode;
+
+                    sptree.host_for_each_leafs(
+                        [&](u64 tree_id, PtNode n) {
+                            flt receiv_h_max = acc_tf[tree_id];
+                            CoordRange<vec> receiv_exp{
+                                n.box_min - receiv_h_max, n.box_max + receiv_h_max};
+
+                            return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
+                        },
+                        [&](u64 id_found, PtNode n) {
+                            if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
+                                && (zoff == 0)) {
+                                return;
+                            }
+
+                            CoordRange<vec> receiv_exp
+                                = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
+                                    int_range_max.get(id_found));
+
+                            CoordRange<vec> interf_volume
+                                = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
+
+#pragma omp critical
+                            interf_map.add_obj(
+                                psender.id_patch,
+                                id_found,
+                                {offset,
+                                 shift.shift_speed,
+                                 {xoff, yoff, zoff},
+                                 interf_volume,
+                                 interf_volume.get_volume() / sender_volume});
+
+                            // logger::raw_ln("found :",offset, shift.shift_speed, vec{xoff, yoff,
+                            // zoff});
+                        });
+                }
+            }
+        });
+
+    } else {
+        sycl::host_accessor acc_tf{
+            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        // sender translation
+        vec periodic_offset = vec{0, 0, 0};
+
+        sycl::host_accessor tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
+        sycl::host_accessor lpid{
+            shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
+
+#pragma omp parallel for
+        for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
+            const shamrock::patch::Patch &psender = sched.patch_list.local[i];
+            if (!psender.is_err_mode()) {
                 CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-                CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(offset);
+                CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
 
                 flt sender_volume = sender_bsize.get_volume();
 
@@ -439,8 +458,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                         return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
                     },
                     [&](u64 id_found, PtNode n) {
-                        if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
-                            && (zoff == 0)) {
+                        if (id_found == psender.id_patch) {
                             return;
                         }
 
@@ -449,71 +467,20 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                 int_range_max.get(id_found));
 
                         CoordRange<vec> interf_volume
-                            = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
+                            = sender_bsize.get_intersect(receiv_exp.add_offset(-periodic_offset));
 
+#pragma omp critical
                         interf_map.add_obj(
                             psender.id_patch,
                             id_found,
-                            {offset,
-                             shift.shift_speed,
-                             {xoff, yoff, zoff},
+                            {periodic_offset,
+                             {0, 0, 0},
+                             {0, 0, 0},
                              interf_volume,
                              interf_volume.get_volume() / sender_volume});
-
-                        // logger::raw_ln("found :",offset, shift.shift_speed, vec{xoff, yoff,
-                        // zoff});
                     });
-            });
-        });
-
-    } else {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
-        // sender translation
-        vec periodic_offset = vec{0, 0, 0};
-
-#ifdef Parralel_GZ
-        sched.for_each_local_patch_parallel([&](const Patch &psender) {
-#else
-        sched.for_each_local_patch([&](const Patch psender) {
-#endif
-            CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
-            CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
-
-            flt sender_volume = sender_bsize.get_volume();
-
-            flt sender_h_max = int_range_max.get(psender.id_patch);
-
-            using PtNode = typename SerialPatchTree<vec>::PtNode;
-
-            sptree.host_for_each_leafs(
-                [&](u64 tree_id, PtNode n) {
-                    flt receiv_h_max = acc_tf[tree_id];
-                    CoordRange<vec> receiv_exp{n.box_min - receiv_h_max, n.box_max + receiv_h_max};
-
-                    return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
-                },
-                [&](u64 id_found, PtNode n) {
-                    if (id_found == psender.id_patch) {
-                        return;
-                    }
-
-                    CoordRange<vec> receiv_exp = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
-                        int_range_max.get(id_found));
-
-                    CoordRange<vec> interf_volume
-                        = sender_bsize.get_intersect(receiv_exp.add_offset(-periodic_offset));
-
-                    interf_map.add_obj(
-                        psender.id_patch,
-                        id_found,
-                        {periodic_offset,
-                         {0, 0, 0},
-                         {0, 0, 0},
-                         interf_volume,
-                         interf_volume.get_volume() / sender_volume});
-                });
-        });
+            }
+        }
     }
 
     base_timer.end();

@@ -75,9 +75,10 @@ namespace shamrock::scheduler {
         // generate hilbert code, load value, and index before sort
         std::vector<LBTile> patch_dt(global_patch_list.size());
 
+#pragma omp parallel for
         for (u64 i = 0; i < global_patch_list.size(); i++) {
 
-            Patch p = global_patch_list[i];
+            const Patch &p = global_patch_list[i];
 
             patch_dt[i]
                 = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),

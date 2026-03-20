@@ -312,7 +312,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -423,7 +423,7 @@ namespace shammodels::sph {
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
@@ -475,7 +475,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -579,7 +579,7 @@ namespace shammodels::sph {
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });

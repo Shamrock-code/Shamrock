@@ -1734,7 +1734,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // Give to the solvergraph the patch rank owners
     storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+    scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
         storage.patch_rank_owner->values.add_obj(
             p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
     });

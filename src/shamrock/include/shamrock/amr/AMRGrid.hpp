@@ -500,7 +500,7 @@ namespace shamrock::amr {
                   cell_count[1] / gcd_cell_count,
                   cell_count[2] / gcd_cell_count}});
 
-            sched.for_each_patch([](u64 id_patch, patch::Patch p) {
+            sched.for_each_patch([](u64 id_patch, const patch::Patch &p) {
                 // TODO implement check to verify that patch a cubes of size 2^n
             });
 

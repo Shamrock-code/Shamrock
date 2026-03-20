@@ -1533,7 +1533,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // give to the solvergraph the patch rank owners
     storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+    scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
         storage.patch_rank_owner->values.add_obj(
             p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
     });
@@ -1569,7 +1569,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         global_patch_boxes_edge.values = {};
 
-        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
             auto pbounds = transf.to_obj_coord(p);
             global_patch_boxes_edge.values.add_obj(
                 p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
@@ -1584,7 +1584,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         local_patch_ids.data = {};
 
-        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch &p) {
             local_patch_ids.data.push_back(p.id_patch);
         });
     }

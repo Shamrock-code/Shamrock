@@ -67,7 +67,7 @@ namespace shammodels::zeus::modules {
                     TgridVec periodic_offset
                         = TgridVec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-                    sched.for_each_local_patch([&](const Patch psender) {
+                    sched.for_each_local_patch([&](const Patch &psender) {
                         CoordRange<TgridVec> sender_bsize
                             = patch_coord_transf.to_obj_coord(psender);
                         CoordRange<TgridVec> sender_bsize_off

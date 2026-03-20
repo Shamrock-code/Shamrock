@@ -144,7 +144,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf
                 = sched.get_sim_box().template get_patch_transform<Tvec>();
 
@@ -253,7 +253,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf
                 = sched.get_sim_box().template get_patch_transform<Tvec>();
 

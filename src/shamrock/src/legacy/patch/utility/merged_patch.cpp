@@ -67,7 +67,7 @@ auto MergedPatchCompField<flt, T>::merge_patches_cfield(
 
     std::unordered_map<u64, MergedPatchCompField<flt, T>> merged_data;
 
-    sched.for_each_patch([&](u64 id_patch, Patch cur_p) {
+    sched.for_each_patch([&](u64 id_patch, const Patch &cur_p) {
         auto &compfield = comp_field.get_field(id_patch);
 
         merged_data.insert({id_patch, MergedPatchCompField<flt, T>()});

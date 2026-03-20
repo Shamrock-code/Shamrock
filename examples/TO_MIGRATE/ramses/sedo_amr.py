@@ -23,9 +23,7 @@ scale_fact = 1 / (cell_size * base * multx)
 cfg.set_scale_factor(scale_fact)
 
 center = (0.5 * base * scale_fact, 0.5 * base * scale_fact, 0.5 * base * scale_fact)
-xc, yc, zc = center
 Rstart = 1.0 / (2.0 * base) + 1e-4
-# Rstart = 0.01
 gamma = 5.0 / 3.0
 
 cfg.set_eos_gamma(gamma)
@@ -52,17 +50,6 @@ model.make_base_grid(
 
 
 def rho_map(rmin, rmax):
-    x_min, y_min, z_min = rmin
-    x_max, y_max, z_max = rmax
-    x = (x_min + x_max) * 0.5 - 0.5
-    y = (y_min + y_max) * 0.5 - 0.5
-    z = (z_min + z_max) * 0.5 - 0.5
-    r = np.sqrt(x * x + y * y + z * z)
-    # if r < Rstart:
-    #     return 1.
-    # else:
-    #     return 1.2
-
     return 1.0
 
 

@@ -39,7 +39,7 @@ xs = 1
 
 P_1 = 3.5
 P_2 = 3.5
-#YOLOOOOOOOO
+# YOLOOOOOOOO
 gamma = 5.0 / 3.0
 
 # resolution

@@ -106,13 +106,12 @@ class SerialPatchTree {
         build_from_patch_tree(ptree, box_transform);
     }
 
-    inline void host_for_each_leafs(
+    template<class Acc1, class Acc2>
+    inline void host_for_each_leafs_internal(
         std::function<bool(u64, PtNode pnode)> interact_cd,
-        std::function<void(u64, PtNode)> found_case) {
-        StackEntry stack_loc{false};
-
-        sycl::host_accessor tree{shambase::get_check_ref(serial_tree_buf), sycl::read_only};
-        sycl::host_accessor lpid{shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
+        std::function<void(u64, PtNode)> found_case,
+        Acc1 &&tree,
+        Acc2 &&lpid) {
 
         std::stack<u64> id_stack;
 
@@ -143,6 +142,17 @@ class SerialPatchTree {
                 }
             }
         }
+    }
+
+    inline void host_for_each_leafs(
+        std::function<bool(u64, PtNode pnode)> interact_cd,
+        std::function<void(u64, PtNode)> found_case) {
+        StackEntry stack_loc{false};
+
+        sycl::host_accessor tree{shambase::get_check_ref(serial_tree_buf), sycl::read_only};
+        sycl::host_accessor lpid{shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
+
+        host_for_each_leafs_internal(interact_cd, found_case, tree, lpid);
     }
 
     /**

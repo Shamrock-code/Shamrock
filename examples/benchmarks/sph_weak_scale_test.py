@@ -14,6 +14,8 @@ import shamrock
 result_text = ""
 
 for N_target_base in [32e6]:
+    shamrock.backends.reset_mem_info_max()
+
     gamma = 5.0 / 3.0
     rho_g = 1
     target_tot_u = 1
@@ -117,6 +119,8 @@ for N_target_base in [32e6]:
     model.set_cfl_multipler(1e-4)
     model.set_cfl_mult_stiffness(1e6)
 
+    shamrock.backends.reset_mem_info_max()
+
     # converge smoothing length and compute initial dt
     model.timestep()
 
@@ -159,13 +163,29 @@ for N_target_base in [32e6]:
         result_text += f"res_cnts = {res_cnts}\n"
         result_text += f"step time = {step_time}\n"
 
+        dic_out = {
+            "world_size": shamrock.sys.world_size(),
+            "rate": res_rate,
+            "cnt": res_cnt,
+            "step_time": step_time,
+        }
+
         # print the system metrics
+        metrics_duration = max_rate_system_metrics["duration"]
         result_text += "system metrics:\n"
         for key, value in max_rate_system_metrics.items():
-            result_text += f"{key}: {value} J\n"
+            if not key == "duration":
+                result_text += f"{key}: {value} J\n"
+                dic_out[key] = value
 
         for key, value in max_rate_system_metrics.items():
-            result_text += f"avg power {key} / step time : {value / step_time} W\n"
+            if not key == "duration":
+                result_text += f"avg power {key} / step time : {value / metrics_duration} W\n"
+                dic_out[f"power_{key}"] = value / metrics_duration
+
+        dic_out["system_metric_duration"] = metrics_duration
+
+        result_text += f"dic_out = {dic_out}\n"
 
         print("current results:")
         print(result_text)

@@ -1132,6 +1132,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [&](T &self) {
                 auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
                 py::dict ret;
+                ret["duration"] = system_metrics.wall_time;
                 if (system_metrics.rank_energy_consummed.has_value()) {
                     ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
                 }

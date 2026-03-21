@@ -41,6 +41,8 @@ namespace shamrock::scheduler::details {
         u64 index;
         i32 new_owner;
 
+        LoadBalancedTile() = default;
+
         LoadBalancedTile(TileWithLoad<Torder, Tweight> in, u64 inindex)
             : ordering_val(in.ordering_val), load_value(in.load_value), index(inindex) {}
     };
@@ -76,9 +78,10 @@ namespace shamrock::scheduler::details {
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
 
-        std::vector<LBTileResult> res;
+        std::vector<LBTileResult> res(lb_vector.size());
+#pragma omp parallel for
         for (u64 i = 0; i < lb_vector.size(); i++) {
-            res.push_back(LBTileResult{lb_vector[i], i});
+            res[i] = LBTileResult{lb_vector[i], i};
         }
 
         // apply the ordering
@@ -94,7 +97,9 @@ namespace shamrock::scheduler::details {
 
         double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
 
-        for (LBTileResult &tile : res) {
+#pragma omp parallel for
+        for (u64 i = 0; i < res.size(); i++) {
+            LBTileResult &tile = res[i];
             tile.new_owner
                 = (target_datacnt == 0)
                       ? 0
@@ -102,7 +107,8 @@ namespace shamrock::scheduler::details {
                             i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
-        if (shamcomm::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0
+            && shamcomm::logs::get_loglevel() >= shamcomm::logs::log_debug) {
             for (LBTileResult t : res) {
                 shamlog_debug_ln(
                     "HilbertLoadBalance",
@@ -141,9 +147,10 @@ namespace shamrock::scheduler::details {
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
 
-        std::vector<LBTileResult> res;
+        std::vector<LBTileResult> res(lb_vector.size());
+#pragma omp parallel for
         for (u64 i = 0; i < lb_vector.size(); i++) {
-            res.push_back(LBTileResult{lb_vector[i], i});
+            res[i] = LBTileResult{lb_vector[i], i};
         }
 
         // apply the ordering
@@ -160,7 +167,9 @@ namespace shamrock::scheduler::details {
 
         double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
 
-        for (LBTileResult &tile : res) {
+#pragma omp parallel for
+        for (u64 i = 0; i < res.size(); i++) {
+            LBTileResult &tile = res[i];
             tile.new_owner
                 = (target_datacnt == 0)
                       ? 0
@@ -168,7 +177,8 @@ namespace shamrock::scheduler::details {
                             i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
-        if (shamcomm::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0
+            && shamcomm::logs::get_loglevel() >= shamcomm::logs::log_debug) {
             for (LBTileResult t : res) {
                 shamlog_debug_ln(
                     "HilbertLoadBalance",

@@ -302,7 +302,7 @@ class PatchScheduler {
     inline void for_each_local_patchdata(
         const std::function<void(const shamrock::patch::Patch &, shamrock::patch::PatchDataLayer &)>
             &fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+        for (const shamrock::patch::Patch &p : patch_list.local) {
             if (!p.is_err_mode()) {
                 fct(p, patch_data.get_pdat(p.id_patch));
             }

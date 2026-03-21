@@ -292,7 +292,7 @@ class PatchScheduler {
 
     inline void for_each_local_patch(
         const std::function<void(const shamrock::patch::Patch &)> &fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+        for (const shamrock::patch::Patch &p : patch_list.local) {
             if (!p.is_err_mode()) {
                 fct(p);
             }

@@ -98,11 +98,12 @@ TestStart(Unittest, "shamrock/solvergraph/ExchangeGhostLayer", testExchangeGhost
     });
 
     // create the rank owner edge
-    auto rank_owner_edge = std::make_shared<ScalarsEdge<u32>>("rank_owner", "rank_owner");
-    for (u64 i = 0; i < npatch; i++) {
-        rank_owner_edge->values.add_obj(i, u32(rank_owner[i]));
-        shamlog_debug_ln(test_name, "rank_owner: ", i, " rank: ", rank_owner[i]);
-    }
+    auto rank_owner_edge = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) {
+            return rank_owner[patch_id];
+        },
+        "rank_owner",
+        "RO");
 
     std::shared_ptr<ExchangeGhostLayer> exchange_gz_node
         = std::make_shared<ExchangeGhostLayer>(layout);

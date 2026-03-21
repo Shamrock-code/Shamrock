@@ -14,6 +14,7 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/ExchangeGhostField.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
@@ -94,12 +95,12 @@ TestStart(Unittest, "shamrock/solvergraph/ExchangeGhostField", testExchangeGhost
     });
 
     // create the rank owner edge
-    auto rank_owner_edge
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("rank_owner", "RO");
-    for (u64 i = 0; i < npatch; i++) {
-        rank_owner_edge->values.add_obj(i, u32(rank_owner[i]));
-        shamlog_debug_ln(test_name, "rank_owner f32: ", i, " rank: ", rank_owner[i]);
-    }
+    auto rank_owner_edge = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) {
+            return rank_owner[patch_id];
+        },
+        "rank_owner",
+        "RO");
 
     std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<f32>> exchange_field_node
         = std::make_shared<shamrock::solvergraph::ExchangeGhostField<f32>>();

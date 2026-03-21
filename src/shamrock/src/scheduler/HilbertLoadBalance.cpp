@@ -26,6 +26,9 @@
 inline void apply_node_patch_packing(
     std::vector<shamrock::patch::Patch> &global_patch_list, std::vector<i32> &new_owner_table) {
 
+    // Note that there seems to be a data race here
+    // However this should never happends as packing index will only point toward a patch without
+    // packing. As such the data we are accessing should never be modified during this loop.
 #pragma omp parallel for
     for (size_t i = 0; i < global_patch_list.size(); i++) {
         if (global_patch_list[i].pack_node_index != u64_max) {

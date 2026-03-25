@@ -43,6 +43,8 @@ namespace shamcomm::mpi {
 
     f64 get_timer(std::string timername) { return mpi_timers[timername]; }
 
+    const std::unordered_map<std::string, f64> &get_timers() { return mpi_timers; }
+
 } // namespace shamcomm::mpi
 
 namespace {

@@ -344,13 +344,13 @@ auto GSPHGhostHandler<vec>::gen_id_table_interfaces(GeneratorMap &&gen)
 
     for (auto &[k, v] : send_count_stats) {
         if (v > 0.2) {
-            warn_log += shambase::format("\n    patch {} high interf/patch volume: {}", k, v);
+            // warn_log += shambase::format("\n    patch {} high interf/patch volume: {}", k, v);
             has_warn = true;
         }
     }
 
     if (has_warn && shamcomm::world_rank() == 0) {
-        warn_log = "\n    This can lead to high mpi "
+        warn_log = "\n    High interf/patch volume. This can lead to high mpi "
                    "overhead, try to increase the patch split crit"
                    + warn_log;
     }

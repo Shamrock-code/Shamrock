@@ -30,9 +30,12 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <functional>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <variant>
+#include <vector>
 namespace shammodels::sph {
 
     struct TimestepLog {
@@ -74,6 +77,12 @@ namespace shammodels::sph {
 
         Config solver_config;
         SolverLog solve_logs;
+
+        struct SolverStepCallback {
+            std::optional<std::function<void(void)>> step_begin_callback;
+            std::optional<std::function<void(void)>> step_end_callback;
+        };
+        std::vector<SolverStepCallback> timestep_callbacks{};
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 

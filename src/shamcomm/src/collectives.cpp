@@ -81,6 +81,56 @@ namespace {
         recv_vec = result;
     }
 
+    /**
+     * @brief Allgather a vector of characters from all MPI ranks into a single string
+     *
+     * The resulting string is concatenated in rank order and is returned on every rank.
+     */
+    template<class Tchar>
+    inline void _internal_allgather_str(
+        const std::basic_string<Tchar> &send_vec, std::basic_string<Tchar> &recv_vec) {
+        StackEntry stack_loc{};
+
+        if (shamcomm::world_size() == 1) {
+            recv_vec = send_vec;
+            return;
+        }
+
+        i32 wsize       = shamcomm::world_size();
+        size_t wsize_sz = static_cast<size_t>(wsize);
+
+        // counts/displacements are expressed in number of characters.
+        std::vector<int> counts(wsize_sz);
+        std::vector<int> disps(wsize_sz);
+
+        // MPI counts/displacements use `int`.
+        int local_count = static_cast<int>(send_vec.size());
+
+        shamcomm::mpi::Allgather(
+            &local_count, 1, MPI_INT, counts.data(), 1, MPI_INT, MPI_COMM_WORLD);
+
+        for (size_t i = 0; i < wsize_sz; i++) {
+            disps[i] = (i > 0) ? (disps[i - 1] + counts[i - 1]) : 0;
+        }
+
+        int global_len = disps[wsize_sz - 1] + counts[wsize_sz - 1];
+
+        std::basic_string<Tchar> result;
+        result.resize(static_cast<size_t>(global_len));
+
+        shamcomm::mpi::Allgatherv(
+            send_vec.data(),
+            local_count,
+            MPI_CHAR,
+            result.data(),
+            counts.data(),
+            disps.data(),
+            MPI_CHAR,
+            MPI_COMM_WORLD);
+
+        recv_vec = result;
+    }
+
 } // namespace
 
 void shamcomm::gather_str(const std::string &send_vec, std::string &recv_vec) {
@@ -92,6 +142,17 @@ void shamcomm::gather_basic_str(
     const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec) {
     StackEntry stack_loc{};
     _internal_gather_str(send_vec, recv_vec);
+}
+
+void shamcomm::allgather_str(const std::string &send_vec, std::string &recv_vec) {
+    StackEntry stack_loc{};
+    _internal_allgather_str(send_vec, recv_vec);
+}
+
+void shamcomm::allgather_basic_str(
+    const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec) {
+    StackEntry stack_loc{};
+    _internal_allgather_str(send_vec, recv_vec);
 }
 
 std::unordered_map<std::string, int> shamcomm::string_histogram(
@@ -118,4 +179,25 @@ std::unordered_map<std::string, int> shamcomm::string_histogram(
     }
 
     return {};
+}
+
+std::unordered_map<std::string, int> shamcomm::all_string_histogram(
+    const std::vector<std::string> &inputs, std::string delimiter) {
+    std::string accum_loc = "";
+    for (auto &s : inputs) {
+        accum_loc += s + delimiter;
+    }
+
+    std::string recv = "";
+    allgather_str(accum_loc, recv);
+
+    std::vector<std::string> splitted = shambase::split_str(recv, delimiter);
+
+    std::unordered_map<std::string, int> histogram;
+
+    for (size_t i = 0; i < splitted.size(); i++) {
+        histogram[splitted[i]] += 1;
+    }
+
+    return histogram;
 }

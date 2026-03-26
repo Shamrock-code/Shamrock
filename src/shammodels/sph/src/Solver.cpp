@@ -112,6 +112,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
     bool has_epsilon_field                     = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field                      = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field                         = solver_config.dust_config.has_s_j_field();
 
     using namespace shamrock::solvergraph;
 
@@ -147,6 +148,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     if (has_deltav_field) {
         solver_graph.register_edge("deltav", FieldRefs<Tvec>("deltav", "\\Delta v"));
         solver_graph.register_edge("dtdeltav", FieldRefs<Tvec>("dtdeltav", "d\\Delta v"));
+    }
+    if (has_s_j_field) {
+        solver_graph.register_edge("s_j", FieldRefs<Tscal>("s_j", "S_j"));
+        solver_graph.register_edge("ds_j_dt", FieldRefs<Tscal>("ds_j_dt", "dS_j/dt"));
     }
 
     {
@@ -330,6 +335,25 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             attach_field_sequence.push_back(attach_dtdeltav);
         }
 
+        if (has_s_j_field) {
+            auto attach_s_j
+                = solver_graph.register_node("attach_s_j", GetFieldRefFromLayer<Tscal>(pdl, "s_j"));
+            shambase::get_check_ref(attach_s_j)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+            attach_field_sequence.push_back(attach_s_j);
+        }
+
+        if (has_s_j_field) {
+            auto attach_ds_j_dt = solver_graph.register_node(
+                "attach_ds_j_dt", GetFieldRefFromLayer<Tscal>(pdl, "ds_j_dt"));
+            shambase::get_check_ref(attach_ds_j_dt)
+                .set_edges(
+                    solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"),
+                    solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"));
+            attach_field_sequence.push_back(attach_ds_j_dt);
+        }
         solver_graph.register_node(
             "attach fields to scheduler",
             OperationSequence("attach fields", std::move(attach_field_sequence)));
@@ -414,6 +438,19 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                         solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                         solver_graph.get_edge_ptr<FieldRefs<Tvec>>("deltav"));
                 half_step_sequence.push_back(half_step_deltav);
+            }
+
+            if (has_s_j_field) {
+                u32 ndust          = solver_config.dust_config.get_dust_nvar();
+                auto half_step_s_j = solver_graph.register_node(
+                    prefix + "_s_j", shammodels::common::modules::ForwardEuler<Tscal>(ndust));
+                shambase::get_check_ref(half_step_s_j)
+                    .set_edges(
+                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"),
+                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+                half_step_sequence.push_back(half_step_s_j);
             }
 
             return OperationSequence("half step", std::move(half_step_sequence));
@@ -1269,6 +1306,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     bool has_curlB_field   = solver_config.has_field_curlB();
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
+    bool has_s_j_field     = solver_config.dust_config.has_s_j_field();
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
@@ -1299,6 +1337,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
+    const u32 is_j     = (has_s_j_field) ? pdl.get_field_idx<Tscal>("s_j") : 0;
 
     auto &ghost_layout_ptr                              = storage.ghost_layout;
     shamrock::patch::PatchDataLayerLayout &ghost_layout = shambase::get_check_ref(ghost_layout_ptr);
@@ -1320,6 +1359,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     const u32 iepsilon_interf
         = (has_epsilon_field) ? ghost_layout.get_field_idx<Tscal>("epsilon") : 0;
     const u32 ideltav_interf = (has_deltav_field) ? ghost_layout.get_field_idx<Tvec>("deltav") : 0;
+    const u32 is_j_interf    = (has_s_j_field) ? ghost_layout.get_field_idx<Tscal>("s_j") : 0;
 
     using InterfaceBuildInfos = typename sph::BasicSPHGhostHandler<Tvec>::InterfaceBuildInfos;
 
@@ -1391,6 +1431,11 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_deltav_field) {
                 sender_patch.get_field<Tvec>(ideltav).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(ideltav_interf));
+            }
+
+            if (has_s_j_field) {
+                sender_patch.get_field<Tscal>(is_j).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tscal>(is_j_interf));
             }
         });
 
@@ -1466,6 +1511,10 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 if (has_deltav_field) {
                     pdat_new.get_field<Tvec>(ideltav_interf).insert(pdat.get_field<Tvec>(ideltav));
+                }
+
+                if (has_s_j_field) {
+                    pdat_new.get_field<Tscal>(is_j_interf).insert(pdat.get_field<Tscal>(is_j));
                 }
 
                 pdat_new.check_field_obj_cnt_match();

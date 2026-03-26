@@ -26,7 +26,10 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/ComputeDustTtilde.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
+#include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
@@ -34,12 +37,15 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include <memory>
+#include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
-    Cfg_AV cfg_av   = solver_config.artif_viscosity;
-    Cfg_MHD cfg_mhd = solver_config.mhd_config;
+    Cfg_AV cfg_av       = solver_config.artif_viscosity;
+    Cfg_MHD cfg_mhd     = solver_config.mhd_config;
+    DustConfig cfg_dust = solver_config.dust_config;
 
     if (Constant *v = std::get_if<Constant>(&cfg_av.config)) {
         update_derivs_constantAV(*v);
@@ -59,6 +65,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
         shambase::throw_unimplemented();
     } else {
         shambase::throw_unimplemented();
+    }
+
+    if (cfg_dust.has_s_j_field()) {
+        // we can do it separately because the backreaction is done only through the pressure
+        update_derivs_dust_monofluid_tvi_Sj(cfg_dust);
     }
 }
 
@@ -1049,6 +1060,134 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         resulting_events.add_event(e);
         pcache.complete_event_state(resulting_events);
     });
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tvi_Sj(
+    DustConfig cfg) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+    const u32 ixyz     = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz    = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz    = pdl.get_field_idx<Tvec>("axyz");
+    const u32 ihpart   = pdl.get_field_idx<Tscal>("hpart");
+    const u32 is_j     = pdl.get_field_idx<Tscal>("s_j");
+    const u32 ids_j_dt = pdl.get_field_idx<Tscal>("ds_j_dt");
+
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 is_j_interf   = ghost_layout.get_field_idx<Tscal>("s_j");
+
+    u32 ndust = cfg.get_dust_nvar();
+
+    auto &merged_xyzh                                 = storage.merged_xyzh.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
+    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
+
+    auto &part_counts            = storage.part_counts;
+    auto &part_counts_with_ghost = storage.part_counts_with_ghost;
+    auto &xyz_refs               = storage.positions_with_ghosts;
+    auto &pressure_field         = storage.pressure;
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> vxyz_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("vxyz", "v");
+    {
+        shambase::get_check_ref(vxyz_refs).set_refs(
+            mpdats.map<std::reference_wrapper<PatchDataField<Tvec>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tvec>(ivxyz_interf));
+                }));
+    }
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "h");
+    { // if was just reset before this call
+        shambase::get_check_ref(hpart_refs)
+            .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(ihpart_interf));
+                }));
+    }
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("omega", "omega");
+    {
+        shambase::get_check_ref(omega_refs)
+            .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(iomega_interf));
+                }));
+    }
+
+    // s_j_interf
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> s_j_refs
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
+    {
+        shambase::get_check_ref(s_j_refs).set_refs(
+            mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                    return std::ref(mpdat.get_field<Tscal>(is_j_interf));
+                }));
+    }
+
+    std::shared_ptr<shamrock::solvergraph::Field<Tscal>> t_j_field
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "t_j", "t_j");
+
+    std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_t_j
+        = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
+    input_t_j->value = cfg.stopping_times;
+
+    std::shared_ptr<SetDustStoppingTimeConstant<Tvec, SPHKernel>> node_set_tj
+        = std::make_shared<SetDustStoppingTimeConstant<Tvec, SPHKernel>>(ndust);
+    {
+        node_set_tj->set_edges(input_t_j, part_counts_with_ghost, t_j_field);
+    }
+    node_set_tj->evaluate();
+
+    std::shared_ptr<shamrock::solvergraph::Field<Tscal>> Ttilde_sj_field
+        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "Ttilde_sj", "Ttilde_sj");
+
+    shamrock::solvergraph::SolverGraph &solver_graph = storage.solver_graph;
+    auto ds_j_dt_refs
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("ds_j_dt");
+
+    auto gpart_mass
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
+
+    std::shared_ptr<ComputeDustTtilde<Tvec, SPHKernel>> node_tj
+        = std::make_shared<ComputeDustTtilde<Tvec, SPHKernel>>(ndust);
+    {
+        node_tj->set_edges(
+            gpart_mass, part_counts_with_ghost, hpart_refs, s_j_refs, t_j_field, Ttilde_sj_field);
+    }
+    node_tj->evaluate();
+
+    std::shared_ptr<NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>> node
+        = std::make_shared<NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>>(ndust);
+    {
+        node->set_edges(
+            gpart_mass,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            vxyz_refs,
+            omega_refs,
+            pressure_field,
+            s_j_refs,
+            Ttilde_sj_field,
+            storage.neigh_cache,
+            ds_j_dt_refs);
+    }
+    node->evaluate();
 }
 
 using namespace shammath;

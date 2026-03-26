@@ -22,7 +22,7 @@
 #include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"

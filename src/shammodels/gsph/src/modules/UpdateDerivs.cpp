@@ -32,7 +32,7 @@
 #include "shammodels/gsph/config/FieldNames.hpp"
 #include "shammodels/gsph/math/forces.hpp"
 #include "shammodels/gsph/math/riemann/iterative.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversal.hpp"
 

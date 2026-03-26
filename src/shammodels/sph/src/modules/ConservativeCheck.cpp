@@ -18,7 +18,7 @@
 #include "shammodels/sph/modules/ConservativeCheck.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>

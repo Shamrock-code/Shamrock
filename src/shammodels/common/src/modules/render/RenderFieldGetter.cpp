@@ -15,14 +15,13 @@
  *
  */
 
-#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/modules/render/RenderFieldGetter.hpp"
 #include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
-namespace shammodels::sph::modules {
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto RenderFieldGetter<Tvec, Tfield, SPHKernel>::runner_function(
+namespace shammodels::common::modules {
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto RenderFieldGetter<Tvec, Tfield, SPHKernel, TStorage>::runner_function(
         std::string field_name,
         lamda_runner lambda,
         std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
@@ -55,12 +54,12 @@ namespace shammodels::sph::modules {
                     auto acc_rho = buf_rho.get_write_access(depends_list);
 
                     auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        const Tscal part_mass = solver_config.gpart_mass;
+                        const Tscal part_mass = render_config.gpart_mass;
 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 u32 gid = (u32) item.get_id();
-                                using namespace shamrock::sph;
+
                                 Tscal rho_ha = rho_h(part_mass, acc_h[gid], Kernel::hfactd);
                                 acc_rho[gid] = rho_ha;
                             });
@@ -102,7 +101,6 @@ namespace shammodels::sph::modules {
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                                 u32 gid = (u32) item.get_id();
-                                using namespace shamrock::sph;
                                 acc_inv_hpart[gid] = 1.0 / acc_h[gid];
                             });
                     });
@@ -196,20 +194,3 @@ namespace shammodels::sph::modules {
         return lambda(field_source_getter);
     }
 } // namespace shammodels::sph::modules
-
-using namespace shammath;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M4>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M6>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, M8>;
-
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C2>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C4>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64, C6>;
-
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M4>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M6>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, M8>;
-
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C2>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C4>;
-template class shammodels::sph::modules::RenderFieldGetter<f64_3, f64_3, C6>;

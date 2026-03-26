@@ -19,7 +19,7 @@
 #include "shamalgs/collective/indexing.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/sph/Solver.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/modules/setup/ISPHSetupNode.hpp"
 #include "shammodels/sph/modules/setup/ModifierApplyCustomWarp.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"

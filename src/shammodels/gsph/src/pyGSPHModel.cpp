@@ -32,6 +32,17 @@
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shammodels/sph/Model.hpp"
+#include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisBarycenter.hpp"
+#include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
+#include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
+#include "shammodels/sph/modules/AnalysisSodTube.hpp"
+#include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
+#include "shammodels/common/modules/render/CartesianRender.hpp"
+#include "shammodels/common/modules/render/RenderConfig.hpp"
+
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -44,6 +55,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     using T       = Model<Tvec, SPHKernel>;
     using TConfig = typename T::SolverConfig;
+    using custom_getter_t = std::function<pybind11::array_t<f64>(size_t, pybind11::dict &)>;
+    using RenderConfig     = shammodels::common::RenderConfig<Tscal>;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -410,7 +423,165 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Example
     -------
     >>> model.dump("checkpoint.shamrock")
-)==");
+)==")
+.def(
+            "render_cartesian_slice",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<py::array_t<Tscal>> {
+
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    py::array_t<Tscal> ret({ny, nx});
+
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::gsph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
+
+                    std::vector<f64> slice
+                        = render
+                              .compute_slice(name, center, delta_x, delta_y, nx, ny, custom_getter)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                if (field_type == "f64_3") {
+                    py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::gsph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, 
+                        rc, 
+                        self.solver.storage);
+
+                    std::vector<f64_3> slice
+                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny, std::nullopt)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                            ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                            ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
+                return py::array_t<Tscal>({nx, ny});
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
+            "render_cartesian_column_integ",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               Tvec center,
+               Tvec delta_x,
+               Tvec delta_y,
+               u32 nx,
+               u32 ny,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<py::array_t<Tscal>> {
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    py::array_t<Tscal> ret({ny, nx});
+
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::gsph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
+
+                    std::vector<f64> slice
+                        = render
+                              .compute_column_integ(
+                                  name, center, delta_x, delta_y, nx, ny, custom_getter)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix) = slice[ix + nx * iy];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                if (field_type == "f64_3") {
+                    py::array_t<Tscal> ret({ny, nx, 3_u32});
+
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::gsph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
+
+                    std::vector<f64_3> slice
+                        = render
+                              .compute_column_integ(
+                                  name, center, delta_x, delta_y, nx, ny, std::nullopt)
+                              .copy_to_stdvec();
+
+                    for (u32 iy = 0; iy < ny; iy++) {
+                        for (u32 ix = 0; ix < nx; ix++) {
+                            ret.mutable_at(iy, ix, 0) = slice[ix + nx * iy][0];
+                            ret.mutable_at(iy, ix, 1) = slice[ix + nx * iy][1];
+                            ret.mutable_at(iy, ix, 2) = slice[ix + nx * iy][2];
+                        }
+                    }
+
+                    return ret;
+                }
+
+                shambase::throw_with_loc<std::runtime_error>("unknown field type");
+                return py::array_t<Tscal>({nx, ny});
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("center"),
+            py::arg("delta_x"),
+            py::arg("delta_y"),
+            py::arg("nx"),
+            py::arg("ny"),
+            py::arg("custom_getter") = std::nullopt)
+
+;
 }
 
 using namespace shammodels::gsph;

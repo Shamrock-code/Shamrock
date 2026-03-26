@@ -19,30 +19,31 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/SolverConfig.hpp"
-#include "shammodels/sph/modules/SolverStorage.hpp"
+#include "shammodels/common/modules/render/RenderConfig.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
 
-namespace shammodels::sph::modules {
+namespace shammodels::common::modules {
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
     class CartesianRender {
         public:
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Kernel             = SPHKernel<Tscal>;
 
-        using Config  = SolverConfig<Tvec, SPHKernel>;
-        using Storage = SolverStorage<Tvec, u32>;
+        using RenderConfig = shammodels::common::RenderConfig<Tscal>;
+        using Storage = TStorage;//SolverStorage<Tvec, u32>;
 
         ShamrockCtx &context;
-        Config &solver_config;
+        RenderConfig &render_config;
         Storage &storage;
 
-        CartesianRender(ShamrockCtx &context, Config &solver_config, Storage &storage)
-            : context(context), solver_config(solver_config), storage(storage) {}
+
+
+        CartesianRender(ShamrockCtx &context, RenderConfig &render_config, Storage &storage)
+            : context(context), render_config(render_config), storage(storage) {}
 
         using field_getter_t = const sham::DeviceBuffer<Tfield> &(
             const shamrock::patch::Patch cur_p, shamrock::patch::PatchDataLayer &pdat);

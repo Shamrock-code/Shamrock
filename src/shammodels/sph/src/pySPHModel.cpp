@@ -24,6 +24,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
+#include "shammodels/common/modules/render/RenderConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
@@ -31,7 +32,7 @@
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
-#include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammodels/common/modules/render/CartesianRender.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -52,11 +53,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TAnalysisDisc    = shammodels::sph::modules::AnalysisDisc<Tvec, SPHKernel>;
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
+    using RenderConfig     = shammodels::common::RenderConfig<Tscal>;
 
     using custom_getter_t = std::function<pybind11::array_t<f64>(size_t, pybind11::dict &)>;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
+
+
 
     py::class_<TConfig> config_cls(m, name_config.c_str());
 
@@ -571,6 +575,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("use_new_setup")        = true);
 
     py::class_<T>(m, name_model.c_str())
+        
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
@@ -858,6 +863,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                const std::vector<Tvec> &positions,
                const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
                 if (custom_getter.has_value()) {
                     if (!(name == "custom" && field_type == "f64")) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -866,14 +875,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 if (field_type == "f64") {
-                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_slice(name, positions, custom_getter).copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
-                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_slice(name, positions, std::nullopt).copy_to_stdvec();
                 }
 
@@ -891,6 +900,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                const std::vector<shammath::Ray<Tvec>> &rays,
                const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
                 if (custom_getter.has_value()) {
                     if (!(name == "custom" && field_type == "f64")) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -899,14 +912,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 if (field_type == "f64") {
-                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_column_integ(name, rays, custom_getter).copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
-                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_column_integ(name, rays, std::nullopt).copy_to_stdvec();
                 }
 
@@ -924,6 +937,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                const std::vector<shammath::RingRay<Tvec>> &ring_rays,
                const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
                 if (custom_getter.has_value()) {
                     if (!(name == "custom" && field_type == "f64")) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -932,15 +949,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 if (field_type == "f64") {
-                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_azymuthal_integ(name, ring_rays, custom_getter)
                         .copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
-                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
                     return render.compute_azymuthal_integ(name, ring_rays, std::nullopt)
                         .copy_to_stdvec();
                 }
@@ -963,6 +980,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                u32 ny,
                const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<py::array_t<Tscal>> {
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
                 if (custom_getter.has_value()) {
                     if (!(name == "custom" && field_type == "f64")) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -973,8 +994,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 if (field_type == "f64") {
                     py::array_t<Tscal> ret({ny, nx});
 
-                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
 
                     std::vector<f64> slice
                         = render
@@ -993,8 +1014,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 if (field_type == "f64_3") {
                     py::array_t<Tscal> ret({ny, nx, 3_u32});
 
-                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
 
                     std::vector<f64_3> slice
                         = render.compute_slice(name, center, delta_x, delta_y, nx, ny, std::nullopt)
@@ -1034,6 +1055,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                u32 ny,
                const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<py::array_t<Tscal>> {
+                    shammodels::common::RenderConfig<Tscal> rc{
+            self.solver.solver_config.gpart_mass,
+            self.solver.solver_config.tree_reduction_level
+        };
                 if (custom_getter.has_value()) {
                     if (!(name == "custom" && field_type == "f64")) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -1044,8 +1069,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 if (field_type == "f64") {
                     py::array_t<Tscal> ret({ny, nx});
 
-                    modules::CartesianRender<Tvec, f64, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
 
                     std::vector<f64> slice
                         = render
@@ -1065,8 +1090,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 if (field_type == "f64_3") {
                     py::array_t<Tscal> ret({ny, nx, 3_u32});
 
-                    modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
-                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    shammodels::common::modules::CartesianRender<Tvec, f64_3, SPHKernel, shammodels::sph::SolverStorage<Tvec, u32>> render(
+                        self.ctx, rc, self.solver.storage);
 
                     std::vector<f64_3> slice
                         = render

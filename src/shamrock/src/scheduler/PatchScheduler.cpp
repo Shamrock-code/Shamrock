@@ -18,6 +18,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
@@ -212,8 +213,8 @@ PatchScheduler::PatchScheduler(
     u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
-          pdl_ptr,
-          {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
+          pdl_ptr, {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}),
+      synchronized_data() {
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -1021,11 +1022,36 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
     nlohmann::json jsim_box;
     patch_data.sim_box.to_json(jsim_box);
 
+    nlohmann::json jsynchro_data = synchronized_data.to_json();
+
     return {
         {"patchtree", patch_tree},
         {"patchlist", patch_list},
         {"patchdata_layout", pdl_old()},
         {"sim_box", jsim_box},
         {"crit_patch_split", crit_patch_split},
-        {"crit_patch_merge", crit_patch_merge}};
+        {"crit_patch_merge", crit_patch_merge},
+        {"synchronized_data", jsynchro_data}};
+}
+
+nlohmann::json SynchronizedData::to_json() {
+
+    nlohmann::json edges{};
+
+    using namespace shamrock::solvergraph;
+
+    for (const std::string &edgen : container.get_edge_names()) {
+        container.get_edge_ref<JsonSerializable>(edgen).to_json(edges[edgen]);
+    }
+
+    return {{"edges", edges}};
+}
+
+void SynchronizedData::from_json(const nlohmann::json &j) {
+
+    for (auto &el : j.at("edges").items()) {
+        std::string type   = el.value().at("type");
+        auto &deserializer = deser_map.at(type);
+        container.register_edge_ptr_base(el.key(), deserializer(el.value()));
+    }
 }

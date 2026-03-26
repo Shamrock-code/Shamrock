@@ -10,26 +10,29 @@
 #pragma once
 
 /**
- * @file IEdgeNamed.hpp
+ * @file JsonSerializable.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
- *
  */
 
 #include "shamrock/solvergraph/IEdge.hpp"
+#include <nlohmann/json.hpp>
+#include <string>
 
 namespace shamrock::solvergraph {
 
-    class IEdgeNamed : public IEdge {
-        std::string name;
-        std::string texsymbol;
+    struct JsonSerializable {
+        virtual ~JsonSerializable() {};
 
-        public:
-        IEdgeNamed(std::string name, std::string texsymbol) : name(name), texsymbol(texsymbol) {}
+        virtual void to_json(nlohmann::json &j)         = 0;
+        virtual void from_json(const nlohmann::json &j) = 0;
 
-        virtual std::string _impl_get_dot_label() const { return name; }
-        virtual std::string _impl_get_tex_symbol() const { return "{" + texsymbol + "}"; }
-        virtual std::string get_raw_tex_symbol() const { return texsymbol; }
+        virtual std::string type_name() = 0;
     };
 
+    inline bool json_serializable_edge_constraint(
+        const std::shared_ptr<shamrock::solvergraph::IEdge> &edge) {
+        // check that the edge can be cross-casted to JsonSerializable
+        return bool(std::dynamic_pointer_cast<JsonSerializable>(edge));
+    };
 } // namespace shamrock::solvergraph

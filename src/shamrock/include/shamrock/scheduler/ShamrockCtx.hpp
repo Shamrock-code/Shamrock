@@ -41,14 +41,14 @@ class ShamAPIException : public std::exception {
 
 class ShamrockCtx {
     public:
-    std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl;
+    std::shared_ptr<shamrock::patch::PatchDataLayout> pdl;
     std::unique_ptr<PatchScheduler> sched;
 
     inline void pdata_layout_new() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl = std::make_shared<shamrock::patch::PatchDataLayerLayout>();
+        pdl = std::make_shared<shamrock::patch::PatchDataLayout>(std::vector<std::string>{"main"});
     }
 
     // inline void pdata_layout_do_double_prec_mode(){
@@ -65,7 +65,7 @@ class ShamrockCtx {
     //    pdl->xyz_mode = xyz32;
     //}
 
-    inline shamrock::patch::PatchDataLayerLayout &get_pdl_write() {
+    inline shamrock::patch::PatchDataLayout &get_pdl_write() {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
@@ -77,21 +77,22 @@ class ShamrockCtx {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl->add_field<T>(fname, nvar);
+        shambase::get_check_ref(pdl).get_layer_ref("main").add_field<T>(fname, nvar);
     }
 
     inline void pdata_layout_add_field_t(std::string fname, u32 nvar, std::string type) {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        pdl->add_field_t(fname, nvar, type);
+        shambase::get_check_ref(pdl).get_layer_ref("main").add_field_t(fname, nvar, type);
     }
 
     inline void pdata_layout_print() {
         if (!pdl) {
             throw ShamAPIException("patch data layout is not initialized");
         }
-        std::cout << pdl->get_description_str() << std::endl;
+        std::cout << shambase::get_check_ref(pdl).get_layer_ref("main").get_description_str()
+                  << std::endl;
     }
 
     inline void dump_status() {
@@ -154,9 +155,13 @@ class ShamrockCtx {
             throw ShamAPIException("scheduler is not initialized");
         }
 
+        if (pdl->get_layer_count() > 1) {
+            throw ShamAPIException("set_coord_domain_bound is not supported for multiple layers");
+        }
+
         auto [a, b] = box;
 
-        if (pdl->check_main_field_type<f32_3>()) {
+        if (pdl->get_layer_ref("main").check_main_field_type<f32_3>()) {
             auto conv_vec = [](f64_3 v) -> f32_3 {
                 return {v.x(), v.y(), v.z()};
             };
@@ -165,7 +170,7 @@ class ShamrockCtx {
             f32_3 vec1 = conv_vec(b);
 
             sched->set_coord_domain_bound<f32_3>(vec0, vec1);
-        } else if (pdl->check_main_field_type<f64_3>()) {
+        } else if (pdl->get_layer_ref("main").check_main_field_type<f64_3>()) {
 
             sched->set_coord_domain_bound<f64_3>(a, b);
         } else {

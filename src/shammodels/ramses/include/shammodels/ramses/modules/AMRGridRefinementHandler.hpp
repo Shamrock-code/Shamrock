@@ -69,9 +69,52 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
             T &&...args);
+
+        /**
+         * @brief Enforces the 2:1 refinement ratio for blocks.
+         *
+         * This function iterates through blocks marked for refinement and ensures that
+         * adjacent, coarser blocks are also marked for refinement to maintain the 2:1
+         * grid balance. This is done iteratively to propagate the refinement as needed.
+         * @param refine_flags refinement flags
+         * @param refine_list        refinement maps
+         */
+        void enforce_two_to_one_for_refinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list);
+
+        /**
+         * @brief Check geometrical validity for derefinement
+         *
+         * This function iterates over all blocks flagged for derefinement and checks
+         * whether all of their siblings also request derefinement, and if the merge operation can
+         * be done. If these conditions are satisfied, the merge (coarsening) operation is
+         * considered valid.
+         *
+         * To avoid duplicate operations, only the first block among each group of
+         * eight siblings is retained when all validity checks succeed.
+         *
+         * @param derefine_flags  Derefinement flags
+         * @param refine_flags    Refinement flags
+         */
+        void check_geometrical_validity_for_derefinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_flags);
+
+        /**
+         * @brief Enforces the 2:1 derefinement ratio for blocks.
+         *
+         * This function iterates through blocks marked for derefinement and ensures that
+         * after  derefinement the 2:1 is still valid.
+         * @param derefine_flags derefinement flags
+         * @param derefine_list        derefinement maps
+         */
+        void enforce_two_to_one_for_derefinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list);
 
         template<class UserAcc>
         bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);

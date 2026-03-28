@@ -257,11 +257,14 @@ inline void for_each_patch_shift(
 
 using namespace shammodels::sph;
 
+#define NEW_GZ_INTERACT_CRIT
+
 template<class vec>
 auto BasicSPHGhostHandler<vec>::find_interfaces(
     SerialPatchTree<vec> &sptree,
     shamrock::patch::PatchtreeField<flt> &int_range_max_tree,
-    shamrock::patch::PatchField<flt> &int_range_max) -> GeneratorMap {
+    shamrock::patch::PatchField<flt> &int_range_max,
+    bool filter_empty_patch_gz) -> GeneratorMap {
 
     StackEntry stack_loc{};
 
@@ -321,12 +324,27 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                             sptree.host_for_each_leafs_internal(
                                 [&](u64 tree_id, PtNode n) {
+#ifdef NEW_GZ_INTERACT_CRIT
+                                    // The ghost interaction was not symmetric before
+                                    // now it is since we check for the max of the two h_max
+                                    flt receiv_h_max = acc_tf[tree_id];
+                                    shammath::AABB<vec> tree_cell{n.box_min, n.box_max};
+                                    tree_cell = tree_cell.expand_all(
+                                        sham::max(sender_h_max, receiv_h_max));
+
+                                    return tree_cell
+                                        .get_intersect(
+                                            shammath::AABB<vec>{
+                                                sender_bsize_off.lower, sender_bsize_off.upper})
+                                        .is_not_empty();
+#else
                                     flt receiv_h_max = acc_tf[tree_id];
                                     CoordRange<vec> receiv_exp{
                                         n.box_min - receiv_h_max, n.box_max + receiv_h_max};
 
                                     return receiv_exp.get_intersect(sender_bsize_off)
                                         .is_not_empty();
+#endif
                                 },
                                 [&](u64 id_found, PtNode n) {
                                     if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
@@ -334,9 +352,15 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                         return;
                                     }
 
+#ifdef NEW_GZ_INTERACT_CRIT
+                                    CoordRange<vec> receiv_exp
+                                        = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
+                                            sham::max(sender_h_max, int_range_max.get(id_found)));
+#else
                                     CoordRange<vec> receiv_exp
                                         = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
                                             int_range_max.get(id_found));
+#endif
 
                                     CoordRange<vec> interf_volume = sender_bsize.get_intersect(
                                         receiv_exp.add_offset(-periodic_offset));
@@ -390,11 +414,26 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                     sptree.host_for_each_leafs_internal(
                         [&](u64 tree_id, PtNode n) {
+#ifdef NEW_GZ_INTERACT_CRIT
+                            // The ghost interaction was not symmetric before
+                            // now it is since we check for the max of the two h_max
                             flt receiv_h_max = acc_tf[tree_id];
-                            CoordRange<vec> receiv_exp{
-                                n.box_min - receiv_h_max, n.box_max + receiv_h_max};
+                            shammath::AABB<vec> tree_cell{n.box_min, n.box_max};
+                            tree_cell = tree_cell.expand_all(sham::max(sender_h_max, receiv_h_max));
 
-                            return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
+                            return tree_cell
+                                .get_intersect(
+                                    shammath::AABB<vec>{
+                                        sender_bsize_off.lower, sender_bsize_off.upper})
+                                .is_not_empty();
+#else
+                                flt receiv_h_max = acc_tf[tree_id];
+                                CoordRange<vec> receiv_exp{
+                                    n.box_min - receiv_h_max, n.box_max + receiv_h_max};
+
+                                return receiv_exp.get_intersect(sender_bsize_off)
+                                    .is_not_empty();
+#endif
                         },
                         [&](u64 id_found, PtNode n) {
                             if ((id_found == psender.id_patch) && (xoff == 0) && (yoff == 0)
@@ -402,9 +441,15 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                                 return;
                             }
 
+#ifdef NEW_GZ_INTERACT_CRIT
+                            CoordRange<vec> receiv_exp
+                                = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
+                                    sham::max(sender_h_max, int_range_max.get(id_found)));
+#else
                             CoordRange<vec> receiv_exp
                                 = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
                                     int_range_max.get(id_found));
+#endif
 
                             CoordRange<vec> interf_volume
                                 = sender_bsize.get_intersect(receiv_exp.add_offset(-offset));
@@ -453,20 +498,39 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
                 sptree.host_for_each_leafs_internal(
                     [&](u64 tree_id, PtNode n) {
+#ifdef NEW_GZ_INTERACT_CRIT
+                        // The ghost interaction was not symmetric before
+                        // now it is since we check for the max of the two h_max
+                        flt receiv_h_max = acc_tf[tree_id];
+                        shammath::AABB<vec> tree_cell{n.box_min, n.box_max};
+                        tree_cell = tree_cell.expand_all(sham::max(sender_h_max, receiv_h_max));
+
+                        return tree_cell
+                            .get_intersect(
+                                shammath::AABB<vec>{sender_bsize_off.lower, sender_bsize_off.upper})
+                            .is_not_empty();
+#else
                         flt receiv_h_max = acc_tf[tree_id];
                         CoordRange<vec> receiv_exp{
                             n.box_min - receiv_h_max, n.box_max + receiv_h_max};
 
                         return receiv_exp.get_intersect(sender_bsize_off).is_not_empty();
+#endif
                     },
                     [&](u64 id_found, PtNode n) {
                         if (id_found == psender.id_patch) {
                             return;
                         }
 
+#ifdef NEW_GZ_INTERACT_CRIT
+                        CoordRange<vec> receiv_exp
+                            = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
+                                sham::max(sender_h_max, int_range_max.get(id_found)));
+#else
                         CoordRange<vec> receiv_exp
                             = CoordRange<vec>{n.box_min, n.box_max}.expand_all(
                                 int_range_max.get(id_found));
+#endif
 
                         CoordRange<vec> interf_volume
                             = sender_bsize.get_intersect(receiv_exp.add_offset(-periodic_offset));
@@ -488,6 +552,58 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     }
 
     base_timer.end();
+
+    if (filter_empty_patch_gz) {
+        PatchField<u32> patchdata_obj_cnt = sched.map_owned_to_patch_field_simple<u32>(
+            [&](const Patch p, PatchDataLayer &pdat) -> u32 {
+                return pdat.get_obj_cnt();
+            });
+
+        GeneratorMap interf_map2 = {};
+
+        interf_map.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos build) {
+            u32 sender_obj_cnt   = patchdata_obj_cnt.get(sender);
+            u32 receiver_obj_cnt = patchdata_obj_cnt.get(receiver);
+
+            if (sender_obj_cnt == 0 || receiver_obj_cnt == 0) {
+                logger::debug_ln("Ghost", "patch ", sender, "->", receiver, "is empty, skipping");
+                return;
+            }
+
+            interf_map2.add_obj(sender, receiver, InterfaceBuildInfos{build});
+        });
+        interf_map = interf_map2;
+    }
+
+    u32 total          = 0;
+    u32 empty_receiver = 0;
+    u32 empty_sender   = 0;
+    u32 empty_either   = 0;
+    interf_map.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos build) {
+        // logger::raw_ln("found interface :",sender,"->",receiver,"ratio:",build.volume_ratio,
+        //"volume:",build.cut_volume.lower,build.cut_volume.upper,
+        // sched.get_patch(receiver).load_value);
+        total++;
+        if (sched.get_patch(receiver).load_value == 0) {
+            empty_receiver++;
+        }
+        if (sched.get_patch(sender).load_value == 0) {
+            empty_sender++;
+        }
+        if (sched.get_patch(receiver).load_value == 0 || sched.get_patch(sender).load_value == 0) {
+            empty_either++;
+        }
+    });
+    logger::debug_ln(
+        "Ghost",
+        "total:",
+        total,
+        "empty_receiver:",
+        empty_receiver,
+        "empty_sender:",
+        empty_sender,
+        "empty_either:",
+        empty_either);
 
     // f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
     //  if (shamcomm::world_rank() == 0) {

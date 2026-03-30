@@ -17,14 +17,14 @@ multy = 1
 multz = 1
 max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 32
+base = 64
 scale_fact = 1 / (cell_size * base * multx)
 gamma = 1.4
 err_min = 0.30
 err_max = 0.10
 nx = base * 2
 ny = base * 2
-sim_folder = "_to_trash/ramses_liska_wendroff/"
+sim_folder = "_to_trash/ramses_liska_wendroff_03/"
 if shamrock.sys.world_rank() == 0:
     os.makedirs(sim_folder, exist_ok=True)
 
@@ -47,13 +47,13 @@ def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
     return [tuple(pos) for pos in positions]
 
 
-positions = make_cartesian_coords(nx, ny, 0.5, 0, 1 - 1e-6, 0, 1 - 1e-6)
+positions = make_cartesian_coords(nx, ny, 0.2, 0, 1.0 - 1e-6, 0, 1.0 - 1e-6)
 
 
 def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
     ext = metadata["extent"]
 
-    my_cmap = matplotlib.colormaps["gist_heat"].copy()  # copy the default cmap
+    my_cmap = matplotlib.colormaps["viridis"].copy()  # copy the default cmap
     my_cmap.set_bad(color="black")
 
     arr_rho_pos = np.array(arr_rho_pos).reshape(nx, ny)
@@ -95,7 +95,7 @@ def run_case(set_bc_func, case_name):
     cfg.set_riemann_solver_hllc()
     cfg.set_slope_lim_minmod()
     cfg.set_face_time_interpolation(True)
-    cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
+    # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
@@ -132,12 +132,12 @@ def run_case(set_bc_func, case_name):
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
     # model.evolve_once(0,0.1)
-    fact = 25
-    tmax = 0.127 * fact
+    fact = 200
+    tmax = 0.0127 * fact
     all_t = np.linspace(0, tmax, fact)
 
     def plot(t, iplot):
-        metadata = {"extent": [0, 1, 0, 1], "time": t}
+        metadata = {"extent": [0, 0.3, 0, 0.3], "time": t}
         arr_rho_pos = model.render_slice("rho", "f64", positions)
         plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name)
 
@@ -174,152 +174,3 @@ def run_case_reflective():
 
 ani_reflective = run_case_reflective()
 plt.show()
-
-
-# def convert_to_cell_coords(dic):
-
-#     cmin = dic["cell_min"]
-#     cmax = dic["cell_max"]
-
-#     xmin = []
-#     ymin = []
-#     zmin = []
-#     xmax = []
-#     ymax = []
-#     zmax = []
-
-#     for i in range(len(cmin)):
-#         m, M = cmin[i], cmax[i]
-
-#         mx, my, mz = m
-#         Mx, My, Mz = M
-
-#         for j in range(8):
-#             a, b = model.get_cell_coords(((mx, my, mz), (Mx, My, Mz)), j)
-
-#             x, y, z = a
-#             xmin.append(x)
-#             ymin.append(y)
-#             zmin.append(z)
-
-#             x, y, z = b
-#             xmax.append(x)
-#             ymax.append(y)
-#             zmax.append(z)
-
-#     dic["xmin"] = np.array(xmin)
-#     dic["ymin"] = np.array(ymin)
-#     dic["zmin"] = np.array(zmin)
-#     dic["xmax"] = np.array(xmax)
-#     dic["ymax"] = np.array(ymax)
-#     dic["zmax"] = np.array(zmax)
-
-#     return dic
-
-
-# t_target = 5
-
-# dt = 0
-# t = 0
-# freq = 1
-# dX0 = []
-# for i in range(100000):
-#     next_dt = model.evolve_once_override_time(t, dt)
-#     if i == 0:
-#         dic0 = convert_to_cell_coords(ctx.collect_data())
-#         dX0.append(dic0["ymax"][i] - dic0["ymin"][i])
-
-#     t += dt
-#     dt = next_dt
-
-#     if i % freq == 0:
-#         model.dump_vtk(f"test{i:04d}.vtk")
-
-#     if t_target < t + next_dt:
-#         dt = t_target - t
-#     if t == t_target:
-#         model.dump_vtk(f"test{i:04d}.vtk")
-#         break
-
-# xref = 0.5
-# xrange = 0.5
-# # sod = shamrock.phys.SodTube(gamma=gamma, rho_1=1, P_1=1, rho_5=0.125, P_5=0.1)
-# # sodanalysis = model.make_analysis_sodtube(sod, (0, 1, 0), t_target, xref, 0.0, 1.0)
-
-
-# #################
-# ### Plot
-# #################
-# # do plot or not
-# if False:
-#     dic = convert_to_cell_coords(ctx.collect_data())
-
-#     X = []
-#     dX = []
-#     rho = []
-#     rhovelx = []
-#     rhoetot = []
-
-#     for i in range(len(dic["ymin"])):
-#         X.append(dic["ymin"][i])
-#         dX.append(dic["ymax"][i] - dic["ymin"][i])
-#         rho.append(dic["rho"][i])
-#         rhovelx.append(dic["rhovel"][i][1])
-#         rhoetot.append(dic["rhoetot"][i])
-
-#     X = np.array(X)
-#     dX = np.array(dX)
-#     dX0 = np.array(dX0)
-#     rho = np.array(rho)
-#     rhovelx = np.array(rhovelx)
-#     rhoetot = np.array(rhoetot)
-
-#     vx = rhovelx / rho
-
-#     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(9, 6), dpi=125)
-
-#     ax1 = plt.gca()
-#     ax2 = ax1.twinx()
-
-#     l_0 = np.log2(base * 2)
-
-#     l = -np.log2(dX / max(dX0.max(), dX.max())) + l_0
-
-#     ax1.scatter(X, rho, rasterized=True, s=12 * np.ones(X.shape), label="rho")
-#     ax1.scatter(X, vx, rasterized=True, s=12 * np.ones(X.shape), label="v")
-#     ax1.scatter(
-#         X,
-#         (rhoetot - 0.5 * rho * (vx**2)) * (gamma - 1),
-#         rasterized=True,
-#         s=12 * np.ones(X.shape),
-#         label="P",
-#     )
-#     idx = np.argsort(X)
-#     ax2.plot(X[idx], l[idx], color="purple", marker="D", linewidth=2.0, ls="-.", label="AMR level")
-#     # plt.scatter(X,rhoetot, rasterized=True,label="rhoetot")
-#     ax1.legend(loc=0)
-#     ax2.legend(loc=0)
-#     ax1.grid()
-
-#     #### add analytical soluce
-#     arr_x = np.linspace(xref - xrange, xref + xrange, 1000)
-
-#     arr_rho = []
-#     arr_P = []
-#     arr_vx = []
-
-#     # for i in range(len(arr_x)):
-#     #     x_ = arr_x[i] - xref
-
-#     #     _rho, _vx, _P = sod.get_value(t_target, x_)
-#     #     arr_rho.append(_rho)
-#     #     arr_vx.append(_vx)
-#     #     arr_P.append(_P)
-
-#     # ax1.plot(arr_x, arr_rho, ls="--", lw=2.0, color="black", label="analytic")
-#     # ax1.plot(arr_x, arr_vx, ls="--", lw=2.0, color="black")
-#     # ax1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
-#     ax2.set_ylabel("AMR level")
-#     plt.title(f"Threshold = {err_max}, derefinement factor = {err_min}")
-#     plt.savefig("Liska_wendroff_baryonic_density.png")
-#     #######

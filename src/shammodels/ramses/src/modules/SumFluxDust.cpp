@@ -24,6 +24,7 @@ struct KernelSumFluxDust {
     using AMRGraph = shammodels::basegodunov::modules::NeighGraph;
 
     u32 ndust;
+    Tscal dxfact;
 
     inline static shammath::AABB<Tvec> get_cell_aabb(
         u32 id,
@@ -51,7 +52,8 @@ struct KernelSumFluxDust {
         u32 id_a,
         u32 id_b,
         const Tvec *__restrict cell0block_aabb_lower,
-        const Tscal *__restrict block_cell_sizes) {
+        const Tscal *__restrict block_cell_sizes,
+        Tscal dxfact) {
         shammath::AABB<Tvec> aabb_cell_a
             = get_cell_aabb(id_a, cell0block_aabb_lower, block_cell_sizes);
         shammath::AABB<Tvec> aabb_cell_b
@@ -61,9 +63,14 @@ struct KernelSumFluxDust {
 
         Tvec delta_face = face_aabb.delt();
 
-        delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
-        delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
-        delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
+        // smallest possible coordinate delta, anything under this is considered null
+        // cell can not have less than size 1 in the grid space, so 1*dxfact is the minimum size, so
+        // we check against dxfact/2
+        Tscal smd = dxfact / 2;
+
+        delta_face.x() = (delta_face.x() < smd) ? 1 : delta_face.x();
+        delta_face.y() = (delta_face.y() < smd) ? 1 : delta_face.y();
+        delta_face.z() = (delta_face.z() < smd) ? 1 : delta_face.z();
 
         return delta_face.x() * delta_face.y() * delta_face.z();
     };
@@ -110,7 +117,7 @@ struct KernelSumFluxDust {
         auto add_flux = [&](const auto &graph_iter, const Tscal *flux_rho, const Tvec *flux_rhov) {
             graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                 Tscal S_ij = KernelSumFluxDust<Tvec, TgridVec>::get_face_surface(
-                    id_a, id_b, cell0block_aabb_lower, block_cell_sizes);
+                    id_a, id_b, cell0block_aabb_lower, block_cell_sizes, dxfact);
                 dtrho -= flux_rho[link_id * ndust + ndust_off_loc] * S_ij;
                 dtrhov -= flux_rhov[link_id * ndust + ndust_off_loc] * S_ij;
             });
@@ -195,7 +202,7 @@ void shammodels::basegodunov::modules::NodeSumFluxDust<Tvec, TgridVec>::_impl_ev
                            graph_neigh_zp,        graph_neigh_zm},
             sham::MultiRef{dt_rho_patch, dt_rhov_patch},
             cell_count,
-            KernelSumFluxDust<Tvec, TgridVec>{ndust});
+            KernelSumFluxDust<Tvec, TgridVec>{ndust, dxfact});
     });
 }
 

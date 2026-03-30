@@ -74,9 +74,10 @@ namespace shammodels::basegodunov::modules {
         using AMRBlock = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
 
         u32 block_size;
+        Tscal dxfact;
 
         public:
-        NodeSumFluxHydro(u32 block_size) : block_size(block_size) {}
+        NodeSumFluxHydro(u32 block_size, Tscal dxfact) : block_size(block_size), dxfact(dxfact) {}
 
         using CellGraphEdge = solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>;
 

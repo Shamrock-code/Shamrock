@@ -11,7 +11,7 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-for c_num in list(range(19)):
+for c_num in list(range(1)):
     multx = 1
     multy = 1
     multz = 1
@@ -174,7 +174,7 @@ for c_num in list(range(19)):
         cs = plt.contour(X, Y, arr_rho_pos, levels=50, colors="black", linewidths=0.5)
         plt.xlabel("x")
         plt.ylabel("y")
-        plt.title(f"t = {metadata['time']:0.3f} [seconds]")
+        plt.title(f"config_{c_num} , t = {metadata['time']:0.3f} [seconds]")
         cbar = plt.colorbar(res, extend="both")
         cbar.set_label(r"$\rho$ [code unit]")
         plt.savefig(os.path.join(sim_folder, f"rho_{case_name}_{iplot:04d}.png"))

@@ -15,10 +15,14 @@
  *
  */
 
-#include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
+#include "shambase/narrowing.hpp"
+#include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/numeric.hpp"
 #include "shamalgs/reduction.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -57,67 +61,58 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
             sham::DeviceBuffer<Tvec> &buf_xyz  = pdat.get_field_buf_ref<Tvec>(ixyz);
             sham::DeviceBuffer<Tvec> &buf_vxyz = pdat.get_field_buf_ref<Tvec>(ivxyz);
 
-            sycl::buffer<u32> not_accreted(Nobj);
-            sycl::buffer<u32> accreted(Nobj);
+            sham::DeviceBuffer<u32> not_accreted(Nobj, dev_sched);
+            sham::DeviceBuffer<u32> accreted(Nobj, dev_sched);
 
-            sham::EventList depends_list1;
-            auto xyz = buf_xyz.get_read_access(depends_list1);
+            Tvec r_sink    = s.pos;
+            Tscal acc_rad2 = s.accretion_radius * s.accretion_radius;
 
-            auto e1 = q.submit(depends_list1, [&](sycl::handler &cgh) {
-                sycl::accessor not_acc{not_accreted, cgh, sycl::write_only, sycl::no_init};
-                sycl::accessor acc{accreted, cgh, sycl::write_only, sycl::no_init};
-
-                Tvec r_sink    = s.pos;
-                Tscal acc_rad2 = s.accretion_radius * s.accretion_radius;
-
-                shambase::parallel_for(cgh, Nobj, "check accretion", [=](i32 id_a) {
+            sham::kernel_call(
+                q,
+                sham::MultiRef{buf_xyz},
+                sham::MultiRef{not_accreted, accreted},
+                Nobj,
+                [r_sink, acc_rad2](u32 id_a, const Tvec *__restrict xyz, u32 *not_acc, u32 *acc) {
                     Tvec r            = xyz[id_a] - r_sink;
                     bool not_accreted = sycl::dot(r, r) > acc_rad2;
                     not_acc[id_a]     = (not_accreted) ? 1 : 0;
                     acc[id_a]         = (!not_accreted) ? 1 : 0;
                 });
-            });
 
-            buf_xyz.complete_event_state(e1);
-
-            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_keep
-                = shamalgs::numeric::stream_compact(q.q, not_accreted, Nobj);
-
-            std::tuple<std::optional<sycl::buffer<u32>>, u32> id_list_accrete
-                = shamalgs::numeric::stream_compact(q.q, accreted, Nobj);
+            sham::DeviceBuffer<u32> id_list_keep
+                = shamalgs::stream_compact(dev_sched, not_accreted, Nobj);
+            sham::DeviceBuffer<u32> id_list_accrete
+                = shamalgs::stream_compact(dev_sched, accreted, Nobj);
 
             // sum accreted values onto sink
+            if (id_list_accrete.get_size() > 0) {
 
-            if (std::get<1>(id_list_accrete) > 0) {
-
-                u32 Naccrete = std::get<1>(id_list_accrete);
+                u32 Naccrete = shambase::narrow_or_throw<u32>(id_list_accrete.get_size());
 
                 Tscal acc_mass = gpart_mass * Naccrete;
 
                 sham::DeviceBuffer<Tvec> pxyz_acc(Naccrete, dev_sched);
 
-                sham::EventList depends_list2;
-                auto vxyz        = buf_vxyz.get_read_access(depends_list2);
-                auto accretion_p = pxyz_acc.get_write_access(depends_list2);
-
-                auto e = q.submit(depends_list2, [&, gpart_mass](sycl::handler &cgh) {
-                    sycl::accessor id_acc{*std::get<0>(id_list_accrete), cgh, sycl::read_only};
-
-                    shambase::parallel_for(
-                        cgh, Naccrete, "compute sum momentum accretion", [=](i32 id_a) {
-                            accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
-                        });
-                });
-
-                buf_vxyz.complete_event_state(e);
-                pxyz_acc.complete_event_state(e);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_vxyz, id_list_accrete},
+                    sham::MultiRef{pxyz_acc},
+                    Naccrete,
+                    [gpart_mass](
+                        u32 id_a,
+                        const Tvec *__restrict vxyz,
+                        const u32 *__restrict id_acc,
+                        Tvec *accretion_p) {
+                        accretion_p[id_a] = gpart_mass * vxyz[id_acc[id_a]];
+                    });
 
                 Tvec acc_pxyz = shamalgs::primitives::sum(dev_sched, pxyz_acc, 0, Naccrete);
 
                 s_acc_mass += acc_mass;
                 s_acc_pxyz += acc_pxyz;
 
-                pdat.keep_ids(*std::get<0>(id_list_keep), std::get<1>(id_list_keep));
+                pdat.keep_ids(
+                    id_list_keep, shambase::narrow_or_throw<u32>(id_list_keep.get_size()));
             }
         });
 

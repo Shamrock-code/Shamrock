@@ -17,7 +17,7 @@ multy = 1
 multz = 1
 max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 256
+base = 512
 scale_fact = 0.3 / (cell_size * base * multx)
 gamma = 1.4
 err_min = 0.30

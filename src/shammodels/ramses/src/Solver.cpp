@@ -1429,7 +1429,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     }
 
     {
-        modules::NodeSumFluxHydro<Tvec, TgridVec> node{AMRBlock::block_size};
+        modules::NodeSumFluxHydro<Tvec, TgridVec> node{
+            AMRBlock::block_size, solver_config.grid_coord_to_pos_fact};
         node.set_edges(
             storage.block_counts,
             storage.cell_graph_edge,
@@ -1461,7 +1462,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     if (solver_config.is_dust_on()) {
         modules::NodeSumFluxDust<Tvec, TgridVec> node{
-            AMRBlock::block_size, solver_config.dust_config.ndust};
+            AMRBlock::block_size,
+            solver_config.grid_coord_to_pos_fact,
+            solver_config.dust_config.ndust};
         node.set_edges(
             storage.block_counts,
             storage.cell_graph_edge,

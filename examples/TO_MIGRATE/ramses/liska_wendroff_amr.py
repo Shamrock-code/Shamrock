@@ -17,8 +17,8 @@ multy = 1
 multz = 1
 max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 64
-scale_fact = 1 / (cell_size * base * multx)
+base = 256
+scale_fact = 0.3 / (cell_size * base * multx)
 gamma = 1.4
 err_min = 0.30
 err_max = 0.10
@@ -47,7 +47,7 @@ def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
     return [tuple(pos) for pos in positions]
 
 
-positions = make_cartesian_coords(nx, ny, 0.2, 0, 1.0 - 1e-6, 0, 1.0 - 1e-6)
+positions = make_cartesian_coords(nx, ny, 0.2, 0, 0.3 - 1e-6, 0, 0.3 - 1e-6)
 
 
 def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
@@ -98,7 +98,7 @@ def run_case(set_bc_func, case_name):
     # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
     model.set_solver_config(cfg)
-    model.init_scheduler(int(1e7), 1)
+    model.init_scheduler(int(1e4), 1)
     model.make_base_grid(
         (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multy, base * multz)
     )
@@ -173,4 +173,4 @@ def run_case_reflective():
 
 
 ani_reflective = run_case_reflective()
-plt.show()
+# plt.show()

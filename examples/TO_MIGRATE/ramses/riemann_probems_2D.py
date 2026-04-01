@@ -11,13 +11,13 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
-for c_num in list(range(2)):
+for c_num in list(range(19)):
     multx = 1
     multy = 1
     multz = 1
     max_amr_lev = 1
     cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-    base = 32
+    base = 64
     scale_fact = 1 / (cell_size * base * multx)
     gamma = 1.4
     err_min = 0.30
@@ -125,7 +125,7 @@ for c_num in list(range(2)):
     y_0 = 0.5
 
     sim_folder = (
-        "_to_trash/ramses_riemann_2d_"
+        "_to_trash/ramses_riemann_2d_van_leer_"
         + "grid_reso_"
         + str(base * 2)
         + "_config_"
@@ -195,7 +195,7 @@ for c_num in list(range(2)):
         cfg.set_eos_gamma(gamma)
         cfg.set_Csafe(0.3)
         cfg.set_riemann_solver_hllc()
-        cfg.set_slope_lim_minmod()
+        cfg.set_slope_lim_vanleer_sym()
         cfg.set_face_time_interpolation(True)
         # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
@@ -279,7 +279,7 @@ for c_num in list(range(2)):
 
         current_time = 0.0
         for i, t in enumerate(all_t):
-            model.dump_vtk(os.path.join(sim_folder, f"{case_name}_{i:04d}.vtk"))
+            # model.dump_vtk(os.path.join(sim_folder, f"{case_name}_{i:04d}.vtk"))
             model.evolve_until(t)
             current_time = t
             plot(current_time, i)

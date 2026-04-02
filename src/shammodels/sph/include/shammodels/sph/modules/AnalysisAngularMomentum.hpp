@@ -12,7 +12,7 @@
 /**
  * @file AnalysisAngularMomentum.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief AnalysisTotalMomentum class with one method AnalysisTotalMomentum.get_total_momentum()
+ * @brief AnalysisAngularMomentum class
  *
  */
 
@@ -53,13 +53,13 @@ namespace shammodels::sph::modules {
 
             Tvec angular_momentum = {};
 
-            sham::DeviceBuffer<Tvec> total_momentum_part(0, dev_sched_ptr);
+            sham::DeviceBuffer<Tvec> angular_momentum_part(0, dev_sched_ptr);
 
             sched.for_each_patchdata_nonempty(
                 [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     u32 len = pdat.get_obj_cnt();
 
-                    total_momentum_part.resize(len);
+                    angular_momentum_part.resize(len);
 
                     sham::DeviceBuffer<Tvec> &xyz_buf  = pdat.get_field_buf_ref<Tvec>(ixyz);
                     sham::DeviceBuffer<Tvec> &vxyz_buf = pdat.get_field_buf_ref<Tvec>(ivxyz);
@@ -67,18 +67,18 @@ namespace shammodels::sph::modules {
                     sham::kernel_call(
                         q,
                         sham::MultiRef{xyz_buf, vxyz_buf},
-                        sham::MultiRef{total_momentum_part},
+                        sham::MultiRef{angular_momentum_part},
                         len,
                         [pmass](
                             u32 i,
                             const Tvec *__restrict xyz,
                             const Tvec *__restrict vxyz,
-                            Tvec *__restrict total_momentum_part) {
-                            total_momentum_part[i] = pmass * sycl::cross(xyz[i], vxyz[i]);
+                            Tvec *__restrict angular_momentum_part) {
+                            angular_momentum_part[i] = pmass * sycl::cross(xyz[i], vxyz[i]);
                         });
 
                     angular_momentum
-                        += shamalgs::primitives::sum(dev_sched_ptr, total_momentum_part, 0, len);
+                        += shamalgs::primitives::sum(dev_sched_ptr, angular_momentum_part, 0, len);
                 });
 
             Tvec tot_angular_momentum = shamalgs::collective::allreduce_sum(angular_momentum);

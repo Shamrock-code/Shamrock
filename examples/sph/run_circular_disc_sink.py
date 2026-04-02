@@ -82,7 +82,7 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.01
+dt_stop = 0.02
 nstop = 30
 
 # The list of times at which the simulation will pause for analysis / dumping
@@ -91,7 +91,7 @@ t_stop = [i * dt_stop for i in range(nstop + 1)]
 
 # Sink parameters
 center_mass = 1.0
-center_racc = 0.1
+center_racc = 0.8
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
@@ -474,6 +474,9 @@ def analysis(ianalysis):
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
     total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+    angular_momentum = shamrock.model_sph.analysisAngularMomentum(
+        model=model
+    ).get_angular_momentum()
 
     potential_energy = shamrock.model_sph.analysisEnergyPotential(
         model=model
@@ -484,6 +487,7 @@ def analysis(ianalysis):
     save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
     save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
     save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
+    save_analysis_data("angular_momentum.json", "angular_momentum", angular_momentum, ianalysis)
     save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
     save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
 
@@ -543,7 +547,7 @@ face_on_render_kwargs = {
 }
 
 sink_params = {
-    "sink_scale_factor": 5,
+    "sink_scale_factor": 1,
     "sink_color": "green",
     "sink_linewidth": 1,
     "sink_fill": False,
@@ -771,6 +775,25 @@ plt.legend(["x", "y", "z"])
 plt.savefig(analysis_folder + "total_momentum.png")
 plt.show()
 
+
+# %%
+# load the json file for total_momentum
+t, angular_momentum = load_data_from_json("angular_momentum.json", "angular_momentum")
+angular_momentum_x = [d[0] - angular_momentum[0][0] for d in angular_momentum]
+angular_momentum_y = [d[1] - angular_momentum[0][1] for d in angular_momentum]
+angular_momentum_z = [d[2] - angular_momentum[0][2] for d in angular_momentum]
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, angular_momentum_x)
+plt.plot(t, angular_momentum_y)
+plt.plot(t, angular_momentum_z)
+plt.xlabel("t")
+plt.ylabel(r"$\mathrm{L} - \mathrm{L}(t=0)$")
+plt.legend(["x", "y", "z"])
+plt.savefig(analysis_folder + "angular_momentum.png")
+
 # %%
 # load the json file for energies
 t, potential_energy = load_data_from_json("potential_energy.json", "potential_energy")
@@ -804,6 +827,25 @@ plt.xlabel("t")
 plt.ylabel("sink position")
 plt.legend()
 plt.savefig(analysis_folder + "sinks.png")
+plt.show()
+
+# %%
+# Sink angular momentum
+t, sinks = load_data_from_json("sinks.json", "sinks")
+
+sinks_lx = np.array([d[0]["angular_momentum"][0] for d in sinks])
+sinks_ly = np.array([d[0]["angular_momentum"][1] for d in sinks])
+sinks_lz = np.array([d[0]["angular_momentum"][2] for d in sinks])
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_lx, label="sink 0 (l_x)")
+plt.plot(t, sinks_ly, label="sink 0 (l_y)")
+plt.plot(t, sinks_lz, label="sink 0 (l_z)")
+plt.xlabel("t")
+plt.ylabel("sink spin")
+plt.legend()
+plt.savefig(analysis_folder + "sink_angular_momentum.png")
 plt.show()
 
 # %%

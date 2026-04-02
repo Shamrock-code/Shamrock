@@ -25,6 +25,7 @@
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
@@ -1315,6 +1316,21 @@ void add_analysisTotalMomentum_instance(py::module &m, const std::string &name_m
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisAngularMomentum_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_angular_momentum", [](modules::AnalysisAngularMomentum<Tvec, SPHKernel> &self) {
+            return self.get_angular_momentum();
+        });
+}
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1491,6 +1507,20 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
+    add_analysisAngularMomentum_instance<f64_3, shammath::M4>(
+        msph, "AnalysisAngularMomentum_f64_3_M4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M6>(
+        msph, "AnalysisAngularMomentum_f64_3_M6");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M8>(
+        msph, "AnalysisAngularMomentum_f64_3_M8");
+
+    add_analysisAngularMomentum_instance<f64_3, shammath::C2>(
+        msph, "AnalysisAngularMomentum_f64_3_C2");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C4>(
+        msph, "AnalysisAngularMomentum_f64_3_C4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C6>(
+        msph, "AnalysisAngularMomentum_f64_3_C6");
+
     register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
         msph, "analysisEnergyKinetic");
@@ -1498,4 +1528,6 @@ Register_pymod(pysphmodel) {
         msph, "analysisEnergyPotential");
     register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
         msph, "analysisTotalMomentum");
+    register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
+        msph, "analysisAngularMomentum");
 }

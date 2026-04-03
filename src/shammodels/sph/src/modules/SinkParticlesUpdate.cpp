@@ -65,7 +65,8 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         sham::DeviceBuffer<u32> accreted;
     };
 
-    for (Sink &s : sink_parts) {
+    for (size_t sink_id = 0; sink_id < sink_parts.size(); sink_id++) {
+        Sink &s = sink_parts[sink_id];
 
         Tvec r_sink    = s.pos;
         Tvec v_sink    = s.velocity;
@@ -187,6 +188,12 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         });
 
         Tscal sum_acc_mass = shamalgs::collective::allreduce_sum(s_acc_mass);
+
+        // if there is accretion continue otherwise skip that part
+        if (sum_acc_mass <= 0) {
+            continue;
+        }
+
         Tvec sum_acc_pxyz  = shamalgs::collective::allreduce_sum(s_acc_pxyz);
         Tvec sum_acc_mxyz  = shamalgs::collective::allreduce_sum(s_acc_mxyz);
         Tvec sum_acc_maxyz = shamalgs::collective::allreduce_sum(s_acc_maxyz);
@@ -208,19 +215,14 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         new_state.angular_momentum = new_ang_mom;
         new_state.sph_acceleration = new_acc;
 
-        if (sum_acc_mass > 0) {
-            had_accretion = true;
-            log += shambase::format(
-                "\n    id {} deltas : mass={} r={} v={} l={}",
-                sink_id,
-                new_state.mass - s.mass,
-                new_state.pos - s.pos,
-                new_state.velocity - s.velocity,
-                new_state.angular_momentum - s.angular_momentum);
-        }
-
-        // Tvec tot_mom_before = get_tot_mom();
-        // Tvec ang_mom_before = get_ang_mom();
+        had_accretion = true;
+        log += shambase::format(
+            "\n    id {} deltas : mass={} r={} v={} l={}",
+            sink_id,
+            new_state.mass - s.mass,
+            new_state.pos - s.pos,
+            new_state.velocity - s.velocity,
+            new_state.angular_momentum - s.angular_momentum);
 
         s = new_state;
 
@@ -243,9 +245,8 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
                     id_list_keep, shambase::narrow_or_throw<u32>(id_list_keep.get_size()));
             }
         });
-
-        sink_id++;
     }
+
     if (shamcomm::world_rank() == 0 && had_accretion) {
         logger::info_ln("sph::Sink", log);
     }

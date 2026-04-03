@@ -19,18 +19,12 @@
 #include "shambase/narrowing.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
-#include "shamalgs/numeric.hpp"
 #include "shamalgs/primitives/reduction.hpp"
-#include "shamalgs/reduction.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
-#include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
-#include "shammath/matrix.hpp"
-#include "shammath/matrix_op.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
-#include "shamsys/legacy/log.hpp"
 #include <shambackends/sycl.hpp>
 
 template<class Tvec, template<class> class SPHKernel>

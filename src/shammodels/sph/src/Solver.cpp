@@ -1638,7 +1638,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
-    sink_update.accrete_particles();
+    sink_update.accrete_particles(dt);
     ext_forces.point_mass_accrete_particles();
 
     sink_update.predictor_step(dt);

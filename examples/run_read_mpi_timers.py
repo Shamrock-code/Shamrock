@@ -31,7 +31,5 @@ print(f"after_mpi_timers = {after_mpi_timers}")
 # Compute the delta
 delta = shamrock.comm.mpi_timers_delta(before_mpi_timers, after_mpi_timers)
 
-keys = [k for k in delta.keys()]
-keys.sort()
-for k in keys:
+for k in sorted(delta):
     print(f"{k} = {delta[k]} s")

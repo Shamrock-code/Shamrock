@@ -28,7 +28,7 @@ after_mpi_timers = shamrock.comm.get_timers()
 print(f"after_mpi_timers = {after_mpi_timers}")
 
 # %%
-# Compute the delta 
+# Compute the delta
 delta = shamrock.comm.mpi_timers_delta(before_mpi_timers, after_mpi_timers)
 
 keys = [k for k in delta.keys()]

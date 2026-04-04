@@ -18,12 +18,15 @@
 #include "shambase/exception.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/AABB.hpp"
-#include "shammodels/sph/math/density.hpp"
-#include "shammodels/sph/modules/render/CartesianRender.hpp"
-#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
+#include "shammodels/common/density.hpp"
+#include "shammodels/common/modules/render/CartesianRender.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
+#include "shamtree/RadixTree.hpp"
+#include "shamtree/TreeTraversal.hpp"
+#include "shammodels/common/modules/render/RenderFieldGetter.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
-namespace shammodels::sph::modules {
+namespace shammodels::common::modules {
 
     template<class Tvec>
     sham::DeviceBuffer<Tvec> pixel_to_positions(
@@ -95,8 +98,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_slice(
         std::string field_name,
         const sham::DeviceBuffer<Tvec> &positions,
         std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
@@ -114,7 +117,7 @@ namespace shammodels::sph::modules {
         shambase::Timer t;
         t.start();
 
-        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
+        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel, TStorage>(context, render_config, storage)
                        .runner_function(
                            field_name,
                            [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
@@ -132,8 +135,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_column_integ(
         std::string field_name,
         const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays,
         std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
@@ -151,7 +154,7 @@ namespace shammodels::sph::modules {
         shambase::Timer t;
         t.start();
 
-        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
+        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel, TStorage>(context, render_config, storage)
                        .runner_function(
                            field_name,
                            [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
@@ -169,8 +172,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_azymuthal_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_azymuthal_integ(
         std::string field_name,
         const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays,
         std::optional<std::function<py::array_t<Tfield>(size_t, pybind11::dict &)>> custom_getter)
@@ -188,7 +191,7 @@ namespace shammodels::sph::modules {
         shambase::Timer t;
         t.start();
 
-        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel>(context, solver_config, storage)
+        auto ret = RenderFieldGetter<Tvec, Tfield, SPHKernel, TStorage>(context, render_config, storage)
                        .runner_function(
                            field_name,
                            [&](auto field_getter) -> sham::DeviceBuffer<Tfield> {
@@ -206,8 +209,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_slice(
         std::function<field_getter_t> field_getter, const sham::DeviceBuffer<Tvec> &positions)
         -> sham::DeviceBuffer<Tfield> {
 
@@ -240,7 +243,7 @@ namespace shammodels::sph::modules {
                 {box.lower, box.upper},
                 buf_xyz,
                 obj_cnt,
-                solver_config.tree_reduction_level);
+                render_config.tree_reduction_level);
 
             tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
             tree.convert_bounding_box(shamsys::instance::get_compute_queue());
@@ -269,7 +272,7 @@ namespace shammodels::sph::modules {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                Tscal partmass = solver_config.gpart_mass;
+                Tscal partmass = render_config.gpart_mass;
 
                 shambase::parallel_for(
                     cgh, positions.get_size(), "compute slice render", [=](u32 gid) {
@@ -320,8 +323,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_column_integ(
         std::function<field_getter_t> field_getter,
         const sham::DeviceBuffer<shammath::Ray<Tvec>> &rays) -> sham::DeviceBuffer<Tfield> {
 
@@ -354,7 +357,7 @@ namespace shammodels::sph::modules {
                 {box.lower, box.upper},
                 buf_xyz,
                 obj_cnt,
-                solver_config.tree_reduction_level);
+                render_config.tree_reduction_level);
 
             tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
             tree.convert_bounding_box(shamsys::instance::get_compute_queue());
@@ -383,7 +386,7 @@ namespace shammodels::sph::modules {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                Tscal partmass = solver_config.gpart_mass;
+                Tscal partmass = render_config.gpart_mass;
 
                 shambase::parallel_for(cgh, rays.get_size(), "compute slice render", [=](u32 gid) {
                     Tfield ret = sham::VectorProperties<Tfield>::get_zero();
@@ -435,8 +438,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_azymuthal_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_azymuthal_integ(
         std::function<field_getter_t> field_getter,
         const sham::DeviceBuffer<shammath::RingRay<Tvec>> &ring_rays)
         -> sham::DeviceBuffer<Tfield> {
@@ -470,7 +473,7 @@ namespace shammodels::sph::modules {
                 {box.lower, box.upper},
                 buf_xyz,
                 obj_cnt,
-                solver_config.tree_reduction_level);
+                render_config.tree_reduction_level);
 
             tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
             tree.convert_bounding_box(shamsys::instance::get_compute_queue());
@@ -499,7 +502,7 @@ namespace shammodels::sph::modules {
 
                 constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
 
-                Tscal partmass = solver_config.gpart_mass;
+                Tscal partmass = render_config.gpart_mass;
 
                 shambase::parallel_for(
                     cgh, ring_rays.get_size(), "compute slice render", [=](u32 gid) {
@@ -560,8 +563,8 @@ namespace shammodels::sph::modules {
         return ret;
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_slice(
         std::function<field_getter_t> field_getter,
         Tvec center,
         Tvec delta_x,
@@ -574,8 +577,8 @@ namespace shammodels::sph::modules {
         return compute_slice(field_getter, positions);
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_column_integ(
         std::function<field_getter_t> field_getter,
         Tvec center,
         Tvec delta_x,
@@ -588,8 +591,8 @@ namespace shammodels::sph::modules {
         return compute_column_integ(field_getter, rays);
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_slice(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_slice(
         std::string field_name,
         Tvec center,
         Tvec delta_x,
@@ -602,8 +605,8 @@ namespace shammodels::sph::modules {
         return compute_slice(field_name, positions, custom_getter);
     }
 
-    template<class Tvec, class Tfield, template<class> class SPHKernel>
-    auto CartesianRender<Tvec, Tfield, SPHKernel>::compute_column_integ(
+    template<class Tvec, class Tfield, template<class> class SPHKernel, class TStorage>
+    auto CartesianRender<Tvec, Tfield, SPHKernel, TStorage>::compute_column_integ(
         std::string field_name,
         Tvec center,
         Tvec delta_x,
@@ -617,20 +620,3 @@ namespace shammodels::sph::modules {
     }
 
 } // namespace shammodels::sph::modules
-
-using namespace shammath;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, M4>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, M6>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, M8>;
-
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, C2>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, C4>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64, C6>;
-
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M4>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M6>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, M8>;
-
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C2>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C4>;
-template class shammodels::sph::modules::CartesianRender<f64_3, f64_3, C6>;

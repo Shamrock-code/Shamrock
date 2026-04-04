@@ -20,7 +20,7 @@
 #include "shambase/exception.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shamphys/eos.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"

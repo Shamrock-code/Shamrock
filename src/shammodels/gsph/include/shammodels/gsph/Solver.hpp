@@ -73,7 +73,7 @@ namespace shammodels::gsph {
 
         using Config = SolverConfig<Tvec, SPHKernel>;
 
-        using u_morton = u32;
+        using u_morton = typename Config::u_morton;
 
         static constexpr Tscal Rkern = Kernel::Rkern;
 

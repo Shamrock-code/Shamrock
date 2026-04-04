@@ -40,7 +40,7 @@
 #include "shammodels/sph/Solver.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"

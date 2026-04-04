@@ -19,7 +19,7 @@
 #include "shammodels/sph/modules/io/VTKDump.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shammodels/common/io/VTKDumpUtils.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"

@@ -61,9 +61,8 @@ set(Sources
     src/modules/self_gravity/SGMMPlummer.cpp
     src/modules/self_gravity/SGFMMPlummer.cpp
     src/modules/self_gravity/SGSFMMPlummer.cpp
-    src/modules/render/CartesianRender.cpp
-    src/modules/render/RenderFieldGetter.cpp
     src/modules/io/VTKDump.cpp
+    src/modules/render/RenderInstanciations.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -81,8 +80,8 @@ target_link_libraries(shammodels_sph PUBLIC shamlib)
 target_link_libraries(shammodels_sph PUBLIC shammath)
 target_link_libraries(shammodels_sph PUBLIC shamphys)
 target_link_libraries(shammodels_sph PUBLIC shamsys)
-target_link_libraries(shammodels_sph PUBLIC shammodels_common)
 target_link_libraries(shammodels_sph PUBLIC shampylib)
+target_link_libraries(shammodels_sph PUBLIC shammodels_common)
 target_link_libraries(shammodels_sph PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shammodels_sph PUBLIC

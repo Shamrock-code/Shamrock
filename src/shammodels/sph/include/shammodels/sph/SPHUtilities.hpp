@@ -17,7 +17,7 @@
  */
 
 #include "shammodels/sph/BasicSPHGhosts.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamtree/RadixTree.hpp"
 #include "shamtree/TreeTraversal.hpp"

@@ -24,7 +24,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include <shambackends/sycl.hpp>
 #include <numeric>

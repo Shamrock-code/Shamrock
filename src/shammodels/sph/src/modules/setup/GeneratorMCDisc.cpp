@@ -18,7 +18,7 @@
 #include "shambase/constants.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shamalgs/random.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/modules/setup/GeneratorMCDisc.hpp"
 
 template<class Tvec, template<class> class SPHKernel>

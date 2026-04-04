@@ -18,7 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shammath/matrix_legacy.hpp"
 #include "shammath/sphkernels.hpp"
-#include "shammodels/sph/math/density.hpp"
+#include "shammodels/common/density.hpp"
 #include "shammodels/sph/modules/DiffOperatorDtDivv.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/InterfacesUtility.hpp"

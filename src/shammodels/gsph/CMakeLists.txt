@@ -20,6 +20,7 @@ set(Sources
     src/modules/UpdateDerivs.cpp
     src/modules/GSPHGhostHandler.cpp
     src/modules/io/VTKDump.cpp
+    src/modules/render/RenderInstanciations.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

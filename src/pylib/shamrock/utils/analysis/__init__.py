@@ -21,5 +21,10 @@ from .BfieldPlots import (
     SliceBVerticalShearGradient,
 )
 
+from .AngularMomentumPlots import (
+    SliceAngularMomentum,
+    ColumnAverageAngularMomentum,
+)
+
 # Performance analysis
 from .PerfHistory import PerfHistory

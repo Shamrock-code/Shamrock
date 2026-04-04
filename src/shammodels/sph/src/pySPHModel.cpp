@@ -824,7 +824,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.solver.solver_config;
             })
         .def("set_solver_config", &T::set_solver_config)
-        .def("add_sink", &T::add_sink)
+        .def(
+            "add_sink",
+            &T::add_sink,
+            py::arg("mass"),
+            py::arg("pos"),
+            py::arg("velocity"),
+            py::arg("accretion_radius"),
+            py::arg("is_torque_free") = false)
         .def(
             "get_sinks",
             [](T &self) {
@@ -840,6 +847,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         sink_dic["mass"]             = sink.mass;
                         sink_dic["angular_momentum"] = sink.angular_momentum;
                         sink_dic["accretion_radius"] = sink.accretion_radius;
+                        sink_dic["is_torque_free"]   = sink.is_torque_free;
                         list_out.append(sink_dic);
                     }
                 }

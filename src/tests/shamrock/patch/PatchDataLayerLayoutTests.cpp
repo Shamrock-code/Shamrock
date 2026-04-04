@@ -10,7 +10,7 @@
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/PatchDataLayerLayout::serialize_json", testpdlserjson, 1) {
+TestStart(Unittest, "shamrock/patch/PatchDataLayerLayout::serialize_json", testpdllayerserjson, 1) {
     using namespace shamrock::patch;
 
     PatchDataLayerLayout pdl;

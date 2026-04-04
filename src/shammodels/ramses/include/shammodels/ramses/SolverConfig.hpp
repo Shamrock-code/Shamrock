@@ -100,14 +100,22 @@ namespace shammodels::basegodunov {
             Tscal crit_mass;
         };
 
-        using mode = std::variant<None, DensityBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        using mode = std::variant<None, DensityBased, PseudoGradientBased>;
 
         mode config = None{};
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
 
-        bool need_level_zero_compute() { return false; }
-        bool need_amr_level_compute() { return false; }
+        bool need_level_zero_compute() { return true; }
+        bool need_amr_level_compute() { return true; }
     };
 
     struct BCConfig {

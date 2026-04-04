@@ -393,6 +393,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.press
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "P", "P");
 
+    storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "rho-prim", "rho-prim");
+
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
@@ -428,6 +431,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // get blocks at level0 sizes for all patches
         storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
             "level0_amr", "level0_amr");
+    }
+
+    if (solver_config.amr_mode.need_amr_level_compute()) {
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+        storage.amr_block_levels
+            = std::make_shared<shamrock::solvergraph::Field<TgridUint>>(1, "", "");
     }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -1006,6 +1015,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.refs_rho,
                 storage.refs_rhov,
                 storage.refs_rhoe,
+                storage.rho_primitive,
                 storage.vel,
                 storage.press);
 
@@ -1617,8 +1627,28 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
-    modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
-    refinement.update_refinement();
+    {
+
+        modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
+            AMRBlock::block_size, solver_config.eos_gamma};
+        node_ctp_after_updated.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_rho,
+            storage.refs_rhov,
+            storage.refs_rhoe,
+            // /**/
+            storage.rho_primitive,
+            // /**/
+            storage.vel,
+            storage.press);
+
+        node_ctp_after_updated.evaluate();
+    }
+
+    if (dt_input > 0) {
+        modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+        refinement.update_refinement();
+    }
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();

@@ -75,7 +75,9 @@ namespace shammodels::sph {
         Config solver_config;
         SolverLog solve_logs;
 
-        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
+        inline void init_required_fields() {
+            solver_config.set_layout(context.get_pdl_write().get_layer_ref(0));
+        }
 
         // serial patch tree control
         void gen_serial_patch_tree();

@@ -33,6 +33,7 @@
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -918,6 +919,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "compute_field",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<
+                    shamrock::solvergraph::Field<f64>,
+                    shamrock::solvergraph::Field<f64_3>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    modules::RenderFieldGetter<Tvec, f64, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                if (field_type == "f64_3") {
+                    modules::RenderFieldGetter<Tvec, f64_3, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
             "render_azymuthal_integ",
             [](T &self,
                const std::string &name,
@@ -1340,7 +1374,6 @@ auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
 
 template<template<class, template<class> class> class Analysis>
 void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
-
     using namespace shammodels::sph;
 
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
@@ -1401,7 +1434,6 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
 }
 
 Register_pymod(pysphmodel) {
-
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
     using namespace shammodels::sph;

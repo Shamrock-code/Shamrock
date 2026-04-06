@@ -25,9 +25,9 @@
 #include "shamcomm/logs.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamsys/NodeInstance.hpp"
-#include <shambackends/sycl.hpp>
 #include <pybind11/cast.h>
 #include <pybind11/complex.h>
+#include <shambackends/sycl.hpp>
 #include <vector>
 
 // Define the operator += for sham::DeviceBuffer, implementation to be done later.
@@ -286,10 +286,20 @@ Register_pymod(shammodelcommonlibinit) {
                             return ix + iy * nx;
                         };
 
+                        f64 x_val = x_field[id];
+                        f64 y_val = y_field[id];
+
+                        bool is_in_x_range = x_bins[0] <= x_val && x_val <= x_bins[nx];
+                        bool is_in_y_range = y_bins[0] <= y_val && y_val <= y_bins[ny];
+
+                        if (!(is_in_x_range && is_in_y_range)) {
+                            return;
+                        }
+
                         u32 ix = shamalgs::primitives::binary_search_upper_bound(
-                            x_bins, 0, nx + 1, x_field[id]);
+                            x_bins, 0, nx + 1, x_val);
                         u32 iy = shamalgs::primitives::binary_search_upper_bound(
-                            y_bins, 0, ny + 1, y_field[id]);
+                            y_bins, 0, ny + 1, y_val);
 
                         using atomic_ref_T = sycl::atomic_ref<
                             u64,

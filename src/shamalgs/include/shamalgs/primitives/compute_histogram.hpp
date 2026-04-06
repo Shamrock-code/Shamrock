@@ -24,7 +24,6 @@
 #include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
-#include <nlohmann/json.hpp>
 #include <shambackends/sycl.hpp>
 #include <optional>
 #include <stdexcept>

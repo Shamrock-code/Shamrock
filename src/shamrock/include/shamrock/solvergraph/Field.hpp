@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
@@ -57,6 +58,8 @@ namespace shamrock::solvergraph {
         virtual DDPatchDataFieldSpanPointer<T> &get_spans() { return spans; }
 
         virtual const DDPatchDataFieldSpanPointer<T> &get_spans() const { return spans; }
+
+        shambase::DistributedData<u32> get_obj_cnts() const { return field.get_obj_cnts(); }
 
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(

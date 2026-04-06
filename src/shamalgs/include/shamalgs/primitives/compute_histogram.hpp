@@ -78,6 +78,7 @@ namespace shamalgs::primitives {
                 } else {
                     shambase::throw_unimplemented("unknown implementation");
                 }
+                was_init = true;
             };
 
             virtual std::vector<std::string> impl_get_avail_configs(
@@ -86,7 +87,10 @@ namespace shamalgs::primitives {
             }
 
             public:
-            histo_impl get_impl() const { return impl; }
+            histo_impl get_impl(const sham::DeviceScheduler_ptr &dev_sched) {
+                this->ensure_init(dev_sched);
+                return impl;
+            }
         };
 
         inline HistogramImplControl compute_histogram_impl_control{};
@@ -371,7 +375,7 @@ namespace shamalgs::primitives {
 
         sham::DeviceBuffer<T> result(nbins, dev_sched);
 
-        switch (compute_histogram_impl_control.get_impl()) {
+        switch (compute_histogram_impl_control.get_impl(dev_sched)) {
         case histo_impl::reference:
             compute_histogram_reference(
                 bin_edge_inf,

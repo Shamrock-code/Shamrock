@@ -32,10 +32,14 @@ namespace shamalgs::primitives {
             return impl_was_configured(dev_sched);
         }
 
-        inline std::string get_config(const sham::DeviceScheduler_ptr &dev_sched) {
+        inline void ensure_init(const sham::DeviceScheduler_ptr &dev_sched) {
             if (!impl_was_configured(dev_sched)) {
                 set_config(dev_sched, get_default_config(dev_sched));
             }
+        }
+
+        inline std::string get_config(const sham::DeviceScheduler_ptr &dev_sched) {
+            ensure_init(dev_sched);
             return impl_get_config(dev_sched);
         }
 

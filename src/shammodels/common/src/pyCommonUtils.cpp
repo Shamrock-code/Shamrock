@@ -301,6 +301,10 @@ Register_pymod(shammodelcommonlibinit) {
                         u32 iy = shamalgs::primitives::binary_search_upper_bound(
                             y_bins, 0, ny + 1, y_val);
 
+                        if (ix >= nx || iy >= ny) {
+                            return;
+                        }
+
                         using atomic_ref_T = sycl::atomic_ref<
                             u64,
                             sycl::memory_order_relaxed,

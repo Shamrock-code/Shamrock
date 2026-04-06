@@ -312,7 +312,7 @@ namespace shamalgs::primitives {
                                 Tbins edge_sup      = is_valid_point ? bin_edge_sup[ibin] : Tbins{};
 
                                 // for each thread this will the sum of all the
-                                // "func(in_data[group_size*i + local_data]) for all i"
+                                // "func(in_data[group_size*i + local_id]) for all i"
                                 T local_sum = 0;
 
                                 for (size_t i = 0; i < element_count; i += group_size) {

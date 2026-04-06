@@ -32,7 +32,7 @@ void register_field(py::module &m, const char *class_name) {
     py::class_<Field<T>, IEdge>(m, class_name)
         .def(
             "get_buf",
-            [](Field<f64> &self, u64 id_patch) -> sham::DeviceBuffer<f64> & {
+            [](Field<T> &self, u64 id_patch) -> sham::DeviceBuffer<T> & {
                 return self.get_buf(id_patch);
             },
             py::return_value_policy::reference)

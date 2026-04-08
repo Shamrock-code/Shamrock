@@ -37,3 +37,26 @@ TestStart(Unittest, "shamcomm/collectives::gather_str", test_gather_str, 4) {
 
     REQUIRE_EQUAL(recv, result);
 }
+
+TestStart(Unittest, "shamcomm/collectives::allgather_str", test_allgather_str, 4) {
+
+    std::array<std::string, 4> ref_base{
+        "I'm a very important string",
+        "But I'm a very important string",
+        "Listen, I'm a very important string",
+        "The most importantest string",
+    };
+
+    std::string result = "";
+    for (u32 i = 0; i < ref_base.size(); i++) {
+        result += ref_base[i];
+    }
+
+    std::string send = ref_base[shamcomm::world_rank()];
+
+    std::string recv = "random string"; // Just to check that it is overwritten
+
+    shamcomm::allgather_str(send, recv);
+
+    REQUIRE_EQUAL(recv, result);
+}

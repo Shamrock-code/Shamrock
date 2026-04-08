@@ -1,5 +1,6 @@
 # base utilities
 from .StandardPlotHelper import StandardPlotHelper  # noqa: I001
+from .StandardPlotHelper import AnalysisHelper  # noqa: I001
 from .UnitHelper import plot_codeu_to_unit  # noqa: I001
 
 # Render based analysis

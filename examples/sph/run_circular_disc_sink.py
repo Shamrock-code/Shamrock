@@ -47,6 +47,14 @@ import os  # for makedirs
 
 import numpy as np
 
+try:
+    from numba import njit
+
+    _HAS_NUMBA = True
+except ImportError:
+    _HAS_NUMBA = False
+
+
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -82,7 +90,7 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.01
+dt_stop = 0.02
 nstop = 30
 
 # The list of times at which the simulation will pause for analysis / dumping
@@ -91,7 +99,7 @@ t_stop = [i * dt_stop for i in range(nstop + 1)]
 
 # Sink parameters
 center_mass = 1.0
-center_racc = 0.1
+center_racc = 0.8
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
@@ -346,6 +354,7 @@ def save_analysis_data(filename, key, value, ianalysis):
 
 
 from shamrock.utils.analysis import (
+    AnalysisHelper,
     ColumnDensityPlot,
     ColumnParticleCount,
     PerfHistory,
@@ -460,6 +469,11 @@ column_particle_count_plot = ColumnParticleCount(
     analysis_prefix="particle_count",
 )
 
+profile_plot = AnalysisHelper(
+    analysis_folder=os.path.join(analysis_folder, "plots"),
+    analysis_prefix="density_profile",
+)
+
 
 def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
@@ -474,6 +488,9 @@ def analysis(ianalysis):
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
     total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+    angular_momentum = shamrock.model_sph.analysisAngularMomentum(
+        model=model
+    ).get_angular_momentum()
 
     potential_energy = shamrock.model_sph.analysisEnergyPotential(
         model=model
@@ -484,6 +501,7 @@ def analysis(ianalysis):
     save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
     save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
     save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
+    save_analysis_data("angular_momentum.json", "angular_momentum", angular_momentum, ianalysis)
     save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
     save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
 
@@ -491,6 +509,73 @@ def analysis(ianalysis):
     save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
     perf_analysis.analysis_save(ianalysis)
+
+    #'''
+    rho_field = model.compute_field("rho", "f64")
+    hpart_field = model.compute_field("hpart", "f64")
+
+    def internal(size: int, x: np.array, y: np.array, z: np.array) -> np.array:
+        r = np.sqrt(x**2 + y**2 + z**2)
+        return r
+
+    if _HAS_NUMBA:
+        internal = njit(internal)
+
+    def custom_getter(size: int, dic_out: dict) -> np.array:
+        return internal(
+            size,
+            dic_out["xyz"][:, 0],
+            dic_out["xyz"][:, 1],
+            dic_out["xyz"][:, 2],
+        )
+
+    r_field = model.compute_field("custom", "f64", custom_getter)
+
+    print(rho_field, r_field)
+
+    x_min = center_racc / 2.0
+    x_max = rout * 1.1
+    x_min_log = np.log10(x_min)
+    x_max_log = np.log10(x_max)
+
+    bin_edges_x1d = np.logspace(x_min_log, x_max_log, 2049)
+
+    histo = shamrock.compute_histogram(
+        bin_edges=bin_edges_x1d,
+        x_field=r_field,
+        y_field=rho_field,
+        do_average=True,
+    )
+
+    histo_convolve = shamrock.compute_histogram_convolve_x(
+        bin_edges=bin_edges_x1d,
+        x_field=r_field,
+        y_field=rho_field,
+        size_field=hpart_field,
+        do_average=True,
+    )
+
+    bin_edges_x = np.logspace(x_min_log, x_max_log, 1025)
+    bin_edges_y = np.logspace(-6, -3, 1025)
+    histo_top = shamrock.compute_histogram_2d(
+        bin_edges_x=bin_edges_x,
+        bin_edges_y=bin_edges_y,
+        x_field=r_field,
+        y_field=rho_field,
+    )
+    histo_2d = np.array(histo_top).reshape(len(bin_edges_x) - 1, len(bin_edges_y) - 1)
+
+    data = {
+        "bin_edges_x1d": bin_edges_x1d,
+        "bin_edges_x": bin_edges_x,
+        "bin_edges_y": bin_edges_y,
+        "histo": histo,
+        "histo_convolve": histo_convolve,
+        "histo_2d": histo_2d,
+        "time": model.get_time(),
+    }
+
+    profile_plot.analysis_save(ianalysis, data)
 
 
 # %%
@@ -543,7 +628,7 @@ face_on_render_kwargs = {
 }
 
 sink_params = {
-    "sink_scale_factor": 5,
+    "sink_scale_factor": 1,
     "sink_color": "green",
     "sink_linewidth": 1,
     "sink_fill": False,
@@ -634,6 +719,48 @@ column_particle_count_plot.render_all(
     contour_list=[1, 10, 100, 1000],
     **sink_params,
 )
+
+
+def profile_plot_func(iplot, data):
+
+    data = data.item()
+
+    bin_edges_x1d = data["bin_edges_x1d"]
+    bin_edges_x = data["bin_edges_x"]
+    bin_edges_y = data["bin_edges_y"]
+    histo = data["histo"]
+    histo_convolve = data["histo_convolve"]
+    histo_2d = data["histo_2d"]
+    time = data["time"]
+
+    bin_center = (bin_edges_x1d[:-1] + bin_edges_x1d[1:]) / 2
+
+    plt.figure(dpi=150)
+
+    plt.pcolormesh(
+        bin_edges_x, bin_edges_y, histo_2d, norm="log", cmap="Greys", vmin=1, vmax=2, shading="auto"
+    )
+
+    plt.plot(bin_center, histo)
+    plt.plot(bin_center, histo_convolve)
+    plt.xlabel("r")
+    plt.ylabel("density")
+
+    plt.xscale("log")
+    plt.yscale("log")
+
+    text = f"t = {time:0.3f}"
+    from matplotlib.offsetbox import AnchoredText
+
+    anchored_text = AnchoredText(text, loc=2)
+    plt.gca().add_artist(anchored_text)
+
+    plt.savefig(profile_plot.analysis_prefix + f"{iplot:07}.png")
+    plt.close()
+
+
+profile_plot.render_all(profile_plot_func)
+
 # %%
 # Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -711,6 +838,17 @@ if render_gif and shamrock.sys.world_rank() == 0:
     if ani is not None:
         plt.show()
 
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = profile_plot.render_gif(
+        profile_plot.analysis_prefix + "*.png",
+        gif_filename="density_profile.gif",
+        save_animation=True,
+    )
+    if ani is not None:
+        plt.show()
+
 
 # %%
 # helper function to load data from JSON files
@@ -771,6 +909,25 @@ plt.legend(["x", "y", "z"])
 plt.savefig(analysis_folder + "total_momentum.png")
 plt.show()
 
+
+# %%
+# load the json file for total_momentum
+t, angular_momentum = load_data_from_json("angular_momentum.json", "angular_momentum")
+angular_momentum_x = [d[0] - angular_momentum[0][0] for d in angular_momentum]
+angular_momentum_y = [d[1] - angular_momentum[0][1] for d in angular_momentum]
+angular_momentum_z = [d[2] - angular_momentum[0][2] for d in angular_momentum]
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+
+plt.plot(t, angular_momentum_x)
+plt.plot(t, angular_momentum_y)
+plt.plot(t, angular_momentum_z)
+plt.xlabel("t")
+plt.ylabel(r"$\mathrm{L} - \mathrm{L}(t=0)$")
+plt.legend(["x", "y", "z"])
+plt.savefig(analysis_folder + "angular_momentum.png")
+
 # %%
 # load the json file for energies
 t, potential_energy = load_data_from_json("potential_energy.json", "potential_energy")
@@ -804,6 +961,25 @@ plt.xlabel("t")
 plt.ylabel("sink position")
 plt.legend()
 plt.savefig(analysis_folder + "sinks.png")
+plt.show()
+
+# %%
+# Sink angular momentum
+t, sinks = load_data_from_json("sinks.json", "sinks")
+
+sinks_lx = np.array([d[0]["angular_momentum"][0] for d in sinks])
+sinks_ly = np.array([d[0]["angular_momentum"][1] for d in sinks])
+sinks_lz = np.array([d[0]["angular_momentum"][2] for d in sinks])
+
+
+plt.figure(figsize=(8, 5), dpi=200)
+plt.plot(t, sinks_lx, label="sink 0 (l_x)")
+plt.plot(t, sinks_ly, label="sink 0 (l_y)")
+plt.plot(t, sinks_lz, label="sink 0 (l_z)")
+plt.xlabel("t")
+plt.ylabel("sink spin")
+plt.legend()
+plt.savefig(analysis_folder + "sink_angular_momentum.png")
 plt.show()
 
 # %%

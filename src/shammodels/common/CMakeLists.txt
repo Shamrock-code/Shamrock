@@ -15,16 +15,17 @@ set(Sources
     src/EOSConfig.cpp
     src/pyAMRTestModel.cpp
     src/pyAMRGrid.cpp
+    src/pyCommonUtils.cpp
     src/modules/AddForceCentralGravPotential.cpp
     src/timestep_report.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shammodels_common target (Shared lib)")
-add_library(shammodels_common SHARED ${Sources})
+    message("-- adding shammodels_common target (Shared lib)")
+    add_library(shammodels_common SHARED ${Sources})
 else()
-message("-- adding shammodels_common target (object lib)")
-add_library(shammodels_common OBJECT ${Sources})
+    message("-- adding shammodels_common target (object lib)")
+    add_library(shammodels_common OBJECT ${Sources})
 endif()
 
 add_library(shammodels_common::shammodels_common ALIAS shammodels_common)

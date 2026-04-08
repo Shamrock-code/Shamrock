@@ -25,6 +25,7 @@
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
@@ -32,6 +33,7 @@
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -917,6 +919,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "compute_field",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<
+                    shamrock::solvergraph::Field<f64>,
+                    shamrock::solvergraph::Field<f64_3>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    modules::RenderFieldGetter<Tvec, f64, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                if (field_type == "f64_3") {
+                    modules::RenderFieldGetter<Tvec, f64_3, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
             "render_azymuthal_integ",
             [](T &self,
                const std::string &name,
@@ -1315,6 +1350,21 @@ void add_analysisTotalMomentum_instance(py::module &m, const std::string &name_m
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisAngularMomentum_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_angular_momentum", [](modules::AnalysisAngularMomentum<Tvec, SPHKernel> &self) {
+            return self.get_angular_momentum();
+        });
+}
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1324,7 +1374,6 @@ auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
 
 template<template<class, template<class> class> class Analysis>
 void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
-
     using namespace shammodels::sph;
 
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
@@ -1385,7 +1434,6 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
 }
 
 Register_pymod(pysphmodel) {
-
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
     using namespace shammodels::sph;
@@ -1491,6 +1539,20 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
+    add_analysisAngularMomentum_instance<f64_3, shammath::M4>(
+        msph, "AnalysisAngularMomentum_f64_3_M4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M6>(
+        msph, "AnalysisAngularMomentum_f64_3_M6");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M8>(
+        msph, "AnalysisAngularMomentum_f64_3_M8");
+
+    add_analysisAngularMomentum_instance<f64_3, shammath::C2>(
+        msph, "AnalysisAngularMomentum_f64_3_C2");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C4>(
+        msph, "AnalysisAngularMomentum_f64_3_C4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C6>(
+        msph, "AnalysisAngularMomentum_f64_3_C6");
+
     register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
         msph, "analysisEnergyKinetic");
@@ -1498,4 +1560,6 @@ Register_pymod(pysphmodel) {
         msph, "analysisEnergyPotential");
     register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
         msph, "analysisTotalMomentum");
+    register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
+        msph, "analysisAngularMomentum");
 }

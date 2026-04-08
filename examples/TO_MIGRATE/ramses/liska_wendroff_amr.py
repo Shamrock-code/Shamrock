@@ -24,7 +24,7 @@ err_min = 0.30
 err_max = 0.10
 nx = base * 2
 ny = base * 2
-sim_folder = "_to_trash/ramses_liska_wendroff_128/bis/"
+sim_folder = f"_to_trash/ramses_liska_wendroff/check_nan_reso_{nx}_hll/"
 if shamrock.sys.world_rank() == 0:
     os.makedirs(sim_folder, exist_ok=True)
 
@@ -36,7 +36,7 @@ def make_cartesian_coords(nx, ny, z_val, min_x, max_x, min_y, max_y):
     y_vals = np.linspace(min_y, max_y, ny)
 
     # Create meshgrid
-    x_grid, y_grid = np.meshgrid(x_vals, y_vals)
+    x_grid, y_grid = np.meshgrid(x_vals, y_vals, indexing="ij")
 
     # Convert to Cartesian coordinates (z = 0 for a disc in the xy-plane)
     z_grid = z_val * np.ones_like(x_grid)
@@ -54,9 +54,19 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
     ext = metadata["extent"]
 
     my_cmap = matplotlib.colormaps["viridis"].copy()  # copy the default cmap
-    my_cmap.set_bad(color="white")
+    my_cmap.set_bad(color="black")
 
     arr_rho_pos = np.array(arr_rho_pos).reshape(nx, ny)
+    # bad_values_mask = ~np.isfinite(arr_rho_pos)
+    # bad_values_indices = np.argwhere(bad_values_mask)
+    # bad_values = arr_rho_pos[bad_values_mask]
+    # output = np.column_stack((bad_values_indices, bad_values))
+
+    # np.savetxt(f"bad_indices_with_values_{iplot}.txt", output,
+    #         fmt=["%d", "%d", "%.6f"],
+    #         header="row col value")
+
+    # np.savetxt(f"data_{iplot}", arr_rho_pos[:, base -2])
 
     ampl = 1e-5
 
@@ -66,21 +76,14 @@ def plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name, dpi=200):
 
     plt.figure(dpi=dpi)
     vmin = 0
-    vmax = 1.15
+    vmax = 2.5
     levels = np.arange(vmin, vmax + 0.025, 0.025)
+
+    # out_of_range = (arr_rho_pos < vmin) | (arr_rho_pos > vmax)
+    # print(f"Out-of-range count for iplot = {iplot}:", np.sum(out_of_range))
     res = plt.contourf(X, Y, arr_rho_pos, levels=levels, cmap=my_cmap)
     cs = plt.contour(X, Y, arr_rho_pos, levels=levels, colors="black", linewidths=0.5)
 
-    # plt.figure(dpi=dpi)
-    # res = plt.imshow(
-    #     arr_rho_pos,
-    #     cmap=my_cmap,
-    #     origin="lower",
-    #     extent=ext,
-    #     aspect="auto",
-    #     vmin=0.,
-    #     vmax=1.1
-    # )
     plt.xlabel("x")
     plt.ylabel("y")
     plt.title(f"t = {metadata['time']:0.3f} [seconds]")

@@ -69,9 +69,6 @@ etot_R = 0.1 / (gamma - 1)
 
 
 def rhoetot_map(rmin, rmax):
-
-    rho = rho_map(rmin, rmax)
-
     x, y, z = rmin
     if y < 0.5:
         return etot_L
@@ -80,8 +77,6 @@ def rhoetot_map(rmin, rmax):
 
 
 def rhovel_map(rmin, rmax):
-    rho = rho_map(rmin, rmax)
-
     return (0, 0, 0)
 
 

@@ -64,6 +64,7 @@ for N_target_base in [32e6]:
     cfg.set_boundary_periodic()
     cfg.set_eos_adiabatic(gamma)
     cfg.set_max_neigh_cache_size(int(100e9))
+    cfg.set_filter_empty_patch_gz(False)
     cfg.print_status()
     model.set_solver_config(cfg)
     model.init_scheduler(scheduler_split_val, scheduler_merge_val)

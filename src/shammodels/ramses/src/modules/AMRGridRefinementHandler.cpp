@@ -1011,8 +1011,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const f64 *block_pressure;
         const f64_3 *block_velocity;
 
+        const Tscal *rho_cons;
         Tscal error_min;
         Tscal error_max;
+        u32 nblock_per_patch;
 
         AMRGraphLinkiterator cell_graph_xp;
         AMRGraphLinkiterator cell_graph_xm;
@@ -1070,15 +1072,23 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         {
             block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
             block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
-            block_rho        = shambase::get_check_ref(storage.rho_primitive)
-                                   .get_buf(id_patch)
-                                   .get_read_access(depends_list);
-            block_pressure   = shambase::get_check_ref(storage.press)
-                                   .get_buf(id_patch)
-                                   .get_read_access(depends_list);
-            block_velocity   = shambase::get_check_ref(storage.vel)
-                                   .get_buf(id_patch)
-                                   .get_read_access(depends_list);
+
+            // rho_cons         = pdat.get_field<Tscal>(2).get_buf().get_read_access(depends_list);
+            rho_cons = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+                           .get_buf()
+                           .get_read_access(depends_list);
+
+            nblock_per_patch = pdat.get_obj_cnt();
+
+            block_rho      = shambase::get_check_ref(storage.rho_primitive)
+                                 .get_buf(id_patch)
+                                 .get_read_access(depends_list);
+            block_pressure = shambase::get_check_ref(storage.press)
+                                 .get_buf(id_patch)
+                                 .get_read_access(depends_list);
+            block_velocity = shambase::get_check_ref(storage.vel)
+                                 .get_buf(id_patch)
+                                 .get_read_access(depends_list);
         }
 
         void finalize(
@@ -1092,6 +1102,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             pdat.get_field<i64_3>(0).get_buf().complete_event_state(resulting_events);
             pdat.get_field<i64_3>(1).get_buf().complete_event_state(resulting_events);
+            // pdat.get_field<Tscal>(2).get_buf().complete_event_state(resulting_events);
+            pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+                .get_buf()
+                .complete_event_state(resulting_events);
 
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::xp)
@@ -1163,6 +1177,28 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                             return block_rho[id];
                         }));
             }
+
+            // logger::raw_ln(
+            //     "\n\n============================= [start] block id \t ",
+            //     block_id,
+            //     "\t ============================= \n\n");
+
+            // for (u32 i = 0; i < AMRBlock::block_size && block_id < nblock_per_patch; i++) {
+            //     if(sham::details::g_sycl_abs(rho_cons[i + block_id * AMRBlock::block_size]
+            //             - block_rho[i + block_id * AMRBlock::block_size]) > 1e-6)
+            //         logger::raw_ln(
+            //             "diff rho_cons -- rho_prim \t at \t[",
+            //             i + block_id * AMRBlock::block_size,
+            //             "]\t :\t ",
+            //             rho_cons[i + block_id * AMRBlock::block_size]
+            //                 - block_rho[i + block_id * AMRBlock::block_size],
+            //             "\n\n");
+            // }
+
+            // logger::raw_ln(
+            //     "\n\n============================= [end] block id \t ",
+            //     block_id,
+            // "\t ============================= \n\n");
 
             Tscal block_press_grad = shambase::VectorProperties<Tscal>::get_zero();
             for (u32 i = 0; i < AMRBlock::block_size; i++) {

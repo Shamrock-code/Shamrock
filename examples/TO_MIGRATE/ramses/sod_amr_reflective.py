@@ -14,7 +14,7 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 multx = 1
 multy = 1
 multz = 1
-max_amr_lev = 3
+max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
 base = 16
 
@@ -131,12 +131,12 @@ t_target = 0.245
 dt = 0
 t = 0
 freq = 100
-dX0 = []
-for i in range(10000):
+dX0 = 0
+for i in range(3):
     next_dt = model.evolve_once_override_time(t, dt)
     if i == 0:
         dic0 = convert_to_cell_coords(ctx.collect_data())
-        dX0.append(dic0["ymax"][i] - dic0["ymin"][i])
+        dX0 = dic0["ymax"][0] - dic0["ymin"][0]
 
     t += dt
     dt = next_dt
@@ -178,7 +178,6 @@ if True:
 
     X = np.array(X)
     dX = np.array(dX)
-    dX0 = np.array(dX0)
     rho = np.array(rho)
     rhovelx = np.array(rhovelx)
     rhoetot = np.array(rhoetot)
@@ -192,7 +191,7 @@ if True:
 
     l_0 = np.log2(base * 2)
 
-    l = -np.log2(dX / max(dX0.max(), dX.max())) + l_0
+    l = -np.log2(dX / max(dX0, dX.max())) + l_0
 
     ax1.scatter(X, rho, rasterized=True, s=12 * np.ones(X.shape), label="rho")
     ax1.scatter(X, vx, rasterized=True, s=12 * np.ones(X.shape), label="v")
@@ -230,5 +229,5 @@ if True:
     ax1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
     ax2.set_ylabel("AMR level")
     plt.title(f"Threshold = {err_max}, derefinement factor = {err_min}")
-    plt.savefig("sod_tube_3_1_baryonic_density.png")
+    plt.savefig("sod_tube_3_1_baryonic_density_check_density.png")
     #######

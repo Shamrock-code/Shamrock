@@ -63,6 +63,8 @@
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
+#include <algorithm>
+#include <cmath>
 #include <memory>
 
 template<class Tvec, class TgridVec>
@@ -1644,6 +1646,29 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         node_ctp_after_updated.evaluate();
     }
+
+    // auto &buf_of_rho_refs = shambase::get_check_ref(storage.refs_rho).get(0).get_buf();
+    // auto std_vec_rho_ref  = buf_of_rho_refs.copy_to_stdvec();
+    // auto &buf_of_rho_prim = shambase::get_check_ref(storage.rho_primitive).get(0).get_buf();
+    // auto std_vec_rho_prim = buf_of_rho_prim.copy_to_stdvec();
+    // logger::raw_ln(
+    //     "\n\n============================= [start] diff rho check \t  ", std_vec_rho_ref.size(),
+    //     "\t -- \t", std_vec_rho_prim.size(),
+    //     "============================= \n\n");
+    // for (u32 i = 0; i < std::min(std_vec_rho_ref.size(), std_vec_rho_prim.size())
+    // &&(std::fabs(std_vec_rho_ref[i] - std_vec_rho_prim[i]) > 1e-6);
+    //      i++) {
+    //     logger::raw_ln(
+    //         "diff rho_cons -- rho_prim \t at \t[",
+    //         i,
+    //         "]\t :\t ",
+    //         std_vec_rho_ref[i] - std_vec_rho_prim[i],
+    //         "\n\n");
+    // }
+    // logger::raw_ln(
+    //     "\n\n============================= [end] diff rho check \t " , std_vec_rho_ref.size(),
+    //     "\t -- \t", std_vec_rho_prim.size(), "============================= "
+    //     "\n\n");
 
     if (dt_input > 0) {
         modules::AMRGridRefinementHandler refinement(context, solver_config, storage);

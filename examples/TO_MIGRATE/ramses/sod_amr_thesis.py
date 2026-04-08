@@ -289,4 +289,4 @@ def run_case(nb_blocks, amr_lev, case="amr"):
         plt.savefig(f"sod-{case}.pdf")
 
 
-run_case(16, 3)
+run_case(16, 3,"uniform")

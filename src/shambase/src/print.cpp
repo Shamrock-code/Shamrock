@@ -20,18 +20,21 @@
 
 namespace shambase {
 
-    void (*_printer)(std::string)   = nullptr; ///< The print function pointer to use if not null
-    void (*_printerln)(std::string) = nullptr; ///< The println function pointer to use if not null
-    void (*_flush)()                = nullptr; ///< The flush function pointer to use if not null
+    using printer_t = void (*)(std::string_view);
+    using flush_t   = void (*)();
 
-    void print(const std::string &s) {
+    printer_t _printer   = nullptr; ///< The print function pointer to use if not null
+    printer_t _printerln = nullptr; ///< The println function pointer to use if not null
+    flush_t _flush       = nullptr; ///< The flush function pointer to use if not null
+
+    void print(std::string_view s) {
         if (_printer == nullptr) {
             std::cout << s;
         } else {
             _printer(s);
         }
     }
-    void println(const std::string &s) {
+    void println(std::string_view s) {
         if (_printerln == nullptr) {
             std::cout << s << "\n";
         } else {
@@ -47,8 +50,8 @@ namespace shambase {
     }
 
     void change_printer(
-        void (*func_printer_normal)(std::string),
-        void (*func_printer_ln)(std::string),
+        void (*func_printer_normal)(std::string_view),
+        void (*func_printer_ln)(std::string_view),
         void (*func_flush_func)()) {
         _printer   = func_printer_normal;
         _printerln = func_printer_ln;

@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "fmt/core.h"
 #include "shamcmdopt/env.hpp"
@@ -60,10 +61,10 @@ void shamcmdopt::print_help_env_var() {
     for (const auto &[var, desc] : env_var_reg) {
         auto val = getenv_str(var.c_str());
 
-        fmt::println(shambase::format("  {:<29} : {}", var, desc));
+        shambase::println(shambase::format("  {:<29} : {}", var, desc));
 
         if (val) {
-            fmt::println(shambase::format("    = {}", *val));
+            shambase::println(shambase::format("    = {}", *val));
         }
     }
 }

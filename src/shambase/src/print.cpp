@@ -23,9 +23,9 @@ namespace shambase {
     using printer_t = void (*)(std::string_view);
     using flush_t   = void (*)();
 
-    printer_t _printer   = nullptr; ///< The print function pointer to use if not null
-    printer_t _printerln = nullptr; ///< The println function pointer to use if not null
-    flush_t _flush       = nullptr; ///< The flush function pointer to use if not null
+    static printer_t _printer   = nullptr; ///< The print function pointer to use if not null
+    static printer_t _printerln = nullptr; ///< The println function pointer to use if not null
+    static flush_t _flush       = nullptr; ///< The flush function pointer to use if not null
 
     void print(std::string_view s) {
         if (_printer == nullptr) {

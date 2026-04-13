@@ -22,6 +22,7 @@
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#include <string_view>
 #include <array>
 #include <fstream>
 #include <vector>
@@ -40,7 +41,7 @@ namespace shambase {
     template<typename... T>
     inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
         try {
-            return fmt::format(fmt, args...);
+            return fmt::vformat(fmt, fmt::make_format_args(args...));
         } catch (const std::exception &e) {
             throw make_except_with_loc<std::invalid_argument>(
                 "format failed : " + std::string(e.what()));
@@ -57,7 +58,7 @@ namespace shambase {
      * @return std::string the formatted string
      */
     template<typename... T>
-    inline std::string format_printf(std::string format, const T &...args) {
+    inline std::string format_printf(std::string_view format, const T &...args) {
         try {
             return fmt::sprintf(format, args...);
         } catch (const std::exception &e) {

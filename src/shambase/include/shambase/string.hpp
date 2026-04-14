@@ -65,7 +65,7 @@ namespace shambase {
     template<typename... T>
     inline __attribute__((always_inline)) auto format(fmt::format_string<T...> fmt, T &&...args)
         -> std::string {
-        return shambase::vformat(fmt.str, fmt::vargs<T...>{{args...}});
+        return shambase::vformat(fmt, fmt::make_format_args(args...));
     }
 
     /**

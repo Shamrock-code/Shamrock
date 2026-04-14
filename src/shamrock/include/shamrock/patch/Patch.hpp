@@ -103,7 +103,7 @@ namespace shamrock::patch {
          * @return true
          * @return false
          */
-        bool operator==(const Patch &rhs);
+        bool operator==(const Patch &rhs) const;
 
         /**
          * @brief Make the patch in error mode (patch struct that will be flushed on sync)
@@ -171,7 +171,7 @@ namespace shamrock::patch {
     // out of line implementation
     ////////////////////////////////////////////
 
-    inline bool Patch::operator==(const Patch &rhs) {
+    inline bool Patch::operator==(const Patch &rhs) const {
 
         bool ret_val = true;
 

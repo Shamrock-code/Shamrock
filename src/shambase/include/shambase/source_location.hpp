@@ -15,7 +15,11 @@
  * @brief
  */
 
-#include "cxxbackports/source_location.hpp"
+#if __cplusplus >= 202002L
+    #include <source_location>
+#else
+    #include "cxxbackports/source_location.hpp"
+#endif
 
 namespace shambase::cxxstd {
 

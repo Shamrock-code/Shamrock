@@ -100,7 +100,7 @@ namespace shamcmdopt {
         for (auto arg : args) {
             if (arg.rfind("-", 0) == 0) {
                 if (!is_name_registered(arg)) {
-                    fmt::println(
+                    shambase::println(
                         err_str() + " opts argument : " + std::string(arg) + " is not registered");
                     err_buf += "\"";
                     err_buf += arg;

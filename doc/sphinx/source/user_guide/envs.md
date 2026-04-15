@@ -29,7 +29,7 @@ options:
   --type TYPE           build type to use
   --lib {shared,object}
                         shamrock libraries mode
-  --                   Everything after this will be forwarded to the env. 
+  --                   Everything after this will be forwarded to the env.
 
 Environment list :
   adastra.mi250.intel-llvm       Adastra mi250x Intel LLVM ROCM
@@ -60,7 +60,7 @@ options:
   --type TYPE           build type to use
   --lib {shared,object}
                         shamrock libraries mode
-  --                   Everything after this will be forwarded to the env. 
+  --                   Everything after this will be forwarded to the env.
 
 Environment list :
 < truncated output >

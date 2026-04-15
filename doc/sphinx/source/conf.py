@@ -43,7 +43,7 @@ extensions = [
     "sphinx_gallery.gen_gallery",  # generate thumbnail and example lib
     "sphinx_copybutton",  # add a copy button to code blocks
     "sphinx_design",  # Add grid tabs and fancy html stuff
-    "myst_parser", # Allow markdown files
+    "myst_parser",  # Allow markdown files
 ]
 
 # Add any paths that contain templates here, relative to this directory.

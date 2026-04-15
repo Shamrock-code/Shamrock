@@ -2,27 +2,29 @@
 
 ## Installation
 
-There are multiple ways to install Shamrock:
+When it come to using Shamrock several options are available.
 
- - [From source](./quickstart/install_from_source.md)
- - [Spack package](./quickstart/install_spack.md) (Easy but long compile time)
- - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
- - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/shamrock.svg)](https://repology.org/project/shamrock/versions)
+
+I will assume that you want to compile it from source (as most probably do anyway) in the following and precise what changes if you are installing it directly through other means. See the list for the alternatives:
+
+- [Spack package](./quickstart/install_spack.md) (Easy but long compile time)
+- [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
+- [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
 ### Recommended Configurations by Operating System
 
 For detailed configuration guides for different operating systems and environments, see the [from source](./quickstart/install_from_source.md) guide.
 
 **Platform:**
+
 - **Linux**: [From source](./quickstart/recommended_config/linux_debian.md)
 - **macOS**: [From source](./quickstart/recommended_config/macos.md)
 - **Conda**: [From source](./quickstart/recommended_config/conda.md)
 
 For detailed setup instructions and configuration-specific notes, please refer to the [individual configuration guides](./recommended_config/).
 
-
 ## Starting Shamrock
-
 
 !!! warning
 
@@ -45,10 +47,10 @@ For detailed setup instructions and configuration-specific notes, please refer t
 
 You have 4 main ways of using Shamrock:
 
- - As Ipython mode
- - As a python interpreter
- - As a Python package
- - In a jupyter notebook
+- As Ipython mode
+- As a python interpreter
+- As a Python package
+- In a jupyter notebook
 
 ## Selecting the device to run on
 
@@ -59,6 +61,7 @@ shamrock --smi
 ```
 
 You should see something like:
+
 ```
  ----- Shamrock SMI -----
 
@@ -79,6 +82,7 @@ shamrock --smi --sycl-cfg 0:0
 ```
 
 You should see :
+
 ```
  ----- Shamrock SMI -----
 
@@ -104,6 +108,7 @@ shamrock --smi --sycl-cfg 0:0 --benchmark-mpi
 ```
 
 You should get:
+
 ```
  ----- Shamrock SMI -----
 
@@ -140,11 +145,13 @@ Here you can check that the peak flop & bandwidth match somewhat to the spec of 
 Before using the Ipython mode check that you have Ipython installed otherwise you will get an error.
 
 To use the Ipython mode do:
+
 ```bash
 shamrock --sycl-cfg 0:0 --ipython
 ```
 
 At the end of the ouput you should be prompted with a Ipython terminal:
+
 ```py
 --------------------------------------------
 -------------- ipython ---------------------
@@ -161,10 +168,10 @@ In [1]: import shamrock
 
 After this you can use the shamrock python package like you would normally ([:octicons-arrow-right-24: Python frontend documentation](../../sphinx/index.html)).
 
-
 ## Using the Python interpreter mode
 
 You can also use Shamrock to run python scripts. For example let's say that we have the following python file:
+
 ```py linenums="1" title="test.py"
 import shamrock
 
@@ -178,11 +185,13 @@ print(shamrock.get_git_info())
 ```
 
 You can use Shamrock to execute it using the `--rscript` flag (rscript stands for runscript).
+
 ```
 shamrock --sycl-cfg 0:0 --rscript test.py
 ```
 
 You will get something like:
+
 ```
 -----------------------------------
 running pyscript : test.py
@@ -224,11 +233,13 @@ shamrock.sys.close()
 ```
 
 Then you can simply run it:
+
 ```bash
 python3 test.py
 ```
 
 You should get the following :
+
 ```
 -> modified loglevel to 0 enabled log types :
 [xxx] Info: xxx ( logger::info )
@@ -263,10 +274,13 @@ You can then run `jupyter notebook` which will start it.
 Make then sure that you select the python kernel that match the python distribution where Shamrock is installed.
 
 If you want to check that try this command:
+
 ```
 echo "import sys;print(sys.executable)" > test.py && shamrock --sycl-cfg 0:0 --rscript test.py
 ```
+
 It will print the corresponding python executable :
+
 ```
 -----------------------------------
 running pyscript : test.py

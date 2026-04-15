@@ -62,6 +62,7 @@ This page aims at documenting the python layer of shamrock.
 
    Home page <self>
    Python API <api>
+   User Guide <user_guide>
    Examples <_as_gen/index>
 
 Indices and tables

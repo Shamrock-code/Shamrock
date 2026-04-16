@@ -166,6 +166,193 @@ If you see any errors at this point it can be hard to list all cases so again dr
 
 ## Starting Shamrock
 
+:::{warning}
+This guide assume that you have Shamrock compiled from source. I will mention what has to be changed if it is installed globally in notes in the following sections.
+:::
+
+You have 4 main ways of using Shamrock:
+
+- As a Python interpreter
+- As a Python interpreter + Ipython
+- As a Python package
+- In a Jupyter notebook
+
+For all of them except the Python interpreter mode you should run the following beforehand:
+
+```bash
+# Configure install paths in the local build folder
+cmake . -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pysham -DCMAKE_INSTALL_PREFIX=$(pwd)/shaminstall
+# Install it !
+shammake install
+```
+
+### Python interpreter mode
+
+So assuming that you have Shamrock compiled and all we can start to do stuff with it. Let start simple just to check that the executable load correct:
+
+```bash
+./shamrock
+```
+
+:::{note}
+If you have installed shamrock globally using any of the alternatives, just replace `./shamrock` by `shamrock` in this section
+:::
+
+You should see something like (even if the git infos & time might differ):
+
+```
+Warning: No kernel can be run without a sycl configuration (--sycl-cfg x:x)                                   [Init][rank=0] 
+
+  █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████
+ ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ 
+░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███   
+░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████    
+ ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███   
+ ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███  
+░░█████████  █████   █████ █████   █████ █████     █████ █████   █████ ░░░███████░   ░░█████████  █████ ░░████
+ ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ 
+ 
+Copyright (c) 2021-2026 Timothée David--Cléris (tim.shamrock@proton.me) 
+SPDX-License-Identifier : CeCILL Free Software License Agreement v2.1 
+Start time : 2026-04-16 22:27:18 
+----------------------------------------------------- 
+
+Shamrock version : 2025.10.0+git.8a0c0b85e.patch-2026-04-15-15-33.dirty
+ 
+Git infos :
+     commit : 8a0c0b85e3598ba83d124ffe8277bddf9ddc9430
+     HEAD   : refs/heads/patch-2026-04-15-15-33, refs/remotes/origin/patch-2026-04-15-15-33
+     modified files (since last commit):
+        doc/sphinx/source/user_guide/quickstart.md
+ 
+----------------------------------------------------- 
+----------------------------------------------------- 
+log status :  
+ - Loglevel: 0, enabled log types : 
+xxx: xxx ( logger::normal )  
+Warning: xxx ( logger::warn )                                                                                  [xxx][rank=0] 
+Error: xxx ( logger::err )                                                                                     [xxx][rank=0] 
+Warning: No sycl configuration (--sycl-cfg x:x) has been set, early exit                                      [Init][rank=0] 
+----------------------------------------------------- 
+ - MPI finalize 
+Exiting ...
+ 
+ Hopefully it was quick :')
+```
+
+If it works great ! Next let's see what devices are available to perform the compute:
+
+```bash
+./shamrock --smi
+```
+
+You should see the same thing as before but with something like this added to it:
+
+```
+ ----- Shamrock SMI -----
+
+Available devices :
+
+1 x Shamrock process: ---------------------------------------------------------------------
+| id |      Device name          |      Platform name     |  Type  |    Memsize   | units |
+-------------------------------------------------------------------------------------------
+|  0 |   NVIDIA GeForce RTX 3070 |      CUDA (platform 0) |    GPU |      7.63 GB |    46 |
+|  1 |         Intel(R) Graphics |    OpenCL (platform 0) |    GPU |     58.00 GB |    64 |
+|  2 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.17 GB |    24 |
+-------------------------------------------------------------------------------------------
+```
+
+If you are familiar with GPU you should recognize the similarity with commands such as `nvidia-smi`, `rocm-smi` or `xpu-smi`.
+
+In this guide as you may have noticed above we are compiling using AdaptiveCpp with OpenMP backend so we can only run on CPU (device `2` in my case).
+
+Now let's see if Shamrock can start on the selected device. To do so run
+
+```bash
+./shamrock --smi --sycl-cfg 2:2
+```
+
+It should add something like this
+
+```
+Selected devices : (totals can be wrong if using multiple ranks per device)
+  - 1 x AdaptiveCpp OpenMP host device (id=2)
+          - default_work_group_size = 1
+          - global_mem_size = 62.17 GB
+          - local_mem_size = No limit !
+          - mem_base_addr_align = 8,
+          - max_mem_alloc_size_dev = 16.00 EB,
+          - max_mem_alloc_size_host = 62.17 GB,
+          - pci_address = Unknown
+      - Warnings:
+          - mem_base_addr_align for is 8 bits. I will assume that this is an issue and default to 64 bits (8 bytes) instead.
+  Total memory : 62.17 GB
+  Total compute units : 24
+
+----------------------------------------------------- 
+ - Code init: DONE.
+```
+
+Especially if you see `- Code init: DONE.` it means that Shamrock can execute compute kernels (which is arguably a pretty usefull thing XD). For the uninitiated a compute kernel is essentially a parallel section like a parallel for loop that was scheduled onto the device to perform computations. And in the GPU or modern CPU world a HPC code is a roughly just a large succesion of compute kernels.
+
+Also if you want to see the performance of the hardware you are running add the `--benchmark-mpi` flag.
+
+```bash
+./shamrock --smi --sycl-cfg 2:2 --benchmark-mpi
+```
+
+For example on my desktop (at home very late at night when I'm writing this 😅) i get:
+
+```
+----------------------------------------------------- 
+Running micro benchmarks: 
+ - p2p bandwidth    : 15.2 GB.s^-1 (ranks : 0 -> 0) (loops : 1825) 
+ - saxpy (f32)   : 92 GB.s^-1 (min = 9.2e+10, max = 9.2e+10, avg = 9.2e+10) (2.2e+00 ms, 128.00 MB) 
+ - saxpy (f64)   : 83.8 GB.s^-1 (min = 8.4e+10, max = 8.4e+10, avg = 8.4e+10) (2.4e+00 ms, 128.00 MB) 
+ - saxpy (f32_2)   : 89.3 GB.s^-1 (min = 8.9e+10, max = 8.9e+10, avg = 8.9e+10) (2.3e+00 ms, 128.00 MB) 
+ - saxpy (f64_2)   : 75.2 GB.s^-1 (min = 7.5e+10, max = 7.5e+10, avg = 7.5e+10) (2.7e+00 ms, 128.00 MB) 
+ - saxpy (f32_3)   : 98.1 GB.s^-1 (min = 9.8e+10, max = 9.8e+10, avg = 9.8e+10) (2.1e+00 ms, 128.00 MB) 
+ - saxpy (f64_3)   : 95.7 GB.s^-1 (min = 9.6e+10, max = 9.6e+10, avg = 9.6e+10) (2.1e+00 ms, 128.00 MB) 
+ - saxpy (f32_4)   : 85.9 GB.s^-1 (min = 8.6e+10, max = 8.6e+10, avg = 8.6e+10) (1.2e+00 ms, 64.00 MB) 
+ - saxpy (f64_4)   : 74.4 GB.s^-1 (min = 7.4e+10, max = 7.4e+10, avg = 7.4e+10) (2.7e+00 ms, 128.00 MB) 
+ - fma_chains (f32) : 40.6 Gflops (min = 4.1e+10, max = 4.1e+10, avg = 4.1e+10) (2.1e+02 ms, rotations = 64) 
+ - fma_chains (f64) : 38.1 Gflops (min = 3.8e+10, max = 3.8e+10, avg = 3.8e+10) (4.5e+02 ms, rotations = 128) 
+ - fma_chains (f32_2) : 81.8 Gflops (min = 8.2e+10, max = 8.2e+10, avg = 8.2e+10) (2.1e+02 ms, rotations = 64) 
+ - fma_chains (f64_2) : 65 Gflops (min = 6.5e+10, max = 6.5e+10, avg = 6.5e+10) (2.6e+02 ms, rotations = 64) 
+ - fma_chains (f32_3) : 108 Gflops (min = 1.1e+11, max = 1.1e+11, avg = 1.1e+11) (2.4e+02 ms, rotations = 64) 
+ - fma_chains (f64_3) : 100 Gflops (min = 1.0e+11, max = 1.0e+11, avg = 1.0e+11) (5.1e+02 ms, rotations = 128) 
+ - fma_chains (f32_4) : 160 Gflops (min = 1.6e+11, max = 1.6e+11, avg = 1.6e+11) (2.2e+02 ms, rotations = 64) 
+ - fma_chains (f64_4) : 119 Gflops (min = 1.2e+11, max = 1.2e+11, avg = 1.2e+11) (2.9e+02 ms, rotations = 64) 
+ - vector_allgather (u64, n=   1) : 3.467e-06 s (min = 3.47e-06, max = 3.47e-06, loops = 28841) 
+ - vector_allgather (u64, n=   8) : 3.431e-06 s (min = 3.43e-06, max = 3.43e-06, loops = 29146) 
+ - vector_allgather (u64, n=  64) : 3.451e-06 s (min = 3.45e-06, max = 3.45e-06, loops = 28978) 
+ - vector_allgather (u64, n= 128) : 3.384e-06 s (min = 3.38e-06, max = 3.38e-06, loops = 29554) 
+ - vector_allgather (u64, n= 150) : 3.363e-06 s (min = 3.36e-06, max = 3.36e-06, loops = 29733) 
+ - vector_allgather (u64, n=1024) : 3.392e-06 s (min = 3.39e-06, max = 3.39e-06, loops = 29484) 
+-----------------------------------------------------
+```
+
+Alright ! Let's run something "usefull" (we will run actual simulation in the next part of the tutorial), it will be one of the algorithm benchmarks.
+
+```bash
+./shamrock --smi --sycl-cfg 2:2 --benchmark-mpi --rscript ../examples/benchmarks/run_exclusive_scan_in_place.py
+```
+
+You should see a figure like:
+![exscan perf figure](../../_images/sphx_glr_run_exclusive_scan_in_place_001.png)
+
+:::{note}
+Here the `--rscript` flag here means run-scripts. In Shamrock since everything goes through python your run will be a python script, hence the name "run script".
+:::
+
+### Python interpreter + Ipython
+
+### Python package
+
+### Jupyter notebook
+
+### Legacy content for this guide
+
 !!! warning
 
     This guide assume that shamrock is available in your path (aka that the `shamrock` commands and that `python3 -c "import shamrock"` work). This might not be the case if you have installed Shamrock [from source](./quickstart/install_from_source.md).
@@ -184,13 +371,6 @@ If you see any errors at this point it can be hard to list all cases so again dr
     ./shamrock <...>
     PYTHONPATH=$(pwd):$PYTHONPATH python3 <...>
     ```
-
-You have 4 main ways of using Shamrock:
-
-- As Ipython mode
-- As a python interpreter
-- As a Python package
-- In a jupyter notebook
 
 ## Selecting the device to run on
 

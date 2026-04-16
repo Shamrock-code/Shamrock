@@ -16,7 +16,7 @@ multy = 1
 multz = 1
 max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 16
+base = 8
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -132,7 +132,7 @@ dt = 0
 t = 0
 freq = 100
 dX0 = 0
-for i in range(3):
+for i in range(2):
     next_dt = model.evolve_once_override_time(t, dt)
     if i == 0:
         dic0 = convert_to_cell_coords(ctx.collect_data())

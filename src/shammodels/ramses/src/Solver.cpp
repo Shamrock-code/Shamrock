@@ -401,6 +401,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
         AMRBlock::block_size, "rho-prim", "rho-prim");
 
+    storage.rho_primitive_2 = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+        AMRBlock::block_size, "rho-prim_2", "rho-prim_2");
+
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
@@ -1633,7 +1636,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     {
-
         modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
             AMRBlock::block_size, solver_config.eos_gamma};
         node_ctp_after_updated.set_edges(
@@ -1642,13 +1644,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             storage.refs_rhov,
             storage.refs_rhoe,
             // /**/
-            storage.rho_primitive,
+            storage.rho_primitive_2,
             // /**/
             storage.vel,
             storage.press);
 
         node_ctp_after_updated.evaluate();
     }
+
+    /**
+     * When compute primitive varibales second times as above, the input variable still unchanged
+     * (even if they should be updated after finite volume). So rho_primitive, rho_primitive_2 and
+     * refs_rho are all equal. This means that primitive variable used in the refinement are one
+     * timestep late behind the conservative varibales, which explained why using the density from
+     * primitive variables give different result for refinement than density from conservative
+     * variables.
+     *
+     * But what is not clear yet is that when accessing "rho" field from pdat, the result is now
+     * different from primitives variable while consistent with refs_rho. Which means that the
+     * finite volume is successful done but we don't get access to same datas depending of how we
+     * access them.
+     */
 
     // scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch& p,
     // shamrock::patch::PatchDataLayer& pdat)
@@ -1657,9 +1673,15 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     //     auto rho_fieldrefs = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
     //                        .get_buf()
     //                        .get_read_access(depend_list);
-    //     auto rho_prim = shambase::get_check_ref(storage.rho_primitive)
+    //     auto rho_prim = shambase::get_check_ref(storage.rho_primitive_2)
     //                              .get_buf(p.id_patch)
     //                              .get_read_access(depend_list);
+
+    //     // auto rho_refs =
+    //     shambase::get_check_ref(storage.refs_rho).get(p.id_patch).get_buf().get_read_access(depend_list);
+
+    //     auto rho_refs =
+    //     shambase::get_check_ref(storage.refs_rho).get(p.id_patch).get_buf().get_read_access(depend_list);
 
     //     for(u32 block_id = 0; block_id < pdat.get_obj_cnt(); block_id++){
     //         //  logger::raw_ln(
@@ -1667,17 +1689,25 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     //         //     block_id,
     //         //     "\t ============================= \n\n");
 
-    //         for (u32 i = 0; i < AMRBlock::block_size ; i++) {
-    //             if(sham::details::g_sycl_abs(rho_fieldrefs[i + block_id * AMRBlock::block_size]
-    //                     - rho_prim[i + block_id * AMRBlock::block_size]) > 1e-6)
-    //                 logger::raw_ln(
-    //                     "diff rho_fieldrefs -- rho_prim \t at \t[",
-    //                     i + block_id * AMRBlock::block_size,
-    //                     "]\t :\t ",
-    //                     rho_fieldrefs[i + block_id * AMRBlock::block_size]
-    //                         - rho_prim[i + block_id * AMRBlock::block_size],
-    //                     "\n\n");
-    //         }
+    //          for (u32 i = 0; i < AMRBlock::block_size ; i++) {
+    //             auto idd = i + block_id*AMRBlock::block_size;
+    //             logger::raw_ln("[", idd, "]\t", "rho_prim :\t", rho_prim[idd],"\t rho_fieldref
+    //             :\t", rho_fieldrefs[idd], "\t rho_pdat :\t", rho_fieldrefs[idd],"\t \n\n");
+
+    //          }
+
+    //         // for (u32 i = 0; i < AMRBlock::block_size ; i++) {
+    //         //     if(sham::details::g_sycl_abs(rho_fieldrefs[i + block_id *
+    //         AMRBlock::block_size]
+    //         //             - rho_refs[i + block_id * AMRBlock::block_size]) > 1e-6)
+    //         //         logger::raw_ln(
+    //         //             "diff rho_fieldrefs -- rho_prim \t at \t[",
+    //         //             i + block_id * AMRBlock::block_size,
+    //         //             "]\t :\t ",
+    //         //             rho_fieldrefs[i + block_id * AMRBlock::block_size]
+    //         //                 - rho_refs[i + block_id * AMRBlock::block_size],
+    //         //             "\n\n");
+    //         // }
 
     //         // logger::raw_ln(
     //         //     "\n\n============================= [end] block id \t ",
@@ -1689,29 +1719,45 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     //             .get_buf()
     //             .complete_event_state(depend_list);
 
-    //     shambase::get_check_ref(storage.rho_primitive)
+    //     shambase::get_check_ref(storage.rho_primitive_2)
     //             .get_buf(p.id_patch)
     //             .complete_event_state(depend_list);
+    //     shambase::get_check_ref(storage.refs_rho).get(p.id_patch).get_buf().complete_event_state(depend_list);
     // });
 
-    // auto &buf_of_rho_refs = shambase::get_check_ref(storage.refs_rho).get(0).get_buf();
-    // auto std_vec_rho_ref  = buf_of_rho_refs.copy_to_stdvec();
-    // auto &buf_of_rho_prim = shambase::get_check_ref(storage.rho_primitive).get(0).get_buf();
-    // auto std_vec_rho_prim = buf_of_rho_prim.copy_to_stdvec();
+    auto &buf_of_rho_refs   = shambase::get_check_ref(storage.refs_rho).get(0).get_buf();
+    auto std_vec_rho_ref    = buf_of_rho_refs.copy_to_stdvec();
+    auto &buf_of_rho_prim   = shambase::get_check_ref(storage.rho_primitive).get(0).get_buf();
+    auto std_vec_rho_prim   = buf_of_rho_prim.copy_to_stdvec();
+    auto &buf_of_rho_prim_2 = shambase::get_check_ref(storage.rho_primitive_2).get(0).get_buf();
+    auto std_vec_rho_prim_2 = buf_of_rho_prim_2.copy_to_stdvec();
     // logger::raw_ln(
     //     "\n\n============================= [start] diff rho check \t  ", std_vec_rho_ref.size(),
     //     "\t -- \t", std_vec_rho_prim.size(),
     //     "============================= \n\n");
-    // for (u32 i = 0; i < std::min(std_vec_rho_ref.size(), std_vec_rho_prim.size())
-    // &&(std::fabs(std_vec_rho_ref[i] - std_vec_rho_prim[i]) > 1e-6);
-    //      i++) {
-    //     logger::raw_ln(
-    //         "diff rho_cons -- rho_prim \t at \t[",
-    //         i,
-    //         "]\t :\t ",
-    //         std_vec_rho_ref[i] - std_vec_rho_prim[i],
-    //         "\n\n");
-    // }
+    for (u32 i = 0; i < 16 * 16 * 16
+         /* &&(std::fabs(std_vec_rho_prim_2[i] - std_vec_rho_prim[i]) > 1e-6 )*/;
+         i++) {
+        // logger::raw_ln(
+        //     "diff rho_prim_2 -- rho_prim \t at \t[",
+        //     i,
+        //     "]\t :\t ",
+        //     std_vec_rho_prim_2[i] - std_vec_rho_prim[i],
+        //     "\n\n");
+
+        logger::raw_ln(
+            "[",
+            i,
+            "]\t",
+            "diff rho_prim_2 \t",
+            std_vec_rho_prim_2[i],
+            "\t -- rho_prim \t ",
+            std_vec_rho_prim[i],
+            "\t -- rho_refs \t ",
+            std_vec_rho_ref[i],
+            "\t",
+            "\n\n");
+    }
     // logger::raw_ln(
     //     "\n\n============================= [end] diff rho check \t " , std_vec_rho_ref.size(),
     //     "\t -- \t", std_vec_rho_prim.size(), "============================= "

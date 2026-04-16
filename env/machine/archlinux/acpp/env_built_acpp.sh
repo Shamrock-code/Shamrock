@@ -65,6 +65,7 @@ function setupcompiler {
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/ \
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DACPP_LLD_PATH=/usr/bin/ld.lld ||
         return
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return

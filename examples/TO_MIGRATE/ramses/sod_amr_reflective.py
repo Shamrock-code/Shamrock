@@ -14,9 +14,9 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 multx = 1
 multy = 1
 multz = 1
-max_amr_lev = 1
+max_amr_lev = 3
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 8
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -37,7 +37,7 @@ cfg.set_face_time_interpolation(True)
 err_min = 0.25
 err_max = 0.15
 
-# cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
+cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
 mass_crit = 1e-6 * 5 * 2 * 2
 # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
@@ -130,9 +130,9 @@ t_target = 0.245
 
 dt = 0
 t = 0
-freq = 100
+freq = 10
 dX0 = 0
-for i in range(2):
+for i in range(50):
     next_dt = model.evolve_once_override_time(t, dt)
     if i == 0:
         dic0 = convert_to_cell_coords(ctx.collect_data())
@@ -229,5 +229,5 @@ if True:
     ax1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
     ax2.set_ylabel("AMR level")
     plt.title(f"Threshold = {err_max}, derefinement factor = {err_min}")
-    plt.savefig("sod_tube_3_1_baryonic_density_check_density.png")
+    plt.savefig("sod_tube_3_1_baryonic_density_check_density_5.png")
     #######

@@ -12,17 +12,157 @@ I will assume that you want to compile it from source (as most probably do anywa
 - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
 - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
-### Recommended Configurations by Operating System
+## Prerequisite
 
-For detailed configuration guides for different operating systems and environments, see the [from source](./quickstart/install_from_source.md) guide.
+::::{tab-set}
+:::{tab-item} Linux (Debian & Ubuntu)
 
-**Platform:**
+If you don't have already have an llvm (...) :
 
-- **Linux**: [From source](./quickstart/recommended_config/linux_debian.md)
-- **macOS**: [From source](./quickstart/recommended_config/macos.md)
-- **Conda**: [From source](./quickstart/recommended_config/conda.md)
+```bash
+wget --progress=bar:force https://apt.llvm.org/llvm.sh
+chmod +x llvm.sh
+sudo ./llvm.sh 20
+sudo apt install -y libclang-20-dev clang-tools-20 libomp-20-dev
+```
 
-For detailed setup instructions and configuration-specific notes, please refer to the [individual configuration guides](./recommended_config/).
+For the other requirements do :
+
+```bash
+sudo apt install cmake libboost-all-dev python3-ipython ninja-build
+```
+
+Just to ensure that you have the correct stuff do:
+
+```bash
+clang-20 --version
+```
+
+If you get an error that's weird and it is probably simpler to drop a message on [Discord](https://discord.gg/Q69s5buyr5) for help.
+
+:::
+:::{tab-item} MacOS
+
+With Homebrew:
+
+```bash
+brew install cmake libomp boost open-mpi adaptivecpp python ninja
+```
+
+:::
+:::{tab-item} ArchLinux
+
+```bash
+sudo pacman -Syu base-devel git python python-pip cmake boost ninja openmp openmpi doxygen llvm20 clang20 lld
+```
+
+:::
+:::{tab-item} Conda
+
+Nothing to do at this stage
+
+:::
+::::
+
+## Doing the setup
+
+### Cloning the repo
+
+Now there before cloning the source code there are two options:
+
+- Do you want to contribute stuff to Shamrock (e.g. modify it and propose the changes)
+- Do you want to just use the standard version
+
+::::{tab-set}
+:::{tab-item} Use only
+
+Go in the folder where you want to work and do:
+
+```bash
+git clone --recurse-submodules https://github.com/Shamrock-code/Shamrock.git
+```
+
+:::
+:::{tab-item} Use and modify
+
+This can be a bit more involved if you are not used to Github, but this is how to get work done there:
+
+If you already have registered your SSH key on Github you don't need to touch it, otherwise:
+
+- First go to [Github.com](https://github.com) and ensure that you are logged in.
+- In a terminal on your laptop/desktop do `ssh-keygen -t rsa -b 4096` (I recommend rsa4096 since some supercomputer require it). You can leave the password empty if you want to avoid the need to type it. And you can also accept the default name of the key `id_rsa`.
+- Now recover your public key `cat ~/.ssh/id_rsa.pub` (You may have to change the filename, this one is the default)
+- Go to [Github SSH user key](https://github.com/settings/keys) and click on `New SSH Key`, chose a name and paste the key obtained by `cat ~/.ssh/id_rsa.pub` in the text box named `Key`.
+
+Alright now that the SSH key is good:
+
+- First go to [Github.com](https://github.com) and ensure that you are logged in.
+- Go to the [Shamrock repo](https://github.com/Shamrock-code/Shamrock) and at the top right of the screen you should see a button called "Fork". Alternatively you can just go to that [URL](https://github.com/Shamrock-code/Shamrock/fork).
+- And click on Create fork
+- You should land on a page whose url is `https://github.com/<your github username>/Shamrock`
+
+Now assuming you have registered your SSH key do:
+
+```bash
+git clone --recurse-submodules git@github.com:<your github username>/Shamrock.git
+```
+
+:::
+::::
+
+And go to the new folder
+
+```bash
+cd Shamrock
+```
+
+### Creating the environment
+
+Shamrock provides its own utilities with pre-made configurations for various machines. Here i give recommendations adapted a quickstart guide. If you want more details about the environment setup see [This page](../user_guide/envs.md).
+
+::::{tab-set}
+:::{tab-item} Linux (Debian & Ubuntu)
+
+```bash
+./env/new-env --builddir build --machine debian-generic.acpp -- --backend omp
+```
+
+:::
+:::{tab-item} MacOS
+
+```bash
+./env/new-env --builddir build --machine macos-generic.acpp -- --backend omp
+```
+
+:::
+:::{tab-item} ArchLinux
+
+```bash
+./env/new-env --machine archlinux.acpp --builddir build -- --backend omp
+```
+
+:::
+:::{tab-item} Conda
+
+```bash
+./env/new-env --machine conda.acpp --builddir build -- --backend omp
+```
+
+:::
+::::
+
+### Compiling
+
+```
+# Now move in the build directory
+cd build
+# Activate the workspace, which will define some utility functions
+source ./activate # load the correct modules and ENV vars
+shamconfigure     # alias to the correct cmake command
+shammake          # alias to ninja build (or make if ninja is not avail)
+```
+
+If you see any errors at this point it can be hard to list all cases so again drop a message on [Discord](https://discord.gg/Q69s5buyr5) for help.
 
 ## Starting Shamrock
 

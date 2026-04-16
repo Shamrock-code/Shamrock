@@ -314,3 +314,16 @@ pyscript end
      - `--no-browser` Do not open the browser there are not in the container obviously.
      - `--ip=0.0.0.0` Otherwise the port is not fowarded correctly out of the container.
      - `--NotebookApp.token=''` Do not use a token to log.
+
+```{toctree}
+:maxdepth: 2
+:caption: Contents
+
+quickstart/install_spack.md
+quickstart/install_brew.md
+quickstart/install_docker.md
+quickstart/install_from_source.md
+quickstart/recommended_config/linux_debian.md
+quickstart/recommended_config/macos.md
+quickstart/recommended_config/conda.md
+```

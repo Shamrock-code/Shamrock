@@ -36,7 +36,8 @@ function setup_sphinx_env {
                 sphinx_design \
                 imageio \
                 sympy \
-                myst-parser
+                myst-parser \
+                mystmd
     )
 
 }

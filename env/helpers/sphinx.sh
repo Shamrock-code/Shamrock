@@ -88,16 +88,16 @@ function _run_sphinx_doc_gen {
         echo "-- Generating Sphinx documentation ($description) --"
         export PYTHONPATH=$SPHINX_SHAMROCK_PYTHON_DIR:$PYTHONPATH
         case "$script" in
-            single)
-                bash gen_sphinx_doc_single_example.sh $3
-                ;;
-            full)
-                bash gen_sphinx_doc.sh
-                ;;
-            *)
-                echo "error: unknown script type '$script', expected 'single' or 'full'"
-                return 1
-                ;;
+        single)
+            bash gen_sphinx_doc_single_example.sh $3
+            ;;
+        full)
+            bash gen_sphinx_doc.sh
+            ;;
+        *)
+            echo "error: unknown script type '$script', expected 'single' or 'full'"
+            return 1
+            ;;
         esac
     )
 }

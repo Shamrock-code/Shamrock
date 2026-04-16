@@ -18,6 +18,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
+#include "shambackends/EventList.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
@@ -48,6 +49,8 @@
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/patch/Patch.hpp"
+#include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -1646,6 +1649,50 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         node_ctp_after_updated.evaluate();
     }
+
+    // scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch& p,
+    // shamrock::patch::PatchDataLayer& pdat)
+    // {
+    //     sham::EventList depend_list;
+    //     auto rho_fieldrefs = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+    //                        .get_buf()
+    //                        .get_read_access(depend_list);
+    //     auto rho_prim = shambase::get_check_ref(storage.rho_primitive)
+    //                              .get_buf(p.id_patch)
+    //                              .get_read_access(depend_list);
+
+    //     for(u32 block_id = 0; block_id < pdat.get_obj_cnt(); block_id++){
+    //         //  logger::raw_ln(
+    //         //     "\n\n============================= [start] block id \t ",
+    //         //     block_id,
+    //         //     "\t ============================= \n\n");
+
+    //         for (u32 i = 0; i < AMRBlock::block_size ; i++) {
+    //             if(sham::details::g_sycl_abs(rho_fieldrefs[i + block_id * AMRBlock::block_size]
+    //                     - rho_prim[i + block_id * AMRBlock::block_size]) > 1e-6)
+    //                 logger::raw_ln(
+    //                     "diff rho_fieldrefs -- rho_prim \t at \t[",
+    //                     i + block_id * AMRBlock::block_size,
+    //                     "]\t :\t ",
+    //                     rho_fieldrefs[i + block_id * AMRBlock::block_size]
+    //                         - rho_prim[i + block_id * AMRBlock::block_size],
+    //                     "\n\n");
+    //         }
+
+    //         // logger::raw_ln(
+    //         //     "\n\n============================= [end] block id \t ",
+    //         //     block_id,
+    //         // "\t ============================= \n\n");
+    //     }
+
+    //     pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
+    //             .get_buf()
+    //             .complete_event_state(depend_list);
+
+    //     shambase::get_check_ref(storage.rho_primitive)
+    //             .get_buf(p.id_patch)
+    //             .complete_event_state(depend_list);
+    // });
 
     // auto &buf_of_rho_refs = shambase::get_check_ref(storage.refs_rho).get(0).get_buf();
     // auto std_vec_rho_ref  = buf_of_rho_refs.copy_to_stdvec();

@@ -218,9 +218,9 @@ namespace shamtest::details {
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n"                                            \
-                    + shambase::format(" -> " #_a " = {}", _______a) + "\n"                        \
-                    + shambase::format(" -> " #_b " = {}", _______b) + "\n"                        \
+                assert_name + " evaluated to false\n\n" + " -> " #_a                               \
+                    + shambase::format(" = {}", _______a) + "\n" + " -> " #_b                      \
+                    + shambase::format(" = {}", _______b) + "\n"                                   \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)

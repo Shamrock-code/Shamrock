@@ -18,15 +18,40 @@
 
 #include "shambase/aliases_int.hpp"
 #include "exception.hpp"
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#include <string_view>
 #include <array>
 #include <fstream>
 #include <vector>
 
 namespace shambase {
+
+    inline __attribute__((always_inline)) auto vformat(std::string_view fmt, fmt::format_args args)
+        -> std::string {
+        try {
+            return fmt::vformat(fmt, args);
+        } catch (const std::exception &e) {
+
+            throw make_except_with_loc<std::invalid_argument>(
+                "format failed : " + std::string(e.what()) + "\n fmt string : " + std::string(fmt));
+        }
+    }
+
+    inline __attribute__((always_inline)) auto vformat(fmt::string_view fmt, fmt::format_args args)
+        -> std::string {
+        try {
+            return fmt::vformat(fmt, args);
+        } catch (const std::exception &e) {
+
+            throw make_except_with_loc<std::invalid_argument>(
+                "format failed : " + std::string(e.what())
+                + "\n fmt string : " + fmt::to_string(fmt));
+        }
+    }
 
     /**
      * @brief format a string using fmtlib style
@@ -38,13 +63,9 @@ namespace shambase {
      * @return std::string the formatted string
      */
     template<typename... T>
-    inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        try {
-            return fmt::format(fmt, args...);
-        } catch (const std::exception &e) {
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what()));
-        }
+    inline __attribute__((always_inline)) auto format(fmt::format_string<T...> fmt, T &&...args)
+        -> std::string {
+        return shambase::vformat(fmt, fmt::make_format_args(args...));
     }
 
     /**
@@ -57,7 +78,7 @@ namespace shambase {
      * @return std::string the formatted string
      */
     template<typename... T>
-    inline std::string format_printf(std::string format, const T &...args) {
+    inline std::string format_printf(std::string_view format, const T &...args) {
         try {
             return fmt::sprintf(format, args...);
         } catch (const std::exception &e) {

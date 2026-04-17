@@ -23,15 +23,19 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamrock/solvergraph/SolverGraph.hpp"
 #include <nlohmann/json.hpp>
+#include <unordered_map>
 #include <unordered_set>
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <tuple>
 #include <vector>
@@ -47,8 +51,25 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
+#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
+inline std::unordered_map<
+    std::string,
+    std::function<std::shared_ptr<shamrock::solvergraph::IEdge>(const nlohmann::json &j)>>
+    deser_map = {};
+
+/// Data stored within the scheduler that are garanteed to be in sink across all ranks
+struct SynchronizedData {
+    shamrock::solvergraph::SolverGraph container
+        = shamrock::solvergraph::SolverGraph::with_constraint(
+            std::nullopt, shamrock::solvergraph::json_serializable_edge_constraint);
+
+    nlohmann::json to_json();
+
+    void from_json(const nlohmann::json &j);
+};
 struct PatchSchedulerConfig {
     u64 split_load_value = 0_u64;
     u64 merge_load_value = 0_u64;
@@ -98,9 +119,10 @@ class PatchScheduler {
     u64 crit_patch_split; ///< splitting limit (if load value > crit_patch_split => patch split)
     u64 crit_patch_merge; ///< merging limit (if load value < crit_patch_merge => patch merge)
 
-    SchedulerPatchList patch_list; ///< handle the list of the patches of the scheduler
-    SchedulerPatchData patch_data; ///< handle the data of the patches of the scheduler
-    PatchTree patch_tree;          ///< handle the tree structure of the patches
+    SchedulerPatchList patch_list;      ///< handle the list of the patches of the scheduler
+    SchedulerPatchData patch_data;      ///< handle the data of the patches of the scheduler
+    PatchTree patch_tree;               ///< handle the tree structure of the patches
+    SynchronizedData synchronized_data; ///< data that is synchroneous across all ranks
 
     // using unordered set is not an issue since we use the find command after
     std::unordered_set<u64> owned_patch_id; ///< list of owned patch ids updated with

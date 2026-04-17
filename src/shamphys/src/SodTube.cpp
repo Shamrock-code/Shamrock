@@ -33,7 +33,7 @@ shamphys::SodTube::SodTube(f64 _gamma, f64 _rho_1, f64 _P_1, f64 _rho_5, f64 _P_
 
 f64 shamphys::SodTube::solve_P_4() {
 
-    auto shock_tube_function = [=](f64 P_4) {
+    auto shock_tube_function = [=, this](f64 P_4) {
         f64 z = (P_4 / P_5 - 1.);
 
         f64 gm1 = gamma - 1.0;

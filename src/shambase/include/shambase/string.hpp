@@ -275,7 +275,7 @@ namespace shambase {
             throw make_except_with_loc<std::invalid_argument>(
                 "the string is too short to be shorten"
                 "\n args : "
-                + format("{} : {} \n {} : {}", "str", str, "len", len));
+                + shambase::format("{} : {} \n {} : {}", "str", str, "len", len));
         }
         return str.substr(0, str.size() - len);
     }

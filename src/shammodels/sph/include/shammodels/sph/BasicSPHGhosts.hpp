@@ -483,7 +483,7 @@ namespace shammodels::sph {
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
                     positioninterfs),
-                [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                [=, this](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<vec> &pos   = pdat.get_field<vec>(0);
                     PatchDataField<flt> &hpart = pdat.get_field<flt>(ihpart);
 

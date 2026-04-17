@@ -32,7 +32,7 @@ Initially you should see something like this
 
 ### VSCode profiles
 
-Start by creating a new vscode profile to avoid messing up existing configurations (you can also import existing keyboard shortcut or whatever at this step, see: [VScode profiles](https://code.visualstudio.com/docs/editor/profiles)).
+Start by creating a new vscode profile to avoid messing up existing configurations (you can also import existing keyboard shortcuts or whatever at this step, see: [VScode profiles](https://code.visualstudio.com/docs/editor/profiles)).
 
 Click on the setting icon, go in the profile tab and select `Create Profile...`
 ![VScode blank](../_static/large-figures/figures/vscode/create_profile.png)
@@ -44,7 +44,7 @@ Now that you have created a profile, go to the extension tab,
 and install the `clangd` C++ language server to get autocompletion and syntax highlight/checking.
 ![VScode blank](../_static/large-figures/figures/vscode/install_clangd.png)
 
-Clangd will be looking at the file `build/compile_commands.json` from the root directory to get the compilation arguments. In Shamrock the `.clangd` file in the root of the directory and the CMake configuration is made in such a way that you will get autocompletion with SYCL support in the repository. To check go in any cpp file (`src/main.cpp` here) and it should work (check that is says `clangd: idle` or something similar at the bottom of the screen).
+Clangd will be looking at the file `build/compile_commands.json` from the root directory to get the compilation arguments. In Shamrock the `.clangd` file in the root of the directory and the CMake configuration is made in such a way that you will get autocompletion with SYCL support in the repository. To check, go in any cpp file (`src/main.cpp` here) and it should work (check that it says `clangd: idle` or something similar at the bottom of the screen).
 ![VScode blank](../_static/large-figures/figures/vscode/it_works.png)
 
 You can now go on the menu bar in the terminal tab and open a new terminal and you can start working normally.
@@ -89,7 +89,7 @@ opt.shiftround = true -- Round indent
 opt.shiftwidth = 4 -- Size of an indent
 ```
 
-This will ensure that you are using 4 space indent as you should (no i'm not biased XD)
+This will ensure that you are using 4 space indent as you should (no I'm not biased XD)
 
 Finally in `nvim/lua/config/autocmds.lua` ensure that you have
 

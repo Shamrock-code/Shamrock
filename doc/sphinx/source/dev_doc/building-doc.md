@@ -3,8 +3,7 @@
 ## Repo setup
 
 We assume in this guide that you have cloned and built Shamrock from source.
-
-In other word something like this:
+In other words, something like this:
 ```bash
 git clone --recurse-submodules git@github.com:Shamrock-code/Shamrock.git
 cd Shamrock
@@ -17,9 +16,9 @@ shammake
 
 ## Building the Sphinx documentation
 
-The Sphinx documentation is now the main documentation of the code. In order to build it i provide some utilites that come with the main dev environments rather than giving you the endless list of commands to get it working because this is such a pain ...
+The Sphinx documentation is now the main documentation of the code. In order to build it I provide some utilities that come with the main dev environments rather than giving you the endless list of commands to get it working because this is such a pain ...
 
-The Sphinx documentation include several components, the user and developer documentation as well as the Python API and Examples. All of them are mandatory to build the doc exept from running all the examples. In general if you have a standard laptop building all the exemples take a very long time so i advise against it. In that case you can, provided that the environment is active do
+The Sphinx documentation includes several components, the user and developer documentation as well as the Python API and Examples. All of them are mandatory to build the doc except for running all the examples. In general if you have a standard laptop building all the examples takes a very long time so I advise against it. In that case you can, provided that the environment is active, do
 
 ### Without running the examples
 
@@ -46,7 +45,7 @@ You can replace the path by anything in the `examples/` directory.
 
 ### All the examples (very long...)
 
-In general i'd say do not bother and let the Github CI do that for you and download the result. If you are brave though here is the command:
+In general I'd say do not bother and let the Github CI do that for you and download the result. If you are brave though here is the command:
 ```bash
 generate_sphinx_doc_with_examples
 ```

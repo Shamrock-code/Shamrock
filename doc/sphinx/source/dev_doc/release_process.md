@@ -6,19 +6,17 @@ Shamrock is released on a 6 months basis. The release process goes as follows.
 
 We first change the version of the code :
 ```cmake
-set(SHAMROCK_VERSION_MAJOR 2024)
+set(SHAMROCK_VERSION_MAJOR 2025)
 set(SHAMROCK_VERSION_MINOR 10)
 set(SHAMROCK_VERSION_PATCH 0)
 ```
 Here the major version is the current year, and the minor version is the current month. Finally, the patch version indicate the minor release (bug fix or other).
 
+Also one should change the version tag also in `dox.conf` as well as `env/helpers/_pysetup.py`.
+
 ## The release branch
 
 First, if this is a true release (opposed to a patch), we branch from `main` and name it `release/<major>.<minor>.x`.
-
-## The release workflow
-
-We launch the `Prepare release` workflow on the release branch. This will generate the doc, the coverage info and the source code archive.
 
 ## Creating the release
 

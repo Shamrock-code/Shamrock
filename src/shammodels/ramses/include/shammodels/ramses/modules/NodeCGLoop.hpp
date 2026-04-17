@@ -1,7 +1,7 @@
 // -------------------------------------------------------//
 //
 // SHAMROCK code for hydrodynamics
-// Copyright (c) 2021-2025 Timothée David--Cléris <tim.shamrock@proton.me>
+// Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
 // SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
 // Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 //
@@ -184,7 +184,6 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::ScalarEdge<Tscal> &mean_rho;
             const shamrock::solvergraph::DDSharedBuffers<u32> &idx_in_ghost;
             const shamrock::solvergraph::RankGetter &rank_owner;
-            const shamrock::solvergraph::ScalarEdge<Tscal> &dt;
             shamrock::solvergraph::IFieldRefs<Tscal> &spans_phi;
             shamrock::solvergraph::Field<Tscal> &spans_phi_cpy;
             shamrock::solvergraph::Field<Tscal> &spans_phi_res;
@@ -208,7 +207,6 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> mean_rho,
             std::shared_ptr<shamrock::solvergraph::DDSharedBuffers<u32>> idx_in_ghost,
             std::shared_ptr<shamrock::solvergraph::RankGetter> rank_owner,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> spans_phi,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_cpy,
             std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_res,
@@ -231,8 +229,7 @@ namespace shammodels::basegodunov::modules {
                  spans_rho,
                  mean_rho,
                  idx_in_ghost,
-                 rank_owner,
-                 dt});
+                 rank_owner});
 
             __internal_set_rw_edges(
                 {spans_phi,
@@ -271,15 +268,10 @@ namespace shammodels::basegodunov::modules {
 
             // set spmv_node edges
             spmv_node.set_edges(
-                sizes,
-                cell_neigh_graph,
-                spans_block_cell_sizes,
-                spans_phi_p,
-                spans_phi_Ap);
+                sizes, cell_neigh_graph, spans_block_cell_sizes, spans_phi_p, spans_phi_Ap);
 
             // set hadamard_prod_node edges
-            hadamard_prod_node.set_edges(
-                sizes,  spans_phi_p, spans_phi_Ap, spans_phi_hadamard_prod);
+            hadamard_prod_node.set_edges(sizes, spans_phi_p, spans_phi_Ap, spans_phi_hadamard_prod);
 
             a_norm_node.set_edges(sizes, spans_phi_hadamard_prod_cpy, e_norm);
             // a_norm_node.set_edges(sizes, sizes_no_gz, spans_phi_hadamard_prod, e_norm);
@@ -296,7 +288,7 @@ namespace shammodels::basegodunov::modules {
             res_ddot_new_node.set_edges(spans_phi_cpy, new_values);
 
             // // set new_p_node edges
-            new_p_node.set_edges(sizes,  spans_phi_res, beta, spans_phi_p);
+            new_p_node.set_edges(sizes, spans_phi_res, beta, spans_phi_p);
 
             // set node_gz edges  for p-vectors
             node_gz_p.set_edges(spans_phi_p, idx_in_ghost, p_ghosts);
@@ -345,7 +337,6 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(5),
                 get_ro_edge<shamrock::solvergraph::DDSharedBuffers<u32>>(6),
                 get_ro_edge<shamrock::solvergraph::RankGetter>(7),
-                get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(8),
                 get_rw_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(1),
                 get_rw_edge<shamrock::solvergraph::Field<Tscal>>(2),

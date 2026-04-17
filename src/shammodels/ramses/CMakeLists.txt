@@ -57,6 +57,9 @@ set(Sources
     src/modules/NodePCGInit.cpp
     src/modules/NodeJacobiPreconditioner.cpp
     src/modules/NodeCGLoop.cpp
+    src/modules/NodeSelfGravityAcceleration.cpp
+    src/modules/NodeNextRho.cpp
+    src/modules/NodeGetNextConsVar.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

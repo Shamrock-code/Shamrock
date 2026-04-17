@@ -64,7 +64,7 @@ namespace shamrock::solvergraph {
         /// Structure containing references to the node's input and output edges.
         struct Edges {
             const IFieldRefs<T> &original; ///< Reference to the source field data
-            Field<T> &target;              ///< Reference to the target field for copying
+            IFieldRefs<T> &target;         ///< Reference to the target field for copying
         };
 
         /**
@@ -73,7 +73,8 @@ namespace shamrock::solvergraph {
          * @param original Shared pointer to the source field references (read-only)
          * @param target Shared pointer to the target field (read-write)
          */
-        void set_edges(std::shared_ptr<IFieldRefs<T>> original, std::shared_ptr<Field<T>> target) {
+        void set_edges(
+            std::shared_ptr<IFieldRefs<T>> original, std::shared_ptr<IFieldRefs<T>> target) {
             __internal_set_ro_edges({original});
             __internal_set_rw_edges({target});
         }
@@ -83,7 +84,9 @@ namespace shamrock::solvergraph {
          *
          * @return Edges structure containing references to original and target fields
          */
-        Edges get_edges() { return Edges{get_ro_edge<IFieldRefs<T>>(0), get_rw_edge<Field<T>>(0)}; }
+        Edges get_edges() {
+            return Edges{get_ro_edge<IFieldRefs<T>>(0), get_rw_edge<IFieldRefs<T>>(0)};
+        }
 
         /**
          * @brief Internal implementation of the field copying operation.

@@ -62,6 +62,7 @@ This page aims at documenting both the User and developer documentation of Shamr
 
    Home page <self>
    User Guide <user_guide>
+   Dev Doc <dev_doc>
    Examples <_as_gen/index>
    Python API <api>
 

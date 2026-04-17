@@ -44,6 +44,7 @@ namespace shammodels::basegodunov {
 
         if (is_gravity_on()) {
             pdl.add_field<Tscal>("phi", AMRBlock::block_size);
+            pdl.add_field<Tscal>("phi_old", AMRBlock::block_size);
         }
 
         if (is_gas_passive_scalar_on()) {

@@ -55,6 +55,7 @@ set(Sources
     src/modules/NodeSpMVPoisson3D.cpp
     src/modules/NodeSumReduction.cpp
     src/modules/NodePCGInit.cpp
+    src/modules/NodeJacobiPreconditioner.cpp
 
 )
 

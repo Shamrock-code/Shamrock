@@ -33,9 +33,11 @@ The option `SHAM_PROF_USE_COMPLETE_EVENT` controls wether completed event or `be
 
 Lastly the option `SHAM_PROF_USE_NVTX` will enable NVTX profiling in shamrock.
 
-!!! warning "NVTX profiling"
 
-    Be aware that both `SHAM_PROFILING` and `SHAM_PROF_USE_NVTX` must be set to `1` and that Shamrock must be compiled with the cmake option `SHAMROCK_USE_NVTX=On` for NVTX to work.
+:::{warning}
+Be aware that both `SHAM_PROFILING` and `SHAM_PROF_USE_NVTX` must be set to `1` and that Shamrock must be compiled with the cmake option `SHAMROCK_USE_NVTX=On` for NVTX to work.
+:::
+
 
 ### Adding profiling entries in the code
 
@@ -55,35 +57,30 @@ This is used initially to trace the location in the code, allowing more precise 
 
 ### Nsys
 
-for a timeline view, with GPU metrics:
-
+Nsys can be used to get a timeline like view of what is happening:
 ```
-nsys profile -t cuda,nvtx --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
-```
-
-MPI version :
-```
-nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../../exemples/spherical_wave.py
+nsys profile -t cuda,nvtx --gpu-metrics-device=0 ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../examples/benchmarks/sph_weak_scale_test.py
 ```
 
-On the CBP (ENSL) the qstrm importer fails, bu it can be ran a posteriori :
+With MPI is should be used like this :
+```
+nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi mpirun -n 2 ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../examples/benchmarks/sph_weak_scale_test.py
+```
+
+On the CBP (ENSL) the qstrm importer fails, but it can be afterward using :
 ```
 /usr/lib/nsight-systems/host-linux-x64/QdstrmImporter -i <input> -o output.qdrep
 ```
 
- MPI trace :
-
+On a multi GPU system it is possible to get the device metric during the run by doing for example (On the CRAL DGX workstation):
 ```
-nsys profile -t cuda,nvtx,mpi --cuda-memory-usage=true --mpi-impl=openmpi /usr/bin/mpirun -n 2 ./shamrock --sycl-cfg auto:CUDA --loglevel 1 --rscript ../../exemples/spherical_wave.py
-```
-
-Current command on the GDX :
-```
-nsys profile -t cuda,nvtx,mpi --gpu-metrics-device=1,2,3,4 --cuda-memory-usage=true --mpi-impl=openmpi  mpirun -n 4 ./shamrock --sycl-cfg auto:CUDA --smi-full --loglevel 1 --rscript ../exemples/spherical_wave.py
+nsys profile -t cuda,nvtx,mpi --gpu-metrics-device=1,2,3,4 --cuda-memory-usage=true --mpi-impl=openmpi  mpirun -n 4 ./shamrock --sycl-cfg auto:CUDA --smi-full --loglevel 1 --rscript ../examples/benchmarks/sph_weak_scale_test.py
 ```
 
 ### NCU
 
+To profile shamrock with ncu here is the magic command (you just have to change the runscript that you want to profile)
+
 ```
-ncu --set full --call-stack --nvtx --section=SpeedOfLight_HierarchicalDoubleRooflineChart --section=SpeedOfLight_HierarchicalSingleRooflineChart --section=SpeedOfLight_HierarchicalTensorRooflineChart --open-in-ui ./shamrock --sycl-cfg 1:1 --loglevel 10 --rscript ../../exemples/spherical_wave.py
+ncu --set full --call-stack --nvtx --section=SpeedOfLight_HierarchicalDoubleRooflineChart --section=SpeedOfLight_HierarchicalSingleRooflineChart --section=SpeedOfLight_HierarchicalTensorRooflineChart --open-in-ui ./shamrock --sycl-cfg 1:1 --loglevel 1 --rscript ../examples/benchmarks/sph_weak_scale_test.py
 ```

@@ -38,7 +38,7 @@ firefox ../doc/sphinx/build/html/index.html
 
 ### With a single example
 
-Especially if you are writing new examples you may want to test them. In that case the command is 
+Especially if you are writing new examples you may want to test them. In that case the command is
 ```bash
 generate_sphinx_doc_single_example examples/sph/run_orzag_tang.py
 ```

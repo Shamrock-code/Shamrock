@@ -78,8 +78,8 @@ namespace shammodels::sph::modules {
             density.get_buf(p.id_patch).complete_event_state(e);
         });
 
-        shamrock::LegacyVtkWriter writter = start_dump<Tvec>(scheduler(), filename);
-        writter.add_point_data_section();
+        shamrock::LegacyVtkWriter writer = start_dump<Tvec>(scheduler(), filename);
+        writer.add_point_data_section();
 
         u32 fnum = 0;
         if (add_patch_world_id) {
@@ -125,49 +125,49 @@ namespace shammodels::sph::modules {
             fnum += ndust;
         }
 
-        writter.add_field_data_section(fnum);
+        writer.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
-            vtk_dump_add_patch_id(scheduler(), writter);
-            vtk_dump_add_worldrank(scheduler(), writter);
+            vtk_dump_add_patch_id(scheduler(), writer);
+            vtk_dump_add_worldrank(scheduler(), writer);
         }
 
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, ihpart, "h");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, iuint, "u");
+        vtk_dump_add_field<Tvec>(scheduler(), writer, ivxyz, "v");
+        vtk_dump_add_field<Tvec>(scheduler(), writer, iaxyz, "a");
 
         if (solver_config.has_field_alphaAV()) {
             const u32 ialpha_AV = pdl.get_field_idx<Tscal>("alpha_AV");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, ialpha_AV, "alpha_AV");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, ialpha_AV, "alpha_AV");
         }
 
         if (solver_config.has_field_divv()) {
             const u32 idivv = pdl.get_field_idx<Tscal>("divv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idivv, "divv");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, idivv, "divv");
         }
 
         if (solver_config.has_field_dtdivv()) {
             const u32 idtdivv = pdl.get_field_idx<Tscal>("dtdivv");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, idtdivv, "dtdivv");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, idtdivv, "dtdivv");
         }
 
         if (solver_config.has_field_curlv()) {
             const u32 icurlv = pdl.get_field_idx<Tvec>("curlv");
-            vtk_dump_add_field<Tvec>(scheduler(), writter, icurlv, "curlv");
+            vtk_dump_add_field<Tvec>(scheduler(), writer, icurlv, "curlv");
         }
 
         if (solver_config.has_field_soundspeed()) {
             const u32 isoundspeed = pdl.get_field_idx<Tscal>("soundspeed");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "soundspeed");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, isoundspeed, "soundspeed");
         }
 
         if (solver_config.compute_luminosity) {
             const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
-            vtk_dump_add_field<Tscal>(scheduler(), writter, iluminosity, "luminosity");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, iluminosity, "luminosity");
         }
 
-        vtk_dump_add_compute_field(scheduler(), writter, density, "rho");
+        vtk_dump_add_compute_field(scheduler(), writer, density, "rho");
 
         if (solver_config.dust_config.has_epsilon_field()) {
             const u32 iepsilon = pdl.get_field_idx<Tscal>("epsilon");
@@ -201,7 +201,7 @@ namespace shammodels::sph::modules {
                 });
 
                 vtk_dump_add_compute_field(
-                    scheduler(), writter, tmp_epsilon, "epsilon_" + std::to_string(idust));
+                    scheduler(), writer, tmp_epsilon, "epsilon_" + std::to_string(idust));
             }
         }
 
@@ -233,7 +233,7 @@ namespace shammodels::sph::modules {
                 });
 
                 vtk_dump_add_compute_field(
-                    scheduler(), writter, tmp_deltav, "deltav_" + std::to_string(idust));
+                    scheduler(), writer, tmp_deltav, "deltav_" + std::to_string(idust));
             }
         }
     }

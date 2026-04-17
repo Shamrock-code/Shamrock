@@ -623,7 +623,7 @@ namespace shammodels::sph {
 
         dump.override_magic_number();
         dump.iversion = 1;
-        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
 
         u32 Ntot = info.nobj;
         dump.table_header_fort_int.add("nparttot", Ntot);

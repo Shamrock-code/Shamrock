@@ -12,7 +12,7 @@
 
 TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1) {
 
-    shamrock::LegacyVtkWriter writter("out-parts.vtk", true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer("out-parts.vtk", true, shamrock::UnstructuredGrid);
 
     f32 offset = shamcomm::world_rank() * shamcomm::world_size();
 
@@ -26,10 +26,10 @@ TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1) {
 
     sycl::buffer<f32_3> buf(pos.data(), pos.size());
 
-    writter.write_points(buf, 5);
+    writer.write_points(buf, 5);
 
-    writter.add_point_data_section();
-    writter.add_field_data_section(2);
+    writer.add_point_data_section();
+    writer.add_field_data_section(2);
 
     std::vector<f32> field_1 = {0, 1, 2, 3, 4};
     std::vector<f32> field_2 = {11, 9, 7, 15, 20};
@@ -37,13 +37,13 @@ TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1) {
     sycl::buffer<f32> buffield_1(field_1.data(), field_1.size());
     sycl::buffer<f32> buffield_2(field_2.data(), field_2.size());
 
-    writter.write_field("field1", buffield_1, 5);
-    writter.write_field("field2", buffield_2, 5);
+    writer.write_field("field1", buffield_1, 5);
+    writer.write_field("field2", buffield_2, 5);
 }
 
 TestStart(Unittest, "vtk-write-cells", vtk_write_test_cells, -1) {
 
-    shamrock::LegacyVtkWriter writter("out-cell.vtk", true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer("out-cell.vtk", true, shamrock::UnstructuredGrid);
 
     f32 offset = shamcomm::world_rank() * shamcomm::world_size();
 
@@ -66,10 +66,10 @@ TestStart(Unittest, "vtk-write-cells", vtk_write_test_cells, -1) {
     sycl::buffer<f32_3> buf(pos.data(), pos.size());
     sycl::buffer<f32_3> buf2(pos2.data(), pos2.size());
 
-    writter.write_voxel_cells(buf, buf2, 5);
+    writer.write_voxel_cells(buf, buf2, 5);
 
-    writter.add_cell_data_section();
-    writter.add_field_data_section(2);
+    writer.add_cell_data_section();
+    writer.add_field_data_section(2);
 
     std::vector<f32> field_1 = {0, 1, 2, 3, 4};
     std::vector<f32> field_2 = {11, 9, 7, 15, 20};
@@ -77,6 +77,6 @@ TestStart(Unittest, "vtk-write-cells", vtk_write_test_cells, -1) {
     sycl::buffer<f32> buffield_1(field_1.data(), field_1.size());
     sycl::buffer<f32> buffield_2(field_2.data(), field_2.size());
 
-    writter.write_field("field1", buffield_1, 5);
-    writter.write_field("field2", buffield_2, 5);
+    writer.write_field("field1", buffield_1, 5);
+    writer.write_field("field2", buffield_2, 5);
 }

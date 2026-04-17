@@ -180,7 +180,7 @@ namespace shamrock {
 
             timer.start();
 
-            shamlog_debug_ln("VtkWritter", "opening :", fname);
+            shamlog_debug_ln("VtkWriter", "opening :", fname);
 
             if (fname.find(".vtk") == std::string::npos) {
                 throw shambase::make_except_with_loc<std::invalid_argument>(

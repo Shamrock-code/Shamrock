@@ -709,6 +709,61 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     }
 
     ////////////////////////////////////////////////////////////////////////////////
+    /// Self-Gravity
+    ////////////////////////////////////////////////////////////////////////////////
+    if (solver_config.is_gravity_on()) {
+        storage.refs_phi
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi", "\\phi");
+        storage.refs_phi_new = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "phi-new", "\\phi");
+
+         storage.phi_res = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Res", "Res");
+        storage.phi_copy = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "phi-cpy", "phi-cpy");
+        storage.phi_p = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Phi_p", "Phi_p");
+        storage.phi_Ap = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Phi_Ap", "Phi_Ap");
+        storage.phi_hadamard_prod = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Phi_Hadamard_prod", "Phi_Hadamard_prod");
+        storage.phi_hadamard_prod_cpy = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "Phi_Hadamard_prod_cpy", "Phi_Hadamard_prod_cpy");
+        storage.e_norm
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("e_norm", "e_norm");
+        storage.alpha
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha", "alpha");
+        storage.beta = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("beta", "beta");
+        storage.old_val
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("old_val", "old_val");
+        storage.new_val
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("new_val", "new_val");
+
+        storage.phi_g_old = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "phi_g_old", "g^{n}");
+        storage.phi_g_new = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "phi_g_new", "g^{n+1}");
+
+        storage.refs_rho_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho-next", "\\rho_{n+1}");
+        storage.refs_rhov_next = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "rhov-next", "\\rho_{n+1}v");
+        storage.refs_rhoe_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rhoe-next", "\\rho_{n+1}e");
+
+        storage.grad_phi_update_m = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "grad-phi-up-1", "\\nabla\\phi_{1}");
+        storage.grad_phi_update_p = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "grad-phi-up-2", "\\nabla\\phi_{2}");
+
+    }
+
+
+
+
+
+
+    ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
     ////////////////////////////////////////////////////////////////////////////////
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> solver_sequence;
@@ -958,6 +1013,24 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.block_cell_sizes,
             storage.cell0block_aabb_lower);
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.should_compute_rho_mean()) {
+        modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};
+        node.set_edges(
+            storage.block_counts,
+            storage.block_cell_sizes,
+            storage.refs_rho,
+            storage.cell_mass);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+
+        modules::NodeComputeSumOverV<Tscal> node2{AMRBlock::block_size};
+        node2.set_edges(
+            storage.block_counts,
+            storage.cell_mass,
+            storage.simulation_volume,
+            storage.rho_mean);
+        solver_sequence.push_back(std::make_shared<decltype(node2)>(std::move(node2)));
     }
 
     if (solver_config.is_coordinate_field_required()) { // Compute coordinates

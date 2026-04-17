@@ -56,7 +56,7 @@ set(Sources
     src/modules/NodeSumReduction.cpp
     src/modules/NodePCGInit.cpp
     src/modules/NodeJacobiPreconditioner.cpp
-
+    src/modules/NodeCGLoop.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

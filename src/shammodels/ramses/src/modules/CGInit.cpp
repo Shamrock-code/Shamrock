@@ -139,7 +139,7 @@ namespace shammodels::basegodunov::modules {
     }
 
     template<class Tvec, class TgridVec>
-    std::string CGInit<Tvec, TgridVec>::_impl_get_tex() {
+    std::string CGInit<Tvec, TgridVec>::_impl_get_tex() const {
         std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
         std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
         std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();

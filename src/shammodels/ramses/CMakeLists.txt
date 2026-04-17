@@ -60,6 +60,7 @@ set(Sources
     src/modules/NodeSelfGravityAcceleration.cpp
     src/modules/NodeNextRho.cpp
     src/modules/NodeGetNextConsVar.cpp
+    src/modules/TimeIntegratorSelfGravity.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

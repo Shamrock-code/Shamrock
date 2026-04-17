@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file  NodeGetNextConsVar.cpp
+ * @file NodeGetNextConsVar.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
@@ -17,6 +17,7 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/NodeGetNextConsVar.hpp"
@@ -44,6 +45,10 @@ namespace {
                 &spans_phi_g_old,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>>
                 &spans_phi_g_next,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>>
+                &spans_dt_rhov_old,
+            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
+                &spans_dt_rhoe_old,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov_next,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe_next,
             const f64 dt_over_2,
@@ -65,7 +70,9 @@ namespace {
                     spans_rhov_old,
                     spans_rhoe_old,
                     spans_phi_g_old,
-                    spans_phi_g_next},
+                    spans_phi_g_next,
+                    spans_dt_rhov_old,
+                    spans_dt_rhoe_old},
                 sham::DDMultiRef{spans_rhov_next, spans_rhoe_next},
                 cell_counts,
                 [dt_over_2](
@@ -127,6 +134,8 @@ namespace shammodels::basegodunov::modules {
                 edges.spans_rhoe_old.get_spans(),
                 edges.spans_phi_g_old.get_spans(),
                 edges.spans_phi_g_next.get_spans(),
+                edges.spans_dt_rhov_old.get_spans(),
+                edges.spans_dt_rhoe_old.get_spans(),
                 edges.spans_rhov_next.get_spans(),
                 edges.spans_rhoe_next.get_spans(),
                 edges.dt_over2.value,

@@ -54,6 +54,7 @@ set(Sources
     src/modules/NodeHadamardProd.cpp
     src/modules/NodeSpMVPoisson3D.cpp
     src/modules/NodeSumReduction.cpp
+    src/modules/NodePCGInit.cpp
 
 )
 

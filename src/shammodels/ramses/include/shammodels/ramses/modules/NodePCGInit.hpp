@@ -10,10 +10,10 @@
 #pragma once
 
 /**
- * @file NodeSpMVPoisson3D.hpp
+ * @file NodePCGInit.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
- * @brief Implementation of SpMV [A*p], A the 3D SPD sparse Poisson matrix.
+ * @brief
  *
  */
 
@@ -21,37 +21,43 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include <memory>
 
-#define NODE_SPMV_EDGES(X_RO, X_RW)                                                                \
+#define NODE_PCGINIT_EDGES(X_RO, X_RW)                                                             \
     /* inputs */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
     X_RO(CellGraphEdge, cell_neigh_graph)                                                          \
-    X_RO(shamrock::solvergraph::Field<Tscal>, spans_block_cell_sizes)                              \
-    X_RO(shamrock::solvergraph::Field<Tscal>, spans_in)                                            \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_block_cell_sizes)                         \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_phi)                                      \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                                      \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mean_rho)                                       \
     /* outputs*/                                                                                   \
-    X_RW(shamrock::solvergraph::Field<Tscal>, spans_out)
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_phi_res)                                  \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_phi_pres)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_phi_p)
 
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
-    class NodeSpMVPoisson3D : public shamrock::solvergraph::INode {
+    class PCGInit : public shamrock::solvergraph::INode {
         using Tscal         = shambase::VecComponent<Tvec>;
         using CellGraphEdge = solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>;
         u32 block_size;
+        Tscal fourPiG;
 
         public:
-        NodeSpMVPoisson3D(u32 block_size) : block_size(block_size) {}
+        PCGInit(u32 block_size, Tscal fourPiG) : block_size(block_size), fourPiG(fourPiG) {}
 
-        EXPAND_NODE_EDGES(NODE_SPMV_EDGES)
+        EXPAND_NODE_EDGES(NODE_PCGINIT_EDGES)
 
         void _impl_evaluate_internal();
-        inline virtual std::string _impl_get_label() const { return "SpMVPoisson3D"; };
+        inline virtual std::string _impl_get_label() const { return "PCGInit"; };
         virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shammodels::basegodunov::modules
 
-#undef NODE_SPMV_EDGES
+#undef NODE_PCGINIT_EDGES

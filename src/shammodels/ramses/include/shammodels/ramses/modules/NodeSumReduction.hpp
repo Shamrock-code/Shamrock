@@ -47,3 +47,5 @@ namespace shammodels::basegodunov::modules {
     };
 
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_SUMRED_EDGES

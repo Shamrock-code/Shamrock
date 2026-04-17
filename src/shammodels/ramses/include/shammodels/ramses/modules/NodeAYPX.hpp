@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeAXPYTwoVectors.hpp
+ * @file NodeAYPX.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
@@ -22,34 +22,31 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define NODE_AXPY_EDGES(X_RO, X_RW)                                                                \
+#define NODE_AYPX_EDGES(X_RO, X_RW)                                                                \
     /* inputs */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
-    X_RO(shamrock::solvergraph::Indexes<u32>, sizes_no_gz)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<T>, spans_x)                                            \
     X_RO(shamrock::solvergraph::ScalarEdge<f64>, alpha)                                            \
     /* outputs*/                                                                                   \
     X_RW(shamrock::solvergraph::IFieldSpan<T>, spans_y)
-
 namespace shammodels::basegodunov::modules {
 
     template<class T>
-    class NodeAXPYTwoVectors : public shamrock::solvergraph::INode {
-
+    class NodeAYPX : public shamrock::solvergraph::INode {
         u32 block_size;
 
         public:
-        NodeAXPYTwoVectors(u32 block_size) : block_size(block_size) {}
+        NodeAYPX(u32 block_size) : block_size(block_size) {}
 
-        EXPAND_NODE_EDGES(NODE_AXPY_EDGES)
+        EXPAND_NODE_EDGES(NODE_AYPX_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "NodeAXPYTwoVectors"; };
+        inline virtual std::string _impl_get_label() const { return "NodeAYPX"; };
 
         virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 
 } // namespace shammodels::basegodunov::modules
 
-#undef NODE_AXPY_EDGES
+#undef NODE_AYPX_EDGES

@@ -48,6 +48,10 @@ set(Sources
     src/modules/SumFluxDust.cpp
 
     src/SolverConfig.cpp
+
+    src/modules/NodeAXPY.cpp
+    src/modules/NodeAYPX.cpp
+    src/modules/NodeHadamardProd.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

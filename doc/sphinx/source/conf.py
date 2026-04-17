@@ -134,6 +134,7 @@ html_theme_options = {
             "type": "local",
         },
     ],
+    "pygments_dark_style": "monokai",
 }
 
 html_context = {

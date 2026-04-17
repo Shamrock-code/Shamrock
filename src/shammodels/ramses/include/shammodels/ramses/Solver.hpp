@@ -49,7 +49,9 @@ namespace shammodels::basegodunov {
 
         SolverStorage<Tvec, TgridVec, u_morton> storage{};
 
-        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
+        inline void init_required_fields() {
+            solver_config.set_layout(context.get_pdl_write().get_layer_ref("main"));
+        }
 
         Solver(ShamrockCtx &context) : context(context) {}
 

@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Shamrock python bindings's documentation!
-====================================================
+Welcome to Shamrock's documentation!
+====================================
 
-This page aims at documenting the python layer of shamrock.
+This page aims at documenting both the User and developer documentation of Shamrock.
 
 .. grid:: 2
 
@@ -61,9 +61,16 @@ This page aims at documenting the python layer of shamrock.
    :caption: Contents:
 
    Home page <self>
-   Python API <api>
    User Guide <user_guide>
    Examples <_as_gen/index>
+   Python API <api>
+
+
+.. toctree::
+   :hidden:
+
+   C++ API <https://shamrock-code.github.io/Shamrock/doxygen/>
+
 
 Indices and tables
 ==================

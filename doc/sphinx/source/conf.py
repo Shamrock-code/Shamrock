@@ -22,7 +22,7 @@ import shamrock
 # -- Project information -----------------------------------------------------
 
 # start allow utf-8
-project = "python bindings"
+project = "Documentation"
 copyright = f"2020 -- {datetime.datetime.now().year} Timothee David--Cléris"
 author = "Timothee David--Cléris"
 # end allow utf-8

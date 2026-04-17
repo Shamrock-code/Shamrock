@@ -110,4 +110,3 @@ set_autoformat({ "lua" }, true)
 ```
 
 This will disable the autoformatting for `python` as this is done automatically by `black` in Shamrock.
-

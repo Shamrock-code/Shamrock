@@ -7,7 +7,7 @@
 
 See [Docker documentation](https://docs.docker.com/engine/install/debian/#installation-methods).
 
-For convenience you can add your user to the docker group (to avoid having to use sudo everytime).
+For convenience you can add your user to the docker group (to avoid having to use sudo every time).
 See [post installation steps](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
 ```bash
@@ -28,7 +28,7 @@ open /Applications/Docker.app
 
 ## Starting Shamrock docker container
 
-Shamrock CI automatically generate the `ghcr.io/shamrock-code/shamrock:latest-oneapi` docker
+Shamrock CI automatically generates the `ghcr.io/shamrock-code/shamrock:latest-oneapi` docker
 container with the last commit. It is convenient if you want to test it right away
 but do not want to clone/compile and so on...
 

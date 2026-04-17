@@ -2,11 +2,11 @@
 
 ## Installation
 
-When it come to using Shamrock several options are available.
+When it comes to using Shamrock several options are available.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/shamrock.svg)](https://repology.org/project/shamrock/versions)
 
-I will assume that you want to compile it from source (as most probably do anyway) in the following and precise what changes if you are installing it directly through other means. See the list for the alternatives:
+I will assume that you want to compile it from source (as most probably do anyway) in the following and specify what changes if you are installing it directly through other means. See the list for the alternatives:
 
 - [Spack package](./quickstart/install_spack.md) (Easy but long compile time)
 - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
@@ -17,7 +17,7 @@ I will assume that you want to compile it from source (as most probably do anywa
 ::::{tab-set}
 :::{tab-item} Linux (Debian & Ubuntu)
 
-If you don't have already have an llvm (...) :
+If you don't already have LLVM (...) :
 
 ```bash
 wget --progress=bar:force https://apt.llvm.org/llvm.sh
@@ -68,7 +68,7 @@ Nothing to do at this stage
 
 ### Cloning the repo
 
-Now there before cloning the source code there are two options:
+Now, before cloning the source code there are two options:
 
 - Do you want to contribute stuff to Shamrock (e.g. modify it and propose the changes)
 - Do you want to just use the standard version
@@ -90,9 +90,9 @@ This can be a bit more involved if you are not used to Github, but this is how t
 If you already have registered your SSH key on Github you don't need to touch it, otherwise:
 
 - First go to [Github.com](https://github.com) and ensure that you are logged in.
-- In a terminal on your laptop/desktop do `ssh-keygen -t rsa -b 4096` (I recommend rsa4096 since some supercomputer require it). You can leave the password empty if you want to avoid the need to type it. And you can also accept the default name of the key `id_rsa`.
+- In a terminal on your laptop/desktop do `ssh-keygen -t rsa -b 4096` (I recommend rsa4096 since some supercomputers require it). You can leave the password empty if you want to avoid the need to type it. And you can also accept the default name of the key `id_rsa`.
 - Now recover your public key `cat ~/.ssh/id_rsa.pub` (You may have to change the filename, this one is the default)
-- Go to [Github SSH user key](https://github.com/settings/keys) and click on `New SSH Key`, chose a name and paste the key obtained by `cat ~/.ssh/id_rsa.pub` in the text box named `Key`.
+- Go to [Github SSH user key](https://github.com/settings/keys) and click on `New SSH Key`, choose a name and paste the key obtained by `cat ~/.ssh/id_rsa.pub` in the text box named `Key`.
 
 Alright now that the SSH key is good:
 
@@ -118,7 +118,7 @@ cd Shamrock
 
 ### Creating the environment
 
-Shamrock provides its own utilities with pre-made configurations for various machines. Here i give recommendations adapted a quickstart guide. If you want more details about the environment setup see [This page](../user_guide/envs.md).
+Shamrock provides its own utilities with pre-made configurations for various machines. Here I give recommendations for a quickstart guide. If you want more details about the environment setup see [This page](../user_guide/envs.md).
 
 ::::{tab-set}
 :::{tab-item} Linux (Debian & Ubuntu)
@@ -159,7 +159,7 @@ cd build
 # Activate the workspace, which will define some utility functions
 source ./activate # load the correct modules and ENV vars
 shamconfigure     # alias to the correct cmake command
-shammake          # alias to ninja build (or make if ninja is not avail)
+shammake          # alias to ninja build (or make if ninja is unavailable)
 ```
 
 If you see any errors at this point it can be hard to list all cases so again drop a message on [Discord](https://discord.gg/Q69s5buyr5) for help.
@@ -167,7 +167,7 @@ If you see any errors at this point it can be hard to list all cases so again dr
 ## Starting Shamrock
 
 :::{warning}
-This guide assume that you have Shamrock compiled from source. I will mention what has to be changed if it is installed globally in notes in the following sections.
+This guide assumes that you have Shamrock compiled from source. I will mention what has to be changed if it is installed globally in notes in the following sections.
 :::
 
 You have 4 main ways of using Shamrock:
@@ -188,7 +188,7 @@ shammake install
 
 ### Python interpreter mode
 
-So assuming that you have Shamrock compiled and all we can start to do stuff with it. Let start simple just to check that the executable load correct:
+So assuming that you have Shamrock compiled and all, we can start to do stuff with it. Let's start simple just to check that the executable loads correctly:
 
 ```bash
 ./shamrock
@@ -240,7 +240,7 @@ Exiting ...
  Hopefully it was quick :')
 ```
 
-If it works great ! Next let's see what devices are available to perform the compute:
+If it works, great! Next let's see what devices are available to perform the compute:
 
 ```bash
 ./shamrock --smi
@@ -262,9 +262,9 @@ Available devices :
 -------------------------------------------------------------------------------------------
 ```
 
-If you are familiar with GPU you should recognize the similarity with commands such as `nvidia-smi`, `rocm-smi` or `xpu-smi`.
+If you are familiar with GPUs you should recognize the similarity with commands such as `nvidia-smi`, `rocm-smi` or `xpu-smi`.
 
-In this guide as you may have noticed above we are compiling using AdaptiveCpp with OpenMP backend so we can only run on CPU (device `2` in my case), for most peoples OpenMP tends to be device 0 so, that what i will use in the rest of the guide, do not forget to change it if that is not the case on your system like mine.
+In this guide as you may have noticed above we are compiling using AdaptiveCpp with OpenMP backend so we can only run on CPU (device `2` in my case), for most people OpenMP tends to be device 0, so that's what I will use in the rest of the guide. Do not forget to change it if that is not the case on your system like mine.
 
 Now let's see if Shamrock can start on the selected device. To do so run
 
@@ -293,7 +293,7 @@ Selected devices : (totals can be wrong if using multiple ranks per device)
  - Code init: DONE.
 ```
 
-Especially if you see `- Code init: DONE.` it means that Shamrock can execute compute kernels (which is arguably a pretty usefull thing XD). For the uninitiated a compute kernel is essentially a parallel section like a parallel for loop that was scheduled onto the device to perform computations. And in the GPU or modern CPU world a HPC code is a roughly just a large succesion of compute kernels.
+Especially if you see `- Code init: DONE.` it means that Shamrock can execute compute kernels (which is arguably a pretty useful thing XD). For the uninitiated a compute kernel is essentially a parallel section like a parallel for loop that was scheduled onto the device to perform computations. And in the GPU or modern CPU world a HPC code is roughly just a large succession of compute kernels.
 
 Also if you want to see the performance of the hardware you are running add the `--benchmark-mpi` flag.
 
@@ -301,7 +301,7 @@ Also if you want to see the performance of the hardware you are running add the 
 ./shamrock --smi --sycl-cfg 0:0 --benchmark-mpi
 ```
 
-For example on my desktop (at home very late at night when I'm writing this 😅) i get:
+For example on my desktop (at home very late at night when I'm writing this 😅) I get:
 
 ```
 -----------------------------------------------------
@@ -332,7 +332,7 @@ Running micro benchmarks:
 -----------------------------------------------------
 ```
 
-Alright ! Let's run something "usefull" (we will run actual simulation in the next part of the tutorial), it will be one of the algorithm benchmarks.
+Alright! Let's run something "useful" (we will run actual simulation in the next part of the tutorial), it will be one of the algorithm benchmarks.
 
 ```bash
 ./shamrock --smi --sycl-cfg 0:0 --rscript ../examples/benchmarks/run_exclusive_scan_in_place.py
@@ -342,13 +342,13 @@ You should see a figure like:
 ![exscan perf figure](../../_images/sphx_glr_run_exclusive_scan_in_place_001.png)
 
 :::{note}
-Here the `--rscript` flag here means run-scripts. In Shamrock since everything goes through python your run will be a python script, hence the name "run script". Here it is a benchmark of one of Shamrock's algorithms.
+The `--rscript` flag means run-scripts. In Shamrock since everything goes through Python your run will be a Python script, hence the name "run script". Here it is a benchmark of one of Shamrock's algorithms.
 :::
 
 ### Python interpreter + Ipython
 
 :::::{warning}
-IPython does not come by default with python. Ensure that it is installed on you system, or you can install it in a python venv but then things are a bit different, see [Using Shamrock with Python venv](./python_venv.md).
+IPython does not come by default with python. Ensure that it is installed on your system, or you can install it in a Python venv but then things are a bit different, see [Using Shamrock with Python venv](./python_venv.md).
 
 ::::{tab-set}
 :::{tab-item} Linux (Debian & Ubuntu)
@@ -381,7 +381,7 @@ TODO: we should add it to the conda env probably by default to avoid the need fo
 
 :::::
 
-Alright! We can do interactive stuff now by using the `--ipython` flag in-place of the `--rscript` flag. Just know that this is limited to use with a single process. If you want to use Shamrock with MPI to distribute across multiple machines forget about interactive modes 😅.
+Alright! We can do interactive stuff now by using the `--ipython` flag in place of the `--rscript` flag. Just know that this is limited to use with a single process. If you want to use Shamrock with MPI to distribute across multiple machines forget about interactive modes 😅.
 
 ```bash
 ./shamrock --smi --sycl-cfg 0:0 --ipython
@@ -403,7 +403,7 @@ import shamrock
 In [1]:
 ```
 
-Now you can use the same python as one would in runscripts. A classic one to run there is the following (which is what i do in the basic CI test btw):
+Now you can use the same python as one would in runscripts. A classic one to run there is the following (which is what I do in the basic CI test btw):
 
 ```{code-block} python
 ---
@@ -476,10 +476,10 @@ cmake . -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pysham -DCMAKE_INSTALL_PREFIX=$(pwd)/sh
 shammake install
 ```
 
-Now you just need to help python locate Shamrock python bindings which are in `./pysham`. To do that just prepend the python call by extending the python path like so
+Now you just need to help python locate Shamrock python bindings which are in `./pysham`. To do that, just prepend the python call by extending the python path like so
 
 ```bash
-PYTHONPATH=./pysham:$PYTHONPATH python3 # can be just python on some system
+PYTHONPATH=./pysham:$PYTHONPATH python3 # can be just python on some systems
 ```
 
 Then use the same thing as above to test it:
@@ -514,7 +514,7 @@ log status :
 >>>
 ```
 
-As you can we have just imported and initialize Shamrock as a python package. Again to run the same script (for the third time already) you can do:
+As you can see, we have just imported and initialized Shamrock as a python package. Again to run the same script (for the third time already) you can do:
 
 ```bash
 PYTHONPATH=./pysham:$PYTHONPATH python3 ../examples/benchmarks/run_exclusive_scan_in_place.py
@@ -534,11 +534,11 @@ Just for your pleasure and enjoyment through this flight... tutorial behold the 
 )
 ```
 
-It leverages the `export PYTHONPATH` to register the shamrock modules in the python venv even though Shamrock was never installed in it. Anyway thanks to that the ipython kernel launched inside jupyter should find Shamrock gracefully. Also note the parenthesis around it. This ensure that the modifications made to the environment variables of your current terminal are contained only to the scope of this sequence of command and everything goes back to normal after.
+It leverages the `export PYTHONPATH` to register the shamrock modules in the python venv even though Shamrock was never installed in it. Anyway thanks to that the ipython kernel launched inside jupyter should find Shamrock gracefully. Also note the parentheses around it. This ensures that the modifications made to the environment variables of your current terminal are contained only to the scope of this sequence of commands and everything goes back to normal after.
 
 :::{note}
 If you are using the Shamrock Docker container there is a special case here.
-Instead to run jupyter, do the following
+Instead of running jupyter, do the following
 
 ```bash
 docker run -i -t -v $(pwd):/work -p 8888:8888 --platform=linux/amd64 ghcr.io/shamrock-code/shamrock:latest-oneapi jupyter notebook --allow-root --no-browser --ip=0.0.0.0 --NotebookApp.token=''
@@ -557,7 +557,7 @@ Explanation of the flags:
 - `jupyter notebook` Come on you know what this does, do you ???
 - `--allow-root` Inside the docker container you are root so you should bypass this check.
 - `--no-browser` Do not open the browser there are none in the container obviously.
-- `--ip=0.0.0.0` Otherwise the port is not fowarded correctly out of the container.
+- `--ip=0.0.0.0` Otherwise the port is not forwarded correctly out of the container.
 - `--NotebookApp.token=''` Do not use a token to log.
 :::
 

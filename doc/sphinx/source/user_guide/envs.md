@@ -1,6 +1,6 @@
 # Build environments in Shamrock
 
-In Shamrock to ease configuration we provide environment script to ease setup on known machines.
+In Shamrock to ease configuration we provide environment scripts to ease setup on known machines.
 They essentially provide preconfigured environments with the correct module load, environment variables and so on.
 
 In essence for any machine that is supported on the repo you can do the following (where you replace `argonne.aurora` by the machine you want):
@@ -11,10 +11,10 @@ In essence for any machine that is supported on the repo you can do the followin
 cd build          # move into it
 source ./activate # load the correct modules and ENV vars
 shamconfigure     # alias to the correct cmake command
-shammake          # alias to ninja build (or make if ninja is not avail)
+shammake          # alias to ninja build (or make if ninja is unavailable)
 ```
 
-If you want the list of supported machines just do run the help `-h` of the `new-env` script and look at the `Environment list :` section:
+If you want the list of supported machines just run the help `-h` of the `new-env` script and look at the `Environment list :` section:
 
 ```
 ❯ ../env/new-env -h
@@ -71,10 +71,10 @@ You can see that there are other options available. Let's go through them:
 - `--machine` as explained above is the way to select an environment
 - `--builddir` is the path of the wanted build directory (can be anywhere on the disk)
 - `--type` is used to select the build type (`release`, `debug`, `asan`, ...). Note that this can also be changed later by doing `cmake . -DCMAKE_BUILD_TYPE=Release` (Shamrock Cmake config will check that the type is valid and print the list if you don't know which one to use).
-- `--lib` is used to select if you want Shamrock to be build in components (shared libraries) or in a monolythic form which require a lot more recompilation & larger binaries.
+- `--lib` is used to select if you want Shamrock to be built in components (shared libraries) or in a monolithic form which requires a lot more recompilation & larger binaries.
 - `--` Anything passed after the two dashes are arguments specific for the environment
 
-Now if you want to specific help of an environment you can do the following (for example on the AdaptiveCpp Debian env here):
+Now if you want specific help for an environment you can do the following (for example on the AdaptiveCpp Debian env here):
 
 ```
 ❯ ../env/new-env --machine debian-generic.acpp --builddir build -- --help

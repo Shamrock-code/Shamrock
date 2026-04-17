@@ -19,15 +19,15 @@
 #include "shamalgs/memory.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
 
     template<class Tvec>
-    shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
+    shamrock::LegacyVtkWriter start_dump(PatchScheduler &sched, std::string dump_name) {
         StackEntry stack_loc{};
-        shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(dump_name, true, shamrock::UnstructuredGrid);
 
         using namespace shamrock::patch;
 
@@ -43,7 +43,7 @@ namespace {
         return writer;
     }
 
-    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWriter &writter) {
         StackEntry stack_loc{};
 
         u64 num_obj = sched.get_rank_count();
@@ -74,7 +74,7 @@ namespace {
         }
     }
 
-    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWriter &writter) {
         StackEntry stack_loc{};
 
         using namespace shamrock::patch;
@@ -107,7 +107,7 @@ namespace {
     template<class T>
     void vtk_dump_add_field(
         PatchScheduler &sched,
-        shamrock::LegacyVtkWritter &writter,
+        shamrock::LegacyVtkWriter &writter,
         u32 field_idx,
         std::string field_dump_name) {
         StackEntry stack_loc{};
@@ -153,7 +153,7 @@ namespace shammodels::gsph::modules {
         const bool has_uint = solver_config.has_field_uint();
         const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
-        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
+        shamrock::LegacyVtkWriter writter = start_dump<Tvec>(scheduler(), filename);
         writter.add_point_data_section();
 
         // Count fields to write

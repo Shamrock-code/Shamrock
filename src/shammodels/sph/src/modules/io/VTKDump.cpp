@@ -20,7 +20,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shammodels/common/io/VTKDumpUtils.hpp"
 #include "shammodels/sph/math/density.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
 
@@ -78,7 +78,7 @@ namespace shammodels::sph::modules {
             density.get_buf(p.id_patch).complete_event_state(e);
         });
 
-        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
+        shamrock::LegacyVtkWriter writter = start_dump<Tvec>(scheduler(), filename);
         writter.add_point_data_section();
 
         u32 fnum = 0;

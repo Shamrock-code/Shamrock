@@ -679,7 +679,7 @@ void check_locality_t(PatchScheduler &sched) {
     });
 }
 
-void PatchScheduler::check_patchdata_locality_corectness() {
+void PatchScheduler::check_patchdata_locality_correctness() {
 
     StackEntry stack_loc{};
 

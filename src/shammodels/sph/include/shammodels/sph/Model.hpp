@@ -418,7 +418,7 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 
@@ -574,7 +574,7 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 

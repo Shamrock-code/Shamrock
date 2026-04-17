@@ -254,7 +254,7 @@ def make_tex_repport(dat):
     tabl_world_sz_res += r""" \begin{center}
         \begin{tabular}{|c|c|c|}
         \hline
-        World size & Status & Succesfull config / total number of config \\  \hline \hline
+        World size & Status & Successful config / total number of config \\  \hline \hline
     """
     for kworldsz in dic_int.keys():
         config_suc_cnt = dic_suc_cnt_global[kworldsz]["global_suc_cnt"]
@@ -293,7 +293,7 @@ def make_tex_repport(dat):
         str_file += r"""
             \begin{tabular}{|c|c|c|}
             \hline
-            Config & Status & Succesfull tests / total number of tests \\  \hline \hline
+            Config & Status & Successful tests / total number of tests \\  \hline \hline
         """
         for kconfig in dic_int[kworldsz].keys():
             test_suc_cnt = dic_int[kworldsz][kconfig]["global_suc_cnt"]
@@ -327,7 +327,7 @@ def make_tex_repport(dat):
             \begin{center}
                 \begin{tabular}{|c|c|c|}
                 \hline
-                Test name & Status & Succesfull asserts / total number of asserts \\  \hline \hline
+                Test name & Status & Successful asserts / total number of asserts \\  \hline \hline
             """
             for ktest in dic_int[kworldsz][kconfig]["succes_cnt"].keys():
                 assert_suc_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["suc_cnt"]

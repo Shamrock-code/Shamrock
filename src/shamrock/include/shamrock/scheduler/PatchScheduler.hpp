@@ -198,7 +198,7 @@ class PatchScheduler {
 
     std::string format_patch_coord(shamrock::patch::Patch p);
 
-    void check_patchdata_locality_corectness();
+    void check_patchdata_locality_correctness();
 
     [[deprecated]]
     void dump_local_patches(std::string filename);

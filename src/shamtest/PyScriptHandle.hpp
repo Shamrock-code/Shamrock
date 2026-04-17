@@ -112,7 +112,7 @@ struct PyScriptHandle {
      * @tparam N length of the source chars
      * @param expr the source to be executed
      * @param global the global py variable
-     * @return true the script executed succesfully
+     * @return true the script executed successfully
      * @return false  the script executed with an error
      */
     template<size_t N>

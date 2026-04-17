@@ -478,7 +478,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     }
                 });
 
-                sched.check_patchdata_locality_corectness();
+                sched.check_patchdata_locality_correctness();
 
                 inserter.balance_load(compute_load);
 

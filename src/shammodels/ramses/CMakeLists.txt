@@ -52,6 +52,7 @@ set(Sources
     src/modules/NodeAXPY.cpp
     src/modules/NodeAYPX.cpp
     src/modules/NodeHadamardProd.cpp
+    src/modules/NodeSpMVPoisson3D.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

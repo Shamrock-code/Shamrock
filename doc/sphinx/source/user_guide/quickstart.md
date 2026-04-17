@@ -201,42 +201,42 @@ If you have installed shamrock globally using any of the alternatives, just repl
 You should see something like (even if the git infos & time might differ):
 
 ```
-Warning: No kernel can be run without a sycl configuration (--sycl-cfg x:x)                                   [Init][rank=0] 
+Warning: No kernel can be run without a sycl configuration (--sycl-cfg x:x)                                   [Init][rank=0]
 
   █████████  █████   █████   █████████   ██████   ██████ ███████████      ███████      █████████  █████   ████
- ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░ 
-░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███   
-░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████    
- ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███   
- ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███  
+ ███░░░░░███░░███   ░░███   ███░░░░░███ ░░██████ ██████ ░░███░░░░░███   ███░░░░░███   ███░░░░░███░░███   ███░
+░███    ░░░  ░███    ░███  ░███    ░███  ░███░█████░███  ░███    ░███  ███     ░░███ ███     ░░░  ░███  ███
+░░█████████  ░███████████  ░███████████  ░███░░███ ░███  ░██████████  ░███      ░███░███          ░███████
+ ░░░░░░░░███ ░███░░░░░███  ░███░░░░░███  ░███ ░░░  ░███  ░███░░░░░███ ░███      ░███░███          ░███░░███
+ ███    ░███ ░███    ░███  ░███    ░███  ░███      ░███  ░███    ░███ ░░███     ███ ░░███     ███ ░███ ░░███
 ░░█████████  █████   █████ █████   █████ █████     █████ █████   █████ ░░░███████░   ░░█████████  █████ ░░████
- ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░ 
- 
-Copyright (c) 2021-2026 Timothée David--Cléris (tim.shamrock@proton.me) 
-SPDX-License-Identifier : CeCILL Free Software License Agreement v2.1 
-Start time : 2026-04-16 22:27:18 
------------------------------------------------------ 
+ ░░░░░░░░░  ░░░░░   ░░░░░ ░░░░░   ░░░░░ ░░░░░     ░░░░░ ░░░░░   ░░░░░    ░░░░░░░      ░░░░░░░░░  ░░░░░   ░░░░
+
+Copyright (c) 2021-2026 Timothée David--Cléris (tim.shamrock@proton.me)
+SPDX-License-Identifier : CeCILL Free Software License Agreement v2.1
+Start time : 2026-04-16 22:27:18
+-----------------------------------------------------
 
 Shamrock version : 2025.10.0+git.8a0c0b85e.patch-2026-04-15-15-33.dirty
- 
+
 Git infos :
      commit : 8a0c0b85e3598ba83d124ffe8277bddf9ddc9430
      HEAD   : refs/heads/patch-2026-04-15-15-33, refs/remotes/origin/patch-2026-04-15-15-33
      modified files (since last commit):
         doc/sphinx/source/user_guide/quickstart.md
- 
------------------------------------------------------ 
------------------------------------------------------ 
-log status :  
- - Loglevel: 0, enabled log types : 
-xxx: xxx ( logger::normal )  
-Warning: xxx ( logger::warn )                                                                                  [xxx][rank=0] 
-Error: xxx ( logger::err )                                                                                     [xxx][rank=0] 
-Warning: No sycl configuration (--sycl-cfg x:x) has been set, early exit                                      [Init][rank=0] 
------------------------------------------------------ 
- - MPI finalize 
+
+-----------------------------------------------------
+-----------------------------------------------------
+log status :
+ - Loglevel: 0, enabled log types :
+xxx: xxx ( logger::normal )
+Warning: xxx ( logger::warn )                                                                                  [xxx][rank=0]
+Error: xxx ( logger::err )                                                                                     [xxx][rank=0]
+Warning: No sycl configuration (--sycl-cfg x:x) has been set, early exit                                      [Init][rank=0]
+-----------------------------------------------------
+ - MPI finalize
 Exiting ...
- 
+
  Hopefully it was quick :')
 ```
 
@@ -289,7 +289,7 @@ Selected devices : (totals can be wrong if using multiple ranks per device)
   Total memory : 62.17 GB
   Total compute units : 24
 
------------------------------------------------------ 
+-----------------------------------------------------
  - Code init: DONE.
 ```
 
@@ -304,31 +304,31 @@ Also if you want to see the performance of the hardware you are running add the 
 For example on my desktop (at home very late at night when I'm writing this 😅) i get:
 
 ```
------------------------------------------------------ 
-Running micro benchmarks: 
- - p2p bandwidth    : 15.2 GB.s^-1 (ranks : 0 -> 0) (loops : 1825) 
- - saxpy (f32)   : 92 GB.s^-1 (min = 9.2e+10, max = 9.2e+10, avg = 9.2e+10) (2.2e+00 ms, 128.00 MB) 
- - saxpy (f64)   : 83.8 GB.s^-1 (min = 8.4e+10, max = 8.4e+10, avg = 8.4e+10) (2.4e+00 ms, 128.00 MB) 
- - saxpy (f32_2)   : 89.3 GB.s^-1 (min = 8.9e+10, max = 8.9e+10, avg = 8.9e+10) (2.3e+00 ms, 128.00 MB) 
- - saxpy (f64_2)   : 75.2 GB.s^-1 (min = 7.5e+10, max = 7.5e+10, avg = 7.5e+10) (2.7e+00 ms, 128.00 MB) 
- - saxpy (f32_3)   : 98.1 GB.s^-1 (min = 9.8e+10, max = 9.8e+10, avg = 9.8e+10) (2.1e+00 ms, 128.00 MB) 
- - saxpy (f64_3)   : 95.7 GB.s^-1 (min = 9.6e+10, max = 9.6e+10, avg = 9.6e+10) (2.1e+00 ms, 128.00 MB) 
- - saxpy (f32_4)   : 85.9 GB.s^-1 (min = 8.6e+10, max = 8.6e+10, avg = 8.6e+10) (1.2e+00 ms, 64.00 MB) 
- - saxpy (f64_4)   : 74.4 GB.s^-1 (min = 7.4e+10, max = 7.4e+10, avg = 7.4e+10) (2.7e+00 ms, 128.00 MB) 
- - fma_chains (f32) : 40.6 Gflops (min = 4.1e+10, max = 4.1e+10, avg = 4.1e+10) (2.1e+02 ms, rotations = 64) 
- - fma_chains (f64) : 38.1 Gflops (min = 3.8e+10, max = 3.8e+10, avg = 3.8e+10) (4.5e+02 ms, rotations = 128) 
- - fma_chains (f32_2) : 81.8 Gflops (min = 8.2e+10, max = 8.2e+10, avg = 8.2e+10) (2.1e+02 ms, rotations = 64) 
- - fma_chains (f64_2) : 65 Gflops (min = 6.5e+10, max = 6.5e+10, avg = 6.5e+10) (2.6e+02 ms, rotations = 64) 
- - fma_chains (f32_3) : 108 Gflops (min = 1.1e+11, max = 1.1e+11, avg = 1.1e+11) (2.4e+02 ms, rotations = 64) 
- - fma_chains (f64_3) : 100 Gflops (min = 1.0e+11, max = 1.0e+11, avg = 1.0e+11) (5.1e+02 ms, rotations = 128) 
- - fma_chains (f32_4) : 160 Gflops (min = 1.6e+11, max = 1.6e+11, avg = 1.6e+11) (2.2e+02 ms, rotations = 64) 
- - fma_chains (f64_4) : 119 Gflops (min = 1.2e+11, max = 1.2e+11, avg = 1.2e+11) (2.9e+02 ms, rotations = 64) 
- - vector_allgather (u64, n=   1) : 3.467e-06 s (min = 3.47e-06, max = 3.47e-06, loops = 28841) 
- - vector_allgather (u64, n=   8) : 3.431e-06 s (min = 3.43e-06, max = 3.43e-06, loops = 29146) 
- - vector_allgather (u64, n=  64) : 3.451e-06 s (min = 3.45e-06, max = 3.45e-06, loops = 28978) 
- - vector_allgather (u64, n= 128) : 3.384e-06 s (min = 3.38e-06, max = 3.38e-06, loops = 29554) 
- - vector_allgather (u64, n= 150) : 3.363e-06 s (min = 3.36e-06, max = 3.36e-06, loops = 29733) 
- - vector_allgather (u64, n=1024) : 3.392e-06 s (min = 3.39e-06, max = 3.39e-06, loops = 29484) 
+-----------------------------------------------------
+Running micro benchmarks:
+ - p2p bandwidth    : 15.2 GB.s^-1 (ranks : 0 -> 0) (loops : 1825)
+ - saxpy (f32)   : 92 GB.s^-1 (min = 9.2e+10, max = 9.2e+10, avg = 9.2e+10) (2.2e+00 ms, 128.00 MB)
+ - saxpy (f64)   : 83.8 GB.s^-1 (min = 8.4e+10, max = 8.4e+10, avg = 8.4e+10) (2.4e+00 ms, 128.00 MB)
+ - saxpy (f32_2)   : 89.3 GB.s^-1 (min = 8.9e+10, max = 8.9e+10, avg = 8.9e+10) (2.3e+00 ms, 128.00 MB)
+ - saxpy (f64_2)   : 75.2 GB.s^-1 (min = 7.5e+10, max = 7.5e+10, avg = 7.5e+10) (2.7e+00 ms, 128.00 MB)
+ - saxpy (f32_3)   : 98.1 GB.s^-1 (min = 9.8e+10, max = 9.8e+10, avg = 9.8e+10) (2.1e+00 ms, 128.00 MB)
+ - saxpy (f64_3)   : 95.7 GB.s^-1 (min = 9.6e+10, max = 9.6e+10, avg = 9.6e+10) (2.1e+00 ms, 128.00 MB)
+ - saxpy (f32_4)   : 85.9 GB.s^-1 (min = 8.6e+10, max = 8.6e+10, avg = 8.6e+10) (1.2e+00 ms, 64.00 MB)
+ - saxpy (f64_4)   : 74.4 GB.s^-1 (min = 7.4e+10, max = 7.4e+10, avg = 7.4e+10) (2.7e+00 ms, 128.00 MB)
+ - fma_chains (f32) : 40.6 Gflops (min = 4.1e+10, max = 4.1e+10, avg = 4.1e+10) (2.1e+02 ms, rotations = 64)
+ - fma_chains (f64) : 38.1 Gflops (min = 3.8e+10, max = 3.8e+10, avg = 3.8e+10) (4.5e+02 ms, rotations = 128)
+ - fma_chains (f32_2) : 81.8 Gflops (min = 8.2e+10, max = 8.2e+10, avg = 8.2e+10) (2.1e+02 ms, rotations = 64)
+ - fma_chains (f64_2) : 65 Gflops (min = 6.5e+10, max = 6.5e+10, avg = 6.5e+10) (2.6e+02 ms, rotations = 64)
+ - fma_chains (f32_3) : 108 Gflops (min = 1.1e+11, max = 1.1e+11, avg = 1.1e+11) (2.4e+02 ms, rotations = 64)
+ - fma_chains (f64_3) : 100 Gflops (min = 1.0e+11, max = 1.0e+11, avg = 1.0e+11) (5.1e+02 ms, rotations = 128)
+ - fma_chains (f32_4) : 160 Gflops (min = 1.6e+11, max = 1.6e+11, avg = 1.6e+11) (2.2e+02 ms, rotations = 64)
+ - fma_chains (f64_4) : 119 Gflops (min = 1.2e+11, max = 1.2e+11, avg = 1.2e+11) (2.9e+02 ms, rotations = 64)
+ - vector_allgather (u64, n=   1) : 3.467e-06 s (min = 3.47e-06, max = 3.47e-06, loops = 28841)
+ - vector_allgather (u64, n=   8) : 3.431e-06 s (min = 3.43e-06, max = 3.43e-06, loops = 29146)
+ - vector_allgather (u64, n=  64) : 3.451e-06 s (min = 3.45e-06, max = 3.45e-06, loops = 28978)
+ - vector_allgather (u64, n= 128) : 3.384e-06 s (min = 3.38e-06, max = 3.38e-06, loops = 29554)
+ - vector_allgather (u64, n= 150) : 3.363e-06 s (min = 3.36e-06, max = 3.36e-06, loops = 29733)
+ - vector_allgather (u64, n=1024) : 3.392e-06 s (min = 3.39e-06, max = 3.39e-06, loops = 29484)
 -----------------------------------------------------
 ```
 
@@ -439,7 +439,7 @@ In [1]: import shamrock
    ...: shamrock.change_loglevel(1)
    ...: if not shamrock.sys.is_initialized():
    ...:     shamrock.sys.init('0:0')
-   ...: 
+   ...:
    ...: # To test that importing nested modules works
    ...: from shamrock.math import *
 Shamrock version: 2025.10.0+git.bb2b3814a.patch-2026-04-15-15-33.dirty
@@ -448,13 +448,13 @@ Git info:      commit : bb2b3814af0ec0c2f16f46017185dbdba36d21fa
      modified files (since last commit):
         doc/sphinx/source/user_guide/quickstart.md
 
--> modified loglevel to 0 enabled log types :  
-log status :  
- - Loglevel: 1, enabled log types : 
-Info: xxx ( logger::info )                                                                [xxx][rank=0] 
-xxx: xxx ( logger::normal )  
-Warning: xxx ( logger::warn )                                                             [xxx][rank=0] 
-Error: xxx ( logger::err )                                                                [xxx][rank=0] 
+-> modified loglevel to 0 enabled log types :
+log status :
+ - Loglevel: 1, enabled log types :
+Info: xxx ( logger::info )                                                                [xxx][rank=0]
+xxx: xxx ( logger::normal )
+Warning: xxx ( logger::warn )                                                             [xxx][rank=0]
+Error: xxx ( logger::err )                                                                [xxx][rank=0]
 
 In [2]:
 ```
@@ -485,7 +485,7 @@ PYTHONPATH=./pysham:$PYTHONPATH python3 # can be just python on some system
 Then use the same thing as above to test it:
 
 ```py
-❯ PYTHONPATH=./pysham:$PYTHONPATH python3                       
+❯ PYTHONPATH=./pysham:$PYTHONPATH python3
 Python 3.14.3 (main, Feb 13 2026, 15:31:44) [GCC 15.2.1 20260209] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import shamrock
@@ -494,23 +494,23 @@ Type "help", "copyright", "credits" or "license" for more information.
 ... shamrock.change_loglevel(1)
 ... if not shamrock.sys.is_initialized():
 ...     shamrock.sys.init('0:0')
-... 
+...
 ... # To test that importing nested modules works
 ... from shamrock.math import *
-... 
+...
 Shamrock version: 2025.10.0+git.bb2b3814a.patch-2026-04-15-15-33.dirty
 Git info:      commit : bb2b3814af0ec0c2f16f46017185dbdba36d21fa
      HEAD   : refs/heads/patch-2026-04-15-15-33, refs/remotes/origin/patch-2026-04-15-15-33
      modified files (since last commit):
         doc/sphinx/source/user_guide/quickstart.md
 
--> modified loglevel to 0 enabled log types :  
-log status :  
- - Loglevel: 1, enabled log types : 
-[xxx] Info: xxx ( logger::info )  
-[xxx] : xxx ( logger::normal )  
-[xxx] Warning: xxx ( logger::warn )  
-[xxx] Error: xxx ( logger::err )  
+-> modified loglevel to 0 enabled log types :
+log status :
+ - Loglevel: 1, enabled log types :
+[xxx] Info: xxx ( logger::info )
+[xxx] : xxx ( logger::normal )
+[xxx] Warning: xxx ( logger::warn )
+[xxx] Error: xxx ( logger::err )
 >>>
 ```
 

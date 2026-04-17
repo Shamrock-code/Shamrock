@@ -264,19 +264,19 @@ Available devices :
 
 If you are familiar with GPU you should recognize the similarity with commands such as `nvidia-smi`, `rocm-smi` or `xpu-smi`.
 
-In this guide as you may have noticed above we are compiling using AdaptiveCpp with OpenMP backend so we can only run on CPU (device `2` in my case).
+In this guide as you may have noticed above we are compiling using AdaptiveCpp with OpenMP backend so we can only run on CPU (device `2` in my case), for most peoples OpenMP tends to be device 0 so, that what i will use in the rest of the guide, do not forget to change it if that is not the case on your system like mine.
 
 Now let's see if Shamrock can start on the selected device. To do so run
 
 ```bash
-./shamrock --smi --sycl-cfg 2:2
+./shamrock --smi --sycl-cfg 0:0
 ```
 
 It should add something like this
 
 ```
 Selected devices : (totals can be wrong if using multiple ranks per device)
-  - 1 x AdaptiveCpp OpenMP host device (id=2)
+  - 1 x AdaptiveCpp OpenMP host device (id=0)
           - default_work_group_size = 1
           - global_mem_size = 62.17 GB
           - local_mem_size = No limit !
@@ -298,7 +298,7 @@ Especially if you see `- Code init: DONE.` it means that Shamrock can execute co
 Also if you want to see the performance of the hardware you are running add the `--benchmark-mpi` flag.
 
 ```bash
-./shamrock --smi --sycl-cfg 2:2 --benchmark-mpi
+./shamrock --smi --sycl-cfg 0:0 --benchmark-mpi
 ```
 
 For example on my desktop (at home very late at night when I'm writing this 😅) i get:
@@ -335,305 +335,238 @@ Running micro benchmarks:
 Alright ! Let's run something "usefull" (we will run actual simulation in the next part of the tutorial), it will be one of the algorithm benchmarks.
 
 ```bash
-./shamrock --smi --sycl-cfg 2:2 --benchmark-mpi --rscript ../examples/benchmarks/run_exclusive_scan_in_place.py
+./shamrock --smi --sycl-cfg 0:0 --rscript ../examples/benchmarks/run_exclusive_scan_in_place.py
 ```
 
 You should see a figure like:
 ![exscan perf figure](../../_images/sphx_glr_run_exclusive_scan_in_place_001.png)
 
 :::{note}
-Here the `--rscript` flag here means run-scripts. In Shamrock since everything goes through python your run will be a python script, hence the name "run script".
+Here the `--rscript` flag here means run-scripts. In Shamrock since everything goes through python your run will be a python script, hence the name "run script". Here it is a benchmark of one of Shamrock's algorithms.
 :::
 
 ### Python interpreter + Ipython
 
-### Python package
+:::::{warning}
+IPython does not come by default with python. Ensure that it is installed on you system, or you can install it in a python venv but then things are a bit different, see [Using Shamrock with Python venv](./python_venv.md).
 
-### Jupyter notebook
-
-### Legacy content for this guide
-
-!!! warning
-
-    This guide assume that shamrock is available in your path (aka that the `shamrock` commands and that `python3 -c "import shamrock"` work). This might not be the case if you have installed Shamrock [from source](./quickstart/install_from_source.md).
-
-    In that case you have two options:
-
-    - export the paths (assuming you are in the build directory) like so :
-    ```bash
-    export PATH=$(pwd):$PATH
-    export LD_LIBRARY_PATH=$(pwd):$LD_LIBRARY_PATH
-    export PYTHONPATH=$(pwd):$PYTHONPATH
-    ```
-
-    - Or precede shamrock start with the right env variable (assuming you are in the build directory) :
-    ```bash
-    ./shamrock <...>
-    PYTHONPATH=$(pwd):$PYTHONPATH python3 <...>
-    ```
-
-## Selecting the device to run on
-
-To select the device that you want to run on run the following command:
+::::{tab-set}
+:::{tab-item} Linux (Debian & Ubuntu)
 
 ```bash
-shamrock --smi
+sudo apt install python3-ipython
 ```
 
-You should see something like:
-
-```
- ----- Shamrock SMI -----
-
-Available devices :
-
-1 x Nodes: --------------------------------------------------------------------------------
-| id |      Device name          |      Platform name     |  Type  |    Memsize   | units |
--------------------------------------------------------------------------------------------
-|  0 |   NVIDIA GeForce RTX 3070 |      CUDA (platform 0) |    GPU |      7.63 GB |    46 |
-|  1 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.18 GB |    24 |
--------------------------------------------------------------------------------------------
-```
-
-Use the one you prefer by passing its id to the `--sycl-cfg x:x` flag like so
+:::
+:::{tab-item} MacOS
 
 ```bash
-shamrock --smi --sycl-cfg 0:0
+brew install ipython
 ```
 
-You should see :
-
-```
- ----- Shamrock SMI -----
-
-Available devices :
-
-1 x Nodes: --------------------------------------------------------------------------------
-| id |      Device name          |      Platform name     |  Type  |    Memsize   | units |
--------------------------------------------------------------------------------------------
-|  0 |   NVIDIA GeForce RTX 3070 |      CUDA (platform 0) |    GPU |      7.63 GB |    46 |
-|  1 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.18 GB |    24 |
--------------------------------------------------------------------------------------------
-
-Selected devices : (totals can be wrong if using multiple ranks per device)
-  - 1 x NVIDIA GeForce RTX 3070 (id=0)
-  Total memory : 7.63 GB
-  Total compute units : 46
-```
-
-If you quickly want to test that everything works do:
+:::
+:::{tab-item} ArchLinux
 
 ```bash
-shamrock --smi --sycl-cfg 0:0 --benchmark-mpi
+sudo pacman -Syu ipython
 ```
 
-You should get:
+:::
+:::{tab-item} Conda
 
-```
- ----- Shamrock SMI -----
+TODO: we should add it to the conda env probably by default to avoid the need for the user to tweak it.
 
-Available devices :
+:::
+::::
 
-1 x Nodes: --------------------------------------------------------------------------------
-| id |      Device name          |      Platform name     |  Type  |    Memsize   | units |
--------------------------------------------------------------------------------------------
-|  0 |   NVIDIA GeForce RTX 3070 |      CUDA (platform 0) |    GPU |      7.63 GB |    46 |
-|  1 |  AdaptiveCpp OpenMP h ... |    OpenMP (platform 0) |    CPU |     62.18 GB |    24 |
--------------------------------------------------------------------------------------------
+:::::
 
-Selected devices : (totals can be wrong if using multiple ranks per device)
-  - 1 x NVIDIA GeForce RTX 3070 (id=0)
-  Total memory : 7.63 GB
-  Total compute units : 46
-
------------------------------------------------------
-Running micro benchmarks:
- - p2p bandwidth    : 2.4662e+10 B.s^-1 (ranks : 0 -> 0) (loops : 2969)
- - saxpy (f32_4)   : 4.005e+11 B.s^-1 (min = 4.0e+11, max = 4.0e+11, avg = 4.0e+11) (2.0e+00 ms)
- - add_mul (f32_4) : 1.340e+13 flops (min = 1.3e+13, max = 1.3e+13, avg = 1.3e+13) (1.9e+01 ms)
- - add_mul (f64_4) : 2.265e+11 flops (min = 2.3e+11, max = 2.3e+11, avg = 2.3e+11) (1.1e+03 ms)
-```
-
-Here you can check that the peak flop & bandwidth match somewhat to the spec of your device.
-
-!!! warning
-    It is normal if the flops are off by about a factor two, the add_mul benchmark only targets
-    `add` and `mul` instructions which do not stress the full floating point units.
-
-## Using the Ipython mode
-
-Before using the Ipython mode check that you have Ipython installed otherwise you will get an error.
-
-To use the Ipython mode do:
+Alright! We can do interactive stuff now by using the `--ipython` flag in-place of the `--rscript` flag. Just know that this is limited to use with a single process. If you want to use Shamrock with MPI to distribute across multiple machines forget about interactive modes 😅.
 
 ```bash
-shamrock --sycl-cfg 0:0 --ipython
+./shamrock --smi --sycl-cfg 0:0 --ipython
 ```
 
-At the end of the ouput you should be prompted with a Ipython terminal:
+Which should display something like:
 
-```py
+```ipython
 --------------------------------------------
 -------------- ipython ---------------------
 --------------------------------------------
 SHAMROCK Ipython terminal
-Python 3.12.9 (main, Feb  4 2025, 14:38:38) [GCC 14.2.1 20241116]
+Python 3.14.3 (main, Feb 13 2026, 15:31:44) [GCC 15.2.1 20260209]
+
+###
+import shamrock
+###
+
+In [1]:
+```
+
+Now you can use the same python as one would in runscripts. A classic one to run there is the following (which is what i do in the basic CI test btw):
+
+```{code-block} python
+---
+lineno-start: 1
+---
+import shamrock
+print("Shamrock version:", shamrock.version_string())
+print("Git info:", shamrock.get_git_info())
+shamrock.change_loglevel(1)
+if not shamrock.sys.is_initialized():
+    shamrock.sys.init('0:0')
+
+# To test that importing nested modules works
+from shamrock.math import *
+```
+
+You should get something like (do not forget to change the device selection in `shamrock.sys.init('0:0')` if you are not using device 0):
+
+```python
+--------------------------------------------
+-------------- ipython ---------------------
+--------------------------------------------
+SHAMROCK Ipython terminal
+Python 3.14.3 (main, Feb 13 2026, 15:31:44) [GCC 15.2.1 20260209]
 
 ###
 import shamrock
 ###
 
 In [1]: import shamrock
-```
-
-After this you can use the shamrock python package like you would normally ([:octicons-arrow-right-24: Python frontend documentation](../../sphinx/index.html)).
-
-## Using the Python interpreter mode
-
-You can also use Shamrock to run python scripts. For example let's say that we have the following python file:
-
-```py linenums="1" title="test.py"
-import shamrock
-
-# If you are using the shamrock executable the init is handled before starting python.
-# Hence this will be skipped, if you are using the python package this will take care of the init.
-if not shamrock.sys.is_initialized():
-    shamrock.sys.init("0:0")
-
-shamrock.change_loglevel(1) # change loglevel to level 1 (info)
-print(shamrock.get_git_info())
-```
-
-You can use Shamrock to execute it using the `--rscript` flag (rscript stands for runscript).
-
-```
-shamrock --sycl-cfg 0:0 --rscript test.py
-```
-
-You will get something like:
-
-```
------------------------------------
-running pyscript : test.py
------------------------------------
--> modified loglevel to 1, enabled log types :
-Info: xxx ( logger::info )                                       [xxx][rank=0]
-xxx: xxx ( logger::normal )
-Warning: xxx ( logger::warn )                                    [xxx][rank=0]
-Error: xxx ( logger::err )                                       [xxx][rank=0]
-
-     commit : 966110450587dd1f0ed53438e181835d39004650
-     HEAD   : refs/heads/update-readme
+   ...: print("Shamrock version:", shamrock.version_string())
+   ...: print("Git info:", shamrock.get_git_info())
+   ...: shamrock.change_loglevel(1)
+   ...: if not shamrock.sys.is_initialized():
+   ...:     shamrock.sys.init('0:0')
+   ...: 
+   ...: # To test that importing nested modules works
+   ...: from shamrock.math import *
+Shamrock version: 2025.10.0+git.bb2b3814a.patch-2026-04-15-15-33.dirty
+Git info:      commit : bb2b3814af0ec0c2f16f46017185dbdba36d21fa
+     HEAD   : refs/heads/patch-2026-04-15-15-33, refs/remotes/origin/patch-2026-04-15-15-33
      modified files (since last commit):
-        README.md
-        doc/mkdocs/docs/usermanual/quickstart.md
-        doc/mkdocs/mkdocs.yml
-        exemples/godunov_sod.py
-        src/main.cpp
-        src/shamsys/include/shamsys/NodeInstance.hpp
-        src/shamsys/src/NodeInstance.cpp
+        doc/sphinx/source/user_guide/quickstart.md
 
------------------------------------
-pyscript end
------------------------------------
+-> modified loglevel to 0 enabled log types :  
+log status :  
+ - Loglevel: 1, enabled log types : 
+Info: xxx ( logger::info )                                                                [xxx][rank=0] 
+xxx: xxx ( logger::normal )  
+Warning: xxx ( logger::warn )                                                             [xxx][rank=0] 
+Error: xxx ( logger::err )                                                                [xxx][rank=0] 
+
+In [2]:
 ```
 
-## Using Shamrock as a python package
+If you want to run the same script as above just do (in the IPython prompt):
 
-```py linenums="1" title="test.py"
-import shamrock
-
-# If you are using the shamrock executable the init is handled before starting python.
-# Hence this will be skipped, if you are using the python package this will take care of the init.
-if not shamrock.sys.is_initialized():
-    shamrock.change_loglevel(1)
-    shamrock.sys.init("0:0")
-
-shamrock.sys.close()
+```ipython
+run ../examples/benchmarks/run_exclusive_scan_in_place.py
 ```
 
-Then you can simply run it:
+### Python package
+
+This one is simple. First ensure that you have done:
 
 ```bash
-python3 test.py
+# Configure install paths in the local build folder
+cmake . -DCMAKE_INSTALL_PYTHONDIR=$(pwd)/pysham -DCMAKE_INSTALL_PREFIX=$(pwd)/shaminstall
+# Install it !
+shammake install
 ```
 
-You should get the following :
+Now you just need to help python locate Shamrock python bindings which are in `./pysham`. To do that just prepend the python call by extending the python path like so
 
-```
--> modified loglevel to 0 enabled log types :
-[xxx] Info: xxx ( logger::info )
-[xxx] : xxx ( logger::normal )
-[xxx] Warning: xxx ( logger::warn )
-[xxx] Error: xxx ( logger::err )
-
------------------------------------------------------
- - MPI finalize
-Exiting ...
-
- Hopefully it was quick :')
-
+```bash
+PYTHONPATH=./pysham:$PYTHONPATH python3 # can be just python on some system
 ```
 
-## Why do we have to distinguish the init between the python package and executable ?
+Then use the same thing as above to test it:
 
-Initializing MPI and GPU software stacks can be complex and inconsistent across platforms (yeah I know it sucks ...).
-It may happen that some shared libraries are loaded by Python, potentially disrupting the MPI initialization.
-For instance, importing a package in Python that utilizes CUDA may load the CUDA stubs before Shamrock initializes,
-which could mess up MPI direct GPU communication.
+```py
+❯ PYTHONPATH=./pysham:$PYTHONPATH python3                       
+Python 3.14.3 (main, Feb 13 2026, 15:31:44) [GCC 15.2.1 20260209] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import shamrock
+... print("Shamrock version:", shamrock.version_string())
+... print("Git info:", shamrock.get_git_info())
+... shamrock.change_loglevel(1)
+... if not shamrock.sys.is_initialized():
+...     shamrock.sys.init('0:0')
+... 
+... # To test that importing nested modules works
+... from shamrock.math import *
+... 
+Shamrock version: 2025.10.0+git.bb2b3814a.patch-2026-04-15-15-33.dirty
+Git info:      commit : bb2b3814af0ec0c2f16f46017185dbdba36d21fa
+     HEAD   : refs/heads/patch-2026-04-15-15-33, refs/remotes/origin/patch-2026-04-15-15-33
+     modified files (since last commit):
+        doc/sphinx/source/user_guide/quickstart.md
 
-To prevent such edge cases, the executable mode initializes all required components before starting Python,
-ensuring the proper initialization of the libraries.
-
-## Jupyter notebook mode
-
-I will assume here that you have jupyter installed in the same python distribution
-(If not try to use you system package manager to install it, or in last resort using pip).
-
-You can then run `jupyter notebook` which will start it.
-Make then sure that you select the python kernel that match the python distribution where Shamrock is installed.
-
-If you want to check that try this command:
-
-```
-echo "import sys;print(sys.executable)" > test.py && shamrock --sycl-cfg 0:0 --rscript test.py
-```
-
-It will print the corresponding python executable :
-
-```
------------------------------------
-running pyscript : test.py
------------------------------------
-/usr/bin/python3
------------------------------------
-pyscript end
------------------------------------
+-> modified loglevel to 0 enabled log types :  
+log status :  
+ - Loglevel: 1, enabled log types : 
+[xxx] Info: xxx ( logger::info )  
+[xxx] : xxx ( logger::normal )  
+[xxx] Warning: xxx ( logger::warn )  
+[xxx] Error: xxx ( logger::err )  
+>>>
 ```
 
-!!! note
-    If you are using the Shamrock Docker container there is a special case here.
-    Instead to run jupyter, do the following
+As you can we have just imported and initialize Shamrock as a python package. Again to run the same script (for the third time already) you can do:
 
-    ```bash
-    docker run -i -t -v $(pwd):/work -p 8888:8888 --platform=linux/amd64 ghcr.io/shamrock-code/shamrock:latest-oneapi jupyter notebook --allow-root --no-browser --ip=0.0.0.0 --NotebookApp.token=''
-    ```
+```bash
+PYTHONPATH=./pysham:$PYTHONPATH python3 ../examples/benchmarks/run_exclusive_scan_in_place.py
+```
 
-    This will start jupyter in the current folder, you can then go to <http://127.0.0.1:8888/> to use it.
+### Jupyter notebook
 
-    Explanation of the flags:
+Just for your pleasure and enjoyment through this flight... tutorial behold the magic command:
 
-     - `-i` start the docker container in interactive mode.
-     - `-t` start a terminal.
-     - `-v $(pwd):/work` mount the current working directory to `/work` in the docker container.
-     - `-p 8888:8888` forward the 8888 port from inside the container.
-     - `--platform=linux/amd64` If you are on macos this will start a virtual machine.
-     - `ghcr.io/shamrock-code/shamrock:latest-oneapi` the docker container.
-     - `jupyter notebook` Come on you know what this does, do you ???
-     - `--allow-root` Inside the docker container you are root so you should bypass this check.
-     - `--no-browser` Do not open the browser there are not in the container obviously.
-     - `--ip=0.0.0.0` Otherwise the port is not fowarded correctly out of the container.
-     - `--NotebookApp.token=''` Do not use a token to log.
+```bash
+(
+    python3 -m venv .pyvenv
+    source .pyvenv/bin/activate
+    pip install -U notebook
+    export PYTHONPATH=./pysham:$PYTHONPATH
+    jupyter notebook
+)
+```
+
+It leverages the `export PYTHONPATH` to register the shamrock modules in the python venv even though Shamrock was never installed in it. Anyway thanks to that the ipython kernel launched inside jupyter should find Shamrock gracefully. Also note the parenthesis around it. This ensure that the modifications made to the environment variables of your current terminal are contained only to the scope of this sequence of command and everything goes back to normal after.
+
+:::{note}
+If you are using the Shamrock Docker container there is a special case here.
+Instead to run jupyter, do the following
+
+```bash
+docker run -i -t -v $(pwd):/work -p 8888:8888 --platform=linux/amd64 ghcr.io/shamrock-code/shamrock:latest-oneapi jupyter notebook --allow-root --no-browser --ip=0.0.0.0 --NotebookApp.token=''
+```
+
+This will start jupyter in the current folder, you can then go to <http://127.0.0.1:8888/> to use it.
+
+Explanation of the flags:
+
+- `-i` start the docker container in interactive mode.
+- `-t` start a terminal.
+- `-v $(pwd):/work` mount the current working directory to `/work` in the docker container.
+- `-p 8888:8888` forward the 8888 port from inside the container.
+- `--platform=linux/amd64` If you are on macos this will start a virtual machine.
+- `ghcr.io/shamrock-code/shamrock:latest-oneapi` the docker container.
+- `jupyter notebook` Come on you know what this does, do you ???
+- `--allow-root` Inside the docker container you are root so you should bypass this check.
+- `--no-browser` Do not open the browser there are none in the container obviously.
+- `--ip=0.0.0.0` Otherwise the port is not fowarded correctly out of the container.
+- `--NotebookApp.token=''` Do not use a token to log.
+:::
+
+## Next steps
+
+Alright now that you know how to compile & start Shamrock we can go many paths:
+
+- [Use Shamrock with python venv](./python_venv.md)
+- [Use Shamrock on GPU](./use_on_gpu.md)
 
 ```{toctree}
 :maxdepth: 2

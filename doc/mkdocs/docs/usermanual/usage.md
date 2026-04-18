@@ -127,7 +127,7 @@ In [2]: print(shamrock.get_git_info())
 
 ## Running a runscript
 
-An other possibility (the one that is the most used also) is to start a runscript, which is just a python script starting that will be executed by shamrock, for example this is a very basic script that get the SPH model with M6 kernel and just start the patch scheduler on it.
+Another possibility (the one that is the most used also) is to start a runscript, which is just a python script that will be executed by shamrock, for example this is a very basic script that gets the SPH model with M6 kernel and just starts the patch scheduler on it.
 
 ```py
 import shamrock

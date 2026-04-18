@@ -14,7 +14,7 @@ void do_smth( args ...){
 }
 ```
 
-Such pattern is not harmfull in itself but may be hard to read/debug for more complex usages.
+Such pattern is not harmful in itself but may be hard to read/debug for more complex usages.
 
 ## moving to policy design
 

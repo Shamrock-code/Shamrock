@@ -40,7 +40,7 @@ void shamalgs::BufferEventHandler::add_read_dependancies(std::vector<sycl::event
 
     depends_list.push_back(event_last_write);
 
-    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read dependancy");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read dependency");
 }
 
 void shamalgs::BufferEventHandler::add_read_write_dependancies(
@@ -62,7 +62,7 @@ void shamalgs::BufferEventHandler::add_read_write_dependancies(
     for (const sycl::event &e : event_last_read) {
         depends_list.push_back(e);
     }
-    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependancy");
+    shamlog_debug_sycl_ln("[USMBuffer]", get_hash_log(), "add read write dependency");
 
     event_last_read  = {};
     event_last_write = {};

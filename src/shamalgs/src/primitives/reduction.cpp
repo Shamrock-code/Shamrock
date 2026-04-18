@@ -78,7 +78,7 @@ namespace shamalgs::primitives {
 #endif
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow reduction implementation : {}", u32(impl)));
+            shambase::format("unknown reduction implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_reduction() {

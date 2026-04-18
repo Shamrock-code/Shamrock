@@ -222,7 +222,7 @@ def make_tex_report(dat):
 
                 dic_int["world size = " + str(wsz)][dat[config_k]["description"]] = {
                     "results": dic_res,
-                    "succes_cnt": dic_suc_cnt,
+                    "success_cnt": dic_suc_cnt,
                     "global_suc_cnt": cnt_succes,
                     "global_test_cnt": cnt_test,
                 }
@@ -329,9 +329,9 @@ def make_tex_report(dat):
                 \hline
                 Test name & Status & Successful asserts / total number of asserts \\  \hline \hline
             """
-            for ktest in dic_int[kworldsz][kconfig]["succes_cnt"].keys():
-                assert_suc_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["suc_cnt"]
-                assert_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["assert_cnt"]
+            for ktest in dic_int[kworldsz][kconfig]["success_cnt"].keys():
+                assert_suc_cnt = dic_int[kworldsz][kconfig]["success_cnt"][ktest]["suc_cnt"]
+                assert_cnt = dic_int[kworldsz][kconfig]["success_cnt"][ktest]["assert_cnt"]
 
                 succes = assert_suc_cnt == assert_cnt
 

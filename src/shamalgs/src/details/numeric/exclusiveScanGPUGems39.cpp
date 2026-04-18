@@ -136,13 +136,13 @@ namespace shamalgs::numeric::details {
         u32 step = 0;
 
         q.submit([&](sycl::handler &cgh) {
-            u32 corect_len = len;
+            u32 correct_len = len;
             sycl::accessor acc_in{buf1, cgh, sycl::read_only};
             sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
                 u32 thid    = id.get_linear_id();
-                acc_out[id] = (thid > 0 && thid < corect_len) ? acc_in[thid - 1] : 0;
+                acc_out[id] = (thid > 0 && thid < correct_len) ? acc_in[thid - 1] : 0;
             });
         });
 
@@ -198,13 +198,13 @@ namespace shamalgs::numeric::details {
         u32 step = 0;
 
         q.submit([&](sycl::handler &cgh) {
-            u32 corect_len = len;
+            u32 correct_len = len;
             sycl::accessor acc_in{buf1, cgh, sycl::read_only};
             sycl::accessor acc_out{get_in_buf_ref(step), cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range<1>{rounded_len}, [=](sycl::item<1> id) {
                 u32 thid    = id.get_linear_id();
-                acc_out[id] = (thid > 0 && thid < corect_len) ? acc_in[thid - 1] : 0;
+                acc_out[id] = (thid > 0 && thid < correct_len) ? acc_in[thid - 1] : 0;
             });
         });
 

@@ -83,12 +83,12 @@ namespace shamalgs::numeric::details {
         inline bool is_invalid() { return state.x() == STATE_X; }
     };
 
-    enum DecoupledLoockBackPolicy { Standard, Parralelized };
+    enum DecoupledLookBackPolicy { Standard, Parralelized };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBack;
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBackAccessed {
         public:
         sycl::accessor<typename Tile::PackStorage, 1, sycl::access::mode::read_write>
@@ -197,7 +197,7 @@ namespace shamalgs::numeric::details {
         }
     };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBack {
         public:
         u32 slice_count;

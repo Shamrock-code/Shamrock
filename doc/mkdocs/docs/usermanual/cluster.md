@@ -98,7 +98,7 @@ cd dpcpp_rocm
 make -j
 ```
 
-Runing the code on 8 gpu per nodes
+Running the code on 8 gpu per nodes
 ```bash
 module load hip
 module load openmpi

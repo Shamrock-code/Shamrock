@@ -32,15 +32,15 @@ header with include guards:
 
 #endif
 ```
-Or we can just add in the begining of the header before anything else:
+Or we can just add in the beginning of the header before anything else:
 ```c++
 #pragma once
 
 ...content of the header...
 ```
 
-Both options do the same thing, however `#pragma once` is slightly faster and more conveninent.
-Therefor in shamrock every header starts with the license banner followed by `#pragma once`
+Both options do the same thing, however `#pragma once` is slightly faster and more convenient.
+Therefore in shamrock every header starts with the license banner followed by `#pragma once`
 
 in order to check the correctness of pragma onces there is the `buildbot/check_pragma_once.py`
 utility will tell you which file do not have the pragma once.

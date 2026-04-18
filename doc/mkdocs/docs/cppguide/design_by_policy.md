@@ -74,7 +74,7 @@ void do_smth( args ...){
 
 ## A better example
 
-Imagine you are coding a GPU kernel but some parameters may have to be tweaked to squeeze the best performance out of the card. The policy design might be very revelant.
+Imagine you are coding a GPU kernel but some parameters may have to be tweaked to squeeze the best performance out of the card. The policy design might be very relevant.
 
 The global definition is :
 ```c++
@@ -117,4 +117,4 @@ void do_smth( args ...){
 }
 ```
 
-The advantage of the using the `enum` case is that the type of `WorkerCount` is not specified and therefor can be better optimized
+The advantage of the using the `enum` case is that the type of `WorkerCount` is not specified and therefore can be better optimized

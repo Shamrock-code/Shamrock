@@ -29,7 +29,7 @@ namespace shamalgs::atomic {
      * e.g. worker group 2 can not start if worker group 1 is not started
      * The performance overhead is minimal (10^-11 s/element on A100)
      *
-     * \todo add figure for overhead measurment
+     * \todo add figure for overhead measurement
      *
      * Example :
      *

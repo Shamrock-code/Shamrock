@@ -69,7 +69,7 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
     multx = 1
-    multy = 1
+    multi = 1
     multz = 1
 
     sz = 1 << 1
@@ -96,11 +96,11 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
 
     # ================= Fields maps  =========================
 
-    def pertubation(x, A, Re, Im, L) -> float:
+    def perturbation(x, A, Re, Im, L) -> float:
         return A * (Re * cos(2 * x * pi / L) - Im * sin(2 * x * pi / L))
 
     """
@@ -123,16 +123,16 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     ### Gas maps
     def rho_map(rmin,rmax)->float:
         x,y,z = rmin
-        return rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
+        return rhog_0 + perturbation(x,A_rho,Re_rho,Im_rho,L)
     def rhovel_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
-        rho = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
-        vx  = pertubation(x,A_vel,Re_vel,Im_vel,L)
+        rho = rhog_0 + perturbation(x,A_rho,Re_rho,Im_rho,L)
+        vx  = perturbation(x,A_vel,Re_vel,Im_vel,L)
         return (rho*vx, 0, 0)
     def rhoe_map (rmin, rmax)->float:
         x,y,z   = rmin
-        rho     = rhog_0 + pertubation(x,A_rho,Re_rho,Im_rho,L)
-        vx      = pertubation(x,A_vel,Re_vel,Im_vel,L)
+        rho     = rhog_0 + perturbation(x,A_rho,Re_rho,Im_rho,L)
+        vx      = perturbation(x,A_vel,Re_vel,Im_vel,L)
         press   = (cs * cs * rho) / gamma
         rhoeint = press / (gamma - 1.0)
         rhoekin = 0.5 * rho * (vx *vx + 0.0)
@@ -140,11 +140,11 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     ### Dust maps
     def rho_d_map(rmin,rmax)->float:
         x,y,z = rmin
-        return rhod_0 + pertubation(x,A_rho,Re_rd,Im_rd,L)
+        return rhod_0 + perturbation(x,A_rho,Re_rd,Im_rd,L)
     def rhovel_d_map(rmin, rmax)->tuple[float,float,float]:
         x,y,z = rmin
-        rho = rhod_0 + pertubation(x,A_rho,Re_rd,Im_rd,L)
-        vx  = pertubation(x,A_vel,Re_vd,Im_vd,L)
+        rho = rhod_0 + perturbation(x,A_rho,Re_rd,Im_rd,L)
+        vx  = perturbation(x,A_vel,Re_vd,Im_vd,L)
         return (rho*vx, 0, 0)"""
 
     ##  5 fluids test setup
@@ -188,18 +188,18 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
     ### Gas maps
     def rho_map(rmin, rmax) -> float:
         x, y, z = rmin
-        return rhog_0 + pertubation(x, A_rho, Re_rho, Im_rho, L)
+        return rhog_0 + perturbation(x, A_rho, Re_rho, Im_rho, L)
 
     def rhovel_map(rmin, rmax) -> tuple[float, float, float]:
         x, y, z = rmin
-        rho = rhog_0 + pertubation(x, A_rho, Re_rho, Im_rho, L)
-        vx = pertubation(x, A_vel, Re_vel, Im_vel, L)
+        rho = rhog_0 + perturbation(x, A_rho, Re_rho, Im_rho, L)
+        vx = perturbation(x, A_vel, Re_vel, Im_vel, L)
         return (rho * vx, 0, 0)
 
     def rhoe_map(rmin, rmax) -> float:
         x, y, z = rmin
-        rho = rhog_0 + pertubation(x, A_rho, Re_rho, Im_rho, L)
-        vx = pertubation(x, A_vel, Re_vel, Im_vel, L)
+        rho = rhog_0 + perturbation(x, A_rho, Re_rho, Im_rho, L)
+        vx = perturbation(x, A_vel, Re_vel, Im_vel, L)
         press = (cs * cs * rho) / gamma
         rhoeint = press / (gamma - 1.0)
         rhoekin = 0.5 * rho * (vx * vx + 0.0)
@@ -209,42 +209,42 @@ def run_sim(times, x0, normalized_rd_num, normalized_rg_num, normalized_vd_num, 
 
     def rho_d_1_map(rmin, rmax) -> float:
         x, y, z = rmin
-        return rhod_1 + pertubation(x, A_rho, Re_rd_1, Im_rd_1, L)
+        return rhod_1 + perturbation(x, A_rho, Re_rd_1, Im_rd_1, L)
 
     def rhovel_d_1_map(rmin, rmax) -> tuple[float, float, float]:
         x, y, z = rmin
-        rho = rhod_1 + pertubation(x, A_rho, Re_rd_1, Im_rd_1, L)
-        vx = pertubation(x, A_vel, Re_vd_1, Im_vd_1, L)
+        rho = rhod_1 + perturbation(x, A_rho, Re_rd_1, Im_rd_1, L)
+        vx = perturbation(x, A_vel, Re_vd_1, Im_vd_1, L)
         return (rho * vx, 0, 0)
 
     def rho_d_2_map(rmin, rmax) -> float:
         x, y, z = rmin
-        return rhod_2 + pertubation(x, A_rho, Re_rd_2, Im_rd_2, L)
+        return rhod_2 + perturbation(x, A_rho, Re_rd_2, Im_rd_2, L)
 
     def rhovel_d_2_map(rmin, rmax) -> tuple[float, float, float]:
         x, y, z = rmin
-        rho = rhod_2 + pertubation(x, A_rho, Re_rd_2, Im_rd_2, L)
-        vx = pertubation(x, A_vel, Re_vd_2, Im_vd_2, L)
+        rho = rhod_2 + perturbation(x, A_rho, Re_rd_2, Im_rd_2, L)
+        vx = perturbation(x, A_vel, Re_vd_2, Im_vd_2, L)
         return (rho * vx, 0, 0)
 
     def rho_d_3_map(rmin, rmax) -> float:
         x, y, z = rmin
-        return rhod_3 + pertubation(x, A_rho, Re_rd_3, Im_rd_3, L)
+        return rhod_3 + perturbation(x, A_rho, Re_rd_3, Im_rd_3, L)
 
     def rhovel_d_3_map(rmin, rmax) -> tuple[float, float, float]:
         x, y, z = rmin
-        rho = rhod_3 + pertubation(x, A_rho, Re_rd_3, Im_rd_3, L)
-        vx = pertubation(x, A_vel, Re_vd_3, Im_vd_3, L)
+        rho = rhod_3 + perturbation(x, A_rho, Re_rd_3, Im_rd_3, L)
+        vx = perturbation(x, A_vel, Re_vd_3, Im_vd_3, L)
         return (rho * vx, 0, 0)
 
     def rho_d_4_map(rmin, rmax) -> float:
         x, y, z = rmin
-        return rhod_4 + pertubation(x, A_rho, Re_rd_4, Im_rd_4, L)
+        return rhod_4 + perturbation(x, A_rho, Re_rd_4, Im_rd_4, L)
 
     def rhovel_d_4_map(rmin, rmax) -> tuple[float, float, float]:
         x, y, z = rmin
-        rho = rhod_4 + pertubation(x, A_rho, Re_rd_4, Im_rd_4, L)
-        vx = pertubation(x, A_vel, Re_vd_4, Im_vd_4, L)
+        rho = rhod_4 + perturbation(x, A_rho, Re_rd_4, Im_rd_4, L)
+        vx = perturbation(x, A_vel, Re_vd_4, Im_vd_4, L)
         return (rho * vx, 0, 0)
 
     # ============ set init fields values for gas =============

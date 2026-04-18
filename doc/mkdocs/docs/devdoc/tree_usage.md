@@ -8,7 +8,7 @@ The radix tree in shamrock can be imported by
 #include "shamtree/RadixTree.hpp"
 ```
 
-This define the class `RadixTree<...>`. This templated `RadixTree` can be instanciated like this :
+This define the class `RadixTree<...>`. This templated `RadixTree` can be instantiated like this :
 
 ```c++
 RadixTree<
@@ -27,7 +27,7 @@ using Tree = RadixTree<u32,f32_3,3>;
 
 Tree rtree(
     q, //the sycl queue to build the tree on
-    {coord_range.lower, coord_range.upper}, // The range of coordinates in the postions
+    {coord_range.lower, coord_range.upper}, // The range of coordinates in the positions
     pos, // the position buffer
     cnt, //number of element in the position buffer
     reduc_lev //level of reduction

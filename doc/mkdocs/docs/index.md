@@ -36,7 +36,7 @@ We can run some SPH, AMR, but not only that!
 
     ---
 
-    Using SYCL run on any harware supported by a SYCL compiler.
+    Using SYCL run on any hardware supported by a SYCL compiler.
 
     CPU : (x86, ARM, Risc-V, ... )
 

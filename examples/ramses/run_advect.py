@@ -22,7 +22,7 @@ tmax = 1.0
 timestamps = 40
 
 multx = 1
-multy = 1
+multi = 1
 multz = 1
 
 sz = 1 << 1
@@ -67,7 +67,7 @@ def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = T
     model.set_solver_config(cfg)
 
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
 
     def rho_map(rmin, rmax):
         x, y, z = rmin

@@ -433,7 +433,7 @@ class PatchDataField {
     std::vector<u32> get_elements_with_range(Lambdacd &&cd_true, T vmin, T vmax);
 
     /**
-     * @brief Get the indicies of the elements in half open interval
+     * @brief Get the indices of the elements in half open interval
      *
      * @tparam LambdaCd
      * @param vmin

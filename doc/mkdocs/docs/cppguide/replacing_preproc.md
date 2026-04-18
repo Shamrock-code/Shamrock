@@ -30,7 +30,7 @@ class VariantField {
 
 # If defs
 
-Usually you may have a Compile flag to toogle some features in C or Fortran code, in order to do so we usually write something like this
+Usually you may have a Compile flag to toggle some features in C or Fortran code, in order to do so we usually write something like this
 
 ```cpp
 void func(){

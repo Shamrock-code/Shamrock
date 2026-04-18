@@ -94,7 +94,7 @@ os.makedirs(output_folder, exist_ok=True)
 
 
 multx = 2
-multy = 1
+multi = 1
 multz = 1
 
 sz = 1 << 1
@@ -146,7 +146,7 @@ def run_test(
     model.set_solver_config(cfg)
 
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
 
     dic = toro_initial_conditions(test_number)
     tmax = dic["tend"]

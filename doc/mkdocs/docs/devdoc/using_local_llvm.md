@@ -16,7 +16,7 @@ configure it :
 ```bash
 mkdir build
 cd build
-cmake -DLLVM_ENABLE_PROJECTS=all -DCMAKE_INSTALL_PREFIX=...instal loc.../llvm-17.x-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
+cmake -DLLVM_ENABLE_PROJECTS=all -DCMAKE_INSTALL_PREFIX=...install loc.../llvm-17.x-local -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles" ../llvm
 ```
 
 compile it :

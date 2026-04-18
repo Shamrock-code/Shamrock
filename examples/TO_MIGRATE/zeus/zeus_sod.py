@@ -12,7 +12,7 @@ model = shamrock.get_Model_Zeus(context=ctx, vector_type="f64_3", grid_repr="i64
 
 
 multx = 4
-multy = 1
+multi = 1
 multz = 1
 
 sz = 1 << 1
@@ -30,7 +30,7 @@ model.set_solver_config(cfg)
 
 
 model.init_scheduler(int(1e7), 1)
-model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
 
 kx, ky, kz = 2 * np.pi, 0, 0
 delta_rho = 1e-2

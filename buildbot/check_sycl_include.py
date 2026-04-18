@@ -37,7 +37,7 @@ def write_file(fname, source):
     f.close()
 
 
-def should_corect(source):
+def should_correct(source):
     if "#include <hipSYCL" in source:
         return True
 
@@ -53,10 +53,10 @@ for fname in file_list:
     if should_check_file(fname):
         source = load_file(fname)
 
-        if should_corect(source):
+        if should_correct(source):
             if not has_found_errors:
                 print(" => \033[1;34mNon standard SYCL #include found \033[0;0m: ")
-                print("The check found so instances of sycl inclusion using non standard headers")
+                print("The check found some instances of sycl inclusion using non standard headers")
                 print("Please remove instances of :")
                 print("  #include <hipSYCL/*")
                 print()

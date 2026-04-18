@@ -10,14 +10,14 @@ executable : ./shamrock
 
 Usage :
 --benchmark-mpi                 : micro benchmark for MPI
---color                         : force colored ouput
+--color                         : force colored output
 --feenableexcept                 : Enable FPE exceptions
 --force-dgpu-off                 : for direct mpi comm off
 --force-dgpu-on                 : for direct mpi comm on
 --help                          : show this message
 --ipython                       : run shamrock in Ipython mode
 --loglevel      (logvalue)      : specify a log level
---nocolor                       : disable colored ouput
+--nocolor                       : disable colored output
 --pypath        (sys.path)      : python sys.path to set
 --pypath-from-bin (python binary) : set sys.path from python binary
 --rscript       (filepath)      : run shamrock with python runscirpt
@@ -112,7 +112,7 @@ import shamrock
 In [1]:
 ```
 
-From that point just type `ìmport shamrock` in that Ipython terminal to initialise the python interoperability.
+From that point just type `import shamrock` in that Ipython terminal to initialise the python interoperability.
 
 For example you can query information about the status of the code :
 ```py

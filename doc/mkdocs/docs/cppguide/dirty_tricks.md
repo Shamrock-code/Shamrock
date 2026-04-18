@@ -86,7 +86,7 @@ StaticInitClass static_init_instance (fct_ptr);
 The function `fct_to_register` will be in `static_init_fct_list` when the main function is ran.
 
 
-## Defining a protocol with hiden implementation
+## Defining a protocol with hidden implementation
 
 ```cpp
 

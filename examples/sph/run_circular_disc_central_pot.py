@@ -226,7 +226,7 @@ def setup_model():
     # Standard way to set the smoothing length (e.g. Price et al. 2018)
     cfg.set_smoothing_length_density_based()
 
-    # Standard density based smoothing lenght but with a neighbor count limit
+    # Standard density based smoothing length but with a neighbor count limit
     # Use it if you have large slowdowns due to giant particles
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
@@ -301,7 +301,7 @@ def setup_model():
 
     # Run a single step to init the integrator and smoothing length of the particles
     # Here the htolerance is the maximum factor of evolution of the smoothing length in each
-    # Smoothing length iterations, increasing it affect the performance negatively but increse the
+    # Smoothing length iterations, increasing it affect the performance negatively but increase the
     # convergence rate of the smoothing length
     # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
     # Note that both ``change_htolerances`` can be removed and it will work the same but would converge

@@ -241,7 +241,7 @@ namespace shamalgs::collective {
         const SparseCommTable &comm_table) {
         StackEntry stack_loc{};
 
-        // share comm list accros nodes
+        // share comm list across nodes
         const std::vector<u64> &send_vec_comm_ranks = comm_table.local_send_vec_comm_ranks;
         const std::vector<u64> &global_comm_ranks   = comm_table.global_comm_ranks;
 
@@ -313,7 +313,7 @@ namespace shamalgs::collective {
         const SparseCommTable &comm_table) {
         StackEntry stack_loc{};
 
-        // share comm list accros nodes
+        // share comm list across nodes
         const std::vector<u64> &send_vec_comm_ranks = comm_table.local_send_vec_comm_ranks;
         const std::vector<u64> &global_comm_ranks   = comm_table.global_comm_ranks;
 
@@ -401,7 +401,7 @@ namespace shamalgs::collective {
         const SparseCommTable &comm_table) {
         StackEntry stack_loc{};
 
-        // share comm list accros nodes
+        // share comm list across nodes
         const std::vector<u64> &send_vec_comm_ranks = comm_table.local_send_vec_comm_ranks;
         const std::vector<u64> &global_comm_ranks   = comm_table.global_comm_ranks;
 

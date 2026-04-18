@@ -68,7 +68,7 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
     model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
     multx = 1
-    multy = 1
+    multi = 1
     multz = 1
 
     sz = 1 << 1
@@ -98,9 +98,9 @@ def run_sim(times, vg_num, vd1_num, vd2_num):
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
 
-    # ============= Fileds maps for gas ==============
+    # ============= Fields maps for gas ==============
 
     def rho_map(rmin, rmax):
         return 1  # 1 is the initial density

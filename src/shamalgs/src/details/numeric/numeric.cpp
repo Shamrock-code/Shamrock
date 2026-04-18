@@ -33,7 +33,7 @@ namespace shamalgs::numeric {
 
     template<class T>
     sycl::buffer<T> scan_exclusive(sycl::queue &q, sycl::buffer<T> &buf1, u32 len) {
-#ifdef __MACH__ // decoupled lookback perf on mac os is awfull
+#ifdef __MACH__ // decoupled lookback perf on mac os is awful
         return details::exclusive_sum_fallback(q, buf1, len);
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
@@ -47,7 +47,7 @@ namespace shamalgs::numeric {
     template<class T>
     sham::DeviceBuffer<T> scan_exclusive(
         sham::DeviceScheduler_ptr sched, sham::DeviceBuffer<T> &buf1, u32 len) {
-#ifdef __MACH__ // decoupled lookback perf on mac os is awfull
+#ifdef __MACH__ // decoupled lookback perf on mac os is awful
         return details::exclusive_sum_fallback_usm(sched, buf1, len);
 #else
     #ifdef SYCL2020_FEATURE_GROUP_REDUCTION

@@ -28,7 +28,7 @@ namespace shamalgs::algorithm::details {
     void sort_by_key_bitonic_updated(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len);
 
-    // implementation disabled since it exibit the same performance as the normal one
+    // implementation disabled since it exhibits the same performance as the normal one
     template<class Tkey, class Tval, u32 MaxStencilSize>
     void sort_by_key_bitonic_updated_xor_swap(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len);

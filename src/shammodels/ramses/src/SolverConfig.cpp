@@ -20,6 +20,7 @@
  */
 
 #include "shammodels/ramses/SolverConfig.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamrock/io/json_print_diff.hpp"
 #include "shamrock/io/json_std_optional.hpp"
 #include "shamrock/io/json_utils.hpp"
@@ -30,6 +31,8 @@ namespace shammodels::basegodunov {
     template<class Tvec, class TgridVec>
     inline void SolverConfig<Tvec, TgridVec>::set_layout(
         shamrock::patch::PatchDataLayerLayout &pdl) {
+
+        logger::raw_ln("set init require filed for rho\t\n\n");
         pdl.add_field<TgridVec>("cell_min", 1);
         pdl.add_field<TgridVec>("cell_max", 1);
         pdl.add_field<Tscal>("rho", AMRBlock::block_size);
@@ -43,6 +46,7 @@ namespace shammodels::basegodunov {
         }
 
         if (is_gravity_on()) {
+            logger::raw_ln("set init require filed for phi\t\n\n");
             pdl.add_field<Tscal>("phi", AMRBlock::block_size);
             pdl.add_field<Tscal>("phi_old", AMRBlock::block_size);
         }

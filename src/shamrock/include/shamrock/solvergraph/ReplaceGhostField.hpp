@@ -31,15 +31,15 @@ namespace shamrock::solvergraph {
         ReplaceGhostField() {}
 
         struct Edges {
-            const shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
+            shamrock::solvergraph::PatchDataFieldDDShared<T> &ghost_fields;
             shamrock::solvergraph::IFieldRefs<T> &fields;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<T>> ghost_fields,
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> fields) {
-            __internal_set_ro_edges({ghost_fields});
-            __internal_set_rw_edges({fields});
+            __internal_set_ro_edges({});
+            __internal_set_rw_edges({ghost_fields, fields});
         }
 
         inline Edges get_edges() {

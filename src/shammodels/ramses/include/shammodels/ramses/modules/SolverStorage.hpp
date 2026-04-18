@@ -253,7 +253,7 @@ namespace shammodels::basegodunov {
             void reset() { *this = {}; }
         } timings_details;
 
-        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_old;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_new;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_copy;

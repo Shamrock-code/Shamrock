@@ -134,7 +134,7 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
 
                 sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                sham::DeviceBuffer<Tscal> &phi_new_patch = phi_next.get_buf(p.id_patch);
+                sham::DeviceBuffer<Tscal> &phi_new_patch = phi_next.get(p.id_patch).get_buf();
 
                 u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 

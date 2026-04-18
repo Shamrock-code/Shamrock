@@ -114,7 +114,7 @@ In [1]:
 
 From that point just type `ìmport shamrock` in that Ipython terminal to initialise the python interoperability.
 
-For example you can querry informations about the status of the code :
+For example you can query information about the status of the code :
 ```py
 In [1]: import shamrock
 

@@ -14,7 +14,7 @@
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief utility to use python script withing tests
 
- * Exemple :
+ * Example :
  * \code{.cpp}
  * TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
  *
@@ -45,7 +45,7 @@
 /**
  * @brief Class allowing use of python scripts within a test case
  *
- * Exemple :
+ * Example :
  * \code{.cpp}
  * std::vector<f64> x = {0, 1, 2, 4, 5};
  * std::vector<f64> y = {1, 2, 4, 6, 1};

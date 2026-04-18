@@ -42,7 +42,7 @@ rtree.convert_bounding_box(q); //convert the cell sizes to the original space of
 
 
 ### Interaction Criterion
- Here is an exemple of the definition of an interaction criterion
+ Here is an example of the definition of an interaction criterion
 
 ```c++
 template<class u_morton, class flt>

@@ -158,7 +158,7 @@ def print_diff(before, after, beforename, aftername):
     )
 
 
-def autocorect(source, filename, path):
+def autocorrect(source, filename, path):
     l_start = 0
     l_end = 0
     i = 0
@@ -193,13 +193,13 @@ def autocorect(source, filename, path):
     do_replace = not (new_src == source)
 
     if do_replace:
-        print("autocorect : ", filename)
+        print("autocorrect : ", filename)
         print_diff(source, new_src, filename, filename + " (corec)")
 
     return do_replace, new_src
 
 
-def run_autocorect():
+def run_autocorrect():
     errors = []
 
     for fname in file_list:
@@ -222,10 +222,10 @@ def run_autocorect():
         source = f.read()
         f.close()
 
-        change, source = autocorect(source, os.path.basename(fname), fname)
+        change, source = autocorrect(source, os.path.basename(fname), fname)
 
         if change:
-            print("autocorect : ", fname.split(abs_proj_dir)[-1])
+            print("autocorrect : ", fname.split(abs_proj_dir)[-1])
             f = open(fname, "w")
             f.write(source)
             f.close()
@@ -234,7 +234,7 @@ def run_autocorect():
     return errors
 
 
-missing_doxygenfilehead = run_autocorect()
+missing_doxygenfilehead = run_autocorrect()
 
 print("--------------------------------")
 print("Current author list:")

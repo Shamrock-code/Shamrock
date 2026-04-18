@@ -5,7 +5,7 @@
 
 if you have a class `MyClass` having some custom constructors or deleted constructors. A way to avoid dealing with constructors issues is to wrap the class in a `std::unique_ptr`.
 
-Exemple :
+Example :
 
 ```cpp
 struct MyClass{

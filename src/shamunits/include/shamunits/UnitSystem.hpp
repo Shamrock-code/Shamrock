@@ -41,7 +41,7 @@ namespace shamunits {
 
     /// \brief Defines a unit system
     ///
-    /// Exemple of usage :
+    /// Example of usage :
     /// \code {.cpp}
     ///    using namespace shamunits;
     ///
@@ -161,7 +161,7 @@ namespace shamunits {
 #ifdef DOXYGEN
         /**
          * @brief get the value of a units in the current system
-         * \todo better doc with exemple
+         * \todo better doc with example
          * @tparam pref unit prefix (default to none)
          * @tparam u the units
          * @tparam power the power of the units (also applied to the prefix)
@@ -224,7 +224,7 @@ namespace shamunits {
 
         /**
          * @brief To the si units (convert a system unit to si ones). This function is the inverse
-         * of get \todo better doc with exemple
+         * of get \todo better doc with example
          * @tparam pref unit prefix (default to none)
          * @tparam u the units
          * @tparam power the power of the units (also applied to the prefix)

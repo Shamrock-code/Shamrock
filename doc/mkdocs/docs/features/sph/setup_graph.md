@@ -9,7 +9,7 @@ This solution is the generalized setups in a form of a graph where link pass Pat
 
 Node can be generators (e.g. lattice hcp, monte carlo, ...) modifiers (strechmapping, disc warp, ...) or combiners (Just combining the result of two other nodes).
 
-## Exemple
+## Example
 
 Imagine a even number generator, a modifier (multiplier) that multiplies the result by 10, and a combiner.
 

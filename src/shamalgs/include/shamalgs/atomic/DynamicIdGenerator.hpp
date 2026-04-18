@@ -31,7 +31,7 @@ namespace shamalgs::atomic {
      *
      * \todo add figure for overhead measurment
      *
-     * Exemple :
+     * Example :
      *
      * \code{.cpp}
      * DynamicIdGenerator<i32, group_size> id_gen(q);
@@ -75,7 +75,7 @@ namespace shamalgs::atomic {
     };
 
     /**
-     * @brief Accesses version of `DynamicIdGenerator` see doc for exemple (`DynamicIdGenerator`)
+     * @brief Accesses version of `DynamicIdGenerator` see doc for example (`DynamicIdGenerator`)
      *
      * @tparam int_t the int type used by the counter (preferentially u32 or u64)
      * @tparam group_size the group size used in `SYCL`

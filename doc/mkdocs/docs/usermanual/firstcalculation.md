@@ -27,7 +27,7 @@ SHAMROCK provides an array of pre-cooked scripts you can run as is. When running
 For the sake of clarity, let's take the example of the spherical_wave.py script. To run it, type this in your terminal:
 
 ```bash
-./shamrock --sycl-cfg 0:0 --smi --loglevel 10 --rscript ../exemples/spherical_wave.py
+./shamrock --sycl-cfg 0:0 --smi --loglevel 10 --rscript ../examples/spherical_wave.py
 ```
 the --loglevel argument specifies the degree of verbosity of SHAMROCK.
 - 0 silent

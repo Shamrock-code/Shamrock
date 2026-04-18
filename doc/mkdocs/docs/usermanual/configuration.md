@@ -24,7 +24,7 @@ options:
 ```
 
 Essentially for each compiler we define several profiles, which holds corresponding compilation flags.
-One exemple could be :
+One example could be :
 ```bash
 python buildbot/configure.py
     --gen ninja                     #to compile with ninja instead of make

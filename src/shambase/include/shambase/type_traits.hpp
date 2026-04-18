@@ -293,7 +293,7 @@ namespace shambase {
      * return type and argument types, then checks if the callable matches this signature
      * using `check_functor` and also checks if the return type matches the deduced return type.
      *
-     * Exemple :
+     * Example :
      * @code {.cpp}
      * int x = 0;
      * auto func = [x](int a, int b) -> int { return a + b; };

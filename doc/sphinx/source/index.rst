@@ -22,7 +22,7 @@ This page aims at documenting both the User and developer documentation of Shamr
 
    .. grid-item-card::
 
-      **Runscript Exemples** (`Link <_as_gen/index.html>`_)
+      **Runscript Examples** (`Link <_as_gen/index.html>`_)
       ^^^
 
       A very nice list of examples of Shamrock scripts, for those who prefer examples. :)

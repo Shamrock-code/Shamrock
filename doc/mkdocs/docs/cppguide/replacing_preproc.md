@@ -42,7 +42,7 @@ void func(){
 }
 ```
 
-In c++ such patern can be replaced by constexpr bool's.
+In c++ such pattern can be replaced by constexpr bool's.
 
 ```cpp
 // somewhere in the code

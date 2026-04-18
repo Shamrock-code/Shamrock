@@ -58,7 +58,7 @@ CommBuffer buf;
 auto obj = CommBuffer<..type...>::convert(std::move(buf));
 ```
 
-## Exemple use of a buffer
+## Example use of a buffer
 
 on the sender side :
 ```cpp

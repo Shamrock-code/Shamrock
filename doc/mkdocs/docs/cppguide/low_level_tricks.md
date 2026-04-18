@@ -283,7 +283,7 @@ int varint;
 int vardouble;
 ```
 
-It can be usefull to avoid copy-paste errors
+It can be useful to avoid copy-paste errors
 
 ## State machine and jump table
 

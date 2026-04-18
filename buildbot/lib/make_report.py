@@ -188,7 +188,7 @@ def get_succes_count_data(dt):
     return out_dic
 
 
-def make_tex_repport(dat):
+def make_tex_report(dat):
     dic_int = {}
 
     for config_k in dat.keys():
@@ -354,7 +354,7 @@ def make_tex_repport(dat):
 
     print(out_tex)
 
-    out_file = open("test_repport.tex", "w")
+    out_file = open("test_report.tex", "w")
     out_file.write(out_tex)
     out_file.close()
 
@@ -367,7 +367,7 @@ def make_report(format, out_res_map_file):
     # print(data)
 
     if format == ReportFormat.Tex:
-        make_tex_repport(data)
+        make_tex_report(data)
 
 
 if __name__ == "__main__":

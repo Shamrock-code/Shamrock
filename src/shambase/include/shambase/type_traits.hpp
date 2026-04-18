@@ -220,7 +220,7 @@ namespace shambase {
 
     /**
      * @brief Helper variable template that is always false.
-     * Especially usefull to perform static asserts based on templates
+     * Especially useful to perform static asserts based on templates
      * @code{.cpp}
      * if constexpr(constexpr_condition(var)){
      *     ......

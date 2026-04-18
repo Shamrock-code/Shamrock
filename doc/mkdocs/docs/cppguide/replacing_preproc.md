@@ -74,4 +74,4 @@ func():                               # @func()
     ret
 ```
 
-here we have no comparaison, and `do_stuff` is not even referenced as expected
+here we have no comparison, and `do_stuff` is not even referenced as expected

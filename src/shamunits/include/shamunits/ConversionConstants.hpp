@@ -46,7 +46,7 @@ namespace shamunits {
         /// We first want to thanks E. Lynch for his useful contribution to the devellopement of
         ///    numerical methods and new standard of measurement
         /// \verbatim
-        /// todo find a more precise measurement of the guiness density (shall be done in ireland)
+        /// todo find a more precise measurement of the Guinness density (shall be done in Ireland)
         /// protocol :
         ///  1 - start by ordering the most precise pint of guiness (in ireland)
         ///  2 - weight the pint

@@ -33,9 +33,10 @@ namespace shammodels::basegodunov::modules {
 
     template<class T>
     class NodeSumReduction : public shamrock::solvergraph::INode {
+        u32 block_size;
 
         public:
-        NodeSumReduction() {}
+        NodeSumReduction(u32 block_size) : block_size(block_size) {}
 
         EXPAND_NODE_EDGES(NODE_SUMRED_EDGES)
 

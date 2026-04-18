@@ -27,8 +27,11 @@ namespace shammodels::basegodunov::modules {
         edges.spans_in.check_sizes(edges.sizes.indexes);
         T loc_val = {};
 
-        edges.spans_in.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
-            loc_val += res_field_ref.compute_sum();
+        edges.spans_in.get_refs().for_each([&](u32 patch_id, PatchDataField<T> &res_field_ref) {
+            auto buf_length = block_size * edges.sizes.indexes.get(patch_id);
+            // loc_val += res_field_ref.compute_sum();
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+            loc_val += shamalgs::primitives::sum(dev_sched, res_field_ref.get_buf(), 0, buf_length);
         });
         edges.out_scal.value = shamalgs::collective::allreduce_sum(loc_val);
     }

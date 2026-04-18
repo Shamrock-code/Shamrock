@@ -91,40 +91,7 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
         });
     }
 
-    if (solver_config.is_gravity_on() && (!solver_config.is_coupling_gravity_on())) {
-        logger::raw_ln("Self-gravity -- [NO COUPLING MODE] \n");
-
-        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> &phi_new
-            = shambase::get_check_ref(storage.refs_phi).get_refs();
-        scheduler().for_each_patchdata_nonempty(
-            [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-                shamlog_debug_ln(
-                    "[Self-gravity]", "Gravitational potential saveback patch", p.id_patch);
-
-                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-                sham::DeviceBuffer<Tscal> &phi_new_patch = phi_new.get(p.id_patch).get().get_buf();
-
-                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
-
-                sham::DeviceBuffer<Tscal> &phi_old = pdat.get_field_buf_ref<Tscal>(iphi);
-
-                sham::EventList depends_list;
-                auto acc_phi_new = phi_new_patch.get_read_access(depends_list);
-                auto acc_phi_old = phi_old.get_write_access(depends_list);
-
-                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                    shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
-                        acc_phi_old[id_a] = acc_phi_new[id_a];
-                    });
-                });
-                phi_new_patch.complete_event_state(e);
-                phi_old.complete_event_state(e);
-            });
-    }
-
-    if (solver_config.is_gravity_on() && solver_config.is_coupling_gravity_on()) {
-        logger::raw_ln("Self-gravity -- [COUPLING MODE] \n");
+    if (solver_config.is_gravity_on()) {
         auto &phi_next = shambase::get_check_ref(storage.refs_phi_new);
 
         scheduler().for_each_patchdata_nonempty(

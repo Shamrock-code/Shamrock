@@ -19,36 +19,27 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/INode.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+
+#define NODE_RESIDUALDOT_EDGES(X_RO, X_RW)                                                         \
+    /*inputs*/                                                                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, spans_phi_res)                                      \
+    /*outputs*/                                                                                    \
+    X_RW(shamrock::solvergraph::ScalarEdge<Tscal>, res_ddot)
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
     class ResidualDot : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<T>;
+        u32 block_size;
 
         public:
-        ResidualDot() {}
+        ResidualDot(u32 block_size) : block_size(block_size) {}
 
-        struct Edges {
-            const shamrock::solvergraph::IFieldRefs<T> &spans_phi_res;
-            shamrock::solvergraph::ScalarEdge<Tscal> &res_ddot;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<T>> spans_phi_res,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> res_ddot) {
-            __internal_set_ro_edges({spans_phi_res});
-            __internal_set_rw_edges({res_ddot});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<T>>(0),
-                get_rw_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(0),
-            };
-        }
-
+        EXPAND_NODE_EDGES(NODE_RESIDUALDOT_EDGES)
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const { return "ResidualDot"; };
@@ -57,3 +48,5 @@ namespace shammodels::basegodunov::modules {
     };
 
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_RESIDUALDOT_EDGES

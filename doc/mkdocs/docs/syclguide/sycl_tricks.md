@@ -34,7 +34,7 @@ struct CustomAcc{
     passing variables
 };
 
-//withing a function templated on the accessor and the functor
+//within a function templated on the accessor and the functor
 shamsys::instance::get_compute_queue().submit([&](sycl::handler & cgh){
 
     CustomAcc local = acc_arg;

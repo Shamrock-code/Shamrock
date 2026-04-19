@@ -80,7 +80,7 @@ G = ucte.G()
 # List parameters
 
 # Resolution
-Npart = 100000
+Npart = int(float(os.environ.get("NPART")))
 
 # Domain decomposition parameters
 scheduler_split_val = int(1.0e7)  # split patches with more than 1e7 particles
@@ -90,20 +90,37 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.02
-nstop = 30
+dt_stop = 1
+nstop = 100
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
 
+run_params = []
+
+for center_is_torque_free in [True, False]:
+    for center_racc in [0.1, 0.25, 0.5, 0.8]:
+        if center_is_torque_free:
+            for center_torque_boost_radius_fact in [1.5, 2.0, 3.0]:
+                run_params.append(
+                    (center_racc, center_is_torque_free, center_torque_boost_radius_fact)
+                )
+        else:
+            run_params.append((center_racc, center_is_torque_free, 0.0))
+
+print(run_params, len(run_params))
+
+run_id = int(os.environ.get("RUN_ID"))
 
 # Sink parameters
 center_mass = 1.0
-center_racc = 0.8
+center_racc = run_params[run_id][0]
+center_is_torque_free = run_params[run_id][1]
+center_torque_boost_radius_fact = run_params[run_id][2]
 
 # Disc parameter
 disc_mass = 0.01  # sol mass
-rout = 10.0  # au
+rout = 20.0  # au
 rin = 1.0  # au
 H_r_0 = 0.05
 q = 0.5
@@ -119,7 +136,10 @@ beta_AV = 2.0
 C_cour = 0.3
 C_force = 0.25
 
-sim_folder = f"_to_trash/circular_disc_sink_{Npart}/"
+
+sim_folder = f"_to_trash/circular_disc_sink_{center_is_torque_free}_{center_racc}_{center_torque_boost_radius_fact}_{Npart}/"
+
+print(sim_folder)
 
 dump_folder = sim_folder + "dump/"
 analysis_folder = sim_folder + "analysis/"
@@ -309,7 +329,14 @@ def setup_model():
         raise RuntimeError("disc barycenter is not 0")
 
     # now that the barycenter & momentum are 0, we can add the sink
-    model.add_sink(center_mass, (0, 0, 0), (0, 0, 0), center_racc)
+    model.add_sink(
+        center_mass,
+        (0, 0, 0),
+        (0, 0, 0),
+        center_racc,
+        is_torque_free=center_is_torque_free,
+        torque_boost_radius_fact=center_torque_boost_radius_fact,
+    )
 
     # Run a single step to init the integrator and smoothing length of the particles
     # Here the htolerance is the maximum factor of evolution of the smoothing length in each
@@ -356,13 +383,8 @@ def save_analysis_data(filename, key, value, ianalysis):
 from shamrock.utils.analysis import (
     AnalysisHelper,
     ColumnDensityPlot,
-    ColumnParticleCount,
     PerfHistory,
-    SliceDensityPlot,
-    SliceDiffVthetaProfile,
     SliceDtPart,
-    SliceVzPlot,
-    VerticalShearGradient,
 )
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
@@ -379,72 +401,6 @@ column_density_plot = ColumnDensityPlot(
     analysis_prefix="rho_integ_normal",
 )
 
-column_density_plot_hollywood = ColumnDensityPlot(
-    model,
-    ext_r=rout * 1.5,
-    nx=1024,
-    ny=1024,
-    ex=(1, 0, 0),
-    ey=(0, 1, 0),
-    center=(0, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="rho_integ_hollywood",
-)
-
-vertical_density_plot = SliceDensityPlot(
-    model,
-    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
-    nx=1920,
-    ny=1080,
-    ex=(1, 0, 0),
-    ey=(0, 0, 1),
-    center=(0, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="rho_slice",
-)
-
-v_z_slice_plot = SliceVzPlot(
-    model,
-    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
-    nx=1920,
-    ny=1080,
-    ex=(1, 0, 0),
-    ey=(0, 0, 1),
-    center=(0, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="v_z_slice",
-    do_normalization=True,
-)
-
-relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
-    model,
-    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
-    nx=1920,
-    ny=1080,
-    ex=(1, 0, 0),
-    ey=(0, 0, 1),
-    center=((rin + rout) / 2, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="relative_azy_velocity_slice",
-    velocity_profile=kep_profile,
-    do_normalization=True,
-    min_normalization=1e-9,
-)
-
-vertical_shear_gradient_slice_plot = VerticalShearGradient(
-    model,
-    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
-    nx=1920,
-    ny=1080,
-    ex=(1, 0, 0),
-    ey=(0, 0, 1),
-    center=((rin + rout) / 2, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="vertical_shear_gradient_slice",
-    do_normalization=True,
-    min_normalization=1e-9,
-)
-
 dt_part_slice_plot = SliceDtPart(
     model,
     ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
@@ -457,19 +413,7 @@ dt_part_slice_plot = SliceDtPart(
     analysis_prefix="dt_part_slice",
 )
 
-column_particle_count_plot = ColumnParticleCount(
-    model,
-    ext_r=rout * 1.5,
-    nx=1024,
-    ny=1024,
-    ex=(1, 0, 0),
-    ey=(0, 1, 0),
-    center=(0, 0, 0),
-    analysis_folder=analysis_folder,
-    analysis_prefix="particle_count",
-)
-
-profile_plot = AnalysisHelper(
+profile_plots = AnalysisHelper(
     analysis_folder=os.path.join(analysis_folder, "plots"),
     analysis_prefix="density_profile",
 )
@@ -477,13 +421,7 @@ profile_plot = AnalysisHelper(
 
 def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
-    column_density_plot_hollywood.analysis_save(ianalysis)
-    vertical_density_plot.analysis_save(ianalysis)
-    v_z_slice_plot.analysis_save(ianalysis)
-    relative_azy_velocity_slice_plot.analysis_save(ianalysis)
-    vertical_shear_gradient_slice_plot.analysis_save(ianalysis)
     dt_part_slice_plot.analysis_save(ianalysis)
-    column_particle_count_plot.analysis_save(ianalysis)
 
     barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
 
@@ -510,44 +448,76 @@ def analysis(ianalysis):
 
     perf_analysis.analysis_save(ianalysis)
 
-    #'''
     rho_field = model.compute_field("rho", "f64")
     hpart_field = model.compute_field("hpart", "f64")
 
-    def internal(size: int, x: np.array, y: np.array, z: np.array) -> np.array:
-        r = np.sqrt(x**2 + y**2 + z**2)
-        return r
+    def compute_r_field():
 
-    if _HAS_NUMBA:
-        internal = njit(internal)
+        def internal(size: int, x: np.array, y: np.array, z: np.array) -> np.array:
+            r = np.sqrt(x**2 + y**2)
+            return r
 
-    def custom_getter(size: int, dic_out: dict) -> np.array:
-        return internal(
-            size,
-            dic_out["xyz"][:, 0],
-            dic_out["xyz"][:, 1],
-            dic_out["xyz"][:, 2],
-        )
+        if _HAS_NUMBA:
+            internal = njit(internal)
 
-    r_field = model.compute_field("custom", "f64", custom_getter)
+        def custom_getter(size: int, dic_out: dict) -> np.array:
+            return internal(
+                size,
+                dic_out["xyz"][:, 0],
+                dic_out["xyz"][:, 1],
+                dic_out["xyz"][:, 2],
+            )
 
-    print(rho_field, r_field)
+        return model.compute_field("custom", "f64", custom_getter)
 
-    x_min = center_racc / 2.0
-    x_max = rout * 1.1
+    def compute_Lz_field():
+        pmass = model.get_particle_mass()
+        hfact = model.get_hfact()
+
+        def internal(
+            size: int,
+            x: np.array,
+            y: np.array,
+            z: np.array,
+            hpart: np.array,
+            vx: np.array,
+            vy: np.array,
+            vz: np.array,
+        ) -> np.array:
+            rho = pmass * (hfact / hpart) ** 3
+            Lz = rho * (x * vy - y * vx)
+            return Lz
+
+        if _HAS_NUMBA:
+            internal = njit(internal)
+
+        def custom_getter(size: int, dic_out: dict) -> np.array:
+            return internal(
+                size,
+                dic_out["xyz"][:, 0],
+                dic_out["xyz"][:, 1],
+                dic_out["xyz"][:, 2],
+                dic_out["hpart"],
+                dic_out["vxyz"][:, 0],
+                dic_out["vxyz"][:, 1],
+                dic_out["vxyz"][:, 2],
+            )
+
+        return model.compute_field("custom", "f64", custom_getter)
+
+    r_field = compute_r_field()
+    Lz_field = compute_Lz_field()
+
+    print(rho_field, r_field, Lz_field)
+
+    x_min = 0.25
+    x_max = rout * 1.5
     x_min_log = np.log10(x_min)
     x_max_log = np.log10(x_max)
 
     bin_edges_x1d = np.logspace(x_min_log, x_max_log, 2049)
 
-    histo = shamrock.compute_histogram(
-        bin_edges=bin_edges_x1d,
-        x_field=r_field,
-        y_field=rho_field,
-        do_average=True,
-    )
-
-    histo_convolve = shamrock.compute_histogram_convolve_x(
+    rho_profile = shamrock.compute_histogram_convolve_x(
         bin_edges=bin_edges_x1d,
         x_field=r_field,
         y_field=rho_field,
@@ -555,27 +525,22 @@ def analysis(ianalysis):
         do_average=True,
     )
 
-    bin_edges_x = np.logspace(x_min_log, x_max_log, 1025)
-    bin_edges_y = np.logspace(-6, -3, 1025)
-    histo_top = shamrock.compute_histogram_2d(
-        bin_edges_x=bin_edges_x,
-        bin_edges_y=bin_edges_y,
+    Lz_profile = shamrock.compute_histogram_convolve_x(
+        bin_edges=bin_edges_x1d,
         x_field=r_field,
-        y_field=rho_field,
+        y_field=Lz_field,
+        size_field=hpart_field,
+        do_average=True,
     )
-    histo_2d = np.array(histo_top).reshape(len(bin_edges_x) - 1, len(bin_edges_y) - 1)
 
     data = {
         "bin_edges_x1d": bin_edges_x1d,
-        "bin_edges_x": bin_edges_x,
-        "bin_edges_y": bin_edges_y,
-        "histo": histo,
-        "histo_convolve": histo_convolve,
-        "histo_2d": histo_2d,
+        "rho_profile": rho_profile,
+        "Lz_profile": Lz_profile,
         "time": model.get_time(),
     }
 
-    profile_plot.analysis_save(ianalysis, data)
+    profile_plots.analysis_save(ianalysis, data)
 
 
 # %%
@@ -593,7 +558,6 @@ for ttarg in t_stop:
         model.evolve_until(ttarg)
 
         if istop % dump_freq_stop == 0:
-            model.do_vtk_dump(get_vtk_dump_name(idump), True)
             dump_helper.write_dump(idump, purge_old_dumps=True, keep_first=1, keep_last=3)
 
             # dump = model.make_phantom_dump()
@@ -644,60 +608,6 @@ column_density_plot.render_all(
     **sink_params,
 )
 
-column_density_plot_hollywood.render_all(
-    **face_on_render_kwargs,
-    field_unit="kg.m^-2",
-    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
-    vmin=1,
-    vmax=1e4,
-    norm="log",
-    holywood_mode=True,
-    **sink_params,
-)
-
-vertical_density_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="kg.m^-3",
-    field_label="$\\rho$",
-    vmin=1e-10,
-    vmax=1e-6,
-    norm="log",
-    **sink_params,
-)
-
-v_z_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="m.s^-1",
-    field_label="$\\mathrm{v}_z$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-300,
-    vmax=300,
-    **sink_params,
-)
-
-relative_azy_velocity_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="m.s^-1",
-    field_label="$\\mathrm{v}_{\\theta} - v_k$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-300,
-    vmax=300,
-    **sink_params,
-)
-
-vertical_shear_gradient_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="yr^-1",
-    field_label="${{\\partial R \\Omega}}/{{\\partial z}}$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-1,
-    vmax=1,
-    **sink_params,
-)
-
 dt_part_slice_plot.render_all(
     **face_on_render_kwargs,
     field_unit="year",
@@ -709,40 +619,20 @@ dt_part_slice_plot.render_all(
     **sink_params,
 )
 
-column_particle_count_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit=None,
-    field_label="$\\int \\frac{1}{h_\\mathrm{part}} \\, \\mathrm{{d}} z$",
-    vmin=1,
-    vmax=1e2,
-    norm="log",
-    contour_list=[1, 10, 100, 1000],
-    **sink_params,
-)
 
-
-def profile_plot_func(iplot, data):
+def profile_plots_func(iplot, data):
 
     data = data.item()
 
     bin_edges_x1d = data["bin_edges_x1d"]
-    bin_edges_x = data["bin_edges_x"]
-    bin_edges_y = data["bin_edges_y"]
-    histo = data["histo"]
-    histo_convolve = data["histo_convolve"]
-    histo_2d = data["histo_2d"]
+    rho_profile = data["rho_profile"]
+    Lz_profile = data["Lz_profile"]
     time = data["time"]
 
     bin_center = (bin_edges_x1d[:-1] + bin_edges_x1d[1:]) / 2
 
     plt.figure(dpi=150)
-
-    plt.pcolormesh(
-        bin_edges_x, bin_edges_y, histo_2d, norm="log", cmap="Greys", vmin=1, vmax=2, shading="auto"
-    )
-
-    plt.plot(bin_center, histo)
-    plt.plot(bin_center, histo_convolve)
+    plt.plot(bin_center, rho_profile)
     plt.xlabel("r")
     plt.ylabel("density")
 
@@ -755,11 +645,28 @@ def profile_plot_func(iplot, data):
     anchored_text = AnchoredText(text, loc=2)
     plt.gca().add_artist(anchored_text)
 
-    plt.savefig(profile_plot.analysis_prefix + f"{iplot:07}.png")
+    plt.savefig(profile_plots.analysis_prefix + f"rho_{iplot:07}.png")
+    plt.close()
+
+    plt.figure(dpi=150)
+    plt.plot(bin_center, Lz_profile)
+    plt.xlabel("r")
+    plt.ylabel("Lz")
+
+    plt.xscale("log")
+    plt.yscale("log")
+
+    text = f"t = {time:0.3f}"
+    from matplotlib.offsetbox import AnchoredText
+
+    anchored_text = AnchoredText(text, loc=2)
+    plt.gca().add_artist(anchored_text)
+
+    plt.savefig(profile_plots.analysis_prefix + f"Lz_{iplot:07}.png")
     plt.close()
 
 
-profile_plot.render_all(profile_plot_func)
+profile_plots.render_all(profile_plots_func)
 
 # %%
 # Make gif for the doc (plot_to_gif.py)
@@ -780,72 +687,9 @@ if render_gif:
 
 
 # %%
-# Same but in hollywood
-if render_gif:
-    ani = column_density_plot_hollywood.render_gif(
-        gif_filename="rho_integ_hollywood.gif", save_animation=True
-    )
-    if ani is not None:
-        plt.show()
-
-# %%
-# For the vertical density plot
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = vertical_density_plot.render_gif(gif_filename="rho_slice.gif", save_animation=True)
-    if ani is not None:
-        plt.show()
-
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = v_z_slice_plot.render_gif(gif_filename="v_z_slice.gif", save_animation=True)
-    if ani is not None:
-        plt.show()
-
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = relative_azy_velocity_slice_plot.render_gif(
-        gif_filename="relative_azy_velocity_slice.gif", save_animation=True
-    )
-    if ani is not None:
-        plt.show()
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = vertical_shear_gradient_slice_plot.render_gif(
-        gif_filename="vertical_shear_gradient_slice.gif", save_animation=True
-    )
-    if ani is not None:
-        plt.show()
-
-# %%
 # Make a gif from the plots
 if render_gif and shamrock.sys.world_rank() == 0:
     ani = dt_part_slice_plot.render_gif(gif_filename="dt_part_slice.gif", save_animation=True)
-    if ani is not None:
-        plt.show()
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = column_particle_count_plot.render_gif(
-        gif_filename="particle_count.gif", save_animation=True
-    )
-    if ani is not None:
-        plt.show()
-
-# %%
-# Make a gif from the plots
-if render_gif and shamrock.sys.world_rank() == 0:
-    ani = profile_plot.render_gif(
-        profile_plot.analysis_prefix + "*.png",
-        gif_filename="density_profile.gif",
-        save_animation=True,
-    )
     if ani is not None:
         plt.show()
 

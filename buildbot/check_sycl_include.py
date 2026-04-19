@@ -56,7 +56,7 @@ for fname in file_list:
         if should_correct(source):
             if not has_found_errors:
                 print(" => \033[1;34mNon standard SYCL #include found \033[0;0m: ")
-                print("The check found so instances of sycl inclusion using non standard headers")
+                print("The check found some instances of sycl inclusion using non standard headers")
                 print("Please remove instances of :")
                 print("  #include <hipSYCL/*")
                 print()

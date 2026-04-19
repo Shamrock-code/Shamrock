@@ -1644,7 +1644,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.predictor_step(dt);
 
     {
-        // begining of SolverGraph migration
+        // beginning of SolverGraph migration
 
         using namespace shamrock::solvergraph;
 

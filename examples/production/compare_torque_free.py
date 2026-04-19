@@ -12,7 +12,7 @@ The simulation models:
 - Artificial viscosity for angular momentum transport
 - Locally isothermal equation of state
 
-Also this simulation feature rolling dumps (see `purge_old_dumps` function) to save disk space.
+Also this simulation features rolling dumps (see `purge_old_dumps` function) to save disk space.
 
 This example is the accumulation of 3 files in a single one to showcase the complete workflow.
 

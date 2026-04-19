@@ -178,7 +178,7 @@ def get_success_count_data(dt):
             sum_cnt_assert += cnt_assert
             sum_cnt_success += cnt_success
 
-            # print("test ",k_cur_test, "world size =",k_cur_wrk,"| success rate =",cnt_succes,"/",len(dt[k_cur_test][k_cur_wrk]))
+            # print("test ",k_cur_test, "world size =",k_cur_wrk,"| success rate =",cnt_success,"/",len(dt[k_cur_test][k_cur_wrk]))
             tmp[k_cur_wrk] = {"suc_cnt": cnt_success, "assert_cnt": cnt_assert}
 
         tmp["suc_cnt"] = sum_cnt_success

@@ -134,7 +134,8 @@ html_theme_options = {
             "type": "local",
         },
     ],
-    "pygments_dark_style": "monokai",
+    "pygments_light_style": "catppuccin-latte",
+    "pygments_dark_style": "catppuccin-mocha",
 }
 
 html_context = {

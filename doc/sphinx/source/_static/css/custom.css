@@ -1,3 +1,79 @@
+html[data-theme="dark"] {
+    --pst-color-primary: #b4befe; /* Lavender */
+    --pst-color-secondary: #f5e0dc; /* Rosewater */
+    --pst-color-primary-bg: #b4befe40; /* Lavender 40% */
+    --sd-color-primary-bg: #b4befe40; /* Lavender 40% */
+    --pst-color-secondary-bg: #f5e0dc40; /* Rosewater 40% */
+    --sd-color-secondary-bg: #f5e0dc40; /* Rosewater 40% */
+    --pst-heading-color: #cdd6f4; /* Text */
+    --pst-color-accent: #f2cdcd; /* Flamingo */
+    --pst-color-success: #a6e3a1; /* Green */
+    --pst-color-success-bg: #a6e3a140; /* Green 40% */
+    --pst-color-info: #f9e2af; /* Yellow */
+    --pst-color-info-bg: #f9e2af40; /* Yellow 40% */
+    --pst-color-warning: #fab387; /* Peach */
+    --pst-color-danger: #f38ba8; /* Red */
+    --pst-color-text-base: #cdd6f4; /* Text */
+    --pst-color-text-muted: #a6adc8; /* Subtext 0 */
+    --pst-color-border: #313244; /* Surface 0 */
+    --pst-color-shadow: #1e1e2e; /* Base */
+    --pst-color-background: #1e1e2e; /* Base */
+    --pst-color-on-background: #1e1e2e; /* Base */
+    --pst-color-surface: #181825; /* Mantle */
+    --pst-color-on-surface: #11111b; /* Crust */
+    --pst-color-panel-background: #181825; /* Mantle */
+    --pst-color-link: #f5e0dc; /* Rosewater */
+    --pst-color-link-hover: #f2cdcd; /* Flamingo */
+    --pst-color-inline-code: #f5c2e7; /* Pink */
+    --pst-color-inline-code-links: #f5e0dc; /* Rosewater */
+    --pst-color-target: #b4befe40; /* Lavender 40% */
+  
+    #pst-back-to-top:hover {
+      background-color: var(--pst-color-link-hover);
+    }
+  }
+  
+  html[data-theme="light"] {
+    --pst-color-primary: #7287fd; /* Lavender */
+    --pst-color-secondary: #dc8a78; /* Rosewater */
+    --pst-color-primary-bg: #7287fd10; /* Lavender 10% */
+    --sd-color-primary-bg: #7287fd10; /* Lavender 10% */
+    --pst-color-secondary-bg: #dc8a7810; /* Rosewater 10% */
+    --sd-color-secondary-bg: #dc8a7810; /* Rosewater 10% */
+    --pst-heading-color: #4c4f69; /* Text */
+    --pst-color-accent: #dd7878; /* Flamingo */
+    --pst-color-success: #40a02b; /* Green */
+    --pst-color-success-bg: #40a02b40; /* Green 40% */
+    --pst-color-info: #df8e1d; /* Yellow */
+    --pst-color-info-bg: #df8e1d10; /* Yellow 10% */
+    --pst-color-warning: #fe640b; /* Peach */
+    --pst-color-danger: #d20f39; /* Red */
+    --pst-color-text-base: #4c4f69; /* Text */
+    --pst-color-text-muted: #6c6f85; /* Subtext 0 */
+    --pst-color-border: #ccd0da; /* Surface 0 */
+    --pst-color-shadow: #eff1f5; /* Base */
+    --pst-color-background: #eff1f5; /* Base */
+    --pst-color-on-background: #eff1f5; /* Base */
+    --pst-color-surface: #e6e9ef; /* Mantle */
+    --pst-color-on-surface: #dce0e8; /* Crust */
+    --pst-color-panel-background: #e6e9ef; /* Mantle */
+    --pst-color-link: #dc8a78; /* Rosewater */
+    --pst-color-link-hover: #dd7878; /* Flamingo */
+    --pst-color-inline-code: #ea76cb; /* Pink */
+    --pst-color-inline-code-links: #dc8a78; /* Rosewater */
+    --pst-color-target: #7287fd40; /* Lavender 40% */
+  
+    #pst-back-to-top:hover {
+      background-color: var(--pst-color-link-hover);
+    }
+  }
+  
+  img {
+    filter: none !important;
+    background-color: transparent !important;
+  }
+
+
 a.navbar-brand {
     padding: .1rem 0;
 }

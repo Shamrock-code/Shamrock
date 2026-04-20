@@ -1,3 +1,12 @@
+"""
+Sph homogeneous benchmarks results
+==================================
+
+Show the results on various devices
+"""
+
+# sphinx_gallery_multi_image = "single"
+
 import textwrap
 
 import matplotlib.pyplot as plt

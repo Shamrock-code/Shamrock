@@ -33,7 +33,7 @@ std::tuple<f64, f64> benchmark_selfgrav(f32 dr, u32 npatch) {
 
     std::shared_ptr<shamrock::patch::PatchDataLayout> pdl_ptr
         = std::make_shared<shamrock::patch::PatchDataLayout>(std::vector<std::string>{"main"});
-    auto &pdl = pdl_ptr->get_layer_ref(0);
+    auto &pdl = pdl_ptr->get_layer_ref("main");
 
     pdl.add_field<f32_3>("xyz", 1);
     pdl.add_field<f32>("hpart", 1);

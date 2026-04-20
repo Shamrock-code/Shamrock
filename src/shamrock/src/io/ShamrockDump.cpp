@@ -252,7 +252,7 @@ namespace shamrock {
                 shamsys::instance::get_compute_scheduler_ptr(), std::move(out));
 
             patch::PatchDataLayer pdat = patch::PatchDataLayer::deserialize_buf(
-                ser, shambase::get_check_ref(ctx.pdl).get_layer_ptr(0));
+                ser, shambase::get_check_ref(ctx.pdl).get_layer_ptr("main"));
 
             sched.patch_data.owned_data.add_obj(pid, std::move(pdat));
         }

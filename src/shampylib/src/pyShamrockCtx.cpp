@@ -108,7 +108,7 @@ Register_pymod(pyshamrockctxinit) {
                 }
 
                 using namespace shamrock;
-                for (auto fname : ctx.pdl->get_layer_ref(0).get_field_names()) {
+                for (auto fname : ctx.pdl->get_layer_ref("main").get_field_names()) {
                     append_to_map<f32>(fname, data, dic_out);
                     append_to_map<f32_2>(fname, data, dic_out);
                     append_to_map<f32_3>(fname, data, dic_out);

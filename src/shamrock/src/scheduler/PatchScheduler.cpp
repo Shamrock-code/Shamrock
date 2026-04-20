@@ -212,7 +212,7 @@ PatchScheduler::PatchScheduler(
     u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
-          pdl_ptr->get_layer_ptr(0),
+          pdl_ptr->get_layer_ptr("main"),
           {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
 
     if (pdl_ptr->get_layer_count() > 1) {

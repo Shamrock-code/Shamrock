@@ -29,7 +29,7 @@ namespace sham {
      * This class provides a mechanism to create a mirrored buffer of a specific
      * DeviceBuffer that can be accessed like a normal pointer.
      *
-     * Exemple of usage :
+     * Example of usage :
      * \code{.cpp}
      * {
      *     auto acc = f.get_buf().template mirror_to<sham::host>();

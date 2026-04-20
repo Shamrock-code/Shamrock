@@ -16,7 +16,7 @@
  *
  */
 
-#include <string>
+#include <string_view>
 
 namespace shambase {
 
@@ -25,14 +25,14 @@ namespace shambase {
      *
      * @param s The string to be printed.
      */
-    void print(const std::string &s);
+    void print(std::string_view sv);
 
     /**
      * @brief Prints a string to the console followed by a newline.
      *
      * @param s The string to be printed.
      */
-    void println(const std::string &s);
+    void println(std::string_view sv);
 
     /**
      * @brief Flushes the output buffer.
@@ -53,8 +53,8 @@ namespace shambase {
      *                       buffer.
      */
     void change_printer(
-        void (*func_printer_normal)(std::string),
-        void (*func_printer_ln)(std::string),
+        void (*func_printer_normal)(std::string_view),
+        void (*func_printer_ln)(std::string_view),
         void (*func_flush_func)());
 
     /**

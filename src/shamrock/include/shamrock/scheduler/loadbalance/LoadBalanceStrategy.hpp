@@ -41,6 +41,8 @@ namespace shamrock::scheduler::details {
         u64 index;
         i32 new_owner;
 
+        LoadBalancedTile() = default;
+
         LoadBalancedTile(TileWithLoad<Torder, Tweight> in, u64 inindex)
             : ordering_val(in.ordering_val), load_value(in.load_value), index(inindex) {}
     };
@@ -76,9 +78,10 @@ namespace shamrock::scheduler::details {
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
 
-        std::vector<LBTileResult> res;
+        std::vector<LBTileResult> res(lb_vector.size());
+#pragma omp parallel for
         for (u64 i = 0; i < lb_vector.size(); i++) {
-            res.push_back(LBTileResult{lb_vector[i], i});
+            res[i] = LBTileResult{lb_vector[i], i};
         }
 
         // apply the ordering
@@ -94,7 +97,9 @@ namespace shamrock::scheduler::details {
 
         double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
 
-        for (LBTileResult &tile : res) {
+#pragma omp parallel for
+        for (u64 i = 0; i < res.size(); i++) {
+            LBTileResult &tile = res[i];
             tile.new_owner
                 = (target_datacnt == 0)
                       ? 0
@@ -102,7 +107,8 @@ namespace shamrock::scheduler::details {
                             i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
-        if (shamcomm::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0
+            && shamcomm::logs::get_loglevel() >= shamcomm::logs::log_debug) {
             for (LBTileResult t : res) {
                 shamlog_debug_ln(
                     "HilbertLoadBalance",
@@ -141,9 +147,10 @@ namespace shamrock::scheduler::details {
         using LBTile       = TileWithLoad<Torder, Tweight>;
         using LBTileResult = details::LoadBalancedTile<Torder, Tweight>;
 
-        std::vector<LBTileResult> res;
+        std::vector<LBTileResult> res(lb_vector.size());
+#pragma omp parallel for
         for (u64 i = 0; i < lb_vector.size(); i++) {
-            res.push_back(LBTileResult{lb_vector[i], i});
+            res[i] = LBTileResult{lb_vector[i], i};
         }
 
         // apply the ordering
@@ -160,7 +167,9 @@ namespace shamrock::scheduler::details {
 
         double target_datacnt = double(res[res.size() - 1].accumulated_load_value) / wsize;
 
-        for (LBTileResult &tile : res) {
+#pragma omp parallel for
+        for (u64 i = 0; i < res.size(); i++) {
+            LBTileResult &tile = res[i];
             tile.new_owner
                 = (target_datacnt == 0)
                       ? 0
@@ -168,7 +177,8 @@ namespace shamrock::scheduler::details {
                             i32(tile.accumulated_load_value / target_datacnt), 0, wsize - 1);
         }
 
-        if (shamcomm::world_rank() == 0) {
+        if (shamcomm::world_rank() == 0
+            && shamcomm::logs::get_loglevel() >= shamcomm::logs::log_debug) {
             for (LBTileResult t : res) {
                 shamlog_debug_ln(
                     "HilbertLoadBalance",
@@ -212,7 +222,8 @@ namespace shamrock::scheduler::details {
     inline LBMetric compute_LB_metric(
         const std::vector<TileWithLoad<Torder, Tweight>> &lb_vector,
         const std::vector<i32> &new_owners,
-        i32 world_size) {
+        i32 world_size,
+        f64 strategy_weight) {
 
         std::vector<u64> load_per_node(world_size, 0);
 
@@ -240,7 +251,11 @@ namespace shamrock::scheduler::details {
         }
         var /= world_size;
 
-        return {min, max, avg, sycl::sqrt(var)};
+        return {
+            min * strategy_weight,
+            max * strategy_weight,
+            avg * strategy_weight,
+            sycl::sqrt(var) * strategy_weight};
     }
 
 } // namespace shamrock::scheduler::details
@@ -260,30 +275,39 @@ namespace shamrock::scheduler {
         std::vector<TileWithLoad<Torder, Tweight>> &&lb_vector,
         i32 world_size = shamcomm::world_size()) {
 
-        auto tmpres        = details::lb_startegy_parallel_sweep(lb_vector, world_size);
-        auto metric_psweep = details::compute_LB_metric(lb_vector, tmpres, world_size);
+        using namespace details;
 
-        auto tmpres_2      = details::lb_startegy_roundrobin(lb_vector, world_size);
-        auto metric_rrobin = details::compute_LB_metric(lb_vector, tmpres_2, world_size);
+        f64 factor_boost_psweep = 1;
+        auto tmpres             = lb_startegy_parallel_sweep(lb_vector, world_size);
+        auto metric_psweep = compute_LB_metric(lb_vector, tmpres, world_size, factor_boost_psweep);
 
+        // We boost the round robin strategy to favor it if the difference is around 5% since the
+        // increased uniformity will probably offset the cost anyway
+        f64 factor_boost_rrobin = 0.95;
+        auto tmpres_2           = lb_startegy_roundrobin(lb_vector, world_size);
+        auto metric_rrobin
+            = compute_LB_metric(lb_vector, tmpres_2, world_size, factor_boost_rrobin);
+
+        std::string strategy_name = "parallel sweep";
         if (metric_rrobin.max < metric_psweep.max) {
-            tmpres = tmpres_2;
+            tmpres        = tmpres_2;
+            strategy_name = "round robin";
         }
 
         if (shamcomm::world_rank() == 0) {
-            logger::info_ln("LoadBalance", "summary :");
             logger::info_ln(
                 "LoadBalance",
-                " - strategy \"psweep\" : max =",
-                metric_psweep.max,
-                "min =",
-                metric_psweep.min);
-            logger::info_ln(
-                "LoadBalance",
-                " - strategy \"round robin\" : max =",
-                metric_rrobin.max,
-                "min =",
-                metric_rrobin.min);
+                shambase::format(
+                    R"=(Summary (strategy = {0:}):
+ - strategy "psweep"      : max = {1:.1f} min = {2:.1f} factor = {3:}
+ - strategy "round robin" : max = {4:.1f} min = {5:.1f} factor = {6:})=",
+                    strategy_name,
+                    metric_psweep.max,
+                    metric_psweep.min,
+                    factor_boost_psweep,
+                    metric_rrobin.max,
+                    metric_rrobin.min,
+                    factor_boost_rrobin));
         }
         return tmpres;
     }

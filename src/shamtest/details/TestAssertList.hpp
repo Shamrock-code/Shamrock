@@ -139,7 +139,7 @@ namespace shamtest::details {
         /// Get number of assertion in the list
         inline u32 get_assert_count() { return asserts.size(); }
 
-        /// Get the number of successfull assertions
+        /// Get the number of successful assertions
         inline u32 get_assert_success_count() {
             u32 cnt = 0;
             for (TestAssert &a : asserts) {

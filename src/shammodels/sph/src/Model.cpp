@@ -181,7 +181,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec
         shamrock::ReattributeDataUtility reatrib(sched);
         sptree.attach_buf();
         reatrib.reatribute_patch_objects(sptree, "xyz");
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
     }
 
     modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
@@ -196,7 +196,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec
         shamrock::ReattributeDataUtility reatrib(sched);
         sptree.attach_buf();
         reatrib.reatribute_patch_objects(sptree, "xyz");
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
     }
 }
 
@@ -222,7 +222,7 @@ inline void post_insert_data(PatchScheduler &sched) {
         shamrock::ReattributeDataUtility reatrib(sched);
         sptree.attach_buf();
         reatrib.reatribute_patch_objects(sptree, "xyz");
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
     }
 
     sched.scheduler_step(true, true);
@@ -235,7 +235,7 @@ inline void post_insert_data(PatchScheduler &sched) {
         shamrock::ReattributeDataUtility reatrib(sched);
         sptree.attach_buf();
         reatrib.reatribute_patch_objects(sptree, "xyz");
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
     }
 
     std::string log = "";
@@ -245,7 +245,7 @@ inline void post_insert_data(PatchScheduler &sched) {
     u32 smallest_count = u32_max;
     u32 largest_count  = 0;
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+    sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
         u32 tmp        = pdat.get_obj_cnt();
         smallest_count = sham::min(tmp, smallest_count);
         largest_count  = sham::max(tmp, largest_count);
@@ -284,7 +284,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 
     std::string log = "";
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+    sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
         PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
         shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -344,7 +344,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
 
         pdat.insert_elements(tmp);
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
         shamcomm::gather_str(log, log_gathered);
@@ -376,7 +376,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
 
     std::string log = "";
 
-    sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+    sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
         PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
         shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -456,7 +456,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
 
         pdat.insert_elements(tmp);
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
         shamcomm::gather_str(log, log_gathered);
@@ -526,7 +526,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             std::vector<Tvec> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
 
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -589,7 +589,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             }
         } while (!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split * 8);
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         // if(logger::details::loglevel >= shamcomm::logs::log_info){
         //     std::string log_gathered = "";
@@ -671,7 +671,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
 
     auto has_pdat = [&]() {
         bool ret = false;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -971,7 +971,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             std::vector<Out> to_ins = gen.next_n(sched.crit_patch_split * 2);
             acc_count += to_ins.size();
 
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1076,7 +1076,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             }
         } while (!gen.is_done() && max_loc_sum_ins_cnt < sched.crit_patch_split * 8);
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         // if(logger::details::loglevel >= shamcomm::logs::log_info){
         //     std::string log_gathered = "";
@@ -1153,7 +1153,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1198,7 +1198,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
             pdat.insert_elements(tmp);
         });
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
         shamcomm::gather_str(log, log_gathered);
@@ -1332,7 +1332,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
 
         u64 Nloc = end_id - start_id;
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
             shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
@@ -1399,7 +1399,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
             pdat.insert_elements(ptmp);
         });
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
         shamcomm::gather_str(log, log_gathered);
@@ -1520,7 +1520,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     dump.override_magic_number();
     dump.iversion = 1;
-    dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+    dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
 
     u32 Ntot = get_total_part_count();
     dump.table_header_fort_int.add("nparttot", Ntot);

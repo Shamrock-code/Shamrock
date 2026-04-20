@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file LegacyVtkWritter.hpp
+ * @file LegacyVtkWriter.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -117,7 +117,7 @@ namespace shamrock {
 
     enum DataSetTypes { UnstructuredGrid };
 
-    class LegacyVtkWritter {
+    class LegacyVtkWriter {
         MPI_File mfile{};
         std::string fname;
         bool binary;
@@ -173,14 +173,14 @@ namespace shamrock {
         bool has_written_cells = false;
 
         public:
-        inline LegacyVtkWritter(std::string fname, bool binary, DataSetTypes type)
+        inline LegacyVtkWriter(std::string fname, bool binary, DataSetTypes type)
             : fname(fname), binary(binary), file_head_ptr(0_u64) {
 
             StackEntry stack_loc{};
 
             timer.start();
 
-            shamlog_debug_ln("VtkWritter", "opening :", fname);
+            shamlog_debug_ln("VtkWriter", "opening :", fname);
 
             if (fname.find(".vtk") == std::string::npos) {
                 throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -437,8 +437,8 @@ namespace shamrock {
             }
         }
 
-        inline ~LegacyVtkWritter() {
-            shamlog_debug_mpi_ln("LegacyVtkWritter", "calling : shamcomm::mpi::File_close");
+        inline ~LegacyVtkWriter() {
+            shamlog_debug_mpi_ln("LegacyVtkWriter", "calling : shamcomm::mpi::File_close");
             shamcomm::mpi::File_close(&mfile);
             timer.end();
 
@@ -453,11 +453,11 @@ namespace shamrock {
             }
         }
 
-        LegacyVtkWritter(const LegacyVtkWritter &)            = delete;
-        LegacyVtkWritter &operator=(const LegacyVtkWritter &) = delete;
-        LegacyVtkWritter(LegacyVtkWritter &&other)
+        LegacyVtkWriter(const LegacyVtkWriter &)            = delete;
+        LegacyVtkWriter &operator=(const LegacyVtkWriter &) = delete;
+        LegacyVtkWriter(LegacyVtkWriter &&other)
             : mfile(other.mfile), fname(std::move(other.fname)), binary(other.binary),
-              file_head_ptr(other.file_head_ptr) {}                     // move constructor
-        LegacyVtkWritter &operator=(LegacyVtkWritter &&other) = delete; // move assignment
+              file_head_ptr(other.file_head_ptr) {}                   // move constructor
+        LegacyVtkWriter &operator=(LegacyVtkWriter &&other) = delete; // move assignment
     };
 } // namespace shamrock

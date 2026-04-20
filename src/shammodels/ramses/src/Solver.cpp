@@ -47,7 +47,7 @@
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -59,6 +59,7 @@
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
@@ -133,7 +134,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             return pdat.pdl();
         };
 
-        shamrock::LegacyVtkWritter writer(filename.data, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(filename.data, true, shamrock::UnstructuredGrid);
 
         u32 field_count = get_field_count();
 
@@ -348,8 +349,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shamrock::solvergraph::DDSharedScalar<modules::GhostLayerCandidateInfos>>(
         "ghost_layers_candidates", "ghost_layers_candidates");
 
-    storage.patch_rank_owner
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) -> u32 {
+            return scheduler().get_patch_rank_owner(patch_id);
+        },
+        "patch_rank_owner",
+        "rank");
 
     storage.source_patches = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
         "source_patches", "P_{\\rm source}");
@@ -1424,7 +1429,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     }
 
     {
-        modules::NodeSumFluxHydro<Tvec, TgridVec> node{AMRBlock::block_size};
+        modules::NodeSumFluxHydro<Tvec, TgridVec> node{
+            AMRBlock::block_size, solver_config.grid_coord_to_pos_fact};
         node.set_edges(
             storage.block_counts,
             storage.cell_graph_edge,
@@ -1456,7 +1462,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     if (solver_config.is_dust_on()) {
         modules::NodeSumFluxDust<Tvec, TgridVec> node{
-            AMRBlock::block_size, solver_config.dust_config.ndust};
+            AMRBlock::block_size,
+            solver_config.grid_coord_to_pos_fact,
+            solver_config.dust_config.ndust};
         node.set_edges(
             storage.block_counts,
             storage.cell_graph_edge,
@@ -1531,12 +1539,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.simulation_volume).value = Vsim;
     }
 
-    // give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
+    /// patch_rank_owner is automatically updated since it is just a lambda
 
     scheduler().for_each_patchdata_nonempty(
         [&](const shamrock::patch::Patch &p, shamrock::patch::PatchDataLayer &pdat) {
@@ -1569,7 +1572,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         global_patch_boxes_edge.values = {};
 
-        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
             auto pbounds = transf.to_obj_coord(p);
             global_patch_boxes_edge.values.add_obj(
                 p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
@@ -1584,7 +1587,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         local_patch_ids.data = {};
 
-        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch &p) {
             local_patch_ids.data.push_back(p.id_patch);
         });
     }
@@ -1691,7 +1694,7 @@ template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 

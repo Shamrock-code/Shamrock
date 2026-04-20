@@ -36,7 +36,7 @@ if(NOT DEFINED HAS_SYCL2020_HEADER)
 endif()
 
 if(NOT HAS_SYCL2020_HEADER)
-    message(FATAL_ERROR "Acpp can not compile a simple exemple including <sycl/sycl.hpp> \n Logs: ${TRY_COMPILE_OUTPUT}")
+    message(FATAL_ERROR "Acpp can not compile a simple example including <sycl/sycl.hpp> \n Logs: ${TRY_COMPILE_OUTPUT}")
 endif()
 
 

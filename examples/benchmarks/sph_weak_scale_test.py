@@ -63,7 +63,6 @@ for N_target_base in [32e6]:
     )
     cfg.set_boundary_periodic()
     cfg.set_eos_adiabatic(gamma)
-    cfg.set_max_neigh_cache_size(int(100e9))
     cfg.print_status()
     model.set_solver_config(cfg)
     model.init_scheduler(scheduler_split_val, scheduler_merge_val)
@@ -102,7 +101,7 @@ for N_target_base in [32e6]:
 
     model.set_value_in_a_box("uint", "f64", 0, bmin, bmax)
 
-    rinj = 8 * dr
+    rinj = 16 * dr
     u_inj = 1
     model.add_kernel_value("uint", "f64", u_inj, (0, 0, 0), rinj)
 
@@ -116,9 +115,6 @@ for N_target_base in [32e6]:
     model.set_cfl_cour(0.1)
     model.set_cfl_force(0.1)
 
-    model.set_cfl_multipler(1e-4)
-    model.set_cfl_mult_stiffness(1e6)
-
     shamrock.backends.reset_mem_info_max()
 
     # converge smoothing length and compute initial dt
@@ -128,10 +124,39 @@ for N_target_base in [32e6]:
     res_rates = []
     res_cnts = []
     res_system_metrics = []
+    res_mpi_timers = []
 
-    for i in range(5):
+    """
+    Here we insert callbacks to measure solver MPI usage by fetching the timers twice at the begining and end of the step
+    """
+    before_mpi_timers, after_mpi_timers = None, None
+
+    def callback_before_mpi_timer():
+        global before_mpi_timers
+        # print(shamrock.sys.world_rank(), "register before_mpi_timers")
+        before_mpi_timers = shamrock.comm.get_timers()
+
+    def callback_after_mpi_timer():
+        global after_mpi_timers
+        # print(shamrock.sys.world_rank(), "register after_mpi_timers")
+        after_mpi_timers = shamrock.comm.get_timers()
+
+    model.add_timestep_callback(
+        step_begin=callback_before_mpi_timer, step_end=callback_after_mpi_timer
+    )
+
+    for i in range(10):
+        if shamrock.sys.world_rank() == 0:
+            print("running step ", i + 1, "/", 10, " ...")
+
         shamrock.sys.mpi_barrier()
+
+        # To replay the same step
+        model.set_next_dt(0.0)
         model.timestep()
+
+        if shamrock.sys.world_rank() == 0:
+            print("collecting results ...")
 
         tmp_res_rate, tmp_res_cnt, tmp_system_metrics = (
             model.solver_logs_last_rate(),
@@ -141,6 +166,17 @@ for N_target_base in [32e6]:
         res_rates.append(tmp_res_rate)
         res_cnts.append(tmp_res_cnt)
         res_system_metrics.append(tmp_system_metrics)
+        res_mpi_timers.append(shamrock.comm.mpi_timers_delta(before_mpi_timers, after_mpi_timers))
+
+        if shamrock.sys.world_rank() == 0:
+            print("sleeping 1 second ...")
+
+        import time
+
+        time.sleep(1)
+
+        if shamrock.sys.world_rank() == 0:
+            print("done sleeping 1 second ...")
 
     # result is the best rate of the 5 steps
     res_rate, res_cnt = max(res_rates), res_cnts[0]
@@ -148,7 +184,7 @@ for N_target_base in [32e6]:
     # index of the max rate
     max_rate_index = res_rates.index(max(res_rates))
     max_rate_system_metrics = res_system_metrics[max_rate_index]
-
+    max_mpi_timers = res_mpi_timers[max_rate_index]
     step_time = res_cnt / res_rate
 
     if shamrock.sys.world_rank() == 0:
@@ -168,6 +204,7 @@ for N_target_base in [32e6]:
             "rate": res_rate,
             "cnt": res_cnt,
             "step_time": step_time,
+            "mpi_timers": max_mpi_timers,
         }
 
         # print the system metrics
@@ -182,6 +219,8 @@ for N_target_base in [32e6]:
             if not key == "duration":
                 result_text += f"avg power {key} / step time : {value / metrics_duration} W\n"
                 dic_out[f"power_{key}"] = value / metrics_duration
+
+        dic_out["system_metric_duration"] = metrics_duration
 
         result_text += f"dic_out = {dic_out}\n"
 

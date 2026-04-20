@@ -30,7 +30,7 @@ class VariantField {
 
 # If defs
 
-Usually you may have a Compile flag to toogle some features in C or Fortran code, in order to do so we usually write something like this
+Usually you may have a Compile flag to toggle some features in C or Fortran code, in order to do so we usually write something like this
 
 ```cpp
 void func(){
@@ -42,7 +42,7 @@ void func(){
 }
 ```
 
-In c++ such patern can be replaced by constexpr bool's.
+In c++ such pattern can be replaced by constexpr bool's.
 
 ```cpp
 // somewhere in the code
@@ -74,4 +74,4 @@ func():                               # @func()
     ret
 ```
 
-here we have no comparaison, and `do_stuff` is not even referenced as expected
+here we have no comparison, and `do_stuff` is not even referenced as expected

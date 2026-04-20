@@ -95,7 +95,7 @@ class Interfacehandler<Tree_Send, pos_prec, RadixTree<u_morton, sycl::vec<pos_pr
     };
 
     // for now interact crit has shape (vec,vec) -> bool
-    // in order to pass for exemple h max we need a full tree field (patch field + radix tree field)
+    // in order to pass for example h max we need a full tree field (patch field + radix tree field)
     template<class InteractCrit, class... Args>
     inline void compute_interface_list(
         PatchScheduler &sched,

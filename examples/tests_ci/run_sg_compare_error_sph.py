@@ -2,7 +2,7 @@
 Test the precision of SG methods in SPH
 ============================
 
-Test that all methodes give expected deviantion compare to the reference mode
+Test that all methods give expected deviation compare to the reference mode
 """
 
 import matplotlib.pyplot as plt

@@ -49,7 +49,8 @@ struct KernelSumFluxHydro {
         u32 id_a,
         u32 id_b,
         const Tvec *__restrict cell0block_aabb_lower,
-        const Tscal *__restrict block_cell_sizes) {
+        const Tscal *__restrict block_cell_sizes,
+        Tscal dxfact) {
         shammath::AABB<Tvec> aabb_cell_a
             = get_cell_aabb(id_a, cell0block_aabb_lower, block_cell_sizes);
         shammath::AABB<Tvec> aabb_cell_b
@@ -59,12 +60,19 @@ struct KernelSumFluxHydro {
 
         Tvec delta_face = face_aabb.delt();
 
-        delta_face.x() = (delta_face.x() == 0) ? 1 : delta_face.x();
-        delta_face.y() = (delta_face.y() == 0) ? 1 : delta_face.y();
-        delta_face.z() = (delta_face.z() == 0) ? 1 : delta_face.z();
+        // smallest possible coordinate delta, anything under this is considered null
+        // cell can not have less than size 1 in the grid space, so 1*dxfact is the minimum size, so
+        // we check against dxfact/2
+        Tscal smd = dxfact / 2;
+
+        delta_face.x() = (delta_face.x() < smd) ? 1 : delta_face.x();
+        delta_face.y() = (delta_face.y() < smd) ? 1 : delta_face.y();
+        delta_face.z() = (delta_face.z() < smd) ? 1 : delta_face.z();
 
         return delta_face.x() * delta_face.y() * delta_face.z();
     };
+
+    Tscal dxfact;
 
     inline void operator()(
         u32 id_a,
@@ -113,7 +121,7 @@ struct KernelSumFluxHydro {
                             const Tscal *flux_rhoe) {
             graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                 Tscal S_ij = KernelSumFluxHydro<Tvec, TgridVec>::get_face_surface(
-                    id_a, id_b, cell0block_aabb_lower, block_cell_sizes);
+                    id_a, id_b, cell0block_aabb_lower, block_cell_sizes, dxfact);
                 dtrho -= flux_rho[link_id] * S_ij;
                 dtrhov -= flux_rhov[link_id] * S_ij;
                 dtrhoe -= flux_rhoe[link_id] * S_ij;
@@ -211,7 +219,7 @@ void shammodels::basegodunov::modules::NodeSumFluxHydro<Tvec, TgridVec>::_impl_e
                            graph_neigh_zp,        graph_neigh_zm},
             sham::MultiRef{dt_rho_patch, dt_rhov_patch, dt_rhoe_patch},
             cell_count,
-            KernelSumFluxHydro<Tvec, TgridVec>{});
+            KernelSumFluxHydro<Tvec, TgridVec>{dxfact});
     });
 }
 

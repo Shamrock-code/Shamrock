@@ -114,6 +114,8 @@ install(TARGETS shamrock_exe ${as_subproject}
         INCLUDES DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 
 
+set(CMAKE_INSTALL_PYTHONDIR "" CACHE PATH "Python installation directory (leave empty to skip Python install)")
+
 if(CMAKE_INSTALL_PYTHONDIR)
 
   # For python, we only install the bindings and the __init__.py file

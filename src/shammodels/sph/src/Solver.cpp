@@ -92,6 +92,7 @@
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -517,8 +518,12 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
         "part_counts_with_ghost", "N_{\\rm part, with ghost}");
 
-    storage.patch_rank_owner
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) -> u32 {
+            return scheduler().get_patch_rank_owner(patch_id);
+        },
+        "patch_rank_owner",
+        "rank");
 
     // merged ghost spans
     storage.positions_with_ghosts
@@ -618,7 +623,7 @@ namespace shammodels::sph {
 
         dump.override_magic_number();
         dump.iversion = 1;
-        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
 
         u32 Ntot = info.nobj;
         dump.table_header_fort_int.add("nparttot", Ntot);
@@ -1567,13 +1572,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
     modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
         .update_load_balancing();
     scheduler().scheduler_step(false, false);
-
-    // give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1584,6 +1582,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
+
+    for (auto &callbacks : timestep_callbacks) {
+        if (callbacks.step_begin_callback) {
+            shambase::get_check_ref(callbacks.step_begin_callback)();
+        }
+    }
 
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
@@ -1608,12 +1612,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     scheduler().scheduler_step(false, false);
     // if(shamcomm::world_rank() == 0) std::cout << scheduler().dump_status() << std::endl;
 
-    // give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
+    /// patch_rank_owner is automatically updated since it is just a lambda
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -1647,13 +1646,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
-    sink_update.accrete_particles();
+    sink_update.accrete_particles(dt);
     ext_forces.point_mass_accrete_particles();
 
     sink_update.predictor_step(dt);
 
     {
-        // begining of SolverGraph migration
+        // beginning of SolverGraph migration
 
         using namespace shamrock::solvergraph;
 
@@ -2670,13 +2669,18 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     tstep.end();
 
+    for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
+        if (it->step_end_callback) {
+            shambase::get_check_ref(it->step_end_callback)();
+        }
+    }
+
     f64 delta_mpi_timer                   = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
     /// must be after the mpi timer to not count the barrier of the system metrics
-    std::optional<f64> rank_energy_consummed_end = shamsys::get_rank_energy_consummed();
-    shamsys::SystemMetrics system_metrics_end    = shamsys::get_system_metrics();
-    shamsys::SystemMetrics system_metrics_delta  = system_metrics_end - system_metrics_start;
+    shamsys::SystemMetrics system_metrics_end   = shamsys::get_system_metrics();
+    shamsys::SystemMetrics system_metrics_delta = system_metrics_end - system_metrics_start;
 
     f64 t_dev_alloc
         = (mem_perf_infos_end.time_alloc_device - mem_perf_infos_start.time_alloc_device)

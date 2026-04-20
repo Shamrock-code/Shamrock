@@ -43,6 +43,22 @@ namespace shamcomm::mpi {
 
     f64 get_timer(std::string timername) { return mpi_timers[timername]; }
 
+    const std::unordered_map<std::string, f64> &get_timers() { return mpi_timers; }
+
+    std::vector<std::string> possible_keys{
+        "total",          "MPI_Isend",          "MPI_Irecv",
+        "MPI_Allreduce",  "MPI_Allgather",      "MPI_Allgatherv",
+        "MPI_Exscan",     "MPI_Wait",           "MPI_Waitall",
+        "MPI_Barrier",    "MPI_Probe",          "MPI_Recv",
+        "MPI_Get_count",  "MPI_Send",           "MPI_File_set_view",
+        "MPI_Type_size",  "MPI_File_write_all", "MPI_File_write",
+        "MPI_File_read",  "MPI_File_write_at",  "MPI_File_read_at",
+        "MPI_File_close", "MPI_File_open",      "MPI_Test",
+        "MPI_Gather",     "MPI_Gatherv",
+    };
+
+    const std::vector<std::string> &get_possible_keys() { return possible_keys; }
+
 } // namespace shamcomm::mpi
 
 namespace {

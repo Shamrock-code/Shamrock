@@ -27,7 +27,7 @@
 
 /**
  * @brief A class to dump a simulation state into ASCII files
- * @todo add exemple of usage
+ * @todo add example of usage
  */
 class AsciiSplitDump {
 

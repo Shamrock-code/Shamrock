@@ -1,3 +1,85 @@
+html[data-theme="dark"] {
+    /* Gruvbox dark — https://github.com/morhetz/gruvbox */
+    --pst-color-primary: #fabd2f; /* bright_yellow */
+    --pst-color-secondary: #fe8019; /* bright_orange */
+    --pst-color-primary-bg: #fabd2f40; /* bright_yellow 40% */
+    --sd-color-primary-bg: #fabd2f40;
+    --pst-color-secondary-bg: #fe801940; /* bright_orange 40% */
+    --sd-color-secondary-bg: #fe801940;
+    --pst-heading-color: #fbf1c7; /* fg0 */
+    --pst-color-accent: #fe8019; /* bright_orange */
+    --pst-color-success: #b8bb26; /* bright_green */
+    --pst-color-success-bg: #b8bb2640; /* bright_green 40% */
+    --pst-color-info: #fabd2f; /* bright_yellow */
+    --pst-color-info-bg: #fabd2f40;
+    --pst-color-warning: #fe8019; /* bright_orange */
+    --pst-color-danger: #fb4934; /* bright_red */
+    --pst-color-text-base: #ebdbb2; /* fg1 */
+    --pst-color-text-muted: #a89984; /* fg4 */
+    --pst-color-border: #504945; /* dark2 */
+    --pst-color-shadow: #1d2021; /* dark0_hard */
+    --pst-color-background: #282828; /* dark0 */
+    --pst-color-on-background: #282828; /* dark0 */
+    --pst-color-surface: #3c3836; /* dark1 */
+    --pst-color-on-surface: #504945; /* dark2 */
+    --pst-color-panel-background: #3c3836; /* dark1 */
+    --pst-color-link: #83a598; /* bright_blue */
+    --pst-color-link-hover: #8ec07c; /* bright_aqua */
+    --pst-color-inline-code: #d3869b; /* bright_purple */
+    --pst-color-inline-code-links: #83a598; /* bright_blue */
+    --pst-color-target: #fabd2f40; /* bright_yellow 40% */
+
+    #pst-back-to-top:hover {
+        background-color: var(--pst-color-link-hover);
+    }
+}
+
+html[data-theme="light"] {
+    /* Gruvbox light */
+    --pst-color-primary: #d79921; /* neutral_yellow */
+    --pst-color-secondary: #d65d0e; /* neutral_orange */
+    --pst-color-primary-bg: #d7992126; /* neutral_yellow ~15% */
+    --sd-color-primary-bg: #d7992126;
+    --pst-color-secondary-bg: #d65d0e26;
+    --sd-color-secondary-bg: #d65d0e26;
+    --pst-heading-color: #282828; /* fg0 */
+    --pst-color-accent: #d65d0e; /* neutral_orange */
+    --pst-color-success: #79740e; /* neutral_green */
+    --pst-color-success-bg: #79740e40;
+    --pst-color-info: #d79921; /* neutral_yellow */
+    --pst-color-info-bg: #d7992126;
+    --pst-color-warning: #d65d0e; /* neutral_orange */
+    --pst-color-danger: #cc241d; /* neutral_red */
+    --pst-color-text-base: #3c3836; /* fg1 */
+    --pst-color-text-muted: #665c54; /* fg3 */
+    --pst-color-border: #d5c4a1; /* light2 */
+    --pst-color-shadow: #ddd; /* light3 */
+    --pst-color-background: #fff; /* light0 */
+    --pst-color-on-background: #fff; /* light0 */
+    --pst-color-surface: #f0f0f0; /* light1 */
+    --pst-color-on-surface: #d5c4a1; /* light2 */
+    --pst-color-panel-background: #ebdbb2; /* light1 */
+    --pst-color-link: #076678; /* faded_blue */
+    --pst-color-link-hover: #427b58; /* faded_aqua */
+    --pst-color-inline-code: #8f3a71; /* faded_purple */
+    --pst-color-inline-code-links: #076678; /* faded_blue */
+    --pst-color-target: #d7992140; /* neutral_yellow 40% */
+
+    #pst-back-to-top:hover {
+        background-color: var(--pst-color-link-hover);
+    }
+}
+
+span.linenos {
+    background-color: var(--pst-color-surface) !important;
+}
+
+img {
+filter: none !important;
+background-color: transparent !important;
+}
+
+
 a.navbar-brand {
     padding: .1rem 0;
 }

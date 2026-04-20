@@ -27,13 +27,13 @@ html[data-theme="dark"] {
     --pst-color-inline-code: #f5c2e7; /* Pink */
     --pst-color-inline-code-links: #f5e0dc; /* Rosewater */
     --pst-color-target: #b4befe40; /* Lavender 40% */
-  
+
     #pst-back-to-top:hover {
-      background-color: var(--pst-color-link-hover);
+        background-color: var(--pst-color-link-hover);
     }
-  }
-  
-  html[data-theme="light"] {
+}
+
+html[data-theme="light"] {
     --pst-color-primary: #7287fd; /* Lavender */
     --pst-color-secondary: #dc8a78; /* Rosewater */
     --pst-color-primary-bg: #7287fd10; /* Lavender 10% */
@@ -51,27 +51,31 @@ html[data-theme="dark"] {
     --pst-color-text-base: #4c4f69; /* Text */
     --pst-color-text-muted: #6c6f85; /* Subtext 0 */
     --pst-color-border: #ccd0da; /* Surface 0 */
-    --pst-color-shadow: #eff1f5; /* Base */
-    --pst-color-background: #eff1f5; /* Base */
-    --pst-color-on-background: #eff1f5; /* Base */
-    --pst-color-surface: #e6e9ef; /* Mantle */
+    --pst-color-shadow: #c7c7c7; /* Base */
+    --pst-color-background: #ffffff; /* Base */
+    --pst-color-on-background: #ffffff; /* Base */
+    --pst-color-surface: #f2f2f2; /* Mantle */
     --pst-color-on-surface: #dce0e8; /* Crust */
-    --pst-color-panel-background: #e6e9ef; /* Mantle */
+    --pst-color-panel-background: #f2f2f2; /* Mantle */
     --pst-color-link: #dc8a78; /* Rosewater */
     --pst-color-link-hover: #dd7878; /* Flamingo */
     --pst-color-inline-code: #ea76cb; /* Pink */
     --pst-color-inline-code-links: #dc8a78; /* Rosewater */
     --pst-color-target: #7287fd40; /* Lavender 40% */
-  
+
     #pst-back-to-top:hover {
-      background-color: var(--pst-color-link-hover);
+        background-color: var(--pst-color-link-hover);
     }
-  }
-  
-  img {
-    filter: none !important;
-    background-color: transparent !important;
-  }
+}
+
+span.linenos {
+    background-color: var(--pst-color-surface) !important;
+}
+
+img {
+filter: none !important;
+background-color: transparent !important;
+}
 
 
 a.navbar-brand {

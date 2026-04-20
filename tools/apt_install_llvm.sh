@@ -22,8 +22,8 @@ retry_on_404() {
             return 0
         fi
 
-        # If command failed and output contains 404, continue
-        if grep -q 404 "$out"; then
+        # If command failed and output contains 404 or "Network is unreachable", continue
+        if grep -q -e 404 -e "Network is unreachable" "$out"; then
             rm -f "$out"
             sleep 2
             continue

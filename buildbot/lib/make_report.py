@@ -215,7 +215,7 @@ def make_tex_report(dat):
 
                 for ktest in dic_suc_cnt.keys():
                     # cnt_assert += dic_suc_cnt[ktest]["assert_cnt"]
-                    # cnt_success += dic_suc_cnt[ktest]["suc_cnt"]
+                    # cnt_success+= dic_suc_cnt[ktest]["suc_cnt"]
 
                     cnt_test += 1
                     cnt_success += dic_suc_cnt[ktest]["suc_cnt"] == dic_suc_cnt[ktest]["assert_cnt"]
@@ -223,7 +223,7 @@ def make_tex_report(dat):
                 dic_int["world size = " + str(wsz)][dat[config_k]["description"]] = {
                     "results": dic_res,
                     "success_cnt": dic_suc_cnt,
-                    "global_suc_cnt": cnt_succes,
+                    "global_suc_cnt": cnt_success,
                     "global_test_cnt": cnt_test,
                 }
 

@@ -107,7 +107,8 @@ void shamalgs::BufferEventHandler::register_read_write_event(const sycl::event &
     if (last_event_create != READ_WRITE) {
         std::string err
             = (get_hash_log()
-               + "you want to register a read event but the last dependency was not in read mode");
+               + "you want to register a read-write event but the last dependency was not in "
+                 "read-write mode");
 
         throw shambase::make_except_with_loc<std::runtime_error>(err);
     }

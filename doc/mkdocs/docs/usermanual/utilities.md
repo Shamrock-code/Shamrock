@@ -39,7 +39,7 @@ Or we can just add in the beginning of the header before anything else:
 ...content of the header...
 ```
 
-Both options do the same thing, however `#pragma once` is slightly faster and more convenient.
+Both options do the same thing, however `#pragma once` is slightly faster and more conveninent.
 Therefore in shamrock every header starts with the license banner followed by `#pragma once`
 
 in order to check the correctness of pragma onces there is the `buildbot/check_pragma_once.py`

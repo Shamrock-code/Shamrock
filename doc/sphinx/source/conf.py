@@ -134,8 +134,8 @@ html_theme_options = {
             "type": "local",
         },
     ],
-    "pygments_light_style": "catppuccin-latte",
-    "pygments_dark_style": "catppuccin-mocha",
+    "pygments_light_style": "gruvbox-light",
+    "pygments_dark_style": "gruvbox-dark",
 }
 
 html_context = {

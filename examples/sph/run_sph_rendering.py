@@ -169,7 +169,7 @@ cfg.set_two_stage_search(False)
 # Standard way to set the smoothing length (e.g. Price et al. 2018)
 cfg.set_smoothing_length_density_based()
 
-# Standard density based smoothing lenght but with a neighbor count limit
+# Standard density based smoothing length but with a neighbor count limit
 # Use it if you have large slowdowns due to giant particles
 # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
 # cfg.set_smoothing_length_density_based_neigh_lim(500)

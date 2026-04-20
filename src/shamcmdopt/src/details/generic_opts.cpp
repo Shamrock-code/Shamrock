@@ -75,8 +75,8 @@ namespace shamcmdopt {
 
     void register_cmdopt_generic_opts() {
 
-        register_opt("--nocolor", {}, "disable colored ouput");
-        register_opt("--color", {}, "force colored ouput");
+        register_opt("--nocolor", {}, "disable colored output");
+        register_opt("--color", {}, "force colored output");
         register_opt("--help", {}, "show this message");
 
         register_env_var_doc("NO_COLOR", "Disable colors (if no color cli args are passed)");

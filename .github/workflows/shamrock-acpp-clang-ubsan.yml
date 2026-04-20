@@ -59,14 +59,7 @@ jobs:
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
           sudo apt update && \
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
+          ./tools/apt_install_llvm.sh ${{matrix.clang}}
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:

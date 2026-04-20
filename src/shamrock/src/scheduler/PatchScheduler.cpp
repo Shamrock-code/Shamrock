@@ -527,7 +527,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
         split_patches(split_rq);
 
         // update packing index
-        // same operation on evey cluster nodes
+        // same operation on every cluster nodes
         set_patch_pack_values(merge_rq);
 
         // update patch list

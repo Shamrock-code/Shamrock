@@ -1650,7 +1650,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.predictor_step(dt);
 
     {
-        // begining of SolverGraph migration
+        // beginning of SolverGraph migration
 
         using namespace shamrock::solvergraph;
 
@@ -2650,7 +2650,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     tstep.end();
 
     for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
-        if (it->step_begin_callback) {
+        if (it->step_end_callback) {
             shambase::get_check_ref(it->step_end_callback)();
         }
     }

@@ -41,7 +41,7 @@ After this command ran, you can `cd` into the build directory and type `ninja` o
 
 ## Installing the code as a python module
 
-By running this command you can pip install the code into you local python installation, and open shamrock in your prefered environment.
+By running this command you can pip install the code into you local python installation, and open shamrock in your preferred environment.
 ```bash
 BUILDBOT_ARGS="--cxxpath <PATH TO COMPILER> --compiler <COMPILER id> --profile <PROFILE>" pip install .
 ```

@@ -104,7 +104,7 @@ int func_do_while(int i){
 }
 ```
 
-Note that the 3 function showed previously exibit exactly the same assembly code but the last one with a lambda exibit a slightly different assembly
+Note that the 3 function showed previously exhibit exactly the same assembly code but the last one with a lambda exhibit a slightly different assembly
 
 
 ```cpp
@@ -355,7 +355,7 @@ The compiler even gives warnings if the input variable is not in the correct ran
 
 Source : https://stackoverflow.com/questions/132241/hidden-features-of-c
 
-I discoverd recently 0 bitfields.
+I discovered recently 0 bitfields.
 ```cpp
 struct {
   int    a:3;
@@ -380,7 +380,7 @@ The 0 width field tells that the following bitfields should be set on the next a
 https://en.wikipedia.org/wiki/Duff%27s_device
 
 
-## Analog litterals
+## Analog literals
 source : http://web.archive.org/web/20111026205138/http://weegen.home.xs4all.nl/eelis/analogliterals.xhtml
 ```cpp
 // Note: The following is all standard-conforming C++, this is not a hypothetical language extension.
@@ -542,7 +542,7 @@ func(int, int):                              # @func(int, int)
         ret
 ```
 
-we have multiple test and a lot of branching whereas the following case exibit no branching
+we have multiple test and a lot of branching whereas the following case exhibit no branching
 
 ```cpp
 int func(int i, int j){

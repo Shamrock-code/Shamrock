@@ -29,8 +29,14 @@ print(f"results from {json_file}")
 
 results_per_model = {}
 
+def key_name(name, world_size):
+    if world_size == 1:
+        return name
+    else:
+        return f"{world_size} x {name}"
+
 for result in results:
-    name = result["device_properties"]["name"]
+    name = key_name(result["device_properties"]["name"], result["world_size"])
     if name not in results_per_model:
         results_per_model[name] = result
     else:

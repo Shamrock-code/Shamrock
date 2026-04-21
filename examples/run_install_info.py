@@ -24,3 +24,7 @@ shamrock.get_compile_arg()
 # %%
 
 shamrock.print_git_info()
+
+# %%
+
+shamrock.get_compiler_id_string()

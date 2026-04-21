@@ -214,6 +214,8 @@ if shamrock.sys.world_rank() == 0:
         "device_properties": device_properties,
         "microbench_results": shamrock.sys.get_microbench_results(),
         "shamrock_version": shamrock.version_string(),
+        "shamrock_compiler_id_string": shamrock.get_compiler_id_string(),
+        "shamrock_compile_flags": shamrock.get_compile_arg(),
         "world_size": shamrock.sys.world_size(),
         "rate": res_rate,
         "cnt": res_cnt,

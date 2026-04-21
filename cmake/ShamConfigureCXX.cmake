@@ -109,3 +109,10 @@ if(NOT "${CMAKE_BUILD_TYPE}" IN_LIST ValidShamBuildType)
 endif()
 message(STATUS "current build type : CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS ${ValidShamBuildType})
+
+# Per-config flags use an UPPERCASE suffix (e.g. CMAKE_CXX_FLAGS_RELEASE), while
+# CMAKE_BUILD_TYPE is mixed case ("Release"). Map with TOUPPER so indirection works.
+string(TOUPPER "${CMAKE_BUILD_TYPE}" _SHAMROCK_BUILD_TYPE_UC)
+set(SHAMROCK_COMPILE_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${_SHAMROCK_BUILD_TYPE_UC}}")
+
+message(STATUS "SHAMROCK_COMPILE_FLAGS : ${SHAMROCK_COMPILE_FLAGS}")

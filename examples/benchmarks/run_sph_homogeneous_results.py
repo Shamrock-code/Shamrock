@@ -23,17 +23,19 @@ except NameError:
 json_file = os.path.join(base_path, "sph_homogeneous_bench_result.json")
 results = json.load(open(json_file))
 
-json.dump(results,open(json_file,'w'),indent=4)
+json.dump(results, open(json_file, "w"), indent=4)
 
 print(f"results from {json_file}")
 
 results_per_model = {}
+
 
 def key_name(name, world_size):
     if world_size == 1:
         return name
     else:
         return f"{world_size} x {name}"
+
 
 for result in results:
     name = key_name(result["device_properties"]["name"], result["world_size"])

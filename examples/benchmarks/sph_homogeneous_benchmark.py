@@ -7,6 +7,7 @@ the resolution is automatically adapted to the available memory and number of pr
 """
 
 import datetime
+import json
 import math
 from statistics import mean, stdev
 
@@ -23,6 +24,11 @@ print(f"device_properties = {device_properties}")
 
 if N_target_base > 2**25:
     N_target_base = 2**25
+
+if device_properties["type"] == "CPU":
+    if N_target_base > 2**23:
+        N_target_base = 2**23
+
 shamrock.backends.reset_mem_info_max()
 
 gamma = 5.0 / 3.0
@@ -210,12 +216,18 @@ if shamrock.sys.world_rank() == 0:
     result_text += f"res_cnts = {res_cnts}\n"
     result_text += f"step time = {step_time}\n"
 
+    microbench_results = shamrock.sys.get_microbench_results()
+    if len(microbench_results) == 0:
+        print("no microbench results, please run with --benchmark-mpi")
+        raise ValueError("no microbench results")
+
     dic_out = {
         "device_properties": device_properties,
         "microbench_results": shamrock.sys.get_microbench_results(),
         "shamrock_version": shamrock.version_string(),
         "shamrock_compiler_id_string": shamrock.get_compiler_id_string(),
         "shamrock_compile_flags": shamrock.get_compile_arg(),
+        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "world_size": shamrock.sys.world_size(),
         "rate": res_rate,
         "cnt": res_cnt,
@@ -238,7 +250,9 @@ if shamrock.sys.world_rank() == 0:
 
     dic_out["system_metric_duration"] = metrics_duration
 
-    result_text += f"dic_out = {dic_out}\n"
+    result_text += "---------submit this result--------\n"
+    result_text += f"{json.dumps(dic_out, indent=4)}\n"
+    result_text += "-----------------------------------\n"
 
     print("current results:")
     print(result_text)

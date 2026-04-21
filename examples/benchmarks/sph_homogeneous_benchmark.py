@@ -15,6 +15,11 @@ import shamrock
 
 device_properties = shamrock.sys.get_compute_device_properties()
 
+microbench_results = shamrock.sys.get_microbench_results()
+if len(microbench_results) == 0:
+    print("no microbench results, please run with --benchmark-mpi")
+    raise ValueError("no microbench results")
+
 memory_gb = device_properties["global_mem_size"] / (1e9)
 
 N_target_base = 2 ** int(math.log2(memory_gb * 1e6 / 1.5))
@@ -215,11 +220,6 @@ if shamrock.sys.world_rank() == 0:
     result_text += f"res_rates = {res_rates}\n"
     result_text += f"res_cnts = {res_cnts}\n"
     result_text += f"step time = {step_time}\n"
-
-    microbench_results = shamrock.sys.get_microbench_results()
-    if len(microbench_results) == 0:
-        print("no microbench results, please run with --benchmark-mpi")
-        raise ValueError("no microbench results")
 
     dic_out = {
         "device_properties": device_properties,

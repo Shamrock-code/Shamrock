@@ -8,14 +8,22 @@ Show the results on various devices
 # sphinx_gallery_multi_image = "single"
 
 import json
+import os
 import textwrap
 
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
-json_file = __file__.replace("run_sph_homogeneous_results.py", "sph_homogeneous_bench_result.json")
+try:
+    base_path = os.path.dirname(os.path.abspath(__file__))
+except NameError:
+    base_path = os.getcwd()
+
+json_file = os.path.join(base_path, "sph_homogeneous_bench_result.json")
 results = json.load(open(json_file))
+
+json.dump(results,open(json_file,'w'),indent=4)
 
 print(f"results from {json_file}")
 

@@ -1622,6 +1622,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
     bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
 
+    bool do_NIMHD = solver_config.do_NIMHD();
+
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
@@ -2505,6 +2507,24 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                             });
                     });
                     vclean_buf.complete_event_state(e);
+                };
+
+                if (do_NIMHD) {
+
+                    auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                        auto *nimhd = std::get_if<typename MHDConfig<Tvec>::NonIdealMHD>(
+                            &solver_config.mhd_config.configMHD);
+                        Tscal etaAD = nimhd ? nimhd->etaAD : Tscal(0);
+
+                        cgh.parallel_for(
+                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
+                                Tscal h_a = hpart[item];
+
+                                Tscal dt_AD = h_a * h_a / etaAD;
+
+                                cfl_dt[item] = sycl::min(cfl_dt[item], dt_AD);
+                            });
+                    });
                 };
 
                 buf_hpart.complete_event_state(e);

@@ -7,5 +7,6 @@ Welcome to the user guide
 :caption: Contents
 
 user_guide/quickstart.md
+user_guide/python_venv.md
 user_guide/envs.md
 ```

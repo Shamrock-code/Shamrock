@@ -407,6 +407,10 @@ import shamrock
 In [1]:
 ```
 
+:::{note}
+Currently on MacOS and maybe some other OS you will see `UserWarning: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.` do not worry to much about it, it works just fine without a venv. We will create one at the next step anyway.
+:::
+
 Now you can use the same python as one would in runscripts. A classic one to run there is the following (which is what I do in the basic CI test btw):
 
 ```{code-block} python

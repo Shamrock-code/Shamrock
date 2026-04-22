@@ -46,7 +46,7 @@ If you get an error that's weird and it is probably simpler to drop a message on
 With Homebrew:
 
 ```bash
-brew install cmake libomp boost open-mpi adaptivecpp python ninja
+brew install cmake libomp boost open-mpi adaptivecpp python ninja fmt
 ```
 
 :::
@@ -124,14 +124,14 @@ Shamrock provides its own utilities with pre-made configurations for various mac
 :::{tab-item} Linux (Debian & Ubuntu)
 
 ```bash
-./env/new-env --builddir build --machine debian-generic.acpp -- --backend omp
+./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp
 ```
 
 :::
 :::{tab-item} MacOS
 
 ```bash
-./env/new-env --builddir build --machine macos-generic.acpp -- --backend omp
+./env/new-env --machine macos-generic.acpp --builddir build --
 ```
 
 :::

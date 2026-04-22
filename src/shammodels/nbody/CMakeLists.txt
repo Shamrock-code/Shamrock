@@ -9,17 +9,14 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shammodels_nbody CXX C)
 
-set(Sources
-    src/models/nbody_selfgrav.cpp
-    src/setup/nbody_setup.cpp
-)
+set(Sources src/models/nbody_selfgrav.cpp src/setup/nbody_setup.cpp)
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shammodels_nbody target (Shared lib)")
-add_library(shammodels_nbody SHARED ${Sources})
+    message("-- adding shammodels_nbody target (Shared lib)")
+    add_library(shammodels_nbody SHARED ${Sources})
 else()
-message("-- adding shammodels_nbody target (object lib)")
-add_library(shammodels_nbody OBJECT ${Sources})
+    message("-- adding shammodels_nbody target (object lib)")
+    add_library(shammodels_nbody OBJECT ${Sources})
 endif()
 
 add_library(shammodels_nbody::shammodels_nbody ALIAS shammodels_nbody)
@@ -32,6 +29,7 @@ target_link_libraries(shammodels_nbody PUBLIC shamsys)
 target_link_libraries(shammodels_nbody PUBLIC shammodels_common)
 target_link_libraries(shammodels_nbody PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(shammodels_nbody PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shammodels_nbody PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                            "$<INSTALL_INTERFACE:include>"
+)

@@ -14,11 +14,11 @@ project(Shampylib CXX C)
 file(GLOB_RECURSE shampylib_srcs CONFIGURE_DEPENDS "*.cpp")
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shampylib target (Shared lib)")
-add_library(shampylib SHARED ${shampylib_srcs})
+    message("-- adding shampylib target (Shared lib)")
+    add_library(shampylib SHARED ${shampylib_srcs})
 else()
-message("-- adding shampylib target (object lib)")
-add_library(shampylib OBJECT ${shampylib_srcs})
+    message("-- adding shampylib target (object lib)")
+    add_library(shampylib OBJECT ${shampylib_srcs})
 endif()
 
 add_library(shampylib::shampylib ALIAS shampylib)
@@ -32,6 +32,7 @@ target_link_libraries(shampylib PUBLIC shamlib)
 target_link_libraries(shampylib PUBLIC shambindings)
 target_link_libraries(shampylib PUBLIC shamtree)
 
-target_include_directories(shampylib PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shampylib PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                     "$<INSTALL_INTERFACE:include>"
+)

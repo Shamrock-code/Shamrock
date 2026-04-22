@@ -32,11 +32,11 @@ set(Sources
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamtree target (Shared lib)")
-add_library(shamtree SHARED ${Sources})
+    message("-- adding shamtree target (Shared lib)")
+    add_library(shamtree SHARED ${Sources})
 else()
-message("-- adding shamtree target (object lib)")
-add_library(shamtree OBJECT ${Sources})
+    message("-- adding shamtree target (object lib)")
+    add_library(shamtree OBJECT ${Sources})
 endif()
 
 add_library(shamtree::shamtree ALIAS shamtree)
@@ -45,6 +45,7 @@ target_link_libraries(shamtree PUBLIC shamalgs)
 target_link_libraries(shamtree PUBLIC shammath)
 target_link_libraries(shamtree PUBLIC shamsys)
 
-target_include_directories(shamtree PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shamtree PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                    "$<INSTALL_INTERFACE:include>"
+)

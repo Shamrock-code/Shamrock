@@ -21,7 +21,9 @@ if(SHAMROCK_USE_CPPTRACE)
     ### CPPTRACE
     ###############################################################################
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/cpptrace 829d06a054bf8365750fba17c0520f1267cd5a2d)
+    _check_git_submodule_cloned(
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cpptrace 829d06a054bf8365750fba17c0520f1267cd5a2d
+    )
 
     set(CPPTRACE_INHERIT_HOST_STANDARD On)
     add_subdirectory(external/cpptrace)

@@ -21,85 +21,74 @@ message(STATUS "Shamrock configure SYCL backend")
 
 # check that the wanted sycl backend is in the list
 set(KNOWN_SYCL_IMPLEMENTATIONS "IntelLLVM" "ACPPDirect" "ACPPCmake")
-if((NOT ${SYCL_IMPLEMENTATION} IN_LIST KNOWN_SYCL_IMPLEMENTATIONS) OR (NOT (DEFINED SYCL_IMPLEMENTATION)))
-  message(FATAL_ERROR
-    "The Shamrock SYCL backend requires specifying a SYCL implementation with "
-    "-DSYCL_IMPLEMENTATION=[IntelLLVM;ACPPDirect,ACPPCmake]")
+if((NOT ${SYCL_IMPLEMENTATION} IN_LIST KNOWN_SYCL_IMPLEMENTATIONS) OR (NOT (DEFINED
+                                                                            SYCL_IMPLEMENTATION))
+)
+    message(FATAL_ERROR "The Shamrock SYCL backend requires specifying a SYCL implementation with "
+                        "-DSYCL_IMPLEMENTATION=[IntelLLVM;ACPPDirect,ACPPCmake]"
+    )
 endif()
 set(SYCL_IMPLEMENTATION "${SYCL_IMPLEMENTATION}" CACHE STRING "Sycl implementation used")
 set_property(CACHE SYCL_IMPLEMENTATION PROPERTY STRINGS ${KNOWN_SYCL_IMPLEMENTATIONS})
 
 message(STATUS "Chosen SYCL implementation : ${SYCL_IMPLEMENTATION}")
 
-
 set(SHAM_CXX_SYCL_FLAGS "")
 
 # use the correct script depending on the implementation
 if(${SYCL_IMPLEMENTATION} STREQUAL "IntelLLVM")
-  include(SYCLAdaptIntelLLVM)
+    include(SYCLAdaptIntelLLVM)
 elseif(${SYCL_IMPLEMENTATION} STREQUAL "ACPPDirect")
-  include(SYCLAdaptACppDirect)
+    include(SYCLAdaptACppDirect)
 elseif(${SYCL_IMPLEMENTATION} STREQUAL "ACPPCmake")
-  include(SYCLAdaptACppCmake)
+    include(SYCLAdaptACppCmake)
 endif()
-
-
 
 set(SHAMROCK_LOOP_DEFAULT "PARALLEL_FOR_ROUND" CACHE STRING "Default loop mode in shamrock")
 set_property(CACHE SHAMROCK_LOOP_DEFAULT PROPERTY STRINGS PARALLEL_FOR PARALLEL_FOR_ROUND ND_RANGE)
 
 set(SHAMROCK_LOOP_GSIZE 256 CACHE STRING "Default group size in shamrock")
 
-
-
-
-
-
-
 ######################
 # Make CXX flags related to sycl
 ######################
 
+message(" ---- Shamrock SYCL backend config ---- ")
 
-message( " ---- Shamrock SYCL backend config ---- ")
+message("  SYCL_COMPILER : ${SYCL_COMPILER}")
 
-
-message( "  SYCL_COMPILER : ${SYCL_COMPILER}")
-
-message( "  sycl 2020 reduction : ${SYCL2020_FEATURE_REDUCTION}")
+message("  sycl 2020 reduction : ${SYCL2020_FEATURE_REDUCTION}")
 if(SYCL2020_FEATURE_REDUCTION)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_REDUCTION")
 endif()
 
-message( "  sycl 2020 group reduction : ${SYCL2020_FEATURE_GROUP_REDUCTION}")
+message("  sycl 2020 group reduction : ${SYCL2020_FEATURE_GROUP_REDUCTION}")
 if(SYCL2020_FEATURE_GROUP_REDUCTION)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_GROUP_REDUCTION")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_GROUP_REDUCTION")
 endif()
 
-message( "  sycl 2020 isinf : ${SYCL2020_FEATURE_ISINF}")
+message("  sycl 2020 isinf : ${SYCL2020_FEATURE_ISINF}")
 if(SYCL2020_FEATURE_ISINF)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_ISINF")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_ISINF")
 endif()
 
-message( "  sycl 2020 clz : ${SYCL2020_FEATURE_CLZ}")
+message("  sycl 2020 clz : ${SYCL2020_FEATURE_CLZ}")
 if(SYCL2020_FEATURE_CLZ)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_CLZ")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSYCL2020_FEATURE_CLZ")
 endif()
 
-
-message( "  SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
+message("  SHAMROCK_LOOP_DEFAULT : ${SHAMROCK_LOOP_DEFAULT}")
 if(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARALLEL_FOR")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARALLEL_FOR")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARALLEL_FOR")
 elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "PARALLEL_FOR_ROUND")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARALLEL_FOR_ROUND")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_PARALLEL_FOR_ROUND")
 elseif(${SHAMROCK_LOOP_DEFAULT} STREQUAL "ND_RANGE")
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_ND_RANGE")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_DEFAULT_ND_RANGE")
 endif()
 
-message( "  SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
+message("  SHAMROCK_LOOP_GSIZE : ${SHAMROCK_LOOP_GSIZE}")
 set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -DSHAMROCK_LOOP_GSIZE=${SHAMROCK_LOOP_GSIZE}")
 
-
-message( " -------------------------------------- ")
+message(" -------------------------------------- ")
 
 message(STATUS "Shamrock configure SYCL backend - done")

@@ -11,6 +11,8 @@ message("   ---- MDSPAN section ----")
 ### MDSPAN
 ###############################################################################
 
-_check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/mdspan 414a5dccf5c775b2eecc13d408b256e94f23d1d2)
+_check_git_submodule_cloned(
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/mdspan 414a5dccf5c775b2eecc13d408b256e94f23d1d2
+)
 
 include_directories(external/mdspan/include)

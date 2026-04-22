@@ -15,9 +15,8 @@ function(_check_git_submodule_cloned directory expect_hash)
     file(GLOB files RELATIVE "${directory}" "${directory}/*")
     if(NOT files)
 
-        message(FATAL_ERROR
-            "The git submodule '${directory}' is empty\n"
-            "please do : git submodule update --init --recursive\n"
+        message(FATAL_ERROR "The git submodule '${directory}' is empty\n"
+                            "please do : git submodule update --init --recursive\n"
         )
 
     endif()
@@ -34,10 +33,11 @@ function(_check_git_submodule_cloned directory expect_hash)
         #message(STATUS "Submodule '${directory}' commit hash: ${submodule_commit_hash}")
 
         if(NOT "${submodule_commit_hash}" STREQUAL "${expect_hash}")
-            message(FATAL_ERROR
-                "The git submodule '${directory}' is not in sync\n"
-                "current commit hash '${submodule_commit_hash}' is not equal to expected '${expect_hash}'\n"
-                "please do : git pull --recurse-submodules\n"
+            message(
+                FATAL_ERROR
+                    "The git submodule '${directory}' is not in sync\n"
+                    "current commit hash '${submodule_commit_hash}' is not equal to expected '${expect_hash}'\n"
+                    "please do : git pull --recurse-submodules\n"
             )
         endif()
     endif()

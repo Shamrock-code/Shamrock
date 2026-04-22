@@ -9,13 +9,8 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shammodels_common CXX C)
 
-set(Sources
-    src/EOSConfig.cpp
-    src/pyAMRTestModel.cpp
-    src/pyAMRGrid.cpp
-    src/pyCommonUtils.cpp
-    src/modules/AddForceCentralGravPotential.cpp
-    src/timestep_report.cpp
+set(Sources src/EOSConfig.cpp src/pyAMRTestModel.cpp src/pyAMRGrid.cpp src/pyCommonUtils.cpp
+            src/modules/AddForceCentralGravPotential.cpp src/timestep_report.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
@@ -35,6 +30,7 @@ target_link_libraries(shammodels_common PUBLIC shamphys)
 target_link_libraries(shammodels_common PUBLIC shamsys)
 target_link_libraries(shammodels_common PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(shammodels_common PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shammodels_common PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                             "$<INSTALL_INTERFACE:include>"
+)

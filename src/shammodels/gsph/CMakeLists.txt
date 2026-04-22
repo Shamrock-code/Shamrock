@@ -21,11 +21,11 @@ set(Sources
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shammodels_gsph target (Shared lib)")
-add_library(shammodels_gsph SHARED ${Sources})
+    message("-- adding shammodels_gsph target (Shared lib)")
+    add_library(shammodels_gsph SHARED ${Sources})
 else()
-message("-- adding shammodels_gsph target (object lib)")
-add_library(shammodels_gsph OBJECT ${Sources})
+    message("-- adding shammodels_gsph target (object lib)")
+    add_library(shammodels_gsph OBJECT ${Sources})
 endif()
 
 add_library(shammodels_gsph::shammodels_gsph ALIAS shammodels_gsph)
@@ -40,6 +40,7 @@ target_link_libraries(shammodels_gsph PUBLIC shammodels_common)
 target_link_libraries(shammodels_gsph PUBLIC shammodels_sph)
 target_link_libraries(shammodels_gsph PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(shammodels_gsph PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shammodels_gsph PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                           "$<INSTALL_INTERFACE:include>"
+)

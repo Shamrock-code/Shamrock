@@ -44,25 +44,31 @@ else()
     # Replace slashes with underscores in branch name to avoid file path issues
     string(REPLACE "/" "_" SHAMROCK_GIT_BRANCH "${SHAMROCK_GIT_BRANCH}")
     # check whether there are local changes
-    execute_process(COMMAND git diff-index --name-only HEAD
+    execute_process(
+        COMMAND git diff-index --name-only HEAD
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_VARIABLE SHAMROCK_LOCAL_CHANGES
         RESULT_VARIABLE GIT_LOCAL_CHANGES_RETURN_CODE
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 
-    if (GIT_HASH_RETURN_CODE EQUAL 0 AND GIT_BRANCH_RETURN_CODE EQUAL 0 AND
-         GIT_LOCAL_CHANGES_RETURN_CODE EQUAL 0)
+    if(GIT_HASH_RETURN_CODE EQUAL 0 AND GIT_BRANCH_RETURN_CODE EQUAL 0
+       AND GIT_LOCAL_CHANGES_RETURN_CODE EQUAL 0
+    )
 
         if(NOT "${SHAMROCK_LOCAL_CHANGES}" STREQUAL "")
-        set(DIRTY_STR ".dirty")
+            set(DIRTY_STR ".dirty")
         else()
-        set(DIRTY_STR "")
+            set(DIRTY_STR "")
         endif()
 
-        set(SHAMROCK_VERSION_SUFFIX "+git.${SHAMROCK_GIT_COMMIT_HASH}.${SHAMROCK_GIT_BRANCH}${DIRTY_STR}")
+        set(SHAMROCK_VERSION_SUFFIX
+            "+git.${SHAMROCK_GIT_COMMIT_HASH}.${SHAMROCK_GIT_BRANCH}${DIRTY_STR}"
+        )
     endif()
 endif()
 
-set(SHAMROCK_VERSION_STRING ${SHAMROCK_VERSION_MAJOR}.${SHAMROCK_VERSION_MINOR}.${SHAMROCK_VERSION_PATCH}${SHAMROCK_VERSION_SUFFIX})
+set(SHAMROCK_VERSION_STRING
+    ${SHAMROCK_VERSION_MAJOR}.${SHAMROCK_VERSION_MINOR}.${SHAMROCK_VERSION_PATCH}${SHAMROCK_VERSION_SUFFIX}
+)
 message(STATUS "Shamrock version : ${SHAMROCK_VERSION_STRING}")

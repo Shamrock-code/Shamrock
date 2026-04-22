@@ -5,20 +5,11 @@
 # Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 # ~~~
 
-set(SourcesTest
-    shamtest.cpp
-)
-set(HeadersTest
-    shamtest.hpp
-)
+set(SourcesTest shamtest.cpp)
+set(HeadersTest shamtest.hpp)
 
 if("${BUILD_TEST}")
-target_sources(shamrock_test
-PRIVATE
-    ${SourcesTest}
-PUBLIC
-    ${HeadersTest}
-)
+    target_sources(shamrock_test PRIVATE ${SourcesTest} PUBLIC ${HeadersTest})
 endif()
 
 add_subdirectory(details)

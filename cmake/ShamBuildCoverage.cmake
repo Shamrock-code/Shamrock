@@ -13,9 +13,9 @@ set(CMAKE_CXX_FLAGS_COVERAGE "${coverage_flags}")
 # disable shared lib if coverage is enabled
 if(CMAKE_BUILD_TYPE STREQUAL "COVERAGE")
     if(SHAMROCK_USE_SHARED_LIB)
-    message(STATUS
-        "forcing SHAMROCK_USE_SHARED_LIB=Off with coverage enabled, "
-        "without it llvm-cov will show only the main binary functions")
+        message(STATUS "forcing SHAMROCK_USE_SHARED_LIB=Off with coverage enabled, "
+                       "without it llvm-cov will show only the main binary functions"
+        )
     endif()
     set(SHAMROCK_FORCE_SHARED_LIB Off)
 endif()
@@ -23,6 +23,9 @@ endif()
 if(CMAKE_BUILD_TYPE STREQUAL "COVERAGE")
     if(NOT DEFINED SHAM_ASSERT_MODE_DEFAULT)
         set(SHAM_ASSERT_MODE_DEFAULT RUNTIME_ERROR)
-        message(STATUS "Setting SHAM_ASSERT_MODE_DEFAULT=RUNTIME_ERROR with CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} (you can force it off).")
+        message(
+            STATUS
+                "Setting SHAM_ASSERT_MODE_DEFAULT=RUNTIME_ERROR with CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} (you can force it off)."
+        )
     endif()
 endif()

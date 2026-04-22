@@ -52,7 +52,6 @@ repos:
   rev: v0.6.13
   hooks:
   - id: cmake-format
-    args: [--in-place, --line-width=100, --tab-size=4]
 #  - id: cmake-lint
 
 #- repo: https://github.com/codespell-project/codespell

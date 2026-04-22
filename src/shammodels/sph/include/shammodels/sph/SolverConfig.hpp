@@ -36,6 +36,7 @@
 #include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -142,7 +143,7 @@ namespace shammodels::sph {
         inline u32 get_dust_nvar() {
             if (None *cfg = std::get_if<None>(&current_mode)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "Querrying a dust nvar with no dust as config is ... discutable ...");
+                    "Querying a dust nvar with no dust as config is ... discutable ...");
                 return 0;
             } else if (MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
                 return cfg->ndust;
@@ -290,6 +291,8 @@ struct shammodels::sph::SolverConfig {
     bool track_particles_id = false;
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
+
+    PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -1126,6 +1129,8 @@ namespace shammodels::sph {
             // used for type checking
             {"kernel_id", kernel_id},
             {"type_id", type_id},
+            // scheduler config
+            {"scheduler_config", p.scheduler_conf},
             // actual data stored in the json
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
@@ -1214,6 +1219,8 @@ namespace shammodels::sph {
             shamrock::get_to_if_contains_fallbacks(
                 j, key, value, fallbacks, has_used_defaults, has_updated_config);
         };
+
+        _get_to_if_contains("scheduler_config", p.scheduler_conf);
 
         // actual data stored in the json
         _get_to_if_contains("gpart_mass", p.gpart_mass);

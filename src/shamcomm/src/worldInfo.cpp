@@ -16,7 +16,7 @@
 #include "shambase/numeric_limits.hpp"
 #include "shambase/profiling/chrome.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamcomm/env_variables.hpp"
+#include "shamcomm/local_rank.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -51,7 +51,7 @@ namespace shamcomm {
     }
 
     void set_callstack_process_identifier() {
-        std::optional<u32> local_rank = get_local_rank();
+        std::optional<u32> local_rank = node_local_rank();
 
         shambase::set_callstack_process_identifier(
             shambase::format(

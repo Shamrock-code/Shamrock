@@ -32,13 +32,22 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <functional>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::gsph::Model<Tvec, SPHKernel>::init_scheduler(u32 crit_split, u32 crit_merge) {
+void shammodels::gsph::Model<Tvec, SPHKernel>::init() {
+
+    if (solver.solver_config.scheduler_conf.split_load_value == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "Scheduler load value should be greater than 0");
+    }
+
     solver.init_required_fields();
-    ctx.init_sched(crit_split, crit_merge);
+    ctx.init_sched(
+        solver.solver_config.scheduler_conf.split_load_value,
+        solver.solver_config.scheduler_conf.merge_load_value);
 
     using namespace shamrock::patch;
 
@@ -135,7 +144,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf
                 = sched.get_sim_box().template get_patch_transform<Tvec>();
 
@@ -182,7 +191,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
             pdat.insert_elements(tmp);
         });
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
         sched.scheduler_step(true, true);
     }
 
@@ -244,7 +253,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
 
     for (std::vector<Tvec> to_ins : sliced_buf) {
 
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             PatchCoordTransform<Tvec> ptransf
                 = sched.get_sim_box().template get_patch_transform<Tvec>();
 
@@ -291,7 +300,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             pdat.insert_elements(tmp);
         });
 
-        sched.check_patchdata_locality_corectness();
+        sched.check_patchdata_locality_correctness();
         sched.scheduler_step(true, true);
     }
 

@@ -154,14 +154,26 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal cfl_force) {
                 self.cfl_config.cfl_force = cfl_force;
             })
-        .def("set_particle_mass", [](TConfig &self, Tscal gpart_mass) {
-            self.gpart_mass = gpart_mass;
-        });
+        .def(
+            "set_particle_mass",
+            [](TConfig &self, Tscal gpart_mass) {
+                self.gpart_mass = gpart_mass;
+            })
+        .def(
+            "set_scheduler_config",
+            [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                self.scheduler_conf.split_load_value = split_crit;
+                self.scheduler_conf.merge_load_value = merge_crit;
+            },
+            py::kw_only(),
+            py::arg("split_load_value"),
+            py::arg("merge_load_value"));
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def("init", &T::init)
         .def("init_scheduler", &T::init_scheduler)
         .def("evolve_once", &T::evolve_once)
         .def(

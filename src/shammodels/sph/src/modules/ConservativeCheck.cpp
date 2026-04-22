@@ -157,7 +157,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                     Tvec dB_on_rho_a = dB_on_rho[item];
                     Tscal drho       = drho_dt[item];
                     term_B           = 0.5 * (1. / mu_0) * sycl::dot(B_on_rho_a, B_on_rho_a) * drho
-                             + (1. / mu_0) * sycl::dot(B, dB_on_rho_a);
+                                       + (1. / mu_0) * sycl::dot(B, dB_on_rho_a);
 
                     de[item] += pmass * term_B;
                 });

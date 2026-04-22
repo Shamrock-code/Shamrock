@@ -12,9 +12,9 @@
 /**
  * @file PyScriptHandle.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief utility to use python script withing tests
+ * @brief utility to use python script within tests
 
- * Exemple :
+ * Example :
  * \code{.cpp}
  * TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
  *
@@ -45,7 +45,7 @@
 /**
  * @brief Class allowing use of python scripts within a test case
  *
- * Exemple :
+ * Example :
  * \code{.cpp}
  * std::vector<f64> x = {0, 1, 2, 4, 5};
  * std::vector<f64> y = {1, 2, 4, 6, 1};
@@ -112,7 +112,7 @@ struct PyScriptHandle {
      * @tparam N length of the source chars
      * @param expr the source to be executed
      * @param global the global py variable
-     * @return true the script executed succesfully
+     * @return true the script executed successfully
      * @return false  the script executed with an error
      */
     template<size_t N>

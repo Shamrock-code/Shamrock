@@ -139,7 +139,7 @@ namespace shamalgs::primitives {
                 return {"multi_std_sort", ""};
             }
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                shambase::format("unknow segmented sort in place implementation : {}", u32(impl)));
+                shambase::format("unknown segmented sort in place implementation : {}", u32(impl)));
         }
 
         /// Get list of available segmented sort in place implementations

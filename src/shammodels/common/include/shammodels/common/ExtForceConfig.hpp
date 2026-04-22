@@ -68,7 +68,23 @@ namespace shammodels {
                 : shear_base(shear_base), shear_dir(shear_dir), Omega_0(Omega_0), eta(eta), q(q) {};
         };
 
-        using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
+        /// f = -GMy / sqrt(R0^2 + y^2)
+        struct VerticalDiscPotential {
+            Tscal central_mass;
+            Tscal R0;
+        };
+
+        /// f = -eta v
+        struct VelocityDissipation {
+            Tscal eta;
+        };
+
+        using VariantForce = std::variant<
+            PointMass,
+            LenseThirring,
+            ShearingBoxForce,
+            VerticalDiscPotential,
+            VelocityDissipation>;
         VariantForce val;
     };
 
@@ -78,11 +94,11 @@ namespace shammodels {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-        using PointMass        = typename ExtForceVariant<Tvec>::PointMass;
-        using LenseThirring    = typename ExtForceVariant<Tvec>::LenseThirring;
-        using ShearingBoxForce = typename ExtForceVariant<Tvec>::ShearingBoxForce;
-
-        using VariantForce = std::variant<PointMass, LenseThirring, ShearingBoxForce>;
+        using PointMass             = typename ExtForceVariant<Tvec>::PointMass;
+        using LenseThirring         = typename ExtForceVariant<Tvec>::LenseThirring;
+        using ShearingBoxForce      = typename ExtForceVariant<Tvec>::ShearingBoxForce;
+        using VerticalDiscPotential = typename ExtForceVariant<Tvec>::VerticalDiscPotential;
+        using VelocityDissipation   = typename ExtForceVariant<Tvec>::VelocityDissipation;
 
         std::vector<ExtForceVariant<Tvec>> ext_forces;
 
@@ -108,6 +124,14 @@ namespace shammodels {
 
             ext_forces.push_back(ExtForceVariant<Tvec>{ShearingBoxForce{Omega_0, eta, q}});
         }
+
+        inline void add_vertical_disc_potential(Tscal central_mass, Tscal R0) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{VerticalDiscPotential{central_mass, R0}});
+        }
+
+        inline void add_velocity_dissipation(Tscal eta) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{VelocityDissipation{eta}});
+        }
     };
 
 } // namespace shammodels
@@ -117,9 +141,11 @@ namespace shammodels {
     inline void to_json(nlohmann::json &j, const ExtForceVariant<Tvec> &p) {
         using T = ExtForceVariant<Tvec>;
 
-        using PointMass        = typename T::PointMass;
-        using LenseThirring    = typename T::LenseThirring;
-        using ShearingBoxForce = typename T::ShearingBoxForce;
+        using PointMass             = typename T::PointMass;
+        using LenseThirring         = typename T::LenseThirring;
+        using ShearingBoxForce      = typename T::ShearingBoxForce;
+        using VerticalDiscPotential = typename T::VerticalDiscPotential;
+        using VelocityDissipation   = typename T::VelocityDissipation;
 
         if (const PointMass *v = std::get_if<PointMass>(&p.val)) {
             j = {
@@ -141,6 +167,13 @@ namespace shammodels {
                 {"eta", v->eta},
                 {"q", v->q},
             };
+        } else if (const VerticalDiscPotential *v = std::get_if<VerticalDiscPotential>(&p.val)) {
+            j
+                = {{"force_type", "vertical_disc_potential"},
+                   {"central_mass", v->central_mass},
+                   {"R0", v->R0}};
+        } else if (const VelocityDissipation *v = std::get_if<VelocityDissipation>(&p.val)) {
+            j = {{"force_type", "velocity_dissipation"}, {"eta", v->eta}};
         } else {
             shambase::throw_unimplemented();
         }
@@ -158,9 +191,11 @@ namespace shammodels {
         std::string force_type;
         j.at("force_type").get_to(force_type);
 
-        using PointMass        = typename T::PointMass;
-        using LenseThirring    = typename T::LenseThirring;
-        using ShearingBoxForce = typename T::ShearingBoxForce;
+        using PointMass             = typename T::PointMass;
+        using LenseThirring         = typename T::LenseThirring;
+        using ShearingBoxForce      = typename T::ShearingBoxForce;
+        using VerticalDiscPotential = typename T::VerticalDiscPotential;
+        using VelocityDissipation   = typename T::VelocityDissipation;
 
         if (force_type == "point_mass") {
             p.val = PointMass{
@@ -182,6 +217,13 @@ namespace shammodels {
                 j.at("eta").get<Tscal>(),
                 j.at("q").get<Tscal>(),
             };
+        } else if (force_type == "vertical_disc_potential") {
+            p.val = VerticalDiscPotential{
+                j.at("central_mass").get<Tscal>(),
+                j.at("R0").get<Tscal>(),
+            };
+        } else if (force_type == "velocity_dissipation") {
+            p.val = VelocityDissipation{j.at("eta").get<Tscal>()};
         } else {
             shambase::throw_unimplemented("wtf !");
         }

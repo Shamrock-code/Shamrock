@@ -103,6 +103,15 @@ namespace shammodels::basegodunov {
                     self.slope_config = Minmod;
                 })
             .def(
+                "set_scheduler_config",
+                [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                    self.scheduler_conf.split_load_value = split_crit;
+                    self.scheduler_conf.merge_load_value = merge_crit;
+                },
+                py::kw_only(),
+                py::arg("split_load_value"),
+                py::arg("merge_load_value"))
+            .def(
                 "set_face_time_interpolation",
                 [](TConfig &self, bool face_time_interpolate) {
                     self.face_half_time_interpolation = face_time_interpolate;
@@ -222,6 +231,7 @@ namespace shammodels::basegodunov {
             });
 
         py::class_<T>(m, name_model.c_str())
+            .def("init", &T::init)
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
@@ -332,7 +342,25 @@ namespace shammodels::basegodunov {
                     }
 
                     throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
-                });
+                })
+            .def(
+                "get_time",
+                [](T &self) {
+                    return self.solver.solver_config.get_time();
+                })
+            .def(
+                "get_dt",
+                [](T &self) {
+                    return self.solver.solver_config.get_dt();
+                })
+            .def(
+                "set_time",
+                [](T &self, Tscal t) {
+                    return self.solver.solver_config.set_time(t);
+                })
+            .def("set_next_dt", [](T &self, Tscal dt) {
+                return self.solver.solver_config.set_next_dt(dt);
+            });
     }
 } // namespace shammodels::basegodunov
 

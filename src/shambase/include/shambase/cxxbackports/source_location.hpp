@@ -24,7 +24,7 @@
  *
  * @see https://en.cppreference.com/w/cpp/utility/source_location
  *
- * Exemple of usage :
+ * Example of usage :
  * \code{.cpp}
  * void log(const std::source_location location = std::source_location::current()){
  *     std::cout << "file: "

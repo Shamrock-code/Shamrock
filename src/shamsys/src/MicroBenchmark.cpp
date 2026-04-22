@@ -20,7 +20,7 @@
 #include "shamalgs/collective/exchanges.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
-#include "shambackends/benchmarks/add_mul.hpp"
+#include "shambackends/benchmarks/fma_chains.hpp"
 #include "shambackends/benchmarks/saxpy.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
@@ -32,6 +32,12 @@
 #include <stdexcept>
 #include <vector>
 
+namespace {
+
+    std::unordered_map<std::string, double> microbench_results = {};
+
+}
+
 namespace shamsys::microbench {
     /// MPI point-to-point bandwidth benchmark
     void p2p_bandwidth(u32 wr_sender, u32 wr_receiv);
@@ -40,16 +46,32 @@ namespace shamsys::microbench {
     void p2p_latency(u32 wr1, u32 wr2);
 
     /// SAXPY benchmark, to get the maximum bandwidth
+    template<typename T>
     void saxpy();
 
-    /// ADD_MUL benchmark to get the maximum floating point performance
-    void add_mul_rotation_f32();
-
-    /// same as add_mul_rotation_f32 but for double
-    void add_mul_rotation_f64();
+    /// FMA chains benchmark to get the maximum floating point performance
+    template<typename T>
+    void fma_chains_rotation();
 
     /// Vector allgather benchmark
     void vector_allgather(u32 el_per_rank);
+
+    std::tuple<std::string, std::string> format_result(f64 val) {
+
+        std::array<char, 6> prefixes    = {'k', 'M', 'G', 'T', 'P', 'E'};
+        std::array<f64, 6> prefixes_val = {1.e3, 1.e6, 1.e9, 1.e12, 1.e15, 1.e18};
+
+        std::string prefix = "";
+        f64 val_out        = val;
+        for (size_t i = 0; i < prefixes.size(); i++) {
+            if (val > prefixes_val[i]) {
+                prefix  = prefixes[i];
+                val_out = val / prefixes_val[i];
+            }
+        }
+        return {prefix, shambase::format("{:.3}", val_out)};
+    }
+
 } // namespace shamsys::microbench
 
 void shamsys::run_micro_benchmark() {
@@ -66,10 +88,22 @@ void shamsys::run_micro_benchmark() {
     if (shamcomm::world_size() > 1) {
         microbench::p2p_latency(wr1, wr2);
     }
-    microbench::saxpy();
-    microbench::add_mul_rotation_f32();
-    microbench::add_mul_rotation_f64();
-
+    microbench::saxpy<f32>();
+    microbench::saxpy<f64>();
+    microbench::saxpy<f32_2>();
+    microbench::saxpy<f64_2>();
+    microbench::saxpy<f32_3>();
+    microbench::saxpy<f64_3>();
+    microbench::saxpy<f32_4>();
+    microbench::saxpy<f64_4>();
+    microbench::fma_chains_rotation<f32>();
+    microbench::fma_chains_rotation<f64>();
+    microbench::fma_chains_rotation<f32_2>();
+    microbench::fma_chains_rotation<f64_2>();
+    microbench::fma_chains_rotation<f32_3>();
+    microbench::fma_chains_rotation<f64_3>();
+    microbench::fma_chains_rotation<f32_4>();
+    microbench::fma_chains_rotation<f64_4>();
     microbench::vector_allgather(1);
     microbench::vector_allgather(8);
     microbench::vector_allgather(64);
@@ -126,11 +160,17 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
 
     } while (shamalgs::collective::allreduce_min(t) < 1);
 
+    f64 bw = f64(length * loops) / t;
+
+    microbench_results["p2p_bandwidth"] = bw;
+
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(bw);
         logger::raw_ln(
             shambase::format(
-                " - p2p bandwidth    : {:.4e} B.s^-1 (ranks : {} -> {}) (loops : {})",
-                (f64(length * loops) / t),
+                " - p2p bandwidth    : {} {}B.s^-1 (ranks : {} -> {}) (loops : {})",
+                val,
+                prefix,
                 wr_sender,
                 wr_receiv,
                 loops));
@@ -187,60 +227,98 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
     } while (shamalgs::collective::allreduce_min(bench_timer.elasped_sec()) < 1);
 
+    f64 latency                       = t / f64(loops);
+    microbench_results["p2p_latency"] = latency;
+
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
             shambase::format(
                 " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
-                t / f64(loops),
+                latency,
                 wr1,
                 wr2,
                 loops));
     }
 }
 
+template<typename T>
 void shamsys::microbench::saxpy() {
+    int Tsize = sizeof(T);
 
-    using vec4    = sycl::vec<float, 4>;
-    int vec4_size = sizeof(vec4);
+    std::string type_name;
+    T init_x, init_y, a;
+    if constexpr (std::is_same_v<T, f32>) {
+        type_name = "f32";
+        init_x    = 1.0f;
+        init_y    = 2.0f;
+        a         = 2.0f;
+    } else if constexpr (std::is_same_v<T, f64>) {
+        type_name = "f64";
+        init_x    = 1.0;
+        init_y    = 2.0;
+        a         = 2.0;
+    } else if constexpr (std::is_same_v<T, f32_2>) {
+        type_name = "f32_2";
+        init_x    = {1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f};
+        a         = {2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_2>) {
+        type_name = "f64_2";
+        init_x    = {1.0, 1.0};
+        init_y    = {2.0, 2.0};
+        a         = {2.0, 2.0};
+    } else if constexpr (std::is_same_v<T, f32_3>) {
+        type_name = "f32_3";
+        init_x    = {1.0f, 1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f, 2.0f};
+        a         = {2.0f, 2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_3>) {
+        type_name = "f64_3";
+        init_x    = {1.0, 1.0, 1.0};
+        init_y    = {2.0, 2.0, 2.0};
+        a         = {2.0, 2.0, 2.0};
+    } else if constexpr (std::is_same_v<T, f32_4>) {
+        type_name = "f32_4";
+        init_x    = {1.0f, 1.0f, 1.0f, 1.0f};
+        init_y    = {2.0f, 2.0f, 2.0f, 2.0f};
+        a         = {2.0f, 2.0f, 2.0f, 2.0f};
+    } else if constexpr (std::is_same_v<T, f64_4>) {
+        type_name = "f64_4";
+        init_x    = {1.0, 1.0, 1.0, 1.0};
+        init_y    = {2.0, 2.0, 2.0, 2.0};
+        a         = {2.0, 2.0, 2.0, 2.0};
+    } else {
+        throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
+    }
 
     auto bench_step = [&](int N) {
-        return sham::benchmarks::saxpy_bench<vec4>(
-            instance::get_compute_scheduler_ptr(),
-            N,
-            {1.0f, 1.0f, 1.0f, 1.0f},
-            {2.0f, 2.0f, 2.0f, 2.0f},
-            {2.0f, 2.0f, 2.0f, 2.0f},
-            vec4_size,
-            N < (1 << 20));
+        return sham::benchmarks::saxpy_bench<T>(
+            instance::get_compute_scheduler_ptr(), N, init_x, init_y, a, Tsize, N < (1 << 17));
     };
 
     auto benchmark = [&]() {
-        int N = (1 << 15);
+        size_t N = (1 << 15);
 
-        auto &dev_sched = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
-        auto &dev_ptr   = dev_sched.device;
-        auto &dev       = shambase::get_check_ref(dev_ptr);
+        auto &dev_ctx = shambase::get_check_ref(instance::get_compute_scheduler().ctx);
+        auto &dev_ptr = dev_ctx.device;
+        auto &dev     = shambase::get_check_ref(dev_ptr);
 
         size_t max_alloc
             = std::min<size_t>(dev.prop.max_mem_alloc_size_dev, dev.prop.global_mem_size);
-        double max_size = double(max_alloc) / (vec4_size * 4); // there is 2 allocations so /4
+        double max_size = double(max_alloc) / (Tsize * 4); // there is 2 allocations so /4
+        if (max_size >= (1 << 30)) {
+            max_size = (1 << 30);
+        }
 
-        auto result = bench_step(N);
+        auto result = bench_step(shambase::narrow_or_throw<i32>(N));
 
-        for (; N <= (1 << 30) && N <= max_size; N *= 2) {
-            auto result_new = bench_step(N);
+        for (; N <= (1 << 30) && static_cast<double>(N) <= max_size; N *= 2) {
+            result = bench_step(shambase::narrow_or_throw<i32>(N));
 
-            // std::cout << N << " " << result_new.milliseconds << " " << result_new.bandwidth
+            // std::cout << N << " " << result_new.seconds << " " << result_new.bandwidth
             //           << std::endl;
 
-            // We are kinda forced to do that as on some machine the current condition will stop
-            // basically on the worst performing case. Using instead the best one make the result
-            // more consistent.
-            if (result_new.bandwidth > result.bandwidth) {
-                result = result_new;
-            }
-
-            if (result.milliseconds > 5) {
+            if (result.seconds > 1e-3) {
                 break;
             }
         }
@@ -257,84 +335,82 @@ void shamsys::microbench::saxpy() {
     f64 sum_bw = shamalgs::collective::allreduce_sum(bw);
     f64 avg_bw = sum_bw / (f64) shamcomm::world_size();
 
+    microbench_results["saxpy_" + type_name] = sum_bw;
+
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(sum_bw);
         logger::raw_ln(
             shambase::format(
-                " - saxpy (f32_4)   : {:.3e} B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} "
-                "ms)",
-                sum_bw,
+                " - saxpy ({})   : {} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                "({:.1e} ms, {})",
+                type_name,
+                val,
+                prefix,
                 min_bw,
                 max_bw,
                 avg_bw,
-                result.milliseconds));
+                result.seconds * 1e3,
+                shambase::readable_sizeof(result.byte_used)));
     }
 }
 
-void shamsys::microbench::add_mul_rotation_f32() {
-    int N = (1 << 20);
+template<typename T>
+void shamsys::microbench::fma_chains_rotation() {
+    int N = (1 << 22);
 
-    using vec4 = sycl::vec<float, 4>;
+    auto result
+        = sham::benchmarks::fma_chains_bench<T>(instance::get_compute_scheduler_ptr(), N, 0.2);
 
-    auto result = sham::benchmarks::add_mul_bench<vec4>(
-        instance::get_compute_scheduler_ptr(),
-        N,
-        {1.0f, 1.0f, 1.0f, 1.0f},
-        {2.0f, 2.0f, 2.0f, 2.0f},
-        {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
-        {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        4,
-        500);
+    std::string type_name;
+    f64 flops_multiplier = 1;
+    if constexpr (std::is_same_v<T, f32>) {
+        type_name        = "f32";
+        flops_multiplier = 1;
+    } else if constexpr (std::is_same_v<T, f64>) {
+        type_name        = "f64";
+        flops_multiplier = 1;
+    } else if constexpr (std::is_same_v<T, f32_2>) {
+        type_name        = "f32_2";
+        flops_multiplier = 2;
+    } else if constexpr (std::is_same_v<T, f64_2>) {
+        type_name        = "f64_2";
+        flops_multiplier = 2;
+    } else if constexpr (std::is_same_v<T, f32_3>) {
+        type_name        = "f32_3";
+        flops_multiplier = 3;
+    } else if constexpr (std::is_same_v<T, f64_3>) {
+        type_name        = "f64_3";
+        flops_multiplier = 3;
+    } else if constexpr (std::is_same_v<T, f32_4>) {
+        type_name        = "f32_4";
+        flops_multiplier = 4;
+    } else if constexpr (std::is_same_v<T, f64_4>) {
+        type_name        = "f64_4";
+        flops_multiplier = 4;
+    } else {
+        throw shambase::make_except_with_loc<std::invalid_argument>("unsupported type");
+    }
 
     f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
     f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
     f64 sum_flop = shamalgs::collective::allreduce_sum(result.flops);
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
-    if (shamcomm::world_rank() == 0) {
-        logger::raw_ln(
-            shambase::format(
-                " - add_mul (f32_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
-                "({:.1e} ms, rotations = {})",
-                sum_flop,
-                min_flop,
-                max_flop,
-                avg_flop,
-                result.milliseconds,
-                result.nrotations));
-    }
-}
-
-void shamsys::microbench::add_mul_rotation_f64() {
-    int N = (1 << 20);
-
-    using vec4 = sycl::vec<double, 4>;
-
-    auto result = sham::benchmarks::add_mul_bench<vec4>(
-        instance::get_compute_scheduler_ptr(),
-        N,
-        {1.0f, 1.0f, 1.0f, 1.0f},
-        {2.0f, 2.0f, 2.0f, 2.0f},
-        {cos(2.0f), cos(2.0f), cos(2.0f), cos(2.0f)},
-        {sin(2.0f), sin(2.0f), sin(2.0f), sin(2.0f)},
-        4,
-        500);
-
-    f64 min_flop = shamalgs::collective::allreduce_min(result.flops);
-    f64 max_flop = shamalgs::collective::allreduce_max(result.flops);
-    f64 sum_flop = shamalgs::collective::allreduce_sum(result.flops);
-    f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
+    microbench_results["fma_chains_" + type_name] = sum_flop * flops_multiplier;
 
     if (shamcomm::world_rank() == 0) {
+        auto [prefix, val] = format_result(sum_flop * flops_multiplier);
         logger::raw_ln(
             shambase::format(
-                " - add_mul (f64_4) : {:.3e} flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
+                " - fma_chains ({}) : {} {}flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
                 "({:.1e} ms, rotations = {})",
-                sum_flop,
-                min_flop,
-                max_flop,
-                avg_flop,
-                result.milliseconds,
+                type_name,
+                val,
+                prefix,
+                min_flop * flops_multiplier,
+                max_flop * flops_multiplier,
+                avg_flop * flops_multiplier,
+                result.seconds * 1e3,
                 result.nrotations));
     }
 }
@@ -369,6 +445,8 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
     f64 sum_t = shamalgs::collective::allreduce_sum(t);
     f64 avg_t = sum_t / (f64) shamcomm::world_size();
 
+    microbench_results["vector_allgather_u64_" + std::to_string(el_per_rank)] = avg_t;
+
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
             shambase::format(
@@ -380,4 +458,8 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
                 max_t,
                 loops));
     }
+}
+
+const std::unordered_map<std::string, double> &shamsys::get_microbench_results() {
+    return microbench_results;
 }

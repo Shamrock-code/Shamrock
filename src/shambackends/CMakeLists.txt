@@ -39,6 +39,7 @@ endif()
 add_library(shambackends::shambackends ALIAS shambackends)
 
 target_link_libraries(shambackends PUBLIC shamcomm)
+target_link_libraries(shambackends PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(shambackends PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

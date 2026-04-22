@@ -19,14 +19,15 @@ set(Sources
     src/io.cpp
     src/logs.cpp
     src/wrapper.cpp
+    src/local_rank.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamcomm target (Shared lib)")
-add_library(shamcomm SHARED ${Sources})
+    message("-- adding shamcomm target (Shared lib)")
+    add_library(shamcomm SHARED ${Sources})
 else()
-message("-- adding shamcomm target (object lib)")
-add_library(shamcomm OBJECT ${Sources})
+    message("-- adding shamcomm target (object lib)")
+    add_library(shamcomm OBJECT ${Sources})
 endif()
 
 add_library(shamcomm::shamcomm ALIAS shamcomm)

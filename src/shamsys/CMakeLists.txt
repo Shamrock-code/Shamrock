@@ -21,14 +21,16 @@ set(Sources
         src/shamrock_smi.cpp
         src/legacy/sycl_handler.cpp
         src/legacy/sycl_mpi_interop.cpp
+        src/stacktrace_log.cpp
+        src/system_metrics.cpp
     )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shamsys target (Shared lib)")
-add_library(shamsys SHARED ${Sources})
+    message("-- adding shamsys target (Shared lib)")
+    add_library(shamsys SHARED ${Sources})
 else()
-message("-- adding shamsys target (object lib)")
-add_library(shamsys OBJECT ${Sources})
+    message("-- adding shamsys target (object lib)")
+    add_library(shamsys OBJECT ${Sources})
 endif()
 
 add_library(shamsys::shamsys ALIAS shamsys)
@@ -36,6 +38,27 @@ add_library(shamsys::shamsys ALIAS shamsys)
 target_link_libraries(shamsys PUBLIC shambackends)
 target_link_libraries(shamsys PUBLIC shamalgs) #TODO shamsys should not depends on algs
 target_link_libraries(shamsys PUBLIC shamcmdopt)
+
+if(SHAMROCK_USE_CPPTRACE)
+    target_link_libraries(shamsys PUBLIC cpptrace::cpptrace)
+    target_compile_definitions(shamsys PUBLIC -DSHAMROCK_USE_CPPTRACE)
+endif()
+
+include(CheckIncludeFileCXX)
+
+check_include_file_cxx(geopm/PlatformIO.hpp HAVE_GEOPM_HEADER)
+find_library(GEOPM_LIB geopmd)
+
+if(HAVE_GEOPM_HEADER AND GEOPM_LIB)
+    option(SHAMROCK_USE_GEOPM "use geopm tooling" Off)
+
+    message("-- SHAMROCK_USE_GEOPM is set to ${SHAMROCK_USE_GEOPM}")
+
+    if(SHAMROCK_USE_GEOPM)
+        target_link_libraries(shamsys PUBLIC ${GEOPM_LIB})
+        target_compile_definitions(shamsys PUBLIC SHAMROCK_USE_GEOPM)
+    endif()
+endif()
 
 target_include_directories(shamsys PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

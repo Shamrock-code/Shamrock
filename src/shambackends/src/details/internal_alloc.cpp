@@ -130,7 +130,8 @@ namespace sham::details {
 
     std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
-        std::string fmt = R"log(
+        return shambase::format(
+            R"log(
     World infos :
         World size = {}
         World rank = {}
@@ -143,10 +144,7 @@ namespace sham::details {
         allocated_byte_host = {}
         allocated_byte_device = {}
         allocated_byte_shared = {}
-        )log";
-
-        return shambase::format(
-            fmt,
+        )log",
             shamcomm::world_size(),
             shamcomm::world_rank(),
             dev_sched->ctx->device->dev.get_info<sycl::info::device::name>(),
@@ -159,7 +157,8 @@ namespace sham::details {
     }
 
     template<USMKindTarget target>
-    void internal_free(void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched) {
+    void internal_free(
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
         StackEntry __st{};
 
@@ -190,7 +189,9 @@ namespace sham::details {
 
     template<USMKindTarget target>
     void *internal_alloc(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment) {
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment) {
 
         StackEntry __st{};
         f64 start_time = shambase::details::get_wtime();
@@ -363,17 +364,23 @@ namespace sham::details {
 
 #ifndef DOXYGEN
     template void internal_free<host>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<host>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
     template void internal_free<device>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<device>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
     template void internal_free<shared>(
-        void *usm_ptr, size_t sz, std::shared_ptr<DeviceScheduler> dev_sched);
+        void *usm_ptr, size_t sz, const std::shared_ptr<DeviceScheduler> &dev_sched);
     template void *internal_alloc<shared>(
-        size_t sz, std::shared_ptr<DeviceScheduler> dev_sched, std::optional<size_t> alignment);
+        size_t sz,
+        const std::shared_ptr<DeviceScheduler> &dev_sched,
+        std::optional<size_t> alignment);
 #endif
 
 } // namespace sham::details

@@ -132,10 +132,10 @@ struct sham::VectorProperties<shammath::mat<T, m, n>> {
     static constexpr bool is_uint_based = std::is_same<T, u8>::value || std::is_same<T, u16>::value
                                           || std::is_same<T, u32>::value
                                           || std::is_same<T, u64>::value;
-    static constexpr bool is_int_based = std::is_same<T, i8>::value || std::is_same<T, i16>::value
-                                         || std::is_same<T, i32>::value
-                                         || std::is_same<T, i64>::value;
-    static constexpr bool has_info = is_float_based || is_int_based || is_uint_based;
+    static constexpr bool is_int_based  = std::is_same<T, i8>::value || std::is_same<T, i16>::value
+                                          || std::is_same<T, i32>::value
+                                          || std::is_same<T, i64>::value;
+    static constexpr bool has_info      = is_float_based || is_int_based || is_uint_based;
 
     static constexpr shammath::mat<T, m, n> get_min() {
         constexpr T min = shambase::get_min<T>();

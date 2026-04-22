@@ -29,7 +29,9 @@
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayerDebugDotGraph.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <utility>
 #include <variant>
 
 namespace shammodels::sph {
@@ -83,15 +85,15 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout;
 
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+        std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
         BasicSPHGhostHandler(
             PatchScheduler &sched,
             Config ghost_config,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner,
+            std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
-            : sched(sched), ghost_config(ghost_config), patch_rank_owner(patch_rank_owner),
-              xyzh_ghost_layout(xyzh_ghost_layout) {}
+            : sched(sched), ghost_config(ghost_config),
+              patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         /**
          * @brief Find interfaces and their metadata

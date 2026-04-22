@@ -27,6 +27,53 @@ if(NOT SYCL_COMPILER_IS_ACPP)
         "-DCMAKE_CXX_COMPILER=<path_to_compiler>")
 endif()
 
+function(shamrock_get_acpp_compiler_id_string out_var cxx_compiler)
+  message(STATUS "fetching acpp compiler id string from ${cxx_compiler} --version and --acpp-version")
+  # tmp var to store the output
+  set(_ver "")
+
+  execute_process(
+    COMMAND "${cxx_compiler}" --version
+    OUTPUT_VARIABLE _vo
+    ERROR_VARIABLE _ve
+    RESULT_VARIABLE _vr
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  execute_process(
+    COMMAND "${cxx_compiler}" --acpp-version
+    OUTPUT_VARIABLE _ao
+    ERROR_VARIABLE _ae
+    RESULT_VARIABLE _ar
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # print the stderr if any
+  if(_ve)
+    message(WARNING "shamrock: \"${cxx_compiler} --version\" stderr:\n${_ve}")
+  endif()
+  if(_ae)
+    message(WARNING "shamrock: \"${cxx_compiler} --acpp-version\" stderr:\n${_ae}")
+  endif()
+
+  # if it worked add the output to the tmp var
+  if(_vr EQUAL 0)
+    set(_ver "${_vo}")
+  else()
+    message(WARNING "shamrock: \"${cxx_compiler} --version\" failed (exit code ${_vr})")
+  endif()
+
+  if(_ar EQUAL 0)
+    set(_ver "${_ver}\n${_ao}")
+  else()
+    message(WARNING "shamrock: \"${cxx_compiler} --acpp-version\" failed (exit code ${_ar})")
+  endif()
+
+  set(${out_var} "${_ver}" PARENT_SCOPE)
+endfunction()
+
+shamrock_get_acpp_compiler_id_string(SHAMROCK_COMPILER_ID_STRING "${CMAKE_CXX_COMPILER}")
+
 variable_watch(__CMAKE_CXX_COMPILER_OUTPUT)
 
 if(NOT DEFINED HAS_SYCL2020_HEADER)
@@ -36,7 +83,7 @@ if(NOT DEFINED HAS_SYCL2020_HEADER)
 endif()
 
 if(NOT HAS_SYCL2020_HEADER)
-    message(FATAL_ERROR "Acpp can not compile a simple exemple including <sycl/sycl.hpp> \n Logs: ${TRY_COMPILE_OUTPUT}")
+    message(FATAL_ERROR "Acpp can not compile a simple example including <sycl/sycl.hpp> \n Logs: ${TRY_COMPILE_OUTPUT}")
 endif()
 
 

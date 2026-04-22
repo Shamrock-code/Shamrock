@@ -100,7 +100,7 @@ namespace shambase::details {
      */
     inline void clear_chrome_entry() { profile_data_chrome.clear(); }
 
-    void dump_profilings_chrome(std::string process_prefix, u32 world_rank) {
+    void dump_profilings_chrome(const std::string &process_prefix, u32 world_rank) {
 
         // Open the file for writing
         std::ofstream outfile(process_prefix + std::to_string(world_rank));
@@ -151,8 +151,8 @@ namespace shambase::details {
      * and the name of the entry.
      */
     struct ProfileEntry {
-        f64 time_start;         ///< Start time of the profiling entry (in sec since programm start)
-        f64 time_end;           ///< End time of the profiling entry (in sec since programm start)
+        f64 time_start;         ///< Start time of the profiling entry (in sec since program start)
+        f64 time_end;           ///< End time of the profiling entry (in sec since program start)
         std::string entry_name; ///< Name of the profiling entry
 
         /**
@@ -197,7 +197,7 @@ namespace shambase::details {
         clear_chrome_entry();
     }
 
-    void dump_profilings(std::string process_prefix, u32 world_rank) {
+    void dump_profilings(const std::string &process_prefix, u32 world_rank) {
         std::ofstream outfile(process_prefix + std::to_string(world_rank));
         outfile << "[";
 

@@ -88,7 +88,7 @@ namespace shamalgs::primitives {
             return {"sum_reduction", ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow is_all_true implementation : {}", u32(impl)));
+            shambase::format("unknown is_all_true implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_is_all_true() {

@@ -42,6 +42,7 @@
 #include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
@@ -106,6 +107,8 @@ struct shammodels::gsph::SolverConfig {
     Tscal gpart_mass{0}; ///< The mass of each gas particle (must be set before use)
 
     CFLConfig<Tscal> cfl_config; ///< CFL configuration
+
+    PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -374,6 +377,7 @@ namespace shammodels::gsph {
             {"solver_type", "gsph"},
             {"kernel_id", kernel_id},
             {"type_id", type_id},
+            {"scheduler_config", p.scheduler_conf},
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
             {"unit_sys", p.unit_sys},
@@ -418,6 +422,7 @@ namespace shammodels::gsph {
             shamrock::get_to_if_contains(j, key, value, has_used_defaults);
         };
 
+        _get_to_if_contains("scheduler_config", p.scheduler_conf);
         _get_to_if_contains("gpart_mass", p.gpart_mass);
         _get_to_if_contains("cfl_config", p.cfl_config);
         _get_to_if_contains("unit_sys", p.unit_sys);

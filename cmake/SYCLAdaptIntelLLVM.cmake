@@ -23,6 +23,37 @@ if(NOT SYCL_COMPILER_IS_INTEL_LLVM)
         "intel llvm should have sycl header and defines SYCL_IMPLEMENTATION_ONEAPI, this is not the case here")
 endif()
 
+
+function(shamrock_get_intel_llvm_compiler_id_string out_var cxx_compiler)
+  message(STATUS "fetching intel llvm compiler id string from ${cxx_compiler} --version")
+  # tmp var to store the output
+  set(_ver "")
+
+  execute_process(
+    COMMAND "${cxx_compiler}" --version
+    OUTPUT_VARIABLE _vo
+    ERROR_VARIABLE _ve
+    RESULT_VARIABLE _vr
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  # print the stderr if any
+  if(_ve)
+    message(WARNING "shamrock: \"${cxx_compiler} --version\" stderr:\n${_ve}")
+  endif()
+
+  # if it worked add the output to the tmp var
+  if(_vr EQUAL 0)
+    set(_ver "${_vo}")
+  else()
+    message(WARNING "shamrock: \"${cxx_compiler} --version\" failed (exit code ${_vr})")
+  endif()
+
+  set(${out_var} "${_ver}" PARENT_SCOPE)
+endfunction()
+
+shamrock_get_intel_llvm_compiler_id_string(SHAMROCK_COMPILER_ID_STRING "${CMAKE_CXX_COMPILER}")
+
 set(SYCL_COMPILER "INTEL_LLVM")
 
 set(SYCL2020_FEATURE_REDUCTION ON)

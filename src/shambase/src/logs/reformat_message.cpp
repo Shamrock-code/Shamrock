@@ -49,7 +49,10 @@ namespace shambase::logs {
      * @return A formatted log message
      */
     std::string reformat_all(
-        std::string color, const char *name, std::string module_name, std::string content) {
+        const std::string &color,
+        const char *name,
+        const std::string &module_name,
+        const std::string &content) {
         if (shambase::logs::_reformat_all == nullptr) {
             // old form
             return "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)
@@ -68,7 +71,10 @@ namespace shambase::logs {
      * @return A formatted log message
      */
     std::string reformat_simple(
-        std::string color, const char *name, std::string module_name, std::string content) {
+        const std::string &color,
+        const char *name,
+        const std::string &module_name,
+        const std::string &content) {
 
         if (shambase::logs::_reformat_simple == nullptr) {
             // old form

@@ -18,7 +18,7 @@
 
 namespace sham {
 
-    auto exception_handler = [](sycl::exception_list exceptions) {
+    auto exception_handler = [](const sycl::exception_list &exceptions) {
         for (std::exception_ptr const &e : exceptions) {
             try {
                 std::rethrow_exception(e);
@@ -61,11 +61,7 @@ namespace sham {
         }
 
         auto &dev = *device;
-        if (dev.mpi_prop.is_mpi_direct_capable) {
-            return true;
-        } else {
-            return false;
-        }
+        return dev.mpi_prop.is_mpi_direct_capable;
     }
 
 } // namespace sham

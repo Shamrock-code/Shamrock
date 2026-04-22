@@ -23,3 +23,6 @@
 [submodule "external/mdspan"]
 	path = external/mdspan
 	url = https://github.com/kokkos/mdspan.git
+[submodule "external/cpptrace"]
+	path = external/cpptrace
+	url = https://github.com/jeremy-rifkin/cpptrace.git

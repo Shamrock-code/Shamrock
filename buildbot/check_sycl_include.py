@@ -37,12 +37,12 @@ def write_file(fname, source):
     f.close()
 
 
-def should_corect(source):
+def should_correct(source):
     if "#include <hipSYCL" in source:
         return True
 
 
-def autocorect(source):
+def autocorrect(source):
     source = re.sub(r"#include <hipSYCL(.+)\n", r"#include <shambackends/sycl.hpp>\n", source)
     return source
 
@@ -53,18 +53,18 @@ for fname in file_list:
     if should_check_file(fname):
         source = load_file(fname)
 
-        if should_corect(source):
+        if should_correct(source):
             if not has_found_errors:
                 print(" => \033[1;34mNon standard SYCL #include found \033[0;0m: ")
-                print("The check found so instances of sycl inclusion using non standard headers")
+                print("The check found some instances of sycl inclusion using non standard headers")
                 print("Please remove instances of :")
                 print("  #include <hipSYCL/*")
                 print()
-                print("Trying autocorect : ")
+                print("Trying autocorrect : ")
                 has_found_errors = True
 
             print(" -", fname)
-            source = autocorect(source)
+            source = autocorrect(source)
 
             write_file(fname, source)
 
@@ -89,8 +89,8 @@ At some point we will refer to a guide in the doc about this
 
 if has_found_errors:
     make_check_pr_report()
-    print("Autocorect done !")
+    print("Autocorrect done !")
     print()
-    sys.exit("Exitting with check failure")
+    sys.exit("Exiting with check failure")
 else:
     print(" => \033[1;34mSYCL #includes status \033[0;0m: OK !")

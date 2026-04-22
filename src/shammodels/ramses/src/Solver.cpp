@@ -25,13 +25,13 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shammodels/ramses/modules/ComputeCoordinates.hpp"
 #include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
-#include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
@@ -42,10 +42,12 @@
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shammodels/ramses/modules/SumFluxDust.hpp"
+#include "shammodels/ramses/modules/SumFluxHydro.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -57,6 +59,7 @@
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
@@ -131,7 +134,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             return pdat.pdl();
         };
 
-        shamrock::LegacyVtkWritter writer(filename.data, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(filename.data, true, shamrock::UnstructuredGrid);
 
         u32 field_count = get_field_count();
 
@@ -346,8 +349,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shamrock::solvergraph::DDSharedScalar<modules::GhostLayerCandidateInfos>>(
         "ghost_layers_candidates", "ghost_layers_candidates");
 
-    storage.patch_rank_owner
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) -> u32 {
+            return scheduler().get_patch_rank_owner(patch_id);
+        },
+        "patch_rank_owner",
+        "rank");
 
     storage.source_patches = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
         "source_patches", "P_{\\rm source}");
@@ -965,6 +972,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
     }
 
+    if (solver_config.amr_mode.need_amr_level_compute()) { // compute block amr level in patch
+        modules::ComputeAMRLevel<TgridVec> node_amr_level{};
+        node_amr_level.set_edges(
+            storage.block_counts,
+            storage.level0_size,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.amr_block_levels);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_amr_level)>(std::move(node_amr_level)));
+    }
+
     if (solver_config.should_compute_rho_mean()) {
         modules::NodeComputeMass<Tvec, TgridVec> node{AMRBlock::block_size};
         node.set_edges(
@@ -1409,6 +1428,65 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    {
+        modules::NodeSumFluxHydro<Tvec, TgridVec> node{
+            AMRBlock::block_size, solver_config.grid_coord_to_pos_fact};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_face_xp,
+            storage.flux_rho_face_xm,
+            storage.flux_rho_face_yp,
+            storage.flux_rho_face_ym,
+            storage.flux_rho_face_zp,
+            storage.flux_rho_face_zm,
+            storage.flux_rhov_face_xp,
+            storage.flux_rhov_face_xm,
+            storage.flux_rhov_face_yp,
+            storage.flux_rhov_face_ym,
+            storage.flux_rhov_face_zp,
+            storage.flux_rhov_face_zm,
+            storage.flux_rhoe_face_xp,
+            storage.flux_rhoe_face_xm,
+            storage.flux_rhoe_face_yp,
+            storage.flux_rhoe_face_ym,
+            storage.flux_rhoe_face_zp,
+            storage.flux_rhoe_face_zm,
+            storage.dtrho,
+            storage.dtrhov,
+            storage.dtrhoe);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.is_dust_on()) {
+        modules::NodeSumFluxDust<Tvec, TgridVec> node{
+            AMRBlock::block_size,
+            solver_config.grid_coord_to_pos_fact,
+            solver_config.dust_config.ndust};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_dust_face_xp,
+            storage.flux_rho_dust_face_xm,
+            storage.flux_rho_dust_face_yp,
+            storage.flux_rho_dust_face_ym,
+            storage.flux_rho_dust_face_zp,
+            storage.flux_rho_dust_face_zm,
+            storage.flux_rhov_dust_face_xp,
+            storage.flux_rhov_dust_face_xm,
+            storage.flux_rhov_dust_face_yp,
+            storage.flux_rhov_dust_face_ym,
+            storage.flux_rhov_dust_face_zp,
+            storage.flux_rhov_dust_face_zm,
+            storage.dtrho_dust,
+            storage.dtrhov_dust);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -1461,12 +1539,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.simulation_volume).value = Vsim;
     }
 
-    // give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
+    /// patch_rank_owner is automatically updated since it is just a lambda
 
     scheduler().for_each_patchdata_nonempty(
         [&](const shamrock::patch::Patch &p, shamrock::patch::PatchDataLayer &pdat) {
@@ -1499,7 +1572,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         global_patch_boxes_edge.values = {};
 
-        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
             auto pbounds = transf.to_obj_coord(p);
             global_patch_boxes_edge.values.add_obj(
                 p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
@@ -1514,7 +1587,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         local_patch_ids.data = {};
 
-        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch &p) {
             local_patch_ids.data.push_back(p.id_patch);
         });
     }
@@ -1526,13 +1599,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // Solvergraph evaluation
     {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
-    }
-
-    // compute dt fields
-    modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on()) {
-        dt_compute.compute_dt_dust_fields();
     }
 
     // RK2 + flux lim
@@ -1628,7 +1694,7 @@ template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 

@@ -107,7 +107,7 @@ namespace shambindings {
 
         std::vector<std::string> possible_paths = {};
 
-        for (auto path : get_site_packages()) {
+        for (const auto &path : get_site_packages()) {
             possible_paths.push_back(path);
         }
 
@@ -115,7 +115,7 @@ namespace shambindings {
         possible_paths.push_back(pyshamrock_path_relative1);
         possible_paths.push_back(pyshamrock_path_relative2);
 
-        for (auto path : configure_time_pylib_paths_str()) {
+        for (const auto &path : configure_time_pylib_paths_str()) {
             possible_paths.push_back(path);
         }
 
@@ -128,7 +128,7 @@ namespace shambindings {
 
         if (do_print) {
             shambase::println("possible pylib paths (search order) : ");
-            for (auto path : possible_paths) {
+            for (const auto &path : possible_paths) {
                 shambase::println("  " + path);
             }
         }

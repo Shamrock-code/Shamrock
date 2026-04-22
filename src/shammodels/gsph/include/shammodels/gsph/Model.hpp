@@ -78,7 +78,16 @@ namespace shammodels::gsph {
         // Setup functions
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        void init_scheduler(u32 crit_split, u32 crit_merge);
+        /// Initialise the model and all the related data structures (patch scheduler in particular)
+        void init();
+
+        /// Old way of doing it, for backward compatibility it just overrides the values in the
+        /// config before calling init()
+        inline void init_scheduler(u32 crit_split, u32 crit_merge) {
+            solver.solver_config.scheduler_conf.split_load_value = crit_split;
+            solver.solver_config.scheduler_conf.merge_load_value = crit_merge;
+            init();
+        }
 
         template<std::enable_if_t<dim == 3, int> = 0>
         inline Tvec get_box_dim_fcc_3d(Tscal dr, u32 xcnt, u32 ycnt, u32 zcnt) {
@@ -334,6 +343,9 @@ namespace shammodels::gsph {
 
         inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
         inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline shamsys::SystemMetrics solver_logs_last_system_metrics() {
+            return solver.solve_logs.get_last_system_metrics();
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // I/O (uses shared ShamrockDump mechanism like SPH)

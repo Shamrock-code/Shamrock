@@ -14,6 +14,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -25,6 +26,7 @@
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
@@ -79,7 +81,7 @@ namespace shamcmdopt {
      * @return false  the option is not registered
      */
     bool is_name_registered(const std::string_view &name) {
-        for (auto opt : registered_opts) {
+        for (const auto &opt : registered_opts) {
             if (opt.name == name) {
                 return true;
             }
@@ -98,7 +100,7 @@ namespace shamcmdopt {
         for (auto arg : args) {
             if (arg.rfind("-", 0) == 0) {
                 if (!is_name_registered(arg)) {
-                    fmt::println(
+                    shambase::println(
                         err_str() + " opts argument : " + std::string(arg) + " is not registered");
                     err_buf += "\"";
                     err_buf += arg;
@@ -127,7 +129,7 @@ namespace shamcmdopt {
         check_init(); // We must init the cmdopt before checking if an option is there
 
         if (!is_name_registered(option_name)) {
-            fmt::println(
+            shambase::println(
                 err_str() + " opts argument :" + std::string(option_name) + " is not registered");
             throw ShamCmdOptException(
                 std::string(option_name) + " option is not registered in ::opts");
@@ -145,7 +147,7 @@ namespace shamcmdopt {
         check_init();
 
         if (!is_name_registered(option_name)) {
-            fmt::println(
+            shambase::println(
                 err_str() + " opts argument :" + std::string(option_name) + "is not registered");
             throw ShamCmdOptException(
                 std::string(option_name) + " option is not registered in ::opts");
@@ -169,7 +171,7 @@ namespace shamcmdopt {
             }
         }
 
-        registered_opts.push_back({name, args, description});
+        registered_opts.push_back({name, std::move(args), std::move(description)});
     }
 
     /// supplied argc from main
@@ -206,7 +208,7 @@ namespace shamcmdopt {
     }
 
     void print_help() {
-        fmt::println(shambase::format("executable : {}", executable_name));
+        shambase::println(shambase::format("executable : {}", executable_name));
 
         fmt::println("\nUsage :");
 
@@ -219,19 +221,13 @@ namespace shamcmdopt {
 
             std::string arg_print = arg.value_or("");
 
-            fmt::println(
+            shambase::println(
                 shambase::format_printf(
                     "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
         }
         print_help_env_var();
     }
 
-    bool is_help_mode() {
-        if (has_option("--help")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
+    bool is_help_mode() { return has_option("--help"); }
 
 } // namespace shamcmdopt

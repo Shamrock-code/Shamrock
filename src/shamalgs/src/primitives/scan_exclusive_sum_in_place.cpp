@@ -9,6 +9,7 @@
 
 /**
  * @file scan_exclusive_sum_in_place.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implementation of the in-place exclusive scan primitive.
  */
@@ -20,6 +21,7 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
+#include <numeric>
 
 #if defined(__has_include)
     #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)
@@ -116,7 +118,7 @@ namespace shamalgs::primitives {
     };
 
     EXSCAN_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
-#ifdef __MACH__     // decoupled lookback perf on mac os is awfull
+#ifdef __MACH__     // decoupled lookback perf on mac os is awful
     #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
         return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
     #else
@@ -177,7 +179,7 @@ namespace shamalgs::primitives {
         }
 
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow scan_exclusive_sum_in_place implementation : {}", u32(impl)));
+            shambase::format("unknown scan_exclusive_sum_in_place implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_scan_exclusive_sum_in_place() {

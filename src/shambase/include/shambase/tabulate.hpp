@@ -17,19 +17,25 @@
  */
 
 #include "shambase/aliases_int.hpp"
+#include "shambase/exception.hpp"
 #include "shambase/string.hpp"
+#include <cstddef>
+#include <stdexcept>
 #include <string>
 #include <variant>
 #include <vector>
 
 namespace shambase {
 
-    template<size_t cols_count>
     struct table {
+
+        size_t cols_count;
+        table(size_t column_count) : cols_count(column_count) {}
+
         struct rule {};
         struct double_rule {};
         struct rulled_data {
-            std::array<std::string, cols_count> colnames;
+            std::vector<std::string> colnames;
         };
         enum positionning {
             left,
@@ -37,7 +43,7 @@ namespace shambase {
             center,
         };
         struct data {
-            std::array<std::string, cols_count> cols;
+            std::vector<std::string> cols;
             positionning position;
         };
 
@@ -45,15 +51,27 @@ namespace shambase {
 
         void add_rule() { table_lines.push_back(rule{}); }
         void add_double_rule() { table_lines.push_back(double_rule{}); }
-        void add_rulled_data(std::array<std::string, cols_count> colnames) {
+        void add_rulled_data(const std::vector<std::string> &colnames) {
+            if (colnames.size() != cols_count) {
+                throw make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "the number of column does not match colnames.size() != cols_count ({} != {})",
+                    colnames.size(),
+                    cols_count));
+            }
             table_lines.push_back(rulled_data{colnames});
         }
-        void add_data(std::array<std::string, cols_count> cols, positionning position) {
+        void add_data(const std::vector<std::string> &cols, positionning position) {
+            if (cols.size() != cols_count) {
+                throw make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "the number of column does not match cols.size() != cols_count ({} != {})",
+                    cols.size(),
+                    cols_count));
+            }
             table_lines.push_back(data{cols, position});
         }
 
-        std::array<size_t, cols_count> compute_widths() {
-            std::array<size_t, cols_count> widths{};
+        std::vector<size_t> compute_widths() {
+            std::vector<size_t> widths(cols_count);
             for (auto &line : table_lines) {
                 if (data *data_line = std::get_if<data>(&line)) {
                     for (u32 i = 0; i < cols_count; i++) {
@@ -70,7 +88,7 @@ namespace shambase {
 
         std::string render() {
 
-            std::array<size_t, cols_count> widths = compute_widths();
+            std::vector<size_t> widths = compute_widths();
 
             std::string print = "";
             for (auto &line : table_lines) {

@@ -32,34 +32,5 @@ namespace shamcomm {
     const std::optional<std::string> PALS_LOCAL_RANKID
         = shamcmdopt::getenv_str("PALS_LOCAL_RANKID");
 
-    inline std::optional<u32> get_local_rank() {
-
-        if (MV2_COMM_WORLD_LOCAL_RANK) {
-            return std::atoi(MV2_COMM_WORLD_LOCAL_RANK->c_str());
-        }
-
-        if (OMPI_COMM_WORLD_LOCAL_RANK) {
-            return std::atoi(OMPI_COMM_WORLD_LOCAL_RANK->c_str());
-        }
-
-        if (MPI_LOCALRANKID) {
-            return std::atoi(MPI_LOCALRANKID->c_str());
-        }
-
-        if (SLURM_PROCID) {
-            return std::atoi(SLURM_PROCID->c_str());
-        }
-
-        if (LOCAL_RANK) {
-            return std::atoi(LOCAL_RANK->c_str());
-        }
-
-        if (PALS_LOCAL_RANKID) {
-            return std::atoi(PALS_LOCAL_RANKID->c_str());
-        }
-
-        return {};
-    }
-
     const std::optional<std::string> PSM2_CUDA = shamcmdopt::getenv_str("PSM2_CUDA");
 } // namespace shamcomm

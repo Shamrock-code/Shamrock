@@ -21,7 +21,7 @@
 
 namespace shamcomm {
 
-    void open_reset_file(MPI_File &fh, std::string fname) {
+    void open_reset_file(MPI_File &fh, const std::string &fname) {
 
         int rc = MPI_File_open(
             MPI_COMM_WORLD,
@@ -49,7 +49,7 @@ namespace shamcomm {
         }
     }
 
-    void open_read_only_file(MPI_File &fh, std::string fname) {
+    void open_read_only_file(MPI_File &fh, const std::string &fname) {
         MPICHECK(MPI_File_open(
             MPI_COMM_WORLD,
             fname.c_str(),

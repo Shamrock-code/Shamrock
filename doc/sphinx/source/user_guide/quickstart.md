@@ -345,6 +345,10 @@ You should see a figure like:
 The `--rscript` flag means run-scripts. In Shamrock since everything goes through Python your run will be a Python script, hence the name "run script". Here it is a benchmark of one of Shamrock's algorithms.
 :::
 
+:::{note}
+It is normal for the figures to vary slightly between runs. This is a benchmark of the exclusive scans implemented in Shamrock, which are quite fast and therefore subject to some run-to-run variability. On CPU, this is especially noticeable depending on what else is using the memory bandwidth.
+:::
+
 ### Python interpreter + Ipython
 
 :::::{warning}

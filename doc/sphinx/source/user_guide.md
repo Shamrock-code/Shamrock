@@ -8,5 +8,6 @@ Welcome to the user guide
 
 user_guide/quickstart.md
 user_guide/python_venv.md
+user_guide/use_on_gpu.md
 user_guide/envs.md
 ```

@@ -12,6 +12,8 @@ I will assume that you want to compile it from source (as most probably do anywa
 - [Homebrew package](./quickstart/install_brew.md) (Homebrew package, precompiled as well)
 - [Docker container](./quickstart/install_docker.md) (Fastest but not the most convenient)
 
+If you only want to use it and never modify it go to any one the links above for the packaged versions.
+
 ## Prerequisite
 
 ::::{tab-set}

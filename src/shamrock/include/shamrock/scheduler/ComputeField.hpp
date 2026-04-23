@@ -140,7 +140,7 @@ namespace shamrock {
 
             if (!bool(nvar)) {
                 shambase::throw_with_loc<std::runtime_error>(
-                    "you cannot querry this function when you have no fields");
+                    "you cannot query this function when you have no fields");
             }
 
             return *nvar;

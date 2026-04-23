@@ -527,7 +527,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
         split_patches(split_rq);
 
         // update packing index
-        // same operation on evey cluster nodes
+        // same operation on every cluster nodes
         set_patch_pack_values(merge_rq);
 
         // update patch list
@@ -679,7 +679,7 @@ void check_locality_t(PatchScheduler &sched) {
     });
 }
 
-void PatchScheduler::check_patchdata_locality_corectness() {
+void PatchScheduler::check_patchdata_locality_correctness() {
 
     StackEntry stack_loc{};
 

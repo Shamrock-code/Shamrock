@@ -151,8 +151,8 @@ namespace shambase::details {
      * and the name of the entry.
      */
     struct ProfileEntry {
-        f64 time_start;         ///< Start time of the profiling entry (in sec since programm start)
-        f64 time_end;           ///< End time of the profiling entry (in sec since programm start)
+        f64 time_start;         ///< Start time of the profiling entry (in sec since program start)
+        f64 time_end;           ///< End time of the profiling entry (in sec since program start)
         std::string entry_name; ///< Name of the profiling entry
 
         /**

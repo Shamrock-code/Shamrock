@@ -19,5 +19,5 @@ module load boost/gnu/1.81.0
 
 module list
 
-mpirun ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/sph_weak_scale_test.py
+mpirun ./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../examples/benchmarks/sph_weak_scale_test.py
 ```

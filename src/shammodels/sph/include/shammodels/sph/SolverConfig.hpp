@@ -143,7 +143,7 @@ namespace shammodels::sph {
         inline u32 get_dust_nvar() {
             if (None *cfg = std::get_if<None>(&current_mode)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "Querrying a dust nvar with no dust as config is ... discutable ...");
+                    "Querying a dust nvar with no dust as config is ... discutable ...");
                 return 0;
             } else if (MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
                 return cfg->ndust;

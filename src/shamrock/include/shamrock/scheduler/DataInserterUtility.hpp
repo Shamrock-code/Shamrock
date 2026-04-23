@@ -121,12 +121,12 @@ namespace shamrock {
 
             shambase::Timer treatrib;
             treatrib.start();
-            // move data into the corect patches
+            // move data into the correct patches
             SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
             ReattributeDataUtility reatrib(sched);
             sptree.attach_buf();
             reatrib.reatribute_patch_objects(sptree, main_field_name);
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             treatrib.end();
             if (shamcomm::world_rank() == 0) {

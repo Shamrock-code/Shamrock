@@ -27,14 +27,12 @@ def selector_cpp(fname):
     return bool(pattern.match(fname))
 
 
-licence_cmake = R"""## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------"""
+licence_cmake = R"""# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~"""
 
 
 def selector_cmake(fname):
@@ -122,6 +120,6 @@ if len(missing_licence) > 0:
     for i in missing_licence:
         print(" -", i.split(abs_proj_dir)[-1])
 
-    sys.exit("Missing liscence for some source files")
+    sys.exit("Missing license for some source files")
 else:
     print(" => \033[1;34mLicense status \033[0;0m: OK !")

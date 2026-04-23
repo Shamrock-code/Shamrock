@@ -1,11 +1,9 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 message("   ---- CPPTRACE section ----")
 
@@ -23,7 +21,9 @@ if(SHAMROCK_USE_CPPTRACE)
     ### CPPTRACE
     ###############################################################################
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/cpptrace 829d06a054bf8365750fba17c0520f1267cd5a2d)
+    _check_git_submodule_cloned(
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/cpptrace 829d06a054bf8365750fba17c0520f1267cd5a2d
+    )
 
     set(CPPTRACE_INHERIT_HOST_STANDARD On)
     add_subdirectory(external/cpptrace)

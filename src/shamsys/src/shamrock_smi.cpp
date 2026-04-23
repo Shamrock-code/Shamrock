@@ -163,7 +163,7 @@ namespace shamsys {
             sham::Device &dev
                 = shambase::get_check_ref(instance::get_compute_scheduler().ctx->device);
 
-            std::string DeviceName = dev.dev.get_info<sycl::info::device::name>();
+            std::string DeviceName = dev.prop.name;
 
             auto nolimit_if_too_large = [](u64 sz) -> std::string {
                 if (sz < u32_max) {

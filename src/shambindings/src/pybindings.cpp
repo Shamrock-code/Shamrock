@@ -48,7 +48,7 @@ void py_func_flush_func() {}
 /**
  * @brief Statically initialized python module init function list
  * We use a unique pointer to ensure that the vector is not reinitialized
- * during programm init which would empty the function list otherwise
+ * during program init which would empty the function list otherwise
  *
  * This behavior was observed when building shamrock using object libraries
  * using the unique_ptr fixes it

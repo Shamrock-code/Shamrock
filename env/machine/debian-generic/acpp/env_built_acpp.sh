@@ -1,6 +1,6 @@
 # Everything before this line will be provided by the new-env script
 
-if which ccache &> /dev/null; then
+if which ccache &>/dev/null; then
     export CCACHE_CMAKE_ARG="-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
     echo " ----- ccache found, using it ----- "
 else
@@ -12,6 +12,7 @@ export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
+export ACPP_DEBUG_LEVEL=0
 
 function setupcompiler {
     clone_acpp || return

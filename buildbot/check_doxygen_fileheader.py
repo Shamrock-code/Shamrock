@@ -44,7 +44,7 @@ for fname in file_list:
 import re
 
 
-def autocorect(source, filename):
+def autocorrect(source, filename):
     do_replace = not (("@file " + filename) in source) and (" * @file " in source)
 
     source = re.sub(r" \* @file (.+)\n", r" * @file " + filename + "\n", source)
@@ -52,7 +52,7 @@ def autocorect(source, filename):
     return do_replace, source
 
 
-def run_autocorect():
+def run_autocorrect():
     for fname in file_list:
         if (not fname.endswith(".cpp")) and (not fname.endswith(".hpp")):
             continue
@@ -74,10 +74,10 @@ def run_autocorect():
         res = has_header(source, os.path.basename(fname))
 
         if not res:
-            change, source = autocorect(source, os.path.basename(fname))
+            change, source = autocorrect(source, os.path.basename(fname))
 
             if change:
-                print("autocorect : ", fname.split(abs_proj_dir)[-1])
+                print("autocorrect : ", fname.split(abs_proj_dir)[-1])
                 f = open(fname, "w")
                 f.write(source)
                 f.close()
@@ -141,7 +141,7 @@ if len(missing_doxygenfilehead) > 0:
     """
     )
 
-    run_autocorect()
+    run_autocorrect()
     make_check_pr_report()
 
     sys.exit("Missing doxygen header for some source files")

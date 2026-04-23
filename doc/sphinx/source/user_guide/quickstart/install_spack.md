@@ -16,4 +16,4 @@ Simply do:
 spack load shamrock
 ```
 
-After this shamrock will be available both as a programm and as a python lib.
+After this shamrock will be available both as a program and as a python lib.

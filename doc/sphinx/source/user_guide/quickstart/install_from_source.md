@@ -106,7 +106,7 @@ Activate the workspace, which will define some utility bash functions:
 source ./activate
 ```
 
-For exemple you have access to:
+For example you have access to:
 
  - `setupcompiler` : which setup the compiler
  - `updatecompiler` : which update the compiler then recompile it

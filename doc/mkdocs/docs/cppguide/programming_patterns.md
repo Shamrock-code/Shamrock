@@ -1,4 +1,4 @@
-## Programming paterns
+## Programming patterns
 
 # Implementation selection
 

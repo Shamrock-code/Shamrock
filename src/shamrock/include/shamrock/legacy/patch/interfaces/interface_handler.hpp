@@ -27,7 +27,7 @@
 #include "interface_handler_impl.hpp"
 #include "interface_handler_impl/interface_handler_impl_list.hpp"
 #include "interface_handler_impl/interface_handler_impl_tree.hpp"
-#include "shamrock/legacy/patch/utility/sphpatch.hpp" // TODO remove sph dependancy
+#include "shamrock/legacy/patch/utility/sphpatch.hpp" // TODO remove sph dependency
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"

@@ -53,7 +53,7 @@
 #include "shammodels/ramses/modules/TimeIntegratorSelfGravity.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
@@ -144,7 +144,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             return pdat.pdl();
         };
 
-        shamrock::LegacyVtkWritter writer(filename.data, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(filename.data, true, shamrock::UnstructuredGrid);
 
         u32 field_count = get_field_count();
 
@@ -1962,7 +1962,7 @@ template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 

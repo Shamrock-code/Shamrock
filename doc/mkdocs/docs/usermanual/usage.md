@@ -10,14 +10,14 @@ executable : ./shamrock
 
 Usage :
 --benchmark-mpi                 : micro benchmark for MPI
---color                         : force colored ouput
+--color                         : force colored output
 --feenableexcept                 : Enable FPE exceptions
 --force-dgpu-off                 : for direct mpi comm off
 --force-dgpu-on                 : for direct mpi comm on
 --help                          : show this message
 --ipython                       : run shamrock in Ipython mode
 --loglevel      (logvalue)      : specify a log level
---nocolor                       : disable colored ouput
+--nocolor                       : disable colored output
 --pypath        (sys.path)      : python sys.path to set
 --pypath-from-bin (python binary) : set sys.path from python binary
 --rscript       (filepath)      : run shamrock with python runscirpt
@@ -112,9 +112,9 @@ import shamrock
 In [1]:
 ```
 
-From that point just type `ìmport shamrock` in that Ipython terminal to initialise the python interoperability.
+From that point just type `import shamrock` in that Ipython terminal to initialise the python interoperability.
 
-For exemple you can querry informations about the status of the code :
+For example you can query information about the status of the code :
 ```py
 In [1]: import shamrock
 
@@ -127,7 +127,7 @@ In [2]: print(shamrock.get_git_info())
 
 ## Running a runscript
 
-An other possibility (the one that is the most used also) is to start a runscript, which is just a python script starting that will be executed by shamrock, for exemple this is a very basic script that get the SPH model with M6 kernel and just start the patch scheduler on it.
+Another possibility (the one that is the most used also) is to start a runscript, which is just a python script that will be executed by shamrock, for example this is a very basic script that gets the SPH model with M6 kernel and just starts the patch scheduler on it.
 
 ```py
 import shamrock
@@ -148,20 +148,20 @@ model.init_scheduler(int(1e7),1)
 
 ## Running on multiple nodes
 
-For exemple on a cluster using OARsub the command to run
+For example on a cluster using OARsub the command to run
 
 ```sh
 mpirun -machinefile $OAR_NODEFILE --bind-to socket -npernode 2 sh runscript.sh
 ```
 
-Here `mpirun` is the standard command to start a program using MPI (to start multiple process that can work together using MPI library). `-machinefile` is used to specify the layout of the nodes that will be used by MPI (if you have reserved 10 nodes for exemple this is the list of nodes available). Starting from OpenMPI 4 `--bind-to` specify the list of CPU cores that are used by each process started by MPI, here `--bind-to socket` tell MPI that each process should be attach to a socket. On the machine used is the exemple there are 2 CPUs per nodes therefor to start one process per CPU one should use `--bind-to socket -npernode 2`, where a socket refer to the "slot" where the CPU is installed (2 on this system). Here `sh runscript.sh` is just the command launched by each process here runscript is :
+Here `mpirun` is the standard command to start a program using MPI (to start multiple processes that can work together using the MPI library). `-machinefile` is used to specify the layout of the nodes that will be used by MPI (if you have reserved 10 nodes for example, this is the list of available nodes). Starting from OpenMPI 4, `--bind-to` specifies the list of CPU cores that are used by each process started by MPI; here `--bind-to socket` tells MPI that each process should be attached to a socket. On the machine used in the example, there are 2 CPUs per node; therefore, to start one process per CPU, one should use `--bind-to socket -npernode 2`, where a socket refers to the "slot" where the CPU is installed (2 on this system). Here `sh runscript.sh` is just the command launched by each process; the runscript is :
 ```sh
 export ACPP_DEBUG_LEVEL=0
 export LD_LIBRARY_PATH=/grid5000/spack/v1/opt/spack/linux-debian11-x86_64_v2/gcc-10.4.0/llvm-13.0.1-i53qugtbmlvnfi6tppnc7bresushxg2j/lib:$LD_LIBRARY_PATH
 export OMP_SCHEDULE="dynamic"
 export OMP_NUM_THREADS=32
 
-./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../exemples/spherical_wave.py
+./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript ../examples/spherical_wave.py
 ```
 
 Sadly hardware and software may differ greatly from clusters to clusters see [Cluster](cluster.md) for details on known clusters.

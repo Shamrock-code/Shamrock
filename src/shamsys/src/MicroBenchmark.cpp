@@ -32,6 +32,12 @@
 #include <stdexcept>
 #include <vector>
 
+namespace {
+
+    std::unordered_map<std::string, double> microbench_results = {};
+
+}
+
 namespace shamsys::microbench {
     /// MPI point-to-point bandwidth benchmark
     void p2p_bandwidth(u32 wr_sender, u32 wr_receiv);
@@ -65,6 +71,7 @@ namespace shamsys::microbench {
         }
         return {prefix, shambase::format("{:.3}", val_out)};
     }
+
 } // namespace shamsys::microbench
 
 void shamsys::run_micro_benchmark() {
@@ -153,8 +160,12 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
 
     } while (shamalgs::collective::allreduce_min(t) < 1);
 
+    f64 bw = f64(length * loops) / t;
+
+    microbench_results["p2p_bandwidth"] = bw;
+
     if (shamcomm::world_rank() == 0) {
-        auto [prefix, val] = format_result(f64(length * loops) / t);
+        auto [prefix, val] = format_result(bw);
         logger::raw_ln(
             shambase::format(
                 " - p2p bandwidth    : {} {}B.s^-1 (ranks : {} -> {}) (loops : {})",
@@ -216,11 +227,14 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
     } while (shamalgs::collective::allreduce_min(bench_timer.elasped_sec()) < 1);
 
+    f64 latency                       = t / f64(loops);
+    microbench_results["p2p_latency"] = latency;
+
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
             shambase::format(
                 " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
-                t / f64(loops),
+                latency,
                 wr1,
                 wr2,
                 loops));
@@ -321,6 +335,8 @@ void shamsys::microbench::saxpy() {
     f64 sum_bw = shamalgs::collective::allreduce_sum(bw);
     f64 avg_bw = sum_bw / (f64) shamcomm::world_size();
 
+    microbench_results["saxpy_" + type_name] = sum_bw;
+
     if (shamcomm::world_rank() == 0) {
         auto [prefix, val] = format_result(sum_bw);
         logger::raw_ln(
@@ -380,6 +396,8 @@ void shamsys::microbench::fma_chains_rotation() {
     f64 sum_flop = shamalgs::collective::allreduce_sum(result.flops);
     f64 avg_flop = sum_flop / (f64) shamcomm::world_size();
 
+    microbench_results["fma_chains_" + type_name] = sum_flop * flops_multiplier;
+
     if (shamcomm::world_rank() == 0) {
         auto [prefix, val] = format_result(sum_flop * flops_multiplier);
         logger::raw_ln(
@@ -427,6 +445,8 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
     f64 sum_t = shamalgs::collective::allreduce_sum(t);
     f64 avg_t = sum_t / (f64) shamcomm::world_size();
 
+    microbench_results["vector_allgather_u64_" + std::to_string(el_per_rank)] = avg_t;
+
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
             shambase::format(
@@ -438,4 +458,8 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
                 max_t,
                 loops));
     }
+}
+
+const std::unordered_map<std::string, double> &shamsys::get_microbench_results() {
+    return microbench_results;
 }

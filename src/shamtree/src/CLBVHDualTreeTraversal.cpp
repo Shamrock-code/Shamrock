@@ -46,7 +46,7 @@ namespace shamtree {
             return {"scan_multipass", ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow dtt implementation : {}", u32(impl)));
+            shambase::format("unknown dtt implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_clbvh_dual_tree_traversal() {

@@ -332,7 +332,7 @@ namespace shammodels::sph {
 
                     // for disc with P = \rho u (/gamma - 1)
                     // the scaleheight : H = \sqrt{u (\gamma -1)}/\Omega_K
-                    // therefor the effective soundspeed is : \sqrt{(\gamma -1)u}
+                    // therefore the effective soundspeed is : \sqrt{(\gamma -1)u}
                     // whereas the real one is \sqrt{(\gamma -1)\gamma u}
                     vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
@@ -418,7 +418,7 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 
@@ -574,7 +574,7 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 

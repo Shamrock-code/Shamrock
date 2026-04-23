@@ -623,7 +623,7 @@ namespace shammodels::sph {
 
         dump.override_magic_number();
         dump.iversion = 1;
-        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
 
         u32 Ntot = info.nobj;
         dump.table_header_fort_int.add("nparttot", Ntot);
@@ -1583,6 +1583,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
+    for (auto &callbacks : timestep_callbacks) {
+        if (callbacks.step_begin_callback) {
+            shambase::get_check_ref(callbacks.step_begin_callback)();
+        }
+    }
+
     Tscal t_current = solver_config.get_time();
     Tscal dt        = solver_config.get_dt_sph();
 
@@ -1644,7 +1650,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.predictor_step(dt);
 
     {
-        // begining of SolverGraph migration
+        // beginning of SolverGraph migration
 
         using namespace shamrock::solvergraph;
 
@@ -2642,6 +2648,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     // if delta too big jump to compute force
 
     tstep.end();
+
+    for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
+        if (it->step_end_callback) {
+            shambase::get_check_ref(it->step_end_callback)();
+        }
+    }
 
     f64 delta_mpi_timer                   = shamcomm::mpi::get_timer("total") - mpi_timer_start;
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();

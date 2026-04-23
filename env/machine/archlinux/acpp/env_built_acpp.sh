@@ -55,6 +55,7 @@ export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
+export ACPP_DEBUG_LEVEL=0
 export LLVM_INSTALL_DIR=/usr/lib/llvm20
 
 function setupcompiler {
@@ -65,6 +66,7 @@ function setupcompiler {
         -DCMAKE_C_COMPILER=${LLVM_INSTALL_DIR}/bin/clang \
         -DCMAKE_CXX_COMPILER=${LLVM_INSTALL_DIR}/bin/clang++ \
         -DLLVM_DIR=${LLVM_INSTALL_DIR}/lib/cmake/llvm/ \
+        -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON \
         -DACPP_LLD_PATH=/usr/bin/ld.lld ||
         return
     (cd ${ACPP_BUILD_DIR} && $MAKE_EXEC "${MAKE_OPT[@]}" && $MAKE_EXEC install) || return

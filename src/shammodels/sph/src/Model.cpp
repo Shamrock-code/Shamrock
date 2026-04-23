@@ -32,6 +32,7 @@
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/solvergraph/ScalarEdgeSerializable.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <functional>
@@ -68,6 +69,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
     using namespace shamrock::patch;
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+    auto time_edge = sched.synchronized_data.container.register_edge(
+        "time", shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("time", "t"));
+    time_edge->value = 0;
 
     sched.add_root_patch();
 

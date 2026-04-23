@@ -173,15 +173,37 @@ namespace shammodels::sph {
             Tscal q,
             std::mt19937 eng);
 
-        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
+        inline void add_sink(
+            Tscal mass,
+            Tvec pos,
+            Tvec velocity,
+            Tscal accretion_radius,
+            bool is_torque_free,
+            Tscal torque_boost_radius_fact) {
             if (solver.storage.sinks.is_empty()) {
                 solver.storage.sinks.set({});
             }
 
-            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+            shamlog_debug_ln(
+                "SPH",
+                "add sink :",
+                mass,
+                pos,
+                velocity,
+                accretion_radius,
+                is_torque_free,
+                torque_boost_radius_fact);
 
             solver.storage.sinks.get().push_back(
-                {pos, velocity, {}, {}, mass, {}, accretion_radius});
+                {pos,
+                 velocity,
+                 {},
+                 {},
+                 mass,
+                 {},
+                 accretion_radius,
+                 is_torque_free,
+                 torque_boost_radius_fact});
         }
 
         template<class T>

@@ -34,4 +34,14 @@ namespace shamcmdopt {
      */
     void print_help();
 
+    /**
+     * @brief Check if the current terminal supports UTF-8 encoding
+     *
+     * This function checks if the current terminal is a TTY and if it supports UTF-8.
+     * It examines the locale settings (LC_ALL, LC_CTYPE, LANG) to determine UTF-8 support.
+     *
+     * @return true if UTF-8 is supported, false otherwise
+     */
+    bool check_utf8_support();
+
 } // namespace shamcmdopt

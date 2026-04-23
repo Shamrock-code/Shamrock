@@ -200,6 +200,14 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("crit_mass"))
             .def(
+                "set_amr_mode_pseudo_gradient_based",
+                [](TConfig &self, Tscal error_min, Tscal error_max) {
+                    self.amr_mode.set_refine_pseudo_gradient_based(error_min, error_max);
+                },
+                py::kw_only(),
+                py::arg("error_min"),
+                py::arg("error_max"))
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;
@@ -219,8 +227,34 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = BICGSTAB;
                 })
-            .def("set_npscal_gas", [](TConfig &self, u32 npscal_gas) {
-                self.npscal_gas_config.npscal_gas = npscal_gas;
+            .def(
+                "set_coupling_gravity_mode_no_coupling",
+                [](TConfig &self) {
+                    self.gravity_config.coupling_gravity_mode = NoCoupling;
+                })
+            .def(
+                "set_coupling_gravity_mode_ramses_like",
+                [](TConfig &self) {
+                    self.gravity_config.coupling_gravity_mode = RAMSES_LIKE;
+                })
+            .def(
+                "set_npscal_gas",
+                [](TConfig &self, u32 npscal_gas) {
+                    self.npscal_gas_config.npscal_gas = npscal_gas;
+                })
+            .def(
+                "set_self_gravity_G_values",
+                [](TConfig &self, bool set_G, f32 G_values) {
+                    self.gravity_config.set_G = set_G;
+                    self.gravity_config.G     = G_values;
+                })
+            .def(
+                "set_self_gravity_Niter_max",
+                [](TConfig &self, u32 Niter) {
+                    self.gravity_config.Niter_max = Niter;
+                })
+            .def("set_self_gravity_tol", [](TConfig &self, f32 tol) {
+                self.gravity_config.tol = tol;
             });
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";

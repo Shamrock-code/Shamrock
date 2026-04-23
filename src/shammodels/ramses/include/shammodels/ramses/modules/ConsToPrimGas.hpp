@@ -36,6 +36,9 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe;
+            /**/
+            shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_fields;
+            /**/
             shamrock::solvergraph::IFieldSpan<Tvec> &spans_vel;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_P;
         };
@@ -45,10 +48,13 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe,
+            /**/
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_fields,
+            /**/
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_vel,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_P) {
             __internal_set_ro_edges({sizes, spans_rho, spans_rhov, spans_rhoe});
-            __internal_set_rw_edges({spans_vel, spans_P});
+            __internal_set_rw_edges({spans_rho_fields, spans_vel, spans_P});
         }
 
         inline Edges get_edges() {
@@ -57,8 +63,9 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(2),
             };
         }
 

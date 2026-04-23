@@ -84,7 +84,9 @@ namespace shammodels::sph {
         };
         std::vector<SolverStepCallback> timestep_callbacks{};
 
-        inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
+        inline void init_required_fields() {
+            solver_config.set_layout(context.get_pdl_write().get_layer_ref("main"));
+        }
 
         // serial patch tree control
         void gen_serial_patch_tree();

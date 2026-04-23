@@ -19,13 +19,20 @@
 #include "shamcomm/logs.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 
+/// Currently this is the only valid tag as "1.0" of Shamrock dumps did not include any versioning
+/// :'(
+#define WRITER_VERSION_TAG "2.0"
+
+bool fused_metadata = true;
+
 namespace shamrock {
 
-    void write_shamrock_dump(std::string fname, std::string metadata_user, PatchScheduler &sched) {
+    void write_shamrock_dump(
+        std::string fname, const nlohmann::json &metadata_user, PatchScheduler &sched) {
 
         StackEntry stack_loc{};
 
-        std::string metadata_patch = sched.serialize_patch_metadata().dump(4);
+        nlohmann::json metadata_patch = sched.serialize_patch_metadata();
 
         using namespace shamrock::patch;
 
@@ -63,9 +70,12 @@ namespace shamrock {
         using namespace nlohmann;
 
         json j;
-        j["pids"]       = all_pids;
-        j["bytecounts"] = all_bytecounts;
-        j["offsets"]    = all_offsets;
+        j["pids"]           = all_pids;
+        j["bytecounts"]     = all_bytecounts;
+        j["offsets"]        = all_offsets;
+        j["metadata_patch"] = metadata_patch;
+        j["metadata_user"]  = metadata_user;
+        j["versioning"]     = WRITER_VERSION_TAG;
 
         std::string sout = j.dump(4);
 
@@ -82,19 +92,14 @@ namespace shamrock {
         // do some perf investigation before enabling preallocation
         bool preallocate = false;
         if (preallocate) {
-            MPI_Offset tot_byte = all_offsets.back() + all_bytecounts.back() + metadata_user.size()
-                                  + metadata_patch.size() + sout.size() + sizeof(std::size_t) * 3;
+            MPI_Offset tot_byte
+                = all_offsets.back() + all_bytecounts.back() + sout.size() + sizeof(std::size_t);
             MPICHECK(MPI_File_preallocate(mfile, tot_byte));
         }
 
-        shamalgs::collective::write_header(mfile, metadata_user, head_ptr);
-        shamalgs::collective::write_header(mfile, metadata_patch, head_ptr);
         shamalgs::collective::write_header(mfile, sout, head_ptr);
 
-        shamlog_debug_ln(
-            "ShamrockDump",
-            shambase::format(
-                "table sizes {} {} {}", metadata_patch.size(), metadata_user.size(), sout.size()));
+        shamlog_debug_ln("ShamrockDump", shambase::format("table sizes  {}", sout.size()));
 
         if (/*do check*/ true) {
             auto check_same_mpi = [](std::string s) {
@@ -112,8 +117,6 @@ namespace shamrock {
                 }
             };
 
-            check_same_mpi(metadata_user);
-            check_same_mpi(metadata_patch);
             check_same_mpi(sout);
         }
 
@@ -159,7 +162,7 @@ namespace shamrock {
         }
     }
 
-    void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx) {
+    void load_shamrock_dump(std::string fname, nlohmann::json &metadata_user, ShamrockCtx &ctx) {
 
         StackEntry stack_loc{};
 
@@ -171,12 +174,9 @@ namespace shamrock {
         shambase::Timer timer;
         timer.start();
 
-        std::string metadata_patch{};
-        std::string patchdata_infos{};
+        std::string metadata{};
 
-        metadata_user   = shamalgs::collective::read_header(mfile, head_ptr);
-        metadata_patch  = shamalgs::collective::read_header(mfile, head_ptr);
-        patchdata_infos = shamalgs::collective::read_header(mfile, head_ptr);
+        metadata = shamalgs::collective::read_header(mfile, head_ptr);
 
         if (!shamcmdopt::getenv_str("SHAMDUMP_OFFSET_MODE_OLD").has_value()) {
             // reset MPI view
@@ -186,8 +186,11 @@ namespace shamrock {
 
         using namespace nlohmann;
 
-        json jmeta_patch = json::parse(metadata_patch);
-        json jpdat_info  = json::parse(patchdata_infos);
+        json jmeta = json::parse(metadata);
+
+        metadata_user = jmeta.at("metadata_user");
+
+        auto jmeta_patch = jmeta.at("metadata_patch");
 
         ctx.pdata_layout_new();
         *ctx.pdl = jmeta_patch.at("patchdata_layout").get<patch::PatchDataLayerLayout>();
@@ -217,9 +220,9 @@ namespace shamrock {
         std::vector<u64> all_pids;
         std::vector<u64> all_bytecounts;
 
-        all_bytecounts = jpdat_info.at("bytecounts").get<std::vector<u64>>();
-        all_offsets    = jpdat_info.at("offsets").get<std::vector<u64>>();
-        all_pids       = jpdat_info.at("pids").get<std::vector<u64>>();
+        all_bytecounts = jmeta.at("bytecounts").get<std::vector<u64>>();
+        all_offsets    = jmeta.at("offsets").get<std::vector<u64>>();
+        all_pids       = jmeta.at("pids").get<std::vector<u64>>();
 
         struct PatchFileOffset {
             u64 offset, bytecount;

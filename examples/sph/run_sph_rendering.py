@@ -215,7 +215,16 @@ model.do_vtk_dump("init_disc.vtk", True)
 model.change_htolerances(coarse=1.3, fine=1.1)
 model.timestep()
 model.change_htolerances(coarse=1.1, fine=1.1)
+model.dump("tmp.sham")
 
+
+ctx = shamrock.Context()
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+model.load_from_dump("tmp.sham")
+
+model.dump("tmp2.sham")
+
+exit()
 for i in range(5):
     model.timestep()
 

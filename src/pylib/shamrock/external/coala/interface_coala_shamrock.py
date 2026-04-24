@@ -1,6 +1,6 @@
-from .solver_DG import *
+from .generate_flux_intflux import compute_flux_coag_k0_kdv
 
-def coala_source_term_k0(nbins,massgrid, rhodust, tensor_tabflux_coag, dv):
+def coala_source_term_k0(nbins,massgrid, rhodust, rhodust_eps, tensor_tabflux_coag, dv):
     """
     Function to compute the source for coagulation and fragmentation in continuity equation for piecewise constant approximation (see Lombart et al., 2021)
     Function for ballistic kernel with differential velocities dv
@@ -16,6 +16,8 @@ def coala_source_term_k0(nbins,massgrid, rhodust, tensor_tabflux_coag, dv):
        grid of masses given borders value of mass bins
     rhodust : 1D array (dim = nbins), type -> float
        dust density for each grain size
+    rhodust_eps : scalar, type -> float
+       threshold value for rhodust
     tensor_tabflux_coag : 3D array (dim = (nbins,nbins,nbins)), type -> float
        array to evaluate coagulation flux
     dv : 2D array (dim = (nbins,nbins)), type -> float
@@ -30,13 +32,18 @@ def coala_source_term_k0(nbins,massgrid, rhodust, tensor_tabflux_coag, dv):
 
     """
 
+
+
     #compute gij from rhodust for coala k=0
-    gij = rhodust/(massgrid[1:] - massgrid[0:nbins])
+    gij = 0.
+    for j in range(nbins):
+        if (rhodust[j] > rhodust_eps):
+            gij[j] = rhodust[j]/(massgrid[j+1] - massgrid[j])
 
     #copmute flux for all dust bins
     flux = compute_flux_coag_k0_kdv(gij, tensor_tabflux_coag, dv)
 
-    S_coag = np.zeros(len(rhodust))
+    S_coag = np.zeros(nbins)
     S_coag[0] = -flux[0]
     S_coag[1:] = flux[:-1] - flux[1:]
 

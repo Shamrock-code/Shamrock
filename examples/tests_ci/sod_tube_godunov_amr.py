@@ -19,7 +19,7 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 
 
 multx = 4
-multi = 1
+multy = 1
 multz = 1
 
 cell_size = 1 << 2  # refinement is limited to cell_size = 2
@@ -47,7 +47,7 @@ model.set_solver_config(cfg)
 
 model.init_scheduler(int(1e7), 1)
 model.make_base_grid(
-    (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multi, base * multz)
+    (0, 0, 0), (cell_size, cell_size, cell_size), (base * multx, base * multy, base * multz)
 )
 
 # without face time interpolation

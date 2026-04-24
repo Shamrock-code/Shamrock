@@ -44,7 +44,7 @@ gamma = 5.0 / 3.0
 
 # resolution
 multx = 1
-multi = 1
+multy = 1
 multz = 1
 
 sz = 1 << 1
@@ -156,7 +156,7 @@ def run_case(set_bc_func, case_name):
     name = f"test_{case_name}"
 
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     u_cs1 = rho_1 / (gamma * (gamma - 1))
     u_cs2 = rho_2 / (gamma * (gamma - 1))

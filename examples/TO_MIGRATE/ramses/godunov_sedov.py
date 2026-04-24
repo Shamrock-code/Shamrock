@@ -21,7 +21,7 @@ bmax = 1.0
 # grid parameters
 base = 8  # resol = base * 2
 multx = 1
-multi = 1
+multy = 1
 multz = 1
 sz = 1 << 1  # size of the cell
 scale_fact = 1 / (sz * base * multx)
@@ -107,7 +107,7 @@ else:
     model.set_solver_config(cfg)
 
     model.init_scheduler(int(1e7), 1)
-    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
+    model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)

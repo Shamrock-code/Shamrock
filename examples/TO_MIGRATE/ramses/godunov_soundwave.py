@@ -12,7 +12,7 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 
 
 multx = 1
-multi = 1
+multy = 1
 multz = 1
 
 sz = 1 << 1
@@ -27,7 +27,7 @@ model.set_solver_config(cfg)
 
 
 model.init_scheduler(int(1e7), 1)
-model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multi, base * multz))
+model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
 gamma = 5.0 / 3.0
 

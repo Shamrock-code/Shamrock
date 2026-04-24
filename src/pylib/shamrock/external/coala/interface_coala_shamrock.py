@@ -37,7 +37,7 @@ def coala_source_term_k0(nbins,massgrid, rhodust, tensor_tabflux_coag, dv):
     flux = compute_flux_coag_k0_kdv(gij, tensor_tabflux_coag, dv)
 
     S_coag = np.zeros(len(rhodust))
-    S_coag[0] = flux[0]
-    S_coag[1:] = -(flux[1:] - flux[0 : nbins - 1])
+    S_coag[0] = -flux[0]
+    S_coag[1:] = flux[:-1] - flux[1:]
 
     return S_coag

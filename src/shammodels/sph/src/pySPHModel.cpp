@@ -771,8 +771,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         "unknown field type");
                 }
             })
-        .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-        .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+        .def(
+            "set_field_value_lambda_f64",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64(Tvec)> pos_to_val,
+               const i32 offset) {
+                return self.template set_field_value_lambda<f64>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_f64_3",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64_3(Tvec)> pos_to_val,
+               const i32 offset) {
+                return self.template set_field_value_lambda<f64_3>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
+        .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const
         // std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){

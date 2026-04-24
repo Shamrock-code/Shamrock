@@ -31,6 +31,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
+#include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
@@ -186,38 +187,66 @@ namespace shammodels::sph {
 
         template<class T>
         inline void set_field_value_lambda(
-            std::string field_name, const std::function<T(Tvec)> pos_to_val) {
+            std::string field_name, const std::function<T(Tvec)> pos_to_val, const i32 offset) {
 
             StackEntry stack_loc{};
+
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            u32 ixyz   = sched.pdl_old().get_field_idx<Tvec>("xyz");
+            u32 ifield = sched.pdl_old().get_field_idx<T>(field_name);
+
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
-                    PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
+                    PatchDataField<Tvec> &xyz = pdat.template get_field<Tvec>(ixyz);
+                    PatchDataField<T> &f      = pdat.template get_field<T>(ifield);
 
-                    PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
+                    auto f_nvar = f.get_nvar();
 
-                    if (f.get_nvar() != 1) {
-                        shambase::throw_unimplemented();
+                    auto acc     = f.get_buf().copy_to_stdvec();
+                    auto acc_xyz = xyz.get_buf().copy_to_stdvec();
+
+                    for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                        acc[i * f_nvar + offset] = pos_to_val(acc_xyz[i]);
                     }
 
-                    {
-                        auto &buf = f.get_buf();
-                        auto acc  = buf.copy_to_stdvec();
+                    f.get_buf().copy_from_stdvec(acc);
+                });
+        }
 
-                        auto &buf_xyz = xyz.get_buf();
-                        auto acc_xyz  = buf_xyz.copy_to_stdvec();
+        template<class T>
+        inline void overwrite_field_value(
+            std::string field_name,
+            const std::function<std::vector<T>(py::dict)> field_compute,
+            const i32 offset) {
 
-                        for (u32 i = 0; i < f.get_obj_cnt(); i++) {
-                            Tvec r = acc_xyz[i];
+            StackEntry stack_loc{};
 
-                            acc[i] = pos_to_val(r);
-                        }
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-                        buf.copy_from_stdvec(acc);
-                        buf_xyz.copy_from_stdvec(acc_xyz);
+            u32 ifield = sched.pdl_old().get_field_idx<T>(field_name);
+
+            sched.patch_data.for_each_patchdata(
+                [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
+                    PatchDataField<T> &f = pdat.template get_field<T>(ifield);
+
+                    auto result = field_compute(shamrock::pdat_to_dic(pdat));
+
+                    if (result.size() != f.get_obj_cnt()) {
+                        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                            "result.size() != f.get_obj_cnt() ({} != {})",
+                            result.size(),
+                            f.get_obj_cnt()));
                     }
+
+                    auto f_nvar = f.get_nvar();
+                    auto acc    = f.get_buf().copy_to_stdvec();
+
+                    for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                        acc[i * f_nvar + offset] = result[i];
+                    }
+
+                    f.get_buf().copy_from_stdvec(acc);
                 });
         }
 

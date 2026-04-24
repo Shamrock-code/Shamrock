@@ -1,11 +1,12 @@
 from .generate_flux_intflux import compute_flux_coag_k0_kdv
 
-def coala_source_term_k0(nbins,massgrid, rhodust, rhodust_eps, tensor_tabflux_coag, dv):
+
+def coala_source_term_k0(nbins, massgrid, rhodust, rhodust_eps, tensor_tabflux_coag, dv):
     """
     Function to compute the source for coagulation and fragmentation in continuity equation for piecewise constant approximation (see Lombart et al., 2021)
     Function for ballistic kernel with differential velocities dv
     Used to evaluate the source term, then hydro code applies time solver
- 
+
     /!\ Only coagulation so far
 
     Parameters
@@ -28,19 +29,17 @@ def coala_source_term_k0(nbins,massgrid, rhodust, rhodust_eps, tensor_tabflux_co
     -------
     S_coag : 1D array (dim = nbins), type -> float
         Source term for dust coagulation in continuity equation
-        DG operator for piecewise constant approximation in each binls       
+        DG operator for piecewise constant approximation in each binls
 
     """
 
-
-
-    #compute gij from rhodust for coala k=0
-    gij = 0.
+    # compute gij from rhodust for coala k=0
+    gij = 0.0
     for j in range(nbins):
-        if (rhodust[j] > rhodust_eps):
-            gij[j] = rhodust[j]/(massgrid[j+1] - massgrid[j])
+        if rhodust[j] > rhodust_eps:
+            gij[j] = rhodust[j] / (massgrid[j + 1] - massgrid[j])
 
-    #copmute flux for all dust bins
+    # copmute flux for all dust bins
     flux = compute_flux_coag_k0_kdv(gij, tensor_tabflux_coag, dv)
 
     S_coag = np.zeros(nbins)

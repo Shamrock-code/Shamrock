@@ -78,6 +78,15 @@ Register_pymod(pysyslibinit) {
     )pbdoc");
 
     m.def(
+        "get_compiler_id_string",
+        []() {
+            return shamrock_compiler_id_string;
+        },
+        R"pbdoc(
+        Return compiler_id_string
+    )pbdoc");
+
+    m.def(
         "print_compile_arg",
         []() {
             logger::raw_ln(compile_arg);

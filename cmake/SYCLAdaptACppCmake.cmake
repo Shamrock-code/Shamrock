@@ -1,31 +1,26 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 # This file gets called when we want to configure with AdaptiveCpp directly using cmake integration
 
-
 if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_CXX_COMPILER_ID MATCHES "IntelLLVM")
-  message(FATAL_ERROR
-    "Acpp cmake integration requires Clang compiler, but ${CMAKE_CXX_COMPILER_ID} is used "
-    "please set clang as cxx compiler "
-    "-DCMAKE_CXX_COMPILER=<clang_path>")
+    message(
+        FATAL_ERROR
+            "Acpp cmake integration requires Clang compiler, but ${CMAKE_CXX_COMPILER_ID} is used "
+            "please set clang as cxx compiler " "-DCMAKE_CXX_COMPILER=<clang_path>"
+    )
 endif()
-
-
-
-
-
 
 if((NOT (DEFINED HIPSYCL_TARGETS)) AND (NOT (DEFINED ACPP_TARGETS)))
 
-  message(FATAL_ERROR "no target are set for AdaptiveCpp: "
-  "known valid targets are :
+    message(
+        FATAL_ERROR
+            "no target are set for AdaptiveCpp: "
+            "known valid targets are :
   omp (OpenMP backend)
   generic (Single pass compiler)
   spirv (generate spirV)
@@ -40,35 +35,31 @@ if((NOT (DEFINED HIPSYCL_TARGETS)) AND (NOT (DEFINED ACPP_TARGETS)))
   or -DACPP_TARGETS=<target_list>
   depending on the compiler version
   example : -DACPP_TARGETS=omp;cuda:sm_52
-  ")
+  "
+    )
 
 endif()
-
-
-
-
-
 
 # try any of the ACPP current / legacy configs
 find_package(AdaptiveCpp CONFIG)
 if(NOT AdaptiveCpp_FOUND)
 
-  find_package(hipSYCL CONFIG)
-  if(NOT hipSYCL_FOUND)
-    message(FATAL_ERROR
-      "You asked shamrock to compiler using
+    find_package(hipSYCL CONFIG)
+    if(NOT hipSYCL_FOUND)
+        message(
+            FATAL_ERROR
+                "You asked shamrock to compiler using
         the acpp/opensycl/hipsycl cmake integration,
-        but neither of the cmake packages can be found"    )
-  else()
-    set(HIPSYCL_CLANG "${CMAKE_CXX_COMPILER}")
+        but neither of the cmake packages can be found"
+        )
+    else()
+        set(HIPSYCL_CLANG "${CMAKE_CXX_COMPILER}")
 
-
-  endif()
-
+    endif()
 
 else()
 
-  set(ACPP_CLANG "${CMAKE_CXX_COMPILER}")
+    set(ACPP_CLANG "${CMAKE_CXX_COMPILER}")
 
 endif()
 
@@ -83,7 +74,7 @@ set(SYCL_COMPILER "ACPP_CMAKE")
 option(ACPP_FAST_MATH Off)
 
 if(ACPP_FAST_MATH)
-  set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -ffast-math")
+    set(SHAM_CXX_SYCL_FLAGS "${SHAM_CXX_SYCL_FLAGS} -ffast-math")
 endif()
 
 message(" ---- Acpp compiler cmake config ---- ")

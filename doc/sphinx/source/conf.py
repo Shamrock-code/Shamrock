@@ -134,7 +134,8 @@ html_theme_options = {
             "type": "local",
         },
     ],
-    "pygments_dark_style": "monokai",
+    "pygments_light_style": "gruvbox-light",
+    "pygments_dark_style": "gruvbox-dark",
 }
 
 html_context = {

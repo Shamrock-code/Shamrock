@@ -6,6 +6,7 @@ This example benchmarks the compute histogram performance for the different algo
 """
 
 # sphinx_gallery_multi_image = "single"
+# sphinx_gallery_thumbnail_number = 2
 
 import random
 import time
@@ -31,8 +32,9 @@ print(impl_control.get_alg_name())
 impl_control.was_configured()
 
 # %%
+default_config = impl_control.get_default_config()
 print(f"Current config: {impl_control.get_config()}")
-print(f"Default config: {impl_control.get_default_config()}")
+print(f"Default config: {default_config}")
 print(f"Available configs: {impl_control.get_avail_configs()}")
 
 # %%
@@ -96,11 +98,29 @@ plt.show()
 
 # %%
 # plot the results
-plt.plot(list(results_f64.keys()), list(results_f64.values()), "--.", label="f64")
-plt.plot(list(results_f32.keys()), list(results_f32.values()), "--.", label="f32")
-plt.xlabel("Config")
+plt.figure(layout="constrained")
+
+configs = list(results_f64.keys())
+vals_f64 = [results_f64[c] for c in configs]
+vals_f32 = [results_f32[c] for c in configs]
+x = np.arange(len(configs))
+bar_w = 0.35
+plt.bar(x - bar_w / 2, vals_f64, bar_w, label="f64")
+plt.bar(x + bar_w / 2, vals_f32, bar_w, label="f32")
+plt.xticks(x, configs, rotation=45, ha="right")
+for tick_label, cfg in zip(plt.gca().get_xticklabels(), configs):
+    if cfg == default_config:
+        tick_label.set_color("red")
+
 plt.ylabel("Time (ms)")
-plt.ylim(0, max(max(results_f64.values()), max(results_f32.values())) * 1.1)
+plt.yscale("log")
+
+_ymin, _ymax = plt.gca().get_ylim()
+_ymin = 10 ** int(np.floor(np.log10(_ymin)))
+_ymax = 10 ** int(np.ceil(np.log10(_ymax)))
+plt.ylim(_ymin, _ymax * 1.1)
+
 plt.title("Compute histogram performance benchmarks")
 plt.legend()
+plt.grid(True, alpha=0.3)
 plt.show()

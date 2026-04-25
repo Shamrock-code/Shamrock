@@ -776,7 +776,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self,
                std::string field_name,
                const std::function<f64(Tvec)> pos_to_val,
-               const i32 offset) {
+               const u32 offset) {
                 return self.template set_field_value_lambda<f64>(
                     std::move(field_name), pos_to_val, offset);
             },
@@ -788,7 +788,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self,
                std::string field_name,
                const std::function<f64_3(Tvec)> pos_to_val,
-               const i32 offset) {
+               const u32 offset) {
                 return self.template set_field_value_lambda<f64_3>(
                     std::move(field_name), pos_to_val, offset);
             },

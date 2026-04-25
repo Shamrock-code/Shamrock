@@ -187,7 +187,7 @@ namespace shammodels::sph {
 
         template<class T>
         inline void set_field_value_lambda(
-            std::string field_name, const std::function<T(Tvec)> pos_to_val, const i32 offset) {
+            std::string field_name, const std::function<T(Tvec)> pos_to_val, const u32 offset) {
 
             StackEntry stack_loc{};
 
@@ -202,11 +202,19 @@ namespace shammodels::sph {
                     PatchDataField<T> &f      = pdat.template get_field<T>(ifield);
 
                     auto f_nvar = f.get_nvar();
+                    if (offset >= f_nvar) {
+                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                            "offset ({}) is out of bounds for field '{}' with nvar {}",
+                            offset,
+                            field_name,
+                            f_nvar));
+                    }
 
                     auto acc     = f.get_buf().copy_to_stdvec();
                     auto acc_xyz = xyz.get_buf().copy_to_stdvec();
 
-                    for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                    u32 obj_cnt = pdat.get_obj_cnt();
+                    for (u32 i = 0; i < obj_cnt; i++) {
                         acc[i * f_nvar + offset] = pos_to_val(acc_xyz[i]);
                     }
 
@@ -218,7 +226,7 @@ namespace shammodels::sph {
         inline void overwrite_field_value(
             std::string field_name,
             const std::function<std::vector<T>(py::dict)> field_compute,
-            const i32 offset) {
+            const u32 offset) {
 
             StackEntry stack_loc{};
 
@@ -230,6 +238,15 @@ namespace shammodels::sph {
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<T> &f = pdat.template get_field<T>(ifield);
 
+                    auto f_nvar = f.get_nvar();
+                    if (offset >= f_nvar) {
+                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                            "offset ({}) is out of bounds for field '{}' with nvar {}",
+                            offset,
+                            field_name,
+                            f_nvar));
+                    }
+
                     auto result = field_compute(shamrock::pdat_to_dic(pdat));
 
                     if (result.size() != f.get_obj_cnt()) {
@@ -239,10 +256,10 @@ namespace shammodels::sph {
                             f.get_obj_cnt()));
                     }
 
-                    auto f_nvar = f.get_nvar();
-                    auto acc    = f.get_buf().copy_to_stdvec();
+                    auto acc = f.get_buf().copy_to_stdvec();
 
-                    for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
+                    u32 obj_cnt = pdat.get_obj_cnt();
+                    for (u32 i = 0; i < obj_cnt; i++) {
                         acc[i * f_nvar + offset] = result[i];
                     }
 

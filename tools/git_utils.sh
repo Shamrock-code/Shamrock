@@ -8,7 +8,7 @@
 echo " -- enabling git utils --"
 
 # Check that gh is avail and is logged in
-if ! which gh &>/dev/null; then
+if ! command -v gh &>/dev/null; then
     echo "gh is not installed" >&2
     return 1
 fi

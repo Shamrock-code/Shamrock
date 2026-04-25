@@ -65,6 +65,21 @@ function new_branch {
     git push --set-upstream origin "$1"
 }
 
+# Fast github checkout from the github user:branch format
+function gco {
+    if [[ -z "$1" ]]; then
+        echo "Usage: gco <github user:branch>, or gco <branch name>" >&2
+        return 1
+    fi
+    echo " -- fetching origin"
+    git fetch origin
+    echo " -- checking out $1 => git checkout ${1#$gh_username:}"
+    git checkout "${1#$gh_username:}"
+    echo " -- pulling changes ..."
+    git pull
+    echo " -- done !"
+}
+
 # Open a PR from the fork (web interface)
 function open_pr_web {
     echo " -- opening PR ($upstream_repo:$main_branch <= $gh_username:$(current_branch)) in web browser"

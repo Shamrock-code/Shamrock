@@ -42,15 +42,19 @@ function current_branch {
 
 # Update the fork + create branch up to date with main and push it to the fork
 function new_branch {
+    if [[ -z "$1" ]]; then
+        echo "Usage: new_branch <branch_name>" >&2
+        return 1
+    fi
     sync_fork
     echo " -- checking out $main_branch"
-    git checkout $main_branch
+    git checkout "$main_branch"
     echo " -- pulling $main_branch"
     git pull
     echo " -- creating new branch $1"
-    git switch --create $1
+    git switch --create "$1"
     echo " -- pushing new branch $1 to origin"
-    git push --set-upstream origin $(current_branch)
+    git push --set-upstream origin "$1"
 }
 
 # Open a PR from the fork (web interface)

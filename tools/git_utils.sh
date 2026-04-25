@@ -19,7 +19,7 @@ if ! gh auth status &>/dev/null; then
 fi
 
 function current_gh_username {
-    echo $(gh api user -q .login)
+    gh api user -q .login
 }
 
 gh_username=$(current_gh_username)

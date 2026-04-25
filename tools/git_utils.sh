@@ -4,6 +4,14 @@
 
 # Note: this script uses return 1 to exit the script if an error occurs because if it is sourced,
 #       it will not exit the shell
+#
+# In principle the workflow with this script to do a PR would be just:
+#   new_branch <branch name>
+#   <do your changes>
+#   <stage your changes, can be with git add -a but be carefull of what you commit>
+#   git commit -m "[<section of the code>] <commit message>"
+#   git push
+#   open_pr_web
 
 echo " -- enabling git utils --"
 

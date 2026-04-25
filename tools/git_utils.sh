@@ -37,7 +37,7 @@ function sync_fork {
 }
 
 function current_branch {
-    echo $(git rev-parse --abbrev-ref HEAD)
+    git rev-parse --abbrev-ref HEAD
 }
 
 # Update the fork + create branch up to date with main and push it to the fork

@@ -130,11 +130,8 @@ match kernel:
         nbins_ref = 100
         massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
 
-        dv_Br_ref = np.zeros((nbins_ref, nbins_ref))
         massmeanlog_ref = np.sqrt(massgrid_ref[0:nbins_ref] * massgrid_ref[1:])
-        for i in range(nbins_ref):
-            for j in range(nbins_ref):
-                dv_Br_ref[i, j] = np.sqrt(1.0 / massmeanlog_ref[i] + 1.0 / massmeanlog_ref[j])
+        dv_Br_ref = np.sqrt(1.0 / massmeanlog_ref[:, None] + 1.0 / massmeanlog_ref[None, :])
 
         print("")
         print("Computing coala solver for k=0, ref solution")

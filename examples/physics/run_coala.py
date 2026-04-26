@@ -60,9 +60,9 @@ else:
 
 if kernel == 0:
     print("Test coala for kconst")
-elif kernel==1:
+elif kernel == 1:
     print("Test coala for kadd")
-elif kernel==2:
+elif kernel == 2:
     print("Test coala for k_Br")
 else:
     print("Test coala for k_dv")
@@ -72,7 +72,7 @@ massgrid, massbins = coala.init_grid_log(nbins, massmax, massmin)
 for case in cases:
     kpol = cases[case]["kpol"]
     print("")
-    print("Computing coala solver for k=%d"%(kpol))
+    print("Computing coala solver for k=%d" % (kpol))
     match kernel:
         case 0 | 1 | 2:
             gij_init, gij, time_coag = coala.iterate_coag(
@@ -112,17 +112,27 @@ for case in cases:
     cases[case]["time"] = [t0, time_coag]
 
 
-#compute ref solutions when needed
+# compute ref solutions when needed
 match kernel:
     case 2:
-        #dv Brownian with analytic formula
+        # dv Brownian with analytic formula
         nbins_ref = 100
         massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
 
         print("")
         print("Computing coala solver for k_Br (k=0), ref solution")
         gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag(
-            kernel, K0, nbins_ref, 0, dthydro, ndthydro, coeff_CFL, Q, eps, massgrid_ref, massbins_ref
+            kernel,
+            K0,
+            nbins_ref,
+            0,
+            dthydro,
+            ndthydro,
+            coeff_CFL,
+            Q,
+            eps,
+            massgrid_ref,
+            massbins_ref,
         )
 
     case 3:
@@ -185,7 +195,7 @@ if kernel < 2:
     plt.loglog(x, coala.exact_sol_coag(kernel, x, tend), "--", c="C0", label="Analytic")
 else:
     plt.loglog(massbins_ref, gij_init_ref, "--", c="C0", alpha=0.5)
-    plt.loglog(massbins_ref, gij_ref, "--", c="C0", label="ref %d bins"%(nbins_ref))
+    plt.loglog(massbins_ref, gij_ref, "--", c="C0", label="ref %d bins" % (nbins_ref))
 
 
 plt.loglog(

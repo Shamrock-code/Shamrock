@@ -120,7 +120,7 @@ match kernel:
         massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
 
         print("")
-        print("Computing coala solver for k=0, ref solution")
+        print("Computing coala solver for k_Br (k=0), ref solution")
         gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag(
             kernel, K0, nbins_ref, 0, dthydro, ndthydro, coeff_CFL, Q, eps, massgrid_ref, massbins_ref
         )

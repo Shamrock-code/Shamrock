@@ -65,7 +65,7 @@ elif kernel==1:
 elif kernel==2:
     print("Test coala for k_Br")
 else:
-    print("Test coala for kdv")
+    print("Test coala for k_dv")
 
 massgrid, massbins = coala.init_grid_log(nbins, massmax, massmin)
 

@@ -24,7 +24,7 @@ nbins = 20
 massmax = 1e6
 massmin = 1e-3
 
-kernel = 1
+kernel = 3
 K0 = 1.0
 Q = 5
 eps = 1e-20
@@ -58,10 +58,21 @@ elif kernel == 3:
 else:
     raise ValueError("need to choose a kernel")
 
+if kernel == 0:
+    print("Test coala for kconst")
+elif kernel==1:
+    print("Test coala for kadd")
+elif kernel==2:
+    print("Test coala for k_Br")
+else:
+    print("Test coala for kdv")
+
 massgrid, massbins = coala.init_grid_log(nbins, massmax, massmin)
 
 for case in cases:
     kpol = cases[case]["kpol"]
+    print("")
+    print("Computing coala solver for k=%d"%(kpol))
     match kernel:
         case 0 | 1 | 2:
             gij_init, gij, time_coag = coala.iterate_coag(
@@ -101,6 +112,48 @@ for case in cases:
     cases[case]["time"] = [t0, time_coag]
 
 
+#compute ref solutions when needed
+match kernel:
+    case 2:
+        #dv Brownian with analytic formula
+        nbins_ref = 100
+        massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
+
+        print("")
+        print("Computing coala solver for k=0, ref solution")
+        gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag(
+            kernel, K0, nbins_ref, 0, dthydro, ndthydro, coeff_CFL, Q, eps, massgrid_ref, massbins_ref
+        )
+
+    case 3:
+        # Brownian motion dv with constant approximation
+        nbins_ref = 100
+        massgrid_ref, massbins_ref = coala.init_grid_log(nbins_ref, massmax, massmin)
+
+        dv_Br_ref = np.zeros((nbins_ref, nbins_ref))
+        massmeanlog_ref = np.sqrt(massgrid_ref[0:nbins_ref] * massgrid_ref[1:])
+        for i in range(nbins_ref):
+            for j in range(nbins_ref):
+                dv_Br_ref[i, j] = np.sqrt(1.0 / massmeanlog_ref[i] + 1.0 / massmeanlog_ref[j])
+
+        print("")
+        print("Computing coala solver for k=0, ref solution")
+        gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag_kdv(
+            kernel,
+            K0,
+            nbins_ref,
+            0,
+            dthydro,
+            ndthydro,
+            coeff_CFL,
+            Q,
+            eps,
+            massgrid_ref,
+            massbins_ref,
+            dv_Br_ref,
+        )
+
+
 # %%
 # Plotting
 plt.rcParams["font.size"] = 16
@@ -118,6 +171,10 @@ match kernel:
         str_kernel = "kconst"
     case 1:
         str_kernel = "kadd"
+    case 2:
+        str_kernel = "k_Br"
+    case 3:
+        str_kernel = "k_dv"
     case _:
         print("Need to choose a simple kernel in the list.")
 
@@ -126,8 +183,13 @@ x = np.logspace(np.log10(massmin), np.log10(massmax), num=100)
 
 tend = cases["order k=0"]["time"][-1]
 plt.figure(1)
-plt.loglog(x, coala.exact_sol_coag(kernel, x, 0.0), "--", c="C0", alpha=0.5)
-plt.loglog(x, coala.exact_sol_coag(kernel, x, tend), "--", c="C0", label="Analytic")
+if kernel < 2:
+    plt.loglog(x, coala.exact_sol_coag(kernel, x, 0.0), "--", c="C0", alpha=0.5)
+    plt.loglog(x, coala.exact_sol_coag(kernel, x, tend), "--", c="C0", label="Analytic")
+else:
+    plt.loglog(massbins_ref, gij_init_ref, "--", c="C0", alpha=0.5)
+    plt.loglog(massbins_ref, gij_ref, "--", c="C0", label="ref %d bins"%(nbins_ref))
+
 
 plt.loglog(
     cases["order k=0"]["massbins"],

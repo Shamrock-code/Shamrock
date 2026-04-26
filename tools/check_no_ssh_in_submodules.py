@@ -2,9 +2,12 @@ import os
 import subprocess
 import sys
 
-from lib.buildbot import *
+import shamrock_tool_banner
 
-print_buildbot_info("include guard check tool")
+shamrock_tool_banner.print_tool_info("No SSH in git submodules remote")
+abs_proj_dir = os.path.join(os.path.dirname(__file__), "..")
+abs_src_dir = os.path.join(abs_proj_dir, "src")
+
 
 check_line = R"""No ssh in git submodules remote"""
 

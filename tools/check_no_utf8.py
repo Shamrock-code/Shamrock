@@ -1,5 +1,13 @@
+import os
 import sys
 from pathlib import Path
+
+import shamrock_tool_banner
+
+shamrock_tool_banner.print_tool_info("No UTF-8 in files (except for authors)")
+abs_proj_dir = os.path.join(os.path.dirname(__file__), "..")
+abs_src_dir = os.path.join(abs_proj_dir, "src")
+
 
 RED = "\033[31m"
 RESET = "\033[0m"

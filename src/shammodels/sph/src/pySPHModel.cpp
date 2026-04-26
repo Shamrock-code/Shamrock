@@ -274,6 +274,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("ndust"))
+        .def(
+            "set_dust_stopping_times",
+            [](TConfig &self, std::vector<Tscal> ts) {
+                self.dust_config.stopping_times = ts;
+            })
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",

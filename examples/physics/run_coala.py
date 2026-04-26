@@ -134,7 +134,7 @@ match kernel:
         dv_Br_ref = np.sqrt(1.0 / massmeanlog_ref[:, None] + 1.0 / massmeanlog_ref[None, :])
 
         print("")
-        print("Computing coala solver for k=0, ref solution")
+        print("Computing coala solver for k_dv (k=0), ref solution")
         gij_init_ref, gij_ref, time_coag_ref = coala.iterate_coag_kdv(
             kernel,
             K0,

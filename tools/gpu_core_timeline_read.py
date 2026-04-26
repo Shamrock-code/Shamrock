@@ -3,6 +3,13 @@ import json
 
 import matplotlib.pyplot as plt
 
+try:
+    import shamrock_tool_banner
+
+    shamrock_tool_banner.print_tool_info("GPU Core Timeline Reader")
+except ImportError:
+    print("--- GPU Core Timeline Reader ---")
+
 parser = argparse.ArgumentParser(description="Read GPU core timeline JSON file")
 parser.add_argument("filename")  # positional argument
 parser.add_argument("-b", "--block-per-sm", type=int, help="Block per SM")

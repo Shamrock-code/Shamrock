@@ -110,37 +110,37 @@ repos:
   hooks:
     - id: doxygen_header
       name: "Check doxygen headers"
-      entry: python buildbot/check_doxygen_fileheader.py
+      entry: python tools/check_doxygen_fileheader.py
       language: python
       pass_filenames: false
 
     - id: license_check
       name: "Check license headers"
-      entry: python buildbot/check_licencing.py
+      entry: python tools/check_licencing.py
       language: python
       pass_filenames: false
 
     - id: pragma_once_check
       name: "Check #pragma once"
-      entry: python buildbot/check_pragma_once.py
+      entry: python tools/check_pragma_once.py
       language: python
       pass_filenames: false
 
     - id: check_sycl_include
       name: "Check SYCL #include"
-      entry: python buildbot/check_sycl_include.py
+      entry: python tools/check_sycl_include.py
       language: python
       pass_filenames: false
 
     - id: check_no_ssh_in_submodules
       name: "No ssh in git submodules remote"
-      entry: python buildbot/check_no_ssh_in_submodules.py
+      entry: python tools/check_no_ssh_in_submodules.py
       language: python
       pass_filenames: false
 
     - id: check_no_utf8
       name: "No UTF-8 in files (except for authors)"
-      entry: python buildbot/check_no_utf8.py
+      entry: python tools/check_no_utf8.py
       language: python
       pass_filenames: true
       files: \.(cpp|hpp|py|cmake|txt)$

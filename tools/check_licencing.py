@@ -1,9 +1,12 @@
 import glob
+import os
 import sys
 
-from lib.buildbot import *
+import shamrock_tool_banner
 
-print_buildbot_info("licence check tool")
+shamrock_tool_banner.print_tool_info("License check")
+abs_proj_dir = os.path.join(os.path.dirname(__file__), "..")
+abs_src_dir = os.path.join(abs_proj_dir, "src")
 
 
 ####################################################################################################

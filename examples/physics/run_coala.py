@@ -44,6 +44,15 @@ def run_kernel_case(kernel):
         "order k=2": {
             "kpol": 2,
         },
+        "order k=3": {
+            "kpol": 3,
+        },
+        # "order k=4": {
+        #     "kpol": 4,
+        # },
+        # "order k=5": {
+        #     "kpol": 5,
+        # },
     }
 
     if kernel == 0:

@@ -10,7 +10,7 @@ import utils.sysinfo
 from utils.setuparg import *
 
 NAME = "CBP Machines - AdaptiveCpp"
-PATH = "machine/cbp/acpp"
+PATH = "machine/cbp/generic/acpp"
 
 
 def setup(arg: SetupArg, envgen: EnvGen):

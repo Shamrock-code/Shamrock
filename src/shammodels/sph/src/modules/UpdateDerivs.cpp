@@ -49,11 +49,11 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
         update_derivs_cd10(*v);
     } else if (ConstantDisc *v = std::get_if<ConstantDisc>(&cfg_av.config)) {
         update_derivs_disc_visco(*v);
-    } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.config)) {
+    } else if (IdealMHD *v = std::get_if<IdealMHD>(&cfg_mhd.configMHD)) {
         update_derivs_MHD(*v);
-    } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.config)) {
-        shambase::throw_unimplemented();
-    } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.config)) {
+    } else if (NonIdealMHD *v = std::get_if<NonIdealMHD>(&cfg_mhd.configMHD)) {
+        update_derivs_MHD(*v);
+    } else if (NoneMHD *v = std::get_if<NoneMHD>(&cfg_mhd.configMHD)) {
         shambase::throw_unimplemented();
     } else if (None *v = std::get_if<None>(&cfg_av.config)) {
         shambase::throw_unimplemented();
@@ -720,12 +720,370 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_disc
     });
 }
 
+// ── thin variant-unpacking wrappers ──────────────────────────────────────────
+
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(IdealMHD cfg) {
+    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::Ideal>(
+        cfg.sigma_mhd,
+        cfg.alpha_u,
+        /*etaO=*/Tscal(0),
+        /*etaH=*/Tscal(0),
+        /*etaAD=*/Tscal(0));
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(NonIdealMHD cfg) {
+    update_derivs_MHD_impl<shamrock::sph::mhd::MHDType::NonIdeal>(
+        cfg.sigma_mhd, cfg.alpha_u, cfg.etaO, cfg.etaH, cfg.etaAD);
+}
+
+template<class Tvec, template<class> class SPHKernel>
+template<shamrock::sph::mhd::MHDType MHD_mode>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD_impl(
+    Tscal sigma_mhd, Tscal alpha_u, Tscal etaO, Tscal etaH, Tscal etaAD) {
+
     StackEntry stack_loc{};
 
     using namespace shamrock;
     using namespace shamrock::patch;
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
+    const u32 ixyz        = pdl.get_field_idx<Tvec>("xyz");
+    const u32 ivxyz       = pdl.get_field_idx<Tvec>("vxyz");
+    const u32 iaxyz       = pdl.get_field_idx<Tvec>("axyz");
+    const u32 iuint       = pdl.get_field_idx<Tscal>("uint");
+    const u32 iduint      = pdl.get_field_idx<Tscal>("duint");
+    const u32 ihpart      = pdl.get_field_idx<Tscal>("hpart");
+    const u32 iB_on_rho   = pdl.get_field_idx<Tvec>("B/rho");
+    const u32 idB_on_rho  = pdl.get_field_idx<Tvec>("dB/rho");
+    const u32 ipsi_on_ch  = pdl.get_field_idx<Tscal>("psi/ch");
+    const u32 idpsi_on_ch = pdl.get_field_idx<Tscal>("dpsi/ch");
+    const u32 idrho_dt    = pdl.get_field_idx<Tscal>("drho/dt");
+
+    bool do_MHD_debug       = solver_config.do_MHD_debug();
+    const u32 imag_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_pressure") : -1;
+    const u32 imag_tension  = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("mag_tension") : -1;
+    const u32 igas_pressure = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("gas_pressure") : -1;
+    const u32 itensile_corr = (do_MHD_debug) ? pdl.get_field_idx<Tvec>("tensile_corr") : -1;
+    const u32 ipsi_propag   = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_propag") : -1;
+    const u32 ipsi_diff     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_diff") : -1;
+    const u32 ipsi_cons     = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("psi_cons") : -1;
+    const u32 iu_mhd        = (do_MHD_debug) ? pdl.get_field_idx<Tscal>("u_mhd") : -1;
+
+    Tscal const mu_0 = solver_config.get_constant_mu_0();
+
+    shamrock::patch::PatchDataLayerLayout &ghost_layout
+        = shambase::get_check_ref(storage.ghost_layout.get());
+    u32 ihpart_interf     = ghost_layout.get_field_idx<Tscal>("hpart");
+    u32 iuint_interf      = ghost_layout.get_field_idx<Tscal>("uint");
+    u32 ivxyz_interf      = ghost_layout.get_field_idx<Tvec>("vxyz");
+    u32 iomega_interf     = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iB_on_rho_interf  = ghost_layout.get_field_idx<Tvec>("B/rho");
+    u32 ipsi_on_ch_interf = ghost_layout.get_field_idx<Tscal>("psi/ch");
+
+    auto &merged_xyzh                                 = storage.merged_xyzh.get();
+    shamrock::solvergraph::Field<Tscal> &omega        = shambase::get_check_ref(storage.omega);
+    shambase::DistributedData<PatchDataLayer> &mpdats = storage.merged_patchdata_ghost.get();
+
+    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+        PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+        sham::DeviceBuffer<Tvec> &buf_xyz
+            = merged_xyzh.get(cur_p.id_patch).template get_field_buf_ref<Tvec>(0);
+        sham::DeviceBuffer<Tvec> &buf_axyz   = pdat.get_field_buf_ref<Tvec>(iaxyz);
+        sham::DeviceBuffer<Tscal> &buf_duint = pdat.get_field_buf_ref<Tscal>(iduint);
+        sham::DeviceBuffer<Tvec> &buf_vxyz   = mpdat.get_field_buf_ref<Tvec>(ivxyz_interf);
+        sham::DeviceBuffer<Tscal> &buf_hpart = mpdat.get_field_buf_ref<Tscal>(ihpart_interf);
+        sham::DeviceBuffer<Tscal> &buf_omega = mpdat.get_field_buf_ref<Tscal>(iomega_interf);
+        sham::DeviceBuffer<Tscal> &buf_uint  = mpdat.get_field_buf_ref<Tscal>(iuint_interf);
+        sham::DeviceBuffer<Tscal> &buf_pressure
+            = shambase::get_check_ref(storage.pressure).get_field(cur_p.id_patch).get_buf();
+        sham::DeviceBuffer<Tscal> &buf_cs
+            = shambase::get_check_ref(storage.soundspeed).get_field(cur_p.id_patch).get_buf();
+
+        sham::DeviceBuffer<Tvec> &buf_dB_on_rho   = pdat.get_field_buf_ref<Tvec>(idB_on_rho);
+        sham::DeviceBuffer<Tscal> &buf_dpsi_on_ch = pdat.get_field_buf_ref<Tscal>(idpsi_on_ch);
+        sham::DeviceBuffer<Tscal> &buf_drho_dt    = pdat.get_field_buf_ref<Tscal>(idrho_dt);
+
+        sham::DeviceBuffer<Tvec> &buf_B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf);
+        sham::DeviceBuffer<Tscal> &buf_psi_on_ch
+            = mpdat.get_field_buf_ref<Tscal>(ipsi_on_ch_interf);
+
+        tree::ObjectCache &pcache
+            = shambase::get_check_ref(storage.neigh_cache).get_cache(cur_p.id_patch);
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::EventList depends_list;
+
+        auto xyz        = buf_xyz.get_read_access(depends_list);
+        auto axyz       = buf_axyz.get_write_access(depends_list);
+        auto du         = buf_duint.get_write_access(depends_list);
+        auto vxyz       = buf_vxyz.get_read_access(depends_list);
+        auto hpart      = buf_hpart.get_read_access(depends_list);
+        auto omega      = buf_omega.get_read_access(depends_list);
+        auto u          = buf_uint.get_read_access(depends_list);
+        auto pressure   = buf_pressure.get_read_access(depends_list);
+        auto cs         = buf_cs.get_read_access(depends_list);
+        auto B_on_rho   = buf_B_on_rho.get_read_access(depends_list);
+        auto psi_on_ch  = buf_psi_on_ch.get_read_access(depends_list);
+        auto dB_on_rho  = buf_dB_on_rho.get_write_access(depends_list);
+        auto dpsi_on_ch = buf_dpsi_on_ch.get_write_access(depends_list);
+        auto drho_dt    = buf_drho_dt.get_write_access(depends_list);
+
+        Tvec *mag_pressure
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tvec>(imag_pressure).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *mag_tension
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tvec>(imag_tension).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *gas_pressure
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tvec>(igas_pressure).get_write_access(depends_list)
+                  : nullptr;
+        Tvec *tensile_corr
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tvec>(itensile_corr).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *psi_propag
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_propag).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *psi_diff
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_diff).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *psi_cons
+            = (do_MHD_debug)
+                  ? pdat.get_field_buf_ref<Tscal>(ipsi_cons).get_write_access(depends_list)
+                  : nullptr;
+        Tscal *u_mhd = (do_MHD_debug)
+                           ? pdat.get_field_buf_ref<Tscal>(iu_mhd).get_write_access(depends_list)
+                           : nullptr;
+
+        auto ploop_ptrs = pcache.get_read_access(depends_list);
+
+        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+            const Tscal pmass    = solver_config.gpart_mass;
+            const Tscal _sigma   = sigma_mhd;
+            const Tscal _alpha_u = alpha_u;
+            const Tscal _etaO    = etaO;
+            const Tscal _etaH    = etaH;
+            const Tscal _etaAD   = etaAD;
+
+            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+            shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", _sigma);
+            shamlog_debug_sycl_ln("deriv kernel", "alpha_u    :", _alpha_u);
+            shamlog_debug_sycl_ln("deriv kernel", "etaO       :", _etaO);
+            shamlog_debug_sycl_ln("deriv kernel", "etaH       :", _etaH);
+            shamlog_debug_sycl_ln("deriv kernel", "etaAD      :", _etaAD);
+            shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
+
+            tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
+            shambase::parallel_for(cgh, pdat.get_obj_cnt(), "compute MHD", [=](u64 gid) {
+                u32 id_a = (u32) gid;
+
+                using namespace shamrock::sph;
+
+                Tscal h_a     = hpart[id_a];
+                Tvec xyz_a    = xyz[id_a];
+                Tvec vxyz_a   = vxyz[id_a];
+                Tscal P_a     = pressure[id_a];
+                Tscal cs_a    = cs[id_a];
+                Tscal omega_a = omega[id_a];
+                Tscal u_a     = u[id_a];
+
+                Tscal rho_a     = rho_h(pmass, h_a, Kernel::hfactd);
+                Tscal rho_a_sq  = rho_a * rho_a;
+                Tscal rho_a_inv = 1. / rho_a;
+
+                Tvec B_a         = B_on_rho[id_a] * rho_a;
+                Tscal v_alfven_a = sycl::sqrt(sycl::dot(B_a, B_a) / (mu_0 * rho_a));
+                Tscal v_shock_a  = sycl::sqrt(cs_a * cs_a + v_alfven_a * v_alfven_a);
+                Tscal psi_a      = psi_on_ch[id_a] * v_shock_a;
+
+                Tscal omega_a_rho_a_inv = 1. / (omega_a * rho_a);
+
+                Tvec force_pressure{0, 0, 0};
+                Tscal tmpdU_pressure = 0;
+                Tvec magnetic_eq{0, 0, 0};
+                Tscal psi_eq  = 0;
+                Tscal drho_eq = 0;
+
+                Tvec mag_pressure_term{0, 0, 0};
+                Tvec mag_tension_term{0, 0, 0};
+                Tvec gas_pressure_term{0, 0, 0};
+                Tvec tensile_corr_term{0, 0, 0};
+                Tscal psi_propag_term = 0;
+                Tscal psi_diff_term   = 0;
+                Tscal psi_cons_term   = 0;
+                Tscal u_mhd_term      = 0;
+
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    Tvec dr    = xyz_a - xyz[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+                    Tscal h_b  = hpart[id_b];
+
+                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                        return;
+                    }
+
+                    Tvec vxyz_b   = vxyz[id_b];
+                    Tscal u_b     = u[id_b];
+                    Tscal P_b     = pressure[id_b];
+                    Tscal omega_b = omega[id_b];
+                    Tscal cs_b    = cs[id_b];
+                    Tscal rab     = sycl::sqrt(rab2);
+
+                    Tscal rho_b      = rho_h(pmass, h_b, Kernel::hfactd);
+                    Tvec B_b         = B_on_rho[id_b] * rho_b;
+                    Tscal v_alfven_b = sycl::sqrt(sycl::dot(B_b, B_b) / (mu_0 * rho_b));
+                    Tscal v_shock_b  = sycl::sqrt(cs_b * cs_b + v_alfven_b * v_alfven_b);
+                    Tscal psi_b      = psi_on_ch[id_b] * v_shock_b;
+
+                    Tscal Fab_a = Kernel::dW_3d(rab, h_a);
+                    Tscal Fab_b = Kernel::dW_3d(rab, h_b);
+
+                    shamrock::sph::mhd::add_to_derivs_spmhd<Kernel, Tvec, Tscal, MHD_mode>(
+                        pmass,
+                        dr,
+                        rab,
+                        rho_a,
+                        rho_a_sq,
+                        omega_a_rho_a_inv,
+                        rho_a_inv,
+                        rho_b,
+                        omega_a,
+                        omega_b,
+                        Fab_a,
+                        Fab_b,
+                        vxyz_a,
+                        vxyz_b,
+                        u_a,
+                        u_b,
+                        P_a,
+                        P_b,
+                        cs_a,
+                        cs_b,
+                        h_a,
+                        h_b,
+                        _alpha_u,
+                        B_a,
+                        B_b,
+                        psi_a,
+                        psi_b,
+                        mu_0,
+                        _sigma,
+                        _etaO,
+                        _etaH,
+                        _etaAD,
+                        force_pressure,
+                        tmpdU_pressure,
+                        magnetic_eq,
+                        psi_eq,
+                        drho_eq,
+                        mag_pressure_term,
+                        mag_tension_term,
+                        gas_pressure_term,
+                        tensile_corr_term,
+                        psi_propag_term,
+                        psi_diff_term,
+                        psi_cons_term,
+                        u_mhd_term);
+                });
+
+                axyz[id_a]       = force_pressure;
+                du[id_a]         = tmpdU_pressure;
+                dB_on_rho[id_a]  = magnetic_eq;
+                dpsi_on_ch[id_a] = psi_eq - psi_a / h_a;
+                drho_dt[id_a]    = drho_eq;
+
+                if (do_MHD_debug) {
+                    mag_pressure[id_a] = mag_pressure_term;
+                    mag_tension[id_a]  = mag_tension_term;
+                    gas_pressure[id_a] = gas_pressure_term;
+                    tensile_corr[id_a] = tensile_corr_term;
+                    psi_propag[id_a]   = psi_propag_term;
+                    psi_diff[id_a]     = psi_diff_term;
+                    psi_cons[id_a]     = -psi_a / h_a;
+                    u_mhd[id_a]        = u_mhd_term;
+                }
+            });
+        });
+
+        buf_xyz.complete_event_state(e);
+        buf_axyz.complete_event_state(e);
+        buf_duint.complete_event_state(e);
+        buf_vxyz.complete_event_state(e);
+        buf_hpart.complete_event_state(e);
+        buf_omega.complete_event_state(e);
+        buf_uint.complete_event_state(e);
+        buf_pressure.complete_event_state(e);
+        buf_cs.complete_event_state(e);
+        buf_B_on_rho.complete_event_state(e);
+        buf_psi_on_ch.complete_event_state(e);
+        buf_dB_on_rho.complete_event_state(e);
+        buf_dpsi_on_ch.complete_event_state(e);
+        buf_drho_dt.complete_event_state(e);
+
+        if (do_MHD_debug) {
+            pdat.get_field_buf_ref<Tvec>(imag_pressure).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(imag_tension).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(igas_pressure).complete_event_state(e);
+            pdat.get_field_buf_ref<Tvec>(itensile_corr).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_propag).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_diff).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(ipsi_cons).complete_event_state(e);
+            pdat.get_field_buf_ref<Tscal>(iu_mhd).complete_event_state(e);
+        }
+
+        sham::EventList resulting_events;
+        resulting_events.add_event(e);
+        pcache.complete_event_state(resulting_events);
+    });
+}
+
+/**
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(Cfg_MHD cfg) {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+
+    Tscal sigma_mhd = 0.0;
+    Tscal alpha_u = 0.0;
+    Tscal etaO = 0.0, etaH = 0.0, etaAD = 0.0;
+
+    using namespace shamrock::sph::mhd;
+    using None = typename Cfg_MHD::None;
+    using IdealMHD = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
+    using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
+
+    MHDType mhd_mode = MHDType::Ideal; // Default
+
+    if (auto* v = std::get_if<None>(&cfg.configMHD)) {
+        mhd_mode = MHDType::Ideal;
+    } else if (auto* v = std::get_if<IdealMHD>(&cfg.configMHD)) {
+        sigma_mhd = v->sigma_mhd;
+        alpha_u = v->alpha_u;
+        mhd_mode = MHDType::Ideal;
+    } else if (auto* v = std::get_if<NonIdealMHD>(&cfg.configMHD)) {
+        sigma_mhd = v->sigma_mhd;
+        alpha_u = v->alpha_u;
+        etaO = v->etaO;
+        etaH = v->etaH;
+        etaAD = v->etaAD;
+        mhd_mode = MHDType::NonIdeal;
+    } else {
+        shambase::throw_unimplemented();
+    }
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -860,8 +1218,6 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             const Tscal pmass     = solver_config.gpart_mass;
-            const Tscal sigma_mhd = cfg.sigma_mhd;
-            const Tscal alpha_u   = cfg.alpha_u;
 
             shamlog_debug_ln("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", "");
             shamlog_debug_sycl_ln("deriv kernel", "sigma_mhd  :", sigma_mhd);
@@ -1050,6 +1406,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
         pcache.complete_event_state(resulting_events);
     });
 }
+*/
 
 using namespace shammath;
 template class shammodels::sph::modules::UpdateDerivs<f64_3, M4>;

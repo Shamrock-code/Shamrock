@@ -19,6 +19,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
+#include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 
@@ -66,7 +67,15 @@ namespace shammodels::sph::modules {
         using IdealMHD    = typename Cfg_MHD::IdealMHD_constrained_hyper_para;
         using NonIdealMHD = typename Cfg_MHD::NonIdealMHD;
 
+        // void update_derivs_MHD(Cfg_MHD cfg);
+        //  One templated implementation, specialised per MHDType at the call sites below.
+        template<shamrock::sph::mhd::MHDType MHD_mode>
+        void update_derivs_MHD_impl(
+            Tscal sigma_mhd, Tscal alpha_u, Tscal etaO, Tscal etaH, Tscal etaAD);
+
+        // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_MHD(IdealMHD cfg);
+        void update_derivs_MHD(NonIdealMHD cfg);
     };
 
 } // namespace shammodels::sph::modules

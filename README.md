@@ -47,7 +47,7 @@ Join us on any of the networks below or just by opening a discussion or issue in
  - [Slack](https://join.slack.com/t/shamrock-code/shared_invite/zt-3geto97g3-QXfTOcg1BUmgIcoJ5PS2EQ)
 
 ## Contributing
-
+gzeraifgzerfhui
 Shamrock accept contributions through github pull request :
 1. Code contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)
 2. Documentation contributions via [Pull request](https://github.com/Shamrock-code/Shamrock/compare)

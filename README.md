@@ -3,7 +3,7 @@
 ![badge1](https://github.com/Shamrock-code/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code
-
+ozjefnozeijfnoiezjfoizejfoizejfoziefjez
 Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.
 The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**,
 which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP**, **OpenCL** and much more.

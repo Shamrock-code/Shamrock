@@ -1,5 +1,5 @@
-<img src="doc/mkdocs/docs/assets/no_background_nocolor.png"  width="600">
-
+img src="dc/mkdocs/docs/assets/no_background_nocolor.png"  width="600">
+eheh!!!
 ![badge1](https://github.com/Shamrock-code/Shamrock/actions/workflows/on_push_main.yml/badge.svg?branch=main) [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](https://github.com/pre-commit/pre-commit)
 
 # The Shamrock code

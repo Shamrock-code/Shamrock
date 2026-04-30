@@ -133,7 +133,7 @@ namespace shamalgs::collective {
 
             if (i > 0) {
                 ON_RANK_0(
-                    logger::warn_ln("SparseComm", "Splitted sparse comm", i, "/", send_max_count));
+                    logger::warn_ln("SparseComm", "Split sparse comm", i, "/", send_max_count));
             }
 
             std::vector<SendPayload> message_send_tmp;

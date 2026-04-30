@@ -92,7 +92,7 @@ namespace shamalgs::collective {
      * @param send_type
      * @param recv_vec
      * @param recv_type
-     * @return the node displacments data table
+     * @return the node displacements data table
      */
     template<class T>
     inline std::vector<int> vector_allgatherv(

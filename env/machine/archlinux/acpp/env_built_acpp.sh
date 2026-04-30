@@ -55,6 +55,7 @@ export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 export ACPP_GIT_DIR=$BUILD_DIR/.env/acpp-git
 export ACPP_BUILD_DIR=$BUILD_DIR/.env/acpp-builddir
 export ACPP_INSTALL_DIR=$BUILD_DIR/.env/acpp-installdir
+export ACPP_DEBUG_LEVEL=0
 export LLVM_INSTALL_DIR=/usr/lib/llvm20
 
 function setupcompiler {

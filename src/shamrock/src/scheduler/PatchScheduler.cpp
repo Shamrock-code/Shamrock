@@ -21,7 +21,6 @@
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"

@@ -18,15 +18,83 @@
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/numeric_limits.hpp"
+#include "shambase/popen.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sysinfo.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
 
 auto SHAM_MAX_ALLOC_SIZE
     = shamcmdopt::getenv_str_register("SHAM_MAX_ALLOC_SIZE", "shamrock max alloc size if set");
+
+namespace {
+
+    std::optional<std::string> get_cpu_name() {
+#ifdef __linux__
+        std::string lscpu_json = "";
+        try {
+            lscpu_json = shambase::popen_fetch_output("lscpu -J");
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+
+        nlohmann::json lscpu_json_parsed;
+        try {
+            lscpu_json_parsed = nlohmann::json::parse(lscpu_json);
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+
+        try {
+            const auto &entries = lscpu_json_parsed.at("lscpu");
+            if (!entries.is_array()) {
+                return std::nullopt;
+            }
+            std::optional<std::string> model_name;
+            std::optional<std::string> socket_count;
+            for (const auto &entry : entries) {
+                const std::string field = entry.at("field").get<std::string>();
+                const std::string data  = entry.at("data").get<std::string>();
+                if (field == "Model name:") {
+                    model_name = data;
+                } else if (field == "Socket(s):") {
+                    socket_count = data;
+                }
+            }
+            if (!model_name.has_value() || !socket_count.has_value() || model_name->empty()
+                || socket_count->empty()) {
+                return std::nullopt;
+            }
+
+            if (*socket_count == "1") {
+                return *model_name;
+            } else {
+                return fmt::format("{} x {}", *model_name, *socket_count);
+            }
+
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+#elif defined(__APPLE__)
+        // in that case the command is simply sysctl -n machdep.cpu.brand_string
+        std::string brand_string = "";
+        try {
+            brand_string = shambase::popen_fetch_output("sysctl -n machdep.cpu.brand_string");
+            shambase::replace_all(brand_string, "\n", "");
+            return brand_string;
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+        return brand_string;
+#else
+        return std::nullopt;
+#endif
+    }
+
+} // namespace
 
 namespace sham {
 
@@ -137,6 +205,15 @@ namespace sham {
         if (dev_name) {
             name = *dev_name;
         }
+
+#if SYCL_COMP_ACPP
+        if (get_device_backend(dev) == Backend::OPENMP) {
+            auto cpu_name = get_cpu_name();
+            if (cpu_name) {
+                name = *cpu_name;
+            }
+        }
+#endif
 
         FETCH_PROP(vendor, std::string)
 
@@ -277,6 +354,8 @@ namespace sham {
             Vendor::UNKNOWN,         // We cannot determine the vendor
             get_device_backend(dev), // Query the backend based on the platform name
             get_device_type(dev),
+            name,
+            dev.get_platform().get_info<sycl::info::platform::name>(),
             shambase::get_check_ref(global_mem_size),
             shambase::get_check_ref(global_mem_cache_line_size),
             shambase::get_check_ref(global_mem_cache_size),

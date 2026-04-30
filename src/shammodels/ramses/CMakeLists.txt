@@ -1,11 +1,9 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 cmake_minimum_required(VERSION 3.9...3.10)
 
@@ -15,7 +13,6 @@ set(Sources
     src/Model.cpp
     src/pyRamsesModel.cpp
     src/Solver.cpp
-
     src/modules/NodeComputeFlux.cpp
     src/modules/DragIntegrator.cpp
     src/modules/TimeIntegrator.cpp
@@ -46,16 +43,15 @@ set(Sources
     src/modules/ComputeCoordinates.cpp
     src/modules/SumFluxHydro.cpp
     src/modules/SumFluxDust.cpp
-
     src/SolverConfig.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shammodels_ramses target (Shared lib)")
-add_library(shammodels_ramses SHARED ${Sources})
+    message("-- adding shammodels_ramses target (Shared lib)")
+    add_library(shammodels_ramses SHARED ${Sources})
 else()
-message("-- adding shammodels_ramses target (object lib)")
-add_library(shammodels_ramses OBJECT ${Sources})
+    message("-- adding shammodels_ramses target (object lib)")
+    add_library(shammodels_ramses OBJECT ${Sources})
 endif()
 
 add_library(shammodels_ramses::shammodels_ramses ALIAS shammodels_ramses)
@@ -68,6 +64,7 @@ target_link_libraries(shammodels_ramses PUBLIC shamsys)
 target_link_libraries(shammodels_ramses PUBLIC shammodels_common)
 target_link_libraries(shammodels_ramses PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(shammodels_ramses PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shammodels_ramses PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                             "$<INSTALL_INTERFACE:include>"
+)

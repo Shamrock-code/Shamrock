@@ -12,7 +12,7 @@
 /**
  * @file PyScriptHandle.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief utility to use python script withing tests
+ * @brief utility to use python script within tests
 
  * Example :
  * \code{.cpp}

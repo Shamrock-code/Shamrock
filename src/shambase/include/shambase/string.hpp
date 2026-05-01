@@ -273,9 +273,9 @@ namespace shambase {
     inline std::string shorten_string(std::string str, u32 len) {
         if (len > str.size()) {
             throw make_except_with_loc<std::invalid_argument>(
-                "the string is too short to be shorten"
+                "the string is too short to be shortened"
                 "\n args : "
-                + format("{} : {} \n {} : {}", "str", str, "len", len));
+                + shambase::format("{} : {} \n {} : {}", "str", str, "len", len));
         }
         return str.substr(0, str.size() - len);
     }

@@ -170,7 +170,7 @@ setup.apply_setup(gen_disc)
 # %%
 # Run a single step to init the integrator and smoothing length of the particles
 # Here the htolerance is the maximum factor of evolution of the smoothing length in each
-# Smoothing length iterations, increasing it affect the performance negatively but increse the
+# Smoothing length iterations, increasing it affect the performance negatively but increase the
 # convergence rate of the smoothing length
 # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
 # Note that both ``change_htolerance`` can be removed and it will work the same but would converge

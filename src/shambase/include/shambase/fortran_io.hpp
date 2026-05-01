@@ -75,7 +75,7 @@ namespace shambase {
         /// Data stream of the file
         std::basic_stringstream<byte> data;
 
-        /// Lenght of the data stream
+        /// Length of the data stream
         u64 length;
 
         /**

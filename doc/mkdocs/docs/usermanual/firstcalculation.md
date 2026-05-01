@@ -37,7 +37,7 @@ the --loglevel argument specifies the degree of verbosity of SHAMROCK.
 
 If you want to use modules that need to me installed (eg sarracen), you need to sudo pip install them.
 
-Shamrock files can be outputed in two formats: the vtk/native format (suitable for number of SPH particles > 10⁸), of the fortran format (phantom dump format, which allows for the use of various utilities developed for Phantom, see below).
+Shamrock files can be outputted in two formats: the vtk/native format (suitable for number of SPH particles > 10⁸), of the fortran format (phantom dump format, which allows for the use of various utilities developed for Phantom, see below).
 
 ## importing a setup from phantom
 
@@ -63,4 +63,4 @@ model.init_from_phantom_dump(dump)
 
 ## Analysing dumps via the phantomanalysis tool
 
-After running your simulation in Shamrock and outputing it in fortran format, you can use the Phantom utility phantomanalysis. For it to work, you NEED to copy in the directory where your shamrock dumps are the .in file and the .params file. Careful with underscores.
+After running your simulation in Shamrock and outputting it in fortran format, you can use the Phantom utility phantomanalysis. For it to work, you NEED to copy in the directory where your shamrock dumps are the .in file and the .params file. Careful with underscores.

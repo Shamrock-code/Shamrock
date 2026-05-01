@@ -143,7 +143,7 @@ namespace shammodels::sph {
         inline u32 get_dust_nvar() {
             if (None *cfg = std::get_if<None>(&current_mode)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "Querrying a dust nvar with no dust as config is ... discutable ...");
+                    "Querying a dust nvar with no dust as config is ... discutable ...");
                 return 0;
             } else if (MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
                 return cfg->ndust;
@@ -877,23 +877,17 @@ struct shammodels::sph::SolverConfig {
         dust_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "particle injection is not yet compatible with particle id tracking");
-            }
+            shamrock::experimental_feature_check(
+                "particle injection is not yet compatible with particle id tracking");
         }
 
         if (track_particles_id) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
-            }
+            shamrock::experimental_feature_check("Particle tracking is experimental");
         }
 
         if (!self_grav_config.is_none()) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "Self gravity is experimental, please enable experimental features to use it");
-            }
+            shamrock::experimental_feature_check(
+                "Self gravity is experimental, please enable experimental features to use it");
         }
     }
 

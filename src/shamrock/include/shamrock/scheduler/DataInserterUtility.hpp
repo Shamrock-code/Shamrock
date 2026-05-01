@@ -121,7 +121,7 @@ namespace shamrock {
 
             shambase::Timer treatrib;
             treatrib.start();
-            // move data into the corect patches
+            // move data into the correct patches
             SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
             ReattributeDataUtility reatrib(sched);
             sptree.attach_buf();

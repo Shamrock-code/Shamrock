@@ -404,7 +404,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "final particle count =", injected_parts, "begining injection ...");
+            "SPH setup", "final particle count =", injected_parts, "beginning injection ...");
     }
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();

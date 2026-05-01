@@ -61,12 +61,12 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
 
 
 
-    //check corectness of local patch list
-    bool corect_size = sche.patch_list.local.size() == local_check_vec.size();
-    Test_assert("corect size for local patch", corect_size);
+    //check correctness of local patch list
+    bool correct_size = sche.patch_list.local.size() == local_check_vec.size();
+    Test_assert("correct size for local patch", correct_size);
     for(u32 i = 0 ; i < sche.patch_list.local.size(); i++){
-        if(corect_size){
-            Test_assert("corect patch", sche.patch_list.local[i] == local_check_vec[i]);
+        if(correct_size){
+            Test_assert("correct patch", sche.patch_list.local[i] == local_check_vec[i]);
         }
     }
 
@@ -114,7 +114,7 @@ Test_start("SchedulerPatchData::", apply_change_list, -1){
     std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
     Test_assert("same id owned (patch/Data)", diffs.size() == 0);
 
-    //check corectness of patchdata contents
+    //check correctness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
         Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a],
 check_patchdata[a])) ;
@@ -170,12 +170,12 @@ Test_start("mpi_scheduler::", testLB, -1){
 
 
 
-    //check corectness of local patch list
-    bool corect_size = sche.patch_list.local.size() == local_check_vec.size();
-    Test_assert("corect size for local patch", corect_size);
+    //check correctness of local patch list
+    bool correct_size = sche.patch_list.local.size() == local_check_vec.size();
+    Test_assert("correct size for local patch", correct_size);
     for(u32 i = 0 ; i < sche.patch_list.local.size(); i++){
-        if(corect_size){
-            Test_assert("corect patch", sche.patch_list.local[i] == local_check_vec[i]);
+        if(correct_size){
+            Test_assert("correct patch", sche.patch_list.local[i] == local_check_vec[i]);
         }
     }
 
@@ -198,7 +198,7 @@ Test_start("mpi_scheduler::", testLB, -1){
     std::set_difference(id_patch_from_owned_patchadata.begin(),id_patch_from_owned_patchadata.end(),sche.owned_patch_id.begin(),sche.owned_patch_id.end(),std::back_inserter(diffs));
     Test_assert("same id owned (patch/Data)", diffs.size() == 0);
 
-    //check corectness of patchdata contents
+    //check correctness of patchdata contents
     for(const u64 a : sche.owned_patch_id){
          Test_assert("match data", patch_data_check_match( sche.patch_data.owned_data[a],
 check_patchdata[a])) ;

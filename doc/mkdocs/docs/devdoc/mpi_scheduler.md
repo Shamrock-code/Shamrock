@@ -60,11 +60,11 @@ void scheduler_step(bool do_split_merge,bool do_load_balancing){
         split_patches(split_rq);
 
         // update packing index
-        // same operation on evey nodes
+        // same operation on every nodes
         set_patch_pack_values(merge_rq);
 
         // update patch list
-        // necessary to update load values in splitted patches
+        // necessary to update load values in split patches
         // alternative : disable this step and set fake load values (load parent / 8)
         //alternative impossible if gravity because we have to compute the multipole
         //owned_patch_id = patch_list.build_local();

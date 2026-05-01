@@ -14,7 +14,7 @@ The type of protocol is selected when building the object, by passing a value of
 
 
 ```{note}
-`DirectGPUFlatten` is to by-pass the bug of openmpi when sending structs with direct GPU
+`DirectGPUFlatten` is to bypass the bug of openmpi when sending structs with direct GPU
 ```
 
 ## Building a buffer

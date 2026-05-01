@@ -1,11 +1,9 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 message("   ---- fmtlib section ----")
 
@@ -25,7 +23,9 @@ message(STATUS "SHAMROCK_EXTERNAL_FMTLIB : ${SHAMROCK_EXTERNAL_FMTLIB}")
 if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     message(STATUS "Using git submodule fmtlib")
 
-    _check_git_submodule_cloned(${CMAKE_CURRENT_SOURCE_DIR}/external/fmt 8303d140a1a11f19b982a9f664bbe59a1ccda3f4)
+    _check_git_submodule_cloned(
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/fmt 8303d140a1a11f19b982a9f664bbe59a1ccda3f4
+    )
 
     option(USE_MANUAL_FMTLIB "Bypass fmt cmake integration" Off)
 
@@ -40,9 +40,8 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
         add_library(fmt::fmt-header-only ALIAS fmt-header-only)
         target_compile_definitions(fmt-header-only INTERFACE FMT_HEADER_ONLY=1)
         target_compile_features(fmt-header-only INTERFACE cxx_std_11)
-        target_include_directories(fmt-header-only
-            BEFORE INTERFACE
-            ${CMAKE_CURRENT_LIST_DIR}external//fmt/include
+        target_include_directories(
+            fmt-header-only BEFORE INTERFACE ${CMAKE_CURRENT_LIST_DIR}external//fmt/include
         )
     else()
         add_subdirectory(external/fmt)
@@ -54,7 +53,9 @@ if(NOT SHAMROCK_EXTERNAL_FMTLIB)
     # Override include directories property as system includes instead to avoid warnings
     # From https://stackoverflow.com/questions/64064157/is-there-a-way-to-get-isystem-for-fetchcontent-targets
     get_target_property(fmtlib_IID fmt-header-only INTERFACE_INCLUDE_DIRECTORIES)
-    set_target_properties(fmt-header-only PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${fmtlib_IID}")
+    set_target_properties(
+        fmt-header-only PROPERTIES INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "${fmtlib_IID}"
+    )
 
 else()
     message(STATUS "Using system fmtlib")

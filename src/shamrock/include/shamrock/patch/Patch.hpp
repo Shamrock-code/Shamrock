@@ -138,7 +138,7 @@ namespace shamrock::patch {
             sycl::vec<u64, 3> src_offset, sycl::vec<T, 3> divfact, sycl::vec<T, 3> offset) const;
 
         /**
-         * @brief check if particle is in the asked range, given the ouput of @convert_coord
+         * @brief check if particle is in the asked range, given the output of @convert_coord
          *
          * @tparam T the type of coordinate
          * @param val the value to check against

@@ -17,6 +17,7 @@
 
 #include "shammodels/ramses/modules/ResidualDot.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shamalgs/primitives/dot_sum.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 
 namespace shammodels::basegodunov::modules {
@@ -26,9 +27,13 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
 
         Tscal loc_val = {};
-        edges.spans_phi_res.get_refs().for_each([&](u32 i, PatchDataField<T> &res_field_ref) {
-            loc_val += res_field_ref.compute_dot_sum();
-        });
+        edges.spans_phi_res.get_refs().for_each(
+            [&](u32 patch_id, PatchDataField<T> &res_field_ref) {
+                // loc_val += res_field_ref.compute_dot_sum();
+
+                auto buf_length = block_size * edges.sizes.indexes.get(patch_id);
+                loc_val += shamalgs::primitives::dot_sum(res_field_ref.get_buf(), 0, buf_length);
+            });
 
         edges.res_ddot.value = shamalgs::collective::allreduce_sum(loc_val);
     }

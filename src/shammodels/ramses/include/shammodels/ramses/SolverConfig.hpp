@@ -77,14 +77,21 @@ namespace shammodels::basegodunov {
         inline bool is_gas_passive_scalar_on() { return npscal_gas > 0; }
     };
 
+    enum CouplinGravitygMode { NoCoupling = 0, RAMSES_LIKE = 1 };
+
     template<class Tvec>
     struct GravityConfig {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
-        Tscal tol                = 1e-6;
+        using Tscal                               = shambase::VecComponent<Tvec>;
+        GravityMode gravity_mode                  = NoGravity;
+        CouplinGravitygMode coupling_gravity_mode = NoCoupling;
+        bool analytical_gravity = false; // whether to use an external analytical gravity
+        Tscal tol               = 1e-6;
+        Tscal G                 = 1.; // for some tests purpose one can want to fix the value of G
+        bool set_G              = false;
+        u32 Niter_max           = 100;
         inline Tscal get_tolerance() { return tol; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
+        inline bool is_coupling_gravity_on() { return (coupling_gravity_mode != NoCoupling); }
     };
 
     template<class Tvec>
@@ -100,14 +107,22 @@ namespace shammodels::basegodunov {
             Tscal crit_mass;
         };
 
-        using mode = std::variant<None, DensityBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        using mode = std::variant<None, DensityBased, PseudoGradientBased>;
 
         mode config = None{};
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
 
-        bool need_level_zero_compute() { return false; }
-        bool need_amr_level_compute() { return false; }
+        bool need_level_zero_compute() { return true; }
+        bool need_amr_level_compute() { return true; }
     };
 
     struct BCConfig {
@@ -208,11 +223,16 @@ struct shammodels::basegodunov::SolverConfig {
     inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
-        auto scal_G = get_constant_G();
-        return 4 * M_PI * scal_G;
+        if (gravity_config.set_G) {
+            return 4. * M_PI * gravity_config.G;
+        } else {
+            auto scal_G = get_constant_G();
+            return 4 * M_PI * scal_G;
+        }
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    inline bool is_coupling_gravity_on() { return gravity_config.is_coupling_gravity_on(); }
     inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////

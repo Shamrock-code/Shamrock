@@ -44,6 +44,19 @@ set(Sources
     src/modules/SumFluxHydro.cpp
     src/modules/SumFluxDust.cpp
     src/SolverConfig.cpp
+
+    src/modules/NodeAXPY.cpp
+    src/modules/NodeAYPX.cpp
+    src/modules/NodeHadamardProd.cpp
+    src/modules/NodeSpMVPoisson3D.cpp
+    src/modules/NodeSumReduction.cpp
+    src/modules/NodePCGInit.cpp
+    src/modules/NodeJacobiPreconditioner.cpp
+    src/modules/NodeCGLoop.cpp
+    src/modules/NodeSelfGravityAcceleration.cpp
+    src/modules/NodeNextRho.cpp
+    src/modules/NodeGetNextConsVar.cpp
+    src/modules/TimeIntegratorSelfGravity.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

@@ -9,9 +9,10 @@ message("   ---- c++ config section ----")
 
 include(CheckCXXCompilerFlag)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection") # or 11, 14, 17, 20
+set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ version selection") # or 11, 14, 17, 20
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # optional, ensure standard is supported
 set(CMAKE_CXX_EXTENSIONS OFF) # optional, keep compiler extensions off
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # otherwise clang-scan-deps will complain about the SYCL flags
 
 check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
 check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)

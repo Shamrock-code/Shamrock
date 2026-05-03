@@ -31,8 +31,10 @@ namespace shammodels::common::modules {
 
         using Tscal = shambase::VecComponent<T>;
 
+        u32 nvar;
+
         public:
-        ForwardEuler() = default;
+        ForwardEuler(u32 nvar = 1) : nvar(nvar) {}
 
         struct Edges {
             const shamrock::solvergraph::IDataEdge<Tscal> &dt;
@@ -68,14 +70,32 @@ namespace shammodels::common::modules {
 
             Tscal dt = edges.dt.data;
 
-            sham::distributed_data_kernel_call(
-                shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{edges.time_derivative.get_spans()},
-                sham::DDMultiRef{edges.field.get_spans()},
-                edges.sizes.indexes,
-                [dt](u32 gid, const T *time_derivative, T *field) {
-                    field[gid] = field[gid] + dt * time_derivative[gid];
+            if (nvar == 1) {
+
+                sham::distributed_data_kernel_call(
+                    shamsys::instance::get_compute_scheduler_ptr(),
+                    sham::DDMultiRef{edges.time_derivative.get_spans()},
+                    sham::DDMultiRef{edges.field.get_spans()},
+                    edges.sizes.indexes,
+                    [dt](u32 gid, const T *time_derivative, T *field) {
+                        field[gid] = field[gid] + dt * time_derivative[gid];
+                    });
+
+            } else {
+
+                auto var_count = edges.sizes.indexes.template map<u32>([&](u64 id, u32 count) {
+                    return count * nvar;
                 });
+
+                sham::distributed_data_kernel_call(
+                    shamsys::instance::get_compute_scheduler_ptr(),
+                    sham::DDMultiRef{edges.time_derivative.get_spans()},
+                    sham::DDMultiRef{edges.field.get_spans()},
+                    var_count,
+                    [dt](u32 gid, const T *time_derivative, T *field) {
+                        field[gid] = field[gid] + dt * time_derivative[gid];
+                    });
+            }
         }
 
         inline virtual std::string _impl_get_label() const { return "ForwardEuler"; };

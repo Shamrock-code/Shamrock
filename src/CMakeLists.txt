@@ -20,7 +20,6 @@ set(as_subproject
     shamlib
     shampylib
     shammodels_common
-    shammodels_nbody
     shammodels_zeus
     shammodels_ramses
     shammodels_sph
@@ -51,7 +50,6 @@ add_subdirectory(shamrock)
 add_subdirectory(shampylib)
 
 add_subdirectory(shammodels/common)
-add_subdirectory(shammodels/nbody)
 add_subdirectory(shammodels/zeus)
 add_subdirectory(shammodels/ramses)
 add_subdirectory(shammodels/sph)

@@ -647,21 +647,21 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     block_sorter.reorder_amr_blocks();
 
     // get refine and derefine list
-    shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-    shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
+    shambase::DistributedData<sham::DeviceBuffer<u32>> dd_refine_list;
+    shambase::DistributedData<sham::DeviceBuffer<u32>> dd_derefine_list;
 
-    gen_refine_block_changes<UserAccCrit>(refine_list, derefine_list);
+    gen_refine_block_changes<UserAccCrit>(dd_refine_list, dd_derefine_list);
 
     //////// apply refine ////////
     // Note that this only add new blocks at the end of the patchdata
-    internal_refine_grid<UserAccSplit>(std::move(refine_list));
+    internal_refine_grid<UserAccSplit>(std::move(dd_refine_list));
 
     //////// apply derefine ////////
     // Note that this will perform the merge then remove the old blocks
     // This is ok to call straight after the refine without edditing the index list in derefine_list
     // since no permutations were applied in internal_refine_grid and no cells can be both refined
     // and derefined in the same pass
-    internal_derefine_grid<UserAccMerge>(std::move(derefine_list));
+    internal_derefine_grid<UserAccMerge>(std::move(dd_derefine_list));
 }
 
 template<class Tvec, class TgridVec>

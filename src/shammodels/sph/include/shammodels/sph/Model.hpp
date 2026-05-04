@@ -312,7 +312,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -332,7 +332,7 @@ namespace shammodels::sph {
 
                     // for disc with P = \rho u (/gamma - 1)
                     // the scaleheight : H = \sqrt{u (\gamma -1)}/\Omega_K
-                    // therefor the effective soundspeed is : \sqrt{(\gamma -1)u}
+                    // therefore the effective soundspeed is : \sqrt{(\gamma -1)u}
                     // whereas the real one is \sqrt{(\gamma -1)\gamma u}
                     vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
                     vec_h.push_back(shamrock::sph::h_rho(part_mass, o.rho, Kernel::hfactd));
@@ -418,12 +418,12 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
@@ -475,7 +475,7 @@ namespace shammodels::sph {
 
             std::string log = "";
 
-            sched.for_each_local_patchdata([&](const Patch ptch, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &ptch, PatchDataLayer &pdat) {
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
 
                 shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(ptch);
@@ -574,12 +574,12 @@ namespace shammodels::sph {
                 reatrib.reatribute_patch_objects(sptree, "xyz");
             }
 
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             sched.scheduler_step(true, true);
 
             log = "";
-            sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+            sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                 log += shambase::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });

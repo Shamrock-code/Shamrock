@@ -28,7 +28,7 @@
 // content
 
 // The idea is to move pre head and the header to the host
-// to avoid multiplying querries to the device
+// to avoid multiplying queries to the device
 
 u64 extract_preahead(sham::DeviceQueue &q, sham::DeviceBuffer<u8> &storage) {
 

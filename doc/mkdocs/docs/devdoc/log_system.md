@@ -19,7 +19,7 @@ currently available ones are :
 | `debug_mpi`       | 100 |  debug print for mpi  |
 | `debug_sycl`       | 11 |  debug print for sycl  |
 | `debug`       | 10 |  generic debug print  |
-| `info`       | 1 |  print usefull optional information  |
+| `info`       | 1 |  print useful optional information  |
 | `normal`       | 0 |  normal logging level  |
 | `warn`       | -1 |  warnings  |
 | `err`       | -10 |  errors  |

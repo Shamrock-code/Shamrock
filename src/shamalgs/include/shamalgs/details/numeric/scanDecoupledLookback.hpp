@@ -83,12 +83,12 @@ namespace shamalgs::numeric::details {
         inline bool is_invalid() { return state.x() == STATE_X; }
     };
 
-    enum DecoupledLoockBackPolicy { Standard, Parralelized };
+    enum DecoupledLookBackPolicy { Standard, Parallelized };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBack;
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBackAccessed {
         public:
         sycl::accessor<typename Tile::PackStorage, 1, sycl::access::mode::read_write>
@@ -197,7 +197,7 @@ namespace shamalgs::numeric::details {
         }
     };
 
-    template<class T, u32 group_size, DecoupledLoockBackPolicy policy, class Tile>
+    template<class T, u32 group_size, DecoupledLookBackPolicy policy, class Tile>
     class ScanDecoupledLoockBack {
         public:
         u32 slice_count;
@@ -485,6 +485,10 @@ namespace shamalgs::numeric::details {
 
                                     accum += tile_state.y();
 
+                                    // if it overflows, tile_ptr == 0, but in that case we can only
+                                    // reach this line if the acc_tile_state[0] is in P state.
+                                    // Therefore we will never perform an access again with tile_ptr
+                                    // so it is safe
                                     tile_ptr--;
                                 }
                             }

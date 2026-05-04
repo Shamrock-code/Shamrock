@@ -63,7 +63,7 @@ TestStart(
 }
 ```
 
-The `TestStart` macro registers the test. You can find other assertion macros (like `REQUIRE_EQUAL`, `REQUIRE_FLOAT_EQUAL`, etc.) in `src/shamtest/shamtest.hpp`.
+The TestStart macro registers the test. You can find other assertion macros (like REQUIRE_EQUAL, REQUIRE_FLOAT_EQUAL, etc.) in src/shamtest/shamtest.hpp (see the [full list in Doxygen](https://shamrock-code.github.io/Shamrock/doxygen/shamtest_8hpp.html)).
 
 ### Test Structure
 

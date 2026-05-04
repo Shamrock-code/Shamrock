@@ -119,7 +119,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
     auto has_pdat = [&]() {
         bool ret = false;
         using namespace shamrock::patch;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -307,7 +307,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     auto has_pdat = [&]() {
         bool ret = false;
         using namespace shamrock::patch;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -404,7 +404,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "final particle count =", injected_parts, "begining injection ...");
+            "SPH setup", "final particle count =", injected_parts, "beginning injection ...");
     }
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
@@ -455,7 +455,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
                 // inject in local domains first
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
-                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+                sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                     shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
                     PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
@@ -478,7 +478,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     }
                 });
 
-                sched.check_patchdata_locality_corectness();
+                sched.check_patchdata_locality_correctness();
 
                 inserter.balance_load(compute_load);
 

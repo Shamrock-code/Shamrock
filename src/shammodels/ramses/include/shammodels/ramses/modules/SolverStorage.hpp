@@ -42,6 +42,7 @@
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
@@ -70,7 +71,7 @@ namespace shammodels::basegodunov {
 
         std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<u64>>> local_patch_ids;
 
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+        std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_over2;
 

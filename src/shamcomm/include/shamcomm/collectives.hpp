@@ -42,6 +42,19 @@ namespace shamcomm {
         const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec);
 
     /**
+     * @brief Allgathers a string from all nodes and concatenates it in a std::string
+     *
+     * This function gathers the string `send_vec` from all nodes and concatenates the
+     * result in `recv_vec` on every rank. The result is ordered by the order of the
+     * nodes in the communicator, i.e. the string is ordered by rank.
+     */
+    void allgather_str(const std::string &send_vec, std::string &recv_vec);
+
+    /// same as allgather_str but with std::basic_string
+    void allgather_basic_str(
+        const std::basic_string<byte> &send_vec, std::basic_string<byte> &recv_vec);
+
+    /**
      * @brief Constructs a histogram from a vector of strings, counting occurrences
      *        of each unique string.
      *
@@ -56,8 +69,11 @@ namespace shamcomm {
      * @return An unordered map where keys are unique strings from the input and
      *         values are the counts of their occurrences. (valid only on rank 0)
      */
-
     std::unordered_map<std::string, int> string_histogram(
+        const std::vector<std::string> &inputs, std::string delimiter = "\n");
+
+    /// same as string_histogram but with result return on every rank
+    std::unordered_map<std::string, int> all_string_histogram(
         const std::vector<std::string> &inputs, std::string delimiter = "\n");
 
 } // namespace shamcomm

@@ -15,7 +15,7 @@ html {
     --pst-header-height: 4rem;
 }
 
-/* hide download note in exemples, see https://github.com/matplotlib/matplotlib/pull/21455/files */
+/* hide download note in examples, see https://github.com/matplotlib/matplotlib/pull/21455/files */
 div.sphx-glr-download-link-note {
     display: none;
 }

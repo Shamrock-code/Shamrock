@@ -34,7 +34,7 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrun, 1) {
 
     PyScriptHandle hdnl{};
 
-    REQUIRE_NAMED("succesfull", hdnl.exec(R"(
+    REQUIRE_NAMED("successful", hdnl.exec(R"(
             a=0
         )"));
 }

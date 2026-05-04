@@ -93,7 +93,7 @@ namespace shamtest {
                     printf("%-20s", res.asserts.asserts[j].name.c_str());
 
                     if (res.asserts.asserts[j].value) {
-                        std::cout << "  (\033[;32mSucces\033[0m)\n";
+                        std::cout << "  (\033[;32mSuccess\033[0m)\n";
                     } else {
                         std::cout << "  (\033[1;31m Fail \033[0m)\n";
                         if (!res.asserts.asserts[j].comment.empty()) {
@@ -106,29 +106,29 @@ namespace shamtest {
         }
 
         u32 assert_count = 0;
-        u32 succes_cnt   = 0;
+        u32 success_cnt  = 0;
         for (int rank = 0; rank < rank_results.size(); rank++) {
             auto &res = rank_results[rank];
             for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
                 if (res.asserts.asserts[j].value) {
-                    succes_cnt++;
+                    success_cnt++;
                 }
                 assert_count++;
             }
         }
 
-        if (succes_cnt == assert_count) {
-            std::cout << "   -> Result : \033[;32mSucces\033[0m";
+        if (success_cnt == assert_count) {
+            std::cout << "   -> Result : \033[;32mSuccess\033[0m";
         } else {
             std::cout << "   -> Result : \033[1;31m Fail \033[0m";
         }
 
-        std::string s_assert = shambase::format(" [{}/{}] ", succes_cnt, assert_count);
+        std::string s_assert = shambase::format(" [{}/{}] ", success_cnt, assert_count);
         printf("%-15s", s_assert.c_str());
         std::cout << " (" << timer.get_time_str() << ")" << std::endl;
 
         if (shamcmdopt::is_ci_github_actions()) {
-            if (succes_cnt != assert_count) {
+            if (success_cnt != assert_count) {
                 logger::raw_ln(shambase::format("##[error]Test {} failed", rank_results[0].name));
             }
         }
@@ -175,7 +175,7 @@ namespace shamtest {
             out += shambase::format_printf("%-20s", res.asserts.asserts[j].name.c_str());
 
             if (res.asserts.asserts[j].value) {
-                out += "  (\033[;32mSucces\033[0m)\n";
+                out += "  (\033[;32mSuccess\033[0m)\n";
             } else {
                 out += "  (\033[1;31m Fail \033[0m)\n";
             }
@@ -222,7 +222,7 @@ namespace shamtest {
 
         std::cout << "Test suite status : ";
         if (fail_count == 0) {
-            std::cout << "  (\033[;32mSucces\033[0m)";
+            std::cout << "  (\033[;32mSuccess\033[0m)";
             printf(" [%d/%d] \n", succ_count, test_count);
         } else {
             std::cout << "  (\033[1;31m Fail \033[0m)";

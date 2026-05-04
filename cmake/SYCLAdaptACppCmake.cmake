@@ -39,7 +39,7 @@ if((NOT (DEFINED HIPSYCL_TARGETS)) AND (NOT (DEFINED ACPP_TARGETS)))
   please set -DHIPSYCL_TARGETS=<target_list>
   or -DACPP_TARGETS=<target_list>
   depending on the compiler version
-  exemple : -DACPP_TARGETS=omp;cuda:sm_52
+  example : -DACPP_TARGETS=omp;cuda:sm_52
   ")
 
 endif()

@@ -198,7 +198,7 @@ class PatchScheduler {
 
     std::string format_patch_coord(shamrock::patch::Patch p);
 
-    void check_patchdata_locality_corectness();
+    void check_patchdata_locality_correctness();
 
     [[deprecated]]
     void dump_local_patches(std::string filename);
@@ -242,7 +242,7 @@ class PatchScheduler {
 
     /**
      * @brief for each macro for patchadata
-     * exemple usage
+     * example usage
      * @code{.cpp}
      * sched.for_each_patch_data(
      *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) {
@@ -281,16 +281,18 @@ class PatchScheduler {
         });
     }
 
-    inline void for_each_global_patch(std::function<void(const shamrock::patch::Patch)> fct) {
-        for (shamrock::patch::Patch p : patch_list.global) {
+    inline void for_each_global_patch(
+        const std::function<void(const shamrock::patch::Patch &)> &fct) {
+        for (const shamrock::patch::Patch &p : patch_list.global) {
             if (!p.is_err_mode()) {
                 fct(p);
             }
         }
     }
 
-    inline void for_each_local_patch(std::function<void(const shamrock::patch::Patch)> fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+    inline void for_each_local_patch(
+        const std::function<void(const shamrock::patch::Patch &)> &fct) {
+        for (const shamrock::patch::Patch &p : patch_list.local) {
             if (!p.is_err_mode()) {
                 fct(p);
             }
@@ -298,8 +300,9 @@ class PatchScheduler {
     }
 
     inline void for_each_local_patchdata(
-        std::function<void(const shamrock::patch::Patch, shamrock::patch::PatchDataLayer &)> fct) {
-        for (shamrock::patch::Patch p : patch_list.local) {
+        const std::function<void(const shamrock::patch::Patch &, shamrock::patch::PatchDataLayer &)>
+            &fct) {
+        for (const shamrock::patch::Patch &p : patch_list.local) {
             if (!p.is_err_mode()) {
                 fct(p, patch_data.get_pdat(p.id_patch));
             }

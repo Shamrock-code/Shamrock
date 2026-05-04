@@ -22,7 +22,7 @@
 /**
  * @brief provide information about the source location
  *
- * Exemple :
+ * Example :
  * \code{.cpp}
  * SourceLocation loc = SourceLocation{};
  * \endcode

@@ -22,6 +22,7 @@ pip_list=(
     "matplotlib"
     "numpy"
     "scipy"
+    "myst-parser"
     )
 
 for package in "${pip_list[@]}"; do

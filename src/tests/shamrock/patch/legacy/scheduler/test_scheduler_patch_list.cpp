@@ -61,7 +61,7 @@ Test_start("SchedulerPatchList::fake_patch_list_gen()::",no_patch_intersection,-
 
 
 //TODO use "make_fake_patch_list" instead of the old utility
-Test_start("SchedulerPatchList::",build_select_corectness,-1){
+Test_start("SchedulerPatchList::",build_select_correctness,-1){
     patch::create_MPI_patch_type();
 
     //in the end this vector should be recovered in recv_vec
@@ -78,12 +78,12 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
     auto res = patch_list.build_local();
 
 
-    //check corectness of local patch list
-    bool corect_size = patch_list.local.size() == local_check_vec.size();
-    Test_assert("corect size for local patch", corect_size);
+    //check correctness of local patch list
+    bool correct_size = patch_list.local.size() == local_check_vec.size();
+    Test_assert("correct size for local patch", correct_size);
     for(u32 i = 0 ; i < patch_list.local.size(); i++){
-        if(corect_size){
-            Test_assert("corect patch", patch_list.local[i] == local_check_vec[i]);
+        if(correct_size){
+            Test_assert("correct patch", patch_list.local[i] == local_check_vec[i]);
         }
     }
 
@@ -92,11 +92,11 @@ Test_start("SchedulerPatchList::",build_select_corectness,-1){
     patch_list.build_global();
 
 
-    corect_size = patch_list.global.size() == check_vec.size();
-    Test_assert("corect size for global patch", corect_size);
+    correct_size = patch_list.global.size() == check_vec.size();
+    Test_assert("correct size for global patch", correct_size);
     for(u32 i = 0 ; i < patch_list.global.size(); i++){
-        if(corect_size){
-            Test_assert("corect patch", patch_list.global[i] == check_vec[i]);
+        if(correct_size){
+            Test_assert("correct patch", patch_list.global[i] == check_vec[i]);
         }
     }
 

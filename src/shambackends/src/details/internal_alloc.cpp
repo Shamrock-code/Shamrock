@@ -130,7 +130,8 @@ namespace sham::details {
 
     std::string log_mem_perf_info(const std::shared_ptr<DeviceScheduler> &dev_sched) {
 
-        std::string fmt = R"log(
+        return shambase::format(
+            R"log(
     World infos :
         World size = {}
         World rank = {}
@@ -143,10 +144,7 @@ namespace sham::details {
         allocated_byte_host = {}
         allocated_byte_device = {}
         allocated_byte_shared = {}
-        )log";
-
-        return shambase::format(
-            fmt,
+        )log",
             shamcomm::world_size(),
             shamcomm::world_rank(),
             dev_sched->ctx->device->dev.get_info<sycl::info::device::name>(),

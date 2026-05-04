@@ -44,6 +44,22 @@ if(SHAMROCK_USE_CPPTRACE)
     target_compile_definitions(shamsys PUBLIC -DSHAMROCK_USE_CPPTRACE)
 endif()
 
+include(CheckIncludeFileCXX)
+
+check_include_file_cxx(geopm/PlatformIO.hpp HAVE_GEOPM_HEADER)
+find_library(GEOPM_LIB geopmd)
+
+if(HAVE_GEOPM_HEADER AND GEOPM_LIB)
+    option(SHAMROCK_USE_GEOPM "use geopm tooling" Off)
+
+    message("-- SHAMROCK_USE_GEOPM is set to ${SHAMROCK_USE_GEOPM}")
+
+    if(SHAMROCK_USE_GEOPM)
+        target_link_libraries(shamsys PUBLIC ${GEOPM_LIB})
+        target_compile_definitions(shamsys PUBLIC SHAMROCK_USE_GEOPM)
+    endif()
+endif()
+
 target_include_directories(shamsys PUBLIC
 "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
 "$<INSTALL_INTERFACE:include>")

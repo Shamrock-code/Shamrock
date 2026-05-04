@@ -130,7 +130,8 @@ namespace shammodels::sph::modules {
                     const_mdspan_rank_1 massgrid(massgrid_ptr, nbins);
 
                     auto rho_dust = [&](int j) {
-                        return s_j[j] * s_j[j];
+                        auto tmp = s_j[j];
+                        return tmp * tmp;
                     };
 
                     // should implement the same content as

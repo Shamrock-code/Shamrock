@@ -256,7 +256,7 @@ namespace shamcmdopt {
             if (arg.has_value()) {
                 // Option takes a value
                 // Example: --output=[Output file]:file:_files
-                entry = "'" + name + "=[" + desc + "]:" + arg.value() + "'";
+                entry = "'" + name + "[" + desc + "]:" + arg.value() + "'";
             } else {
                 // Flag without value
                 // Example: --help[Show help]

@@ -52,12 +52,14 @@ def coala_source_term_k0(nbins, massgrid, rhodust, rhodust_eps, tensor_tabflux_c
 
     return S_coag
 
-import numpy as np
+
+import time
+
 from scipy.special import legendre
 
 from .generate_tabflux_tabintflux import compute_coagtabflux_k0_numba
 from .utils_polynomials import legendre_coeffs
-import time
+
 
 def coala_precalc_tabflux_coag(K0, nbins, Q, massgrid):
     """
@@ -90,7 +92,6 @@ def coala_precalc_tabflux_coag(K0, nbins, Q, massgrid):
 
     """
 
-
     kernel = 3
     kpol = 0
 
@@ -100,25 +101,22 @@ def coala_precalc_tabflux_coag(K0, nbins, Q, massgrid):
     mat_coeffs_leg = np.zeros((kpol + 1, kpol + 1))
     mat_coeffs_leg = legendre_coeffs(kpol)
 
-
     start = time.time()
     tensor_tabflux_coag = np.zeros((nbins, nbins, nbins))
 
     compute_coagtabflux_k0_numba(
-            kernel,
-            K0,
-            Q,
-            vecnodes,
-            vecweights,
-            nbins,
-            massgrid,
-            mat_coeffs_leg,
-            tensor_tabflux_coag,
-        )  
+        kernel,
+        K0,
+        Q,
+        vecnodes,
+        vecweights,
+        nbins,
+        massgrid,
+        mat_coeffs_leg,
+        tensor_tabflux_coag,
+    )
 
-        
     finish = time.time()
     print("Tensor tabflux generated in %.5f s" % (finish - start))
 
     return tensor_tabflux_coag
-    

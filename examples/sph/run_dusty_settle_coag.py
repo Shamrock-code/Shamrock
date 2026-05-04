@@ -11,8 +11,8 @@ import shamrock
 
 shamrock.enable_experimental_features()
 import numpy as np
-
 import shamrock.external.coala as coala
+
 print(f"coala path : {coala.__file__}")
 
 
@@ -95,7 +95,6 @@ tabflux_coag = coala.coala_precalc_tabflux_coag(K0, ndust, Q, massgrid)
 
 from scipy.special import erfinv
 
-
 bmin = (-box / 4, -box, -box / 4)
 bmax = (box / 4, box, box / 4)
 
@@ -174,7 +173,7 @@ def f_remap(r):
     x, y, z = r
 
     rn = max(abs(yM), abs(ym))
-    #print(y, H, H * erfinv(y / rn))
+    # print(y, H, H * erfinv(y / rn))
     y = H * erfinv(y / rn)
 
     y = min(y, yM)

@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <experimental/mdspan>
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
@@ -43,7 +44,6 @@
 #include <optional>
 #include <random>
 #include <utility>
-#include <experimental/mdspan>
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -283,7 +283,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_dust_evol_coala_coag",
             [](TConfig &self, std::vector<Tscal> massgrid, py::array_t<Tscal> tabflux_coag) {
-
                 u32 nbins = massgrid.size() - 1;
 
                 // tabflux_coag is a 3D array of shape (nbins ** 3)
@@ -294,14 +293,16 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 }
 
                 // assert shape is (nbins, nbins, nbins)
-                if (tabflux_coag.shape(0) != nbins || tabflux_coag.shape(1) != nbins || tabflux_coag.shape(2) != nbins) {
-                    throw std::runtime_error("tabflux_coag must be a 3D array of shape (nbins, nbins, nbins)");
+                if (tabflux_coag.shape(0) != nbins || tabflux_coag.shape(1) != nbins
+                    || tabflux_coag.shape(2) != nbins) {
+                    throw std::runtime_error(
+                        "tabflux_coag must be a 3D array of shape (nbins, nbins, nbins)");
                 }
 
                 std::vector<Tscal> tabflux_coag_vec(nbins * nbins * nbins);
-                
+
                 using mdspan_rank_3 = std::mdspan<Tscal, std::dextents<u32, 3>>;
-                mdspan_rank_3 tabflux_coag_mdspan(tabflux_coag_vec.data(), nbins, nbins, nbins); 
+                mdspan_rank_3 tabflux_coag_mdspan(tabflux_coag_vec.data(), nbins, nbins, nbins);
 
                 for (u32 i = 0; i < nbins; i++) {
                     for (u32 j = 0; j < nbins; j++) {

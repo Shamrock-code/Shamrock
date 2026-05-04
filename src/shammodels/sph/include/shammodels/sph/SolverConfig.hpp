@@ -207,7 +207,7 @@ namespace shammodels::sph {
 
                     u32 ndust = get_dust_nvar();
 
-                    if (cfg->massgrid.size()-1 != ndust) {
+                    if (cfg->massgrid.size() - 1 != ndust) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
                             "massgrid size does not match the number of dust bins");
                     }

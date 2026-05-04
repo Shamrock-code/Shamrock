@@ -11,11 +11,10 @@ from .compute_coag import *  # import also solver_DG.py (to port to C++)
 from .exact_solutions_coag import *
 from .generate_tabflux_tabintflux import *
 from .init_massgrid import *
+from .interface_coala_shamrock import *
 
 # Iterate coagulation solver
 from .iterate_coag import *  # Only for coala tests (maybe to port for tests)
 from .L2_proj import *  # to port to C++ (interpolate for tests & interp rho dust from hydro)
 from .limiter import *  # to port to C++ (positivity limiter)
 from .reconstruction_g import *  # to port to C++ (distrib reconstruction)
-
-from .interface_coala_shamrock import *

@@ -38,7 +38,6 @@ namespace shamrock::solvergraph {
         fields.get_refs().for_each([&](u32 id_patch, PatchDataField<T> &field) {
             // TODO: currently we guess the GZ size using the input, we should use in place ghost
             // zones really ...
-            PatchDataField<T> temp_pdat(field.get_name(), field.get_nvar());
             field.shrink(gz_map.at(id_patch));
         });
 

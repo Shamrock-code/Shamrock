@@ -51,3 +51,74 @@ def coala_source_term_k0(nbins, massgrid, rhodust, rhodust_eps, tensor_tabflux_c
     S_coag[1:] = flux[:-1] - flux[1:]
 
     return S_coag
+
+import numpy as np
+from scipy.special import legendre
+
+from .generate_tabflux_tabintflux import compute_coagtabflux_k0_numba
+from .utils_polynomials import legendre_coeffs
+import time
+
+def coala_precalc_tabflux_coag(K0, nbins, Q, massgrid):
+    """
+    Function to iterate coagulation solver to reach the time ndthydro x dthydro
+
+    Function for ballistic kernel with differential velocities dv
+
+    DG scheme k=0, piecewise constant approximation
+
+    Parameters
+    ----------
+    K0 : scalar, type -> float
+       constant value of the kernel function (used to adapt to code unit)
+    nbins : scalar, type -> integer
+       number of dust bins
+    Q : scalar, type -> integer
+       number of points for Gauss-Legendre quadrature
+    massgrid : 1D array (dim = nbins+1), type -> float
+       grid of masses given borders value of mass bins
+
+
+    Returns
+    -------
+    gij_init : 1D array (dim = nbins) or 2D array (dim = (nbins.kpol+1)), type -> float
+       initial components of g on the polynomial basis
+    gij : 1D array (dim = nbins) or 2D array (dim = (nbins.kpol+1)), type -> float
+       evolved components of g on the polynomial basis
+    time_coag : scalar, type -> float
+       final time ndthydro x dthydro
+
+    """
+
+
+    kernel = 3
+    kpol = 0
+
+    vecnodes, vecweights = np.polynomial.legendre.leggauss(Q)
+
+    # Legendre polynomial coefficients
+    mat_coeffs_leg = np.zeros((kpol + 1, kpol + 1))
+    mat_coeffs_leg = legendre_coeffs(kpol)
+
+
+    start = time.time()
+    tensor_tabflux_coag = np.zeros((nbins, nbins, nbins))
+
+    compute_coagtabflux_k0_numba(
+            kernel,
+            K0,
+            Q,
+            vecnodes,
+            vecweights,
+            nbins,
+            massgrid,
+            mat_coeffs_leg,
+            tensor_tabflux_coag,
+        )  
+
+        
+    finish = time.time()
+    print("Tensor tabflux generated in %.5f s" % (finish - start))
+
+    return tensor_tabflux_coag
+    

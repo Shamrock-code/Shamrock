@@ -15,6 +15,7 @@
  */
 
 #include "shambase/memory.hpp"
+#include "shambase/stacktrace.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/vec.hpp"
@@ -155,9 +156,9 @@ namespace shammodels::sph::modules {
                     compute_flux_coag_k0_kdv(nbins, gij, tabflux_coag, dv, flux);
 
                     // compute flux diff and store
-                    S_coag[0] = -flux[0];
+                    S_coag[0] += -flux[0];
                     for (int j = 1; j < nbins; ++j) {
-                        S_coag[j] = flux[j - 1] - flux[j];
+                        S_coag[j] += flux[j - 1] - flux[j];
                     }
                 });
             };
@@ -167,28 +168,31 @@ namespace shammodels::sph::modules {
     template<class Tvec>
     inline void NodeEvolveDustCOALASourceTerm<Tvec>::_impl_evaluate_internal() {
 
+        __shamrock_stack_entry();
+
         auto edges = get_edges();
 
         auto hpart_spans     = edges.hpart.get_spans();
         auto s_j_spans       = edges.s_j.get_spans();
         auto delta_v_j_spans = edges.delta_v_j.get_spans();
 
+        auto counts = edges.part_counts.indexes;
+
+        edges.S_coag.ensure_sizes(counts);
         auto S_coag_spans = edges.S_coag.get_spans();
 
         Tscal rho_eps                                 = edges.rhodust_eps.value;
         const std::vector<Tscal> &massgrid            = edges.massgrid.value;
         const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.value;
 
-        auto counts = edges.part_counts.indexes;
-
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
         auto &q        = shambase::get_check_ref(dev_sched).get_queue();
 
-        sham::DeviceBuffer<Tscal> massgrid_buf(nbins, dev_sched);
+        sham::DeviceBuffer<Tscal> massgrid_buf(nbins + 1, dev_sched);
         massgrid_buf.copy_from_stdvec(massgrid);
 
         sham::DeviceBuffer<Tscal> tensor_tabflux_coag_buf(nbins * nbins * nbins, dev_sched);
-        tensor_tabflux_coag_buf.copy_from_stdvec(massgrid);
+        tensor_tabflux_coag_buf.copy_from_stdvec(tensor_tabflux_coag);
 
         u32 group_size = 64;
 

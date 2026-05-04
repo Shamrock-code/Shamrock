@@ -22,11 +22,16 @@
 #include "shambackends/math.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/ComputeDustTtilde.hpp"
+#include "shammodels/sph/modules/MonoFluidTVIDeltav.hpp"
+#include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
+#include "shammodels/sph/modules/NodeEvolveDustCOALASourceTerm.hpp"
+#include "shammodels/sph/modules/NodeMonofluidTVIAddSourceTerm.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
@@ -1188,6 +1193,67 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
             ds_j_dt_refs);
     }
     node->evaluate();
+
+    if (DustEvolCoalaCoag<Tscal> *cfg_evol
+        = std::get_if<DustEvolCoalaCoag<Tscal>>(&cfg.dust_evol_config)) {
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> massgrid
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
+        massgrid->value = cfg_evol->massgrid;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> tabflux_coag
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
+        tabflux_coag->value = cfg_evol->tabflux_coag;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rhodust_eps
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        rhodust_eps->value = 1e-9;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_pressure
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad P", "grad P");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> delta_v
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(ndust, "Delta v", "Delta v");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> S_coag
+            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "S_coag", "S_coag");
+
+        auto press_grad_node      = std::make_shared<NodeComputePressureGrad<Tvec, SPHKernel>>();
+        auto delta_v_node         = std::make_shared<MonoFluidTVIDeltav<Tvec, SPHKernel>>(ndust);
+        auto node                 = std::make_shared<NodeEvolveDustCOALASourceTerm<Tvec>>(ndust);
+        auto node_add_source_term = std::make_shared<NodeMonofluidTVIAddSourceTerm<Tvec>>(ndust);
+
+        press_grad_node->set_edges(
+            gpart_mass,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            omega_refs,
+            pressure_field,
+            storage.neigh_cache,
+            grad_pressure);
+
+        delta_v_node->set_edges(
+            gpart_mass, part_counts, hpart_refs, grad_pressure, s_j_refs, t_j_field, delta_v);
+
+        node->set_edges(
+            rhodust_eps,
+            massgrid,
+            tabflux_coag,
+            part_counts,
+            hpart_refs,
+            s_j_refs,
+            delta_v,
+            S_coag);
+
+        node_add_source_term->set_edges(part_counts, S_coag, s_j_refs, ds_j_dt_refs);
+
+        press_grad_node->evaluate();
+        delta_v_node->evaluate();
+        node->evaluate();
+        node_add_source_term->evaluate();
+    }
 }
 
 using namespace shammath;

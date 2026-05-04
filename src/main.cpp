@@ -69,6 +69,9 @@ int main(int argc, char *argv[]) {
     opts::register_opt("--pypath", "(sys.path)", "python sys.path to set");
     opts::register_opt("--pypath-from-bin", "(python binary)", "set sys.path from python binary");
 
+    // --show-completion zsh should call opts::print_completion_zsh()
+    opts::register_opt("--show-completion-zsh", {}, "show completion for zsh");
+
     shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
 
     shamcmdopt::register_env_var_doc("SHAM_PROF_PREFIX", "Prefix of shamrock profile outputs");
@@ -83,6 +86,11 @@ int main(int argc, char *argv[]) {
     opts::init(argc, argv);
 
     if (opts::is_help_mode()) {
+        return 0;
+    }
+
+    if (opts::has_option("--show-completion-zsh")) {
+        opts::print_completion_zsh();
         return 0;
     }
 

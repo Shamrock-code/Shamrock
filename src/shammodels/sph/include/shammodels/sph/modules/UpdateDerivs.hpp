@@ -76,6 +76,9 @@ namespace shammodels::sph::modules {
         // Thin wrappers that unpack the variant and forward to the template above.
         void update_derivs_MHD(IdealMHD cfg);
         void update_derivs_MHD(NonIdealMHD cfg);
+
+        template<shamrock::sph::mhd::MHDType MHD_mode>
+        void compute_J(Tscal mu_0);
     };
 
 } // namespace shammodels::sph::modules

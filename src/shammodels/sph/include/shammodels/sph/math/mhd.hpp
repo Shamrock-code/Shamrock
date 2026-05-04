@@ -24,6 +24,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamunits/Constants.hpp"
 #include <tuple>
@@ -33,12 +34,10 @@ namespace shamrock::sph::mhd {
     enum MHDType { Ideal = 0, NonIdeal = 1 };
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
-    inline Tvec MagCurrentJ(
-        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0) {
+    inline void MagCurrentJ_sum(
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec J_a) {
 
-        Tvec J = m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
-
-        return J;
+        J_a += m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
     }
 
     template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
@@ -274,6 +273,9 @@ namespace shamrock::sph::mhd {
         Tvec B_a,
         Tvec B_b,
 
+        Tvec J_a,
+        Tvec J_b,
+
         Tscal psi_a,
         Tscal psi_b,
 
@@ -458,10 +460,10 @@ namespace shamrock::sph::mhd {
         if constexpr (MHD_mode == NonIdeal) {
             // logger::raw_ln("############# NON IDEAL MHD #############");
 
-            Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-                pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
-            Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
-                pmass, B_a, B_b, r_ab_unit * dWab_b, sub_fact_b, mu_0);
+            // Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+            //     pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
+            // Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+            //     pmass, B_a, B_b, r_ab_unit * dWab_b, sub_fact_b, mu_0);
 
             Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
             Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);

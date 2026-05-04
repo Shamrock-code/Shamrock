@@ -1278,6 +1278,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
     const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
     const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
+    const u32 iJ          = (has_B_field) ? pdl.get_field_idx<Tvec>("J") : 0;
     const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
     const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
     const u32 icurlB      = (has_curlB_field) ? pdl.get_field_idx<Tvec>("curlB") : 0;
@@ -1301,6 +1302,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
     u32 ivxyz_interf  = ghost_layout.get_field_idx<Tvec>("vxyz");
     u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+    u32 iJ_interf     = ghost_layout.get_field_idx<Tvec>("J");
 
     const u32 iaxyz_interf
         = (solver_config.has_axyz_in_ghost()) ? ghost_layout.get_field_idx<Tvec>("axyz") : 0;
@@ -1366,6 +1368,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
             if (has_B_field) {
                 sender_patch.get_field<Tvec>(iB_on_rho).append_subset_to(
                     buf_idx, cnt, pdat.get_field<Tvec>(iB_interf));
+                sender_patch.get_field<Tvec>(iJ).append_subset_to(
+                    buf_idx, cnt, pdat.get_field<Tvec>(iJ_interf));
             }
 
             if (has_psi_field) {
@@ -1443,6 +1447,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 
                 if (has_B_field) {
                     pdat_new.get_field<Tvec>(iB_interf).insert(pdat.get_field<Tvec>(iB_on_rho));
+                    pdat_new.get_field<Tvec>(iJ_interf).insert(pdat.get_field<Tvec>(iJ));
                 }
 
                 if (has_psi_field) {

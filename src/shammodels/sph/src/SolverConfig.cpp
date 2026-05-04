@@ -66,6 +66,7 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("B/rho", 1);
             pdl.add_field<Tvec>("dB/rho", 1);
             pdl.add_field<Tscal>("drho/dt", 1);
+            pdl.add_field<Tvec>("J", 1);
         }
 
         if (has_field_psi_on_ch()) {
@@ -132,6 +133,7 @@ namespace shammodels::sph {
 
         if (has_field_B_on_rho()) {
             ghost_layout.add_field<Tvec>("B/rho", 1);
+            ghost_layout.add_field<Tvec>("J", 1); // @@@ only for ni mhd
         }
 
         if (has_field_psi_on_ch()) {

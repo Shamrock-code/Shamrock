@@ -86,11 +86,11 @@ stokes = np.logspace(-3, 0, ndust)
 stopping_times = stokes / omega_k(R0)
 print(stopping_times, omega_k(R0))
 
-do_coag = True
+do_coag = False
 massmax = 1e6
 massmin = 1e-3
 massgrid, massbins = coala.init_grid_log(ndust, massmax, massmin)
-K0 = 1.0
+K0 = 40.0
 Q = 5
 
 tabflux_coag = coala.coala_precalc_tabflux_coag(K0, ndust, Q, massgrid)
@@ -208,14 +208,15 @@ def compute_sj_new(patchdata):
 # TODO: add function to modify fields e.g. get rho and do stuff according to it
 
 tnext = 0
-for j in range(1000):
-    if j == 0:
+for j in range(60):
+    if j == 20:
         for k in range(ndust):
             model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
     if j > 0:
         tnext += 0.1
         model.evolve_until(tnext)
+        # model.timestep()
 
     dic = ctx.collect_data()
     print(dic["s_j"])

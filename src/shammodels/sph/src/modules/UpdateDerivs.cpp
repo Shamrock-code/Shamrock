@@ -1253,6 +1253,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
         delta_v_node->evaluate();
         node->evaluate();
         node_add_source_term->evaluate();
+
+        // logger::raw_ln("S_coag = ", S_coag->get(0).get_buf().copy_to_stdvec());
     }
 }
 

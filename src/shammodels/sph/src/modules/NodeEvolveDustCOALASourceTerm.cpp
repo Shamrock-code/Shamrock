@@ -18,6 +18,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/modules/NodeEvolveDustCOALASourceTerm.hpp"
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
@@ -86,6 +87,7 @@ namespace shammodels::sph::modules {
         Tscal rho_eps;
         u32 corrected_len;
         u32 group_size;
+        u32 true_size;
 
         auto operator()(
             u32 /**/,
@@ -111,6 +113,10 @@ namespace shammodels::sph::modules {
                 cgh.parallel_for(range, [=](sycl::nd_item<1> tid) {
                     const u64 id_a = tid.get_global_linear_id();
                     const u64 lid  = tid.get_local_linear_id();
+
+                    if (id_a >= true_size) {
+                        return;
+                    }
 
                     using mdspan_rank_1 = std::mdspan<Tscal, std::dextents<u32, 1>>;
                     using mdspan_rank_2 = std::mdspan<Tscal, std::dextents<u32, 2>>;
@@ -140,7 +146,7 @@ namespace shammodels::sph::modules {
 
                     for (int j = 0; j < nbins; j++) {
                         Tscal rho_d = rho_dust(j);
-                        gij(j) = (rho_d < rho_eps) ? rho_d / (massgrid[j + 1] - massgrid[j]) : 0;
+                        gij(j) = (rho_d > rho_eps) ? rho_d / (massgrid[j + 1] - massgrid[j]) : 0;
                     }
 
                     // dv_ij = v_dust_j - v_dust_i
@@ -154,9 +160,10 @@ namespace shammodels::sph::modules {
                     compute_flux_coag_k0_kdv(nbins, gij, tabflux_coag, dv, flux);
 
                     // compute flux diff and store
-                    S_coag[0] += -flux[0];
+                    u32 id_a_d     = id_a * nbins;
+                    S_coag[id_a_d] = -flux[0];
                     for (int j = 1; j < nbins; ++j) {
-                        S_coag[j] += flux[j - 1] - flux[j];
+                        S_coag[id_a_d + j] = flux[j - 1] - flux[j];
                     }
                 });
             };
@@ -208,7 +215,7 @@ namespace shammodels::sph::modules {
                     delta_v_j_spans.get(id_patch)},
                 sham::MultiRef{S_coag_spans.get(id_patch)},
                 count,
-                KernelGenCoala_k0<Tvec>{nbins, rho_eps, corrected_len, group_size});
+                KernelGenCoala_k0<Tvec>{nbins, rho_eps, corrected_len, group_size, u32(count)});
         });
     }
 } // namespace shammodels::sph::modules

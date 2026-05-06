@@ -140,9 +140,7 @@ namespace shammodels::sph::modules {
 
                     for (int j = 0; j < nbins; j++) {
                         Tscal rho_d = rho_dust(j);
-                        if (rho_d > rho_eps) {
-                            gij(j) = rho_d / (massgrid[j + 1] - massgrid[j]);
-                        }
+                        gij(j) = (rho_d < rho_eps) ? rho_d / (massgrid[j + 1] - massgrid[j]) : 0;
                     }
 
                     // dv_ij = v_dust_j - v_dust_i

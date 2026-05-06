@@ -5,6 +5,8 @@ Testing Sod tube with SPH
 CI test for Sod tube with SPH
 """
 
+import os
+
 import matplotlib.pyplot as plt
 
 import shamrock
@@ -84,6 +86,7 @@ stokes = np.logspace(-3, 0, ndust)
 stopping_times = stokes / omega_k(R0)
 print(stopping_times, omega_k(R0))
 
+do_coag = True
 massmax = 1e6
 massmin = 1e-3
 massgrid, massbins = coala.init_grid_log(ndust, massmax, massmin)
@@ -98,7 +101,7 @@ from scipy.special import erfinv
 bmin = (-box / 4, -box, -box / 4)
 bmax = (box / 4, box, box / 4)
 
-N_target = 1e5
+N_target = 1e4
 scheduler_split_val = int(2e7)
 scheduler_merge_val = int(1)
 
@@ -129,7 +132,8 @@ cfg.set_artif_viscosity_VaryingCD10(
 )
 cfg.set_dust_mode_monofluid_tvi(ndust)
 cfg.set_dust_stopping_times(stopping_times)
-cfg.set_dust_evol_coala_coag(massgrid, tabflux_coag)
+if do_coag:
+    cfg.set_dust_evol_coala_coag(massgrid, tabflux_coag)
 cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
 cfg.add_ext_force_velocity_dissipation(eta=10)
 cfg.set_boundary_periodic()
@@ -205,13 +209,13 @@ def compute_sj_new(patchdata):
 
 tnext = 0
 for j in range(1000):
+    if j == 0:
+        for k in range(ndust):
+            model.overwrite_field_value_f64("s_j", compute_sj_new, k)
+
     if j > 0:
         tnext += 0.1
         model.evolve_until(tnext)
-
-        if j == 20:
-            for k in range(ndust):
-                model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
     dic = ctx.collect_data()
     print(dic["s_j"])
@@ -266,6 +270,7 @@ for j in range(1000):
     axs[2].set_xlabel(r"$y$")
     axs[2].legend()
 
-    plt.savefig(f"mono_{j}.png")
-    model.do_vtk_dump(f"dump_stratif_{j}.vtk", True)
+    os.makedirs(f"mono_{'coag' if do_coag else 'mono'}", exist_ok=True)
+    plt.savefig(f"mono_{'coag' if do_coag else 'mono'}/{j}.png")
+    # model.do_vtk_dump(f"dump_stratif_{j}.vtk", True)
     plt.close()

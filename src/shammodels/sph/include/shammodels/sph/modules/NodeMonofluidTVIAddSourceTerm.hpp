@@ -21,6 +21,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
 
@@ -28,6 +29,7 @@
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
                                                                                                    \
     /* fields */                                                                                   \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, S)                                              \
@@ -60,6 +62,8 @@ namespace shammodels::sph::modules {
             edges.s_j.check_sizes(edges.part_counts.indexes);
             edges.ds_j_dt.check_sizes(edges.part_counts.indexes);
 
+            auto rhodust_eps = edges.rhodust_eps.value;
+
             shambase::DistributedData<u32> counts = edges.part_counts.indexes.template map<u32>(
                 [nbins = this->nbins](u64 /**/, u32 count) -> u32 {
                     return count * nbins;
@@ -70,11 +74,18 @@ namespace shammodels::sph::modules {
                 sham::DDMultiRef{edges.S.get_spans(), edges.s_j.get_spans()},
                 sham::DDMultiRef{edges.ds_j_dt.get_spans()},
                 counts,
-                [](u32 id,
-                   const Tscal *__restrict S,
-                   const Tscal *__restrict s_j,
-                   Tscal *__restrict ds_j_dt) {
-                    ds_j_dt[id] += S[id] / (2 * sycl::sqrt(s_j[id]));
+                [rhodust_eps](
+                    u32 id,
+                    const Tscal *__restrict S,
+                    const Tscal *__restrict s_j,
+                    Tscal *__restrict ds_j_dt) {
+                    auto sj = s_j[id];
+
+                    bool valid_div = sj * sj > rhodust_eps;
+
+                    auto ds_j_dt_val = (valid_div) ? S[id] / (2 * sycl::sqrt(sj)) : 0;
+
+                    ds_j_dt[id] += ds_j_dt_val;
                 });
         }
 

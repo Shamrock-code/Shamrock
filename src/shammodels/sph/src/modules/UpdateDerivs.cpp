@@ -1247,7 +1247,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
             delta_v,
             S_coag);
 
-        node_add_source_term->set_edges(part_counts, S_coag, s_j_refs, ds_j_dt_refs);
+        node_add_source_term->set_edges(part_counts, rhodust_eps, S_coag, s_j_refs, ds_j_dt_refs);
 
         press_grad_node->evaluate();
         delta_v_node->evaluate();

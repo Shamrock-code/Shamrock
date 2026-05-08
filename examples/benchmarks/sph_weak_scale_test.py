@@ -13,7 +13,7 @@ import shamrock
 
 result_text = ""
 
-for N_target_base in [1e6]:
+for N_target_base in [32e6]:
     shamrock.backends.reset_mem_info_max()
 
     gamma = 5.0 / 3.0
@@ -25,7 +25,7 @@ for N_target_base in [1e6]:
 
     compute_multiplier = shamrock.sys.world_size()
     # compute_multiplier = 12
-    scheduler_split_val = int(2e5)
+    scheduler_split_val = int(2e7)
     scheduler_merge_val = int(1)
 
     N_target = N_target_base * compute_multiplier

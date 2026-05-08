@@ -24,6 +24,7 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
@@ -368,31 +369,33 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
                 PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
 
-                sham::kernel_call(
-                    shamsys::instance::get_compute_scheduler().get_queue(),
-                    sham::MultiRef{xyz.get_buf(), buf_patch_aabb_min, buf_patch_aabb_max},
-                    sham::MultiRef{local_load_values},
-                    xyz.get_obj_cnt(),
-                    [npatch](
-                        u32 i,
-                        const Tvec *__restrict xyz,
-                        const Tvec *__restrict patch_aabb_min,
-                        const Tvec *__restrict patch_aabb_max,
-                        u64 *__restrict local_load_values) {
-                        Tvec pos = xyz[i];
-                        for (size_t j = 0; j < npatch; j++) {
-                            shammath::CoordRange<Tvec> patch_coord
-                                = {patch_aabb_min[j], patch_aabb_max[j]};
-                            if (patch_coord.contain_pos(pos)) {
-                                sycl::atomic_ref<
-                                    u64,
-                                    sycl::memory_order::relaxed,
-                                    sycl::memory_scope::device>
-                                    atomic_local_load_values(local_load_values[j]);
-                                atomic_local_load_values++;
+                if (xyz.get_obj_cnt() > 0) {
+                    sham::kernel_call(
+                        shamsys::instance::get_compute_scheduler().get_queue(),
+                        sham::MultiRef{xyz.get_buf(), buf_patch_aabb_min, buf_patch_aabb_max},
+                        sham::MultiRef{local_load_values},
+                        xyz.get_obj_cnt(),
+                        [npatch](
+                            u32 i,
+                            const Tvec *__restrict xyz,
+                            const Tvec *__restrict patch_aabb_min,
+                            const Tvec *__restrict patch_aabb_max,
+                            u64 *__restrict local_load_values) {
+                            Tvec pos = xyz[i];
+                            for (size_t j = 0; j < npatch; j++) {
+                                shammath::CoordRange<Tvec> patch_coord
+                                    = {patch_aabb_min[j], patch_aabb_max[j]};
+                                if (patch_coord.contain_pos(pos)) {
+                                    sycl::atomic_ref<
+                                        u64,
+                                        sycl::memory_order::relaxed,
+                                        sycl::memory_scope::device>
+                                        atomic_local_load_values(local_load_values[j]);
+                                    atomic_local_load_values++;
+                                }
                             }
-                        }
-                    });
+                        });
+                }
 
                 // recover data
 

@@ -35,6 +35,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <memory>
+#include <vector>
 
 template<class T>
 class Kernel_Extract_element;
@@ -328,10 +329,41 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     auto keep_ids = shamalgs::numeric::stream_compact(dev_sched, keep_flag, nobj);
 
     if (keep_ids.get_size() != remaining) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+
+        // post mortem analysis
+
+        std::vector<u32> ids_to_rem_vec = ids_to_rem.copy_to_stdvec();
+
+        std::sort(ids_to_rem_vec.begin(), ids_to_rem_vec.end());
+
+        bool has_duplicates = false;
+
+        // Adgacent elements in ids_to_rem_vec should be different
+        for (size_t i = 1; i < ids_to_rem_vec.size(); i++) {
+            if (ids_to_rem_vec[i] == ids_to_rem_vec[i - 1]) {
+                has_duplicates = true;
+            }
+        }
+
+        std::vector<u32> keep_flags_vec = keep_flag.copy_to_stdvec();
+
+        // compute keep flags sum
+        u32 keep_flags_sum = std::accumulate(keep_flags_vec.begin(), keep_flags_vec.end(), 0);
+
+        std::string log = shambase::format(
             "the number of remaining ids {} is different from the expected {}",
             keep_ids.get_size(),
-            remaining));
+            remaining);
+
+        log += "\n\nAdditional information:\n";
+        if (has_duplicates) {
+            log += "  ids_to_rem has duplicates = true\n";
+        } else {
+            log += "  ids_to_rem has duplicates = false\n";
+        }
+        log += shambase::format("  keep flags sum = {}\n", keep_flags_sum);
+
+        throw shambase::make_except_with_loc<std::invalid_argument>(log);
     }
 
     index_remap_resize(keep_ids, remaining);

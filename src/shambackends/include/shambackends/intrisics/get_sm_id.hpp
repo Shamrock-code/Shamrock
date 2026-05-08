@@ -79,7 +79,9 @@ namespace sham {
             jit::compile_if(
                 jit::reflect<jit::reflection_query::target_vendor_id>() == jit::vendor_id::nvidia,
                 [&]() {
-                    asm("mov.u32 %0, %%smid;" : "=r"(ret));
+                    u32 x;
+                    asm("mov.u32 %0, %%smid;" : "=r"(x));
+                    ret = x;
                 }););
     #endif
 

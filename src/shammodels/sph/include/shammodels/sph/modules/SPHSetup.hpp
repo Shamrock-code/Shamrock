@@ -60,7 +60,7 @@ namespace shammodels::sph::modules {
             bool do_setup_log                                   = false);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
-            Tscal dr, std::pair<Tvec, Tvec> box);
+            Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous = true);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
             Tscal dr, std::pair<Tvec, Tvec> box);

@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file ResidualDot.hpp
+ * @file NodeSumReduction.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
  *
  */
@@ -22,31 +22,31 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define NODE_RESIDUALDOT_EDGES(X_RO, X_RW)                                                         \
-    /*inputs*/                                                                                     \
+#define NODE_SUMRED_EDGES(X_RO, X_RW)                                                              \
+    /* inputs */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
-    X_RO(shamrock::solvergraph::IFieldRefs<T>, spans_phi_res)                                      \
-    /*outputs*/                                                                                    \
-    X_RW(shamrock::solvergraph::ScalarEdge<Tscal>, res_ddot)
+    X_RO(shamrock::solvergraph::IFieldRefs<T>, spans_in)                                           \
+    /* outputs*/                                                                                   \
+    X_RW(shamrock::solvergraph::ScalarEdge<T>, out_scal)
 
 namespace shammodels::basegodunov::modules {
 
     template<class T>
-    class ResidualDot : public shamrock::solvergraph::INode {
-        using Tscal = shambase::VecComponent<T>;
+    class NodeSumReduction : public shamrock::solvergraph::INode {
         u32 block_size;
 
         public:
-        ResidualDot(u32 block_size) : block_size(block_size) {}
+        NodeSumReduction(u32 block_size) : block_size(block_size) {}
 
-        EXPAND_NODE_EDGES(NODE_RESIDUALDOT_EDGES)
+        EXPAND_NODE_EDGES(NODE_SUMRED_EDGES)
+
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "ResidualDot"; };
+        inline virtual std::string _impl_get_label() const { return "NodeSumReduction"; };
 
-        virtual std::string _impl_get_tex() const;
+        virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 
 } // namespace shammodels::basegodunov::modules
 
-#undef NODE_RESIDUALDOT_EDGES
+#undef NODE_SUMRED_EDGES

@@ -23,6 +23,9 @@
 #include "shamrock/amr/AMRCell.hpp"
 
 namespace shammodels::basegodunov::modules {
+    using namespace shamrock::patch;
+    using Direction_           = shammodels::basegodunov::modules::Direction;
+    using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
 
     template<class Tvec, class TgridVec>
     class AMRGridRefinementHandler {
@@ -42,6 +45,8 @@ namespace shammodels::basegodunov::modules {
         using AMRBlock         = typename Config::AMRBlock;
         using BlockCoord       = shamrock::amr::AMRBlockCoord<TgridVec, 3>;
         using OrientedAMRGraph = OrientedAMRGraph<Tvec, TgridVec>;
+
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
 
         ShamrockCtx &context;
         Config &solver_config;
@@ -69,16 +74,30 @@ namespace shammodels::basegodunov::modules {
          */
         template<class UserAcc, class... T>
         void gen_refine_block_changes(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_derefine_flags,
             T &&...args);
 
+        /**
+         * @brief
+         */
+        void enforce_two_to_one_refinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
+
+        /**
+         * @brief
+         */
+        void enforce_two_to_one_derefinement(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
+
         template<class UserAcc>
-        bool internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
+        bool internal_refine_grid(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
 
         template<class UserAcc>
         bool internal_derefine_grid(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list);
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
         void internal_update_refinement();

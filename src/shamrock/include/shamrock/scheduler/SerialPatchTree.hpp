@@ -153,8 +153,8 @@ class SerialPatchTree {
         std::function<void(u64, PtNode)> found_case) {
         StackEntry stack_loc{false};
 
-        auto tree = serial_tree_buf->template mirror_to<sham::host>();
-        auto lpid = linked_patch_ids_buf->template mirror_to<sham::host>();
+        auto tree = shambase::get_check_ref(serial_tree_buf).template mirror_to<sham::host>();
+        auto lpid = shambase::get_check_ref(linked_patch_ids_buf).template mirror_to<sham::host>();
 
         host_for_each_leafs_internal(interact_cd, found_case, tree, lpid);
     }

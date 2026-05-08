@@ -198,9 +198,9 @@ class SerialPatchTree {
             }
         }
 
-        auto &q       = shambase::get_check_ref(dev_sched).get_queue();
-        u32 end_loop  = get_level_count();
-        u32 elem_cnt  = get_element_count();
+        auto &q      = shambase::get_check_ref(dev_sched).get_queue();
+        u32 end_loop = get_level_count();
+        u32 elem_cnt = get_element_count();
 
         for (u32 level = 0; level < end_loop; level++) {
             sham::kernel_call(
@@ -259,9 +259,9 @@ sham::DeviceBuffer<u64> SerialPatchTree<vec>::compute_patch_owner(
     sham::DeviceBuffer<u64> roots(roots_ids.size(), dev_sched);
     roots.copy_from_stdvec(roots_ids);
 
-    auto &q       = dev_sched->get_queue();
-    u32 root_cnt  = roots_ids.size();
-    auto max_lev  = get_level_count();
+    auto &q      = dev_sched->get_queue();
+    u32 root_cnt = roots_ids.size();
+    auto max_lev = get_level_count();
 
     using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
 

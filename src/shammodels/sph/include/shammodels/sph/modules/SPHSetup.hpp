@@ -57,7 +57,8 @@ namespace shammodels::sph::modules {
             std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
             std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,
             std::optional<u64> max_msg_size                     = std::nullopt,
-            bool do_setup_log                                   = false);
+            bool do_setup_log                                   = false,
+            bool speculative_balancing                          = false);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
             Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous = true);

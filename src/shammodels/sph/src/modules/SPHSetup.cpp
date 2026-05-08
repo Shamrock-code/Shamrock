@@ -268,7 +268,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     std::optional<u64> max_msg_count_per_rank_per_step,
     std::optional<u64> max_data_count_per_rank_per_step,
     std::optional<u64> max_msg_size,
-    bool do_setup_log) {
+    bool do_setup_log,
+    bool speculative_balancing) {
 
     __shamrock_stack_entry();
 
@@ -309,13 +310,13 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr_old());
 
-    bool speculative_balancing = true;
-
     u64 speculative_last_npatch                            = 0;
     shambase::DistributedData<u64> speculative_load_values = {};
 
     auto compute_load = [&]() {
         if (speculative_balancing) {
+
+            StackEntry stack_loc{};
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -323,6 +324,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             // check if the number of patches has changed, rebuild otherwise
             if (npatch != speculative_last_npatch) {
+
+                shambase::details::NamedBasicStackEntry stack_loc2{"compute_load"};
 
                 if (shamcomm::world_rank() == 0) {
                     logger::normal_ln(

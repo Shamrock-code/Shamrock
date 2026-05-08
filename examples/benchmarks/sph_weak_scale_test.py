@@ -13,7 +13,7 @@ import shamrock
 
 result_text = ""
 
-for N_target_base in [32e6]:
+for N_target_base in [1e6]:
     shamrock.backends.reset_mem_info_max()
 
     gamma = 5.0 / 3.0
@@ -25,7 +25,7 @@ for N_target_base in [32e6]:
 
     compute_multiplier = shamrock.sys.world_size()
     # compute_multiplier = 12
-    scheduler_split_val = int(2e7)
+    scheduler_split_val = int(2e5)
     scheduler_merge_val = int(1)
 
     N_target = N_target_base * compute_multiplier
@@ -74,7 +74,7 @@ for N_target_base in [32e6]:
     model.resize_simulation_box(bmin, bmax)
 
     setup = model.get_setup()
-    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
+    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax, discontinuous=True)
 
     # Kind of optimized for Aurora
     setup.apply_setup(
@@ -85,6 +85,7 @@ for N_target_base in [32e6]:
         rank_comm_size_limit=int(scheduler_split_val) * 2,
         max_msg_size=int(scheduler_split_val / 8),
         do_setup_log=False,
+        speculative_balancing=False,
     )
 
     xc, yc, zc = model.get_closest_part_to((0, 0, 0))

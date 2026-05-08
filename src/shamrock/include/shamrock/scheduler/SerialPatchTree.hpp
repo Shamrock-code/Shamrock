@@ -205,8 +205,8 @@ class SerialPatchTree {
         for (u32 level = 0; level < end_loop; level++) {
             sham::kernel_call(
                 q,
-                sham::MultiRef{*serial_tree_buf},
-                sham::MultiRef{*ptfield.internal_buf},
+                sham::MultiRef{shambase::get_check_ref(serial_tree_buf)},
+                sham::MultiRef{shambase::get_check_ref(ptfield.internal_buf)},
                 elem_cnt,
                 [reducer](u32 i, const PtNode *tree, T *f) {
                     std::array<u64, 8> n = tree[i].childs_id;

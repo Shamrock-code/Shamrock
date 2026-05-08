@@ -511,6 +511,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 sum_push = shamalgs::collective::allreduce_sum<u64>(tmp.get_obj_cnt());
         u64 sum_all  = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
 
+        u64 min_rank = shamalgs::collective::allreduce_min<u64>(to_insert.get_obj_cnt());
+        u64 max_rank = shamalgs::collective::allreduce_max<u64>(to_insert.get_obj_cnt());
+
         timer_gen.end();
 
         if (shamcomm::world_rank() == 0) {
@@ -518,13 +521,15 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             logger::normal_ln(
                 "SPH setup",
                 shambase::format(
-                    "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} ) rate = {:e} "
-                    "N.s^-1",
+                    "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} rank min = {:.1e} max = {:.1e}) "
+                    "rate = {:e} N.s^-1",
                     sum_push,
                     f64(sum_push),
                     sum_all,
                     f64(sum_all),
-                    part_per_sec));
+                    part_per_sec,
+                    f64(min_rank),
+                    f64(max_rank)));
         }
 
         if (setup_log) {

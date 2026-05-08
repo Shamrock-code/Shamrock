@@ -188,8 +188,8 @@ class SerialPatchTree {
         ptfield.allocate(get_element_count(), dev_sched);
 
         {
-            auto lpid       = linked_patch_ids_buf->template mirror_to<sham::host>();
-            auto tree_field = ptfield.internal_buf->template mirror_to<sham::host>();
+            auto lpid       = shambase::get_check_ref(linked_patch_ids_buf).template mirror_to<sham::host>();
+            auto tree_field = shambase::get_check_ref(ptfield.internal_buf).template mirror_to<sham::host>();
 
             // init reduction
             std::unordered_map<u64, u64> &idp_to_gid = sched.patch_list.id_patch_to_global_idx;

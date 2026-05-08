@@ -419,7 +419,14 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
                 // Add the already injected parts to the load values
 
-                // TODO
+                auto &patch_list = scheduler().patch_list;
+
+                for (u64 id : scheduler().owned_patch_id) {
+                    shamrock::patch::Patch &p
+                        = patch_list.local[patch_list.id_patch_to_local_idx[id]];
+                    speculative_load_values.get(id)
+                        += scheduler().patch_data.owned_data.get(id).get_obj_cnt();
+                }
             }
 
             // update load values

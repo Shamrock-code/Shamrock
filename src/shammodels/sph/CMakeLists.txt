@@ -59,6 +59,8 @@ set(Sources
     src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
+    src/modules/ConsToPrim.cpp
+
     src/modules/io/VTKDump.cpp
 )
 

@@ -267,7 +267,7 @@ sham::DeviceBuffer<u64> SerialPatchTree<vec>::compute_patch_owner(
 
     sham::kernel_call(
         q,
-        sham::MultiRef{position_buffer, *serial_tree_buf, *linked_patch_ids_buf, roots},
+        sham::MultiRef{position_buffer, shambase::get_check_ref(serial_tree_buf), shambase::get_check_ref(linked_patch_ids_buf), roots},
         sham::MultiRef{new_owned_id},
         len,
         [root_cnt, max_lev](

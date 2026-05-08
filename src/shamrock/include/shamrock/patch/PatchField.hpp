@@ -16,8 +16,11 @@
  */
 
 #include "shambase/DistributedData.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/DeviceScheduler.hpp"
 #include "shambackends/sycl.hpp"
 #include <memory>
+#include <optional>
 namespace shamrock::patch {
 
     template<class T>
@@ -33,10 +36,12 @@ namespace shamrock::patch {
     template<class T>
     class PatchtreeField {
         public:
-        std::unique_ptr<sycl::buffer<T>> internal_buf;
+        std::optional<sham::DeviceBuffer<T>> internal_buf;
 
         inline void reset() { internal_buf.reset(); }
 
-        inline void allocate(u32 size) { internal_buf = std::make_unique<sycl::buffer<T>>(size); }
+        inline void allocate(u32 size, sham::DeviceScheduler_ptr sched) {
+            internal_buf.emplace(size, sched);
+        }
     };
 } // namespace shamrock::patch

@@ -77,7 +77,7 @@ namespace shammodels::gsph {
 
             PatchtreeField<Tscal> interactR_mpi_tree = sptree.make_patch_tree_field(
                 sched,
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler_ptr(),
                 interactR_patch,
                 [](Tscal h0, Tscal h1, Tscal h2, Tscal h3, Tscal h4, Tscal h5, Tscal h6, Tscal h7) {
                     return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);

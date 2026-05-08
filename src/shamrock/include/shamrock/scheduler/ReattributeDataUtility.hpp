@@ -59,12 +59,12 @@ namespace shamrock {
          * bound).
          */
         template<class T>
-        shambase::DistributedData<sycl::buffer<u64>> compute_new_pid(
+        shambase::DistributedData<sham::DeviceBuffer<u64>> compute_new_pid(
             SerialPatchTree<T> &sptree, u32 ipos) {
 
             StackEntry stack_loc{};
 
-            shambase::DistributedData<sycl::buffer<u64>> newid_buf_map;
+            shambase::DistributedData<sham::DeviceBuffer<u64>> newid_buf_map;
 
             sched.patch_data.for_each_patchdata([&](u64 id, shamrock::patch::PatchDataLayer &pdat) {
                 if (!pdat.is_empty()) {
@@ -84,7 +84,7 @@ namespace shamrock {
 
                     bool err_id_in_newid = false;
                     {
-                        sycl::host_accessor nid{newid_buf_map.get(id), sycl::read_only};
+                        std::vector<u64> nid = newid_buf_map.get(id).copy_to_stdvec();
                         for (u32 i = 0; i < pdat.get_obj_cnt(); i++) {
                             bool err        = nid[i] == u64_max;
                             err_id_in_newid = err_id_in_newid || (err);
@@ -114,7 +114,7 @@ namespace shamrock {
          * @return A shared distributed data object containing the extracted patch data.
          */
         inline shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> extract_elements(
-            shambase::DistributedData<sycl::buffer<u64>> new_pid) {
+            shambase::DistributedData<sham::DeviceBuffer<u64>> &&new_pid) {
             shambase::DistributedDataShared<patch::PatchDataLayer> part_exchange;
 
             StackEntry stack_loc{};
@@ -128,7 +128,7 @@ namespace shamrock {
                     histogram_extract[current_pid] = 0;
                     if (!pdat.is_empty()) {
 
-                        sycl::host_accessor nid{new_pid.get(current_pid), sycl::read_only};
+                        std::vector<u64> nid = new_pid.get(current_pid).copy_to_stdvec();
 
                         if (false) {
 
@@ -222,9 +222,10 @@ namespace shamrock {
 
             u32 ipos = sched.pdl_old().get_field_idx<T>(position_field);
 
-            DistributedData<sycl::buffer<u64>> new_pid = compute_new_pid(sptree, ipos);
+            DistributedData<sham::DeviceBuffer<u64>> new_pid = compute_new_pid(sptree, ipos);
 
-            DistributedDataShared<patch::PatchDataLayer> part_exchange = extract_elements(new_pid);
+            DistributedDataShared<patch::PatchDataLayer> part_exchange
+                = extract_elements(std::move(new_pid));
 
             part_exchange.for_each([](u64 sender, u64 receiver, PatchDataLayer &pdat) {
                 shamlog_debug_ln("ReattributeDataUtility", sender, receiver, pdat.get_obj_cnt());

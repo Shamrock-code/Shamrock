@@ -15,6 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/BufferMirror.hpp"
 #include "shamcomm/collectives.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include <functional>
@@ -133,8 +134,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
     using BCShearingPeriodic = typename CfgClass::ShearingPeriodic;
 
     if (BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
 
         for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
             for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
@@ -188,8 +188,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
             }
         }
     } else if (BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
 
         for_each_patch_shift<flt>(*cfg, bsize, [&](i32_3 ioff, ShiftInfo<flt> shift) {
             i32 xoff = ioff.x();
@@ -242,8 +241,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
         });
 
     } else {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
         // sender translation
         vec periodic_offset = vec{0, 0, 0};
 

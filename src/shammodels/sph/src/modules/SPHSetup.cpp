@@ -416,6 +416,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     speculative_load_values.add_obj(
                         global_patch_list[i].id_patch, u64(reduced_load_values[i]));
                 }
+
+                // Add the already injected parts to the load values
+
+                // TODO
             }
 
             // update load values

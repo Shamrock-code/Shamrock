@@ -4,7 +4,6 @@ import utils.amd_arch
 import utils.cuda_arch
 from utils.oscmd import *
 
-
 BACKENDS = [
     "omp",
     "omp.accelerated",

@@ -45,41 +45,30 @@ shamconfigure     # alias to the correct cmake command
 shammake          # alias to ninja build (or make if ninja is unavailable)
 ```
 
-### Build types / sanitizers
-
-These are set during the `shamconfigure` step (after `source ./activate`):
-
-- `ASAN`  — `-fsanitize=address`
-- `UBSAN` — `-fsanitize=undefined`
-- `TSAN`  — `-fsanitize=thread`
-- `MSAN`  — `-fsanitize=memory`
-- `COVERAGE` — `-fprofile-instr-generate -fcoverage-mapping` (forces
-  SHAMROCK_USE_SHARED_LIB=Off)
-
 ## Testing
 
 ```bash
 cd build
 source ./activate
-ctest          # runs the C++ test suite
+./shamrock --smi          # or ./shamrock_test --smi
 ```
 
-Tests live in `src/tests/` alongside the library sources they exercise
-(e.g. `src/tests/shambase/`, `src/tests/shammath/`). The project also has
-Python tests but they are mainly run via CI.
+Pick a device ID from the output, then run:
+
+```bash
+./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
+```
+
+where `<id>` is the device ID the user selected from `--smi` output.
 
 ## Code style & linting
 
-- **Formatter**: `.clang-format` — LLVM style, 4-space indent, column limit
-  **100**, C++17.
-- **CI linter**: `.clang-tidy` — runs with `run-clang-tidy-20` (LLVM 20).
-  Custom CheckOptions for naming: classes CamelCase, functions/lower_case,
-  members lower_case.
-- **Pre-commit**: clang-format (v22), cmake-format, ruff (Python), license/
-  doxygen/pragma-once checks via local Python hooks.
-- **Always run** `pre-commit run --all-files` before committing.
+- **Formatter**: `.clang-format`
+- **CI linter**: `.clang-tidy`
+- **Pre-commit hooks**: `.pre-commit-config.yaml`
+- Run `pre-commit run --all-files` before committing
 
-## Naming conventions (from .clang-tidy)
+## Naming conventions (from `.clang-tidy` `CheckOptions`)
 
 | Entity                         | Case       |
 | ------ ------ ---------------- | ---------- |
@@ -91,48 +80,26 @@ Python tests but they are mainly run via CI.
 
 ```text
 src/
-  shamrock/          core hydrodynamics solvers, mesh, Riemann
-  shamphys/          physics models (EOS, reaction tables)
-  shammodels/        higher-level models
+  shamalgs/          GPU & MPI algorithms
+  shambackends/      SYCL GPU device management and kernels
   shambase/          base containers, math utils, I/O
-  shammath/          math primitives (tensors, linear algebra)
-  shamcomm/          MPI / SYCL comm layer
-  shambackends/      SYCL backend implementations
-  shamcmdopt/        CLI argument parsing
-  shamsys/           system-level glue
-  shamtree/          YAML tree / config parsing
-  shamtest/          test helpers / macros
-  shambindings/      pybind11 glue
-  shampylib/         Python library entry point
-  shamalsgs/         ALGOS (algorithms)
-  pylib/             Python package root
-  tests/             unit + integration tests
+  shambindings/      embeds Python via pybind11, registering C++ types and modules
+  shamcmdopt/        CLI argument parsing, env/tty detection utilities
+  shamcomm/          MPI and SYCL comm layer for Shamrock
+  shammath/          tensor and linear algebra math routines
+  shammodels/        SPH, GSPH, Ramses, Zeus hydro model implementations
+  shamphys/          physics utilities: EOS, MHD, orbits, collapse
+  shamrock/          core hydrodynamics framework: solvers, mesh, AMR, I/O, scheduler, graph
+  shamsys/           SHAMROCK system and runtime glue
+  shamtest/          Shamrock's internal C++ test framework
+  shamtree/          SYCL-accelerated Morton-code trees for hydrodynamics queries
+  shamunits/         compile-time physics unit conversion library
+  pylib/             Python package root for Shamrock
+  tests/             unit tests for Shamrock library components
 ```
-
-## CI highlights
-
-- `main_workflow.yml` orchestrates all CI: source checks, docs, conda build,
-  ASAN/UBSAN/TSAN.
-- `on_pr.yml` gates merges on CI passing (respects `light-ci` label).
-- `shamrock-acpp-clang-tidy.yml` — full clang-tidy on AdaptiveCpp + Ubuntu.
-- `shamrock-acpp-clang-asan.yml`, `shamrock-acpp-clang-ubsan.yml` — sanitizer
-  CI.
-- `shamrock-acpp-phys-test.yml` — physics regression tests.
-
-## Important constraints
-
-- **SYCL backend is mandatory** — `--backend [SYCL|omp|hetero]` must be set
-  during configure. Any major SYCL compiler works
-  (AdaptiveCpp, DPC++, intel/llvm).
-- **Submodules must be in sync** — CMake checks their commit hashes at configure
-  time. Run `git pull --recurse-submodules`.
-- **MacOS forces** `SHAMROCK_USE_SHARED_LIB=Off` due to known issues.
-- **License headers** are checked at pre-commit — CeCILL boilerplate required on
-  every source file.
 
 ## Files to avoid modifying unless explicitly asked
 
-- `env/machine/*/setup-env.py` — machine-specific env configs.
 - `.github/workflows/*.yml` — CI workflows.
 - `external/` submodules — upstream dependencies.
 - `LICENSE`, `LICENSE.en` — legal files.
@@ -151,19 +118,11 @@ src/
   <machine specific flags>
 
 # Build
-cd build && source ./activate && shammake
-
-# Run clang-tidy locally
-CLANGTIDYBINARY=clang-tidy-20 run-clang-tidy-20 -p build/ \
-  -use-color -config-file .clang-tidy
+pwd && ls && cd build && source ./activate && shammake
 
 # Run pre-commit
 pre-commit run --all-files
 
 # Run tests
-cd build && source ./activate && ctest
-
-# Python bindings
-cd build && source ./activate
-python3 -c "import shampylib; shampylib.main()"
+pwd && ls && cd build && source ./activate && ./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
 ```

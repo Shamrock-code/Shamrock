@@ -13,6 +13,10 @@ A "machine" is one OS + hardware combination.
 Run `./env/new-env` without arguments to see the
 full list of available machine configurations.
 
+### Step 0 - Check the already existing build folder
+
+Check if a folder does not already exist before create and env. If you found an existing folder (e.g. activate script present in it) go to step 4
+
 ### Step 1 — Select a machine
 
 ```bash
@@ -42,7 +46,7 @@ This shows the flags specific to that machine — they can vary widely.
 cd build
 source ./activate
 shamconfigure     # alias to the correct cmake command
-shammake          # alias to ninja build (or make if ninja is unavailable)
+shammake && echo "build done"        # alias to ninja build (or make if ninja is unavailable), the echo part allows the llm to understand that the build succedeed even if it does not show 100% completion as ninja does sometimes
 ```
 
 ## Testing
@@ -103,6 +107,21 @@ src/
 - `.github/workflows/*.yml` — CI workflows.
 - `external/` submodules — upstream dependencies.
 - `LICENSE`, `LICENSE.en` — legal files.
+
+## Agent commit attribution
+
+Agent-made commits should use `Assisted-by: <agent_name>` instead of
+`Co-Authored-by`. Reserve `Co-Authored-by` for human collaborators only.
+
+## Upstream repo & PRs
+
+The upstream repo is `Shamrock-code/Shamrock`.
+PR lookups should target the upstream:
+
+```bash
+gh pr list --repo Shamrock-code/Shamrock
+gh pr view <number> --repo Shamrock-code/Shamrock
+```
 
 ## Quick reference: common commands
 

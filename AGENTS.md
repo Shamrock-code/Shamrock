@@ -44,23 +44,21 @@ This shows the flags specific to that machine — they can vary widely.
 
 ```bash
 cd build
-source ./activate
-shamconfigure     # alias to the correct cmake command
-shammake && echo "build done"        # alias to ninja build (or make if ninja is unavailable), the echo part allows the llm to understand that the build succedeed even if it does not show 100% completion as ninja does sometimes
+./shamenv_do shamconfigure     # alias to the correct cmake command
+./shamenv_do shammake && echo "build done"        # alias to ninja build (or make if ninja is unavailable), the echo part allows the llm to understand that the build succedeed even if it does not show 100% completion as ninja does sometimes
 ```
 
 ## Testing
 
 ```bash
 cd build
-source ./activate
-./shamrock --smi          # or ./shamrock_test --smi
+./shamenv_do ./shamrock --smi          # or ./shamrock_test --smi
 ```
 
 Pick a device ID from the output, then run:
 
 ```bash
-./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
+./shamenv_do ./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
 ```
 
 where `<id>` is the device ID the user selected from `--smi` output.
@@ -137,11 +135,11 @@ gh pr view <number> --repo Shamrock-code/Shamrock
   <machine specific flags>
 
 # Build
-pwd && ls && cd build && source ./activate && shammake
+pwd && ls && cd build && ./shamenv_do shammake && echo "build done"
 
 # Run pre-commit
 pre-commit run --all-files
 
 # Run tests
-pwd && ls && cd build && source ./activate && ./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
+pwd && ls && cd build && ./shamenv_do ./shamrock_test --sycl-cfg <id>:<id> --loglevel 1 --unittest
 ```

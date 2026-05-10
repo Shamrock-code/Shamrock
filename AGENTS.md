@@ -71,7 +71,7 @@ where `<id>` is the device ID the user selected from `--smi` output.
 ## Naming conventions (from `.clang-tidy` `CheckOptions`)
 
 | Entity                         | Case       |
-| ------ ------ ---------------- | ---------- |
+| ------------------------------ | ---------- |
 | Class/Enum/Union               | CamelCase  |
 | Function/Variable/Parameter/   | lower_case |
 | Member                         | lower_case |

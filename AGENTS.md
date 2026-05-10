@@ -73,7 +73,7 @@ where `<id>` is the device ID the user selected from `--smi` output.
 | Entity                         | Case       |
 | ------------------------------ | ---------- |
 | Class/Enum/Union               | CamelCase  |
-| Function/Variable/Parameter/   | lower_case |
+| Function/Variable/Parameter    | lower_case |
 | Member                         | lower_case |
 
 ## Architecture overview

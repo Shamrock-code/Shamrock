@@ -5,6 +5,19 @@ import utils.cuda_arch
 from utils.oscmd import *
 
 
+BACKENDS = [
+    "omp",
+    "omp.accelerated",
+    "omp.library-only",
+    "generic",
+    "cuda",
+    "cuda.explicit-multipass",
+    "cuda.integrated-multipass",
+    "hip",
+    "hip.integrated-multipass",
+]
+
+
 def clone_acpp(folder):
     if os.path.isdir(folder):
         print("-- skipping git clone folder does already exist")

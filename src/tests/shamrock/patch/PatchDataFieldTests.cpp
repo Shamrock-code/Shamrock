@@ -222,7 +222,7 @@ TestStart(
     PatchDataField<f64> field = PatchDataField<f64>("test", 2, values.size() / 2);
     field.override(values, values.size());
 
-    // ids 0 and 1 appear twice — duplicates should trigger an error
+    // ids 0 and 1 appear twice -- duplicates should trigger an error
     std::vector<u32> to_be_removed = {0, 1, 0, 1};
 
     sham::DeviceBuffer<u32> to_be_removed_buf(

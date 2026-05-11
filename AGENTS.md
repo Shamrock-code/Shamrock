@@ -50,7 +50,7 @@ cd build
 
 Always use something like `&& echo DONE` after the build command to avoid confusion since `ninja` sometimes can do a successful build without showing 100% in the steps.
 
-Check if ./shamrock, ./shamrock_test are present in the build dir, if yes it has succedeed.
+Check if `./shamrock`, `./shamrock_test` are present in the build dir, if yes it has succeeded.
 
 ## Testing
 

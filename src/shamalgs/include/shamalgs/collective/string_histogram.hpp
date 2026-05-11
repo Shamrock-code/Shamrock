@@ -39,14 +39,10 @@ namespace shamalgs::collective {
      *         values are the counts of their occurrences. (valid only on rank 0)
      */
     std::unordered_map<std::string, int> string_histogram(
-        const std::vector<std::string> &inputs,
-        std::string delimiter = "\n",
-        bool hash_based       = true);
+        const std::vector<std::string> &inputs, std::string delimiter, bool hash_based);
 
     /// same as string_histogram but with result return on every rank
     std::unordered_map<std::string, int> all_string_histogram(
-        const std::vector<std::string> &inputs,
-        std::string delimiter = "\n",
-        bool hash_based       = true);
+        const std::vector<std::string> &inputs, std::string delimiter, bool hash_based);
 
 } // namespace shamalgs::collective

@@ -61,29 +61,38 @@ namespace {
 
 TestStart(Unittest, "shamalgs/collective/string_histogram", test_string_histogram, -1) {
 
-    i32 wsize     = shamcomm::world_size();
-    auto ref_base = build_histogram_dataset(wsize);
+    for (bool hash_based : {true, false}) {
 
-    auto histogram = shamalgs::collective::string_histogram(ref_base[shamcomm::world_rank()], ",");
+        i32 wsize     = shamcomm::world_size();
+        auto ref_base = build_histogram_dataset(wsize);
 
-    if (shamcomm::world_rank() == 0) {
-        auto expected = compute_expected(wsize);
-        for (auto &[word, cnt] : expected) {
-            REQUIRE_EQUAL(histogram[word], cnt);
+        auto histogram = shamalgs::collective::string_histogram(
+            ref_base[shamcomm::world_rank()], ",", hash_based);
+
+        if (shamcomm::world_rank() == 0) {
+            auto expected = compute_expected(wsize);
+            for (auto &[word, cnt] : expected) {
+                REQUIRE_EQUAL(histogram[word], cnt);
+            }
+        } else {
+            REQUIRE_EQUAL(histogram.size(), 0);
         }
     }
 }
 
 TestStart(Unittest, "shamalgs/collective/all_string_histogram", test_all_string_histogram, -1) {
 
-    i32 wsize     = shamcomm::world_size();
-    auto ref_base = build_histogram_dataset(wsize);
+    for (bool hash_based : {true, false}) {
 
-    auto histogram
-        = shamalgs::collective::all_string_histogram(ref_base[shamcomm::world_rank()], ",");
+        i32 wsize     = shamcomm::world_size();
+        auto ref_base = build_histogram_dataset(wsize);
 
-    auto expected = compute_expected(wsize);
-    for (auto &[word, cnt] : expected) {
-        REQUIRE_EQUAL(histogram[word], cnt);
+        auto histogram = shamalgs::collective::all_string_histogram(
+            ref_base[shamcomm::world_rank()], ",", hash_based);
+
+        auto expected = compute_expected(wsize);
+        for (auto &[word, cnt] : expected) {
+            REQUIRE_EQUAL(histogram[word], cnt);
+        }
     }
 }

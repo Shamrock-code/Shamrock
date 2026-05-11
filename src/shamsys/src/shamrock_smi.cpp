@@ -16,13 +16,14 @@
 #include "shambase/memory.hpp"
 #include "shambase/numeric_limits.hpp"
 #include "shambase/string.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shamalgs/collective/string_histogram.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/sycl.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -83,7 +84,7 @@ namespace shamsys {
         });
 
         std::unordered_map<std::string, int> nodeconfig_histogram
-            = shamcomm::string_histogram({nodeconfig}, "@#%");
+            = shamalgs::collective::string_histogram({nodeconfig}, "@#%");
 
         if (rank == 0) {
             std::string print = "Available devices :\n";
@@ -132,7 +133,7 @@ namespace shamsys {
         });
 
         std::string recv;
-        shamcomm::gather_str(print_buf, recv);
+        shamalgs::collective::gather_str(print_buf, recv);
         if (rank == 0) {
             std::string print = "Available devices :\n";
             print += ("----------------------------------------------------------------------------"
@@ -200,7 +201,7 @@ namespace shamsys {
             }
 
             std::unordered_map<std::string, int> devicename_histogram
-                = shamcomm::string_histogram({dev_with_id}, "xxx\nxxx");
+                = shamalgs::collective::string_histogram({dev_with_id}, "xxx\nxxx");
 
             f64 mem           = dev.prop.global_mem_size;
             u64 compute_units = dev.prop.max_compute_units;

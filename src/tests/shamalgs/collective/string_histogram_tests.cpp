@@ -7,7 +7,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/string_histogram.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -59,60 +59,12 @@ namespace {
 
 } // namespace
 
-TestStart(Unittest, "shamcomm/collectives::gather_str", test_gather_str, 4) {
-
-    std::array<std::string, 4> ref_base{
-        "I'm a very important string",
-        "But I'm a very important string",
-        "Listen, I'm a very important string",
-        "The most importantest string",
-    };
-
-    std::string result = "";
-    if (shamcomm::world_rank() == 0) {
-        for (u32 i = 0; i < ref_base.size(); i++) {
-            result += ref_base[i];
-        }
-    }
-
-    std::string send = ref_base[shamcomm::world_rank()];
-
-    std::string recv = "random string"; // Just to check that it is overwritten
-
-    shamcomm::gather_str(send, recv);
-
-    REQUIRE_EQUAL(recv, result);
-}
-
-TestStart(Unittest, "shamcomm/collectives::allgather_str", test_allgather_str, 4) {
-
-    std::array<std::string, 4> ref_base{
-        "I'm a very important string",
-        "But I'm a very important string",
-        "Listen, I'm a very important string",
-        "The most importantest string",
-    };
-
-    std::string result = "";
-    for (u32 i = 0; i < ref_base.size(); i++) {
-        result += ref_base[i];
-    }
-
-    std::string send = ref_base[shamcomm::world_rank()];
-
-    std::string recv = "random string"; // Just to check that it is overwritten
-
-    shamcomm::allgather_str(send, recv);
-
-    REQUIRE_EQUAL(recv, result);
-}
-
-TestStart(Unittest, "shamcomm/collectives::string_histogram", test_string_histogram, -1) {
+TestStart(Unittest, "shamalgs/collective/string_histogram", test_string_histogram, -1) {
 
     i32 wsize     = shamcomm::world_size();
     auto ref_base = build_histogram_dataset(wsize);
 
-    auto histogram = shamcomm::string_histogram(ref_base[shamcomm::world_rank()], ",");
+    auto histogram = shamalgs::collective::string_histogram(ref_base[shamcomm::world_rank()], ",");
 
     if (shamcomm::world_rank() == 0) {
         auto expected = compute_expected(wsize);
@@ -122,12 +74,13 @@ TestStart(Unittest, "shamcomm/collectives::string_histogram", test_string_histog
     }
 }
 
-TestStart(Unittest, "shamcomm/collectives::all_string_histogram", test_all_string_histogram, -1) {
+TestStart(Unittest, "shamalgs/collective/all_string_histogram", test_all_string_histogram, -1) {
 
     i32 wsize     = shamcomm::world_size();
     auto ref_base = build_histogram_dataset(wsize);
 
-    auto histogram = shamcomm::all_string_histogram(ref_base[shamcomm::world_rank()], ",");
+    auto histogram
+        = shamalgs::collective::all_string_histogram(ref_base[shamcomm::world_rank()], ",");
 
     auto expected = compute_expected(wsize);
     for (auto &[word, cnt] : expected) {

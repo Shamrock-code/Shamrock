@@ -18,7 +18,8 @@ scheduler_split_val = int(2e7)
 scheduler_merge_val = int(1)
 
 for specul_LB, discont_setup in [(False, True), (False, False), (True, False), (True, True)]:
-    print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
+    if shamrock.sys.world_rank() == 0:
+        print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
 
     shamrock.backends.reset_mem_info_max()
 

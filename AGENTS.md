@@ -45,7 +45,7 @@ This shows the flags specific to that machine — they can vary widely.
 ```bash
 cd build
 ./shamenv_do shamconfigure # alias to the correct cmake command
-./shamenv_do shammake      # alias to ninja build (or make if ninja is unavailable) 
+./shamenv_do shammake      # alias to ninja build (or make if ninja is unavailable)
 ```
 
 Always use something line `&& echo DONE` after the build command to avoid confusion since ninja sometime can do a succesfull build without showing 100% in the steps.

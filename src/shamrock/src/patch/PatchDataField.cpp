@@ -341,7 +341,8 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
         bool has_duplicates = false;
 
         // Adjacent elements in ids_to_rem_vec should be different
-        has_duplicates = std::adjacent_find(ids_to_rem_vec.begin(), ids_to_rem_vec.end()) != ids_to_rem_vec.end();
+        has_duplicates = std::adjacent_find(ids_to_rem_vec.begin(), ids_to_rem_vec.end())
+                         != ids_to_rem_vec.end();
 
         std::vector<u32> keep_flags_vec = keep_flag.copy_to_stdvec();
 

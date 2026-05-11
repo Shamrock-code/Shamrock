@@ -13,14 +13,14 @@ import shamrock
 
 result_text = ""
 
-N_target_base = 32e6
-scheduler_split_val = int(2e7)
-scheduler_merge_val = int(1)
+specul_LB = os.environ.get("specul_LB")
+discont_setup = os.environ.get("discont_setup")
 
-for specul_LB, discont_setup in [(False, True), (False, False), (True, False), (True, True)]:
-    if shamrock.sys.world_rank() == 0:
-        print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
+for N_target_base in [32e6]:
 
+    #if shamrock.sys.world_rank() == 0:
+    print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
+    
     shamrock.backends.reset_mem_info_max()
 
     gamma = 5.0 / 3.0
@@ -32,6 +32,8 @@ for specul_LB, discont_setup in [(False, True), (False, False), (True, False), (
 
     compute_multiplier = shamrock.sys.world_size()
     # compute_multiplier = 12
+    scheduler_split_val = int(2e7)
+    scheduler_merge_val = int(1)
 
     N_target = N_target_base * compute_multiplier
     xm, ym, zm = bmin

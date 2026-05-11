@@ -251,7 +251,14 @@ namespace shamsys {
 
         shamcomm::mpi::Barrier(MPI_COMM_WORLD);
         timer.end();
-        logger::info_ln("shamsys", "shamrock_smi time: ", timer.get_time_str());
+        if (shamcomm::world_rank() == 0) {
+            logger::info_ln(
+                "shamsys",
+                "shamrock_smi time:",
+                timer.get_time_str(),
+                "| hash based:",
+                SHAMROCK_SMI_USE_HASH ? "yes" : "no");
+        }
     }
 
 } // namespace shamsys

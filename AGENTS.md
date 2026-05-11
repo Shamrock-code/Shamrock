@@ -48,9 +48,9 @@ cd build
 ./shamenv_do shammake      # alias to ninja build (or make if ninja is unavailable)
 ```
 
-Always use something line `&& echo DONE` after the build command to avoid confusion since ninja sometime can do a succesfull build without showing 100% in the steps.
+Always use something like `&& echo DONE` after the build command to avoid confusion since `ninja` sometimes can do a successful build without showing 100% in the steps.
 
-Check if ./shamrock, ./shamrock_test are present in the build dir, if yes it has succedeed.
+Check if `./shamrock`, `./shamrock_test` are present in the build dir, if yes it has succeeded.
 
 ## Testing
 

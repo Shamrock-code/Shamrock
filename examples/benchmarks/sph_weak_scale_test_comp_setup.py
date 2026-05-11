@@ -18,8 +18,8 @@ discont_setup = os.environ.get("discont_setup") == "True"
 
 for N_target_base in [32e6]:
 
-    #if shamrock.sys.world_rank() == 0:
-    print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
+    if shamrock.sys.world_rank() == 0:
+        print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
     
     shamrock.backends.reset_mem_info_max()
 

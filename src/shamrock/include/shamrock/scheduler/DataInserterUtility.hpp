@@ -72,8 +72,8 @@ namespace shamrock {
                     logger::info_ln("DataInserterUtility", "run scheduler step ...");
                 }
 
-                sched.scheduler_step(true, true);
                 sched.scheduler_step(false, false);
+                sched.scheduler_step(true, true);
 
                 u64 npatch_new = sched.patch_list.global.size();
                 if (npatch_new != npatch_last) {

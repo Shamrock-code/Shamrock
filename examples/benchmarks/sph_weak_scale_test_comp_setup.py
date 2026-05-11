@@ -8,13 +8,13 @@ with the number of processes. Run it only if you have enough memory available.
 """
 
 from statistics import mean, stdev
-
+import os
 import shamrock
 
 result_text = ""
 
-specul_LB = os.environ.get("specul_LB")
-discont_setup = os.environ.get("discont_setup")
+specul_LB = os.environ.get("specul_LB") == "True"
+discont_setup = os.environ.get("discont_setup") == "True"
 
 for N_target_base in [32e6]:
 

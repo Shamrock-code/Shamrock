@@ -120,7 +120,7 @@ namespace {
         // override the histogram from the hash case info
         for (auto &[word, cnt] : histogram) {
             auto fnv = shambase::fnv1a_hash(word.data(), word.size());
-            cnt = static_cast<int>(hash_case_info[fnv].count);
+            cnt      = static_cast<int>(hash_case_info[fnv].count);
         }
 
         return histogram;

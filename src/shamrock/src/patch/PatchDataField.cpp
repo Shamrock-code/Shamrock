@@ -34,7 +34,9 @@
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
+#include <algorithm>
 #include <memory>
+#include <numeric>
 #include <vector>
 
 template<class T>
@@ -332,23 +334,19 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
 
         // post mortem analysis
 
-        std::vector<u32> ids_to_rem_vec = ids_to_rem.copy_to_stdvec();
+        std::vector<u32> ids_to_rem_vec = ids_to_rem.copy_to_stdvec_idx_range(0, len);
 
         std::sort(ids_to_rem_vec.begin(), ids_to_rem_vec.end());
 
         bool has_duplicates = false;
 
-        // Adgacent elements in ids_to_rem_vec should be different
-        for (size_t i = 1; i < ids_to_rem_vec.size(); i++) {
-            if (ids_to_rem_vec[i] == ids_to_rem_vec[i - 1]) {
-                has_duplicates = true;
-            }
-        }
+        // Adjacent elements in ids_to_rem_vec should be different
+        has_duplicates = std::adjacent_find(ids_to_rem_vec.begin(), ids_to_rem_vec.end()) != ids_to_rem_vec.end();
 
         std::vector<u32> keep_flags_vec = keep_flag.copy_to_stdvec();
 
         // compute keep flags sum
-        u32 keep_flags_sum = std::accumulate(keep_flags_vec.begin(), keep_flags_vec.end(), 0);
+        u32 keep_flags_sum = std::accumulate(keep_flags_vec.begin(), keep_flags_vec.end(), u32(0));
 
         std::string log = shambase::format(
             "the number of remaining ids {} is different from the expected {}",

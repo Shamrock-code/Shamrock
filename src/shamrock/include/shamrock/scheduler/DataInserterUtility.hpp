@@ -51,6 +51,7 @@ namespace shamrock {
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));
 
+            load_balance_update();
             sched.scheduler_step(false, false);
 
             u64 npatch_last = sched.patch_list.global.size();

@@ -7,8 +7,9 @@ It is based on a Sedov blast wave simulation, the number of particles is scaled
 with the number of processes. Run it only if you have enough memory available.
 """
 
-from statistics import mean, stdev
 import os
+from statistics import mean, stdev
+
 import shamrock
 
 result_text = ""
@@ -17,10 +18,9 @@ specul_LB = os.environ.get("specul_LB") == "True"
 discont_setup = os.environ.get("discont_setup") == "True"
 
 for N_target_base in [32e6]:
-
     if shamrock.sys.world_rank() == 0:
         print(f"specul_LB : {specul_LB}, discont_setup : {discont_setup}")
-    
+
     shamrock.backends.reset_mem_info_max()
 
     gamma = 5.0 / 3.0

@@ -18,6 +18,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shambase/tabulate.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
@@ -904,6 +905,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         if (was_sync_limited) {
             log_suffix += " (sync limited)";
         }
+        log_suffix += shambase::format(" (msg count : {})", recv_msg.size());
         log_inject_status(" <- global loop ->" + log_suffix);
 
         f64 worst_time_get_index_per_ranks

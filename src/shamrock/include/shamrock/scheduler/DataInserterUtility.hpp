@@ -50,7 +50,15 @@ namespace shamrock {
             ON_RANK_0(
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));
-            for (int i = 0; i < 3; i++) {
+
+            sched.scheduler_step(false, false);
+
+            u64 npatch_last = sched.patch_list.global.size();
+
+            u32 max_runs = 30;
+
+            int i = 0;
+            for (; i < max_runs; i++) {
                 if (shamcomm::world_rank() == 0) {
                     logger::info_ln("DataInserterUtility", "Compute load ...");
                 }
@@ -63,9 +71,25 @@ namespace shamrock {
                     logger::info_ln("DataInserterUtility", "run scheduler step ...");
                 }
 
-                sched.scheduler_step(false, false);
                 sched.scheduler_step(true, true);
+                sched.scheduler_step(false, false);
+
+                u64 npatch_new = sched.patch_list.global.size();
+                if (npatch_new != npatch_last) {
+                    npatch_last = npatch_new;
+                } else {
+                    break;
+                }
             }
+
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility",
+                    "patch count stable after",
+                    i,
+                    "runs npatch =",
+                    npatch_last));
+
             ON_RANK_0(
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));

@@ -268,7 +268,7 @@ namespace shamalgs::collective {
             }
 
             std::string matrix;
-            shamcomm::gather_str(accum, matrix);
+            shamalgs::collective::gather_str(accum, matrix);
 
             matrix = "\n" + matrix;
 
@@ -292,7 +292,7 @@ namespace shamalgs::collective {
 
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
             std::string log;
-            shamcomm::gather_str(accum, log);
+            shamalgs::collective::gather_str(accum, log);
 
             log = "\n" + log;
 

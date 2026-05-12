@@ -48,10 +48,10 @@ repos:
     exclude: Makefile|\.gitmodules
     log_file: log_precommit_remove-tabs
 
-#- repo: https://github.com/cheshirekow/cmake-format-precommit
-#  rev: v0.6.10
-#  hooks:
-#  - id: cmake-format
+- repo: https://github.com/cheshirekow/cmake-format-precommit
+  rev: v0.6.13
+  hooks:
+  - id: cmake-format
 #  - id: cmake-lint
 
 #- repo: https://github.com/codespell-project/codespell
@@ -65,7 +65,7 @@ repos:
 #  - id: shellcheck
 
 - repo: https://github.com/python-jsonschema/check-jsonschema
-  rev: 0.37.1
+  rev: 0.37.2
   hooks:
   - id: check-github-workflows
     log_file: log_precommit_check-github-workflows
@@ -73,20 +73,21 @@ repos:
 
 # Clang format the codebase automatically
 - repo: https://github.com/pre-commit/mirrors-clang-format
-  rev: v22.1.3
+  rev: v22.1.5
   hooks:
   - id: clang-format
     types_or: [c++, c, cuda]
     log_file: log_precommit_clang-format
 
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.10
+  rev: v0.15.12
   hooks:
     - id: ruff-check
       args:
         - --extend-select=BLE,I,NPY,PLE
         - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
         - --fix
+      exclude: ^\.cmake-format\.py$
       log_file: log_precommit_ruff_check
 
     - id: ruff-format
@@ -109,37 +110,37 @@ repos:
   hooks:
     - id: doxygen_header
       name: "Check doxygen headers"
-      entry: python buildbot/check_doxygen_fileheader.py
+      entry: python tools/check_doxygen_fileheader.py
       language: python
       pass_filenames: false
 
     - id: license_check
       name: "Check license headers"
-      entry: python buildbot/check_licencing.py
+      entry: python tools/check_licencing.py
       language: python
       pass_filenames: false
 
     - id: pragma_once_check
       name: "Check #pragma once"
-      entry: python buildbot/check_pragma_once.py
+      entry: python tools/check_pragma_once.py
       language: python
       pass_filenames: false
 
     - id: check_sycl_include
       name: "Check SYCL #include"
-      entry: python buildbot/check_sycl_include.py
+      entry: python tools/check_sycl_include.py
       language: python
       pass_filenames: false
 
     - id: check_no_ssh_in_submodules
       name: "No ssh in git submodules remote"
-      entry: python buildbot/check_no_ssh_in_submodules.py
+      entry: python tools/check_no_ssh_in_submodules.py
       language: python
       pass_filenames: false
 
     - id: check_no_utf8
       name: "No UTF-8 in files (except for authors)"
-      entry: python buildbot/check_no_utf8.py
+      entry: python tools/check_no_utf8.py
       language: python
       pass_filenames: true
       files: \.(cpp|hpp|py|cmake|txt)$

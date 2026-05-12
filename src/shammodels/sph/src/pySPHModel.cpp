@@ -390,9 +390,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max});
-            })
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
+                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true)
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -523,7 +527,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::optional<u64> msg_size_limit,
                std::optional<u64> max_msg_size,
                bool do_setup_log,
-               bool use_new_setup) {
+               bool use_new_setup,
+               bool speculative_balancing) {
                 if (use_new_setup) {
                     return self.apply_setup_new(
                         setup,
@@ -533,7 +538,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         msg_count_limit,
                         msg_size_limit,
                         max_msg_size,
-                        do_setup_log);
+                        do_setup_log,
+                        speculative_balancing);
                 } else {
                     if (bool(gen_step)) {
                         ON_RANK_0(
@@ -565,14 +571,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering")      = true,
-            py::arg("gen_step")             = std::nullopt,
-            py::arg("insert_step")          = std::nullopt,
-            py::arg("msg_count_limit")      = std::nullopt,
-            py::arg("rank_comm_size_limit") = std::nullopt,
-            py::arg("max_msg_size")         = std::nullopt,
-            py::arg("do_setup_log")         = false,
-            py::arg("use_new_setup")        = true);
+            py::arg("part_reordering")       = true,
+            py::arg("gen_step")              = std::nullopt,
+            py::arg("insert_step")           = std::nullopt,
+            py::arg("msg_count_limit")       = std::nullopt,
+            py::arg("rank_comm_size_limit")  = std::nullopt,
+            py::arg("max_msg_size")          = std::nullopt,
+            py::arg("do_setup_log")          = false,
+            py::arg("use_new_setup")         = true,
+            py::arg("speculative_balancing") = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -771,8 +778,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         "unknown field type");
                 }
             })
-        .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-        .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+        .def(
+            "set_field_value_lambda_f64",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_f64_3",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64_3(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64_3>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
+        .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const
         // std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){

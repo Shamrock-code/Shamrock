@@ -20,6 +20,10 @@ def copy_env_file(source_path, path_write):
     shutil.copy2(source_path, path_write)
 
 
+def make_executable(path):
+    os.chmod(path, 0o755)
+
+
 def file_to_string(path):
     with open(path) as f:
         contents = f.read()

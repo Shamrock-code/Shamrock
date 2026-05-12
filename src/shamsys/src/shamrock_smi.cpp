@@ -34,10 +34,12 @@
 #include <string>
 #include <vector>
 
-bool SHAMROCK_SMI_USE_HASH
-    = shamcmdopt::getenv_str_default_register(
-          "SHAMROCK_SMI_USE_HASH", "1", "use hash based string histogram for shamrock --smi")
-      == "1";
+namespace {
+    static bool SHAMROCK_SMI_USE_HASH
+        = shamcmdopt::getenv_str_default_register(
+              "SHAMROCK_SMI_USE_HASH", "1", "use hash based string histogram for shamrock --smi")
+          == "1";
+}
 
 namespace shamsys {
 

@@ -85,7 +85,7 @@ for N_target_base in [32e6]:
         rank_comm_size_limit=int(scheduler_split_val) * 2,
         max_msg_size=int(scheduler_split_val / 8),
         do_setup_log=False,
-        speculative_balancing=False,
+        speculative_balancing=True,
     )
 
     xc, yc, zc = model.get_closest_part_to((0, 0, 0))

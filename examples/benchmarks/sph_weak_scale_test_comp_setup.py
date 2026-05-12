@@ -91,7 +91,7 @@ for N_target_base in [32e6]:
         msg_count_limit=1024,
         rank_comm_size_limit=int(scheduler_split_val) * 2,
         max_msg_size=int(scheduler_split_val / 8),
-        do_setup_log=False,
+        do_setup_log=True,
         speculative_balancing=specul_LB,
     )
 

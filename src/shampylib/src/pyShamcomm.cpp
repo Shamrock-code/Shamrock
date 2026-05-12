@@ -13,11 +13,11 @@
  * @brief
  */
 
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambindings/pybind11_stl.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/wrapper.hpp"
 #include <pybind11/pytypes.h>

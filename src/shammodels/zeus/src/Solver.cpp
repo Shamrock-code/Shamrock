@@ -15,7 +15,7 @@
  */
 
 #include "shammodels/zeus/Solver.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/zeus/modules/AMRTree.hpp"

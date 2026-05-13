@@ -17,6 +17,7 @@
 
 #include "shambase/constants.hpp"
 #include "shambackends/sycl.hpp"
+#include "shambase/assert.hpp"
 
 namespace shamphys {
 

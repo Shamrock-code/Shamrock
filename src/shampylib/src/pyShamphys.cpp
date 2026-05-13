@@ -310,11 +310,11 @@ Register_pymod(shamphyslibinit) {
         py::arg("rho"),
         py::arg("cs"),
         py::arg("gamma"),
-        py::arg("f"),
+        py::arg("f") = 1.0,
         R"pbdoc(
         Epstein drag stopping time for spherical dust grains.
 
-        \f$t_s = \frac{\rho_{\rm grain} \, s_{\rm grain}}{\rho \, c_s \, f} \sqrt{\frac{\pi \gamma}{8}}\f]
+        \f[t_s = \frac{\rho_{\rm grain} \, s_{\rm grain}}{\rho \, c_s \, f} \sqrt{\frac{\pi \gamma}{8}}\f]
 
         where \f$\rho = \rho_{\rm g} + \rho_{\rm d}\f$ is the total density and \f$f\f$
         is the supersonic correction factor.

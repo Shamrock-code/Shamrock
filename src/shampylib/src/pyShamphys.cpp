@@ -37,9 +37,9 @@
 #include <complex>
 #include <utility>
 
-Register_pymod(shamphyslibinit) {
+ON_PYTHON_INIT {
 
-    py::module shamphys_module = m.def_submodule("phys", "Physics Library");
+    py::module shamphys_module = root_module.def_submodule("phys", "Physics Library");
 
     // Planets.hpp
 

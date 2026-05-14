@@ -1477,7 +1477,8 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
         py::arg("model"));
 }
 
-Register_pymod(pysphmodel) {
+ON_PYTHON_INIT {
+    auto &m         = root_module;
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
     using namespace shammodels::sph;

@@ -34,9 +34,9 @@
 #include <pybind11/numpy.h>
 #include <functional>
 
-Register_pymod(pysham_mathinit) {
+ON_PYTHON_INIT {
 
-    py::module math_module = m.def_submodule("math", "Shamrock math lib");
+    py::module math_module = root_module.def_submodule("math", "Shamrock math lib");
 
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");

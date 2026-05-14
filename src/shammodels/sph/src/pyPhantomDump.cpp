@@ -20,7 +20,8 @@
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include <memory>
 
-Register_pymod(pyphantomdump) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     using T = shammodels::sph::PhantomDump;
 

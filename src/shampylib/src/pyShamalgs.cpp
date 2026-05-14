@@ -30,7 +30,8 @@
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
 
-Register_pymod(shamalgslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module shamalgs_module = m.def_submodule("algs", "algorithmic library");
 

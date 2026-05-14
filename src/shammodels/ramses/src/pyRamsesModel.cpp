@@ -364,7 +364,8 @@ namespace shammodels::basegodunov {
     }
 } // namespace shammodels::basegodunov
 
-Register_pymod(pybasegodunovmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mramses = m.def_submodule("model_ramses", "Shamrock Ramses solver");
 

@@ -17,9 +17,9 @@
  */
 
 /// Utility to concatenate two tokens
-#define internal_macro_sham_CONCAT2(a, b) a##b
+#define sham_CONCAT2(a, b) a##b
 /// Utility to expand a macro with two tokens
-#define internal_macro_sham_EXPAND2(a, b) internal_macro_sham_CONCAT2(a, b)
+#define sham_EXPAND2(a, b) sham_CONCAT2(a, b)
 
 /**
  * @fn __shamrock_unique_name
@@ -29,4 +29,4 @@
  * @note The `__LINE__` fallback is not unique for multiple uses on the same line.
  */
 
-#define __shamrock_unique_name(base_name) internal_macro_sham_EXPAND2(base_name, __LINE__)
+#define __shamrock_unique_name(base_name) sham_EXPAND2(base_name, __LINE__)

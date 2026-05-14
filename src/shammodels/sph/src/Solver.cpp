@@ -1476,7 +1476,7 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.insert_elements(pdat_interf);
             }));
 
-    timer_interf.end();
+    timer_interf.stop();
     storage.timings_details.interface += timer_interf.elasped_sec();
 }
 
@@ -2000,7 +2000,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         mpdat.insert(pdat_interf);
                     });
 
-            time_interf.end();
+            time_interf.stop();
             storage.timings_details.interface += time_interf.elasped_sec();
 
             storage.alpha_av_ghost.set(std::move(merged_field));
@@ -2647,7 +2647,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // if delta too big jump to compute force
 
-    tstep.end();
+    tstep.stop();
 
     for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
         if (it->step_end_callback) {

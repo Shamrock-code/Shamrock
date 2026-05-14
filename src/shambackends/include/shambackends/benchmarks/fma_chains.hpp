@@ -117,7 +117,7 @@ namespace sham::benchmarks {
                 });
             });
             e.wait();
-            t.end();
+            t.stop();
 
             return t.elasped_sec();
         };

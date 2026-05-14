@@ -60,7 +60,7 @@ f64 test_buffer_out_of_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     shamsys::instance::get_compute_queue().wait();
 
-    timer.end();
+    timer.stop();
     return timer.elasped_sec();
 }
 
@@ -110,7 +110,7 @@ f64 test_buffer_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     q.wait();
 
-    timer.end();
+    timer.stop();
     return timer.elasped_sec();
 }
 
@@ -167,7 +167,7 @@ f64 test_buffer_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         queues[ibuf]->wait();
     }
-    timer.end();
+    timer.stop();
     return timer.elasped_sec();
 }
 
@@ -214,7 +214,7 @@ f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
     }
 
     q.wait();
-    timer.end();
+    timer.stop();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         f64 *buf = bufs[ibuf];
@@ -274,7 +274,7 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         queues[ibuf]->wait();
     }
-    timer.end();
+    timer.stop();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         f64 *buf = bufs[ibuf];

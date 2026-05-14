@@ -556,7 +556,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
         });
     }
 
-    tstep.end();
+    tstep.stop();
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 

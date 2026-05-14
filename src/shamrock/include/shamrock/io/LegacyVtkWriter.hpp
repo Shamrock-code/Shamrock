@@ -440,7 +440,7 @@ namespace shamrock {
         inline ~LegacyVtkWriter() {
             shamlog_debug_mpi_ln("LegacyVtkWriter", "calling : shamcomm::mpi::File_close");
             shamcomm::mpi::File_close(&mfile);
-            timer.end();
+            timer.stop();
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(

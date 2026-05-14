@@ -177,7 +177,7 @@ namespace shambase::details {
      * @return f64 Wall time in seconds since program start
      */
     f64 get_wtime() {
-        global_timer.end();
+        global_timer.stop();
         return global_timer.elasped_sec();
     }
 

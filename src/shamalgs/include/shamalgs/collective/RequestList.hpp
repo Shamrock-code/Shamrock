@@ -99,7 +99,7 @@ namespace shamalgs::collective {
             size_t in_flight;
 
             while ((in_flight = remain_count()) >= max_in_flight) {
-                twait.end();
+                twait.stop();
                 if (twait.elasped_sec() > timeout) {
                     report_timeout();
                 }

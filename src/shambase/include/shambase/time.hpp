@@ -78,7 +78,7 @@ namespace shambase {
 
         inline void start() { t_start = std::chrono::steady_clock::now(); }
 
-        inline void end() {
+        inline void stop() {
             t_end   = std::chrono::steady_clock::now();
             nanosec = f64(
                 std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
@@ -108,7 +108,7 @@ namespace shambase {
         /**
          * @brief Stops the timer and stores the elapsed time in nanoseconds.
          */
-        inline void end() { nanosec = timer.get_elapsed_ns(); }
+        inline void stop() { nanosec = timer.get_elapsed_ns(); }
 
         /**
          * @brief Converts the stored nanosecond time to a string representation.
@@ -150,7 +150,7 @@ namespace shambase {
             Timer t;
             t.start();
             f();
-            t.end();
+            t.stop();
             acc += t.elasped_sec();
             run_count += 1;
         }
@@ -213,7 +213,7 @@ namespace shambase {
             t.time_func([&]() {
                 f();
             });
-            tdur.end();
+            tdur.stop();
         } while (tdur.elasped_sec() < max_duration);
 
         return t.func_time_sec();

@@ -742,7 +742,7 @@ inline void test_tree(std::string dset_name) {
         rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
         shamsys::instance::get_compute_queue().wait();
-        timer.end();
+        timer.stop();
 
         times.push_back(timer.nanosec / 1.e9);
         Npart.push_back(u32(cnt));

@@ -170,7 +170,7 @@ namespace {
                       done = true;
                   }
 
-                  twait.end();
+                  twait.stop();
 
                   if (twait.elasped_sec() > t_last_print + 10) {
 
@@ -524,7 +524,7 @@ namespace shamalgs::collective {
                 shambase::Timer twait;
                 twait.start();
                 do {
-                    twait.end();
+                    twait.stop();
                     if (twait.elasped_sec() > timeout) {
                         report_unfinished_requests(rqs, rqs_infos);
                     }

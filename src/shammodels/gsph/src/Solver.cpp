@@ -496,7 +496,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
+    time_neigh.stop();
     storage.timings_details.neighbors += time_neigh.elasped_sec();
 }
 
@@ -814,7 +814,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.insert_elements(pdat_interf);
             }));
 
-    timer_interf.end();
+    timer_interf.stop();
     storage.timings_details.interface += timer_interf.elasped_sec();
 }
 
@@ -1848,7 +1848,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     solve_logs.step_count++;
 
-    tstep.end();
+    tstep.stop();
 
     // Prepare timing log
     TimestepLog log;

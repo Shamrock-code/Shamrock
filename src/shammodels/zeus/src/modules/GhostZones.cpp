@@ -422,7 +422,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
             "Merged patch", id, ",", mpdat.original_elements, "->", mpdat.total_elements);
     });
 
-    timer_interf.end();
+    timer_interf.stop();
     storage.timings_details.interface += timer_interf.elasped_sec();
 }
 
@@ -482,7 +482,7 @@ shamrock::ComputeField<T> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>:
             out.field_data.add_obj(p.id_patch, std::move(new_pdat));
         });
 
-    timer_interf.end();
+    timer_interf.stop();
     storage.timings_details.interface += timer_interf.elasped_sec();
     return out;
 }

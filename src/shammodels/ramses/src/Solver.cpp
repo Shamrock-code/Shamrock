@@ -1651,7 +1651,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     shambase::get_check_ref(storage.ghost_layers_candidates_edge).free_alloc();
 
-    tstep.end();
+    tstep.stop();
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 

@@ -144,7 +144,7 @@ namespace shamrock {
         // write data to file
 
         MPI_File_close(&mfile);
-        timer.end();
+        timer.stop();
 
         if (shamcomm::world_rank() == 0) {
             size_t plist_len = all_offsets.size();
@@ -252,7 +252,7 @@ namespace shamrock {
         }
 
         MPI_File_close(&mfile);
-        timer.end();
+        timer.stop();
 
         if (shamcomm::world_rank() == 0) {
             size_t plist_len = all_offsets.size();

@@ -118,7 +118,7 @@ namespace sham::benchmarks {
                 });
             });
             e.wait();
-            t.end();
+            t.stop();
 
             x.complete_event_state(sycl::event{});
             y.complete_event_state(sycl::event{});

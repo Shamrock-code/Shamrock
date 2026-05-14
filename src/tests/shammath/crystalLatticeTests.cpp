@@ -503,7 +503,7 @@ TestStart(Benchmark, "shammath/crystalLattice/LatticeHCP/Iterator", lattice_iter
     shambase::Timer t;
     t.start();
     std::vector<f64_3> parts = gen.next_n(2e9);
-    t.end();
+    t.stop();
 
     trap(parts);
 
@@ -513,7 +513,7 @@ TestStart(Benchmark, "shammath/crystalLattice/LatticeHCP/Iterator", lattice_iter
     shambase::Timer t2;
     t2.start();
     gen.skip(1e9);
-    t2.end();
+    t2.stop();
     trap(gen.next());
     logger::raw_ln("skip_perf : ", t2.elasped_sec());
 }
@@ -532,7 +532,7 @@ TestStart(
     shambase::Timer t;
     t.start();
     std::vector<f64_3> parts = gen.next_n(2e9);
-    t.end();
+    t.stop();
 
     trap(parts);
 
@@ -542,7 +542,7 @@ TestStart(
     shambase::Timer t2;
     t2.start();
     gen.skip(1e9);
-    t2.end();
+    t2.stop();
     trap(gen.next());
     logger::raw_ln("skip_perf : ", t2.elasped_sec());
 }

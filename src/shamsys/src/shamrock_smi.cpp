@@ -252,7 +252,7 @@ namespace shamsys {
         shamrock_smi_selected(list_all_devices);
 
         shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-        timer.end();
+        timer.stop();
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "shamsys",

@@ -215,7 +215,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
+    time_neigh.stop();
     storage.timings_details.neighbors += time_neigh.elasped_sec();
 }
 
@@ -599,7 +599,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
+    time_neigh.stop();
     storage.timings_details.neighbors += time_neigh.elasped_sec();
 }
 

@@ -37,15 +37,15 @@
 #include <complex>
 #include <utility>
 
-Register_pymodsubmodule(blablabla, "shamrock.phys") {
+Register_pymodsubmodule("shamrock.phys") {
     return shambindings::submodules::modules()
         .get("shamrock")
         .def_submodule("phys", "Physics Library");
 }
 
-Register_pymod(shamphyslibinit) {
+Register_pybind() {}
 
-    shambindings::submodules::build_all_modules();
+Register_pybind() {
 
     py::module &shamphys_module = shambindings::submodules::modules().get("shamrock.phys");
 

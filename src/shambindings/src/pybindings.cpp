@@ -148,6 +148,8 @@ namespace shambindings {
             return m;
         });
 
+        shambindings::submodules::build_all_modules();
+
         if (static_init_shamrock_pybind) {
             for (auto fct : *static_init_shamrock_pybind) {
                 fct(m);

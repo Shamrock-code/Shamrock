@@ -23,6 +23,7 @@
 
 #include "shambase/call_lambda.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <pybind11/pybind11.h>
 #include <map>
 #include <optional>
@@ -162,6 +163,13 @@ using fct_sig = std::function<void(py::module &)>;
 /// Register a python module init function to be ran on init
 void register_pybind_init_func(fct_sig);
 
+#define Register_pymod_int(funcname, lambda_name)                                                  \
+    static void funcname(py::module &m);                                                           \
+    static shambase::call_lambda lambda_name([]() {                                                \
+        register_pybind_init_func(funcname);                                                       \
+    });                                                                                            \
+    static void funcname(py::module &m)
+
 /**
  * @brief Register a python module init function using static initialisation
  *
@@ -178,15 +186,18 @@ void register_pybind_init_func(fct_sig);
  * @endcode
  */
 #define Register_pymod(placeholdername)                                                            \
-    void pymod_##placeholdername(py::module &m);                                                   \
-    shambase::call_lambda pymod_class_obj_##placeholdername([]() {                                 \
-        register_pybind_init_func(pymod_##placeholdername);                                        \
-    });                                                                                            \
-    void pymod_##placeholdername(py::module &m)
+    Register_pymod_int(pymod_##placeholdername, pymod_class_obj_##placeholdername)
 
-#define Register_pymodsubmodule(placeholdername, path)                                             \
-    py::module pymod_##placeholdername();                                                          \
-    shambase::call_lambda pymod_class_obj_##placeholdername([]() {                                 \
-        shambindings::submodules::builders().insert(path, pymod_##placeholdername);                \
+#define Register_pybind()                                                                          \
+    Register_pymod_int(__shamrock_unique_name(pybind_), __shamrock_unique_name(pybind_class_obj_))
+
+#define Register_pymodsubmodule_int(path, funcname, lambda_name)                                   \
+    py::module funcname();                                                                         \
+    shambase::call_lambda lambda_name([]() {                                                       \
+        shambindings::submodules::builders().insert(path, funcname);                               \
     });                                                                                            \
-    py::module pymod_##placeholdername()
+    py::module funcname()
+
+#define Register_pymodsubmodule(path)                                                              \
+    Register_pymodsubmodule_int(                                                                   \
+        path, __shamrock_unique_name(pybind_class_obj_), __shamrock_unique_name(pybind_))

@@ -37,9 +37,19 @@
 #include <complex>
 #include <utility>
 
+Register_pymodsubmodule(blablabla, "shamrock.phys") {
+    return shambindings::submodules::modules()
+        .get("shamrock")
+        .def_submodule("phys", "Physics Library");
+}
+
 Register_pymod(shamphyslibinit) {
 
-    py::module shamphys_module = m.def_submodule("phys", "Physics Library");
+    shambindings::submodules::build_all_modules();
+
+    py::module &shamphys_module = shambindings::submodules::modules().get("shamrock.phys");
+
+    // py::module shamphys_module = m.def_submodule("phys", "Physics Library");
 
     // Planets.hpp
 

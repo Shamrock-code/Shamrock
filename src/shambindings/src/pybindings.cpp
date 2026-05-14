@@ -116,6 +116,20 @@ void register_py_to_sham_print(py::module &m) {
     });
 }
 
+namespace shambindings::submodules {
+
+    registry_t<py::module> &modules() {
+        static auto _reg = registry_t<py::module>{};
+        return _reg;
+    }
+
+    registry_t<module_factory_t> &builders() {
+        static auto _reg = registry_t<module_factory_t>{};
+        return _reg;
+    }
+
+} // namespace shambindings::submodules
+
 namespace shambindings {
 
     enum { None = 0, Lib = 1, Embed = 2 } init_state = None;
@@ -130,11 +144,18 @@ namespace shambindings {
                 &py_func_printer_normal, &py_func_printer_ln, &py_func_flush_func);
         }
 
+        submodules::modules().set_override("shamrock", [&]() -> py::module & {
+            return m;
+        });
+
         if (static_init_shamrock_pybind) {
             for (auto fct : *static_init_shamrock_pybind) {
                 fct(m);
             }
         }
+
+        submodules::builders().reset();
+        submodules::modules().reset();
 
         if (is_lib_mode) {
             init_state = Lib;

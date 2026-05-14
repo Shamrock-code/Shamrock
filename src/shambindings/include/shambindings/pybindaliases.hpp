@@ -21,22 +21,146 @@
  * we can then wrap them conveniently in a single macro call.
  */
 
+#include "shambase/call_lambda.hpp"
+#include "shambase/exception.hpp"
 #include <pybind11/pybind11.h>
+#include <map>
+#include <optional>
 
 /// alias to pybind11 namespace
 namespace py = pybind11;
+
+// ------------------------------------------------------------------
+// Submodule registry
+// ------------------------------------------------------------------
+
+namespace shambindings::submodules {
+
+    // ------------------------------------------------------------------
+    // Generic registry
+    // ------------------------------------------------------------------
+
+    template<typename T>
+    struct registry_t {
+
+        // note here that std::less<> is for transparent lookup with string_view
+        using map_t                    = std::map<std::string, T, std::less<>>;
+        std::unique_ptr<map_t> storage = {};
+
+        using getter_fn = std::function<T &()>;
+        std::optional<std::map<std::string, getter_fn, std::less<>>> overrides;
+
+        map_t &data() {
+            if (!storage) {
+                storage = std::make_unique<map_t>();
+            }
+            return *storage;
+        }
+
+        void reset() {
+            storage.reset();
+            overrides = std::nullopt;
+        }
+
+        // enable override system lazily
+        auto &override_map() {
+            if (!overrides) {
+                overrides.emplace();
+            }
+            return *overrides;
+        }
+
+        void set_override(std::string_view key, getter_fn fn) {
+            override_map().insert_or_assign(std::string(key), std::move(fn));
+        }
+
+        void clear_overrides() { overrides = std::nullopt; }
+
+        // does not include overrides
+        std::vector<std::string> keys() const {
+            if (!storage) {
+                return {};
+            }
+
+            std::vector<std::string> out;
+            out.reserve(storage->size());
+
+            for (auto const &kv : *storage) {
+                out.push_back(kv.first);
+            }
+
+            return out;
+        }
+
+        T &get(std::string_view key) {
+
+            // global override first
+            if (overrides) {
+                if (auto it = overrides->find(key); it != overrides->end()) {
+                    return it->second();
+                }
+            }
+
+            auto &map = data();
+
+            if (auto it = map.find(key); it != map.end()) {
+                return it->second;
+            }
+
+            throw shambase::make_except_with_loc<std::out_of_range>(
+                "registry entry not found: " + std::string(key));
+        }
+
+        void insert(std::string_view key, T &&value) {
+            auto [it, inserted] = data().emplace(std::string(key), std::move(value));
+
+            if (!inserted) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "registry entry already exists: " + std::string(key));
+            }
+        }
+    };
+
+    // ------------------------------------------------------------------
+    // Registry types
+    // ------------------------------------------------------------------
+
+    using module_factory_t = std::function<py::module()>;
+
+    // ------------------------------------------------------------------
+    // Global registries
+    // ------------------------------------------------------------------
+
+    registry_t<py::module> &modules();
+
+    registry_t<module_factory_t> &builders();
+
+    // ------------------------------------------------------------------
+    // Global build call
+    // ------------------------------------------------------------------
+
+    inline void build_all_modules() {
+        auto &module_map = modules().data();
+
+        // Get snapshot of builder keys
+        std::vector<std::string> keys = builders().keys();
+
+        // Lexicographic order
+        std::sort(keys.begin(), keys.end());
+
+        for (auto const &key : keys) {
+            auto &builder = builders().get(key);
+            module_map.emplace(key, builder());
+        }
+    }
+
+} // namespace shambindings::submodules
 
 /// function signature used to register python modules
 using fct_sig = std::function<void(py::module &)>;
 
 /// Register a python module init function to be ran on init
 void register_pybind_init_func(fct_sig);
-
-/// Utility struct to register python modules through static init
-struct PyBindStaticInit {
-    /// Constructor to register the python init function using static init
-    inline explicit PyBindStaticInit(fct_sig t) { register_pybind_init_func(std::move(t)); }
-};
 
 /**
  * @brief Register a python module init function using static initialisation
@@ -55,6 +179,14 @@ struct PyBindStaticInit {
  */
 #define Register_pymod(placeholdername)                                                            \
     void pymod_##placeholdername(py::module &m);                                                   \
-    void (*pymod_ptr_##placeholdername)(py::module & m) = pymod_##placeholdername;                 \
-    PyBindStaticInit pymod_class_obj_##placeholdername(pymod_ptr_##placeholdername);               \
+    shambase::call_lambda pymod_class_obj_##placeholdername([]() {                                 \
+        register_pybind_init_func(pymod_##placeholdername);                                        \
+    });                                                                                            \
     void pymod_##placeholdername(py::module &m)
+
+#define Register_pymodsubmodule(placeholdername, path)                                             \
+    py::module pymod_##placeholdername();                                                          \
+    shambase::call_lambda pymod_class_obj_##placeholdername([]() {                                 \
+        shambindings::submodules::builders().insert(path, pymod_##placeholdername);                \
+    });                                                                                            \
+    py::module pymod_##placeholdername()

@@ -65,7 +65,6 @@ void register_pybind_init_func(fct_sig);
  *
  * }
  * @endcode
- *
  */
 #define ON_PYTHON_INIT                                                                             \
     _internal_register_pybind_init(                                                                \

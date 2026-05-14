@@ -25,9 +25,9 @@
 #include <utility>
 #include <vector>
 
-Register_pymod(shamcommlibinit) {
+ON_PYTHON_INIT {
 
-    py::module shamcomm_module = m.def_submodule("comm", "comm library");
+    py::module shamcomm_module = root_module.def_submodule("comm", "comm library");
 
     shamcomm_module.def("get_timer", [](std::string name) {
         return shamcomm::mpi::get_timer(std::move(name));

@@ -23,7 +23,8 @@
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
 
-Register_pymod(pysyslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     m.def(
         "change_loglevel",

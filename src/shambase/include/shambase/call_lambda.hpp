@@ -12,12 +12,17 @@
 /**
  * @file print.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief TODO
+ * @brief Call a lambda at static or local scope construction time
  */
 
 namespace shambase {
 
-    /// TODO dox header
+    /**
+     * @brief Execute a lambda when a `call_lambda` object is constructed.
+     *
+     * Useful for static initialization side effects (registering data,
+     * registering modules, etc.) without needing a named function.
+     */
     struct call_lambda {
 
         /// Call the lambda on construction

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file print.hpp
+ * @file call_lambda.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Call a lambda at static or local scope construction time
  */

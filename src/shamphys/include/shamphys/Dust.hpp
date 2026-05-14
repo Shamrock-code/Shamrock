@@ -15,9 +15,9 @@
  * @brief Epstein drag stopping time for spherical dust grains
  */
 
+#include "shambase/assert.hpp"
 #include "shambase/constants.hpp"
 #include "shambackends/sycl.hpp"
-#include "shambase/assert.hpp"
 
 namespace shamphys {
 

@@ -50,7 +50,13 @@ namespace shamrock {
             ON_RANK_0(
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));
-            for (int i = 0; i < 3; i++) {
+
+            u64 npatch_last = sched.patch_list.global.size();
+
+            u32 max_runs = 30;
+
+            int i = 0;
+            for (; i < max_runs; i++) {
                 if (shamcomm::world_rank() == 0) {
                     logger::info_ln("DataInserterUtility", "Compute load ...");
                 }
@@ -65,7 +71,23 @@ namespace shamrock {
 
                 sched.scheduler_step(false, false);
                 sched.scheduler_step(true, true);
+
+                u64 npatch_new = sched.patch_list.global.size();
+                if (npatch_new != npatch_last) {
+                    npatch_last = npatch_new;
+                } else {
+                    break;
+                }
             }
+
+            ON_RANK_0(
+                logger::info_ln(
+                    "DataInserterUtility",
+                    "patch count stable after",
+                    i + 1,
+                    "runs npatch =",
+                    npatch_last));
+
             ON_RANK_0(
                 logger::info_ln(
                     "DataInserterUtility", "---------------------------------------------"));
@@ -103,7 +125,7 @@ namespace shamrock {
 
             if (pdat_ob_cnt < split_threshold) {
                 bool should_insert = true;
-                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+                sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                     if (should_insert) {
                         pdat.insert_elements(pdat_ins);
                         should_insert = false; // We insert only in first patch (no duplicates)
@@ -121,12 +143,12 @@ namespace shamrock {
 
             shambase::Timer treatrib;
             treatrib.start();
-            // move data into the corect patches
+            // move data into the correct patches
             SerialPatchTree<Tvec> sptree = SerialPatchTree<Tvec>::build(sched);
             ReattributeDataUtility reatrib(sched);
             sptree.attach_buf();
             reatrib.reatribute_patch_objects(sptree, main_field_name);
-            sched.check_patchdata_locality_corectness();
+            sched.check_patchdata_locality_correctness();
 
             treatrib.end();
             if (shamcomm::world_rank() == 0) {

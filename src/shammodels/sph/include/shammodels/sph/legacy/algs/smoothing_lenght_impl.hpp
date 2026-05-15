@@ -212,9 +212,9 @@ namespace impl {
                 auto acc_hpart = pdat_merge.get_field<f32>(ihpart)
                                      .get_buf()
                                      ->get_access<sycl::access::mode::read>(cgh);
-                auto r = pdat_merge.get_field<f32_3>(ixyz)
-                             .get_buf()
-                             ->get_access<sycl::access::mode::read>(cgh);
+                auto r         = pdat_merge.get_field<f32_3>(ixyz)
+                                     .get_buf()
+                                     ->get_access<sycl::access::mode::read>(cgh);
 
                 Rta tree_acc(radix_t, cgh);
 
@@ -336,9 +336,9 @@ namespace impl {
                 auto acc_hpart = pdat_merge.get_field<f64>(ihpart)
                                      .get_buf()
                                      ->get_access<sycl::access::mode::read>(cgh);
-                auto r = pdat_merge.get_field<f64_3>(ixyz)
-                             .get_buf()
-                             ->get_access<sycl::access::mode::read>(cgh);
+                auto r         = pdat_merge.get_field<f64_3>(ixyz)
+                                     .get_buf()
+                                     ->get_access<sycl::access::mode::read>(cgh);
 
                 Rta tree_acc(radix_t, cgh);
 

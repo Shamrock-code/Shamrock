@@ -58,6 +58,7 @@ namespace shammodels::basegodunov {
 
         j = nlohmann::json{
             {"type_id", shambase::get_type_name<Tvec>()},
+            {"scheduler_config", p.scheduler_conf},
             {"courant_safety_factor", p.Csafe},
             {"dust_riemann_solver", p.dust_config.dust_riemann_config},
             {"eos_gamma", p.eos_gamma},
@@ -92,6 +93,8 @@ namespace shammodels::basegodunov {
         auto _get_to_if_contains = [&](const std::string &key, auto &value) {
             shamrock::get_to_if_contains(j, key, value, has_used_defaults);
         };
+
+        _get_to_if_contains("scheduler_config", p.scheduler_conf);
 
         // actual data stored in the json
         _get_to_if_contains("courant_safety_factor", p.Csafe);

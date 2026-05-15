@@ -18,15 +18,83 @@
 #include "shambase/logs/loglevels.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/numeric_limits.hpp"
+#include "shambase/popen.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/sysinfo.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
 
 auto SHAM_MAX_ALLOC_SIZE
     = shamcmdopt::getenv_str_register("SHAM_MAX_ALLOC_SIZE", "shamrock max alloc size if set");
+
+namespace {
+
+    std::optional<std::string> get_cpu_name() {
+#ifdef __linux__
+        std::string lscpu_json = "";
+        try {
+            lscpu_json = shambase::popen_fetch_output("lscpu -J");
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+
+        nlohmann::json lscpu_json_parsed;
+        try {
+            lscpu_json_parsed = nlohmann::json::parse(lscpu_json);
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+
+        try {
+            const auto &entries = lscpu_json_parsed.at("lscpu");
+            if (!entries.is_array()) {
+                return std::nullopt;
+            }
+            std::optional<std::string> model_name;
+            std::optional<std::string> socket_count;
+            for (const auto &entry : entries) {
+                const std::string field = entry.at("field").get<std::string>();
+                const std::string data  = entry.at("data").get<std::string>();
+                if (field == "Model name:") {
+                    model_name = data;
+                } else if (field == "Socket(s):") {
+                    socket_count = data;
+                }
+            }
+            if (!model_name.has_value() || !socket_count.has_value() || model_name->empty()
+                || socket_count->empty()) {
+                return std::nullopt;
+            }
+
+            if (*socket_count == "1") {
+                return *model_name;
+            } else {
+                return fmt::format("{} x {}", *model_name, *socket_count);
+            }
+
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+#elif defined(__APPLE__)
+        // in that case the command is simply sysctl -n machdep.cpu.brand_string
+        std::string brand_string = "";
+        try {
+            brand_string = shambase::popen_fetch_output("sysctl -n machdep.cpu.brand_string");
+            shambase::replace_all(brand_string, "\n", "");
+            return brand_string;
+        } catch (const std::exception &e) {
+            return std::nullopt;
+        }
+        return brand_string;
+#else
+        return std::nullopt;
+#endif
+    }
+
+} // namespace
 
 namespace sham {
 
@@ -88,10 +156,9 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
+            warnings.push_back(                                                                    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device "   \
+                + name);                                                                           \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -102,10 +169,9 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<sycl::info::device::info_>()};                                    \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device",                                                                          \
-                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device",   \
-                name);                                                                             \
+            warnings.push_back(                                                                    \
+                "dev.get_info<sycl::info::device::" #info_ ">() raised an exception for device "   \
+                + name);                                                                           \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -116,8 +182,8 @@ namespace sham {
         try {                                                                                      \
             return {dev.get_info<info_>()};                                                        \
         } catch (...) {                                                                            \
-            logger::warn_ln(                                                                       \
-                "Device", "dev.get_info<" #info_ ">() raised an exception for device", name);      \
+            warnings.push_back(                                                                    \
+                "dev.get_info<" #info_ ">() raised an exception for device " + name);              \
             return {};                                                                             \
         }                                                                                          \
     }();
@@ -131,12 +197,23 @@ namespace sham {
      */
     DeviceProperties fetch_properties(const sycl::device &dev) {
 
+        std::vector<std::string> warnings;
+
         // Just to ensure that this one is not empty
         std::string name = "?";
         FETCH_PROPN(name, std::string, dev_name);
         if (dev_name) {
             name = *dev_name;
         }
+
+#if SYCL_COMP_ACPP
+        if (get_device_backend(dev) == Backend::OPENMP) {
+            auto cpu_name = get_cpu_name();
+            if (cpu_name) {
+                name = *cpu_name;
+            }
+        }
+#endif
 
         FETCH_PROP(vendor, std::string)
 
@@ -236,34 +313,23 @@ namespace sham {
         }
 #endif
 
-        // with oneapi there can be some issues with this
-        // see:https://github.com/intel/llvm/blob/sycl/sycl/ReleaseNotes.md#sycl-library-50
-        // > Fixed sycl::device::get_info<sycl::info::device::mem_base_addr_align> query
-        // > which was returning incorrect result for CUDA plugin [a6d03f3]
-        //
-        // So easy fix since this is cuda and cuda default ot 8 i just default to 8 also
-        // Note: on the CRAL DGX it was reporting 4096 hence the check on 2048
-        if (*mem_base_addr_align && mem_base_addr_align > 2048) {
-            shamlog_warn_ln(
-                "Backends",
+        // with acpp 8 bit is returned for most backends so we default to 8 bytes (64 bits)
+        if (*mem_base_addr_align && mem_base_addr_align == 8) {
+            warnings.push_back(
                 shambase::format(
-                    "mem_base_addr_align for device {} is {}\n   I will assume that this is an "
-                    "issue and default to 8 instead",
-                    name,
+                    "mem_base_addr_align for is {} bits. I will assume that this is an "
+                    "issue and default to 64 bits (8 bytes) instead.",
                     *mem_base_addr_align));
-            mem_base_addr_align = 8;
+            mem_base_addr_align = CHAR_BIT * 8;
         }
 
         // Some backends do not report sub_group_sizes, so we default to {1}
         u32 default_work_group_size = 1;
         if (!sub_group_sizes) {
             sub_group_sizes = std::vector<size_t>{default_work_group_size};
-            shamlog_warn_ln(
-                "Backends",
+            warnings.push_back(
                 shambase::format(
-                    "cannot fetch sub_group_sizes for device {}, defaulting to {}",
-                    name,
-                    default_work_group_size));
+                    "cannot fetch sub_group_sizes, defaulting to {}", default_work_group_size));
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
 
@@ -275,8 +341,7 @@ namespace sham {
                 max_alloc_dev        = max_alloc;
                 max_alloc_host       = max_alloc;
             } catch (const std::exception &e) {
-                logger::warn_ln(
-                    "Backends",
+                warnings.push_back(
                     shambase::format(
                         "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
                         "Ignoring override.",
@@ -285,20 +350,25 @@ namespace sham {
             }
         }
 
-        DeviceProperties ret
-            = {Vendor::UNKNOWN,         // We cannot determine the vendor
-               get_device_backend(dev), // Query the backend based on the platform name
-               get_device_type(dev),
-               shambase::get_check_ref(global_mem_size),
-               shambase::get_check_ref(global_mem_cache_line_size),
-               shambase::get_check_ref(global_mem_cache_size),
-               shambase::get_check_ref(local_mem_size),
-               shambase::get_check_ref(max_compute_units),
-               max_alloc_dev,
-               max_alloc_host,
-               shambase::get_check_ref(mem_base_addr_align),
-               shambase::get_check_ref(sub_group_sizes),
-               default_work_group_size};
+        DeviceProperties ret = {
+            Vendor::UNKNOWN,         // We cannot determine the vendor
+            get_device_backend(dev), // Query the backend based on the platform name
+            get_device_type(dev),
+            name,
+            dev.get_platform().get_info<sycl::info::platform::name>(),
+            shambase::get_check_ref(global_mem_size),
+            shambase::get_check_ref(global_mem_cache_line_size),
+            shambase::get_check_ref(global_mem_cache_size),
+            shambase::get_check_ref(local_mem_size),
+            shambase::get_check_ref(max_compute_units),
+            max_alloc_dev,
+            max_alloc_host,
+            // the SYCL standard returns the alignment in bits, we convert to bytes for convenience
+            shambase::get_check_ref(mem_base_addr_align) / CHAR_BIT,
+            shambase::get_check_ref(sub_group_sizes),
+            default_work_group_size,
+            std::nullopt,
+            warnings};
 
         { // PCI id infos
 #if defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 5

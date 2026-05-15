@@ -41,10 +41,12 @@ namespace sham::benchmarks {
     struct saxpy_result {
         /// Name of the function.
         std::string func_name;
-        /// Computation time in milliseconds.
-        f64 milliseconds;
+        /// Computation time in seconds.
+        f64 seconds;
         /// Bandwidth in gibibytes per second.
         f64 bandwidth;
+        /// Byte count used in the test
+        u64 byte_used;
     };
 
     /**
@@ -60,7 +62,7 @@ namespace sham::benchmarks {
      *
      *From https://developer.nvidia.com/blog/how-implement-performance-metrics-cuda-cc/
      *
-     * @return saxpy_result containing the computation time in milliseconds,
+     * @return saxpy_result containing the computation time in seconds,
      *         the bandwidth in gibibytes per second, and the name of the
      *         function.
      */
@@ -76,38 +78,57 @@ namespace sham::benchmarks {
 
         sham::DeviceQueue &q = sched->get_queue();
 
-        sham::DeviceBuffer<T> x = {size_t(N), sched};
-        sham::DeviceBuffer<T> y = {size_t(N), sched};
+        double seconds = shambase::get_max<double>();
+
+        sham::DeviceBuffer<T> x{size_t(N), sched};
+        sham::DeviceBuffer<T> y{size_t(N), sched};
 
         x.fill(init_x);
         y.fill(init_y);
 
-        sham::EventList depends_list;
+        if (x.get_size() < N) {
+            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "x.get_size() < N\n  x.get_size() = {},\n  N = {}", x.get_size(), N));
+        }
 
-        auto x_ptr = x.get_write_access(depends_list);
-        auto y_ptr = y.get_write_access(depends_list);
+        if (y.get_size() < N) {
+            shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                "y.get_size() < N\n  y.get_size() = {},\n  N = {}", y.get_size(), N));
+        }
 
-        depends_list.wait();
+        std::vector<T> y_res = {};
 
-        sham::EventList empty_list{};
+        for (int i = 0; i < 5; i++) {
 
-        shambase::Timer t;
-        t.start();
-        auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
-            cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
-                // printf("%d\n", item.get_linear_id());
-                saxpy(item.get_linear_id(), N, a, x_ptr, y_ptr);
+            sham::EventList depends_list;
+
+            auto x_ptr = x.get_write_access(depends_list);
+            auto y_ptr = y.get_write_access(depends_list);
+
+            depends_list.wait();
+
+            sham::EventList empty_list{};
+
+            shambase::Timer t;
+            t.start();
+            auto e = q.submit(empty_list, [&](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{size_t(N)}, [=](sycl::item<1> item) {
+                    // printf("%d\n", item.get_linear_id());
+                    saxpy(item.get_linear_id(), N, a, x_ptr, y_ptr);
+                });
             });
-        });
-        e.wait();
-        t.end();
+            e.wait();
+            t.end();
 
-        x.complete_event_state(sycl::event{});
-        y.complete_event_state(sycl::event{});
+            x.complete_event_state(sycl::event{});
+            y.complete_event_state(sycl::event{});
 
-        double milliseconds = t.elasped_sec() * 1e3;
+            seconds = sham::min(seconds, t.elasped_sec());
 
-        auto y_res = y.copy_to_stdvec();
+            if (i == 0) {
+                y_res = y.copy_to_stdvec();
+            }
+        }
 
         T expected = a * init_x + init_y;
 
@@ -135,8 +156,9 @@ namespace sham::benchmarks {
 
         return {
             SourceLocation{}.loc.function_name(),
-            milliseconds,
-            double(N) * load_size * 3 / milliseconds / 1e6};
+            seconds,
+            double(N) * load_size * 3 / seconds / 1e9,
+            u64(N) * u64(load_size) * 2_u64};
     }
 
 } // namespace sham::benchmarks

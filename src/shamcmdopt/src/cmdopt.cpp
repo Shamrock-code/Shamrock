@@ -14,6 +14,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include "shamcmdopt/cmdopt.hpp"
@@ -99,7 +100,7 @@ namespace shamcmdopt {
         for (auto arg : args) {
             if (arg.rfind("-", 0) == 0) {
                 if (!is_name_registered(arg)) {
-                    fmt::println(
+                    shambase::println(
                         err_str() + " opts argument : " + std::string(arg) + " is not registered");
                     err_buf += "\"";
                     err_buf += arg;
@@ -128,7 +129,7 @@ namespace shamcmdopt {
         check_init(); // We must init the cmdopt before checking if an option is there
 
         if (!is_name_registered(option_name)) {
-            fmt::println(
+            shambase::println(
                 err_str() + " opts argument :" + std::string(option_name) + " is not registered");
             throw ShamCmdOptException(
                 std::string(option_name) + " option is not registered in ::opts");
@@ -146,7 +147,7 @@ namespace shamcmdopt {
         check_init();
 
         if (!is_name_registered(option_name)) {
-            fmt::println(
+            shambase::println(
                 err_str() + " opts argument :" + std::string(option_name) + "is not registered");
             throw ShamCmdOptException(
                 std::string(option_name) + " option is not registered in ::opts");
@@ -207,7 +208,7 @@ namespace shamcmdopt {
     }
 
     void print_help() {
-        fmt::println(shambase::format("executable : {}", executable_name));
+        shambase::println(shambase::format("executable : {}", executable_name));
 
         fmt::println("\nUsage :");
 
@@ -220,11 +221,60 @@ namespace shamcmdopt {
 
             std::string arg_print = arg.value_or("");
 
-            fmt::println(
+            shambase::println(
                 shambase::format_printf(
                     "%-15s %-15s : %s", n.c_str(), arg_print.c_str(), desc.c_str()));
         }
         print_help_env_var();
+    }
+
+    void print_completion_zsh() {
+
+        std::string exe(executable_name);
+
+        // keep only the executable name
+        exe = exe.substr(exe.find_last_of('/') + 1);
+
+        // Header required by zsh
+        shambase::println("#compdef " + exe);
+        shambase::println("");
+
+        // Function name must be _<cmd>
+        shambase::println("_" + exe + "() {");
+        shambase::println("  _arguments \\");
+
+        std::sort(
+            registered_opts.begin(), registered_opts.end(), [](const auto &lhs, const auto &rhs) {
+                return lhs.name < rhs.name;
+            });
+
+        for (size_t i = 0; i < registered_opts.size(); ++i) {
+            const auto &[name, arg, desc] = registered_opts[i];
+
+            std::string entry;
+
+            if (arg.has_value()) {
+                // Option takes a value
+                // Example: --output=[Output file]:file:_files
+                entry = "'" + name + "[" + desc + "]:" + arg.value() + "'";
+            } else {
+                // Flag without value
+                // Example: --help[Show help]
+                entry = "'" + name + "[" + desc + "]'";
+            }
+
+            // Add trailing backslash except last line
+            if (i != registered_opts.size() - 1)
+                entry += " \\";
+
+            shambase::println("    " + entry);
+        }
+
+        shambase::println("");
+        shambase::println("}");
+        shambase::println("");
+
+        shambase::println("compdef _" + exe + " " + exe + " */" + exe);
     }
 
     bool is_help_mode() { return has_option("--help"); }

@@ -33,6 +33,7 @@
 #include "shammodels/ramses/config/enum_SlopeMode.hpp"
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -46,7 +47,7 @@ namespace shammodels::basegodunov {
      */
     struct DragConfig {
         DragSolverMode drag_solver_config = NoDrag;
-        std::vector<f32> alphas;
+        std::vector<f64> alphas;
         bool enable_frictional_heating
             = false; // 0 to turn off and 1 when all dissipation is deposited to the gas
     };
@@ -118,7 +119,9 @@ namespace shammodels::basegodunov {
         mode config = None{};
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+
         bool need_level_zero_compute() { return false; }
+        bool need_amr_level_compute() { return false; }
     };
 
     struct BCConfig {
@@ -252,6 +255,8 @@ struct shammodels::basegodunov::SolverConfig {
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
+    PatchSchedulerConfig scheduler_conf = {};
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -288,13 +293,12 @@ struct shammodels::basegodunov::SolverConfig {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Self gravity is experimental"));
             u32 mode = gravity_config.gravity_mode;
 
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            shamrock::experimental_feature_check(
+                shambase::format(
                     "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
                     "== "
                     "NoGravity mode)",
                     mode));
-            }
         }
 
         if (!(eos_gamma > 1.0)) {
@@ -304,13 +308,12 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (is_gas_passive_scalar_on()) {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            shamrock::experimental_feature_check(
+                shambase::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "
                     "to {}"
                     "> 0",
                     npscal_gas_config.npscal_gas));
-            }
         }
     }
 

@@ -14,7 +14,7 @@
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Shamrock communication buffers
  *
- * \todo make a better exemple
+ * \todo make a better example
  *
  * \code{.cpp}
  *   u32 nbytes = 1e5;

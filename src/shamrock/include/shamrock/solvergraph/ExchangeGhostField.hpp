@@ -22,6 +22,7 @@
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
 namespace shamrock::solvergraph {
@@ -68,7 +69,7 @@ namespace shamrock::solvergraph {
 
 #define NODE_EXCHANGE_GHOST_FIELD_EDGES(X_RO, X_RW)                                                \
     /* input */                                                                                    \
-    X_RO(shamrock::solvergraph::ScalarsEdge<u32>, rank_owner)                                      \
+    X_RO(shamrock::solvergraph::RankGetter, rank_owner)                                            \
     /* output */                                                                                   \
     X_RW(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_layer)
 

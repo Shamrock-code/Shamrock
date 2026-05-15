@@ -89,7 +89,7 @@ inline void validate_kernel_3d(
         const Tscal x = i * step;
         Tscal diff    = Ker::df(x) - shammath::derivative_upwind<Tscal>(x, dx, [](Tscal x) {
                          return Ker::f(x);
-                     });
+                        });
         diff *= gen_norm3d;
         L2_sum += diff * diff * step;
     }

@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
@@ -29,8 +30,7 @@
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcmdopt/tty.hpp"
-#include "shamcomm/collectives.hpp"
-#include "shamcomm/env_variables.hpp"
+#include "shamcomm/local_rank.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiInfo.hpp"
@@ -74,7 +74,7 @@ namespace shamsys::instance::details {
         });
 
         std::string recv;
-        shamcomm::gather_str(print_buf, recv);
+        shamalgs::collective::gather_str(print_buf, recv);
 
         if (rank == 0) {
             std::string print = "Cluster SYCL Info : \n";
@@ -171,7 +171,7 @@ namespace shamsys::instance {
 
         std::string print_buf = "";
 
-        std::optional<u32> loc = shamcomm::get_local_rank();
+        std::optional<u32> loc = shamcomm::node_local_rank();
         if (loc) {
             print_buf = shambase::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
@@ -189,7 +189,7 @@ namespace shamsys::instance {
         }
 
         std::string recv;
-        shamcomm::gather_str(print_buf, recv);
+        shamalgs::collective::gather_str(print_buf, recv);
 
         if (rank == 0) {
             std::string print = "Queue map : \n";

@@ -25,28 +25,16 @@
 
 inline void apply_node_patch_packing(
     std::vector<shamrock::patch::Patch> &global_patch_list, std::vector<i32> &new_owner_table) {
-    using namespace shamrock::patch;
-    sycl::buffer<i32> new_owner(new_owner_table.data(), new_owner_table.size());
-    sycl::buffer<Patch> patch_buf(global_patch_list.data(), global_patch_list.size());
 
-    sycl::range<1> range{global_patch_list.size()};
-
-    // pack nodes
-    shamsys::instance::get_alt_queue()
-        .submit([&](sycl::handler &cgh) {
-            auto ptch = patch_buf.get_access<sycl::access::mode::read>(cgh);
-            // auto pdt  = dt_buf.get_access<sycl::access::mode::read>(cgh);
-            auto chosen_node = new_owner.get_access<sycl::access::mode::write>(cgh);
-
-            cgh.parallel_for(range, [=](sycl::item<1> item) {
-                u64 i = (u64) item.get_id(0);
-
-                if (ptch[i].pack_node_index != u64_max) {
-                    chosen_node[i] = chosen_node[ptch[i].pack_node_index];
-                }
-            });
-        })
-        .wait();
+    // Note that there seems to be a data race here
+    // However this should never happends as packing index will only point toward a patch without
+    // packing. As such the data we are accessing should never be modified during this loop.
+#pragma omp parallel for
+    for (size_t i = 0; i < global_patch_list.size(); i++) {
+        if (global_patch_list[i].pack_node_index != u64_max) {
+            new_owner_table[i] = new_owner_table[global_patch_list[i].pack_node_index];
+        }
+    }
 }
 
 namespace shamrock::scheduler {
@@ -75,9 +63,10 @@ namespace shamrock::scheduler {
         // generate hilbert code, load value, and index before sort
         std::vector<LBTile> patch_dt(global_patch_list.size());
 
+#pragma omp parallel for
         for (u64 i = 0; i < global_patch_list.size(); i++) {
 
-            Patch p = global_patch_list[i];
+            const Patch &p = global_patch_list[i];
 
             patch_dt[i]
                 = {SFC::icoord_to_hilbert(p.coord_min[0], p.coord_min[1], p.coord_min[2]),
@@ -101,17 +90,17 @@ namespace shamrock::scheduler {
 
                 // TODO add bool for optional print verbosity
                 // std::cout << i << " : " << old_owner << " -> " << new_owner << std::endl;
-
-                using ChangeOp = LoadBalancingChangeList::ChangeOp;
-
-                ChangeOp op;
-                op.patch_idx      = i;
-                op.patch_id       = global_patch_list[i].id_patch;
-                op.rank_owner_new = new_owner;
-                op.rank_owner_old = old_owner;
-                op.tag_comm       = tags_it_node[old_owner];
-
                 if (new_owner != old_owner) {
+
+                    using ChangeOp = LoadBalancingChangeList::ChangeOp;
+
+                    ChangeOp op;
+                    op.patch_idx      = i;
+                    op.patch_id       = global_patch_list[i].id_patch;
+                    op.rank_owner_new = new_owner;
+                    op.rank_owner_old = old_owner;
+                    op.tag_comm       = tags_it_node[old_owner];
+
                     change_list.change_ops.push_back(op);
                     tags_it_node[old_owner]++;
                 }
@@ -125,23 +114,31 @@ namespace shamrock::scheduler {
             f64 avg = 0;
             f64 var = 0;
 
-            for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
+            i32 world_size = shamcomm::world_size();
+
+#pragma omp parallel for reduction(min : min) reduction(max : max) reduction(+ : avg)
+            for (i32 nid = 0; nid < world_size; nid++) {
                 f64 val = load_per_node[nid];
                 min     = sycl::fmin(min, val);
                 max     = sycl::fmax(max, val);
                 avg += val;
+            }
 
-                if (shamcomm::world_rank() == 0) {
+            if (shamcomm::world_rank() == 0
+                && shamcomm::logs::get_loglevel() >= shamcomm::logs::log_debug) {
+                for (i32 nid = 0; nid < world_size; nid++) {
                     shamlog_debug_ln(
                         "HilbertLoadBalance", "node :", nid, "load :", load_per_node[nid]);
                 }
             }
-            avg /= shamcomm::world_size();
-            for (i32 nid = 0; nid < shamcomm::world_size(); nid++) {
+            avg /= world_size;
+
+#pragma omp parallel for reduction(+ : var)
+            for (i32 nid = 0; nid < world_size; nid++) {
                 f64 val = load_per_node[nid];
                 var += (val - avg) * (val - avg);
             }
-            var /= shamcomm::world_size();
+            var /= world_size;
 
             if (shamcomm::world_rank() == 0) {
                 std::string str = "Loadbalance stats : \n";

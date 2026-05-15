@@ -22,7 +22,8 @@
 #include <shamunits/UnitSystem.hpp>
 #include <memory>
 
-Register_pymod(pyunits_init) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     using UnitSystem = shamunits::UnitSystem<f64>;
 

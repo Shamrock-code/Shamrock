@@ -29,9 +29,9 @@ namespace shamalgs::atomic {
      * e.g. worker group 2 can not start if worker group 1 is not started
      * The performance overhead is minimal (10^-11 s/element on A100)
      *
-     * \todo add figure for overhead measurment
+     * \todo add figure for overhead measurement
      *
-     * Exemple :
+     * Example :
      *
      * \code{.cpp}
      * DynamicIdGenerator<i32, group_size> id_gen(q);
@@ -75,7 +75,7 @@ namespace shamalgs::atomic {
     };
 
     /**
-     * @brief Accesses version of `DynamicIdGenerator` see doc for exemple (`DynamicIdGenerator`)
+     * @brief Accesses version of `DynamicIdGenerator` see doc for example (`DynamicIdGenerator`)
      *
      * @tparam int_t the int type used by the counter (preferentially u32 or u64)
      * @tparam group_size the group size used in `SYCL`

@@ -17,20 +17,16 @@
  */
 
 /// Utility to concatenate two tokens
-#define internal_macro_sham_CONCAT2(a, b) a##b
+#define sham_CONCAT2(a, b) a##b
 /// Utility to expand a macro with two tokens
-#define internal_macro_sham_EXPAND2(a, b) internal_macro_sham_CONCAT2(a, b)
+#define sham_EXPAND2(a, b) sham_CONCAT2(a, b)
 
 /**
  * @fn __shamrock_unique_name
  * @brief Macro to create a unique name.
  *
- * This macro creates a unique identifier from `base_name` using `__COUNTER__` or `__LINE__`.
+ * This macro creates a unique identifier from `base_name` using `__LINE__`.
  * @note The `__LINE__` fallback is not unique for multiple uses on the same line.
  */
 
-#ifdef __COUNTER__
-    #define __shamrock_unique_name(base_name) internal_macro_sham_EXPAND2(base_name, __COUNTER__)
-#else
-    #define __shamrock_unique_name(base_name) internal_macro_sham_EXPAND2(base_name, __LINE__)
-#endif
+#define __shamrock_unique_name(base_name) sham_EXPAND2(base_name, __LINE__)

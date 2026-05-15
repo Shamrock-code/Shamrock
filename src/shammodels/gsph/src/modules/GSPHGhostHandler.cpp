@@ -15,7 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include <functional>
 #include <vector>
@@ -143,7 +143,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
                     // sender translation
                     vec periodic_offset = vec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-                    sched.for_each_local_patch([&](const Patch psender) {
+                    sched.for_each_local_patch([&](const Patch &psender) {
                         CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
                         CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
 
@@ -198,7 +198,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
 
             vec offset = shift.shift;
 
-            sched.for_each_local_patch([&](const Patch psender) {
+            sched.for_each_local_patch([&](const Patch &psender) {
                 CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
                 CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(offset);
 
@@ -247,7 +247,7 @@ auto GSPHGhostHandler<vec>::find_interfaces(
         // sender translation
         vec periodic_offset = vec{0, 0, 0};
 
-        sched.for_each_local_patch([&](const Patch psender) {
+        sched.for_each_local_patch([&](const Patch &psender) {
             CoordRange<vec> sender_bsize     = patch_coord_transf.to_obj_coord(psender);
             CoordRange<vec> sender_bsize_off = sender_bsize.add_offset(periodic_offset);
 
@@ -383,7 +383,7 @@ void GSPHGhostHandler<vec>::gen_debug_patch_ghost(
         });
 
     std::string dot_graph = "";
-    shamcomm::gather_str(loc_graph, dot_graph);
+    shamalgs::collective::gather_str(loc_graph, dot_graph);
 
     dot_graph = "strict digraph {\n" + dot_graph + "}";
 

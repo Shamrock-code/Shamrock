@@ -24,8 +24,8 @@ template<class Tvec, class TgridVec>
 template<class UserAcc, class... T>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     gen_refine_block_changes(
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_refine_list,
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &dd_derefine_list,
         T &&...args) {
 
     using namespace shamrock::patch;
@@ -132,7 +132,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         tot_refine += buf_refine.get_size();
 
         // add the results to the map
-        refine_list.add_obj(id_patch, std::move(buf_refine));
+        dd_refine_list.add_obj(id_patch, std::move(buf_refine));
 
         ////////////////////////////////////////////////////////////////////////////////
         // derefinement
@@ -147,7 +147,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         tot_derefine += buf_derefine.get_size();
 
         // add the results to the map
-        derefine_list.add_obj(id_patch, std::move(buf_derefine));
+        dd_derefine_list.add_obj(id_patch, std::move(buf_derefine));
     });
 
     logger::info_ln("AMRGrid", "on this process", tot_refine, "blocks were refined");
@@ -157,7 +157,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list) {
+    internal_refine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_list) {
 
     using namespace shamrock::patch;
 
@@ -170,7 +170,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
         u32 old_obj_cnt = pdat.get_obj_cnt();
 
-        sham::DeviceBuffer<u32> &refine_flags = refine_list.get(id_patch);
+        sham::DeviceBuffer<u32> &refine_flags = dd_refine_list.get(id_patch);
 
         if (refine_flags.get_size() > 0) {
 
@@ -250,7 +250,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_derefine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list) {
+    internal_derefine_grid(shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_list) {
 
     using namespace shamrock::patch;
 
@@ -262,7 +262,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     scheduler().for_each_patch_data([&](u64 id_patch, Patch cur_p, PatchDataLayer &pdat) {
         u32 old_obj_cnt = pdat.get_obj_cnt();
 
-        sham::DeviceBuffer<u32> &derefine_flags = derefine_list.get(id_patch);
+        sham::DeviceBuffer<u32> &derefine_flags = dd_derefine_list.get(id_patch);
 
         if (derefine_flags.get_size() > 0) {
 
@@ -368,21 +368,21 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     block_sorter.reorder_amr_blocks();
 
     // get refine and derefine list
-    shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-    shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
+    shambase::DistributedData<sham::DeviceBuffer<u32>> dd_refine_list;
+    shambase::DistributedData<sham::DeviceBuffer<u32>> dd_derefine_list;
 
-    gen_refine_block_changes<UserAccCrit>(refine_list, derefine_list);
+    gen_refine_block_changes<UserAccCrit>(dd_refine_list, dd_derefine_list);
 
     //////// apply refine ////////
     // Note that this only add new blocks at the end of the patchdata
-    internal_refine_grid<UserAccSplit>(std::move(refine_list));
+    internal_refine_grid<UserAccSplit>(std::move(dd_refine_list));
 
     //////// apply derefine ////////
     // Note that this will perform the merge then remove the old blocks
     // This is ok to call straight after the refine without edditing the index list in derefine_list
     // since no permutations were applied in internal_refine_grid and no cells can be both refined
     // and derefined in the same pass
-    internal_derefine_grid<UserAccMerge>(std::move(derefine_list));
+    internal_derefine_grid<UserAccMerge>(std::move(dd_derefine_list));
 }
 
 template<class Tvec, class TgridVec>

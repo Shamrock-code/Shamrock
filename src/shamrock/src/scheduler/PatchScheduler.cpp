@@ -21,7 +21,6 @@
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -527,7 +526,7 @@ void SchedulerMPI::scheduler_step(bool do_split_merge,bool do_load_balancing){
         split_patches(split_rq);
 
         // update packing index
-        // same operation on evey cluster nodes
+        // same operation on every cluster nodes
         set_patch_pack_values(merge_rq);
 
         // update patch list
@@ -679,7 +678,7 @@ void check_locality_t(PatchScheduler &sched) {
     });
 }
 
-void PatchScheduler::check_patchdata_locality_corectness() {
+void PatchScheduler::check_patchdata_locality_correctness() {
 
     StackEntry stack_loc{};
 
@@ -829,8 +828,7 @@ inline void PatchScheduler::set_patch_pack_values(std::unordered_set<u64> merge_
             patch_list
                 .global[patch_list.id_patch_to_global_idx
                             [patch_tree.tree[to_merge_node.get_child_nid(i)].linked_patchid]]
-                .pack_node_index
-                = idx_pack;
+                .pack_node_index = idx_pack;
         } // std::cout << std::endl;
     }
 }

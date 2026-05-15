@@ -81,5 +81,9 @@ def plot_codeu_to_unit(unit_system, name):
             "s", power=-2
         )
 
+    # Magnetic field
+    elif name == "T":
+        return "[T]", unit_system.to("T")
+
     else:
         raise ValueError(f"Unknown unit: {name}")

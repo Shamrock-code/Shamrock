@@ -25,6 +25,7 @@
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
@@ -32,12 +33,16 @@
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pytypes.h>
 #include <memory>
+#include <optional>
 #include <random>
+#include <utility>
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -63,6 +68,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     config_cls.def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
+        .def(
+            "set_scheduler_config",
+            [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                self.scheduler_conf.split_load_value = split_crit;
+                self.scheduler_conf.merge_load_value = merge_crit;
+            },
+            py::kw_only(),
+            py::arg("split_load_value"),
+            py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
@@ -280,6 +294,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Omega_0"),
             py::arg("eta"),
             py::arg("q"))
+        .def(
+            "add_ext_force_velocity_dissipation",
+            [](TConfig &self, Tscal eta) {
+                self.ext_force_config.add_velocity_dissipation(eta);
+            },
+            py::kw_only(),
+            py::arg("eta"))
+        .def(
+            "add_ext_force_vertical_disc_potential",
+            [](TConfig &self, Tscal central_mass, Tscal R0) {
+                self.ext_force_config.add_vertical_disc_potential(central_mass, R0);
+            },
+            py::kw_only(),
+            py::arg("central_mass"),
+            py::arg("R0"))
         .def("set_units", &TConfig::set_units)
         .def(
             "get_units",
@@ -361,9 +390,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max});
-            })
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
+                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true)
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -494,7 +527,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::optional<u64> msg_size_limit,
                std::optional<u64> max_msg_size,
                bool do_setup_log,
-               bool use_new_setup) {
+               bool use_new_setup,
+               bool speculative_balancing) {
                 if (use_new_setup) {
                     return self.apply_setup_new(
                         setup,
@@ -504,7 +538,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         msg_count_limit,
                         msg_size_limit,
                         max_msg_size,
-                        do_setup_log);
+                        do_setup_log,
+                        speculative_balancing);
                 } else {
                     if (bool(gen_step)) {
                         ON_RANK_0(
@@ -536,19 +571,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering")      = true,
-            py::arg("gen_step")             = std::nullopt,
-            py::arg("insert_step")          = std::nullopt,
-            py::arg("msg_count_limit")      = std::nullopt,
-            py::arg("rank_comm_size_limit") = std::nullopt,
-            py::arg("max_msg_size")         = std::nullopt,
-            py::arg("do_setup_log")         = false,
-            py::arg("use_new_setup")        = true);
+            py::arg("part_reordering")       = true,
+            py::arg("gen_step")              = std::nullopt,
+            py::arg("insert_step")           = std::nullopt,
+            py::arg("msg_count_limit")       = std::nullopt,
+            py::arg("rank_comm_size_limit")  = std::nullopt,
+            py::arg("max_msg_size")          = std::nullopt,
+            py::arg("do_setup_log")          = false,
+            py::arg("use_new_setup")         = true,
+            py::arg("speculative_balancing") = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def("init", &T::init)
         .def("init_scheduler", &T::init_scheduler)
 
         .def(
@@ -741,8 +778,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         "unknown field type");
                 }
             })
-        .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-        .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+        .def(
+            "set_field_value_lambda_f64",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_f64_3",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64_3(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64_3>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
+        .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const
         // std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
@@ -889,6 +950,39 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("name"),
             py::arg("field_type"),
             py::arg("rays"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
+            "compute_field",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<
+                    shamrock::solvergraph::Field<f64>,
+                    shamrock::solvergraph::Field<f64_3>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    modules::RenderFieldGetter<Tvec, f64, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                if (field_type == "f64_3") {
+                    modules::RenderFieldGetter<Tvec, f64_3, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
             py::arg("custom_getter") = std::nullopt)
         .def(
             "render_azymuthal_integ",
@@ -1101,6 +1195,26 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_debug_dump", &T::set_debug_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+        .def(
+            "solver_logs_last_system_metrics",
+            [&](T &self) {
+                auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                py::dict ret;
+                ret["duration"] = system_metrics.wall_time;
+                if (system_metrics.rank_energy_consummed.has_value()) {
+                    ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                }
+                if (system_metrics.gpu_energy_consummed.has_value()) {
+                    ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                }
+                if (system_metrics.cpu_energy_consummed.has_value()) {
+                    ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                }
+                if (system_metrics.dram_energy_consummed.has_value()) {
+                    ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                }
+                return ret;
+            })
         .def("solver_logs_cumulated_step_time", &T::solver_logs_cumulated_step_time)
         .def("solver_logs_reset_cumulated_step_time", &T::solver_logs_reset_cumulated_step_time)
         .def("solver_logs_step_count", &T::solver_logs_step_count)
@@ -1200,7 +1314,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return sched.get_patch_transform<Tvec>();
             })
         .def("apply_momentum_offset", &T::apply_momentum_offset)
-        .def("apply_position_offset", &T::apply_position_offset);
+        .def("apply_position_offset", &T::apply_position_offset)
+        .def(
+            "add_timestep_callback",
+            [](T &self,
+               std::optional<std::function<void(void)>> step_begin_callback,
+               std::optional<std::function<void(void)>> step_end_callback) {
+                self.solver.timestep_callbacks.push_back(
+                    {std::move(step_begin_callback), std::move(step_end_callback)});
+            },
+            py::kw_only(),
+            py::arg("step_begin") = std::nullopt,
+            py::arg("step_end")   = std::nullopt);
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -1269,6 +1394,21 @@ void add_analysisTotalMomentum_instance(py::module &m, const std::string &name_m
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisAngularMomentum_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_angular_momentum", [](modules::AnalysisAngularMomentum<Tvec, SPHKernel> &self) {
+            return self.get_angular_momentum();
+        });
+}
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1278,7 +1418,6 @@ auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
 
 template<template<class, template<class> class> class Analysis>
 void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
-
     using namespace shammodels::sph;
 
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
@@ -1338,7 +1477,8 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
         py::arg("model"));
 }
 
-Register_pymod(pysphmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
@@ -1445,6 +1585,20 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
+    add_analysisAngularMomentum_instance<f64_3, shammath::M4>(
+        msph, "AnalysisAngularMomentum_f64_3_M4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M6>(
+        msph, "AnalysisAngularMomentum_f64_3_M6");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M8>(
+        msph, "AnalysisAngularMomentum_f64_3_M8");
+
+    add_analysisAngularMomentum_instance<f64_3, shammath::C2>(
+        msph, "AnalysisAngularMomentum_f64_3_C2");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C4>(
+        msph, "AnalysisAngularMomentum_f64_3_C4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C6>(
+        msph, "AnalysisAngularMomentum_f64_3_C6");
+
     register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
         msph, "analysisEnergyKinetic");
@@ -1452,4 +1606,6 @@ Register_pymod(pysphmodel) {
         msph, "analysisEnergyPotential");
     register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
         msph, "analysisTotalMomentum");
+    register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
+        msph, "analysisAngularMomentum");
 }

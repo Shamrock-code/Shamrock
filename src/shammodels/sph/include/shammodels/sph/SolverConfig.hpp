@@ -844,6 +844,9 @@ struct shammodels::sph::SolverConfig {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
+    /// @brief Whether the solver is set for non ideal MHD
+    inline bool do_NIMHD() { return mhd_config.do_NIMHD(); }
+
     /// @brief Whether the solver has a field for B_on_rho
     inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
 

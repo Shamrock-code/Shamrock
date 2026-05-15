@@ -198,6 +198,17 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("sigma_mhd"),
             py::arg("sigma_u"))
         .def(
+            "set_NonIdealMHD",
+            [](TConfig &self, Tscal sigma_mhd, Tscal sigma_u, Tscal etaO, Tscal etaH, Tscal etaAD) {
+                self.set_NonIdealMHD({sigma_mhd, sigma_u, etaO, etaH, etaAD});
+            },
+            py::kw_only(),
+            py::arg("sigma_mhd"),
+            py::arg("sigma_u"),
+            py::arg("etaO"),
+            py::arg("etaH"),
+            py::arg("etaAD"))
+        .def(
             "set_self_gravity_none",
             [](TConfig &self) {
                 self.self_grav_config.set_none();

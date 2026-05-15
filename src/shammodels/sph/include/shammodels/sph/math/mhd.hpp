@@ -24,6 +24,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamunits/Constants.hpp"
 #include <tuple>
@@ -31,6 +32,51 @@
 namespace shamrock::sph::mhd {
 
     enum MHDType { Ideal = 0, NonIdeal = 1 };
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline void MagCurrentJ_sum(
+        Tscal m_b, Tvec B_a, Tvec B_b, Tvec nabla_Wab_ha, Tscal sub_fact_a, Tscal mu_0, Tvec J_a) {
+
+        J_a += m_b * sham::inv_sat_zero(sub_fact_a) * sycl::cross(B_a - B_b, nabla_Wab_ha) / mu_0;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tvec WursterD(Tvec B, Tvec J, Tscal etaO, Tscal etaH, Tscal etaAD) {
+
+        Tvec Bhat = B / sycl::length(B);
+        Tvec D    = etaO * J + etaH * sycl::cross(J, Bhat)
+                    + etaAD * sycl::cross(sycl::cross(J, Bhat), Bhat);
+
+        return D;
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tscal u_NI_heating(Tvec D, Tvec J, Tscal rho) {
+
+        return -sycl::dot(D, J) * sham::inv_sat_zero(rho);
+    }
+
+    template<class Tvec, class Tscal, MHDType MHD_mode = NonIdeal>
+    inline Tvec B_NI_terms(
+        Tvec D_a,
+        Tvec D_b,
+        Tscal m_b,
+        Tscal rho_a_sq,
+        Tscal rho_b_sq,
+        Tvec B_a,
+        Tvec B_b,
+        Tscal omega_a,
+        Tscal omega_b,
+        Tvec nabla_Wab_ha,
+        Tvec nabla_Wab_hb) {
+
+        Tscal sub_fact_a = rho_a_sq * omega_a;
+        Tscal sub_fact_b = rho_b_sq * omega_b;
+
+        Tvec acc_a = sham::inv_sat_zero(sub_fact_a) * (sycl::cross(D_a, nabla_Wab_ha));
+        Tvec acc_b = sham::inv_sat_zero(sub_fact_b) * (sycl::cross(D_b, nabla_Wab_hb));
+        return -m_b * (acc_a + acc_b);
+    }
 
     // mag tension form the Tricco 2023 formula
     template<class Tvec, class Tscal>
@@ -159,7 +205,7 @@ namespace shamrock::sph::mhd {
         Tvec psisubterm_a = ((psi_a) *sham::inv_sat_zero(sub_fact_a)) * nabla_Wab_ha;
         Tvec psisubterm_b = ((psi_b) *sham::inv_sat_zero(sub_fact_b)) * nabla_Wab_hb;
 
-        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_a);
+        Tvec psiterm = -m_b * (psisubterm_a + psisubterm_b);
 
         return psiterm;
     }
@@ -227,11 +273,18 @@ namespace shamrock::sph::mhd {
         Tvec B_a,
         Tvec B_b,
 
+        Tvec J_a,
+        Tvec J_b,
+
         Tscal psi_a,
         Tscal psi_b,
 
         Tscal mu_0,
         Tscal sigma_mhd,
+
+        Tscal etaO,
+        Tscal etaH,
+        Tscal etaAD,
 
         Tvec &dv_dt,
         Tscal &du_dt,
@@ -364,8 +417,9 @@ namespace shamrock::sph::mhd {
         Tvec dB_on_rho_dissipation_term
             = 0.5 * pmass * (rho_diss_term_a + rho_diss_term_b) * (B_a - B_b) * vsig_B;
 
-        dB_on_rho_dt
-            += v_ab * dB_on_rho_induction_term(pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b);
+        dB_on_rho_dt += v_ab
+                        * dB_on_rho_induction_term(
+                            pmass, rho_a_sq, B_a, omega_a, r_ab_unit * dWab_b); // @@ dWab_a ?
 
         dB_on_rho_dt += dB_on_rho_psi_term(
             pmass,
@@ -401,6 +455,39 @@ namespace shamrock::sph::mhd {
 
         // for conservative checks
         drho_dt += (1. / omega_a) * pmass * sycl::dot(v_ab, r_ab_unit * dWab_a);
+
+        // Non-ideal MHD terms
+        if constexpr (MHD_mode == NonIdeal) {
+            // logger::raw_ln("############# NON IDEAL MHD #############");
+
+            // Tvec J_a = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+            //     pmass, B_a, B_b, r_ab_unit * dWab_a, sub_fact_a, mu_0);
+            // Tvec J_b = MagCurrentJ<Tvec, Tscal, MHD_mode>(
+            //     pmass, B_a, B_b, r_ab_unit * dWab_b, sub_fact_b, mu_0);
+
+            Tvec D_a = WursterD<Tvec, Tscal, MHD_mode>(B_a, J_a, etaO, etaH, etaAD);
+            Tvec D_b = WursterD<Tvec, Tscal, MHD_mode>(B_b, J_b, etaO, etaH, etaAD);
+
+            Tvec B_NI = B_NI_terms<Tvec, Tscal, MHD_mode>(
+                D_a,
+                D_b,
+                pmass,
+                rho_a_sq,
+                rho_b * rho_b,
+                B_a,
+                B_b,
+                omega_a,
+                omega_b,
+                r_ab_unit * dWab_a,
+                r_ab_unit * dWab_b);
+
+            dB_on_rho_dt += B_NI;
+
+            Tscal u_NI = u_NI_heating<Tvec, Tscal, MHD_mode>(D_a, J_a, rho_a) * 0.5
+                         + u_NI_heating<Tvec, Tscal, MHD_mode>(D_b, J_b, rho_b) * 0.5;
+
+            du_dt += u_NI;
+        }
     }
 
 } // namespace shamrock::sph::mhd

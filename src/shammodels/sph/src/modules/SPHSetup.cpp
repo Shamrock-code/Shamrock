@@ -652,7 +652,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             shambase::throw_unimplemented();
         }
 
-        sycl::buffer<u64> new_id_buf = sptree.compute_patch_owner(
+        sham::DeviceBuffer<u64> new_id_buf = sptree.compute_patch_owner(
             shamsys::instance::get_compute_scheduler_ptr(),
             pos_field.get_buf(),
             pos_field.get_obj_cnt());
@@ -660,7 +660,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         std::unordered_map<i32, std::vector<u32>> index_per_ranks;
         bool err_id_in_newid = false;
         {
-            sycl::host_accessor nid{new_id_buf, sycl::read_only};
+            std::vector<u64> nid = new_id_buf.copy_to_stdvec();
             for (u32 i = 0; i < pos_field.get_obj_cnt(); i++) {
                 u64 patch_id    = nid[i];
                 bool err        = patch_id == u64_max;

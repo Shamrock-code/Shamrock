@@ -94,7 +94,7 @@ inline void test_tree_build_steps(std::string dset_name) {
                 f();
                 shamsys::instance::get_compute_queue().wait();
 
-                timer.end();
+                timer.stop();
                 return timer.nanosec / 1.e9;
             };
 
@@ -206,7 +206,7 @@ inline void test_tree_build_steps(std::string dset_name) {
                 rtree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
                 rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
                 shamsys::instance::get_compute_queue().wait();
-                timer2.end();
+                timer2.stop();
                 times_full_tree[index] += (timer2.nanosec / 1.e9);
             }
         }
@@ -422,7 +422,7 @@ void test_sph_iter_overhead(std::string dset_name) {
                 });
 
                 q.wait();
-                t.end();
+                t.stop();
 
                 return t.nanosec * 1e-9;
             };
@@ -621,7 +621,7 @@ f64 amr_walk_perf(
     } while (rerefine);
 
     q.wait();
-    t_refine.end();
+    t_refine.stop();
 
     PatchData &pdat = sched.patch_data.get_pdat(0);
     Patch p         = sched.patch_list.global.at(0);
@@ -710,7 +710,7 @@ f64 amr_walk_perf(
     tree.convert_bounding_box(q);
 
     q.wait();
-    t_tree.end();
+    t_tree.stop();
 
     TreeStructureWalker walk = generate_walk<Recompute>(
         tree.tree_struct,
@@ -765,7 +765,7 @@ f64 amr_walk_perf(
              });
          }).wait();
 
-        t.end();
+        t.stop();
         return t.nanosec * 1e-9;
     };
 
@@ -1102,7 +1102,7 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta) {
                 });
 
                 q.wait();
-                t.end();
+                t.stop();
 
                 return t.nanosec * 1e-9;
             };

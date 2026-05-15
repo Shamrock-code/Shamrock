@@ -80,7 +80,7 @@ f64 benchmark_key_pair_sort(const u32 &nobj) {
 
         shamsys::instance::get_compute_queue().wait();
 
-        t.end();
+        t.stop();
     }
 
     return t.nanosec * 1e-9;

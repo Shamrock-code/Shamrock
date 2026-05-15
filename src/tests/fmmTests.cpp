@@ -1032,7 +1032,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
     // #endif
 
     shamsys::instance::get_compute_queue().wait();
-    timer.end();
+    timer.stop();
 
     f64 r_f, r_r;
 

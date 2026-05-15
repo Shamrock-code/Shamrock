@@ -99,19 +99,19 @@ namespace shamalgs::collective {
             size_t in_flight;
 
             while ((in_flight = remain_count()) >= max_in_flight) {
-                twait.end();
-                if (twait.elasped_sec() > timeout) {
+                twait.stop();
+                if (twait.elapsed_sec() > timeout) {
                     report_timeout();
                 }
 
-                if (twait.elasped_sec() - last_print_time > print_freq) {
+                if (twait.elapsed_sec() - last_print_time > print_freq) {
                     logger::warn_ln(
                         "SparseComm",
                         "too many messages in flight :",
                         in_flight,
                         "/",
                         max_in_flight);
-                    last_print_time = twait.elasped_sec();
+                    last_print_time = twait.elapsed_sec();
                 }
             }
         }

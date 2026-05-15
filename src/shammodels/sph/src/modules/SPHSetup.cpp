@@ -204,9 +204,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("SPH setup", "the setup took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -515,10 +515,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 min_rank = shamalgs::collective::allreduce_min<u64>(to_insert.get_obj_cnt());
         u64 max_rank = shamalgs::collective::allreduce_max<u64>(to_insert.get_obj_cnt());
 
-        timer_gen.end();
+        timer_gen.stop();
 
         if (shamcomm::world_rank() == 0) {
-            f64 part_per_sec = f64(sum_push) / f64(timer_gen.elasped_sec());
+            f64 part_per_sec = f64(sum_push) / f64(timer_gen.elapsed_sec());
             logger::normal_ln(
                 "SPH setup",
                 shambase::format(
@@ -540,10 +540,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         injected_parts += sum_push;
     }
 
-    time_part_gen.end();
+    time_part_gen.stop();
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "the generation step took :", time_part_gen.elasped_sec(), "s");
+            "SPH setup", "the generation step took :", time_part_gen.elapsed_sec(), "s");
     }
 
     if (shamcomm::world_rank() == 0) {
@@ -676,8 +676,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 "a new id could not be computed");
         }
 
-        time_get_index_per_ranks.end();
-        timer_result = time_get_index_per_ranks.elasped_sec();
+        time_get_index_per_ranks.stop();
+        timer_result = time_get_index_per_ranks.elapsed_sec();
 
         return index_per_ranks;
     };
@@ -919,10 +919,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     }
 
     shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-    time_part_inject.end();
+    time_part_inject.stop();
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "the injection step took :", time_part_inject.elasped_sec(), "s");
+            "SPH setup", "the injection step took :", time_part_inject.elapsed_sec(), "s");
     }
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
@@ -948,7 +948,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             = shamalgs::collective::gather(mem_perf_infos_end.max_allocated_byte_host);
 
         if (shamcomm::world_rank() == 0) {
-            f64 time_part_inject_sec = time_part_inject.elasped_sec();
+            f64 time_part_inject_sec = time_part_inject.elapsed_sec();
             f64 sum_t                = time_part_inject_sec * shamcomm::world_size();
 
             f64 sum_time_rank_getter = std::accumulate(
@@ -1020,9 +1020,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::normal_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");
+        logger::normal_ln("SPH setup", "the setup took :", time_setup.elapsed_sec(), "s");
     }
 }
 

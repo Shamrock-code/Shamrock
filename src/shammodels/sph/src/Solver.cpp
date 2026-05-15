@@ -1476,8 +1476,8 @@ void shammodels::sph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.insert_elements(pdat_interf);
             }));
 
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    timer_interf.stop();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -2000,8 +2000,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         mpdat.insert(pdat_interf);
                     });
 
-            time_interf.end();
-            storage.timings_details.interface += time_interf.elasped_sec();
+            time_interf.stop();
+            storage.timings_details.interface += time_interf.elapsed_sec();
 
             storage.alpha_av_ghost.set(std::move(merged_field));
         }
@@ -2647,7 +2647,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     // if delta too big jump to compute force
 
-    tstep.end();
+    tstep.stop();
 
     for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
         if (it->step_end_callback) {
@@ -2669,7 +2669,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                        + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count();
-    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+    f64 rate       = f64(rank_count) / tstep.elapsed_sec();
 
     u64 npatch = scheduler().patch_list.local.size();
 
@@ -2679,7 +2679,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         rate,
         rank_count,
         npatch,
-        tstep.elasped_sec(),
+        tstep.elapsed_sec(),
         delta_mpi_timer,
         t_dev_alloc,
         t_host_alloc,
@@ -2691,7 +2691,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("sph::Model", log_step);
         logger::info_ln(
-            "sph::Model", "estimated rate :", dt * (3600 / tstep.elasped_sec()), "(tsim/hr)");
+            "sph::Model", "estimated rate :", dt * (3600 / tstep.elapsed_sec()), "(tsim/hr)");
     }
 
     solve_logs.register_log(
@@ -2700,7 +2700,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
          shamcomm::world_rank(), // i32 world_rank;
          rank_count,             // u64 rank_count;
          rate,                   // f64 rate;
-         tstep.elasped_sec(),    // f64 elasped_sec;
+         tstep.elapsed_sec(),    // f64 elapsed_sec;
          shambase::details::get_wtime(),
          system_metrics_delta});
 
@@ -2738,7 +2738,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     log.rank     = shamcomm::world_rank();
     log.rate     = rate;
     log.npart    = rank_count;
-    log.tcompute = tstep.elasped_sec();
+    log.tcompute = tstep.elapsed_sec();
 
     return log;
 }

@@ -611,9 +611,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -712,9 +712,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
         shamlog_debug_ln("Gen", "gen.is_done()", gen.is_done());
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -1098,9 +1098,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_big_disc took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_big_disc took :", time_setup.elapsed_sec(), "s");
     }
 }
 

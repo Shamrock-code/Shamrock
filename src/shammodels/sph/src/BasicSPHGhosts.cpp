@@ -487,7 +487,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
         }
     }
 
-    base_timer.end();
+    base_timer.stop();
 
     // f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
     //  if (shamcomm::world_rank() == 0) {

@@ -2700,7 +2700,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
          shamcomm::world_rank(), // i32 world_rank;
          rank_count,             // u64 rank_count;
          rate,                   // f64 rate;
-         tstep.elapsed_sec(),    // f64 elasped_sec;
+         tstep.elapsed_sec(),    // f64 elapsed_sec;
          shambase::details::get_wtime(),
          system_metrics_delta});
 

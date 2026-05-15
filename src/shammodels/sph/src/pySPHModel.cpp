@@ -858,7 +858,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return self.solver.solver_config;
             })
         .def("set_solver_config", &T::set_solver_config)
-        .def("add_sink", &T::add_sink)
+        .def(
+            "add_sink",
+            &T::add_sink,
+            py::arg("mass"),
+            py::arg("pos"),
+            py::arg("velocity"),
+            py::arg("accretion_radius"),
+            py::arg("is_torque_free")           = false,
+            py::arg("torque_boost_radius_fact") = 2.0)
         .def(
             "get_sinks",
             [](T &self) {
@@ -867,13 +875,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 if (!self.solver.storage.sinks.is_empty()) {
                     for (auto &sink : self.solver.storage.sinks.get()) {
                         py::dict sink_dic;
-                        sink_dic["pos"]              = sink.pos;
-                        sink_dic["velocity"]         = sink.velocity;
-                        sink_dic["sph_acceleration"] = sink.sph_acceleration;
-                        sink_dic["ext_acceleration"] = sink.ext_acceleration;
-                        sink_dic["mass"]             = sink.mass;
-                        sink_dic["angular_momentum"] = sink.angular_momentum;
-                        sink_dic["accretion_radius"] = sink.accretion_radius;
+                        sink_dic["pos"]                      = sink.pos;
+                        sink_dic["velocity"]                 = sink.velocity;
+                        sink_dic["sph_acceleration"]         = sink.sph_acceleration;
+                        sink_dic["ext_acceleration"]         = sink.ext_acceleration;
+                        sink_dic["mass"]                     = sink.mass;
+                        sink_dic["angular_momentum"]         = sink.angular_momentum;
+                        sink_dic["accretion_radius"]         = sink.accretion_radius;
+                        sink_dic["is_torque_free"]           = sink.is_torque_free;
+                        sink_dic["torque_boost_radius_fact"] = sink.torque_boost_radius_fact;
                         list_out.append(sink_dic);
                     }
                 }

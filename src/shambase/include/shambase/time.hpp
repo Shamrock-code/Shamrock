@@ -125,7 +125,7 @@ namespace shambase {
          * @brief Converts the stored nanosecond time to a floating point representation in seconds.
          * @return f64 The elapsed time in seconds.
          */
-        [[nodiscard]] inline f64 elapsed_sec() const { return f64(nanosec) * 1e-9; }
+        [[nodiscard]] inline f64 elapsed_sec() const { return nanosec * 1e-9; }
     };
 
     /**

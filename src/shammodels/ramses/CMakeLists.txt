@@ -41,6 +41,7 @@ set(Sources
     src/modules/FuseGhostLayer.cpp
     src/modules/render/GridRender.cpp
     src/modules/ComputeCoordinates.cpp
+    src/modules/ComputeAnalyticalGravity.cpp
     src/modules/SumFluxHydro.cpp
     src/modules/SumFluxDust.cpp
     src/SolverConfig.cpp

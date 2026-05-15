@@ -35,6 +35,7 @@ namespace shammodels::basegodunov {
         pdl.add_field<Tscal>("rho", AMRBlock::block_size);
         pdl.add_field<Tvec>("rhovel", AMRBlock::block_size);
         pdl.add_field<Tscal>("rhoetot", AMRBlock::block_size);
+        pdl.add_field<Tvec>("gravitational_force", AMRBlock::block_size);
 
         if (is_dust_on()) {
             u32 ndust = dust_config.ndust;

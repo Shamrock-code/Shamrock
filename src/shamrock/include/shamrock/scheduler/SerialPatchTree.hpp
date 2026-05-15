@@ -269,10 +269,13 @@ class SerialPatchTree {
         sycl::queue &queue,
         shamrock::patch::PatchField<T> pfield,
         Func &&reducer) {
+        __shamrock_stack_entry();
+
         shamrock::patch::PatchtreeField<T> ptfield;
         ptfield.allocate(get_element_count());
 
         {
+            __shamrock_stack_entry();
             sycl::host_accessor lpid{
                 shambase::get_check_ref(linked_patch_ids_buf), sycl::read_only};
             sycl::host_accessor tree_field{
@@ -280,6 +283,8 @@ class SerialPatchTree {
 
             // init reduction
             std::unordered_map<u64, u64> &idp_to_gid = sched.patch_list.id_patch_to_global_idx;
+
+#pragma omp parallel for
             for (u64 idx = 0; idx < get_element_count(); idx++) {
                 tree_field[idx] = (lpid[idx] != u64_max) ? pfield.get(lpid[idx]) : T();
             }

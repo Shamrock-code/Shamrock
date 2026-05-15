@@ -146,6 +146,8 @@ for N_target_base in [32e6]:
         step_begin=callback_before_mpi_timer, step_end=callback_after_mpi_timer
     )
 
+    continue
+
     for i in range(10):
         if shamrock.sys.world_rank() == 0:
             print("running step ", i + 1, "/", 10, " ...")

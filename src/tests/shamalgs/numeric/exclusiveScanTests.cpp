@@ -145,13 +145,16 @@ struct TestExclScanUSM {
     void check() {
         if constexpr (std::is_same<u32, T>::value) {
 
-            u32 len_test = 1e5;
+            u32 len_test = 32e6;
 
-            std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(0x111, len_test, 0, 10);
+            std::vector<u32> data = shamalgs::primitives::mock_vector<u32>(
+                0x111 + shambase::details::get_wtime() * 100000000, len_test, 0, 60);
 
             std::vector<u32> data_buf(data);
 
             std::exclusive_scan(data.begin(), data.end(), data.begin(), 0);
+
+            std::cout << "total = " << data[len_test - 1] + data_buf[len_test - 1] << std::endl;
 
             sham::DeviceBuffer<u32> buf{
                 data_buf.size(), shamsys::instance::get_compute_scheduler_ptr()};
@@ -482,7 +485,10 @@ TestStart(
     TestExclScanUSM<u32> test(
         (TestExclScanUSM<u32>::vFunctionCall)
             shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v5_usm<u32, 512>);
-    test.check();
+
+    for (u32 i = 0; i < 1000; i++) {
+        test.check();
+    }
 }
 #endif
 

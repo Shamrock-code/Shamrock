@@ -36,6 +36,7 @@
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <experimental/mdspan>
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pytypes.h>
@@ -274,6 +275,45 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("ndust"))
+        .def(
+            "set_dust_stopping_times",
+            [](TConfig &self, std::vector<Tscal> ts) {
+                self.dust_config.stopping_times = ts;
+            })
+        .def(
+            "set_dust_evol_coala_coag",
+            [](TConfig &self, std::vector<Tscal> massgrid, py::array_t<Tscal> tabflux_coag) {
+                u32 nbins = massgrid.size() - 1;
+
+                // tabflux_coag is a 3D array of shape (nbins ** 3)
+
+                // assert rank is 3
+                if (tabflux_coag.ndim() != 3) {
+                    throw std::runtime_error("tabflux_coag must be a 3D array");
+                }
+
+                // assert shape is (nbins, nbins, nbins)
+                if (tabflux_coag.shape(0) != nbins || tabflux_coag.shape(1) != nbins
+                    || tabflux_coag.shape(2) != nbins) {
+                    throw std::runtime_error(
+                        "tabflux_coag must be a 3D array of shape (nbins, nbins, nbins)");
+                }
+
+                std::vector<Tscal> tabflux_coag_vec(nbins * nbins * nbins);
+
+                using mdspan_rank_3 = std::mdspan<Tscal, std::dextents<u32, 3>>;
+                mdspan_rank_3 tabflux_coag_mdspan(tabflux_coag_vec.data(), nbins, nbins, nbins);
+
+                for (u32 i = 0; i < nbins; i++) {
+                    for (u32 j = 0; j < nbins; j++) {
+                        for (u32 k = 0; k < nbins; k++) {
+                            tabflux_coag_mdspan(i, j, k) = tabflux_coag.mutable_at(i, j, k);
+                        }
+                    }
+                }
+
+                self.dust_config.set_dust_evol_coala(massgrid, tabflux_coag_vec);
+            })
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",

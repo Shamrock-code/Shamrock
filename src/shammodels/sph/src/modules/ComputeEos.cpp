@@ -19,6 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
@@ -87,6 +88,48 @@ struct RhoGetterMonofluid {
     }
 
     void complete_event_state(sycl::event e) { buf_h.complete_event_state(e); }
+};
+
+template<class Tscal>
+struct RhoGetterSJ {
+    sham::DeviceBuffer<Tscal> &buf_h;
+    sham::DeviceBuffer<Tscal> &buf_s_j;
+    u32 nvar_dust;
+    Tscal pmass;
+    Tscal hfact;
+
+    struct accessed {
+        const Tscal *h;
+        const Tscal *buf_s_j;
+        u32 nvar_dust;
+        Tscal pmass;
+        Tscal hfact;
+
+        Tscal operator()(u32 i) const {
+            using namespace shamrock::sph;
+            Tscal rho = rho_h(pmass, h[i], hfact);
+
+            Tscal epsilon_sum = 0;
+            for (u32 j = 0; j < nvar_dust; j++) {
+                Tscal s_j = buf_s_j[i * nvar_dust + j];
+                epsilon_sum += s_j * s_j / rho;
+            }
+
+            return rho * (1 - epsilon_sum);
+        }
+    };
+
+    accessed get_read_access(sham::EventList &depends_list) {
+        auto h   = buf_h.get_read_access(depends_list);
+        auto s_j = buf_s_j.get_read_access(depends_list);
+
+        return accessed{h, s_j, nvar_dust, pmass, hfact};
+    }
+
+    void complete_event_state(sycl::event e) {
+        buf_h.complete_event_state(e);
+        buf_s_j.complete_event_state(e);
+    }
 };
 
 template<class Tvec, template<class> class SPHKernel>
@@ -561,6 +604,9 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
     shambase::get_check_ref(storage.pressure).ensure_sizes(counts_with_ghosts);
     shambase::get_check_ref(storage.soundspeed).ensure_sizes(counts_with_ghosts);
 
+    logger::raw_ln(
+        solver_config.dust_config.has_epsilon_field(), solver_config.dust_config.has_s_j_field());
+
     if (solver_config.dust_config.has_epsilon_field()) {
 
         u32 iepsilon_interf = ghost_layout.get_field_idx<Tscal>("epsilon");
@@ -574,6 +620,21 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                 gpart_mass,
                 Kernel::hfactd};
         });
+    } else if (solver_config.dust_config.has_s_j_field()) {
+
+        u32 is_j_interf = ghost_layout.get_field_idx<Tscal>("s_j");
+        u32 nvar_dust   = solver_config.dust_config.get_dust_nvar();
+
+        compute_eos_internal([&](PatchDataLayer &mpdat) {
+            return RhoGetterSJ<Tscal>{
+                mpdat.get_field_buf_ref<Tscal>(ihpart_interf),
+                mpdat.get_field_buf_ref<Tscal>(is_j_interf),
+                nvar_dust,
+                gpart_mass,
+                Kernel::hfactd};
+        });
+
+        logger::info_ln("ComputeEos", "SJ field has been computed");
     } else {
         compute_eos_internal([&](PatchDataLayer &mpdat) {
             return RhoGetterBase<Tscal>{

@@ -37,8 +37,10 @@
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <cstddef>
 #include <stdexcept>
 #include <variant>
+#include <vector>
 
 namespace shammodels::basegodunov {
 
@@ -176,6 +178,18 @@ struct shammodels::basegodunov::SolverConfig {
         drag_config.alphas.push_back(alpha_values);
     }
 
+    inline void set_dust_stopping_times_constants(std::vector<Tscal> stopping_times) {
+        StackEntry stack_lock{};
+
+        std::vector<Tscal> alphas(stopping_times.size());
+
+        for (size_t i = 0; i < stopping_times.size(); i++) {
+            alphas[i] = 1 / stopping_times[i];
+        }
+
+        drag_config.alphas = alphas;
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Dust config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,6 +281,11 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (is_dust_on()) {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Dust is experimental"));
+
+            bool correct_drag_size = drag_config.alphas.size() == dust_config.ndust;
+            if (!correct_drag_size) {
+                throw shambase::make_except_with_loc<std::invalid_argument>("TODO");
+            }
         }
 
         if (is_gravity_on()) {

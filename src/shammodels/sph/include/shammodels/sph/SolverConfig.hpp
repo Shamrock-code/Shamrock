@@ -43,6 +43,7 @@
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -110,6 +111,12 @@ namespace shammodels::sph {
     };
 
     template<class Tscal>
+    struct DustEvolCoalaCoag {
+        std::vector<Tscal> massgrid;
+        std::vector<Tscal> tabflux_coag;
+    };
+
+    template<class Tscal>
     struct DustConfig {
 
         struct None {};
@@ -122,6 +129,8 @@ namespace shammodels::sph {
             u32 ndust;
         };
 
+        std::vector<Tscal> stopping_times;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<None, MonofluidTVI, MonofluidComplete>;
 
@@ -131,9 +140,18 @@ namespace shammodels::sph {
         inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
+        inline bool is_none() { return std::holds_alternative<None>(current_mode); }
+        inline bool is_monofluid_tvi() { return bool(std::get_if<MonofluidTVI>(&current_mode)); }
+        inline bool is_monofluid_complete() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline bool has_s_j_field() {
+            return is_monofluid_tvi(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
         inline bool has_epsilon_field() {
-            return bool(std::get_if<MonofluidTVI>(&current_mode))
-                   || bool(std::get_if<MonofluidComplete>(&current_mode));
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
         }
 
         inline bool has_deltav_field() {
@@ -155,14 +173,57 @@ namespace shammodels::sph {
             return 0;
         }
 
+        std::variant<None, DustEvolCoalaCoag<Tscal>> dust_evol_config = None{};
+
+        inline void set_dust_evol_coala(
+            std::vector<Tscal> massgrid, std::vector<Tscal> tabflux_coag) {
+            dust_evol_config
+                = DustEvolCoalaCoag<Tscal>{std::move(massgrid), std::move(tabflux_coag)};
+        }
+
         inline void check_config() {
-            bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
-                               || bool(std::get_if<MonofluidComplete>(&current_mode));
+            bool is_not_none = !is_none();
             if (is_not_none) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH::config",
-                        "Dust config != None is work in progress, use it at your own risk"));
+                if (!shamrock::are_experimental_features_allowed()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Dust config != None is experimental");
+                } else {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH::config",
+                            "Dust config != None is work in progress, use it at your own risk"));
+                }
+
+                if (get_dust_nvar() != stopping_times.size()) {
+                    throw shambase::make_except_with_loc<std::invalid_argument>(
+                        "stopping_times size does not match the number of dust bins");
+                }
+            }
+
+            if (!std::holds_alternative<None>(dust_evol_config) && is_not_none) {
+
+                if (DustEvolCoalaCoag<Tscal> *cfg
+                    = std::get_if<DustEvolCoalaCoag<Tscal>>(&dust_evol_config)) {
+
+                    u32 ndust = get_dust_nvar();
+
+                    if (cfg->massgrid.size() - 1 != ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "massgrid size does not match the number of dust bins");
+                    }
+
+                    if (cfg->tabflux_coag.size() != ndust * ndust * ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tabflux_coag size does not match the number of dust bins");
+                    }
+
+                } else {
+                    shambase::throw_unimplemented();
+                }
+
+            } else if (!std::holds_alternative<None>(dust_evol_config) && is_none()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "can not enable dust evol if dust not enabled");
             }
         }
     };

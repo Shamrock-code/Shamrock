@@ -47,6 +47,14 @@ import os  # for makedirs
 
 import numpy as np
 
+try:
+    from numba import njit
+
+    _HAS_NUMBA = True
+except ImportError:
+    _HAS_NUMBA = False
+
+
 import shamrock
 
 # If we use the shamrock executable to run this script instead of the python interpreter,
@@ -227,7 +235,7 @@ def setup_model():
 
     cfg.set_save_dt_to_fields(True)
 
-    # Standard density based smoothing lenght but with a neighbor count limit
+    # Standard density based smoothing length but with a neighbor count limit
     # Use it if you have large slowdowns due to giant particles
     # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
     # cfg.set_smoothing_length_density_based_neigh_lim(500)
@@ -305,7 +313,7 @@ def setup_model():
 
     # Run a single step to init the integrator and smoothing length of the particles
     # Here the htolerance is the maximum factor of evolution of the smoothing length in each
-    # Smoothing length iterations, increasing it affect the performance negatively but increse the
+    # Smoothing length iterations, increasing it affect the performance negatively but increase the
     # convergence rate of the smoothing length
     # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
     # Note that both ``change_htolerances`` can be removed and it will work the same but would converge
@@ -346,6 +354,7 @@ def save_analysis_data(filename, key, value, ianalysis):
 
 
 from shamrock.utils.analysis import (
+    AnalysisHelper,
     ColumnDensityPlot,
     ColumnParticleCount,
     PerfHistory,
@@ -460,6 +469,11 @@ column_particle_count_plot = ColumnParticleCount(
     analysis_prefix="particle_count",
 )
 
+profile_plot = AnalysisHelper(
+    analysis_folder=os.path.join(analysis_folder, "plots"),
+    analysis_prefix="density_profile",
+)
+
 
 def analysis(ianalysis):
     column_density_plot.analysis_save(ianalysis)
@@ -495,6 +509,73 @@ def analysis(ianalysis):
     save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
     perf_analysis.analysis_save(ianalysis)
+
+    #'''
+    rho_field = model.compute_field("rho", "f64")
+    hpart_field = model.compute_field("hpart", "f64")
+
+    def internal(size: int, x: np.array, y: np.array, z: np.array) -> np.array:
+        r = np.sqrt(x**2 + y**2 + z**2)
+        return r
+
+    if _HAS_NUMBA:
+        internal = njit(internal)
+
+    def custom_getter(size: int, dic_out: dict) -> np.array:
+        return internal(
+            size,
+            dic_out["xyz"][:, 0],
+            dic_out["xyz"][:, 1],
+            dic_out["xyz"][:, 2],
+        )
+
+    r_field = model.compute_field("custom", "f64", custom_getter)
+
+    print(rho_field, r_field)
+
+    x_min = center_racc / 2.0
+    x_max = rout * 1.1
+    x_min_log = np.log10(x_min)
+    x_max_log = np.log10(x_max)
+
+    bin_edges_x1d = np.logspace(x_min_log, x_max_log, 2049)
+
+    histo = shamrock.compute_histogram(
+        bin_edges=bin_edges_x1d,
+        x_field=r_field,
+        y_field=rho_field,
+        do_average=True,
+    )
+
+    histo_convolve = shamrock.compute_histogram_convolve_x(
+        bin_edges=bin_edges_x1d,
+        x_field=r_field,
+        y_field=rho_field,
+        size_field=hpart_field,
+        do_average=True,
+    )
+
+    bin_edges_x = np.logspace(x_min_log, x_max_log, 1025)
+    bin_edges_y = np.logspace(-6, -3, 1025)
+    histo_top = shamrock.compute_histogram_2d(
+        bin_edges_x=bin_edges_x,
+        bin_edges_y=bin_edges_y,
+        x_field=r_field,
+        y_field=rho_field,
+    )
+    histo_2d = np.array(histo_top).reshape(len(bin_edges_x) - 1, len(bin_edges_y) - 1)
+
+    data = {
+        "bin_edges_x1d": bin_edges_x1d,
+        "bin_edges_x": bin_edges_x,
+        "bin_edges_y": bin_edges_y,
+        "histo": histo,
+        "histo_convolve": histo_convolve,
+        "histo_2d": histo_2d,
+        "time": model.get_time(),
+    }
+
+    profile_plot.analysis_save(ianalysis, data)
 
 
 # %%
@@ -638,6 +719,48 @@ column_particle_count_plot.render_all(
     contour_list=[1, 10, 100, 1000],
     **sink_params,
 )
+
+
+def profile_plot_func(iplot, data):
+
+    data = data.item()
+
+    bin_edges_x1d = data["bin_edges_x1d"]
+    bin_edges_x = data["bin_edges_x"]
+    bin_edges_y = data["bin_edges_y"]
+    histo = data["histo"]
+    histo_convolve = data["histo_convolve"]
+    histo_2d = data["histo_2d"]
+    time = data["time"]
+
+    bin_center = (bin_edges_x1d[:-1] + bin_edges_x1d[1:]) / 2
+
+    plt.figure(dpi=150)
+
+    plt.pcolormesh(
+        bin_edges_x, bin_edges_y, histo_2d, norm="log", cmap="Greys", vmin=1, vmax=2, shading="auto"
+    )
+
+    plt.plot(bin_center, histo)
+    plt.plot(bin_center, histo_convolve)
+    plt.xlabel("r")
+    plt.ylabel("density")
+
+    plt.xscale("log")
+    plt.yscale("log")
+
+    text = f"t = {time:0.3f}"
+    from matplotlib.offsetbox import AnchoredText
+
+    anchored_text = AnchoredText(text, loc=2)
+    plt.gca().add_artist(anchored_text)
+
+    plt.savefig(profile_plot.analysis_prefix + f"{iplot:07}.png")
+    plt.close()
+
+
+profile_plot.render_all(profile_plot_func)
+
 # %%
 # Make gif for the doc (plot_to_gif.py)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -711,6 +834,17 @@ if render_gif and shamrock.sys.world_rank() == 0:
 if render_gif and shamrock.sys.world_rank() == 0:
     ani = column_particle_count_plot.render_gif(
         gif_filename="particle_count.gif", save_animation=True
+    )
+    if ani is not None:
+        plt.show()
+
+# %%
+# Make a gif from the plots
+if render_gif and shamrock.sys.world_rank() == 0:
+    ani = profile_plot.render_gif(
+        profile_plot.analysis_prefix + "*.png",
+        gif_filename="density_profile.gif",
+        save_animation=True,
     )
     if ani is not None:
         plt.show()

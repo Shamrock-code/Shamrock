@@ -92,7 +92,7 @@ namespace shamrock::tree {
          */
         inline void offload_oldest() {
 
-            bool successfull_pop = false;
+            bool successful_pop = false;
             do {
 
                 if (cache.is_empty()) {
@@ -107,7 +107,7 @@ namespace shamrock::tree {
 
                     offload_entry(last_id);
 
-                    successfull_pop = true;
+                    successful_pop = true;
                     shamlog_debug_ln(
                         "ObjectCacheHandler",
                         "offloaded cache for id =",
@@ -118,7 +118,7 @@ namespace shamrock::tree {
                         shambase::readable_sizeof(current_host_memsize));
                 }
 
-            } while (!successfull_pop);
+            } while (!successful_pop);
         }
 
         /**

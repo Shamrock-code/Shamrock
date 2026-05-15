@@ -25,12 +25,22 @@
 
 namespace shammodels::sph::modules {
 
+    template<class Tvec, bool Discontinuous = true>
+    struct IteratorTypeGetter {
+        using type = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
+    };
+
     template<class Tvec>
+    struct IteratorTypeGetter<Tvec, false> {
+        using type = typename shammath::LatticeHCP<Tvec>::Iterator;
+    };
+
+    template<class Tvec, bool Discontinuous = true>
     class GeneratorLatticeHCP : public ISPHSetupNode {
         using Tscal              = shambase::VecComponent<Tvec>;
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         using Lattice            = shammath::LatticeHCP<Tvec>;
-        using LatticeIter        = typename shammath::LatticeHCP<Tvec>::IteratorDiscontinuous;
+        using LatticeIter        = typename IteratorTypeGetter<Tvec, Discontinuous>::type;
 
         ShamrockCtx &context;
         Tscal dr;

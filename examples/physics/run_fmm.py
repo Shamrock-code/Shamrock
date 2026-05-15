@@ -914,7 +914,7 @@ plt.show()
 # We start with the upward pass for the mass moment. To perform it we need
 # to compute the mass moment of a parent according to the one of its children.
 # The issue is that the childrens and the parents do not share the same center.
-# Therefor we need to offset the mass moment of the children to the parent
+# Therefore we need to offset the mass moment of the children to the parent
 # center before summing their moments to get the parent's one.
 #
 # This is what we call mass moment translation/offset. This section will

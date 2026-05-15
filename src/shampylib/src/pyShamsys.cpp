@@ -23,7 +23,8 @@
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
 
-Register_pymod(pysyslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     m.def(
         "change_loglevel",
@@ -75,6 +76,15 @@ Register_pymod(pysyslibinit) {
         },
         R"pbdoc(
         Return compile_arg
+    )pbdoc");
+
+    m.def(
+        "get_compiler_id_string",
+        []() {
+            return shamrock_compiler_id_string;
+        },
+        R"pbdoc(
+        Return compiler_id_string
     )pbdoc");
 
     m.def(

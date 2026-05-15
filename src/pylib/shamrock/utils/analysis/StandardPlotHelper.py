@@ -427,3 +427,54 @@ class StandardPlotHelper:
                 ani.save(self.analysis_prefix + gif_filename, writer=writer)
             return ani
         return None
+
+
+class AnalysisHelper:
+    def __init__(
+        self,
+        analysis_folder,
+        analysis_prefix,
+    ):
+        os.makedirs(analysis_folder, exist_ok=True)
+
+        self.analysis_prefix = os.path.join(analysis_folder, analysis_prefix) + "_"
+        self.npy_data_filename = self.analysis_prefix + "{:07}.npy"
+        self.glob_str_data = self.analysis_prefix + "*.npy"
+
+    def analysis_save(self, iplot, data):
+        """
+        Save the analysis data npy file
+        """
+        if shamrock.sys.world_rank() == 0:
+            print(f"Saving data to {self.npy_data_filename.format(iplot)}")
+            np.save(self.npy_data_filename.format(iplot), data)
+
+    def load_analysis(self, iplot):
+        """
+        Load the analysis data from the json and npy files
+        """
+        return np.load(self.npy_data_filename.format(iplot), allow_pickle=True)
+
+    def get_list_analysis_id(self):
+        return get_list_analysis_id(self.glob_str_data)
+
+    def make_plot(self, iplot, plot_func):
+
+        if shamrock.sys.world_rank() == 0:
+            plot_func(iplot, self.load_analysis(iplot))
+
+    def render_all(self, plot_func):
+        for iplot in self.get_list_analysis_id():
+            self.make_plot(iplot, plot_func)
+
+    def render_gif(self, glob_str_plot, gif_filename, save_animation=False, fps=15, bitrate=1800):
+        if shamrock.sys.world_rank() == 0:
+            ani = shamrock.utils.plot.show_image_sequence(glob_str_plot, render_gif=True)
+            if save_animation:
+                # To save the animation using Pillow as a gif
+                writer = animation.PillowWriter(
+                    fps=fps, metadata=dict(artist="Me"), bitrate=bitrate
+                )
+                ani.save(self.analysis_prefix + gif_filename, writer=writer)
+            return ani
+        return None

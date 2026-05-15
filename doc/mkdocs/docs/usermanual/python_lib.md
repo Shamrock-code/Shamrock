@@ -8,7 +8,7 @@ This can be done in 3 steps:
 - Create a Shamrock environment
 - In the environment build directory run ``
 
-For exemple the following should work:
+For example the following should work:
 ```bash
 python -m venv .shamrock-venv
 source .shamrock-venv/bin/activate

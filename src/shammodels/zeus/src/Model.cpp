@@ -17,7 +17,7 @@
 #include "shambase/memory.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shammodels/zeus/Model.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -68,7 +68,7 @@ template<class Tvec, class TgridVec>
 void shammodels::zeus::Model<Tvec, TgridVec>::dump_vtk(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 

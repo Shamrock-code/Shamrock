@@ -33,7 +33,7 @@ export LD_LIBRARY_PATH=/opt/openmpi_cuda/lib${LD_LIBRARY_PATH:+:${LD_LIBRARY_PAT
 
 Now if you build shamrock you should see this mpi used.
 
-To check run : `cmake .` in the build folder, the begining of the outputs contain the path to the MPI in use.
+To check run : `cmake .` in the build folder, the beginning of the outputs contain the path to the MPI in use.
 
 Also when shamrock (or the tests) starts if MPI is CUDA aware during startup it should print :
 

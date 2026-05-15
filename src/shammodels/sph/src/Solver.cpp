@@ -22,13 +22,13 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/reduction.hpp"
 #include "shambackends/MemPerfInfos.hpp"
 #include "shambackends/details/memoryHandle.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
@@ -623,7 +623,7 @@ namespace shammodels::sph {
 
         dump.override_magic_number();
         dump.iversion = 1;
-        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writter");
+        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
 
         u32 Ntot = info.nobj;
         dump.table_header_fort_int.add("nparttot", Ntot);
@@ -1650,7 +1650,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     sink_update.predictor_step(dt);
 
     {
-        // begining of SolverGraph migration
+        // beginning of SolverGraph migration
 
         using namespace shamrock::solvergraph;
 
@@ -2650,7 +2650,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     tstep.end();
 
     for (auto it = timestep_callbacks.rbegin(); it != timestep_callbacks.rend(); ++it) {
-        if (it->step_begin_callback) {
+        if (it->step_end_callback) {
             shambase::get_check_ref(it->step_end_callback)();
         }
     }

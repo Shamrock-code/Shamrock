@@ -198,7 +198,7 @@ class PatchScheduler {
 
     std::string format_patch_coord(shamrock::patch::Patch p);
 
-    void check_patchdata_locality_corectness();
+    void check_patchdata_locality_correctness();
 
     [[deprecated]]
     void dump_local_patches(std::string filename);
@@ -242,7 +242,7 @@ class PatchScheduler {
 
     /**
      * @brief for each macro for patchadata
-     * exemple usage
+     * example usage
      * @code{.cpp}
      * sched.for_each_patch_data(
      *     [&](u64 id_patch, Patch cur_p, PatchData &pdat) {

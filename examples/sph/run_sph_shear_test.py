@@ -2,7 +2,7 @@
 Shearing box in SPH
 ========================
 
-This simple example shows how to run an unstratified shearing box simulaiton
+This simple example shows how to run an unstratified shearing box simulation
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -79,7 +79,7 @@ model.resize_simulation_box(bmin, bmax)
 
 # %%
 # Add the particles & set fields values
-# Note that every field that are not mentionned are set to zero
+# Note that every field that are not mentioned are set to zero
 model.add_cube_fcc_3d(dr, bmin, bmax)
 
 vol_b = (xM - xm) * (yM - ym) * (zM - zm)

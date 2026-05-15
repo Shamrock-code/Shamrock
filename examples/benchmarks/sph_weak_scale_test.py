@@ -74,7 +74,7 @@ for N_target_base in [32e6]:
     model.resize_simulation_box(bmin, bmax)
 
     setup = model.get_setup()
-    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
+    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax, discontinuous=False)
 
     # Kind of optimized for Aurora
     setup.apply_setup(
@@ -85,6 +85,7 @@ for N_target_base in [32e6]:
         rank_comm_size_limit=int(scheduler_split_val) * 2,
         max_msg_size=int(scheduler_split_val / 8),
         do_setup_log=False,
+        speculative_balancing=True,
     )
 
     xc, yc, zc = model.get_closest_part_to((0, 0, 0))

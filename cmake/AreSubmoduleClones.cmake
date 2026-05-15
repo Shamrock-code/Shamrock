@@ -1,11 +1,9 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 ###############################################################################
 ### test git submodules
@@ -17,9 +15,8 @@ function(_check_git_submodule_cloned directory expect_hash)
     file(GLOB files RELATIVE "${directory}" "${directory}/*")
     if(NOT files)
 
-        message(FATAL_ERROR
-            "The git submodule '${directory}' is empty\n"
-            "please do : git submodule update --init --recursive\n"
+        message(FATAL_ERROR "The git submodule '${directory}' is empty\n"
+                            "please do : git submodule update --init --recursive\n"
         )
 
     endif()
@@ -36,10 +33,11 @@ function(_check_git_submodule_cloned directory expect_hash)
         #message(STATUS "Submodule '${directory}' commit hash: ${submodule_commit_hash}")
 
         if(NOT "${submodule_commit_hash}" STREQUAL "${expect_hash}")
-            message(FATAL_ERROR
-                "The git submodule '${directory}' is not in sync\n"
-                "current commit hash '${submodule_commit_hash}' is not equal to expected '${expect_hash}'\n"
-                "please do : git pull --recurse-submodules\n"
+            message(
+                FATAL_ERROR
+                    "The git submodule '${directory}' is not in sync\n"
+                    "current commit hash '${submodule_commit_hash}' is not equal to expected '${expect_hash}'\n"
+                    "please do : git pull --recurse-submodules\n"
             )
         endif()
     endif()

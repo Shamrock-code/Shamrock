@@ -55,7 +55,7 @@ def analysis(f, df, x0, label):
 
 
 # %%
-# Exemple of analysis
+# Example of analysis
 
 
 def f1(x):

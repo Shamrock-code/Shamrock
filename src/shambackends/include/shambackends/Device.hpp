@@ -91,6 +91,12 @@ namespace sham {
         /// The type of the device
         DeviceType type;
 
+        /// The name of the device
+        std::string name;
+
+        /// The name of the platform of the device
+        std::string platform;
+
         /// The amount of global memory on the device in bytes
         usize global_mem_size;
 

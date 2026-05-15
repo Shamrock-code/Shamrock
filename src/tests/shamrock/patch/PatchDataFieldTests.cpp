@@ -203,6 +203,41 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremovei
     REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), remaining_values);
 }
 
+TestStart(
+    Unittest, "shamrock/patch/PatchDataField::remove_ids duplicates", testpdatremoveidsdup, 1) {
+
+    std::vector<f64> values = {
+        1,
+        2, // obj 0
+        3,
+        4, // obj 1
+        5,
+        6, // obj 2
+        7,
+        8, // obj 3
+        9,
+        10, // obj 4
+    };
+
+    PatchDataField<f64> field = PatchDataField<f64>("test", 2, values.size() / 2);
+    field.override(values, values.size());
+
+    // ids 0 and 1 appear twice -- duplicates should trigger an error
+    std::vector<u32> to_be_removed = {0, 1, 0, 1};
+
+    sham::DeviceBuffer<u32> to_be_removed_buf(
+        to_be_removed.size(), shamsys::instance::get_compute_scheduler_ptr());
+    to_be_removed_buf.copy_from_stdvec(to_be_removed);
+
+    std::vector<f64> values_before = field.get_buf().copy_to_stdvec();
+
+    REQUIRE_EXCEPTION_THROW(
+        field.remove_ids(to_be_removed_buf, to_be_removed_buf.get_size()), std::invalid_argument);
+
+    // Verify the field content was not modified by the failed operation
+    REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), values_before);
+}
+
 TestStart(Unittest, "shamrock/patch/PatchDataField::append_subset_to", testappendsubsetto, 1) {
 
     using T = f64;

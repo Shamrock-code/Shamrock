@@ -22,7 +22,12 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
-    parser.add_argument("--backend", action="store", help="sycl backend to use")
+    parser.add_argument(
+        "--backend",
+        required=True,
+        choices=utils.acpp.BACKENDS,
+        help="sycl backend to use",
+    )
     parser.add_argument("--arch", action="store", help="arch to build")
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 
@@ -51,11 +56,13 @@ def setup(arg: SetupArg, envgen: EnvGen):
         "CMAKE_OPT": f"({cmake_extra_args})",
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
         "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
+        "SPHINX_VENV_DIR": builddir + "/.sphinxvenv",
     }
 
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/sphinx.sh",
     ]
 
     envgen.gen_env_file("env_built_acpp.sh")

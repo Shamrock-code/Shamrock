@@ -22,6 +22,7 @@
 #include <pybind11/eval.h>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
+#include <string_view>
 #include <exception>
 #include <memory>
 #include <stdexcept>
@@ -30,13 +31,13 @@
 // in adaptive cpp, hence the use of python printing functions
 
 /// With pybind we print using python out stream
-void py_func_printer_normal(std::string s) {
+void py_func_printer_normal(std::string_view s) {
     using namespace pybind11;
     py::print(s, "end"_a = "");
 }
 
 /// With pybind we print using python out stream
-void py_func_printer_ln(std::string s) {
+void py_func_printer_ln(std::string_view s) {
     using namespace pybind11;
     py::print(s);
 }
@@ -47,7 +48,7 @@ void py_func_flush_func() {}
 /**
  * @brief Statically initialized python module init function list
  * We use a unique pointer to ensure that the vector is not reinitialized
- * during programm init which would empty the function list otherwise
+ * during program init which would empty the function list otherwise
  *
  * This behavior was observed when building shamrock using object libraries
  * using the unique_ptr fixes it

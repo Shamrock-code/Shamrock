@@ -9,7 +9,7 @@ message("   ---- c++ config section ----")
 
 include(CheckCXXCompilerFlag)
 
-set(CMAKE_CXX_STANDARD 20 CACHE STRING "C++ version selection") # or 11, 14, 17, 20
+set(CMAKE_CXX_STANDARD 20 STRING "C++ version selection") # or 11, 14, 17, 20
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # optional, ensure standard is supported
 set(CMAKE_CXX_EXTENSIONS OFF) # optional, keep compiler extensions off
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # otherwise clang-scan-deps will complain about the SYCL flags
@@ -22,7 +22,7 @@ check_cxx_compiler_flag("-Werror=return-type" COMPILER_SUPPORT_ERROR_RETURN_TYPE
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "-g") # -fsanitize=address")# -Wall -Wextra") #
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG"
-)#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+) #-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 
 if(COMPILER_SUPPORT_PEDANTIC)

@@ -23,6 +23,8 @@
 
 #ifndef __MACH__
     #include <plf_nanotimer.h>
+#else
+    #include <chrono>
 #endif
 
 namespace shambase {

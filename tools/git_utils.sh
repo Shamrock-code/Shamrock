@@ -27,7 +27,7 @@ if ! gh auth status &>/dev/null; then
 fi
 
 function current_gh_username {
-    gh api user -q .login || return 1
+    gh api user -q .login || return
 }
 
 gh_username=$(current_gh_username)

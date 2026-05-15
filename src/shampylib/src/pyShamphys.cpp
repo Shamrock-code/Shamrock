@@ -20,6 +20,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamphys/BlackHoles.hpp"
+#include "shamphys/Dust.hpp"
 #include "shamphys/HydroSoundwave.hpp"
 #include "shamphys/Planets.hpp"
 #include "shamphys/SedovTaylor.hpp"
@@ -36,9 +37,9 @@
 #include <complex>
 #include <utility>
 
-Register_pymod(shamphyslibinit) {
+ON_PYTHON_INIT {
 
-    py::module shamphys_module = m.def_submodule("phys", "Physics Library");
+    py::module shamphys_module = root_module.def_submodule("phys", "Physics Library");
 
     // Planets.hpp
 
@@ -272,6 +273,62 @@ Register_pymod(shamphyslibinit) {
         Compute the free fall time
         rho : Density
         units : unit system
+    )pbdoc");
+
+    shamphys_module.def(
+        "epstein_supersonic_correction",
+        [](double delta_v, double cs) {
+            return shamphys::epstein_supersonic_correction<double>(delta_v, cs);
+        },
+        py::kw_only(),
+        py::arg("delta_v"),
+        py::arg("cs"),
+        R"pbdoc(
+        Epstein drag supersonic correction factor for spherical dust grains.
+
+        Corrects the Epstein drag force when the drift speed between dust
+        and gas exceeds the thermal speed.
+
+        \f$f(\Delta v, c_s) = \sqrt{1 + \frac{9\pi}{128} \frac{\Delta v^2}{c_s^2}}\f$
+
+        Args:
+            delta_v: Drift speed between dust and gas
+            cs: Gas sound speed
+
+        Returns:
+            The supersonic correction factor f(delta_v, cs)
+    )pbdoc");
+
+    shamphys_module.def(
+        "epstein_stopping_time",
+        [](double rho_grain, double s_grain, double rho, double cs, double gamma, double f) {
+            return shamphys::epstein_stopping_time(rho_grain, s_grain, rho, cs, gamma, f);
+        },
+        py::kw_only(),
+        py::arg("rho_grain"),
+        py::arg("s_grain"),
+        py::arg("rho"),
+        py::arg("cs"),
+        py::arg("gamma"),
+        py::arg("f") = 1.0,
+        R"pbdoc(
+        Epstein drag stopping time for spherical dust grains.
+
+        \f[t_s = \frac{\rho_{\rm grain} \, s_{\rm grain}}{\rho \, c_s \, f} \sqrt{\frac{\pi \gamma}{8}}\f]
+
+        where \f$\rho = \rho_{\rm g} + \rho_{\rm d}\f$ is the total density and \f$f\f$
+        is the supersonic correction factor.
+
+        Args:
+            rho_grain: Internal density of the dust grain
+            s_grain: Radius of the dust grain
+            rho: Total density (\f$\rho_{\rm g} + \rho_{\rm d}\f$)
+            cs: Gas sound speed
+            gamma: Adiabatic index
+            f: Supersonic correction factor (1.0 for subsonic)
+
+        Returns:
+            The stopping time
     )pbdoc");
 
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.phys.HydroSoundwave");

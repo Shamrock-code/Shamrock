@@ -18,7 +18,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/ramses/Solver.hpp"

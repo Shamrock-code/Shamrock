@@ -415,7 +415,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
 using namespace shammodels::gsph;
 
-Register_pymod(pygsphmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mgsph = m.def_submodule("model_gsph", "Shamrock GSPH (Godunov SPH) solver");
 

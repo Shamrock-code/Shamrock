@@ -153,9 +153,8 @@ int main(){
 
 #include "shambase/exception.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shambackends/BufferMirror.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include <functional>
@@ -592,7 +591,7 @@ void BasicSPHGhostHandler<vec>::gen_debug_patch_ghost(
         });
 
     std::string dot_graph = "";
-    shamcomm::gather_str(loc_graph, dot_graph);
+    shamalgs::collective::gather_str(loc_graph, dot_graph);
 
     dot_graph = "strict digraph {\n" + dot_graph + "}";
 

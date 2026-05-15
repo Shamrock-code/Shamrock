@@ -21,6 +21,8 @@
  * we can then wrap them conveniently in a single macro call.
  */
 
+#include "shambase/call_lambda.hpp"
+#include "shambase/unique_name_macro.hpp"
 #include <pybind11/pybind11.h>
 
 /// alias to pybind11 namespace
@@ -32,29 +34,38 @@ using fct_sig = std::function<void(py::module &)>;
 /// Register a python module init function to be ran on init
 void register_pybind_init_func(fct_sig);
 
-/// Utility struct to register python modules through static init
-struct PyBindStaticInit {
-    /// Constructor to register the python init function using static init
-    inline explicit PyBindStaticInit(fct_sig t) { register_pybind_init_func(std::move(t)); }
-};
+/**
+ * @brief Internal helper that creates static symbols to register a Python init function via a
+ * static initializer. It declares `funcname`, creates a `call_lambda` object that calls
+ * `register_pybind_init_func(funcname)` at startup, and defines `funcname`.
+ *
+ * Here the objects/func are static in order to avoid conflicting name in linking. This is similar
+ * to anonymous namespaces
+ */
+#define _internal_register_pybind_init(funcname, lambda_name, varname)                             \
+    static void funcname(py::module &varname);                                                     \
+    static shambase::call_lambda lambda_name([]() {                                                \
+        register_pybind_init_func(funcname);                                                       \
+    });                                                                                            \
+    static void funcname(py::module &varname)
 
 /**
- * @brief Register a python module init function using static initialisation
+ * @brief Register a Python module init function using static initialization
  *
- * Usage (in any source files) :
+ * Generates unique symbols automatically, making it convenient for one-shot initializations in
+ * .cpp files.
+ *
+ * Usage (in a .cpp file) :
  * @code{.cpp}
  *
- * Register_pymod(<python init module name>){
+ * ON_PYTHON_INIT {
  *
- *    // You can define stuff in the python module object `m` like so :
- *    py::class_<ShamrockCtx>(m, "Context")
- *        .def(py::init<>())
+ *    // Define things in the python module object `root_module` like so :
+ *    root_module.def("hello", []() { return "Hello from SHAMROCK!"; });
  *
  * }
  * @endcode
  */
-#define Register_pymod(placeholdername)                                                            \
-    void pymod_##placeholdername(py::module &m);                                                   \
-    void (*pymod_ptr_##placeholdername)(py::module & m) = pymod_##placeholdername;                 \
-    PyBindStaticInit pymod_class_obj_##placeholdername(pymod_ptr_##placeholdername);               \
-    void pymod_##placeholdername(py::module &m)
+#define ON_PYTHON_INIT                                                                             \
+    _internal_register_pybind_init(                                                                \
+        __shamrock_unique_name(pybind_), __shamrock_unique_name(pybind_class_obj_), root_module)

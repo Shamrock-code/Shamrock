@@ -103,9 +103,9 @@ inline void register_dtt_alg(py::module &m) {
     });
 }
 
-Register_pymod(shamtreelibinit) {
+ON_PYTHON_INIT {
 
-    py::module shamtree_module = m.def_submodule("tree", "backend library");
+    py::module shamtree_module = root_module.def_submodule("tree", "backend library");
 
     register_CLBVH<u64, f64_3, 3>(shamtree_module, "CLBVH_u64_f64_3");
     register_dtt_alg<u64, f64_3, 3>(shamtree_module);

@@ -77,12 +77,13 @@ namespace shambase {
     class Timer {
         public:
 #if defined(__MACH__)
-        std::chrono::steady_clock::time_point t_start;
+        std::chrono::steady_clock::time_point t_start; ///< Internal timer
 #else
-        plf::nanotimer timer;
+        plf::nanotimer timer; ///< Internal timer
 #endif
-        f64 nanosec;
+        f64 nanosec; ///< Time in nanosecond
 
+        /// Constructor, init nanosec to 0
         Timer() : nanosec(0.0) {}
 
         /**

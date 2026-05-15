@@ -39,7 +39,7 @@ void bench_memcpy_sycl(
         shambase::Timer t;
         t.start();
         get_compute_queue().memcpy(ptr1, ptr2, cnt * sizeof(T)).wait();
-        t.end();
+        t.stop();
 
         sycl::free(ptr1, q1);
         sycl::free(ptr2, q2);
@@ -80,7 +80,7 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
         shambase::Timer t;
         t.start();
         get_compute_queue().memcpy(ptr1, ptr2, cnt * sizeof(T)).wait();
-        t.end();
+        t.stop();
 
         sycl::free(ptr1, q1);
         sycl::free(ptr2, q1);
@@ -190,7 +190,7 @@ void make_bandwidth_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size
 
         mpi::barrier(MPI_COMM_WORLD);
 
-        t.end();
+        t.stop();
 
         return (f64(comm_size * sizeof(T)) / (t.nanosec / 1e9)) / f64(1024 * 1024 * 1024);
     };

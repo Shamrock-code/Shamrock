@@ -286,7 +286,7 @@ class AMRTestModel {
             pdat.get_field<u64_3>(1).get_buf().complete_event_state(e);
 
             q.q.wait();
-            t.end();
+            t.stop();
 
             shamlog_debug_ln("AMR Test", "walk time", t.get_time_str());
 

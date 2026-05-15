@@ -30,7 +30,8 @@
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
 
-Register_pymod(shamalgslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module shamalgs_module = m.def_submodule("algs", "algorithmic library");
 
@@ -113,8 +114,8 @@ Register_pymod(shamalgslibinit) {
             timer.start();
             bool result = shamalgs::primitives::is_all_true(buf, len);
             buf.synchronize();
-            timer.end();
-            return timer.elasped_sec();
+            timer.stop();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def(
@@ -143,8 +144,8 @@ Register_pymod(shamalgslibinit) {
             timer.start();
             f64 result = shamalgs::primitives::sum(
                 shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
-            timer.end();
-            return timer.elasped_sec();
+            timer.stop();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
@@ -153,8 +154,8 @@ Register_pymod(shamalgslibinit) {
             timer.start();
             f32 result = shamalgs::primitives::sum(
                 shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
-            timer.end();
-            return timer.elasped_sec();
+            timer.stop();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def(
@@ -185,8 +186,8 @@ Register_pymod(shamalgslibinit) {
                 timer.start();
                 shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
                 buf.synchronize();
-                timer.end();
-                return timer.elasped_sec();
+                timer.stop();
+                return timer.elapsed_sec();
             });
 
         shamalgs_module.def(
@@ -227,8 +228,8 @@ Register_pymod(shamalgslibinit) {
                 buf_copy.synchronize();
                 offsets_copy.synchronize();
 
-                timer.end();
-                return timer.elasped_sec();
+                timer.stop();
+                return timer.elapsed_sec();
             });
 
         shamalgs_module.def(

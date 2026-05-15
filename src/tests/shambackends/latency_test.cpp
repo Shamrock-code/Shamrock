@@ -60,8 +60,8 @@ f64 test_buffer_out_of_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     shamsys::instance::get_compute_queue().wait();
 
-    timer.end();
-    return timer.elasped_sec();
+    timer.stop();
+    return timer.elapsed_sec();
 }
 
 f64 test_buffer_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
@@ -110,8 +110,8 @@ f64 test_buffer_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
 
     q.wait();
 
-    timer.end();
-    return timer.elasped_sec();
+    timer.stop();
+    return timer.elapsed_sec();
 }
 
 f64 test_buffer_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_count) {
@@ -167,8 +167,8 @@ f64 test_buffer_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         queues[ibuf]->wait();
     }
-    timer.end();
-    return timer.elasped_sec();
+    timer.stop();
+    return timer.elapsed_sec();
 }
 
 f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
@@ -214,13 +214,13 @@ f64 test_usm_in_order(u32 buf_size, u32 stream_count, u32 repeat_count) {
     }
 
     q.wait();
-    timer.end();
+    timer.stop();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         f64 *buf = bufs[ibuf];
         sycl::free(buf, q);
     }
-    return timer.elasped_sec();
+    return timer.elapsed_sec();
 }
 
 f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_count) {
@@ -274,13 +274,13 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         queues[ibuf]->wait();
     }
-    timer.end();
+    timer.stop();
 
     for (u32 ibuf = 0; ibuf < stream_count; ibuf++) {
         f64 *buf = bufs[ibuf];
         sycl::free(buf, *queues[ibuf]);
     }
-    return timer.elasped_sec();
+    return timer.elapsed_sec();
 }
 
 TestStart(Benchmark, "latency_sycl", latency_sycl, 1) {

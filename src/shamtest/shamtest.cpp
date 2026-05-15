@@ -19,11 +19,11 @@
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/ci_env.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamrock/version.hpp"
@@ -248,7 +248,7 @@ namespace shamtest {
         shambase::stream_write_vector(outrank, rank_result);
 
         std::basic_string<byte> gathered;
-        shamcomm::gather_basic_str(outrank.str(), gathered);
+        shamalgs::collective::gather_basic_str(outrank.str(), gathered);
 
         if (shamcomm::world_rank() != 0) {
             return {};
@@ -529,7 +529,7 @@ namespace shamtest {
             shambase::Timer timer;
             timer.start();
             TestResult res = test.run();
-            timer.end();
+            timer.stop();
             mpi::barrier(MPI_COMM_WORLD);
 
             usize gather_bytecount           = 0;

@@ -388,7 +388,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     timers.metadata_sync.start();
     patch_list.build_global();
-    timers.metadata_sync.end();
+    timers.metadata_sync.stop();
 
     // std::cout << dump_status();
 
@@ -403,7 +403,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.global_idx_map_build->start(); // TODO check if it it used outside of split merge ->
                                               // maybe need to be put before the if
         patch_list.build_global_idx_map();
-        timers.global_idx_map_build->end();
+        timers.global_idx_map_build->stop();
 
         // std::cout << dump_status() << std::endl;
 
@@ -411,7 +411,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.patch_tree_count_reduce = shambase::Timer{};
         timers.patch_tree_count_reduce->start();
         patch_tree.partial_values_reduction(patch_list.global, patch_list.id_patch_to_global_idx);
-        timers.patch_tree_count_reduce->end();
+        timers.patch_tree_count_reduce->stop();
 
         // std::cout << dump_status() << std::endl;
 
@@ -420,7 +420,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.gen_merge_split_rq->start();
         split_rq = patch_tree.get_split_request(crit_patch_split);
         merge_rq = patch_tree.get_merge_request(crit_patch_merge);
-        timers.gen_merge_split_rq->end();
+        timers.gen_merge_split_rq->stop();
 
         timers.split_merge_cnt = u32_2{split_rq.size(), merge_rq.size()};
         /*
@@ -443,7 +443,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.apply_splits = shambase::Timer{};
         timers.apply_splits->start();
         split_patches(split_rq);
-        timers.apply_splits->end();
+        timers.apply_splits->stop();
 
         // std::cout << dump_status() << std::endl;
 
@@ -460,7 +460,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         // generate LB change list
         shamrock::scheduler::LoadBalancingChangeList change_list
             = LoadBalancer::make_change_list(patch_list.global);
-        timers.load_balance_compute->end();
+        timers.load_balance_compute->stop();
 
         timers.load_balance_move_op_cnt = change_list.change_ops.size();
 
@@ -468,7 +468,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
         timers.load_balance_apply->start();
         // apply LB change list
         patch_data.apply_change_list(change_list, patch_list);
-        timers.load_balance_apply->end();
+        timers.load_balance_apply->stop();
     }
 
     // std::cout << dump_status();
@@ -494,7 +494,7 @@ void PatchScheduler::scheduler_step(bool do_split_merge, bool do_load_balancing)
 
     // std::cout << dump_status();
 
-    timers.global_timer.end();
+    timers.global_timer.stop();
     timers.print_stats();
 }
 

@@ -27,7 +27,7 @@ if ! gh auth status &>/dev/null; then
 fi
 
 function current_gh_username {
-    gh api user -q .login
+    gh api user -q .login || return
 }
 
 gh_username=$(current_gh_username)
@@ -39,13 +39,13 @@ echo " -- gh username: $gh_username"
 
 function sync_fork {
     echo " -- syncing fork $repo_name ($main_branch -> $main_branch) with upstream"
-    gh repo sync $repo_name -b $main_branch
+    gh repo sync $repo_name -b $main_branch || return
     echo " -- fetched latest changes from upstream"
-    git fetch --all
+    git fetch --all || return
 }
 
 function current_branch {
-    git rev-parse --abbrev-ref HEAD
+    git rev-parse --abbrev-ref HEAD || return
 }
 
 # Update the fork + create branch up to date with main and push it to the fork
@@ -54,15 +54,15 @@ function new_branch {
         echo "Usage: new_branch <branch_name>" >&2
         return 1
     fi
-    sync_fork
+    sync_fork || return
     echo " -- checking out $main_branch"
-    git checkout "$main_branch"
+    git checkout "$main_branch" || return
     echo " -- pulling $main_branch"
-    git pull
+    git pull || return
     echo " -- creating new branch $1"
-    git switch --create "$1"
+    git switch --create "$1" || return
     echo " -- pushing new branch $1 to origin"
-    git push --set-upstream origin "$1"
+    git push --set-upstream origin "$1" || return
 }
 
 # Fast github checkout from the github user:branch format
@@ -72,22 +72,22 @@ function gco {
         return 1
     fi
     echo " -- fetching origin"
-    git fetch origin
+    git fetch origin || return
     echo " -- checking out $1 => git checkout ${1#$gh_username:}"
-    git checkout "${1#$gh_username:}"
+    git checkout "${1#$gh_username:}" || return
     echo " -- pulling changes ..."
-    git pull
+    git pull || return
     echo " -- done !"
 }
 
 # Open a PR from the fork (web interface)
 function open_pr_web {
     echo " -- opening PR ($upstream_repo:$main_branch <= $gh_username:$(current_branch)) in web browser"
-    gh pr create --repo $upstream_repo --base $main_branch --head $gh_username:$(current_branch) --web
+    gh pr create --repo $upstream_repo --base $main_branch --head $gh_username:$(current_branch) --web || return
 }
 
 # Open a PR from the fork (CLI)
 function open_pr_cli {
     echo " -- opening PR ($upstream_repo:$main_branch <= $gh_username:$(current_branch)) in CLI"
-    gh pr create --repo $upstream_repo --base $main_branch --head $gh_username:$(current_branch)
+    gh pr create --repo $upstream_repo --base $main_branch --head $gh_username:$(current_branch) || return
 }

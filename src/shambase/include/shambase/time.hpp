@@ -79,9 +79,9 @@ namespace shambase {
         inline void start() { t_start = std::chrono::steady_clock::now(); }
 
         inline void stop() {
-            t_end   = std::chrono::steady_clock::now();
+            t_stop  = std::chrono::steady_clock::now();
             nanosec = f64(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
+                std::chrono::duration_cast<std::chrono::nanoseconds>(t_stop - t_start).count());
         }
 
         inline std::string get_time_str() { return nanosec_to_time_str(nanosec); }

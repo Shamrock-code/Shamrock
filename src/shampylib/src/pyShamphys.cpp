@@ -37,6 +37,12 @@
 #include <complex>
 #include <utility>
 
+Register_pymodsubmodule("shamrock.phys") {
+    return shambindings::submodules::modules()
+        .get("shamrock")
+        .def_submodule("phys", "Physics Library");
+}
+
 ON_PYTHON_INIT {
 
     py::module shamphys_module = root_module.def_submodule("phys", "Physics Library");

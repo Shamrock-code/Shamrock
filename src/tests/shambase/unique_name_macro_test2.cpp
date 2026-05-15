@@ -14,3 +14,6 @@ static int __shamrock_unique_name(test_var) = 0;
 
 static void __shamrock_unique_name(test_func)(){};
 static void __shamrock_unique_name(test_func)(){};
+
+// This file duplicates the content of unique_name_macro_test.cpp to test that using the same macro
+// as the same spot does not provide linker errors

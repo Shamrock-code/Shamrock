@@ -83,7 +83,7 @@ namespace shambase {
 #else
         plf::nanotimer timer; ///< Internal timer
 #endif
-        f64 nanosec; ///< Time in nanosecond
+        f64 nanosec; ///< Time in nanoseconds
 
         /// Constructor, init nanosec to 0
         Timer() : nanosec(0.0) {}

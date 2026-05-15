@@ -18,16 +18,7 @@
 
 #include "shambase/Timer.hpp"
 #include "shambase/aliases_float.hpp"
-#include "shambase/format_time.hpp"
-#include "shambase/string.hpp"
 #include <functional>
-#include <iostream>
-
-#ifndef __MACH__
-    #include <plf_nanotimer.h>
-#else
-    #include <chrono>
-#endif
 
 namespace shambase {
 

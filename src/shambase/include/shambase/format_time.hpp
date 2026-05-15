@@ -61,6 +61,6 @@ namespace shambase {
             sec_int /= 1000;
         }
 
-        return shambase::format_printf("%4.2f", sec_int) + " " + unit;
+        return shambase::format("{:.2f}", sec_int) + " " + unit;
     }
 } // namespace shambase

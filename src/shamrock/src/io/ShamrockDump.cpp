@@ -155,7 +155,7 @@ namespace shamrock {
                     "dump to {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),
-                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+                    shambase::readable_sizeof(max_head / timer.elapsed_sec())));
         }
     }
 
@@ -263,7 +263,7 @@ namespace shamrock {
                     "load dump from {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),
-                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+                    shambase::readable_sizeof(max_head / timer.elapsed_sec())));
         }
     }
 

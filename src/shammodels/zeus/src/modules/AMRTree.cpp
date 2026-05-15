@@ -358,7 +358,7 @@ void shammodels::zeus::modules::AMRTree<Tvec, TgridVec>::build_neigh_cache() {
     });
 
     time_neigh.stop();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 template class shammodels::zeus::modules::AMRTree<f64_3, i64_3>;

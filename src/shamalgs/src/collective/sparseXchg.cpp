@@ -172,16 +172,16 @@ namespace {
 
                   twait.stop();
 
-                  if (twait.elasped_sec() > t_last_print + 10) {
+                  if (twait.elapsed_sec() > t_last_print + 10) {
 
                       std::string msg
                           = shambase::format("Sparse comm : {} / {} done", done_count, rqs.size());
                       logger::warn_ln("Sparse comm", msg);
 
-                      t_last_print = twait.elasped_sec();
+                      t_last_print = twait.elapsed_sec();
                   }
 
-                  if (twait.elasped_sec() > timeout_t) {
+                  if (twait.elapsed_sec() > timeout_t) {
                       std::string err_msg = "";
                       for (u32 i = 0; i < rqs.size(); i++) {
                           if (!done_map[i]) {
@@ -525,18 +525,18 @@ namespace shamalgs::collective {
                 twait.start();
                 do {
                     twait.stop();
-                    if (twait.elasped_sec() > timeout) {
+                    if (twait.elapsed_sec() > timeout) {
                         report_unfinished_requests(rqs, rqs_infos);
                     }
 
-                    if (twait.elasped_sec() - last_print_time > print_freq) {
+                    if (twait.elapsed_sec() - last_print_time > print_freq) {
                         logger::warn_ln(
                             "SparseComm",
                             "too many messages in flight :",
                             in_flight,
                             "/",
                             in_flight_lim);
-                        last_print_time = twait.elasped_sec();
+                        last_print_time = twait.elapsed_sec();
                     }
                     in_flight = rqs.remain_count();
                 } while (in_flight > in_flight_lim);

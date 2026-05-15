@@ -423,7 +423,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
     });
 
     timer_interf.stop();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
 }
 
 template<class Tvec, class TgridVec>
@@ -483,7 +483,7 @@ shamrock::ComputeField<T> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>:
         });
 
     timer_interf.stop();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
     return out;
 }
 

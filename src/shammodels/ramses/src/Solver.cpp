@@ -1663,7 +1663,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
                        + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
-    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+    f64 rate       = f64(rank_count) / tstep.elapsed_sec();
 
     u64 npatch = scheduler().patch_list.local.size();
 
@@ -1671,7 +1671,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         rate,
         rank_count,
         npatch,
-        tstep.elasped_sec(),
+        tstep.elapsed_sec(),
         delta_mpi_timer,
         t_dev_alloc,
         t_host_alloc,
@@ -1683,7 +1683,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         logger::info_ln(
             "amr::RAMSES",
             "estimated rate :",
-            dt_input * (3600 / tstep.elasped_sec()),
+            dt_input * (3600 / tstep.elapsed_sec()),
             "(tsim/hr)");
     }
 

@@ -123,7 +123,7 @@ namespace sham::benchmarks {
             x.complete_event_state(sycl::event{});
             y.complete_event_state(sycl::event{});
 
-            seconds = sham::min(seconds, t.elasped_sec());
+            seconds = sham::min(seconds, t.elapsed_sec());
 
             if (i == 0) {
                 y_res = y.copy_to_stdvec();

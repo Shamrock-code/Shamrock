@@ -119,7 +119,7 @@ namespace sham::benchmarks {
             e.wait();
             t.stop();
 
-            return t.elasped_sec();
+            return t.elapsed_sec();
         };
 
         // warmup kernel

@@ -178,7 +178,7 @@ namespace shambase::details {
      */
     f64 get_wtime() {
         global_timer.stop();
-        return global_timer.elasped_sec();
+        return global_timer.elapsed_sec();
     }
 
     void register_profile_entry_start(std::source_location loc, f64 start_time) {

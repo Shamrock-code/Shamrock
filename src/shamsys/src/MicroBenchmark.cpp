@@ -225,7 +225,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
         bench_timer.stop();
 
-    } while (shamalgs::collective::allreduce_min(bench_timer.elasped_sec()) < 1);
+    } while (shamalgs::collective::allreduce_min(bench_timer.elapsed_sec()) < 1);
 
     f64 latency                       = t / f64(loops);
     microbench_results["p2p_latency"] = latency;

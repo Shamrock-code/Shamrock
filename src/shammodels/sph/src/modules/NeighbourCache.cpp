@@ -216,7 +216,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
     });
 
     time_neigh.stop();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
@@ -600,7 +600,7 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
     });
 
     time_neigh.stop();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 using namespace shammath;

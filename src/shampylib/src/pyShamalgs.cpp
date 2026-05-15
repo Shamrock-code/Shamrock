@@ -115,7 +115,7 @@ ON_PYTHON_INIT {
             bool result = shamalgs::primitives::is_all_true(buf, len);
             buf.synchronize();
             timer.stop();
-            return timer.elasped_sec();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def(
@@ -145,7 +145,7 @@ ON_PYTHON_INIT {
             f64 result = shamalgs::primitives::sum(
                 shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
             timer.stop();
-            return timer.elasped_sec();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def("benchmark_reduction_sum", [](sham::DeviceBuffer<f32> &buf, u32 len) {
@@ -155,7 +155,7 @@ ON_PYTHON_INIT {
             f32 result = shamalgs::primitives::sum(
                 shamsys::instance::get_compute_scheduler_ptr(), buf, 0, len);
             timer.stop();
-            return timer.elasped_sec();
+            return timer.elapsed_sec();
         });
 
         shamalgs_module.def(
@@ -187,7 +187,7 @@ ON_PYTHON_INIT {
                 shamalgs::primitives::scan_exclusive_sum_in_place(buf, len);
                 buf.synchronize();
                 timer.stop();
-                return timer.elasped_sec();
+                return timer.elapsed_sec();
             });
 
         shamalgs_module.def(
@@ -229,7 +229,7 @@ ON_PYTHON_INIT {
                 offsets_copy.synchronize();
 
                 timer.stop();
-                return timer.elasped_sec();
+                return timer.elapsed_sec();
             });
 
         shamalgs_module.def(

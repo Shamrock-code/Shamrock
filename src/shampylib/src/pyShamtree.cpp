@@ -85,7 +85,7 @@ inline void register_dtt_alg(py::module &m) {
             shamtree::clbvh_dual_tree_traversal(
                 shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
             t.stop();
-            return t.elasped_sec();
+            return t.elapsed_sec();
         });
 
     m.def("get_default_impl_list_clbvh_dual_tree_traversal", []() {

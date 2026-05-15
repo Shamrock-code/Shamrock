@@ -449,7 +449,7 @@ namespace shamrock {
                         "dump to {}\n              - took {}, bandwidth = {}/s",
                         fname,
                         timer.get_time_str(),
-                        shambase::readable_sizeof(file_head_ptr / timer.elasped_sec())));
+                        shambase::readable_sizeof(file_head_ptr / timer.elapsed_sec())));
             }
         }
 

@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file time.hpp
+ * @file Timer.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief High-resolution timer with plf_nanotimer (non-macOS) or std::chrono (macOS) backend
  *
  */
 
@@ -20,9 +20,7 @@
 #include "shambase/format_time.hpp"
 
 #ifndef __MACH__
-    #ifndef USE_PLF_TIMER
-        #define USE_PLF_TIMER
-    #endif
+    #define USE_PLF_TIMER
 #endif
 
 #if defined(USE_PLF_TIMER)

@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file time.hpp
+ * @file format_time.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Human-readable nanosecond duration formatting
  *
  */
 

@@ -18,25 +18,17 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/integer.hpp"
+#include <bit>
 
 namespace shambase {
 
     /**
      * @brief Check if the CPU is in little endian
      *
-     * Check if the CPU is in little endian by checking the endianness of short int
-     *
-     * The check is done by reinterpreting a short int with the value 0x0001 as a char array
-     * and checking the first byte of this array.
-     *
-     * If the first byte is 1, then the CPU is in little endian, false otherwise.
-     *
      * @return true if the CPU is in little endian, false otherwise
      */
-    inline bool is_little_endian() {
-        short int word = 0x0001;
-        char *byte     = (char *) &word;
-        return (byte[0] ? 1 : 0);
+    constexpr bool is_little_endian() noexcept {
+        return std::endian::native == std::endian::little;
     }
 
     /**

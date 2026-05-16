@@ -19,7 +19,6 @@
 #include "shambase/exception.hpp"
 #include "shambase/format.hpp"
 #include "shambase/stacktrace.hpp"
-#include <format>
 #include <string>
 
 namespace shambase {
@@ -49,7 +48,7 @@ namespace shambase {
         const std::string &fmt_string,
         std::source_location loc) {
         return make_except_with_loc<std::format_error>(
-            std::format(
+            fmt::format(
                 "format failed:\n  function={}\n  what={}\n  fmt_string={}",
                 function_call,
                 what,

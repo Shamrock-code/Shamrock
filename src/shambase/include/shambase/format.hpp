@@ -73,7 +73,7 @@ namespace shambase {
      *
      * @tparam T
      * @param fmt the format string
-     * @param args the arguments to format agains
+     * @param args the arguments to format against
      * @return std::string the formatted string
      */
     template<typename... T>
@@ -88,7 +88,7 @@ namespace shambase {
      *
      * @tparam T
      * @param fmt the format string
-     * @param args the arguments to format agains
+     * @param args the arguments to format against
      * @return std::string the formatted string
      */
     template<typename... T>

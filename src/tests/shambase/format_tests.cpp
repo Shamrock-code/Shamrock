@@ -19,11 +19,11 @@ namespace {
 
         auto s = shambase::vformat(std::string_view{fmt}, fmt::make_format_args(value));
 
-        // just to trap the result and avoid optimizatiopns
+        // just to trap the result and avoid optimizations
         std::cout << s << '\n';
     }
 } // namespace
 
-TestStart(Unittest, "shambase/format", test_excption_throw, 1) {
+TestStart(Unittest, "shambase/format", test_exception_throw, 1) {
     REQUIRE_EXCEPTION_THROW(throwing_format(), std::format_error);
 }

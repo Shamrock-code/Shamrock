@@ -185,10 +185,10 @@ namespace shamalgs::numeric::details {
                 id,
                 local_id,
                 group_tile_id,
-                [=]() {
+                [=, this]() {
                     return local_scan_buf[0];
                 },
-                [=](T accum) {
+                [=, this](T accum) {
                     local_sum[0] = accum;
                 },
                 slice_id);

@@ -10,19 +10,15 @@
 #pragma once
 
 /**
- * @file source_location.hpp
+ * @file as_constant.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
+ *
  */
 
-#if __cplusplus >= 202002L
-    #include <source_location>
-#else
-    #include "cxxbackports/source_location.hpp"
-#endif
+namespace shambase {
 
-namespace shambase::cxxstd {
+    /// Anything passed through that function must be evaluated at compile time
+    consteval auto as_constant(auto value) { return value; }
 
-    using source_location = std::source_location;
-
-} // namespace shambase::cxxstd
+} // namespace shambase

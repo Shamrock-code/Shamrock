@@ -9,9 +9,10 @@ message("   ---- c++ config section ----")
 
 include(CheckCXXCompilerFlag)
 
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ version selection") # or 11, 14, 17, 20
+set(CMAKE_CXX_STANDARD 20) # or 11, 14, 17, 20
 set(CMAKE_CXX_STANDARD_REQUIRED ON) # optional, ensure standard is supported
 set(CMAKE_CXX_EXTENSIONS OFF) # optional, keep compiler extensions off
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF) # otherwise clang-scan-deps will complain about the SYCL flags
 
 check_cxx_compiler_flag("-march=native" COMPILER_SUPPORT_MARCHNATIVE)
 check_cxx_compiler_flag("-pedantic-errors" COMPILER_SUPPORT_PEDANTIC)
@@ -19,9 +20,8 @@ check_cxx_compiler_flag("-fcolor-diagnostics" COMPILER_SUPPORT_COLOR_DIAGNOSTIC)
 check_cxx_compiler_flag("-Werror=return-type" COMPILER_SUPPORT_ERROR_RETURN_TYPE)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-set(CMAKE_CXX_FLAGS_DEBUG "-g") # -fsanitize=address")# -Wall -Wextra") #
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG"
-)#-DNDEBUG ")#-Wall -Wextra -Wunknown-cuda-version -Wno-linker-warnings")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g -DNDEBUG")
 
 if(COMPILER_SUPPORT_PEDANTIC)
@@ -80,6 +80,7 @@ if(NOT CXX_VALARRAY_COMPILE)
 
 endif()
 
+message(STATUS "CMAKE_CXX_STANDARD             : ${CMAKE_CXX_STANDARD}")
 message(STATUS "CMAKE_CXX_FLAGS                : ${CMAKE_CXX_FLAGS}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG          : ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE        : ${CMAKE_CXX_FLAGS_RELEASE}")

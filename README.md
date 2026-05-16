@@ -5,7 +5,7 @@
 # The Shamrock code
 
 Shamrock is a general purpose HPC hydrodynamics simulation code focused on astrophysical contexts.
-The whole code is **C++17** by default, and all accelerated parts are done using **SYCL**,
+The whole code is **C++20** by default, and all accelerated parts are done using **SYCL**,
 which can be directly compiled directly to native **CUDA**, **ROCM**, **OpenMP**, **OpenCL** and much more.
 Shamrock also supports multiple GPUs and Heterogeneous clusters using **MPI**.
 

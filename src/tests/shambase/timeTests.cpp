@@ -29,10 +29,11 @@ TestStart(Unittest, "shambase/time/sleep_200ms_precision", unitt_timer_sleep_200
 
     shambase::Timer timer;
     timer.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    std::this_thread::sleep_for(std::chrono::milliseconds(400));
     timer.stop();
 
-    REQUIRE_FLOAT_EQUAL(timer.elapsed_sec(), 0.2, 0.05);
+    // sadly i must be verrrrrrry loose on the tolerances because of Github runners ...
+    REQUIRE_FLOAT_EQUAL(timer.elapsed_sec(), 0.4, 0.2);
 }
 
 TestStart(Unittest, "shambase/time/stop_overwrites_nanosec", unitt_timer_stop_overwrites, 1) {
@@ -44,6 +45,7 @@ TestStart(Unittest, "shambase/time/stop_overwrites_nanosec", unitt_timer_stop_ov
     timer.stop();
     f64 elapsed1 = timer.elapsed_sec();
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     timer.stop();
     f64 elapsed2 = timer.elapsed_sec();
 

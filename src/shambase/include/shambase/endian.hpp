@@ -27,7 +27,9 @@ namespace shambase {
      *
      * @return true if the CPU is in little endian, false otherwise
      */
-    constexpr bool is_little_endian() noexcept { return std::endian::native == std::endian::little; }
+    constexpr bool is_little_endian() noexcept {
+        return std::endian::native == std::endian::little;
+    }
 
     /**
      * @brief Swap the endianness of the input value

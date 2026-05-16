@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file format.hpp
+ * @file format.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  */

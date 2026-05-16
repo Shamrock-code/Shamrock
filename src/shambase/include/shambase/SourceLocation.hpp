@@ -19,6 +19,37 @@
 #include <source_location>
 #include <string>
 
+namespace shambase {
+    /**
+     * @brief format the location in multiple lines
+     *
+     * @return std::string the formated location
+     */
+    std::string format_multiline(std::source_location loc);
+
+    /**
+     * @brief format the location in multiple lines with a given stacktrace
+     *
+     * @param stacktrace the stacktrace to add to the location
+     * @return std::string the formated location
+     */
+    std::string format_multiline(std::source_location loc, const std::string &stacktrace);
+
+    /**
+     * @brief format the location in a one liner
+     *
+     * @return std::string the formated location
+     */
+    std::string format_one_line(std::source_location loc);
+
+    /**
+     * @brief format the location in a one liner with the function name displayed
+     *
+     * @return std::string the formated location
+     */
+    std::string format_one_line_func(std::source_location loc);
+} // namespace shambase
+
 /**
  * @brief provide information about the source location
  *
@@ -33,14 +64,15 @@ struct SourceLocation {
 
     srcloc loc;
 
-    inline explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
+    inline constexpr explicit SourceLocation(srcloc _loc = srcloc::current()) noexcept
+        : loc(_loc) {}
 
     /**
      * @brief format the location in multiple lines
      *
      * @return std::string the formated location
      */
-    std::string format_multiline() const;
+    inline std::string format_multiline() const { return shambase::format_multiline(loc); }
 
     /**
      * @brief format the location in multiple lines with a given stacktrace
@@ -48,19 +80,21 @@ struct SourceLocation {
      * @param stacktrace the stacktrace to add to the location
      * @return std::string the formated location
      */
-    std::string format_multiline(std::string stacktrace) const;
+    inline std::string format_multiline(const std::string &stacktrace) const {
+        return shambase::format_multiline(loc, stacktrace);
+    }
 
     /**
      * @brief format the location in a one liner
      *
      * @return std::string the formated location
      */
-    std::string format_one_line() const;
+    inline std::string format_one_line() const { return shambase::format_one_line(loc); }
 
     /**
      * @brief format the location in a one liner with the function name displayed
      *
      * @return std::string the formated location
      */
-    std::string format_one_line_func() const;
+    inline std::string format_one_line_func() const { return shambase::format_one_line_func(loc); }
 };

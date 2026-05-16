@@ -16,7 +16,7 @@
  * @date 2023-02-24
  */
 
-#include "shambase/source_location.hpp"
+#include <source_location>
 #include <string>
 
 /**
@@ -29,11 +29,11 @@
  */
 struct SourceLocation {
 
-    using srcloc = shambase::cxxstd::source_location;
+    using srcloc = std::source_location;
 
     srcloc loc;
 
-    inline explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
+    inline consteval explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
 
     /**
      * @brief format the location in multiple lines

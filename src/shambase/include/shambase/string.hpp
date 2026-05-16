@@ -26,7 +26,6 @@
 #include <fmt/ranges.h>
 #include <string_view>
 #include <array>
-#include <format>
 #include <fstream>
 #include <vector>
 

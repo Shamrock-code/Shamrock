@@ -56,7 +56,7 @@ namespace shambase {
             SourceLocation(loc));
     }
 
-    static shambase::call_lambda lambda_name([]() {
+    static shambase::call_lambda register_format_exception_builder([]() {
         set_format_exception_builder(format_exception_builder);
     });
 } // namespace shambase

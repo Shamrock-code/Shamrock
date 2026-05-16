@@ -21,7 +21,6 @@
 #include <fmt/ranges.h>
 #include <source_location>
 #include <string_view>
-#include <format>
 
 namespace shambase {
 
@@ -38,13 +37,13 @@ namespace shambase {
     using formatter = fmt::formatter<T>;
 
     /// format error callback
-    std::format_error make_format_exception(
+    fmt::format_error make_format_exception(
         std::string_view function_call,
         std::string_view what,
         const std::string &fmt_string,
         std::source_location loc = std::source_location::current());
 
-    using format_except_builder_t = std::format_error (*)(
+    using format_except_builder_t = fmt::format_error (*)(
         std::string_view, std::string_view, const std::string &, std::source_location);
 
     void set_format_exception_builder(format_except_builder_t callback);

@@ -14,14 +14,13 @@
  */
 
 #include "shambase/format.hpp"
-#include <format>
 
 namespace shambase {
 
     /// Internal function ptr handle (intentionally large name for linking)
     format_except_builder_t internal_func_ptr_make_format_exception = nullptr;
 
-    std::format_error make_format_exception(
+    fmt::format_error make_format_exception(
         std::string_view function_call,
         std::string_view what,
         const std::string &fmt_string,
@@ -29,7 +28,7 @@ namespace shambase {
         if (internal_func_ptr_make_format_exception != nullptr) {
             return internal_func_ptr_make_format_exception(function_call, what, fmt_string, loc);
         } else {
-            return std::format_error(std::string(what));
+            return fmt::format_error(std::string(what));
         }
     }
 

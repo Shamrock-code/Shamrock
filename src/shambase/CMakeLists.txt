@@ -16,6 +16,7 @@ set(Sources
     src/print.cpp
     src/popen.cpp
     src/term_colors.cpp
+    src/format.cpp
     src/profiling/chrome.cpp
     src/profiling/profiling.cpp
     src/logs/reformat_message.cpp

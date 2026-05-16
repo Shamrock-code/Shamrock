@@ -33,7 +33,7 @@ struct SourceLocation {
 
     srcloc loc;
 
-    inline consteval explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
+    inline explicit SourceLocation(srcloc _loc = srcloc::current()) : loc(_loc) {}
 
     /**
      * @brief format the location in multiple lines

@@ -16,7 +16,6 @@
 
 #include "sham/term/color_env.hpp"
 #include "sham/term/color.hpp"
-#include <source_location>
 #include <string_view>
 #include <stdexcept>
 #include <vector>

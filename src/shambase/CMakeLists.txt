@@ -70,3 +70,4 @@ if(SHAMROCK_USE_NVTX)
 endif()
 
 target_link_libraries(shambase PUBLIC shamformat)
+target_link_libraries(shambase PUBLIC shamterm)

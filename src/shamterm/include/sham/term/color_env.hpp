@@ -7,9 +7,27 @@
 //
 // -------------------------------------------------------//
 
+#pragma once
+
 /**
- * @file term_colors.cpp
+ * @file color_env.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
+
+#include <string_view>
+#include <optional>
+
+namespace sham::term {
+
+    struct TermSupportEnvVars {
+        std::optional<std::string_view> TERM;
+        std::optional<std::string_view> COLORTERM;
+        std::optional<std::string_view> NO_COLOR;
+        std::optional<std::string_view> CLICOLOR_FORCE;
+    };
+
+    void parse_terminal_support(TermSupportEnvVars vars);
+
+} // namespace sham::term

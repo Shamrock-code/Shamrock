@@ -18,58 +18,15 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
+#include "sham/term/color_env.hpp"
 #include "sham/term/tty.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
 #include <string_view>
+#include <optional>
+#include <string>
 #include <vector>
-
-/**
- * @brief List of known terminal ident that support colors
- */
-static const std::vector<std::string_view> color_suport_term{
-    "xterm",
-    "xterm-256",
-    "xterm-256color",
-    "xterm-truecolor",
-    "vt100",
-    "color",
-    "ansi",
-    "cygwin",
-    "linux",
-    "xterm-kitty",
-    "alacritty"};
-
-/**
- * @brief detect if terminal emulator support colored outputs
- *
- * @return true
- * @return false
- */
-bool term_support_color() {
-
-    auto term_var = shamcmdopt::getenv_str("TERM");
-    if (term_var) {
-        for (auto term : color_suport_term) {
-            if (*term_var == term) {
-                return true;
-            }
-        }
-    }
-
-    auto colorterm_var = shamcmdopt::getenv_str("COLORTERM");
-    if (colorterm_var) {
-        if (*colorterm_var == "truecolor") {
-            return true;
-        }
-        if (*colorterm_var == "24bit") {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 namespace shamcmdopt {
 
@@ -105,28 +62,36 @@ namespace shamcmdopt {
         bool has_opt_nocolor = has_option("--nocolor");
         bool has_opt_color   = has_option("--color");
 
-        bool has_envvar_nocolor = bool(getenv_str("NO_COLOR"));
-        bool has_envvar_color   = bool(getenv_str("CLICOLOR_FORCE"));
-
         if (has_opt_color && has_opt_nocolor) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "You can not pass --nocolor and --color simultaneously");
         }
 
+        auto TERM           = getenv_str("TERM");
+        auto COLORTERM      = getenv_str("COLORTERM");
+        auto NO_COLOR       = getenv_str("NO_COLOR");
+        auto CLICOLOR_FORCE = getenv_str("CLICOLOR_FORCE");
+
+        // TODO this should not be required
+        auto to_opt_str_view
+            = [](std::optional<std::string> &in) -> std::optional<std::string_view> {
+            if (in) {
+                return *in;
+            }
+            return std::nullopt;
+        };
+
+        sham::term::parse_terminal_support({
+            .TERM           = to_opt_str_view(TERM),
+            .COLORTERM      = to_opt_str_view(COLORTERM),
+            .NO_COLOR       = to_opt_str_view(NO_COLOR),
+            .CLICOLOR_FORCE = to_opt_str_view(CLICOLOR_FORCE),
+        });
+
         if (has_opt_nocolor) {
             shambase::term_colors::disable_colors();
         } else if (has_opt_color) {
             shambase::term_colors::enable_colors();
-        } else if (has_envvar_nocolor) {
-            shambase::term_colors::disable_colors();
-        } else if (has_envvar_color) {
-            shambase::term_colors::enable_colors();
-        } else {
-            if (term_support_color() && sham::term::is_a_tty()) {
-                shambase::term_colors::enable_colors();
-            } else {
-                shambase::term_colors::disable_colors();
-            }
         }
     }
 

@@ -30,50 +30,6 @@
 namespace shambase {
 
     /**
-     * @brief Convert nanoseconds to a human-readable string representation.
-     *
-     * @param nanosec The duration in nanoseconds.
-     * @return std::string The duration in a human-readable format.
-     */
-    inline std::string nanosec_to_time_str(double nanosec) {
-        double sec_int = nanosec;
-
-        std::string unit = "ns";
-
-        if (sec_int > 2000) {
-            unit = "us";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "s";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ks";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Gs";
-            sec_int /= 1000;
-        }
-
-        return shambase::format_printf("%4.2f", sec_int) + " " + unit;
-    }
-
-    /**
      * @brief Class Timer measures the time elapsed since the timer was started.
      */
     class Timer {
@@ -119,7 +75,10 @@ namespace shambase {
          * @brief Converts the stored nanosecond time to a string representation.
          * @return std::string A string representation of the elapsed time.
          */
-        inline std::string get_time_str() const { return nanosec_to_time_str(nanosec); }
+        inline std::string get_time_str() const {
+            auto res = sham::to_human_readable(nanosec * 1e-9);
+            return sham::format("{:.2f} {}s", res.value, res.prefix);
+        }
 
         /**
          * @brief Converts the stored nanosecond time to a floating point representation in seconds.

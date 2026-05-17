@@ -19,6 +19,7 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
 #include "sham/format/format.hpp"
+#include "sham/format/human_readable.hpp"
 #include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -73,32 +74,16 @@ namespace shambase {
 
     /**
      * @brief given a sizeof value return a readble string
-     * Example : readable_sizeof(1024*1024*1024) -> "1.00 GB"
+     * Example : readable_sizeof(1e9) -> "1.00 GB"
+     *
+     * Use to be in base 1024 but was error prone
      *
      * @param size the size
      * @return std::string the formated string
      */
     inline std::string readable_sizeof(double size) {
-
-        i32 i = 0;
-
-        using namespace std::string_literals;
-        const std::array units{"B"s, "kB"s, "MB"s, "GB"s, "TB"s, "PB"s, "EB"s, "ZB"s, "YB"s};
-
-        if (size >= 0) {
-            while (size > 1024) {
-                size /= 1024;
-                i++;
-            }
-        } else {
-            i = 9;
-        }
-
-        if (i > 8) {
-            return format_printf("%s", "err val");
-        } else {
-            return format_printf("%.2f %s", size, units[i]);
-        }
+        auto res = sham::to_human_readable<false>(size);
+        return sham::format("{:.2f} {}B", res.value, res.prefix);
     }
 
     /**

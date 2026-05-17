@@ -16,8 +16,11 @@
  *
  */
 
+#include <source_location>
 #include <string_view>
+#include <functional>
 #include <optional>
+#include <stdexcept>
 
 namespace sham::term {
 
@@ -28,6 +31,10 @@ namespace sham::term {
         std::optional<std::string_view> CLICOLOR_FORCE;
     };
 
-    void parse_terminal_support(TermSupportEnvVars vars);
+    using term_parse_callback_t
+        = std::function<std::runtime_error(const char *what, std::source_location where)>;
+
+    // TODO is runtime_error the right excepotion ?
+    void parse_terminal_support(TermSupportEnvVars vars, term_parse_callback_t error_callback);
 
 } // namespace sham::term

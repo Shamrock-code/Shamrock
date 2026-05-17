@@ -14,6 +14,7 @@
  *
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
@@ -25,6 +26,7 @@
 #include "shamcmdopt/env.hpp"
 #include <string_view>
 #include <optional>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -81,12 +83,19 @@ namespace shamcmdopt {
             return std::nullopt;
         };
 
-        sham::term::parse_terminal_support({
-            .TERM           = to_opt_str_view(TERM),
-            .COLORTERM      = to_opt_str_view(COLORTERM),
-            .NO_COLOR       = to_opt_str_view(NO_COLOR),
-            .CLICOLOR_FORCE = to_opt_str_view(CLICOLOR_FORCE),
-        });
+        auto term_parse_error_callback
+            = [](const char *what, std::source_location where) -> std::runtime_error {
+            return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
+        };
+
+        sham::term::parse_terminal_support(
+            {
+                .TERM           = to_opt_str_view(TERM),
+                .COLORTERM      = to_opt_str_view(COLORTERM),
+                .NO_COLOR       = to_opt_str_view(NO_COLOR),
+                .CLICOLOR_FORCE = to_opt_str_view(CLICOLOR_FORCE),
+            },
+            term_parse_error_callback);
 
         if (has_opt_nocolor) {
             shambase::term_colors::disable_colors();

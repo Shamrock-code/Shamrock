@@ -23,7 +23,5 @@ add_library(shamterm::shamterm ALIAS shamterm)
 
 target_include_directories(
     shamterm PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-                      "$<INSTALL_INTERFACE:include>"
+                    "$<INSTALL_INTERFACE:include>"
 )
-
-

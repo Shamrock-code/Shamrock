@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shamcmdopt CXX C)
 
-set(Sources src/details/generic_opts.cpp src/cmdopt.cpp src/env.cpp src/ci_env.cpp )
+set(Sources src/details/generic_opts.cpp src/cmdopt.cpp src/env.cpp src/ci_env.cpp)
 
 if(SHAMROCK_USE_SHARED_LIB)
     message("-- adding shamcmdopt target (Shared lib)")

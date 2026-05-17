@@ -16,9 +16,7 @@
 
 #include "sham/term/color_env.hpp"
 #include "sham/term/color.hpp"
-#include <source_location>
 #include <string_view>
-#include <stdexcept>
 #include <vector>
 
 namespace {
@@ -71,7 +69,8 @@ namespace {
 
 namespace sham::term {
 
-    void parse_terminal_support(TermSupportEnvVars vars, term_parse_callback_t error_callback) {
+    void parse_terminal_support(
+        TermSupportEnvVars vars, const term_parse_callback_t &error_callback) {
         if (term_support_color(vars)) {
             enable_colors();
         } else {

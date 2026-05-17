@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shamterm CXX C)
 
-set(sources src/tty.cpp src/color.cpp src/color_env.cpp)
+set(sources src/tty.cpp src/tty_env.cpp src/color.cpp src/color_env.cpp)
 
 if(SHAMROCK_USE_SHARED_LIB)
     message("-- adding shamterm target (Shared lib)")

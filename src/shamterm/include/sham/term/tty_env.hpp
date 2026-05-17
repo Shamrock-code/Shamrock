@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file color_env.hpp
+ * @file tty_env.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -24,18 +24,14 @@
 
 namespace sham::term {
 
-    struct TermSupportEnvVars {
-        std::optional<std::string_view> TERM;
-        std::optional<std::string_view> COLORTERM;
-        std::optional<std::string_view> NO_COLOR;
-        std::optional<std::string_view> CLICOLOR_FORCE;
+    struct TtyEnvVars {
+        std::optional<std::string_view> SHAMTTYCOL;
     };
 
     using term_parse_callback_t
         = std::function<std::runtime_error(const char *what, std::source_location where)>;
 
     // TODO is runtime_error the right excepotion ?
-    void parse_terminal_support(
-        TermSupportEnvVars vars, const term_parse_callback_t &error_callback);
+    void parse_tty_env_vars(TtyEnvVars vars, const term_parse_callback_t &error_callback);
 
 } // namespace sham::term

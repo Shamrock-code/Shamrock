@@ -21,6 +21,7 @@
 #include "shambase/term_colors.hpp"
 #include "sham/term/color_env.hpp"
 #include "sham/term/tty.hpp"
+#include "sham/term/tty_env.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
@@ -115,22 +116,22 @@ namespace shamcmdopt {
     void process_tty() {
         auto res = getenv_str("SHAMTTYCOL");
 
-        int min_sz = 10;
-        if (res) {
-            try {
-                try {
-                    int val = std::stoi(*res);
-                    if (val < min_sz) {
-                        val = min_sz;
-                    }
-                    sham::term::set_tty_columns(val);
-                } catch (const std::invalid_argument &a) {
-                    shambase::println("Error : SHAMTTYCOL is not an integer");
-                }
-            } catch (const std::out_of_range &a) {
-                shambase::println("Error : SHAMTTYCOL is out of range");
+        // TODO this should not be required
+        auto to_opt_str_view
+            = [](std::optional<std::string> &in) -> std::optional<std::string_view> {
+            if (in) {
+                return *in;
             }
-        }
+            return std::nullopt;
+        };
+
+        auto term_parse_error_callback
+            = [](const char *what, std::source_location where) -> std::runtime_error {
+            return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
+        };
+
+        sham::term::parse_tty_env_vars(
+            sham::term::TtyEnvVars{.SHAMTTYCOL = to_opt_str_view(res)}, term_parse_error_callback);
     }
 
     void process_cmdopt_generic_opts() {

@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shamcmdopt CXX C)
 
-set(Sources src/details/generic_opts.cpp src/cmdopt.cpp src/env.cpp src/ci_env.cpp src/tty.cpp)
+set(Sources src/details/generic_opts.cpp src/cmdopt.cpp src/env.cpp src/ci_env.cpp )
 
 if(SHAMROCK_USE_SHARED_LIB)
     message("-- adding shamcmdopt target (Shared lib)")
@@ -20,6 +20,7 @@ else()
 endif()
 
 target_link_libraries(shamcmdopt PUBLIC shambase)
+target_link_libraries(shamcmdopt PUBLIC shamterm)
 
 target_include_directories(
     shamcmdopt PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"

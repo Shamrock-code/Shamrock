@@ -18,10 +18,10 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
+#include "sham/term/tty.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
 #include <string_view>
 #include <vector>
 
@@ -122,7 +122,7 @@ namespace shamcmdopt {
         } else if (has_envvar_color) {
             shambase::term_colors::enable_colors();
         } else {
-            if (term_support_color() && is_a_tty()) {
+            if (term_support_color() && sham::term::is_a_tty()) {
                 shambase::term_colors::enable_colors();
             } else {
                 shambase::term_colors::disable_colors();
@@ -149,7 +149,7 @@ namespace shamcmdopt {
                     if (val < min_sz) {
                         val = min_sz;
                     }
-                    set_tty_columns(val);
+                    sham::term::set_tty_columns(val);
                 } catch (const std::invalid_argument &a) {
                     shambase::println("Error : SHAMTTYCOL is not an integer");
                 }
@@ -169,7 +169,7 @@ namespace shamcmdopt {
 
             shambase::println("\nEnv deduced vars :");
 
-            if (is_a_tty()) {
+            if (sham::term::is_a_tty()) {
                 shambase::println("  isatty = Yes");
             } else {
                 shambase::println("  isatty = No");
@@ -182,7 +182,10 @@ namespace shamcmdopt {
             }
 
             shambase::println(
-                shambase::format("  tty size = {}x{}", get_tty_lines(), get_tty_columns()));
+                shambase::format(
+                    "  tty size = {}x{}",
+                    sham::term::get_tty_lines(),
+                    sham::term::get_tty_columns()));
         }
     }
 

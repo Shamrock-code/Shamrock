@@ -31,6 +31,14 @@
 #include <string>
 #include <vector>
 
+namespace {
+
+    auto term_parse_error_callback(const char *what, std::source_location where)
+        -> std::runtime_error {
+        return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
+    };
+} // namespace
+
 namespace shamcmdopt {
 
     void register_cmdopt_generic_opts() {
@@ -70,31 +78,17 @@ namespace shamcmdopt {
                 "You can not pass --nocolor and --color simultaneously");
         }
 
-        auto TERM           = getenv_str("TERM");
-        auto COLORTERM      = getenv_str("COLORTERM");
-        auto NO_COLOR       = getenv_str("NO_COLOR");
-        auto CLICOLOR_FORCE = getenv_str("CLICOLOR_FORCE");
-
-        // TODO this should not be required
-        auto to_opt_str_view
-            = [](std::optional<std::string> &in) -> std::optional<std::string_view> {
-            if (in) {
-                return *in;
-            }
-            return std::nullopt;
-        };
-
-        auto term_parse_error_callback
-            = [](const char *what, std::source_location where) -> std::runtime_error {
-            return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
-        };
+        auto TERM           = getenv_str_view("TERM");
+        auto COLORTERM      = getenv_str_view("COLORTERM");
+        auto NO_COLOR       = getenv_str_view("NO_COLOR");
+        auto CLICOLOR_FORCE = getenv_str_view("CLICOLOR_FORCE");
 
         sham::term::parse_terminal_support(
             {
-                .TERM           = to_opt_str_view(TERM),
-                .COLORTERM      = to_opt_str_view(COLORTERM),
-                .NO_COLOR       = to_opt_str_view(NO_COLOR),
-                .CLICOLOR_FORCE = to_opt_str_view(CLICOLOR_FORCE),
+                .TERM           = TERM,
+                .COLORTERM      = COLORTERM,
+                .NO_COLOR       = NO_COLOR,
+                .CLICOLOR_FORCE = CLICOLOR_FORCE,
             },
             term_parse_error_callback);
 
@@ -114,24 +108,10 @@ namespace shamcmdopt {
      * the value is not an integer or is out of range, an error message is printed.
      */
     void process_tty() {
-        auto res = getenv_str("SHAMTTYCOL");
-
-        // TODO this should not be required
-        auto to_opt_str_view
-            = [](std::optional<std::string> &in) -> std::optional<std::string_view> {
-            if (in) {
-                return *in;
-            }
-            return std::nullopt;
-        };
-
-        auto term_parse_error_callback
-            = [](const char *what, std::source_location where) -> std::runtime_error {
-            return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
-        };
+        auto SHAMTTYCOL = getenv_str_view("SHAMTTYCOL");
 
         sham::term::parse_tty_env_vars(
-            sham::term::TtyEnvVars{.SHAMTTYCOL = to_opt_str_view(res)}, term_parse_error_callback);
+            sham::term::TtyEnvVars{.SHAMTTYCOL = SHAMTTYCOL}, term_parse_error_callback);
     }
 
     void process_cmdopt_generic_opts() {

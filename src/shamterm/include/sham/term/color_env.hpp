@@ -17,11 +17,8 @@
  */
 
 #include "sham/term/error_callback.hpp"
-#include <source_location>
 #include <string_view>
-#include <functional>
 #include <optional>
-#include <stdexcept>
 
 namespace sham::term {
 

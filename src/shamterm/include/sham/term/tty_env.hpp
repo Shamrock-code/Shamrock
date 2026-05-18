@@ -17,17 +17,14 @@
  */
 
 #include "sham/term/error_callback.hpp"
-#include <source_location>
 #include <string_view>
-#include <functional>
 #include <optional>
-#include <stdexcept>
 
 namespace sham::term {
 
     /// Holds terminal environment variables collected from the environment.
     struct TtyEnvVars {
-        /// The SHAMTTYCOL environment variable — a colon-separated list of terminal colors.
+        /// The SHAMTTYCOL environment variable to set the terminal width (tty columns).
         std::optional<std::string_view> SHAMTTYCOL;
     };
 

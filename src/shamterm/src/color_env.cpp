@@ -46,7 +46,7 @@ namespace {
     bool term_support_color(sham::term::TermSupportEnvVars vars) {
 
         if (vars.TERM) {
-            for (auto term : color_suport_term) {
+            for (auto term : color_support_term) {
                 if (*vars.TERM == term) {
                     return true;
                 }

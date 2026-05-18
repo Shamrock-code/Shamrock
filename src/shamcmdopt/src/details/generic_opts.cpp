@@ -34,9 +34,10 @@
 namespace {
 
     auto term_parse_error_callback(const char *what, std::source_location where)
-        -> std::runtime_error {
-        return shambase::make_except_with_loc<std::runtime_error>(what, SourceLocation{where});
+        -> std::invalid_argument {
+        return shambase::make_except_with_loc<std::invalid_argument>(what, SourceLocation{where});
     };
+
 } // namespace
 
 namespace shamcmdopt {

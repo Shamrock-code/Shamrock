@@ -10,25 +10,19 @@
 #pragma once
 
 /**
- * @file tty_env.hpp
+ * @file error_callback.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */
 
-#include "sham/term/error_callback.hpp"
 #include <source_location>
-#include <string_view>
 #include <functional>
-#include <optional>
 #include <stdexcept>
 
 namespace sham::term {
 
-    struct TtyEnvVars {
-        std::optional<std::string_view> SHAMTTYCOL;
-    };
+    using term_parse_callback_t
+        = std::function<std::invalid_argument(const char *what, std::source_location where)>;
 
-    void parse_tty_env_vars(TtyEnvVars vars, const term_parse_callback_t &error_callback);
-
-} // namespace sham::term
+}

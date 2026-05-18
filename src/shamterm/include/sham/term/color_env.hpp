@@ -16,6 +16,7 @@
  *
  */
 
+#include "sham/term/error_callback.hpp"
 #include <source_location>
 #include <string_view>
 #include <functional>
@@ -31,10 +32,6 @@ namespace sham::term {
         std::optional<std::string_view> CLICOLOR_FORCE;
     };
 
-    using term_parse_callback_t
-        = std::function<std::runtime_error(const char *what, std::source_location where)>;
-
-    // TODO is runtime_error the right excepotion ?
     void parse_terminal_support(
         TermSupportEnvVars vars, const term_parse_callback_t &error_callback);
 

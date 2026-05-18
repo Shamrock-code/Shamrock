@@ -13,7 +13,7 @@
  * @file env.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Environment variable parsing for terminal color and size configuration (TERM, COLORTERM,
- * NO_COLOR, CLICOLOR_FORCE, SHAMTTYCOL)
+ * NO_COLOR, CLICOLOR_FORCE, COLUMN)
  *
  */
 
@@ -24,7 +24,7 @@
 namespace sham::term {
 
     /// @brief Holds optional terminal environment variables (TERM, COLORTERM, NO_COLOR,
-    /// CLICOLOR_FORCE, SHAMTTYCOL)
+    /// CLICOLOR_FORCE, COLUMN)
     struct TermEnvVars {
         std::optional<std::string_view> TERM;
         std::optional<std::string_view> COLORTERM;

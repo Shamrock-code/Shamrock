@@ -28,16 +28,14 @@ namespace sham::term {
         int min_sz = 10;
         if (res) {
             try {
-                try {
-                    int val = std::stoi(std::string(*res));
-                    if (val < min_sz) {
-                        val = min_sz;
-                    }
-                    sham::term::set_tty_columns(val);
-                } catch (const std::invalid_argument &a) {
-                    throw error_callback(
-                        "Error : SHAMTTYCOL is not an integer", std::source_location::current());
+                int val = std::stoi(std::string(*res));
+                if (val < min_sz) {
+                    val = min_sz;
                 }
+                sham::term::set_tty_columns(val);
+            } catch (const std::invalid_argument &a) {
+                throw error_callback(
+                    "Error : SHAMTTYCOL is not an integer", std::source_location::current());
             } catch (const std::out_of_range &a) {
                 throw error_callback(
                     "Error : SHAMTTYCOL is out of range", std::source_location::current());

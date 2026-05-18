@@ -22,8 +22,9 @@
 
 namespace sham::term {
 
-    /// @brief Callback signature for parsing error reporting (returns what, receives source location)
+    /// @brief Callback signature for parsing error reporting (returns what, receives source
+    /// location)
     using term_parse_callback_t
         = std::function<std::invalid_argument(const char *what, std::source_location where)>;
 
-}
+} // namespace sham::term

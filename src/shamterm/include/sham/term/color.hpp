@@ -18,6 +18,9 @@
 
 namespace sham::term {
 
+    /**
+     * @brief Terminal text styling escape sequences (bold, faint, underline, blink, reset).
+     */
     namespace style {
         /// escape sequence to reset the terminal text formatting.
         const char *reset();
@@ -31,6 +34,9 @@ namespace sham::term {
         const char *blink();
     } // namespace style
 
+    /**
+     * @brief 8 bit 8-color palette escape sequences.
+     */
     namespace colors_8b {
         /// Escape sequence to set black text color.
         const char *black();
@@ -50,13 +56,19 @@ namespace sham::term {
         const char *white();
     } // namespace colors_8b
 
-    /// Enable colors
+    /**
+     * @brief Enable terminal color output.
+     */
     void enable_colors();
 
-    /// Disable all colors
+    /**
+     * @brief Disable all terminal color output.
+     */
     void disable_colors();
 
-    /// Are colors enabled
+    /**
+     * @brief Query whether terminal color output is currently enabled.
+     */
     bool are_colors_enabled();
 
 } // namespace sham::term

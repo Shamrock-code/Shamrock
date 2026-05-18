@@ -25,10 +25,13 @@
 
 namespace sham::term {
 
+    /// Holds terminal environment variables collected from the environment.
     struct TtyEnvVars {
+        /// The SHAMTTYCOL environment variable — a colon-separated list of terminal colors.
         std::optional<std::string_view> SHAMTTYCOL;
     };
 
+    /// Parses terminal environment variables, invoking error_callback on invalid input.
     void parse_tty_env_vars(TtyEnvVars vars, const term_parse_callback_t &error_callback);
 
 } // namespace sham::term

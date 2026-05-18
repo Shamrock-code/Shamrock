@@ -25,6 +25,7 @@
 
 namespace sham::term {
 
+    /// @brief Holds optional environment variable values related to terminal color support
     struct TermSupportEnvVars {
         std::optional<std::string_view> TERM;
         std::optional<std::string_view> COLORTERM;
@@ -32,6 +33,7 @@ namespace sham::term {
         std::optional<std::string_view> CLICOLOR_FORCE;
     };
 
+    /// @brief Determines terminal color support based on environment variables
     void parse_terminal_support(
         TermSupportEnvVars vars, const term_parse_callback_t &error_callback);
 

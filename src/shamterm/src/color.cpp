@@ -10,7 +10,7 @@
 /**
  * @file color.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Terminal color escape sequence constants and enable/disable control implementation
  *
  */
 

@@ -12,7 +12,7 @@
 /**
  * @file color.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Terminal color escape sequences and enable/disable control
  *
  */
 

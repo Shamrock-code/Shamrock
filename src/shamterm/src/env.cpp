@@ -8,14 +8,15 @@
 // -------------------------------------------------------//
 
 /**
- * @file color_env.cpp
+ * @file env.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief This file handler generic cli & env options
+ * @brief Terminal color support detection and COLUMN parsing from environment variables
  *
  */
 
-#include "sham/term/color_env.hpp"
+#include "sham/term/env.hpp"
 #include "sham/term/color.hpp"
+#include "sham/term/tty.hpp"
 #include <string_view>
 #include <vector>
 
@@ -43,7 +44,7 @@ namespace {
      * @return true
      * @return false
      */
-    bool term_support_color(sham::term::TermSupportEnvVars vars) {
+    bool term_support_color(sham::term::TermEnvVars vars) {
 
         if (vars.TERM) {
             for (auto term : color_support_term) {
@@ -69,8 +70,7 @@ namespace {
 
 namespace sham::term {
 
-    void parse_terminal_support(
-        TermSupportEnvVars vars, const term_parse_callback_t &error_callback) {
+    void parse_terminal_support(TermEnvVars vars, const term_parse_callback_t &error_callback) {
         if (term_support_color(vars)) {
             enable_colors();
         } else {
@@ -92,6 +92,25 @@ namespace sham::term {
 
         if (has_envvar_color) {
             enable_colors();
+        }
+
+        auto &res = vars.COLUMN;
+
+        int min_sz = 10;
+        if (res) {
+            try {
+                int val = std::stoi(std::string(*res));
+                if (val < min_sz) {
+                    val = min_sz;
+                }
+                sham::term::set_tty_columns(val);
+            } catch (const std::invalid_argument &a) {
+                throw error_callback(
+                    "Error : COLUMN is not an integer", std::source_location::current());
+            } catch (const std::out_of_range &a) {
+                throw error_callback(
+                    "Error : COLUMN is out of range", std::source_location::current());
+            }
         }
     }
 

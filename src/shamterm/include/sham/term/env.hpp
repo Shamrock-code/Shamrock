@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file color_env.hpp
+ * @file env.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Environment variable parsing for terminal color and size configuration (TERM, COLORTERM, NO_COLOR, CLICOLOR_FORCE, SHAMTTYCOL)
  *
  */
 
@@ -22,16 +22,16 @@
 
 namespace sham::term {
 
-    /// @brief Holds optional environment variable values related to terminal color support
-    struct TermSupportEnvVars {
+    /// @brief Holds optional terminal environment variables (TERM, COLORTERM, NO_COLOR, CLICOLOR_FORCE, SHAMTTYCOL)
+    struct TermEnvVars {
         std::optional<std::string_view> TERM;
         std::optional<std::string_view> COLORTERM;
         std::optional<std::string_view> NO_COLOR;
         std::optional<std::string_view> CLICOLOR_FORCE;
+        std::optional<std::string_view> COLUMN;
     };
 
-    /// @brief Determines terminal color support based on environment variables
-    void parse_terminal_support(
-        TermSupportEnvVars vars, const term_parse_callback_t &error_callback);
+    /// @brief Parses terminal environment variables to determine color support and set terminal size
+    void parse_terminal_support(TermEnvVars vars, const term_parse_callback_t &error_callback);
 
 } // namespace sham::term

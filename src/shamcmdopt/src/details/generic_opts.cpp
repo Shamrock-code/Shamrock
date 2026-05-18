@@ -19,9 +19,8 @@
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
-#include "sham/term/color_env.hpp"
+#include "sham/term/env.hpp"
 #include "sham/term/tty.hpp"
-#include "sham/term/tty_env.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
@@ -52,7 +51,7 @@ namespace shamcmdopt {
         register_env_var_doc("CLICOLOR_FORCE", "Enable colors (if no color cli args are passed)");
         register_env_var_doc("TERM", "Terminal emulator identifier");
         register_env_var_doc("COLORTERM", "Terminal color support identifier");
-        register_env_var_doc("SHAMTTYCOL", "Set tty assumed column count");
+        register_env_var_doc("COLUMN", "Set tty assumed column count");
     }
 
     /**
@@ -69,7 +68,7 @@ namespace shamcmdopt {
      *     returns true
      *
      */
-    void process_colors() {
+    void process_env_vars() {
 
         bool has_opt_nocolor = has_option("--nocolor");
         bool has_opt_color   = has_option("--color");
@@ -84,12 +83,15 @@ namespace shamcmdopt {
         auto NO_COLOR       = getenv_str_view("NO_COLOR");
         auto CLICOLOR_FORCE = getenv_str_view("CLICOLOR_FORCE");
 
+        auto COLUMN = getenv_str_view("COLUMN");
+
         sham::term::parse_terminal_support(
             {
                 .TERM           = TERM,
                 .COLORTERM      = COLORTERM,
                 .NO_COLOR       = NO_COLOR,
                 .CLICOLOR_FORCE = CLICOLOR_FORCE,
+                .COLUMN         = COLUMN,
             },
             term_parse_error_callback);
 
@@ -100,25 +102,9 @@ namespace shamcmdopt {
         }
     }
 
-    /**
-     * @brief Process the SHAMTTYCOL environment variable to set the number of columns for the
-     * terminal.
-     *
-     * If the variable is set, its value is parsed as an integer and used to set the terminal
-     * columns. If the value is less than the minimum size (10), it is set to the minimum size. If
-     * the value is not an integer or is out of range, an error message is printed.
-     */
-    void process_tty() {
-        auto SHAMTTYCOL = getenv_str_view("SHAMTTYCOL");
-
-        sham::term::parse_tty_env_vars(
-            sham::term::TtyEnvVars{.SHAMTTYCOL = SHAMTTYCOL}, term_parse_error_callback);
-    }
-
     void process_cmdopt_generic_opts() {
 
-        process_colors();
-        process_tty();
+        process_env_vars();
 
         if (has_option("--help")) {
             print_help();

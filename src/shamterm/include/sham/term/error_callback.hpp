@@ -12,7 +12,7 @@
 /**
  * @file error_callback.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Shared callback type definition for parsing error handling
  *
  */
 

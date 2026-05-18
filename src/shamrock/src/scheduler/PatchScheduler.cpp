@@ -974,10 +974,10 @@ std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::ga
 
             send_payloads.push_back(
                 Message{
-                    std::make_unique<shamcomm::CommunicationBuffer>(
+                    .buf = std::make_unique<shamcomm::CommunicationBuffer>(
                         std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
-                    0,
-                    i32(i)});
+                    .rank = 0,
+                    .tag  = i32(i)});
         }
     }
 
@@ -990,9 +990,9 @@ std::vector<std::unique_ptr<shamrock::patch::PatchDataLayer>> PatchScheduler::ga
         for (u32 i = 0; i < plist.size(); i++) {
             recv_payloads.push_back(
                 Message{
-                    std::unique_ptr<shamcomm::CommunicationBuffer>{},
-                    i32(plist[i].node_owner_id),
-                    i32(i)});
+                    .buf  = std::unique_ptr<shamcomm::CommunicationBuffer>{},
+                    .rank = i32(plist[i].node_owner_id),
+                    .tag  = i32(i)});
         }
     }
 

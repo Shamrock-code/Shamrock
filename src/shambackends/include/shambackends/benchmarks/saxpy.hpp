@@ -155,10 +155,10 @@ namespace sham::benchmarks {
         }
 
         return {
-            SourceLocation{}.loc.function_name(),
-            seconds,
-            double(N) * load_size * 3 / seconds / 1e9,
-            u64(N) * u64(load_size) * 2_u64};
+            .func_name = SourceLocation{}.loc.function_name(),
+            .seconds   = seconds,
+            .bandwidth = double(N) * load_size * 3 / seconds / 1e9,
+            .byte_used = u64(N) * u64(load_size) * 2_u64};
     }
 
 } // namespace sham::benchmarks

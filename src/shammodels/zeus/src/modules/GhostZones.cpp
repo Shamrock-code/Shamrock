@@ -410,7 +410,11 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
                 pdat_new.check_field_obj_cnt_match();
 
-                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+                return MergedPatchData{
+                    .original_elements = or_elem,
+                    .total_elements    = total_elements,
+                    .pdat              = std::move(pdat_new),
+                    .pdl               = ghost_layout};
             },
             [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();

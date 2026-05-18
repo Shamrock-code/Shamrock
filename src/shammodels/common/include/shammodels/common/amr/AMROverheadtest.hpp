@@ -353,11 +353,12 @@ class AMRTestModel {
                 tree.tree_struct,
                 pdat.get_obj_cnt(),
                 InteractionCrit{
-                    {},
-                    tree,
-                    pdat,
-                    pdat.get_field<u64_3>(0).get_buf().copy_to_sycl_buffer(),
-                    pdat.get_field<u64_3>(1).get_buf().copy_to_sycl_buffer()});
+                    .bounds             = {},
+                    .tree               = tree,
+                    .pdat               = pdat,
+                    .buf_cell_low_bound = pdat.get_field<u64_3>(0).get_buf().copy_to_sycl_buffer(),
+                    .buf_cell_high_bound
+                    = pdat.get_field<u64_3>(1).get_buf().copy_to_sycl_buffer()});
 
             q.submit([&](sycl::handler &cgh) {
                 auto walker        = walk.get_access(cgh);

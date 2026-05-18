@@ -50,7 +50,9 @@ namespace shamrock::solvergraph {
         }
 
         Edges get_edges() {
-            return Edges{get_ro_edge<IPatchDataLayerRefs>(0), get_rw_edge<PatchDataLayerEdge>(0)};
+            return Edges{
+                .original = get_ro_edge<IPatchDataLayerRefs>(0),
+                .target   = get_rw_edge<PatchDataLayerEdge>(0)};
         }
 
         void _impl_evaluate_internal();

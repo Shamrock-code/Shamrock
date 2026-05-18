@@ -39,7 +39,7 @@ ON_PYTHON_INIT {
 
     py::class_<shamalgs::impl_param>(shamalgs_module, "impl_param")
         .def(py::init([]() {
-            return shamalgs::impl_param{"", ""};
+            return shamalgs::impl_param{.impl_name = "", .params = ""};
         }))
         .def_readwrite(
             "impl_name",

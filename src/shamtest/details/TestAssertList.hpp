@@ -67,7 +67,11 @@ namespace shamtest::details {
                 comment = "left=" + std::to_string(a) + " right=" + std::to_string(b);
             }
 
-            asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
+            asserts.push_back(
+                TestAssert{
+                    .value   = t,
+                    .name    = std::move(assert_name),
+                    .comment = gen_comment(comment, loc)});
         }
 
         /// Assert equal on an array of values

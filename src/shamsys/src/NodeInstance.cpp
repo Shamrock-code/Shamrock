@@ -331,7 +331,7 @@ namespace shamsys::instance {
 
             // shamlog_debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            init_sycl_mpi(sycl_cfg, {argc, argv, forced_state});
+            init_sycl_mpi(sycl_cfg, {.argc = argc, .argv = argv, .forced_state = forced_state});
 
         } else {
 

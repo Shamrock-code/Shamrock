@@ -466,7 +466,13 @@ namespace shamalgs::collective {
 
                 auto &rq = rqs.new_request();
 
-                rqs_infos.push_back({sender, receiver, payload->get_size(), tag, true, false});
+                rqs_infos.push_back(
+                    {.sender   = sender,
+                     .receiver = receiver,
+                     .size     = payload->get_size(),
+                     .tag      = tag,
+                     .is_send  = true,
+                     .is_recv  = false});
 
                 SHAM_ASSERT(payload->get_size() == comm_sizes_loc[send_idx]);
 
@@ -496,7 +502,13 @@ namespace shamalgs::collective {
 
                 auto &rq = rqs.new_request();
 
-                rqs_infos.push_back({sender, receiver, u64(comm_sizes[i]), tag, false, true});
+                rqs_infos.push_back(
+                    {.sender   = sender,
+                     .receiver = receiver,
+                     .size     = u64(comm_sizes[i]),
+                     .tag      = tag,
+                     .is_send  = false,
+                     .is_recv  = true});
 
                 // logger::raw_ln(shambase::format(
                 //     "[{}] recv {} bytes from rank {}, tag {}",

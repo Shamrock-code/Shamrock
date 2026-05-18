@@ -228,7 +228,7 @@ namespace shamrock {
         std::unordered_map<u64, PatchFileOffset> off_table;
 
         for (u32 i = 0; i < all_bytecounts.size(); i++) {
-            off_table[all_pids[i]] = {all_offsets[i], all_bytecounts[i]};
+            off_table[all_pids[i]] = {.offset = all_offsets[i], .bytecount = all_bytecounts[i]};
         }
 
         for (const auto &p : sched.patch_list.local) {

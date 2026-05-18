@@ -24,7 +24,7 @@ namespace {
     /**
      * @brief List of known terminal ident that support colors
      */
-    static const std::vector<std::string_view> color_suport_term{
+    static const std::vector<std::string_view> color_support_term{
         "xterm",
         "xterm-256",
         "xterm-256color",

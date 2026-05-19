@@ -157,8 +157,7 @@ namespace shamphys {
      * @brief Convert interface fluxes to a mass-bin coagulation source term
      *
      * Applies the DG \f$k=0\f$ divergence operator (finite difference across bin
-     * boundaries) to obtain the source term \f$S_{\rm coag}\f$ in the dust continuity
-     * equation:
+     * boundaries) to obtain the source term \f$S_{\rm coag}\f$ in the conservative form of the Smoluchowski equation:
      *
      * \f[
      *     S_{\rm coag}[0] = -\mathrm{flux}[0], \qquad

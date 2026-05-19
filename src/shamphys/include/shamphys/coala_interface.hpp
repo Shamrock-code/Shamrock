@@ -15,7 +15,7 @@
  * @brief COALA dust coagulation helpers for a DG \f$k=0\f$ (piecewise-constant) basis
  *
  * C++ counterparts of the COALA Python routines used to build dust coagulation source
- * terms in the mass-bin continuity equation (Lombart et al., 2021). The reference
+ * terms in the conservative form of the Smoluchowski equation (Lombart et al., 2021). The reference
  * implementation lives in
  * `src/pylib/shamrock/external/coala/interface_coala_shamrock.py` and
  * `src/pylib/shamrock/external/coala/generate_flux_intflux.py`.

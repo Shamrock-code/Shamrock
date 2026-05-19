@@ -48,10 +48,8 @@ namespace shamphys {
      * @tparam A2        `std::mdspan` accessor type for @p gij
      * @param rho_dust   Dust density accessor (one value per bin)
      * @param rho_eps    Density threshold below which \f$g_j\f$ is set to zero
-     * @param massgrid   Rank-1 view of mass-bin edges; must expose indices
-     *                   \f$0 \ldots \f$ `gij.extent(0)` so that
-     *                   `massgrid[j + 1] - massgrid[j]` is defined for every bin \f$j\f$
-     * @param gij        Rank-1 output view of length `massgrid.extent(0)`; filled in place
+     * @param massgrid   Rank-1 view of mass-bin edges (length `gij.extent(0) + 1`)
+     * @param gij        Rank-1 output view of DG coefficients (one per bin); filled in place
      */
     template<class T, class RhoGetter, class E1, class L1, class A1, class E2, class L2, class A2>
     inline void compute_gij_k0(
@@ -63,9 +61,9 @@ namespace shamphys {
         static_assert(E1::rank() == 1, "massgrid must be rank 1");
         static_assert(E2::rank() == 1, "gij must be rank 1");
 
-        SHAM_ASSERT(massgrid.extent(0) == gij.extent(0));
+        SHAM_ASSERT(massgrid.extent(0) == gij.extent(0) + 1);
 
-        for (int j = 0; j < massgrid.extent(0); j++) {
+        for (std::size_t j = 0; j < gij.extent(0); ++j) {
             T rho_d = rho_dust(j);
             gij(j)  = (rho_d > rho_eps) ? rho_d / (massgrid[j + 1] - massgrid[j]) : 0;
         }
@@ -134,12 +132,10 @@ namespace shamphys {
 
         // --- Runtime extent checks ---
         SHAM_ASSERT(gij.extent(0) == nbins);
-        SHAM_ASSERT(gij.extent(0) == nbins);
-
+        SHAM_ASSERT(flux.extent(0) == nbins);
+        SHAM_ASSERT(tensor_tabflux_coag.extent(0) == nbins);
         SHAM_ASSERT(tensor_tabflux_coag.extent(1) == nbins);
         SHAM_ASSERT(tensor_tabflux_coag.extent(2) == nbins);
-
-        SHAM_ASSERT(tensor_tabflux_coag.extent(0) == flux.extent(0));
 
         /*
          * Python version:

@@ -20,8 +20,7 @@
  * `src/pylib/shamrock/external/coala/interface_coala_shamrock.py` and
  * `src/pylib/shamrock/external/coala/generate_flux_intflux.py`.
  *
- * Only the coagulation flux with a ballistic kernel and pair-wise differential
- * velocities is covered here (\f$k=0\f$ approximation).
+ * Only the coagulation flux with \f$k=0\f$ approximation.
  */
 
 #include "shambase/assert.hpp"

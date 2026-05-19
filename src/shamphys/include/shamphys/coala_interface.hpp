@@ -36,7 +36,7 @@ namespace shamphys {
      * For each mass bin \f$j\f$, converts the dust density to the polynomial coefficient
      * \f$g_j = \rho_{\rm d,j} / \Delta m_j\f$ when \f$\rho_{\rm d,j} > \rho_{\rm eps}\f$,
      * and sets \f$g_j = 0\f$ otherwise, with
-     * \f$\Delta m_j = m_{j+1} - m_j\f$ the bin width from consecutive mass-grid edges.
+     * \f$\Delta m_j = massgrid[j+1] - massgrid[j]\f$ the bin width from consecutive mass-grid edges.
      *
      * @tparam T         Floating-point scalar type
      * @tparam RhoGetter Callable `rho_dust(j) -> T` returning dust density in bin \f$j\f$

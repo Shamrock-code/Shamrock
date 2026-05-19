@@ -47,7 +47,7 @@ namespace shamphys {
      * @tparam L2        `std::mdspan` layout type for @p gij
      * @tparam A2        `std::mdspan` accessor type for @p gij
      * @param rho_dust   Dust density accessor (one value per bin)
-     * @param rho_eps    Density threshold below which \f$g_j\f$ is set to zero
+     * @param rho_eps    Density threshold below which rho_dust is set to zero
      * @param massgrid   Rank-1 view of mass-bin edges (length `gij.extent(0) + 1`)
      * @param gij        Rank-1 output view of DG coefficients (one per bin); filled in place
      */

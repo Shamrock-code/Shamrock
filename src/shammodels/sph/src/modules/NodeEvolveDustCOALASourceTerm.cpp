@@ -53,7 +53,6 @@ namespace shammodels::sph::modules {
             const Tscal *__restrict massgrid_ptr,
             const Tscal *__restrict tensor_tabflux_coag,
             // field specific data
-            const Tscal *__restrict hpart,
             const Tscal *__restrict s_j,
             const Tvec *__restrict delta_v_j,
             Tscal *__restrict S_coag) const {
@@ -129,7 +128,6 @@ namespace shammodels::sph::modules {
 
         auto edges = get_edges();
 
-        auto hpart_spans     = edges.hpart.get_spans();
         auto s_j_spans       = edges.s_j.get_spans();
         auto delta_v_j_spans = edges.delta_v_j.get_spans();
 
@@ -162,7 +160,6 @@ namespace shammodels::sph::modules {
                 sham::MultiRef{
                     massgrid_buf,
                     tensor_tabflux_coag_buf,
-                    hpart_spans.get(id_patch),
                     s_j_spans.get(id_patch),
                     delta_v_j_spans.get(id_patch)},
                 sham::MultiRef{S_coag_spans.get(id_patch)},

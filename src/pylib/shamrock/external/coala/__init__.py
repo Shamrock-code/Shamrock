@@ -11,6 +11,7 @@ from .compute_coag import *  # import also solver_DG.py (to port to C++)
 from .exact_solutions_coag import *
 from .generate_tabflux_tabintflux import *
 from .init_massgrid import *
+from .interface_coala_shamrock import *
 
 # Iterate coagulation solver
 from .iterate_coag import *  # Only for coala tests (maybe to port for tests)

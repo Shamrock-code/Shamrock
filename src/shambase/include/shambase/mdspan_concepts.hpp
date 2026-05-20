@@ -11,6 +11,7 @@
 
 /**
  * @file mdspan_concepts.hpp
+ * @author Maxime Lombart (maxime.lombart@cea.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *

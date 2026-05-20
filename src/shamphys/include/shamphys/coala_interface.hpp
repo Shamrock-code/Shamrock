@@ -11,6 +11,7 @@
 
 /**
  * @file coala_interface.hpp
+ * @author Maxime Lombart (maxime.lombart@cea.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief COALA dust coagulation helpers for a DG \f$k=0\f$ (piecewise-constant) basis
  *

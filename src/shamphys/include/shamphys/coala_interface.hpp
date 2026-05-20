@@ -160,4 +160,29 @@ namespace shamphys {
         }
     }
 
+    template<class T, class FuncDv, class FuncRhoDust>
+    void coala_k0_source_term(
+        int nbins,
+        /* inputs */
+        FuncDv &&dv,
+        FuncRhoDust &&rho_dust,
+        T rho_eps,
+        shambase::is_mdspan_rank<1> auto massgrid,
+        shambase::is_mdspan_rank<3> auto tabflux_coag,
+        /* internal */
+        shambase::is_mdspan_rank<1> auto gij,
+        shambase::is_mdspan_rank<1> auto flux,
+        /* output */
+        shambase::is_mdspan_rank<1> auto S_coag) {
+
+        // init the gij coefficients
+        shamphys::compute_gij_k0(rho_dust, rho_eps, massgrid, gij);
+
+        // compute flux for all dust bins
+        shamphys::compute_flux_coag_k0_kdv(nbins, gij, tabflux_coag, dv, flux);
+
+        // compute flux diff and store result
+        shamphys::coala_flux_diff(flux, S_coag);
+    }
+
 } // namespace shamphys

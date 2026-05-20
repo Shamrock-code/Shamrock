@@ -12,12 +12,14 @@
 /**
  * @file NodeMonofluidTVIAddSourceTerm.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Module to add a source term on the dust density to the monofluid s_j derivative
+ * @brief
+ *
  */
 
-#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
@@ -75,16 +77,22 @@ namespace shammodels::sph::modules {
                 sham::DDMultiRef{edges.ds_j_dt.get_spans()},
                 counts,
                 [rhodust_eps](
-                    u32 id,                      // = part_id * nbins + jbin
-                    const Tscal *__restrict S,   // [part_counts * nbins]
-                    const Tscal *__restrict s_j, // [part_counts * nbins]
-                    Tscal *__restrict ds_j_dt    // [part_counts * nbins]
-                ) {
+                    u32 id,
+                    const Tscal *__restrict S,
+                    const Tscal *__restrict s_j,
+                    Tscal *__restrict ds_j_dt) {
                     auto sj = s_j[id];
 
-                    bool valid_div = sj * sj > rhodust_eps;
+                    Tscal ds_j_dt_val = 0;
 
-                    auto ds_j_dt_val = (valid_div) ? S[id] / (2 * sycl::sqrt(sj)) : 0;
+                    if (sj * sj > rhodust_eps) {
+                        ds_j_dt_val = S[id] / (2 * sycl::sqrt(sj));
+                    } else {
+                        // we need this trick otherwise the bin would never start to get filled
+                        // because of the cuttof, so the trick is to add the threshold in the
+                        // denominator. yeah dirty i know i know  ...
+                        ds_j_dt_val = S[id] / (2 * sycl::sqrt(sj + sycl::sqrt(rhodust_eps)));
+                    }
 
                     ds_j_dt[id] += ds_j_dt_val;
                 });
@@ -94,37 +102,6 @@ namespace shammodels::sph::modules {
             return "NodeMonofluidTVIAddSourceTerm";
         };
 
-        inline virtual std::string _impl_get_tex() const {
-            auto part_counts = get_ro_edge_base(0).get_tex_symbol();
-            auto rhodust_eps = get_ro_edge_base(1).get_tex_symbol();
-            auto S           = get_ro_edge_base(2).get_tex_symbol();
-            auto s_j         = get_ro_edge_base(3).get_tex_symbol();
-            auto ds_j_dt     = get_rw_edge_base(0).get_tex_symbol();
-
-            std::string tex = R"tex(
-            Monofluid TVI source term added to the dust surface-density evolution
-
-            \begin{align}
-            {ds_j_dt}_{j,a} &\mathrel{+}= \begin{cases}
-                \dfrac{ {S}_{j,a} }{ 2 \sqrt{ {s_j}_{j,a} } }
-                & \text{if } {s_j}_{j,a}^2 > \rho_{\rm eps} \\
-                0 & \text{otherwise}
-            \end{cases} \\
-            a &\in [0, {part_counts}), \quad j \in [0, N_{\rm bins}) \\
-            \rho_{\rm eps} &= {rhodust_eps}, \quad N_{\rm bins} = {nbins}
-            \end{align}
-            )tex";
-
-            shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{rhodust_eps}", rhodust_eps);
-            shambase::replace_all(tex, "{S}", S);
-            shambase::replace_all(tex, "{s_j}", s_j);
-            shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt);
-            shambase::replace_all(tex, "{nbins}", shambase::format("{}", nbins));
-
-            return tex;
-        };
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shammodels::sph::modules
-
-#undef NODE_MONOFLUID_TVI_ADD_SOURCE_TERM_EDGES

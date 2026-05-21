@@ -112,7 +112,12 @@ namespace shammodels::basegodunov {
             Tscal error_max;
         };
 
-        using mode = std::variant<None, DensityBased, PseudoGradientBased>;
+        struct JeansLengthBased {
+            u32 N_J = 4;
+            Tscal T_0 = 10.;
+        };
+
+        using mode = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased>;
 
         mode config = None{};
         void set_refine_none() { config = None{}; }
@@ -120,6 +125,8 @@ namespace shammodels::basegodunov {
         void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
             config = PseudoGradientBased{error_min, error_max};
         }
+
+        void set_refine_jeans_length_based(u32 N_J, Tscal T_0){config = JeansLengthBased{N_J,T_0};}
 
         bool need_level_zero_compute() { return true; }
         bool need_amr_level_compute() { return true; }
@@ -224,6 +231,7 @@ struct shammodels::basegodunov::SolverConfig {
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
         if (gravity_config.set_G) {
+            logger::raw_ln("G value from code \t", gravity_config.G,"\n\n");
             return 4. * M_PI * gravity_config.G;
         } else {
             auto scal_G = get_constant_G();

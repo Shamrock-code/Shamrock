@@ -29,7 +29,7 @@ namespace {
     using Direction = shammodels::basegodunov::modules::Direction;
 
     /**
-     * @brief Get the 3d, phi's gradient
+     * @brief Get the 3d, minus phi's gradient
      *
      * @tparam T
      * @tparam Tvec
@@ -73,6 +73,7 @@ namespace {
         Tscal phi_zp = get_avg_neigh(graph_iter_zp);
         Tscal phi_zm = get_avg_neigh(graph_iter_zm);
 
+        /* this intermediate state is not require*/
         Tscal delta_phi_x_p = phi_xp - phi_i;
         Tscal delta_phi_y_p = phi_yp - phi_i;
         Tscal delta_phi_z_p = phi_zp - phi_i;

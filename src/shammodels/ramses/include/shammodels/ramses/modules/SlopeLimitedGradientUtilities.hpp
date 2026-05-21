@@ -134,8 +134,9 @@ namespace {
      */
     template<class Tfield, class Tvec, SlopeMode mode, class ACCField>
     inline std::array<Tfield, 3> get_3d_grad(
+        const f64* cell_sizes,
+        const u32 block_size,
         const u32 cell_global_id,
-        const shambase::VecComponent<Tvec> delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
         const AMRGraphLinkiterator &graph_iter_yp,
@@ -144,11 +145,29 @@ namespace {
         const AMRGraphLinkiterator &graph_iter_zm,
         ACCField &&field_access) {
 
+        auto cur_cell_block_id = cell_global_id / block_size;
+        auto delta_cell = cell_sizes[cur_cell_block_id];
+
+        
+
         auto get_avg_neigh = [&](auto &graph_links) -> Tfield {
             Tfield acc = shambase::VectorProperties<Tfield>::get_zero();
             u32 cnt    = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                auto neigh_block_id = id_b / block_size;
+                // if(cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]){
+                //     logger::raw_ln("diff fact big Neigh \t ", cell_sizes[neigh_block_id]/cell_sizes[cur_cell_block_id], "\n\n");
+                // }
+
+                if(cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]){
+                    logger::raw_ln("diff fact small Neigh \t ", cell_sizes[neigh_block_id]/cell_sizes[cur_cell_block_id], "\n\n");
+
+                }
+               
+                
+                
                 acc += field_access(id_b);
             });
+            logger::raw_ln("CNT = \t ", cnt, "\t\n\n");
             return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tfield>::get_zero();
         };
 

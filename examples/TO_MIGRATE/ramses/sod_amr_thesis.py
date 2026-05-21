@@ -286,7 +286,7 @@ def run_case(nb_blocks, amr_lev, case="amr"):
             ax10_2.set_ylabel("AMR level")
             ax10_2.legend(loc=0)
 
-        plt.savefig(f"sod-{case}.pdf")
+        plt.savefig(f"sod-{case}-new-bb.pdf")
 
 
-run_case(16, 3,"uniform")
+run_case(16, 3,"amr")

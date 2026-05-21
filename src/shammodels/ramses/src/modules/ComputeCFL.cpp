@@ -16,6 +16,7 @@
 
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "fmt/core.h"
+#include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -97,8 +98,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
                 constexpr Tscal div = 1. / 3.;
 
                 Tscal cs    = sound_speed(prim_state, gamma);
+
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
+
+                // logger::raw_ln("cell id \t", gid, " cfl \t", dt, "\n\n");
 
                 cfl_dt[gid] = dt;
             });

@@ -208,6 +208,14 @@ namespace shammodels::basegodunov {
                 py::arg("error_min"),
                 py::arg("error_max"))
             .def(
+                "set_amr_mode_jeans_length_based",
+                [](TConfig &self, u32 N_jeans, Tscal T_init) {
+                    self.amr_mode.set_refine_jeans_length_based(N_jeans, T_init);
+                },
+                py::kw_only(),
+                py::arg("N_jeans"),
+                py::arg("T_init"))
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;

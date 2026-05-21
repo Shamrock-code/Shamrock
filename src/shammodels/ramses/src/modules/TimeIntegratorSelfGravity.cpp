@@ -79,9 +79,26 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                     shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
+                        auto vel = acc_rhov_next_patch[id_a] / acc_rho_next_patch[id_a];
+                        auto Ekin =  0.5 * acc_rho_next_patch[id_a] * (vel[0]*vel[0] + vel[1]* vel[1] + vel[2]*vel[2]);
+
+                        shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+                        auto m_H = ctes.proton_mass(); // [kg]
+                        auto kb = ctes.kb();          // []
+                        auto mu = 2.3 ; //molecular gas
+                        // auto m_H = 1.6735e-27;  //[kg]
+                        // auto kb = 1.380649e-23;
+                        auto T = 10 ;
+
+                        auto cs0_sqr = (kb * T) / (mu * m_H);
+                        auto rho_crit = 1 ; //[kg*m^-3]
+                        auto P = acc_rho_next_patch[id_a] * cs0_sqr * ( 1. + sycl::pow(acc_rho_next_patch[id_a]/rho_crit, 2./3.));
+                        auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5./3.;
+                        auto Eint = P / (gamma_eff -1.);
                         rho_old[id_a]     = acc_rho_next_patch[id_a];
                         rhov_old[id_a]    = acc_rhov_next_patch[id_a];
-                        rhoe_old[id_a]    = acc_rhoe_next_patch[id_a];
+                        // rhoe_old[id_a]    = acc_rhoe_next_patch[id_a];
+                        rhoe_old[id_a]    = Ekin +  Eint;
                         acc_phi_old[id_a] = acc_phi_new[id_a];
                     });
                 });

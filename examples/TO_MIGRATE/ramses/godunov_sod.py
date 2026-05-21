@@ -5,6 +5,7 @@ import numpy as np
 
 import shamrock
 
+shamrock.enable_experimental_features()
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
@@ -80,9 +81,9 @@ dt = 0.0000
 t = 0
 tend = 0.245
 
-for i in range(1):
+for i in range(6):
     if i % freq == 0:
-        model.dump_vtk("test" + str(i // freq) + ".vtk")
+        model.dump_vtk("Test_Advection_Bug" + str(i // freq) + ".vtk")
 
     next_dt = model.evolve_once_override_time(t, dt)
 

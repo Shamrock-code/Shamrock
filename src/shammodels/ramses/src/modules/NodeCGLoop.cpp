@@ -30,6 +30,8 @@ namespace shammodels::basegodunov::modules {
         StackEntry stack_loc{};
         auto edges = get_edges();
 
+        auto r_0 = 1.;
+
         {
             edges.spans_block_cell_sizes.check_sizes(edges.sizes.indexes);
             edges.spans_phi.check_sizes(edges.sizes.indexes);
@@ -47,6 +49,7 @@ namespace shammodels::basegodunov::modules {
             if (shamcomm::world_rank() == 0) {
                 logger::raw_ln(" k = ", k);
                 logger::raw_ln("RES (L2-squared) = ", edges.old_values.value);
+                r_0 = edges.old_values.value;
             }
 
             /*** Main loop */
@@ -129,7 +132,7 @@ namespace shammodels::basegodunov::modules {
                 // if (shamcomm::world_rank() == 0) {
                 //     logger::raw_ln("l2diff = ", sycl::sqrt(l2diff) / lszz);
                 //     logger::raw_ln("l1diff = ", l1diff / lszz);
-                //     logger::raw_ln("linfdiff = ", linfdiff);
+                //     logger::raw_ln("linfdiff = ", linfdiff/lszz);
                 // }
 
                 edges.alpha.value = -edges.alpha.value;
@@ -145,14 +148,24 @@ namespace shammodels::basegodunov::modules {
 
                 /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
                 edges.old_values.value = edges.new_values.value;
-                if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("New-RES (L2-squared)  = ", edges.old_values.value);
-                }
+                // if (shamcomm::world_rank() == 0) {
+                //     logger::raw_ln("r_0 = \t",r_0, " r_{n+1} = \t",edges.old_values.value,"\n" );
+                //     logger::raw_ln("New-RES (L2-squared)  = ", (edges.old_values.value));
+                //     logger::raw_ln("New-RES (L2)  = ", sycl::sqrt(edges.old_values.value));
+                // }
 
                 /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */
                 new_p_node.evaluate();
 
-                if (edges.old_values.value <= tol /* && (diff_linf <= tol) */) {
+                // if (edges.old_values.value <= tol && (linfdiff<= tol) ) {
+                //     if (shamcomm::world_rank() == 0) {
+                //         logger::raw_ln("The solution converged after ", k, "iterations");
+                //     }
+
+                //     break;
+                // }
+
+                if ((edges.old_values.value / r_0) <= tol ) {
                     if (shamcomm::world_rank() == 0) {
                         logger::raw_ln("The solution converged after ", k, "iterations");
                     }

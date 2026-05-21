@@ -309,6 +309,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             ghost_layout.add_field<Tvec>("rhovel_dust", ndust * AMRBlock::block_size);
         }
 
+
         if (solver_config.is_gravity_on()) {
             ghost_layout.add_field<Tscal>("phi", AMRBlock::block_size);
             ghost_layout.add_field<Tscal>("phi_old", AMRBlock::block_size);
@@ -579,6 +580,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     }
 
     if (solver_config.should_compute_rho_mean()) {
+        logger::raw_ln("  Need to compute rho_mean  \n\n");
+
         storage.cell_mass = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "cell_mass", "m");
         storage.rho_mean
@@ -717,20 +720,22 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     ////////////////////////////////////////////////////////////////////////////////
     /// Self-Gravity
     ////////////////////////////////////////////////////////////////////////////////
+  
+  
     if (solver_config.is_gravity_on()) {
         storage.refs_phi
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi", "\\phi");
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi_old", "\\phi_\\mathrm{old}");
         storage.refs_phi_new
-            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi-new", "\\phi");
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("phi", "\\phi");
 
         storage.phi_res = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Res", "Res");
+            AMRBlock::block_size, "res", "res");
         storage.phi_p = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Phi_p", "Phi_p");
+            AMRBlock::block_size, "phi_p", "phi_p");
         storage.phi_Ap = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Phi_Ap", "Phi_Ap");
+            AMRBlock::block_size, "phi_Ap", "phi_Ap");
         storage.phi_hadamard_prod = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-            AMRBlock::block_size, "Phi_Hadamard_prod", "Phi_Hadamard_prod");
+            AMRBlock::block_size, "phi_Hadamard_prod", "phi_Hadamard_prod");
         storage.e_norm
             = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("e_norm", "e_norm");
         storage.alpha
@@ -753,6 +758,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         storage.refs_rhoe_next = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "rhoe-next", "\\rho_{n+1}e");
     }
+
 
     ////////////////////////////////////////////////////////////////////////////////
     /// Nodes
@@ -948,6 +954,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 std::make_shared<decltype(attach_rhov_dust)>(std::move(attach_rhov_dust)));
         }
 
+    
         if (solver_config.is_gravity_on()) {
             shamrock::solvergraph::GetFieldRefFromLayer<Tscal> attach_phi
                 = shamrock::solvergraph::GetFieldRefFromLayer<Tscal>(
@@ -962,6 +969,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             solver_sequence.push_back(
                 std::make_shared<decltype(attach_phi_new)>(std::move(attach_phi_new)));
         }
+
+    
+
+
     }
 
     { // build trees
@@ -1827,8 +1838,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     // RK2 + flux lim
 
-    if (!solver_config.is_gravity_on()) {
-        if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+     if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
             modules::TimeIntegrator dt_integ(context, solver_config, storage);
             dt_integ.forward_euler(dt_input);
         } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
@@ -1841,11 +1851,27 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
             drag_integ.enable_expo_drag_integrator(dt_input);
         } else {
             shambase::throw_unimplemented();
-        }
-    } else if (solver_config.is_gravity_on()) {
-        modules::TimeIntegratorSelfGravity dt_integ_self_gravity(context, solver_config, storage);
-        dt_integ_self_gravity.forward_euler(dt_input);
     }
+
+    // if (!solver_config.is_gravity_on()) {
+    //     if (solver_config.drag_config.drag_solver_config == DragSolverMode::NoDrag) {
+    //         modules::TimeIntegrator dt_integ(context, solver_config, storage);
+    //         dt_integ.forward_euler(dt_input);
+    //     } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::IRK1) {
+    //         modules::DragIntegrator drag_integ(context, solver_config, storage);
+    //         drag_integ.involve_with_no_src(dt_input);
+    //         drag_integ.enable_irk1_drag_integrator(dt_input);
+    //     } else if (solver_config.drag_config.drag_solver_config == DragSolverMode::EXPO) {
+    //         modules::DragIntegrator drag_integ(context, solver_config, storage);
+    //         drag_integ.involve_with_no_src(dt_input);
+    //         drag_integ.enable_expo_drag_integrator(dt_input);
+    //     } else {
+    //         shambase::throw_unimplemented();
+    //     }
+    // } else if (solver_config.is_gravity_on()) {
+    //     modules::TimeIntegratorSelfGravity dt_integ_self_gravity(context, solver_config, storage);
+    //     dt_integ_self_gravity.forward_euler(dt_input);
+    // }
 
     {
         modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
@@ -1878,14 +1904,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
      * access them.
      */
 
-    if (dt_input > 0) {
+
+
+    if (dt_input > 0)
+    
+     {
         modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
         refinement.update_refinement();
     }
 
-    if (shamcomm::world_rank() == 0) {
+    if (solver_config.should_compute_rho_mean() && shamcomm::world_rank() == 0 ) {
         auto rho_means = shambase::get_check_ref(storage.rho_mean).value;
-        logger::raw_ln("Rho-mean : ", rho_means, "\n\n");
+        logger::raw_ln("Rho-mean in Solver.cpp: ", rho_means, "\n\n");
     }
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);

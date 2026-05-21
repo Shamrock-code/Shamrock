@@ -14,9 +14,9 @@ model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i
 multx = 1
 multy = 1
 multz = 1
-max_amr_lev = 3
+max_amr_lev = 2
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 16
+base = 32
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -132,7 +132,7 @@ dt = 0
 t = 0
 freq = 10
 dX0 = 0
-for i in range(50):
+for i in range(100000):
     next_dt = model.evolve_once_override_time(t, dt)
     if i == 0:
         dic0 = convert_to_cell_coords(ctx.collect_data())
@@ -229,5 +229,5 @@ if True:
     ax1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
     ax2.set_ylabel("AMR level")
     plt.title(f"Threshold = {err_max}, derefinement factor = {err_min}")
-    plt.savefig("sod_tube_3_1_baryonic_density_check_density_5.png")
+    plt.savefig("sod_tube_amr_new_test.png")
     #######

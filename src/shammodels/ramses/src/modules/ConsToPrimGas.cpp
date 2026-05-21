@@ -70,7 +70,7 @@ namespace {
 
                     vel[i]       = prim_state.vel;
                     P[i]         = prim_state.press;
-                    rho_field[i] = rho[i];
+                    rho_field[i] = prim_state.rho;
                 });
         }
     };

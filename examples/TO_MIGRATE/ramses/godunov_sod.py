@@ -81,7 +81,7 @@ dt = 0.0000
 t = 0
 tend = 0.245
 
-for i in range(6):
+for i in range(1000):
     if i % freq == 0:
         model.dump_vtk("Test_Advection_Bug" + str(i // freq) + ".vtk")
 

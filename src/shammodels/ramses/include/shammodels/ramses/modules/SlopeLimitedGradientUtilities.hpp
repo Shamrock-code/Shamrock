@@ -134,7 +134,7 @@ namespace {
      */
     template<class Tfield, class Tvec, SlopeMode mode, class ACCField>
     inline std::array<Tfield, 3> get_3d_grad(
-        const f64* cell_sizes,
+        const f64 *cell_sizes,
         const u32 block_size,
         const u32 cell_global_id,
         const AMRGraphLinkiterator &graph_iter_xp,
@@ -146,54 +146,47 @@ namespace {
         ACCField &&field_access) {
 
         auto cur_cell_block_id = cell_global_id / block_size;
-        auto delta_cell = cell_sizes[cur_cell_block_id];
 
-        
-
-        auto get_avg_neigh = [&](auto &graph_links) -> Tfield {
-            Tfield acc = shambase::VectorProperties<Tfield>::get_zero();
-            u32 cnt    = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+        auto get_gradiant_dir = [&](auto &graph_links, Direction dir) -> Tfield {
+            Tfield acc            = shambase::VectorProperties<Tfield>::get_zero();
+            auto cell_center_dist = cell_sizes[cur_cell_block_id];
+            auto fac              = 1.;
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
                 auto neigh_block_id = id_b / block_size;
-                // if(cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]){
-                //     logger::raw_ln("diff fact big Neigh \t ", cell_sizes[neigh_block_id]/cell_sizes[cur_cell_block_id], "\n\n");
-                // }
 
-                if(cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]){
-                    logger::raw_ln("diff fact small Neigh \t ", cell_sizes[neigh_block_id]/cell_sizes[cur_cell_block_id], "\n\n");
+                int sign = 1 - 2 * (dir % 2);
+                acc += sign * (field_access(id_b) - field_access(cell_global_id));
 
+                if (cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]) {
+                    fac = (3. / 2.);
                 }
-               
-                
-                
-                acc += field_access(id_b);
+                // This logic suppose that the last (4-th) cell at interface have same size with the
+                // other three cells. This is also consitent with 2:1 refinement.
+                // TODO: extended to anisotropic mesh
+                if (cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]) {
+                    fac = (3. / 4.);
+                }
             });
-            logger::raw_ln("CNT = \t ", cnt, "\t\n\n");
-            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tfield>::get_zero();
+            return (cnt > 0) ? acc / (cell_center_dist * fac * cnt)
+                             : shambase::VectorProperties<Tfield>::get_zero();
         };
 
-        Tfield W_i  = field_access(cell_global_id);
-        Tfield W_xp = get_avg_neigh(graph_iter_xp);
-        Tfield W_xm = get_avg_neigh(graph_iter_xm);
-        Tfield W_yp = get_avg_neigh(graph_iter_yp);
-        Tfield W_ym = get_avg_neigh(graph_iter_ym);
-        Tfield W_zp = get_avg_neigh(graph_iter_zp);
-        Tfield W_zm = get_avg_neigh(graph_iter_zm);
-
-        Tfield delta_W_x_p = W_xp - W_i;
-        Tfield delta_W_y_p = W_yp - W_i;
-        Tfield delta_W_z_p = W_zp - W_i;
-
-        Tfield delta_W_x_m = W_i - W_xm;
-        Tfield delta_W_y_m = W_i - W_ym;
-        Tfield delta_W_z_m = W_i - W_zm;
-
-        Tfield fact = 1. / Tfield(delta_cell);
-
-        Tfield lim_slope_W_x = slope_function<Tfield, mode>(delta_W_x_m * fact, delta_W_x_p * fact);
-        Tfield lim_slope_W_y = slope_function<Tfield, mode>(delta_W_y_m * fact, delta_W_y_p * fact);
-        Tfield lim_slope_W_z = slope_function<Tfield, mode>(delta_W_z_m * fact, delta_W_z_p * fact);
-
-        return {lim_slope_W_x, lim_slope_W_y, lim_slope_W_z};
+        Tfield delta_xp = get_gradiant_dir(graph_iter_xp, Direction::xp);
+        Tfield delta_xm = get_gradiant_dir(graph_iter_xm, Direction::xm);
+        Tfield delta_yp = get_gradiant_dir(graph_iter_yp, Direction::yp);
+        Tfield delta_ym = get_gradiant_dir(graph_iter_ym, Direction::ym);
+        Tfield delta_zp = get_gradiant_dir(graph_iter_zp, Direction::zp);
+        Tfield delta_zm = get_gradiant_dir(graph_iter_zm, Direction::zm);
+        return {
+            slope_function<Tfield, mode>(
+                get_gradiant_dir(graph_iter_xm, Direction::xm),
+                get_gradiant_dir(graph_iter_xp, Direction::xp)),
+            slope_function<Tfield, mode>(
+                get_gradiant_dir(graph_iter_ym, Direction::ym),
+                get_gradiant_dir(graph_iter_yp, Direction::yp)),
+            slope_function<Tfield, mode>(
+                get_gradiant_dir(graph_iter_zm, Direction::zm),
+                get_gradiant_dir(graph_iter_zp, Direction::zp))};
     }
 
     /**

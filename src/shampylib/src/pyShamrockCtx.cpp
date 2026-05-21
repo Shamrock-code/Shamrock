@@ -46,7 +46,8 @@ inline void register_patch_transform_class(py::module &m, std::string name) {
         });
 }
 
-Register_pymod(pyshamrockctxinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     shamlog_debug_ln("[Py]", "registering shamrock.Patch");
 

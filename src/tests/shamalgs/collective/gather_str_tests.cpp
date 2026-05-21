@@ -7,13 +7,16 @@
 //
 // -------------------------------------------------------//
 
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamtest/shamtest.hpp"
+#include <unordered_map>
+#include <array>
+#include <random>
 
-TestStart(Unittest, "shamcomm/collectives::gather_str", test_gather_str, 4) {
+TestStart(Unittest, "shamalgs/collective/gather_str", test_gather_str, 4) {
 
     std::array<std::string, 4> ref_base{
         "I'm a very important string",
@@ -33,12 +36,12 @@ TestStart(Unittest, "shamcomm/collectives::gather_str", test_gather_str, 4) {
 
     std::string recv = "random string"; // Just to check that it is overwritten
 
-    shamcomm::gather_str(send, recv);
+    shamalgs::collective::gather_str(send, recv);
 
     REQUIRE_EQUAL(recv, result);
 }
 
-TestStart(Unittest, "shamcomm/collectives::allgather_str", test_allgather_str, 4) {
+TestStart(Unittest, "shamalgs/collective/allgather_str", test_allgather_str, 4) {
 
     std::array<std::string, 4> ref_base{
         "I'm a very important string",
@@ -56,7 +59,7 @@ TestStart(Unittest, "shamcomm/collectives::allgather_str", test_allgather_str, 4
 
     std::string recv = "random string"; // Just to check that it is overwritten
 
-    shamcomm::allgather_str(send, recv);
+    shamalgs::collective::allgather_str(send, recv);
 
     REQUIRE_EQUAL(recv, result);
 }

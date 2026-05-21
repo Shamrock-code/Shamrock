@@ -46,14 +46,14 @@ void register_field(py::module &m, const char *class_name) {
         });
 }
 
-Register_pymod(shamsolvergraphinit) {
+ON_PYTHON_INIT {
 
     using namespace shamrock::solvergraph;
 
-    py::class_<IEdge>(m, "IEdge")
+    py::class_<IEdge>(root_module, "IEdge")
         .def("get_label", &IEdge::get_label)
         .def("get_tex_symbol", &IEdge::get_tex_symbol);
 
-    register_field<f64>(m, "Field_f64");
-    register_field<f64_3>(m, "Field_f64_3");
+    register_field<f64>(root_module, "Field_f64");
+    register_field<f64_3>(root_module, "Field_f64_3");
 }

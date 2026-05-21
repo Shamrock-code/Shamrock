@@ -252,10 +252,10 @@ namespace shamrock::scheduler::details {
         var /= world_size;
 
         return {
-            min * strategy_weight,
-            max * strategy_weight,
-            avg * strategy_weight,
-            sycl::sqrt(var) * strategy_weight};
+            .min    = min * strategy_weight,
+            .max    = max * strategy_weight,
+            .mean   = avg * strategy_weight,
+            .stddev = sycl::sqrt(var) * strategy_weight};
     }
 
 } // namespace shamrock::scheduler::details

@@ -15,8 +15,8 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/term_colors.hpp"
+#include "sham/term/tty.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 
@@ -129,7 +129,7 @@ namespace logformatter {
      */
     std::string style3_formatter_full(const logger::ReformatArgs &args) {
 
-        u32 tty_width = shamcmdopt::get_tty_columns();
+        u32 tty_width = sham::term::get_tty_columns();
 
         std::string ansi_reset = shambase::term_colors::reset();
         std::string ansi_faint = shambase::term_colors::faint();
@@ -195,7 +195,7 @@ namespace logformatter {
      */
     std::string style4_formatter_full(const logger::ReformatArgs &args) {
 
-        u32 tty_width = shamcmdopt::get_tty_columns();
+        u32 tty_width = sham::term::get_tty_columns();
 
         std::string ansi_reset = shambase::term_colors::reset();
         std::string ansi_faint = shambase::term_colors::faint();

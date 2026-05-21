@@ -59,7 +59,8 @@ namespace shambase::logs {
                    + (name) + shambase::term_colors::reset() + ": " + content;
         }
 
-        return shambase::logs::_reformat_all({color, name, module_name, content});
+        return shambase::logs::_reformat_all(
+            {.color = color, .level_name = name, .module_name = module_name, .content = content});
     }
 
     /**
@@ -82,6 +83,7 @@ namespace shambase::logs {
                    + (name) + shambase::term_colors::reset() + ": " + content;
         }
 
-        return shambase::logs::_reformat_simple({color, name, module_name, content});
+        return shambase::logs::_reformat_simple(
+            {.color = color, .level_name = name, .module_name = module_name, .content = content});
     }
 } // namespace shambase::logs

@@ -144,7 +144,7 @@ namespace shamrock {
         // write data to file
 
         MPI_File_close(&mfile);
-        timer.end();
+        timer.stop();
 
         if (shamcomm::world_rank() == 0) {
             size_t plist_len = all_offsets.size();
@@ -155,7 +155,7 @@ namespace shamrock {
                     "dump to {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),
-                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+                    shambase::readable_sizeof(max_head / timer.elapsed_sec())));
         }
     }
 
@@ -228,7 +228,7 @@ namespace shamrock {
         std::unordered_map<u64, PatchFileOffset> off_table;
 
         for (u32 i = 0; i < all_bytecounts.size(); i++) {
-            off_table[all_pids[i]] = {all_offsets[i], all_bytecounts[i]};
+            off_table[all_pids[i]] = {.offset = all_offsets[i], .bytecount = all_bytecounts[i]};
         }
 
         for (const auto &p : sched.patch_list.local) {
@@ -252,7 +252,7 @@ namespace shamrock {
         }
 
         MPI_File_close(&mfile);
-        timer.end();
+        timer.stop();
 
         if (shamcomm::world_rank() == 0) {
             size_t plist_len = all_offsets.size();
@@ -263,7 +263,7 @@ namespace shamrock {
                     "load dump from {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),
-                    shambase::readable_sizeof(max_head / timer.elasped_sec())));
+                    shambase::readable_sizeof(max_head / timer.elapsed_sec())));
         }
     }
 

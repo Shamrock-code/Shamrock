@@ -265,7 +265,7 @@ inline void post_insert_data(PatchScheduler &sched) {
     // });
     //
     // std::string log_gathered = "";
-    // shamcomm::gather_str(log, log_gathered);
+    // shamalgs::collective::gather_str(log, log_gathered);
     //
     // if (shamcomm::world_rank() == 0)
     //     logger::info_ln("Model", "current particle counts : ", log_gathered);
@@ -347,7 +347,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
         sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
+        shamalgs::collective::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
@@ -459,7 +459,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
         sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
+        shamalgs::collective::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles MHD : ", log_gathered);
@@ -593,7 +593,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
 
         // if(logger::details::loglevel >= shamcomm::logs::log_info){
         //     std::string log_gathered = "";
-        //     shamcomm::gather_str(log, log_gathered);
+        //     shamalgs::collective::gather_str(log, log_gathered);
         //
         //     if (shamcomm::world_rank() == 0) {
         //         shamlog_debug_ln("Model", "Push particles : ", log_gathered);
@@ -611,9 +611,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -712,9 +712,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
         shamlog_debug_ln("Gen", "gen.is_done()", gen.is_done());
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -1080,7 +1080,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
 
         // if(logger::details::loglevel >= shamcomm::logs::log_info){
         //     std::string log_gathered = "";
-        //     shamcomm::gather_str(log, log_gathered);
+        //     shamalgs::collective::gather_str(log, log_gathered);
         //
         //     if (shamcomm::world_rank() == 0) {
         //         shamlog_debug_ln("Model", "Push particles : ", log_gathered);
@@ -1098,9 +1098,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_big_disc took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_big_disc took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -1201,7 +1201,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
         sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
+        shamalgs::collective::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);
@@ -1402,7 +1402,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         sched.check_patchdata_locality_correctness();
 
         std::string log_gathered = "";
-        shamcomm::gather_str(log, log_gathered);
+        shamalgs::collective::gather_str(log, log_gathered);
 
         if (shamcomm::world_rank() == 0) {
             logger::info_ln("Model", "Push particles : ", log_gathered);

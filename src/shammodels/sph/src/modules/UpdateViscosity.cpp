@@ -150,30 +150,31 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
 
         u32 obj_cnt = pdat.get_obj_cnt();
 
-        sham::DeviceQueue &queue = shamsys::instance::get_compute_scheduler().get_queue();
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-        sham::EventList depends_list;
-
-        auto divv             = buf_divv.get_read_access(depends_list);
-        auto curlv            = buf_curlv.get_read_access(depends_list);
-        auto dtdivv           = buf_dtdivv.get_read_access(depends_list);
-        auto cs               = buf_cs.get_read_access(depends_list);
-        auto h                = buf_h.get_read_access(depends_list);
-        auto alpha_AV         = buf_alpha_AV.get_read_access(depends_list);
-        auto alpha_AV_updated = buf_alpha_AV_updated.get_write_access(depends_list);
-
-        auto e = queue.submit(depends_list, [&, dt](sycl::handler &cgh) {
-            Tscal sigma_decay = cfg.sigma_decay;
-            Tscal alpha_min   = cfg.alpha_min;
-            Tscal alpha_max   = cfg.alpha_max;
-
-            cgh.parallel_for(sycl::range<1>{obj_cnt}, [=](sycl::item<1> item) {
-                Tscal cs_a     = cs[item];
-                Tscal h_a      = h[item];
-                Tscal alpha_a  = alpha_AV[item];
-                Tscal divv_a   = divv[item];
-                Tvec curlv_a   = curlv[item];
-                Tscal dtdivv_a = dtdivv[item];
+        sham::kernel_call(
+            q,
+            sham::MultiRef{buf_divv, buf_curlv, buf_dtdivv, buf_cs, buf_h, buf_alpha_AV},
+            sham::MultiRef{buf_alpha_AV_updated},
+            obj_cnt,
+            [sigma_decay = cfg.sigma_decay,
+             alpha_min   = cfg.alpha_min,
+             alpha_max   = cfg.alpha_max,
+             dt](
+                u32 i,
+                const Tscal *__restrict divv,
+                const Tvec *__restrict curlv,
+                const Tscal *__restrict dtdivv,
+                const Tscal *__restrict cs,
+                const Tscal *__restrict h,
+                const Tscal *__restrict alpha_AV,
+                Tscal *__restrict alpha_AV_updated) {
+                Tscal cs_a     = cs[i];
+                Tscal h_a      = h[i];
+                Tscal alpha_a  = alpha_AV[i];
+                Tscal divv_a   = divv[i];
+                Tvec curlv_a   = curlv[i];
+                Tscal dtdivv_a = dtdivv[i];
 
                 Tscal vsig            = cs_a;
                 Tscal inv_tau_a       = vsig * sigma_decay / h_a;
@@ -214,17 +215,8 @@ void shammodels::sph::modules::UpdateViscosity<Tvec, SPHKernel>::update_artifici
                     new_alpha = alpha_loc_a;
                 }
 
-                alpha_AV_updated[item] = new_alpha;
+                alpha_AV_updated[i] = new_alpha;
             });
-        });
-
-        buf_divv.complete_event_state(e);
-        buf_curlv.complete_event_state(e);
-        buf_dtdivv.complete_event_state(e);
-        buf_cs.complete_event_state(e);
-        buf_h.complete_event_state(e);
-        buf_alpha_AV.complete_event_state(e);
-        buf_alpha_AV_updated.complete_event_state(e);
     });
 }
 

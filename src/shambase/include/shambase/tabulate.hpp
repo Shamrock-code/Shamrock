@@ -67,7 +67,7 @@ namespace shambase {
                     cols.size(),
                     cols_count));
             }
-            table_lines.push_back(data{cols, position});
+            table_lines.push_back(data{.cols = cols, .position = position});
         }
 
         std::vector<size_t> compute_widths() {

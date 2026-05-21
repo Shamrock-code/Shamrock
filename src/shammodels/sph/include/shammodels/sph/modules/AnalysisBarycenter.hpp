@@ -104,7 +104,7 @@ namespace shammodels::sph::modules {
                 }
             }
             tot_barycenter /= tot_mass;
-            return result{tot_barycenter, tot_mass_disc};
+            return result{.barycenter = tot_barycenter, .mass_disc = tot_mass_disc};
         }
     };
 } // namespace shammodels::sph::modules

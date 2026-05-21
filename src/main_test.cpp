@@ -71,6 +71,9 @@ int main(int argc, char *argv[]) {
 
     opts::register_opt("-o", {"(filepath)"}, "output test report in that file");
 
+    // --show-completion zsh should call opts::print_completion_zsh()
+    opts::register_opt("--show-completion-zsh", {}, "show completion for zsh");
+
     shamcmdopt::register_opt("--feenableexcept", "", "Enable FPE exceptions");
 
     opts::register_env_var_doc("REF_FILES_PATH", "reference test files path");
@@ -86,6 +89,11 @@ int main(int argc, char *argv[]) {
 
     opts::init(argc, argv);
     if (opts::is_help_mode()) {
+        return 0;
+    }
+
+    if (opts::has_option("--show-completion-zsh")) {
+        opts::print_completion_zsh();
         return 0;
     }
 
@@ -117,7 +125,7 @@ int main(int argc, char *argv[]) {
         shamsys::instance::init(argc, argv);
     } else {
         using namespace shamsys::instance;
-        start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        start_mpi(MPIInitInfo{.argc = opts::get_argc(), .argv = opts::get_argv()});
         if (shamcomm::world_rank() == 0) {
             logger::warn_ln(
                 "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");

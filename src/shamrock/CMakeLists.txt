@@ -20,7 +20,7 @@ if(${CMAKE_VERSION} VERSION_GREATER 3.27)
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${CMAKE_CURRENT_BINARY_DIR}/version__.cpp
         COMMAND
-            python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../buildbot/make_version_file.py
+            python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/make_version_file.py
             ${CMAKE_CURRENT_BINARY_DIR}/version.cpp "${SHAMROCK_COMPILE_FLAGS}"
             "${SHAMROCK_VERSION_STRING}" DEPENDS_EXPLICIT_ONLY
     )
@@ -28,7 +28,7 @@ else()
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/version.cpp ${CMAKE_CURRENT_BINARY_DIR}/version__.cpp
         COMMAND
-            python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../buildbot/make_version_file.py
+            python3 ${CMAKE_CURRENT_SOURCE_DIR}/../../tools/make_version_file.py
             ${CMAKE_CURRENT_BINARY_DIR}/version.cpp "${SHAMROCK_COMPILE_FLAGS}"
             "${SHAMROCK_VERSION_STRING}"
     )

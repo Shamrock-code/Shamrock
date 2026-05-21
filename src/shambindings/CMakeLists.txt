@@ -27,6 +27,7 @@ add_library(shambindings::shambindings ALIAS shambindings)
 
 target_link_libraries(shambindings PUBLIC shambase)
 target_link_libraries(shambindings PUBLIC shamcmdopt)
+target_link_libraries(shambindings PUBLIC shamterm)
 target_link_libraries(shambindings PUBLIC pybind11::pybind11)
 
 target_include_directories(

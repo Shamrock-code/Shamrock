@@ -22,7 +22,12 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     parser = argparse.ArgumentParser(prog=PATH, description=NAME + " env for Shamrock")
 
-    parser.add_argument("--backend", action="store", help="sycl backend to use")
+    parser.add_argument(
+        "--backend",
+        required=True,
+        choices=utils.acpp.BACKENDS,
+        help="sycl backend to use",
+    )
     parser.add_argument("--arch", action="store", help="arch to build")
     parser.add_argument("--gen", action="store", help="generator to use (ninja or make)")
 

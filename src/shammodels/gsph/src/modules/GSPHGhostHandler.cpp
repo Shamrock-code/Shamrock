@@ -15,7 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include <functional>
 #include <vector>
@@ -383,7 +383,7 @@ void GSPHGhostHandler<vec>::gen_debug_patch_ghost(
         });
 
     std::string dot_graph = "";
-    shamcomm::gather_str(loc_graph, dot_graph);
+    shamalgs::collective::gather_str(loc_graph, dot_graph);
 
     dot_graph = "strict digraph {\n" + dot_graph + "}";
 

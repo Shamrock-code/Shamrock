@@ -15,8 +15,8 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "sham/term/tty.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamsys/stacktrace_log.hpp"

@@ -62,7 +62,7 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::n
     Tscal fs  = 1;
     Tscal rho = (sigma * fs) * sycl::exp(-z * z / (2 * H * H));
 
-    DiscOutput out{pos, vel, cs, rho};
+    DiscOutput out{.pos = pos, .velocity = vel, .cs = cs, .rho = rho};
 
     // increase counter + check if finished
     current_index++;

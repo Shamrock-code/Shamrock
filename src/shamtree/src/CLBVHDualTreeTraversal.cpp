@@ -39,11 +39,11 @@ namespace shamtree {
 
     inline shamalgs::impl_param dtt_impl_to_params(const DTTImpl &impl) {
         if (impl == DTTImpl::REFERENCE) {
-            return {"reference", ""};
+            return {.impl_name = "reference", .params = ""};
         } else if (impl == DTTImpl::PARALLEL_SELECT) {
-            return {"parallel_select", ""};
+            return {.impl_name = "parallel_select", .params = ""};
         } else if (impl == DTTImpl::SCAN_MULTIPASS) {
-            return {"scan_multipass", ""};
+            return {.impl_name = "scan_multipass", .params = ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
             shambase::format("unknown dtt implementation : {}", u32(impl)));
@@ -51,7 +51,9 @@ namespace shamtree {
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_clbvh_dual_tree_traversal() {
         std::vector<shamalgs::impl_param> impl_list{
-            {"reference", ""}, {"parallel_select", ""}, {"scan_multipass", ""}};
+            {.impl_name = "reference", .params = ""},
+            {.impl_name = "parallel_select", .params = ""},
+            {.impl_name = "scan_multipass", .params = ""}};
         return impl_list;
     }
 

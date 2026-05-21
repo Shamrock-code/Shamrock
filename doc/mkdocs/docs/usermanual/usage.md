@@ -37,7 +37,7 @@ Env variables :
     = xterm-256color
   COLORTERM                     : Terminal color support identifier
     = truecolor
-  SHAMTTYCOL                    : Set tty assumed column count
+  COLUMN                        : Set tty assumed column count
 
 Env deduced vars :
   isatty = Yes

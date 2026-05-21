@@ -112,11 +112,15 @@ namespace shamsys {
                        : std::nullopt;
         };
         return SystemMetrics{
-            lhs.wall_time - rhs.wall_time,
-            optional_sub(lhs.rank_energy_consummed, rhs.rank_energy_consummed),
-            optional_sub(lhs.gpu_energy_consummed, rhs.gpu_energy_consummed),
-            optional_sub(lhs.cpu_energy_consummed, rhs.cpu_energy_consummed),
-            optional_sub(lhs.dram_energy_consummed, rhs.dram_energy_consummed)};
+            .wall_time = lhs.wall_time - rhs.wall_time,
+            .rank_energy_consummed
+            = optional_sub(lhs.rank_energy_consummed, rhs.rank_energy_consummed),
+            .gpu_energy_consummed
+            = optional_sub(lhs.gpu_energy_consummed, rhs.gpu_energy_consummed),
+            .cpu_energy_consummed
+            = optional_sub(lhs.cpu_energy_consummed, rhs.cpu_energy_consummed),
+            .dram_energy_consummed
+            = optional_sub(lhs.dram_energy_consummed, rhs.dram_energy_consummed)};
     }
 
     // Returns true if the current reporter is not a NoopSystemMetricReporter (defined below).

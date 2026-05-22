@@ -48,6 +48,7 @@ set(Sources
     src/modules/ComputeNeighStats.cpp
     src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp
     src/modules/NodeEvolveDustCOALASourceTerm.cpp
+    src/modules/NodeEvolveDustCOALASourceTermOrmel.cpp
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierApplyCustomWarp.cpp

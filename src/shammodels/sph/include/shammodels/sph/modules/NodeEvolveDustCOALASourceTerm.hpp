@@ -65,3 +65,6 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
+
+
+#undef NODE_EVOLVE_DUST_COALA_SOURCE_TERM_EDGES

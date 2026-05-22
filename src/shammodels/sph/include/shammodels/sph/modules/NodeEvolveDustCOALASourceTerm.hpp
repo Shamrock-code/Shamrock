@@ -66,5 +66,4 @@ namespace shammodels::sph::modules {
     };
 } // namespace shammodels::sph::modules
 
-
 #undef NODE_EVOLVE_DUST_COALA_SOURCE_TERM_EDGES

@@ -29,26 +29,23 @@
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, massgrid)                          \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, tensor_tabflux_coag)               \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_turb)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mu)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mh)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, kb)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                          \
-                                                                                               \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                        \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                    \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_turb)                                     \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mu)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mh)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, kb)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
+                                                                                                   \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                       \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, cs)                                             \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, ts)                                             \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, a_ext)                             \
-                                            \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, a_ext)                                           \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
                                                                                                    \
     /* to get rho_dust_j */                                                                        \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, s_j)                                            \
-                                                                                                   \
-                                                                                                   \
                                                                                                    \
     /* outputs */                                                                                  \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, S_coag)

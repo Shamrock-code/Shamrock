@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeEvolveDustCOALASourceTerm.hpp
+ * @file NodeEvolveDustCOALASourceTermOrmel.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -29,6 +29,17 @@
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, massgrid)                          \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, tensor_tabflux_coag)               \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_turb)                                     \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mu)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, mh)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, kb)                                             \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
+                                                                                                   \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                       \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, cs)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, ts)                                             \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, a_ext)                                           \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -36,30 +47,27 @@
     /* to get rho_dust_j */                                                                        \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, s_j)                                            \
                                                                                                    \
-    /* Here it is the delta_v in the monofluid sense not the coala sense */                        \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, delta_v_j)                                       \
-                                                                                                   \
     /* outputs */                                                                                  \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, S_coag)
 
 namespace shammodels::sph::modules {
 
-    template<class Tvec>
-    class NodeEvolveDustCOALASourceTerm : public shamrock::solvergraph::INode {
+    template<class Tvec, template<class> class SPHKernel>
+    class NodeEvolveDustCOALASourceTermOrmel : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         u32 nbins;
 
         public:
-        NodeEvolveDustCOALASourceTerm(u32 nbins) : nbins(nbins) {}
+        NodeEvolveDustCOALASourceTermOrmel(u32 nbins) : nbins(nbins) {}
 
         EXPAND_NODE_EDGES(NODE_EVOLVE_DUST_COALA_SOURCE_TERM_EDGES)
 
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const {
-            return "NodeEvolveDustCOALASourceTerm";
+            return "NodeEvolveDustCOALASourceTermOrmel";
         };
 
         inline virtual std::string _impl_get_tex() const;

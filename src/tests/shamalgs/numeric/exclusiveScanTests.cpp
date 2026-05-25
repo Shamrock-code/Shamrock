@@ -81,7 +81,7 @@ struct TestExclScan {
         sycl::buffer<u32> res = fct(q, buf, len);
 
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -208,7 +208,7 @@ struct TestExclScanUSM {
             depends_list.wait_and_throw();
             res.complete_event_state(sycl::event{});
         }
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -315,7 +315,7 @@ struct TestExclScanInplace {
         fct(q, buf, len);
 
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }

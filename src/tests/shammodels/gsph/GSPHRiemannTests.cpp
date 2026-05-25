@@ -48,21 +48,71 @@ namespace {
     // Standard shock tube test cases from Toro (2009)
     const std::vector<RiemannTestCase> standard_tests = {
         // Test 1: Sod shock tube (modified)
-        {"Sod", 1.0, 0.0, 1.0, 0.125, 0.0, 0.1, 1.4, 0.30313, 0.92745, 0.05},
+        {.name         = "Sod",
+         .rho_L        = 1.0,
+         .u_L          = 0.0,
+         .p_L          = 1.0,
+         .rho_R        = 0.125,
+         .u_R          = 0.0,
+         .p_R          = 0.1,
+         .gamma        = 1.4,
+         .p_star_exact = 0.30313,
+         .u_star_exact = 0.92745,
+         .tolerance    = 0.05},
 
         // Test 2: 123 problem (two rarefactions)
-        {"123 problem", 1.0, -2.0, 0.4, 1.0, 2.0, 0.4, 1.4, 0.00189, 0.0, 0.1},
+        {.name         = "123 problem",
+         .rho_L        = 1.0,
+         .u_L          = -2.0,
+         .p_L          = 0.4,
+         .rho_R        = 1.0,
+         .u_R          = 2.0,
+         .p_R          = 0.4,
+         .gamma        = 1.4,
+         .p_star_exact = 0.00189,
+         .u_star_exact = 0.0,
+         .tolerance    = 0.1},
 
         // Test 3: Left half of blast wave
-        {"Left blast", 1.0, 0.0, 1000.0, 1.0, 0.0, 0.01, 1.4, 460.894, 19.5975, 5.0},
+        {.name         = "Left blast",
+         .rho_L        = 1.0,
+         .u_L          = 0.0,
+         .p_L          = 1000.0,
+         .rho_R        = 1.0,
+         .u_R          = 0.0,
+         .p_R          = 0.01,
+         .gamma        = 1.4,
+         .p_star_exact = 460.894,
+         .u_star_exact = 19.5975,
+         .tolerance    = 5.0},
 
         // Test 4: Right half of blast wave
-        {"Right blast", 1.0, 0.0, 0.01, 1.0, 0.0, 100.0, 1.4, 46.0950, -6.19633, 1.0},
+        {.name         = "Right blast",
+         .rho_L        = 1.0,
+         .u_L          = 0.0,
+         .p_L          = 0.01,
+         .rho_R        = 1.0,
+         .u_R          = 0.0,
+         .p_R          = 100.0,
+         .gamma        = 1.4,
+         .p_star_exact = 46.0950,
+         .u_star_exact = -6.19633,
+         .tolerance    = 1.0},
 
         // Test 5: Lax shock tube (challenging: left rarefaction + right shock)
         // The iterative solver may struggle with this case due to the non-zero left velocity
         // and the complex wave pattern. Using a more relaxed tolerance.
-        {"Lax", 0.445, 0.698, 3.528, 0.5, 0.0, 0.571, 1.4, 1.12838, 0.92840, 0.8},
+        {.name         = "Lax",
+         .rho_L        = 0.445,
+         .u_L          = 0.698,
+         .p_L          = 3.528,
+         .rho_R        = 0.5,
+         .u_R          = 0.0,
+         .p_R          = 0.571,
+         .gamma        = 1.4,
+         .p_star_exact = 1.12838,
+         .u_star_exact = 0.92840,
+         .tolerance    = 0.8},
     };
 
     //==========================================================================

@@ -221,13 +221,21 @@ namespace shammodels::sph {
         void set_none() { config = None{}; }
         void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
         void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
-            config = MM{mm_order, opening_angle, reduction_level};
+            config = MM{
+                .order           = mm_order,
+                .opening_angle   = opening_angle,
+                .reduction_level = reduction_level};
         }
         void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
-            config = FMM{order, opening_angle, reduction_level};
+            config = FMM{
+                .order = order, .opening_angle = opening_angle, .reduction_level = reduction_level};
         }
         void set_sfmm(u32 order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
-            config = SFMM{order, opening_angle, leaf_lowering, reduction_level};
+            config = SFMM{
+                .order           = order,
+                .opening_angle   = opening_angle,
+                .leaf_lowering   = leaf_lowering,
+                .reduction_level = reduction_level};
         }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
@@ -1070,20 +1078,20 @@ namespace shammodels::sph {
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
         if (j.at("type").get<std::string>() == "sfmm") {
             p.config = SelfGravConfig::SFMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("leaf_lowering").get<bool>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .leaf_lowering   = j.at("leaf_lowering").get<bool>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "fmm") {
             p.config = SelfGravConfig::FMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "mm") {
             p.config = SelfGravConfig::MM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "direct") {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {

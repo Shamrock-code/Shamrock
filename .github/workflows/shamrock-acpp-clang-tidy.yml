@@ -22,7 +22,7 @@ jobs:
       matrix:
         include:
           - clang: 20
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu24
     #if: false
 
     timeout-minutes: 120

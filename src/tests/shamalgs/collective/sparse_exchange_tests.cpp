@@ -220,12 +220,12 @@ void test_sparse_exchange(std::vector<TestElement> test_elements, size_t max_all
         if (test_elements[i].sender == shamcomm::world_rank()) {
             messages_send.push_back(
                 shamalgs::collective::CommMessageInfo{
-                    test_elements[i].size,
-                    test_elements[i].sender,
-                    test_elements[i].receiver,
-                    std::nullopt,
-                    std::nullopt,
-                    std::nullopt,
+                    .message_size                = test_elements[i].size,
+                    .rank_sender                 = test_elements[i].sender,
+                    .rank_receiver               = test_elements[i].receiver,
+                    .message_tag                 = std::nullopt,
+                    .message_bytebuf_offset_send = std::nullopt,
+                    .message_bytebuf_offset_recv = std::nullopt,
                 });
         }
     }
@@ -364,7 +364,10 @@ TestStart(Unittest, "shamalgs/collective/test_sparse_exchange", testsparsexchg_2
         std::vector<TestElement> test_elements;
         for (i32 i = 0; i < shamcomm::world_size(); i++) {
             test_elements.push_back(
-                TestElement{i, i, shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
+                TestElement{
+                    .sender   = i,
+                    .receiver = i,
+                    .size     = shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
         }
         test_sparse_exchange(test_elements, i32_max);
     }
@@ -380,9 +383,9 @@ TestStart(Unittest, "shamalgs/collective/test_sparse_exchange", testsparsexchg_2
         for (i32 i = 0; i < shamcomm::world_size(); i++) {
             test_elements.push_back(
                 TestElement{
-                    i,
-                    (i + 1) % shamcomm::world_size(),
-                    shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
+                    .sender   = i,
+                    .receiver = (i + 1) % shamcomm::world_size(),
+                    .size     = shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
         }
         test_sparse_exchange(test_elements, i32_max);
     }
@@ -398,9 +401,11 @@ TestStart(Unittest, "shamalgs/collective/test_sparse_exchange", testsparsexchg_2
         for (u32 i = 0; i < 3 * shamcomm::world_size(); i++) {
             test_elements.push_back(
                 TestElement{
-                    shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
-                    shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
-                    shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
+                    .sender
+                    = shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
+                    .receiver
+                    = shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
+                    .size = shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
         }
         test_sparse_exchange(test_elements, i32_max);
     }
@@ -416,9 +421,11 @@ TestStart(Unittest, "shamalgs/collective/test_sparse_exchange", testsparsexchg_2
         for (u32 i = 0; i < 3 * shamcomm::world_size(); i++) {
             test_elements.push_back(
                 TestElement{
-                    shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
-                    shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
-                    shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
+                    .sender
+                    = shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
+                    .receiver
+                    = shamalgs::primitives::mock_value<i32>(eng, 0, shamcomm::world_size() - 1),
+                    .size = shamalgs::primitives::mock_value<u32>(eng, 1, 10)});
         }
         test_sparse_exchange(test_elements, 20);
     }

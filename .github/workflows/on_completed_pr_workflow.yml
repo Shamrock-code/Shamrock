@@ -35,7 +35,7 @@ jobs:
 
 
       - name: 'Download reports artifact'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v9
         with:
           script: |
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
@@ -44,10 +44,20 @@ jobs:
                run_id: context.payload.workflow_run.id,
             });
 
+            console.log(
+              "All artifacts:",
+              allArtifacts.data.artifacts.map((a) => ({ id: a.id, name: a.name }))
+            );
+
             // Filter artifacts whose name starts with 'report_'
             let reportArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
               return artifact.name.startsWith("report_");
             });
+
+            console.log(
+              "Report artifacts (report_*):",
+              reportArtifacts.map((a) => ({ id: a.id, name: a.name }))
+            );
 
             // Loop through each matching artifact and download it
             const fs = require('fs');

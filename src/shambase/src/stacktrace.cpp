@@ -92,7 +92,8 @@ namespace shambase::details {
         };
         // Add the entry to the storage
         profile_data_chrome.push_back(
-            ChromeProfileEntry{loc.function_name(), to_prof_time(time), is_start});
+            ChromeProfileEntry{
+                .name = loc.function_name(), .time_val = to_prof_time(time), .is_start = is_start});
     }
 
     /**
@@ -177,8 +178,8 @@ namespace shambase::details {
      * @return f64 Wall time in seconds since program start
      */
     f64 get_wtime() {
-        global_timer.end();
-        return global_timer.elasped_sec();
+        global_timer.stop();
+        return global_timer.elapsed_sec();
     }
 
     void register_profile_entry_start(std::source_location loc, f64 start_time) {
@@ -187,7 +188,8 @@ namespace shambase::details {
 
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time) {
         // Add the profile entry to the storage
-        profile_data.push_back({start_time, end_time, loc.function_name()});
+        profile_data.push_back(
+            {.time_start = start_time, .time_end = end_time, .entry_name = loc.function_name()});
         // Add a Chrome profiling entry to the storage
         add_entry_chrome(loc, end_time, false);
     };

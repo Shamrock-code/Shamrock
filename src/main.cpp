@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
         shamsys::instance::init(argc, argv);
     } else {
         using namespace shamsys::instance;
-        start_mpi(MPIInitInfo{opts::get_argc(), opts::get_argv()});
+        start_mpi(MPIInitInfo{.argc = opts::get_argc(), .argv = opts::get_argv()});
         if (shamcomm::world_rank() == 0) {
             logger::warn_ln(
                 "Init", "No kernel can be run without a sycl configuration (--sycl-cfg x:x)");

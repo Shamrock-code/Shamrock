@@ -150,7 +150,7 @@ namespace shamrock {
             reatrib.reatribute_patch_objects(sptree, main_field_name);
             sched.check_patchdata_locality_correctness();
 
-            treatrib.end();
+            treatrib.stop();
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
                     "DataInserterUtility", "reattributing data done in ", treatrib.get_time_str());

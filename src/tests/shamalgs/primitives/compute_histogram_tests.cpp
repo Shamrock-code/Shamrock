@@ -93,7 +93,7 @@ inline void basic_histogram(const std::vector<std::string> &impl_list) {
             },
             pos);
         ret.synchronize();
-        timer.end();
+        timer.stop();
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 
@@ -165,7 +165,7 @@ inline void basic_histogram_size(const std::vector<std::string> &impl_list) {
             pos,
             szs);
         ret.synchronize();
-        timer.end();
+        timer.stop();
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 
@@ -239,7 +239,7 @@ inline void basic_histogram_size_non_unif(const std::vector<std::string> &impl_l
             pos,
             szs);
         ret.synchronize();
-        timer.end();
+        timer.stop();
 
         logger::raw_ln("impl =", cfg, "time =", timer.get_time_str());
 

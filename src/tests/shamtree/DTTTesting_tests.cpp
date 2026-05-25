@@ -397,7 +397,7 @@ void dtt_test(
             theta_crit,
             ordered_result,
             allow_leaf_lowering);
-        timer.end();
+        timer.stop();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
         m2l_ref = result.node_interactions_m2l.copy_to_stdvec();
@@ -420,7 +420,7 @@ void dtt_test(
             theta_crit,
             ordered_result,
             allow_leaf_lowering);
-        timer.end();
+        timer.stop();
         logger::raw_ln(impl.impl_name, " :", timer.get_time_str());
 
         validate_dtt_results(

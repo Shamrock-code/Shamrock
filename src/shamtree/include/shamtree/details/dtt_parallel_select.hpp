@@ -371,10 +371,13 @@ namespace shamtree::details {
                     }
                 });
 
-            DTTResult ret{std::move(idx_m2l), std::move(idx_p2p)};
+            DTTResult ret{
+                .node_interactions_m2l = std::move(idx_m2l),
+                .node_interactions_p2p = std::move(idx_p2p)};
 
             if (ordered_result) {
-                DTTResult::OrderedResult ordering{std::move(scan_m2l), std::move(scan_p2p)};
+                DTTResult::OrderedResult ordering{
+                    .offset_m2l = std::move(scan_m2l), .offset_p2p = std::move(scan_p2p)};
                 ret.ordered_result = std::move(ordering);
             }
 

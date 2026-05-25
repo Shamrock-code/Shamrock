@@ -124,7 +124,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         auto recov = ser1.finalize();
         shamsys::instance::get_compute_queue().wait();
 
-        tser.end();
+        tser.stop();
 
         shambase::Timer tdeser;
         tdeser.start();
@@ -140,7 +140,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         }
         shamsys::instance::get_compute_queue().wait();
 
-        tdeser.end();
+        tdeser.stop();
 
         return {
             sz.get_total_size() / (tser.nanosec / 1e9),
@@ -169,7 +169,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         auto recov = ser1.finalize();
         shamsys::instance::get_compute_queue().wait();
 
-        tser.end();
+        tser.stop();
 
         shambase::Timer tdeser;
         tdeser.start();
@@ -187,7 +187,7 @@ TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializ
         }
         shamsys::instance::get_compute_queue().wait();
 
-        tdeser.end();
+        tdeser.stop();
 
         return {
             sz.get_total_size() / (tser.nanosec / 1e9),

@@ -20,7 +20,7 @@
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
 
-std::string SourceLocation::format_multiline() const {
+std::string shambase::format_multiline(std::source_location loc) {
     return fmt::format(
         R"=(
 ---- Source Location ----
@@ -34,7 +34,7 @@ call = {}
         loc.function_name());
 }
 
-std::string SourceLocation::format_multiline(std::string stacktrace) const {
+std::string shambase::format_multiline(std::source_location loc, const std::string &stacktrace) {
     return fmt::format(
         R"=(
 ---- Source Location ----
@@ -51,11 +51,11 @@ stacktrace :
         stacktrace);
 }
 
-std::string SourceLocation::format_one_line() const {
+std::string shambase::format_one_line(std::source_location loc) {
     return fmt::format("{}:{}:{}", loc.file_name(), loc.line(), loc.column());
 }
 
-std::string SourceLocation::format_one_line_func() const {
+std::string shambase::format_one_line_func(std::source_location loc) {
     return fmt::format(
         "{} ({}:{}:{})", loc.function_name(), loc.file_name(), loc.line(), loc.column());
 }

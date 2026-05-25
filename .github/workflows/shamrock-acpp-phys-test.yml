@@ -44,7 +44,7 @@ jobs:
   shamrock_phys_test:
     name: run ${{ matrix.testfile }} wz=${{ matrix.worldsize }}
     runs-on: ubuntu-latest
-    needs: [ build_docker ]
+    needs: [build_docker]
 
     strategy:
       matrix:
@@ -95,7 +95,6 @@ jobs:
             testfile: run_compare_shamrock_ph_disc.py
       fail-fast: false
 
-
     timeout-minutes: 60
     steps:
       - name: Download artifact
@@ -127,15 +126,18 @@ jobs:
                 --loglevel 1 \
                 --rscript /opt/Shamrock_src/examples/tests_ci/${{ matrix.testfile }}
 
-
   shamrock_example_gallery:
     name: run example ${{ matrix.testfile }}
     runs-on: ubuntu-latest
-    needs: [ build_docker ]
+    needs: [build_docker]
 
     strategy:
       matrix:
         include:
+          # Physics examples
+          - testfile: "examples/physics/run_coala.py"
+            artifact_name: gallery_coala
+
           # Ramses examples
           - testfile: "examples/ramses/run_kh.py"
             artifact_name: gallery_ramses_run_kh
@@ -163,14 +165,16 @@ jobs:
             artifact_name: gallery_sph_run_sphsetup_logs
           - testfile: "examples/sph/run_orzag_tang.py"
             artifact_name: gallery_sph_run_orzag_tang
+          - testfile: "examples/sph/run_pairing_instab.py"
+            artifact_name: gallery_sph_pairing_instab
+          - testfile: "examples/sph/run_cubic_reorganisation.py"
+            artifact_name: gallery_sph_cubic_reorg
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
             artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
 
-
       fail-fast: false
-
 
     timeout-minutes: 60
     steps:
@@ -185,8 +189,8 @@ jobs:
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
+      - name: Reconfigure git
+        run: |
           git config --global --add safe.directory '*'
           git config --global --list
       - uses: actions/checkout@v4
@@ -224,13 +228,10 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ./doc
 
-
-
   shamrock_sphinx_doc:
     name: run sphinx doc
     runs-on: ubuntu-latest
-    needs: [ shamrock_example_gallery ]
-
+    needs: [shamrock_example_gallery]
 
     timeout-minutes: 120
     steps:
@@ -245,8 +246,8 @@ jobs:
 
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
+      - name: Reconfigure git
+        run: |
           git config --global --add safe.directory '*'
           git config --global --list
       - uses: actions/checkout@v4
@@ -292,13 +293,10 @@ jobs:
           name: sphinx_doc
           path: doc/sphinx/build/html
 
-
-
-
   remove-image:
     name: Remove image
     runs-on: ubuntu-latest
-    needs: [ build_docker, shamrock_phys_test, shamrock_sphinx_doc]
+    needs: [build_docker, shamrock_phys_test, shamrock_sphinx_doc]
     steps:
       - uses: geekyeggo/delete-artifact@v5
         with:

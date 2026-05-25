@@ -171,7 +171,8 @@ namespace shamcmdopt {
             }
         }
 
-        registered_opts.push_back({name, std::move(args), std::move(description)});
+        registered_opts.push_back(
+            {.name = name, .args = std::move(args), .description = std::move(description)});
     }
 
     /// supplied argc from main

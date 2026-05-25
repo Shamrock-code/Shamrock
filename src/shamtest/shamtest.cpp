@@ -529,7 +529,7 @@ namespace shamtest {
             shambase::Timer timer;
             timer.start();
             TestResult res = test.run();
-            timer.end();
+            timer.stop();
             mpi::barrier(MPI_COMM_WORLD);
 
             usize gather_bytecount           = 0;

@@ -94,7 +94,9 @@ namespace shammodels::basegodunov::modules {
         };
 
         ro_access get_read_access(sham::EventList &e) const {
-            return ro_access{node_link_offset.get_read_access(e), node_links.get_read_access(e)};
+            return ro_access{
+                .node_link_offset = node_link_offset.get_read_access(e),
+                .node_links       = node_links.get_read_access(e)};
         }
 
         void complete_event_state(sycl::event &e) const {

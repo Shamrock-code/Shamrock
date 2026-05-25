@@ -14,7 +14,7 @@
  *
  */
 
-#include "shamcmdopt/tty.hpp"
+#include "sham/term/tty.hpp"
 #include <cstdio>
 #include <utility>
 
@@ -26,7 +26,7 @@
     #include <sys/ioctl.h>
 #endif
 
-namespace shamcmdopt {
+namespace sham::term {
 
     bool is_a_tty() {
 #if __has_include(<unistd.h>)
@@ -38,9 +38,9 @@ namespace shamcmdopt {
 
     /// Forced width of the terminal, if set by set_tty_columns.
     /// If set to 0, get_tty_dim returns the actual width of the terminal.
-    u32 tty_forced_width = 0;
+    int tty_forced_width = 0;
 
-    void set_tty_columns(u32 columns) { tty_forced_width = columns; }
+    void set_tty_columns(int columns) { tty_forced_width = columns; }
 
     /**
      * @brief Get the number of columns and lines of the current terminal
@@ -50,7 +50,7 @@ namespace shamcmdopt {
      *
      * @return Number of columns and lines if the current terminal
      */
-    std::pair<u32, u32> get_tty_dim() {
+    std::pair<int, int> get_tty_dim() {
         // If forced width is set, return it
         if (tty_forced_width > 0) {
             return {10, tty_forced_width};
@@ -78,7 +78,7 @@ namespace shamcmdopt {
 #endif
     }
 
-    u32 get_tty_columns() { return get_tty_dim().second; }
-    u32 get_tty_lines() { return get_tty_dim().first; }
+    int get_tty_columns() { return get_tty_dim().second; }
+    int get_tty_lines() { return get_tty_dim().first; }
 
-} // namespace shamcmdopt
+} // namespace sham::term

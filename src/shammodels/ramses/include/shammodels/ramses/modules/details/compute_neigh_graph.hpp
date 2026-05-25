@@ -104,7 +104,11 @@ namespace shammodels::basegodunov::modules::details {
 
         using Graph = shammodels::basegodunov::modules::NeighGraph;
         return Graph(
-            Graph{std::move(link_cnt_offsets), std::move(ids_links), link_cnt, graph_nodes});
+            Graph{
+                .node_link_offset = std::move(link_cnt_offsets),
+                .node_links       = std::move(ids_links),
+                .link_count       = link_cnt,
+                .obj_cnt          = graph_nodes});
     };
 
     /**
@@ -183,7 +187,11 @@ namespace shammodels::basegodunov::modules::details {
 
         using Graph = shammodels::basegodunov::modules::NeighGraph;
         return Graph(
-            Graph{std::move(link_cnt_offsets), std::move(ids_links), link_cnt, graph_nodes});
+            Graph{
+                .node_link_offset = std::move(link_cnt_offsets),
+                .node_links       = std::move(ids_links),
+                .link_count       = link_cnt,
+                .obj_cnt          = graph_nodes});
     };
 
 } // namespace shammodels::basegodunov::modules::details

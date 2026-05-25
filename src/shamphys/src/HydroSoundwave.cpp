@@ -20,5 +20,5 @@ auto shamphys::HydroSoundwave::get_value(f64 t, f64 x) -> field_val {
 
     std::complex<f64> val = std::exp(i * (get_omega() * t - k * x));
 
-    return {std::real(val * rho_tilde), std::real(val * v_tilde)};
+    return {.rho = std::real(val * rho_tilde), .v = std::real(val * v_tilde)};
 }

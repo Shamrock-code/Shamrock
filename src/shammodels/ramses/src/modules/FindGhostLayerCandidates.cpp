@@ -67,7 +67,9 @@ void shammodels::basegodunov::modules::FindGhostLayerCandidates<
                     // patch `id` and patch `id_found` for this offset
                     // so we store that
                     ghost_layers_candidates.add_obj(
-                        id, id_found, GhostLayerCandidateInfos{xoff, yoff, zoff});
+                        id,
+                        id_found,
+                        GhostLayerCandidateInfos{.xoff = xoff, .yoff = yoff, .zoff = zoff});
                 });
         }
     });

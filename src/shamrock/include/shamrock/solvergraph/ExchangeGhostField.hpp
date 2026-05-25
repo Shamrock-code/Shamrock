@@ -67,14 +67,14 @@ namespace shamrock::solvergraph {
          */
         ExchangeGhostField() {}
 
-#define NODE_EXCHANGE_GHOST_FIELD_EDGES(X_RO, X_RW)                                                \
+#define NODE_EDGES(X_RO, X_RW)                                                \
     /* input */                                                                                    \
     X_RO(shamrock::solvergraph::RankGetter, rank_owner)                                            \
     /* output */                                                                                   \
     X_RW(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_layer)
 
-        EXPAND_NODE_EDGES(NODE_EXCHANGE_GHOST_FIELD_EDGES)
-#undef NODE_EXCHANGE_GHOST_FIELD_EDGES
+        EXPAND_NODE_EDGES(NODE_EDGES)
+#undef NODE_EDGES
 
         /**
          * @brief Performs the ghost field data exchange computation

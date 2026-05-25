@@ -24,7 +24,7 @@
 #include <experimental/mdspan>
 #include <vector>
 
-#define NODE_EVOLVE_DUST_COALA_SOURCE_TERM_EDGES(X_RO, X_RW)                                       \
+#define NODE_EDGES(X_RO, X_RW)                                       \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, massgrid)                          \
@@ -54,7 +54,7 @@ namespace shammodels::sph::modules {
         public:
         NodeEvolveDustCOALASourceTerm(u32 nbins) : nbins(nbins) {}
 
-        EXPAND_NODE_EDGES(NODE_EVOLVE_DUST_COALA_SOURCE_TERM_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -65,3 +65,4 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
+#undef NODE_EDGES

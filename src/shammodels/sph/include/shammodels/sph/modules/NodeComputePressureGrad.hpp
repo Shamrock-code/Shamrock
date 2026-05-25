@@ -23,7 +23,7 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define NODE_COMPUTE_PRESSURE_GRAD_EDGES(X_RO, X_RW)                                               \
+#define NODE_EDGES(X_RO, X_RW)                                               \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
                                                                                                    \
@@ -55,7 +55,7 @@ namespace shammodels::sph::modules {
         public:
         NodeComputePressureGrad() {}
 
-        EXPAND_NODE_EDGES(NODE_COMPUTE_PRESSURE_GRAD_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -64,3 +64,4 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shammodels::sph::modules
+#undef NODE_EDGES

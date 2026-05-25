@@ -30,14 +30,14 @@ namespace shammodels::basegodunov::modules {
     class ComputeLevel0CellSize : public shamrock::solvergraph::INode {
         public:
         ComputeLevel0CellSize() {}
-#define NODE_ComputeLevel0CellSize_EDGES(X_RO, X_RW)                                               \
+#define NODE_EDGES(X_RO, X_RW)                                               \
     /* inputs */                                                                                   \
     X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes)                \
     X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
     /* outputs */                                                                                  \
     X_RW(shamrock::solvergraph::ScalarsEdge<TgridVec>, level0_size)
 
-        EXPAND_NODE_EDGES(NODE_ComputeLevel0CellSize_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 #undef NODE_ComputeLevel0CellSize_EDGES
 
         void _impl_evaluate_internal() {

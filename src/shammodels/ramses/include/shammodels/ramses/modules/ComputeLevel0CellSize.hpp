@@ -26,7 +26,7 @@
 #include <memory>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
-    /* inputs */    \
+    /* inputs */                                                                                   \
     X_RO(shamrock::solvergraph::ScalarsEdge<shammath::AABB<TgridVec>>, patch_boxes)                \
     X_RO(shamrock::solvergraph::IPatchDataLayerRefs, refs)                                         \
     /* outputs */                                                                                  \
@@ -55,4 +55,5 @@ namespace shammodels::basegodunov::modules {
     };
 
 } // namespace shammodels::basegodunov::modules
+
 #undef NODE_EDGES

@@ -27,7 +27,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
 
-#define NODE_EDGES(X_RO, X_RW)                                       \
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -105,4 +105,5 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shammodels::sph::modules
+
 #undef NODE_EDGES

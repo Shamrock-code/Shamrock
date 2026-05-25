@@ -58,4 +58,5 @@ namespace shamrock::solvergraph {
     };
 
 } // namespace shamrock::solvergraph
+
 #undef NODE_EDGES

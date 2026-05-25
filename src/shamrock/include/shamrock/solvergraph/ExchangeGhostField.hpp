@@ -25,10 +25,10 @@
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
-#define NODE_EDGES(X_RO, X_RW)                                                \
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* input */                                                                                    \
     X_RO(shamrock::solvergraph::RankGetter, rank_owner)                                            \
-    /* output */    \
+    /* output */                                                                                   \
     X_RW(shamrock::solvergraph::PatchDataFieldDDShared<T>, ghost_layer)
 
 namespace shamrock::solvergraph {
@@ -98,4 +98,5 @@ namespace shamrock::solvergraph {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph
+
 #undef NODE_EDGES

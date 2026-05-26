@@ -15,10 +15,10 @@
  */
 
 #include "shambase/string.hpp"
-#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
 
 template<class Tvec, template<class> class SPHKernel>

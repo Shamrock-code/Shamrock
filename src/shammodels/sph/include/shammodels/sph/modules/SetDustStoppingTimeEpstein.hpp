@@ -54,6 +54,8 @@ namespace shammodels::sph::modules {
         using Kernel = SPHKernel<Tscal>;
 
         u32 ndust;
+        std::unique_ptr<sham::DeviceBuffer<Tscal>> sgrain_j;
+        std::unique_ptr<sham::DeviceBuffer<Tscal>> rho_grain_j;
 
         public:
         SetDustStoppingTimeEpstein(u32 ndust) : ndust(ndust) {}
@@ -69,16 +71,25 @@ namespace shammodels::sph::modules {
             auto &part_counts                            = edges.part_counts.indexes;
             const std::vector<Tscal> &inputs_sgrain_j    = edges.sgrain_j.value;
             const std::vector<Tscal> &inputs_rho_grain_j = edges.rho_grain_j.value;
+            SHAM_ASSERT(inputs_sgrain_j.size() == ndust);
+            SHAM_ASSERT(inputs_rho_grain_j.size() == ndust);
 
             // ensure that the output edges are of size part_counts
             edges.t_j.ensure_sizes(part_counts);
 
             auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-            sham::DeviceBuffer<Tscal> sgrain_j(ndust, dev_sched);
-            sham::DeviceBuffer<Tscal> rho_grain_j(ndust, dev_sched);
-            sgrain_j.copy_from_stdvec(inputs_sgrain_j);
-            rho_grain_j.copy_from_stdvec(inputs_rho_grain_j);
+            if (!sgrain_j) {
+                sgrain_j = std::make_unique<sham::DeviceBuffer<Tscal>>(ndust, dev_sched);
+            }
+            if (!rho_grain_j) {
+                rho_grain_j = std::make_unique<sham::DeviceBuffer<Tscal>>(ndust, dev_sched);
+            }
+
+            sgrain_j->resize(ndust);
+            rho_grain_j->resize(ndust);
+            sgrain_j->copy_from_stdvec(inputs_sgrain_j);
+            rho_grain_j->copy_from_stdvec(inputs_rho_grain_j);
 
             auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -91,12 +102,12 @@ namespace shammodels::sph::modules {
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
-                        sgrain_j,
-                        rho_grain_j,
+                        *sgrain_j,
+                        *rho_grain_j,
                         edges.hpart.get_spans().get(id),
                         edges.cs.get_spans().get(id)},
                     sham::MultiRef{edges.t_j.get_spans().get(id)},
-                    part_counts.get(id) * ndust,
+                    count * ndust,
                     [ndust = ndust, pmass, gamma](
                         u32 thread_id,
                         const Tscal *__restrict sgrain_j,

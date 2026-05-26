@@ -45,6 +45,7 @@ namespace shammodels::sph::modules {
         using Tscal = shambase::VecComponent<Tvec>;
 
         u32 ndust;
+        std::unique_ptr<sham::DeviceBuffer<Tscal>> t_j_0;
 
         public:
         SetDustStoppingTimeConstant(u32 ndust) : ndust(ndust) {}
@@ -59,12 +60,17 @@ namespace shammodels::sph::modules {
 
             auto &part_counts                   = edges.part_counts.indexes;
             const std::vector<Tscal> &inputs_tj = edges.t_j_0.value;
+            SHAM_ASSERT(inputs_tj.size() == ndust);
 
             // ensure that the output edges are of size part_counts
             edges.t_j.ensure_sizes(part_counts);
 
-            sham::DeviceBuffer<Tscal> t_j_0(ndust, shamsys::instance::get_compute_scheduler_ptr());
-            t_j_0.copy_from_stdvec(inputs_tj);
+            if (!t_j_0) {
+                t_j_0 = std::make_unique<sham::DeviceBuffer<Tscal>>(
+                    ndust, shamsys::instance::get_compute_scheduler_ptr());
+            }
+            t_j_0->resize(ndust);
+            t_j_0->copy_from_stdvec(inputs_tj);
 
             auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
@@ -73,9 +79,9 @@ namespace shammodels::sph::modules {
                 // id_patch
                 sham::kernel_call(
                     q,
-                    sham::MultiRef{t_j_0},
+                    sham::MultiRef{*t_j_0},
                     sham::MultiRef{edges.t_j.get_spans().get(id)},
-                    part_counts.get(id) * ndust,
+                    count * ndust,
                     [ndust
                      = ndust](u32 thread_id, const Tscal *__restrict t_j_0, Tscal *__restrict t_j) {
                         u32 jdust      = thread_id % ndust;

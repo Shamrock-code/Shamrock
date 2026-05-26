@@ -129,13 +129,13 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const {
 
             auto gpart_mass  = get_ro_edge_base(0).get_tex_symbol();
-            auto gamma         = get_ro_edge_base(1).get_tex_symbol();
-            auto sgrain_j      = get_ro_edge_base(2).get_tex_symbol();
-            auto rho_grain_j   = get_ro_edge_base(3).get_tex_symbol();
-            auto part_counts   = get_ro_edge_base(4).get_tex_symbol();
-            auto hpart         = get_ro_edge_base(5).get_tex_symbol();
-            auto cs            = get_ro_edge_base(6).get_tex_symbol();
-            auto t_j           = get_rw_edge_base(0).get_tex_symbol();
+            auto gamma       = get_ro_edge_base(1).get_tex_symbol();
+            auto sgrain_j    = get_ro_edge_base(2).get_tex_symbol();
+            auto rho_grain_j = get_ro_edge_base(3).get_tex_symbol();
+            auto part_counts = get_ro_edge_base(4).get_tex_symbol();
+            auto hpart       = get_ro_edge_base(5).get_tex_symbol();
+            auto cs          = get_ro_edge_base(6).get_tex_symbol();
+            auto t_j         = get_rw_edge_base(0).get_tex_symbol();
 
             std::string tex = R"tex(
                 SetDustStoppingTimeEpstein (PHANTOM eq.~250, subsonic)

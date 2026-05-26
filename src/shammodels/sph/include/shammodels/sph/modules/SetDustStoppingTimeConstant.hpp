@@ -84,7 +84,9 @@ namespace shammodels::sph::modules {
             });
         }
 
-        inline virtual std::string _impl_get_label() const { return "SetDustStoppingTimeConstant"; };
+        inline virtual std::string _impl_get_label() const {
+            return "SetDustStoppingTimeConstant";
+        };
 
         inline virtual std::string _impl_get_tex() const {
 

@@ -27,7 +27,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include <vector>
 
-#define NODE_SET_DUST_STOPPING_TIME_CTE_EDGES(X_RO, X_RW)                                          \
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, t_j_0)                             \
                                                                                                    \
@@ -50,7 +50,7 @@ namespace shammodels::sph::modules {
         public:
         SetDustStoppingTimeConstant(u32 ndust) : ndust(ndust) {}
 
-        EXPAND_NODE_EDGES(NODE_SET_DUST_STOPPING_TIME_CTE_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         inline void _impl_evaluate_internal() {
 
@@ -119,3 +119,5 @@ namespace shammodels::sph::modules {
         };
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

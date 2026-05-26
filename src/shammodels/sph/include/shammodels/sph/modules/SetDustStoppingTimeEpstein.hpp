@@ -120,15 +120,12 @@ namespace shammodels::sph::modules {
                         auto ts = shamphys::epstein_stopping_time(
                             rho_grain, sgrain, rho_a, cs_a, gamma);
 
-                        if (id_a == 1408)
-                            logger::raw_ln("ts", jdust, ts, rho_grain, sgrain, rho_a, cs_a, gamma);
-
                         t_j[thread_id] = ts;
                     });
             });
         }
 
-        inline virtual std::string _impl_get_label() const { return "ComputeDustTtilde"; };
+        inline virtual std::string _impl_get_label() const { return "SetDustStoppingTimeEpstein"; };
 
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };

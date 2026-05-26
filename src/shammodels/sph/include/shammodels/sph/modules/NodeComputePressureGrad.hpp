@@ -41,7 +41,7 @@
     X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
                                                                                                    \
     /* outputs */                                                                                  \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, grad_pressure)
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, grad_P_on_rho)
 
 namespace shammodels::sph::modules {
 

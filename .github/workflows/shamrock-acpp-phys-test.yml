@@ -222,6 +222,11 @@ jobs:
             ls -la /work
             bash /work/doc/sphinx/gen_sphinx_doc_single_example_diff.sh ${{ matrix.testfile }}
 
+      # remove all folders whose name starts with _to_trash
+      - name: Remove _to_trash folders
+        run: |
+          find . -type d -name "_to_trash" -exec rm -rfv {} +
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

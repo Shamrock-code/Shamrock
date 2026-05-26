@@ -225,7 +225,7 @@ jobs:
       # remove all folders whose name starts with _to_trash
       - name: Remove _to_trash folders
         run: |
-          find . -type d -name "_to_trash" -exec rm -rfv {} +
+          sudo find . -type d -name "_to_trash" -exec rm -rfv {} +
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

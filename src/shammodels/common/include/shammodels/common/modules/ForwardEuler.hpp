@@ -90,3 +90,5 @@ namespace shammodels::common::modules {
         inline virtual std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shammodels::common::modules
+
+#undef NODE_EDGES

@@ -24,6 +24,16 @@
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_min)                             \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, spans_block_max)                             \
+    X_RO(OrientedAMRGraph, block_neigh_graph)                                                      \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(OrientedAMRGraph, cell_neigh_graph)
+
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec, class Tmorton>
@@ -40,32 +50,7 @@ namespace shammodels::basegodunov::modules {
         public:
         BlockNeighToCellNeigh(u32 block_nside_pow) : block_nside_pow(block_nside_pow) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldRefs<TgridVec> &spans_block_min;
-            const shamrock::solvergraph::IFieldRefs<TgridVec> &spans_block_max;
-            const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &block_neigh_graph;
-            solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<TgridVec>> spans_block_min,
-            std::shared_ptr<shamrock::solvergraph::IFieldRefs<TgridVec>> spans_block_max,
-            std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> block_neigh_graph,
-            std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph) {
-            __internal_set_ro_edges({sizes, spans_block_min, spans_block_max, block_neigh_graph});
-            __internal_set_rw_edges({cell_neigh_graph});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldRefs<TgridVec>>(2),
-                get_ro_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(3),
-                get_rw_edge<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -74,3 +59,5 @@ namespace shammodels::basegodunov::modules {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

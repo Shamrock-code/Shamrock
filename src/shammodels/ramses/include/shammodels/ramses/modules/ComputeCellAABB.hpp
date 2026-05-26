@@ -21,6 +21,16 @@
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<TgridVec>, block_min)                                   \
+    X_RO(shamrock::solvergraph::IFieldSpan<TgridVec>, block_max)                                   \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, block_cell_sizes)                               \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, cell0block_aabb_lower)
+
 namespace shammodels::basegodunov::modules {
 
     template<class Tvec, class TgridVec>
@@ -33,38 +43,14 @@ namespace shammodels::basegodunov::modules {
         NodeComputeCellAABB(u32 block_nside, Tscal grid_coord_to_pos_fact)
             : block_nside(block_nside), grid_coord_to_pos_fact(grid_coord_to_pos_fact) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldSpan<TgridVec> &spans_block_min;
-            const shamrock::solvergraph::IFieldSpan<TgridVec> &spans_block_max;
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_block_cell_sizes;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_cell0block_aabb_lower;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> spans_block_min,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> spans_block_max,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_block_cell_sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_cell0block_aabb_lower) {
-            __internal_set_ro_edges({sizes, spans_block_min, spans_block_max});
-            __internal_set_rw_edges({spans_block_cell_sizes, spans_cell0block_aabb_lower});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(2),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(1),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "ComputeCellAABB"; };
+        inline virtual std::string _impl_get_label() const { return "ComputeCellAABB"; }
 
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

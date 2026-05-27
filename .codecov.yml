@@ -11,7 +11,7 @@ coverage:
 
 comment:
   require_changes: false # always post details even when patch coverage is fully covered
-  layout: "condensed_header, components, condensed_files, condensed_footer" # show component info in the PR comment
+  layout: "header, diff, flags, components"  # show component info in the PR comment # show component info in the PR comment
 
 component_management:
 

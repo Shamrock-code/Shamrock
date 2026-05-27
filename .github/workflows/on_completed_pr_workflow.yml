@@ -47,24 +47,13 @@ jobs:
 
             console.log("artifacts:",artifacts);
 
-            const allArtifacts = await github.paginate(
-              github.rest.actions.listWorkflowRunArtifacts,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: context.payload.workflow_run.id,
-              },
-              (response) => response.data.artifacts
-            );
-
-
             console.log(
-              "All artifacts:",
-              allArtifacts.data.artifacts.map((a) => ({ id: a.id, name: a.name }))
+              "All artifacts (id, name):",
+              artifacts.map((a) => ({ id: a.id, name: a.name }))
             );
 
             // Filter artifacts whose name starts with 'report_'
-            let reportArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
+            let reportArtifacts = artifacts.filter((artifact) => {
               return artifact.name.startsWith("report_");
             });
 

@@ -1257,7 +1257,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.refs_rho,
                 storage.refs_rhov,
                 storage.refs_rhoe,
-                storage.rho_primitive,
+                // storage.rho_primitive,
                 storage.vel,
                 storage.press);
 

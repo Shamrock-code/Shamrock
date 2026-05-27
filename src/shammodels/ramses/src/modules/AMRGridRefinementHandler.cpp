@@ -1043,7 +1043,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
         const TgridVec *block_low_bound;
         const TgridVec *block_high_bound;
-        const Tscal *block_rho;
+        // const Tscal *block_rho;
         const f64 *block_pressure;
         const f64_3 *block_velocity;
 
@@ -1114,9 +1114,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             nblock_per_patch = pdat.get_obj_cnt();
 
-            block_rho      = shambase::get_check_ref(storage.rho_primitive)
-                                 .get_buf(id_patch)
-                                 .get_read_access(depends_list);
+            // block_rho      = shambase::get_check_ref(storage.rho_primitive)
+            //                      .get_buf(id_patch)
+            //                      .get_read_access(depends_list);
             block_pressure = shambase::get_check_ref(storage.press)
                                  .get_buf(id_patch)
                                  .get_read_access(depends_list);
@@ -1173,9 +1173,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get()
                 .complete_event_state(resulting_events);
 
-            shambase::get_check_ref(storage.rho_primitive)
-                .get_buf(id_patch)
-                .complete_event_state(resulting_events);
+            // shambase::get_check_ref(storage.rho_primitive)
+            //     .get_buf(id_patch)
+            //     .complete_event_state(resulting_events);
 
             shambase::get_check_ref(storage.press)
                 .get_buf(id_patch)

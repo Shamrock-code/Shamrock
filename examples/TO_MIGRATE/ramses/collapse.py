@@ -147,12 +147,12 @@ def run_sim():
         dt = next_dt
 
         if i % freq == 0:
-            model.dump_vtk(f"iso_collapse_{i:04d}.vtk")
+            model.dump_vtk(f"_iso_collapse_{i:04d}.vtk")
 
         if tmax < t + next_dt:
             dt = tmax - t
         if t == tmax:
-            model.dump_vtk(f"iso_collapse{i:04d}.vtk")
+            model.dump_vtk(f"_iso_collapse{i:04d}.vtk")
             break
 
 

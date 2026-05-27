@@ -170,6 +170,15 @@ jobs:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
 
+      - name: Debug Codecov token
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:

@@ -19,6 +19,8 @@
 #include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 
+#define NODE_EDGES(X_RO, X_RW) X_RW(shamrock::solvergraph::IEdge, to_free)
+
 namespace shamrock::solvergraph {
 
     /**
@@ -32,9 +34,7 @@ namespace shamrock::solvergraph {
         public:
         NodeFreeAlloc() {}
 
-#define NODE_FREE_ALLOC_EDGES(X_RO, X_RW) X_RW(shamrock::solvergraph::IEdge, to_free)
-        EXPAND_NODE_EDGES(NODE_FREE_ALLOC_EDGES)
-#undef NODE_FREE_ALLOC_EDGES
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         /// Evaluate the node
         inline void _impl_evaluate_internal() { get_edges().to_free.free_alloc(); }
@@ -58,3 +58,5 @@ namespace shamrock::solvergraph {
     };
 
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

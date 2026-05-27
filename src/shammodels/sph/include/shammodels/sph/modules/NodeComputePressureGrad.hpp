@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeUpdateDerivsVaryingAlphaAV.hpp
+ * @file NodeComputePressureGrad.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -26,8 +26,6 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_u)                                        \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, beta_AV)                                        \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -36,37 +34,32 @@
     /* fields */                                                                                   \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, xyz)                                             \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, vxyz)                                            \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, uint)                                           \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, omega)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, pressure)                                       \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, cs)                                             \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, alpha_AV)                                       \
                                                                                                    \
     /* neigh */                                                                                    \
     X_RO(shammodels::sph::solvergraph::NeighCache, neigh_cache)                                    \
                                                                                                    \
     /* outputs */                                                                                  \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, duint)
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, grad_P_on_rho)
 
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class NodeUpdateDerivsVaryingAlphaAV : public shamrock::solvergraph::INode {
+    class NodeComputePressureGrad : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         static constexpr Tscal kernel_radius = SPHKernel<Tscal>::Rkern;
 
         public:
-        NodeUpdateDerivsVaryingAlphaAV() {}
+        NodeComputePressureGrad() {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "UpdateDerivsVaryingAlphaAV"; };
+        inline virtual std::string _impl_get_label() const { return "ComputePressureGrad"; };
 
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };

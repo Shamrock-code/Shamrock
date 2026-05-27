@@ -19,7 +19,6 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/vec.hpp"
-#include "shamcomm/logs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
@@ -27,8 +26,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
 
-#define NODE_MONOFLUID_TVI_ADD_SOURCE_TERM_EDGES(X_RO, X_RW)                                       \
-                                                                                                   \
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
@@ -52,7 +50,7 @@ namespace shammodels::sph::modules {
         public:
         NodeMonofluidTVIAddSourceTerm(u32 nbins) : nbins(nbins) {}
 
-        EXPAND_NODE_EDGES(NODE_MONOFLUID_TVI_ADD_SOURCE_TERM_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         inline void _impl_evaluate_internal() {
 
@@ -86,12 +84,12 @@ namespace shammodels::sph::modules {
                     Tscal ds_j_dt_val = 0;
 
                     if (sj * sj > rhodust_eps) {
-                        ds_j_dt_val = S[id] / (2 * sycl::sqrt(sj));
+                        ds_j_dt_val = S[id] / (2 * sham::abs(sj));
                     } else {
                         // we need this trick otherwise the bin would never start to get filled
                         // because of the cuttof, so the trick is to add the threshold in the
                         // denominator. yeah dirty i know i know  ...
-                        ds_j_dt_val = S[id] / (2 * sycl::sqrt(sj + sycl::sqrt(rhodust_eps)));
+                        ds_j_dt_val = S[id] / (2 * (sham::abs(sj) + sycl::sqrt(rhodust_eps)));
                     }
 
                     ds_j_dt[id] += ds_j_dt_val;
@@ -102,6 +100,47 @@ namespace shammodels::sph::modules {
             return "NodeMonofluidTVIAddSourceTerm";
         };
 
-        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+        inline virtual std::string _impl_get_tex() const {
+
+            auto S_edge           = get_ro_edge_base(2).get_tex_symbol();
+            auto s_j_edge         = get_ro_edge_base(3).get_tex_symbol();
+            auto ds_j_dt_edge     = get_rw_edge_base(0).get_tex_symbol();
+            auto rhodust_eps_edge = get_ro_edge_base(1).get_tex_symbol();
+            auto part_counts_edge = get_ro_edge_base(0).get_tex_symbol();
+
+            std::string tex = R"tex(
+                Monofluid TVI: dust-density source term $\rightarrow$ ${s_j}$ time derivative
+
+                Per gas particle $a$ and mass bin $j$ (monofluid: $\rho_{{\rm d},j,a} = {s_j}_{j,a}^2$):
+
+                \begin{align}
+                \rho_{{\rm d},j,a} &= {s_j}_{j,a}^2 \\
+                {S}_{j,a} &= \text{dust density source term } (\mathrm{d}\rho_{{\rm d},j,a}/\mathrm{d}t) \\
+                \delta_{j,a} &= \begin{cases}
+                    {S}_{j,a} / (2 |{s_j}_{j,a}|) & |{s_j}_{j,a}|^2 > \rho_{\rm eps} \\
+                    {S}_{j,a} / \bigl(2 (|{s_j}_{j,a}| + \sqrt{\rho_{\rm eps}})\bigr) & \text{otherwise}
+                \end{cases} \\
+                {ds_j_dt}_{j,a} &\mathrel{+}= \delta_{j,a}
+                \end{align}
+
+                Unsaturated: $\mathrm{d}{s_j}_{j,a}^2/\mathrm{d}t = {S}_{j,a}
+                \Rightarrow \mathrm{d}{s_j}_{j,a}/\mathrm{d}t = {S}_{j,a}/(2|{s_j}_{j,a}|)$.
+                The floor ($\sqrt{\rho_{\rm eps}}$ in the denominator) lets bins with $|{s_j}_{j,a}|^2 \le \rho_{\rm eps}$ start accumulating.
+
+                $a \in [0, {part_counts})$, $j \in [0, N_{\rm bins})$,
+                $\rho_{\rm eps} = {rhodust_eps}$, $N_{\rm bins} = {nbins}$
+            )tex";
+
+            shambase::replace_all(tex, "{S}", S_edge);
+            shambase::replace_all(tex, "{s_j}", s_j_edge);
+            shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt_edge);
+            shambase::replace_all(tex, "{rhodust_eps}", rhodust_eps_edge);
+            shambase::replace_all(tex, "{part_counts}", part_counts_edge);
+            shambase::replace_all(tex, "{nbins}", shambase::format("{}", nbins));
+
+            return tex;
+        }
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

@@ -70,9 +70,12 @@ uuzero = przero / (gam1 * rhozero)
 
 render_gif = True
 
-dump_folder = ""
+dump_folder = "_to_trash"
 sim_name = "orztang"
 analysis_folder = dump_folder  # store analysis data alongside dumps
+
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
 
 # %%
 # Configure the solver
@@ -228,13 +231,13 @@ t_target = 1.0
 dt_dump = 0.025
 
 analysis(0)
-model.do_vtk_dump(f"{sim_name}_{0:05}.vtk", True)
+model.do_vtk_dump(f"{dump_folder}/{sim_name}_{0:05}.vtk", True)
 
 i_dump = 1
 
 while t_sum < t_target:
     model.evolve_until(t_sum + dt_dump)
-    model.do_vtk_dump(f"{sim_name}_{i_dump:05}.vtk", True)
+    model.do_vtk_dump(f"{dump_folder}/{sim_name}_{i_dump:05}.vtk", True)
     analysis(i_dump)
     t_sum += dt_dump
     i_dump += 1

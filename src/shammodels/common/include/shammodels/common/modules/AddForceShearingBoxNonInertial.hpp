@@ -16,17 +16,26 @@
  *
  */
 
-#include "shambase/SourceLocation.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
-#include "shambackends/math.hpp"
-#include "shamcomm/logs.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsys/NodeInstance.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, omega_0)                                         \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, q)                                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_positions)                                 \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_velocities)                                \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_accel_ext)
+
 namespace shammodels::common::modules {
+
     template<class Tvec>
     class AddForceShearingBoxNonInertial : public shamrock::solvergraph::INode {
 
@@ -35,38 +44,9 @@ namespace shammodels::common::modules {
         public:
         AddForceShearingBoxNonInertial() = default;
 
-        struct Edges {
-            const shamrock::solvergraph::IDataEdge<Tscal> &omega_0;
-            const shamrock::solvergraph::IDataEdge<Tscal> &q;
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_positions;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_velocities;
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_accel_ext;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> omega_0,
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> q,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_positions,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_velocities,
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_accel_ext) {
-            __internal_set_ro_edges({omega_0, q, spans_positions, spans_velocities, sizes});
-            __internal_set_rw_edges({spans_accel_ext});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(4),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
-        }
-
-        void _impl_evaluate_internal() {
+        inline void _impl_evaluate_internal() {
 
             __shamrock_stack_entry();
 
@@ -99,8 +79,10 @@ namespace shammodels::common::modules {
 
         inline virtual std::string _impl_get_label() const {
             return "AddForceShearingBoxNonInertial";
-        };
+        }
 
-        virtual std::string _impl_get_tex() const { return "TODO"; }
+        inline virtual std::string _impl_get_tex() const { return "TODO"; }
     };
 } // namespace shammodels::common::modules
+
+#undef NODE_EDGES

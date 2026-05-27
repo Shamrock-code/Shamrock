@@ -21,6 +21,16 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::ScalarsEdge<TgridVec>, level0_size)                                \
+    X_RO(shamrock::solvergraph::IFieldSpan<TgridVec>, block_min)                                   \
+    X_RO(shamrock::solvergraph::IFieldSpan<TgridVec>, block_max)                                   \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<TgridUint>, block_level)
+
 namespace shammodels::basegodunov::modules {
 
     template<class TgridVec>
@@ -31,40 +41,17 @@ namespace shammodels::basegodunov::modules {
         public:
         ComputeAMRLevel() {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::ScalarsEdge<TgridVec> &level0_size;
-            const shamrock::solvergraph::IFieldSpan<TgridVec> &block_min;
-            const shamrock::solvergraph::IFieldSpan<TgridVec> &block_max;
-            shamrock::solvergraph::IFieldSpan<TgridUint> &block_level;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<TgridVec>> level0_size,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> block_min,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridVec>> block_max,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<TgridUint>> block_level) {
-            __internal_set_ro_edges({sizes, level0_size, block_min, block_max});
-            __internal_set_rw_edges({block_level});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<TgridVec>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<TgridVec>>(3),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<TgridUint>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        void _impl_reset_internal() {};
+        inline void _impl_reset_internal() {}
 
-        inline virtual std::string _impl_get_label() const { return "ComputeAMRLevel"; };
+        inline virtual std::string _impl_get_label() const { return "ComputeAMRLevel"; }
 
         virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

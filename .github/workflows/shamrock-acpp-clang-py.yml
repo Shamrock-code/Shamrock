@@ -30,8 +30,8 @@ jobs:
             backend: omp
             arch: none
             runtest: yes
-            label: "ubuntu latest"
-            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu-latest
+            label: "ubuntu 24"
+            container: ghcr.io/shamrock-code/shamrock-ci:ubuntu24
 
     timeout-minutes: 180
     steps:

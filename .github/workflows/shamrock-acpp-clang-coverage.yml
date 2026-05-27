@@ -1,15 +1,13 @@
 name: Acpp/clang (Coverage)
 
-
 on:
   workflow_call:
-
 
 jobs:
 
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: [self-hosted, docker-runner]
 
     container:
       image: ${{ matrix.container }}
@@ -24,8 +22,8 @@ jobs:
     steps:
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
+      - name: Reconfigure git
+        run: |
           git config --global --add safe.directory '*'
           git config --global --list
       - uses: actions/checkout@v4
@@ -47,7 +45,7 @@ jobs:
       #### End Checkout part ####
 
       - name: ls local
-        run : ls -la
+        run: ls -la
 
       - name: install LLVM
         run: |
@@ -131,12 +129,28 @@ jobs:
       - name: make coverage reports
         run: |
           cd acpp_omp_debug
-          llvm-cov-${{matrix.clang}} report shamrock_test -instr-profile=utests.profdata \
-              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"\
-               > coverage_list.txt
-          llvm-cov-${{matrix.clang}} show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov\
-              -Xdemangler c++filt -Xdemangler -n \
+
+          # Txt output
+          llvm-cov-${{matrix.clang}} report shamrock_test \
+              -instr-profile=utests.profdata \
+              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp" \
+              > coverage_list.txt
+
+          # HTML website for doc
+          llvm-cov-${{matrix.clang}} show shamrock_test \
+              -instr-profile=utests.profdata \
+              -format=html \
+              -output-dir=out_cov \
+              -Xdemangler c++filt \
+              -Xdemangler -n \
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"
+
+          # export LCOV for Codecov
+          llvm-cov-${{matrix.clang}} export shamrock_test \
+              -instr-profile=utests.profdata \
+              -format=lcov \
+              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp" \
+              > coverage.info
 
       - name: print coverage
         run: |
@@ -155,3 +169,10 @@ jobs:
         with:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: acpp_omp_debug/coverage.info
+          fail_ci_if_error: false
+          verbose: true

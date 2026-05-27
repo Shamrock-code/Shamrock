@@ -46,8 +46,7 @@ namespace shammodels::basegodunov::modules {
 
         struct Edges {
             const shamrock::solvergraph::Indexes<u32> &sizes;
-
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_old;
+            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_dt_rho_old;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_next;
             const shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov_old;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rhoe_old;
@@ -63,8 +62,7 @@ namespace shammodels::basegodunov::modules {
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_old,
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_dt_rho_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_next,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov_old,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rhoe_old,
@@ -78,7 +76,7 @@ namespace shammodels::basegodunov::modules {
 
             __internal_set_ro_edges(
                 {sizes,
-                 spans_rho_old,
+                 spans_dt_rho_old,
                  spans_rho_next,
                  spans_rhov_old,
                  spans_rhoe_old,

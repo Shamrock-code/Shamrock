@@ -9,9 +9,9 @@ import shamrock
 
 #####============================== matplot config start ===============================
 
-lw, ms = 5, 7  # linewidth  #markersize
+lw, ms = 2, 2  # linewidth  #markersize
 elw, cs = 0.75, 0.75  # elinewidth and capthick #capsize for errorbar specifically
-fontsize = 35
+fontsize = 5
 tickwidth, ticksize = 1.5, 4
 mpl.rcParams["axes.titlesize"] = fontsize * 1.5
 mpl.rcParams["axes.labelsize"] = fontsize * 1.5
@@ -42,7 +42,7 @@ mpl.rcParams["font.serif"] = "latex"
 shamrock.enable_experimental_features()
 
 
-def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
+def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2, NJ=4):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
 
@@ -52,8 +52,11 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     multy = 1
     multz = 1
 
-    sz = 1 << 1
-    base = 32
+    max_amr_lev = 2
+    sz = 2 << max_amr_lev
+
+    # sz = 1 << 1
+    base = 16
 
     cfg = model.gen_default_config()
     scale_fact = 1 / (sz * base * multx)
@@ -64,7 +67,12 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     cfg.set_eos_gamma(1.0000001)
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
+
+    # ===========
     cfg.set_gravity_mode_cg()
+    # ===========
+
+    # cfg.set_gravity_mode_bicgstab()
     cfg.set_riemann_solver_hllc()
 
     cfg.set_self_gravity_G_values(True, 1.0)
@@ -72,6 +80,7 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     cfg.set_self_gravity_tol(1e-6)
     # cfg.set_self_gravity_happy_breakdown_tol(1e-6)
     cfg.set_coupling_gravity_mode_ramses_like()
+    cfg.set_amr_mode_jeans_length_based(N_jeans=NJ, T_init=cs)
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(50000), 1)
@@ -97,7 +106,6 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
         return rho0 * (1.0 + pertubation(x, A_rho))
 
     def rhovel_map(rmin, rmax) -> tuple[float, float, float]:
-
         return (0, 0, 0)
 
     def rhoe_map(rmin, rmax) -> float:
@@ -170,7 +178,9 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     b = None
     c = None
     mask = None
-    for i in range(100000):
+    for i in range(500):
+        next_dt = model.evolve_once_override_time(t, dt)
+
         dic = ctx.collect_data()
 
         if shamrock.sys.world_rank() == 0:
@@ -190,8 +200,6 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
             rhog.append(rg_i - rho0)
             vg.append(vg_i)
             etot.append(e_i)
-
-        next_dt = model.evolve_once_override_time(t, dt)
 
         t += dt
 
@@ -257,15 +265,26 @@ rg_num = []
 vg_num = []
 etot_num = []
 
-cs = 2
+cs = 0.15
 lembda = 0.5
 amp = 1e-4
 rho0 = 1
 L = 1.0
 G = 1.0
 
+t_ff = np.sqrt((3.0 * np.pi) / (32.0 * G * rho0))  # [s]
+lamb_J = np.sqrt((cs * cs * np.pi) / (G * rho0))  # [m]
+print(f"Jeans length = {lamb_J}\n")
+print(f"free fall time = {t_ff} \n")
+N_J = 100
+L = 1
+min_reso = (L * N_J) / (lamb_J)
+print(f"min reso = {min_reso}\n")
 
-rho_last, vel_last, X, mask = run_sim(rg_num, vg_num, etot_num, cs, times, lembda, rho0, amp)
+
+rho_last, vel_last, X, mask = run_sim(
+    rg_num, vg_num, etot_num, cs, times, lembda, rho0, amp, NJ=N_J
+)
 
 
 if shamrock.sys.world_rank() == 0:
@@ -320,22 +339,22 @@ if shamrock.sys.world_rank() == 0:
     # datas_extrema = np.stack((maxima_pos, maxima , minima_pos, minima)).T
     # np.savetxt(f"Jeans-instablity-test-datas-extremas-for-{shamrock.sys.world_size()}-amp-{amp}-cs-{cs}-rho0-{rho0}-lambda-{lembda}-{len(X)}--{len(rg_num)}", datas_extrema)
 
-    fig, axs = plt.subplots(2, 2, figsize=(40, 35))
+    fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     plt.subplots_adjust(wspace=0.25)
     axs[0][0].plot(times, rg_num, "co", label="$\\rho_{num}$")
-    axs[0][0].plot(times, dens_in_time, "k--", label="$\\rho_{ana}$")
+    axs[0][0].plot(times, dens_in_time, "ko", label="$\\rho_{ana}$")
     axs[0][0].set_xlabel("Time", fontsize=fontsize, fontweight="bold")
     axs[0][0].set_ylabel("Density in time", fontsize=fontsize, fontweight="bold")
     axs[0][0].legend(prop={"weight": "bold"}, loc="best")
 
     axs[0][1].plot(times, vg_num, "co", label="$v_{num}$")
-    axs[0][1].plot(times, vel_in_time, "k--", label="$v_{ana}$")
+    axs[0][1].plot(times, vel_in_time, "ko", label="$v_{ana}$")
     axs[0][1].set_xlabel("Time", fontsize=fontsize, fontweight="bold")
     axs[0][1].set_ylabel("Velocity in time ", fontsize=fontsize, fontweight="bold")
     axs[0][1].legend(prop={"weight": "bold"}, loc="best")
 
     axs[1][0].plot(X, rho_last, "co", label="$\\rho_{num}$")
-    axs[1][0].plot(X, dens_fix_time, "k--", label="$\\rho_{ana}$")
+    axs[1][0].plot(X, dens_fix_time, "ko", label="$\\rho_{ana}$")
     axs[1][0].set_xlabel(r"$\mathbf{x}$", fontsize=fontsize, fontweight="bold")
     axs[1][0].set_ylabel(
         "Density at $t_{final}$ = " + f"{t_last} ", fontsize=fontsize, fontweight="bold"
@@ -343,7 +362,7 @@ if shamrock.sys.world_rank() == 0:
     axs[1][0].legend(prop={"weight": "bold"}, loc="best")
 
     axs[1][1].plot(X, vel_last, "co", label="$v_{num}$")
-    axs[1][1].plot(X, vel_fix_time, "k--", label="$v_{ana}$")
+    axs[1][1].plot(X, vel_fix_time, "ko", label="$v_{ana}$")
     axs[1][1].set_xlabel(r"$\mathbf{x}$", fontsize=fontsize, fontweight="bold")
     axs[1][1].set_ylabel(
         "Velocity at $t_{final}$ = " + f"{t_last}", fontsize=fontsize, fontweight="bold"
@@ -368,6 +387,7 @@ if shamrock.sys.world_rank() == 0:
     )
 
     plt.legend(prop={"weight": "bold"})
+    plt.show()
     plt.savefig(
         f"Jeans_instability-{shamrock.sys.world_size()}-amp-{amp}-cs-{cs}-rho0-{rho0}-lambda-{lembda}-{len(X)}--{len(rg_num)}-V-Check.pdf",
         format="pdf",

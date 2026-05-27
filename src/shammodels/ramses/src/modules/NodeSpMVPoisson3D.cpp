@@ -91,8 +91,9 @@ namespace {
                             const u32 cell_loc_id = cell_global_id % block_size;
                             Tscal delta_cell      = cell_sizes[block_id];
                             auto Ap_id = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec>(
+                                cell_sizes,
+                                block_size,
                                 cell_global_id,
-                                delta_cell,
                                 graph_iter_xp,
                                 graph_iter_xm,
                                 graph_iter_yp,
@@ -100,10 +101,14 @@ namespace {
                                 graph_iter_zp,
                                 graph_iter_zm,
                                 [=](u32 id) {
-                                    return in[id];
+                                    return sycl::isnan(in[id]) ? 0.0 : in[id];
                                 });
 
                             out[cell_global_id] = Ap_id;
+
+                            if (sycl::isnan(Ap_id)) {
+                                logger::raw_ln("nan in SpMV3D @ \t", cell_global_id, "\n");
+                            }
                         });
                 });
         }

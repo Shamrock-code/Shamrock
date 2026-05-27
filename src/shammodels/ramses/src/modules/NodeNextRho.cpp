@@ -35,8 +35,6 @@ namespace {
         inline static void kernel(
             const shambase::DistributedData<u32> &sizes,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-                &spans_rho_old,
-            const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
                 &spans_dt_rho_old,
             const f64 dt_over_2,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho_new,
@@ -49,15 +47,22 @@ namespace {
                   });
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{spans_rho_old, spans_dt_rho_old},
+                sham::DDMultiRef{spans_dt_rho_old},
                 sham::DDMultiRef{spans_rho_new},
                 cell_counts,
-                [dt_over_2](
-                    u32 i,
-                    const Tscal *__restrict rho_old,
-                    const Tscal *__restrict dt_rho_old,
-                    Tscal *__restrict rho_new) {
-                    rho_new[i] = rho_old[i] + (2. * dt_over_2) * dt_rho_old[i];
+                [dt_over_2](u32 i, const Tscal *__restrict dt_rho_old, Tscal *__restrict rho_new) {
+                    if (sycl::isnan(rho_new[i]) || sycl::isnan(dt_rho_old[i])) {
+                        logger::raw_ln(
+                            "nan in rho_next @ \t",
+                            i,
+                            "\t rho = \t",
+                            rho_new[i],
+                            "\t dtrho = \t",
+                            dt_rho_old[i],
+                            "\n");
+                    }
+
+                    rho_new[i] += (2. * dt_over_2) * dt_rho_old[i];
                 });
         }
     };
@@ -72,11 +77,9 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
         edges.spans_dt_rho_old.check_sizes(edges.sizes.indexes);
         edges.spans_rho_next.ensure_sizes(edges.sizes.indexes);
-        edges.spans_rho_old.check_sizes(edges.sizes.indexes);
 
         KernelNextRho<Tvec>::kernel(
             edges.sizes.indexes,
-            edges.spans_rho_old.get_spans(),
             edges.spans_dt_rho_old.get_spans(),
             edges.dt_over2.value,
             edges.spans_rho_next.get_spans(),

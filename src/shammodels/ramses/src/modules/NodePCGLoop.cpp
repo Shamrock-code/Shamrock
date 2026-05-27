@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeCGLoop.cpp
+ * @file NodePCGLoop.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief
@@ -53,6 +53,12 @@ namespace shammodels::basegodunov::modules {
             /* compute norm of rhs <b_rhs,b_rsh>*/
             rhs_node.evaluate();
 
+            /* compute hadamard r*z*/
+            rz_hadamard_prod_node.evaluate();
+
+            /* compute old <r,z>*/
+            rz_reduction_node.evaluate();
+
             u32 k = 0;
             if (shamcomm::world_rank() == 0) {
                 logger::raw_ln(" k = ", k);
@@ -90,8 +96,10 @@ namespace shammodels::basegodunov::modules {
                 a_norm_node.evaluate();
 
                 /** compute \alpha_{k} = \frac{ <r_{k},r_{k}> }{ <p_{k},Ap_{k}> }*/
-
-                edges.alpha.value = edges.old_values.value / edges.e_norm.value;
+                //---------------
+                // edges.alpha.value = edges.old_values.value / edges.e_norm.value;
+                //------------
+                edges.alpha.value = edges.rz_old_values.value / edges.e_norm.value;
 
                 /** compute new phi : \phi_{k+1} = \phi_{k} + \alpha_{k} p_{k}  */
                 new_potential_node.evaluate();
@@ -100,16 +108,29 @@ namespace shammodels::basegodunov::modules {
                 edges.alpha.value = -edges.alpha.value;
                 new_residual_node.evaluate();
 
+                /** compute preconditioned residual: z_{k+1} = M^{-1}*r_{k+1} */
+                res_precond_node.evaluate();
+
                 /** compute <r_{k+1},r_{k+1}> and assign its value to edges.new_values.value */
                 res_ddot_new_node.evaluate();
 
+                /** r_{k+1}*z_{k+1} **/
+                rz_hadamard_prod_node.evaluate();
+
+                /** compute new <r,z> : <r_{k+1}, z_{k+1}>*/
+                rz_new_reduction_node.evaluate();
+
                 /** compute \beta_{k} = \frac{<r_{k+1},r_{k+1}>}{<r_{k},r_{k}>}*/
                 //-------------------
-                edges.beta.value = edges.new_values.value / edges.old_values.value;
+                // edges.beta.value = edges.new_values.value / edges.old_values.value;
+                //------------------
+                edges.beta.value = edges.rz_new_values.value / edges.rz_old_values.value;
 
                 /** set <r_{k},r_{k}> = <r_{k+1},r_{k+1}>*/
                 edges.old_values.value = edges.new_values.value;
 
+                /** set <r_{k}, z_{k}> = <r_{k+1}, z_{k+1}>*/
+                edges.rz_old_values = edges.rz_new_values;
                 if (shamcomm::world_rank() == 0) {
                     logger::raw_ln("New-RES (L2-squared)  = \t ", (edges.old_values.value), "\n\n");
                 }

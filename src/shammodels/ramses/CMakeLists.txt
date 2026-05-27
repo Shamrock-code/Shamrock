@@ -44,7 +44,6 @@ set(Sources
     src/modules/SumFluxHydro.cpp
     src/modules/SumFluxDust.cpp
     src/SolverConfig.cpp
-
     src/modules/NodeAXPY.cpp
     src/modules/NodeAYPX.cpp
     src/modules/NodeHadamardProd.cpp
@@ -57,6 +56,12 @@ set(Sources
     src/modules/NodeNextRho.cpp
     src/modules/NodeGetNextConsVar.cpp
     src/modules/TimeIntegratorSelfGravity.cpp
+    src/modules/NodePrecondResidual.cpp
+    src/modules/BICGSTABInit.cpp
+    src/modules/NodeAXPYThreeVectors.cpp
+    src/modules/NodeLinCombThreeVectors.cpp
+    src/modules/NodeOverwrite.cpp
+    src/modules/BICGSTABLoop.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

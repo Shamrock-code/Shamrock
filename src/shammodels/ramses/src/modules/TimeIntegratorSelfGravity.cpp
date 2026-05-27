@@ -41,79 +41,86 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
 
     {
 
-        auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
+        // auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
+
+        auto &rho_next  = shambase::get_check_ref(storage.refs_rho);
         auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
         auto &rhoe_next = shambase::get_check_ref(storage.refs_rhoe_next);
-        auto &phi_next  = shambase::get_check_ref(storage.refs_phi_new);
+        auto &phi_next  = shambase::get_check_ref(storage.refs_phi);
 
-        scheduler().for_each_patchdata_nonempty(
-            [&](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-                shamlog_debug_ln(
-                    "[AMR Flux]", "forward euler integration-self-gravity patch", p.id_patch);
+        scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
+                                                    shamrock::patch::PatchDataLayer &pdat) {
+            shamlog_debug_ln(
+                "[AMR Flux]", "forward euler integration-self-gravity patch", p.id_patch);
 
-                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                sham::DeviceBuffer<Tscal> &rho_next_patch  = rho_next.get_buf(p.id_patch);
-                sham::DeviceBuffer<Tvec> &rhov_next_patch  = rhov_next.get_buf(p.id_patch);
-                sham::DeviceBuffer<Tscal> &rhoe_next_patch = rhoe_next.get_buf(p.id_patch);
-                sham::DeviceBuffer<Tscal> &phi_new_patch   = phi_next.get(p.id_patch).get_buf();
+            sham::DeviceBuffer<Tscal> &rho_next_patch  = rho_next.get(p.id_patch).get_buf();
+            sham::DeviceBuffer<Tvec> &rhov_next_patch  = rhov_next.get_buf(p.id_patch);
+            sham::DeviceBuffer<Tscal> &rhoe_next_patch = rhoe_next.get_buf(p.id_patch);
+            sham::DeviceBuffer<Tscal> &phi_new_patch   = phi_next.get(p.id_patch).get_buf();
 
-                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+            u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
-                sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
-                sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
-                sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
-                sham::DeviceBuffer<Tscal> &phi_old  = pdat.get_field_buf_ref<Tscal>(iphi);
+            sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
+            sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
+            sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
+            sham::DeviceBuffer<Tscal> &phi_old  = pdat.get_field_buf_ref<Tscal>(iphi);
 
-                sham::EventList depends_list;
-                auto acc_rho_next_patch  = rho_next_patch.get_read_access(depends_list);
-                auto acc_rhov_next_patch = rhov_next_patch.get_read_access(depends_list);
-                auto acc_rhoe_next_patch = rhoe_next_patch.get_read_access(depends_list);
+            sham::EventList depends_list;
+            auto acc_rho_next_patch  = rho_next_patch.get_read_access(depends_list);
+            auto acc_rhov_next_patch = rhov_next_patch.get_read_access(depends_list);
+            auto acc_rhoe_next_patch = rhoe_next_patch.get_read_access(depends_list);
 
-                auto rho_old  = buf_rho.get_write_access(depends_list);
-                auto rhov_old = buf_rhov.get_write_access(depends_list);
-                auto rhoe_old = buf_rhoe.get_write_access(depends_list);
+            auto rho_old  = buf_rho.get_write_access(depends_list);
+            auto rhov_old = buf_rhov.get_write_access(depends_list);
+            auto rhoe_old = buf_rhoe.get_write_access(depends_list);
 
-                auto acc_phi_new = phi_new_patch.get_read_access(depends_list);
-                auto acc_phi_old = phi_old.get_write_access(depends_list);
+            auto acc_phi_new = phi_new_patch.get_read_access(depends_list);
+            auto acc_phi_old = phi_old.get_write_access(depends_list);
 
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
-                        auto vel = acc_rhov_next_patch[id_a] / acc_rho_next_patch[id_a];
-                        auto Ekin =  0.5 * acc_rho_next_patch[id_a] * (vel[0]*vel[0] + vel[1]* vel[1] + vel[2]*vel[2]);
+            auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
+                shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
+                    auto vel  = acc_rhov_next_patch[id_a] / acc_rho_next_patch[id_a];
+                    auto Ekin = 0.5 * acc_rho_next_patch[id_a]
+                                * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
 
-                        shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-                        auto m_H = ctes.proton_mass(); // [kg]
-                        auto kb = ctes.kb();          // []
-                        auto mu = 2.3 ; //molecular gas
-                        // auto m_H = 1.6735e-27;  //[kg]
-                        // auto kb = 1.380649e-23;
-                        auto T = 10 ;
+                    shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+                    auto m_H = ctes.proton_mass(); // [kg]
+                    auto kb  = ctes.kb();          // []
+                    auto mu  = 2.3;                // molecular gas
+                    // auto m_H = 1.6735e-27;  //[kg]
+                    // auto kb = 1.380649e-23;
+                    auto T = 10;
 
-                        auto cs0_sqr = (kb * T) / (mu * m_H);
-                        auto rho_crit = 1 ; //[kg*m^-3]
-                        auto P = acc_rho_next_patch[id_a] * cs0_sqr * ( 1. + sycl::pow(acc_rho_next_patch[id_a]/rho_crit, 2./3.));
-                        auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5./3.;
-                        auto Eint = P / (gamma_eff -1.);
-                        rho_old[id_a]     = acc_rho_next_patch[id_a];
-                        rhov_old[id_a]    = acc_rhov_next_patch[id_a];
-                        // rhoe_old[id_a]    = acc_rhoe_next_patch[id_a];
-                        rhoe_old[id_a]    = Ekin +  Eint;
-                        acc_phi_old[id_a] = acc_phi_new[id_a];
-                    });
+                    auto cs0_sqr  = (kb * T) / (mu * m_H);
+                    auto rho_crit = 1; //[kg*m^-3]
+                    // auto P = acc_rho_next_patch[id_a] * cs0_sqr
+                    //          * (1. + sycl::pow(acc_rho_next_patch[id_a] / rho_crit, 2. / 3.));
+                    auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5. / 3.;
+                    auto P         = acc_rho_next_patch[id_a] * cs0_sqr;
+                    auto Eint      = P / (gamma_eff - 1.);
+                    rho_old[id_a]  = acc_rho_next_patch[id_a];
+
+                    rhov_old[id_a] = acc_rhov_next_patch[id_a];
+                    // rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
+
+                    rhoe_old[id_a] = Ekin + Eint;
+                    // acc_phi_old[id_a] = acc_phi_new[id_a];
                 });
-
-                rho_next_patch.complete_event_state(e);
-                rhov_next_patch.complete_event_state(e);
-                rhoe_next_patch.complete_event_state(e);
-
-                buf_rho.complete_event_state(e);
-                buf_rhov.complete_event_state(e);
-                buf_rhoe.complete_event_state(e);
-
-                phi_new_patch.complete_event_state(e);
-                phi_old.complete_event_state(e);
             });
+
+            rho_next_patch.complete_event_state(e);
+            rhov_next_patch.complete_event_state(e);
+            rhoe_next_patch.complete_event_state(e);
+
+            buf_rho.complete_event_state(e);
+            buf_rhov.complete_event_state(e);
+            buf_rhoe.complete_event_state(e);
+
+            phi_new_patch.complete_event_state(e);
+            phi_old.complete_event_state(e);
+        });
     }
 }
 

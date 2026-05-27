@@ -86,10 +86,12 @@ namespace shammodels::basegodunov {
         CouplinGravitygMode coupling_gravity_mode = NoCoupling;
         bool analytical_gravity = false; // whether to use an external analytical gravity
         Tscal tol               = 1e-6;
-        Tscal G                 = 1.; // for some tests purpose one can want to fix the value of G
+        Tscal tol_hp_bk         = 1e-6; // tol to check happy breakdown and restart
+        Tscal G                 = 1.;   // for some tests purpose one can want to fix the value of G
         bool set_G              = false;
         u32 Niter_max           = 100;
         inline Tscal get_tolerance() { return tol; }
+        inline Tscal get_happy_bk_tolerance() { return tol_hp_bk; }
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
         inline bool is_coupling_gravity_on() { return (coupling_gravity_mode != NoCoupling); }
     };
@@ -113,7 +115,7 @@ namespace shammodels::basegodunov {
         };
 
         struct JeansLengthBased {
-            u32 N_J = 4;
+            u32 N_J   = 4;
             Tscal T_0 = 10.;
         };
 
@@ -126,7 +128,9 @@ namespace shammodels::basegodunov {
             config = PseudoGradientBased{error_min, error_max};
         }
 
-        void set_refine_jeans_length_based(u32 N_J, Tscal T_0){config = JeansLengthBased{N_J,T_0};}
+        void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
+            config = JeansLengthBased{N_J, T_0};
+        }
 
         bool need_level_zero_compute() { return true; }
         bool need_amr_level_compute() { return true; }
@@ -231,7 +235,7 @@ struct shammodels::basegodunov::SolverConfig {
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
         if (gravity_config.set_G) {
-            logger::raw_ln("G value from code \t", gravity_config.G,"\n\n");
+            logger::raw_ln("G value from code \t", gravity_config.G, "\n\n");
             return 4. * M_PI * gravity_config.G;
         } else {
             auto scal_G = get_constant_G();
@@ -239,6 +243,7 @@ struct shammodels::basegodunov::SolverConfig {
         }
     }
     inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
+    inline Tscal get_happy_bk_grav_tol() { return gravity_config.get_happy_bk_tolerance(); }
     inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
     inline bool is_coupling_gravity_on() { return gravity_config.is_coupling_gravity_on(); }
     inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }

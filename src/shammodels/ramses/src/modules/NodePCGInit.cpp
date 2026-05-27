@@ -92,8 +92,9 @@ namespace {
                             const u32 cell_loc_id = cell_global_id % block_size;
                             Tscal delta_cell      = cell_sizes[block_id];
                             auto Aphi = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec>(
+                                cell_sizes,
+                                block_size,
                                 cell_global_id,
-                                delta_cell,
                                 graph_iter_xp,
                                 graph_iter_xm,
                                 graph_iter_yp,

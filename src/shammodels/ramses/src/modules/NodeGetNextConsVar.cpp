@@ -34,7 +34,7 @@ namespace {
         inline static void kernel(
             const shambase::DistributedData<u32> &sizes,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-                &spans_rho_old,
+                &spans_dt_rho_old,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
                 &spans_rho_next,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>>
@@ -65,7 +65,7 @@ namespace {
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 sham::DDMultiRef{
-                    spans_rho_old,
+                    spans_dt_rho_old,
                     spans_rho_next,
                     spans_rhov_old,
                     spans_rhoe_old,
@@ -77,7 +77,7 @@ namespace {
                 cell_counts,
                 [dt_over_2](
                     u32 i,
-                    const Tscal *__restrict rho_old,
+                    const Tscal *__restrict dt_rho_old,
                     const Tscal *__restrict rho_next,
                     const Tvec *__restrict rhov_old,
                     const Tscal *__restrict rhoe_old,
@@ -87,15 +87,37 @@ namespace {
                     const Tscal *__restrict dt_rhoe_old,
                     Tvec *__restrict rhov_new,
                     Tscal *__restrict rhoe_new) {
+                    auto rho_old = rho_next[i] - (2. * dt_over_2) * dt_rho_old[i];
+
+                    // auto rhovec_next = rhov_old[i] + (2. * dt_over_2) * dt_rhov_old[i];
+                    // auto rhoe_next   = rhoe_old[i] + (2. * dt_over_2) * dt_rhoe_old[i];
+                    // auto Ekin_old = (0.5/rho_next[i])* (  (rhovec_next[0] * rhovec_next[0])  +
+                    // (rhovec_next[1] * rhovec_next[1]) + (rhovec_next[2] * rhovec_next[2]) );
+                    // rhov_new[i] = rhovec_next + dt_over_2 * phi_g_old[i] * (rho_old +
+                    // rho_next[i]);
+
+                    // auto Ekin_new = (0.5/rho_next[i]) * (  ( rhov_new[i][0] *  rhov_new[i][0])  +
+                    // ( rhov_new[i][1] *  rhov_new[i][1])  +  ( rhov_new[i][2] *  rhov_new[i][2])
+                    // );
+
+                    // // rhoe_new[i] = rhoe_next + (Ekin_new - Ekin_old);
+
+                    // auto vel_old = (rhov_old[i] / rho_old);
+                    // auto vel_new = (rhov_new[i] / rho_next[i]);
+                    // auto vel_half = 0.5 * (vel_old + vel_new);
+                    // auto rho_half = (rho_old + rho_next[i]);
+
+                    // rhoe_new[i] =  rhoe_next +  dt_over_2 * sham::dot(vel_half,phi_g_old[i]);
+
                     Tvec tmp_rhov
                         = rhov_old[i] + (2. * dt_over_2) * dt_rhov_old[i]
-                          + dt_over_2 * (rho_old[i] * phi_g_old[i] + rho_next[i] * phi_g_next[i]);
+                          + dt_over_2 * (rho_old * phi_g_old[i] + rho_next[i] * phi_g_next[i]);
                     rhov_new[i] = tmp_rhov;
 
                     rhoe_new[i]
                         = rhoe_old[i] + (2. * dt_over_2) * dt_rhoe_old[i]
                           + dt_over_2
-                                * (rho_old[i] * sham::dot((rhov_old[i] / rho_old[i]), phi_g_old[i])
+                                * (rho_old * sham::dot((rhov_old[i] / rho_old), phi_g_old[i])
                                    + rho_next[i]
                                          * sham::dot((tmp_rhov / rho_next[i]), phi_g_next[i]));
                 });
@@ -111,8 +133,7 @@ namespace shammodels::basegodunov::modules {
         auto edges = get_edges();
 
         {
-
-            edges.spans_rho_old.check_sizes(edges.sizes.indexes);
+            edges.spans_dt_rho_old.check_sizes(edges.sizes.indexes);
             edges.spans_rho_next.check_sizes(edges.sizes.indexes);
             edges.spans_rhov_old.check_sizes(edges.sizes.indexes);
             edges.spans_rhoe_old.check_sizes(edges.sizes.indexes);
@@ -128,7 +149,7 @@ namespace shammodels::basegodunov::modules {
 
             KernelNextConsVar<Tvec>::kernel(
                 edges.sizes.indexes,
-                edges.spans_rho_old.get_spans(),
+                edges.spans_dt_rho_old.get_spans(),
                 edges.spans_rho_next.get_spans(),
                 edges.spans_rhov_old.get_spans(),
                 edges.spans_rhoe_old.get_spans(),

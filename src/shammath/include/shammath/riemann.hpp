@@ -21,6 +21,7 @@
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -141,7 +142,18 @@ namespace shammath {
         prim.vel[2] = cons.rhovel[2] / cons.rho;
 
         const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
-        prim.press         = (gamma - 1.0) * rhoeint;
+        // prim.press         = (gamma - 1.0) * rhoeint;
+
+        /** This just for testing purpose. Will be remove*/
+
+        auto m_H = 1.6735e-27; //[kg]
+        auto kb  = 1.380649e-23;
+        auto mu  = 2.3; // molecular gas
+        auto T   = 10;
+
+        auto cs0_sqr = (kb * T) / (mu * m_H);
+
+        prim.press = cons.rho * cs0_sqr;
 
         return prim;
     }
@@ -379,6 +391,25 @@ namespace shammath {
         // sound speeds
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
+
+        if (sycl::isnan(csL) || sycl::isnan(csR)) {
+            logger::raw_ln(
+                "Nan in HLLC solver \t csL \t",
+                csL,
+                "\t pL \t",
+                primL.press,
+                "\t rhoL \t",
+                primL.rho,
+                "\t csR \t",
+                csR,
+                "\t pR \t",
+                primR.press,
+                "\t rhoR \t",
+                primR.rho,
+                "\t gamma \t",
+                gamma,
+                "\t\n");
+        }
 
         // Left and right state fluxes
         const auto FL = hydro_flux_x(cL, gamma);

@@ -45,6 +45,17 @@ namespace {
                 [block_size](
                     u32 i, const T *__restrict in1, const T *__restrict in2, T *__restrict out) {
                     out[i] = in1[i] * in2[i];
+
+                    if (isnan(out[i])) {
+                        logger::raw_ln(
+                            "nan in Had @ \t",
+                            i,
+                            "\t {1st}  \t ",
+                            in1[i],
+                            "\t {2nd} \t",
+                            in2[i],
+                            "\n");
+                    }
                 });
         }
     };

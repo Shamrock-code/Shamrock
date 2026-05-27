@@ -26,10 +26,10 @@ codeu = shamrock.UnitSystem(
 ucte = shamrock.Constants(codeu)
 G = ucte.G()
 kb = ucte.kb()
-m_H = ucte.proton_mass() # [kg]
+m_H = ucte.proton_mass()  # [kg]
 
 
-T0 = 10.  # [K]
+T0 = 10.0  # [K]
 R0 = 7.07e16 * 1e-2  # [cm -> m]
 
 rho0 = 1.38e-18 * 1e3  # [g/cm^3 -> kg/m^3]
@@ -52,13 +52,11 @@ print(f"sound speed  = {np.sqrt(cs_sqr)}\n")
 print(f"alpha = {alpha0}\n")
 print(f"ss = {(3600 * 24 * 365)}\n")
 print(f"free fall time = {t_ff / (3600 * 24 * 365)} years \n")
-N_J = 100 # N_J points per Jeans length
+N_J = 16  # N_J points per Jeans length
 L0 = 4 * R0  # [m]
 min_reso = (L0 * N_J) / (lamb_J)
 print(f"min reso = {min_reso}\n")
 gamma = 5.0 / 3.0
-
-# gamma = 1.0000001
 
 
 def run_sim():
@@ -73,9 +71,10 @@ def run_sim():
     multy = 1
     multz = 1
 
-    max_amr_lev = 10
-    sz= 2 << max_amr_lev
+    max_amr_lev = 2
+    sz = 2 << max_amr_lev
 
+    # sz= 2
 
     base = 16
 
@@ -87,19 +86,23 @@ def run_sim():
     cfg.set_eos_gamma(gamma)
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
+    ########
+
     # cfg.set_gravity_mode_cg()
+
+    ####
+    cfg.set_gravity_mode_bicgstab()
     cfg.set_riemann_solver_hllc()
 
     cfg.set_self_gravity_G_values(True, G)
-    # cfg.set_self_gravity_Niter_max(1000)
-    # cfg.set_self_gravity_tol(1e-6)
-    # cfg.set_coupling_gravity_mode_ramses_like()
+    cfg.set_self_gravity_Niter_max(100)
+    cfg.set_self_gravity_tol(1e-6)
+    cfg.set_coupling_gravity_mode_ramses_like()
 
     # err_min = 0.25
     # err_max = 0.10
     # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
     cfg.set_amr_mode_jeans_length_based(N_jeans=N_J, T_init=T0)
-
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(50000), 1)
@@ -125,31 +128,32 @@ def run_sim():
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
-        # P = cs_sqr * rho
-        return cs_sqr / (gamma - 1.0)
+        P = cs_sqr * rho
+        return P / (gamma - 1.0)
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-    tmax = 15. * t_ff
+    tmax = 2.0 * t_ff
     t = 0
     dt = 0
-    freq = 1
+    freq = 10
     dX0 = []
-    for i in range(int(3)):
+    for i in range(int(1e7)):
         next_dt = model.evolve_once_override_time(t, dt)
 
         t += dt
         dt = next_dt
 
         if i % freq == 0:
-            model.dump_vtk(f"sphe_amr_full_iso_collapse_{i:04d}.vtk")
+            model.dump_vtk(f"iso_collapse_{i:04d}.vtk")
 
         if tmax < t + next_dt:
             dt = tmax - t
         if t == tmax:
-            model.dump_vtk(f"sphe_amr_full_iso_collapse{i:04d}.vtk")
+            model.dump_vtk(f"iso_collapse{i:04d}.vtk")
             break
+
 
 run_sim()

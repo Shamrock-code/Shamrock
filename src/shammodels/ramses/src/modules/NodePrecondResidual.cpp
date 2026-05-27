@@ -8,26 +8,28 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeAXPY.cpp
+ * @file NodePrecondResidual.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @brief
  *
  */
-#include "shammodels/ramses/modules/NodeAXPY.hpp"
+#include "shammodels/ramses/modules/NodePrecondResidual.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
+#include "shamrock/patch/PatchDataFieldSpan.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 template<class T>
-struct KernelAXPY {
+struct KernelPrecondRes {
 
     inline static void kernel(
+        const shambase::DistributedData<u32> &sizes,
+        const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>>
+            &spans_block_cell_sizes,
         const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_x,
         shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<T>> &spans_y,
-        const f64 alpha,
-        const shambase::DistributedData<u32> &sizes,
         u32 block_size) {
 
         shambase::DistributedData<u32> cell_counts = sizes.map<u32>([&](u64 id, u32 block_count) {
@@ -37,40 +39,31 @@ struct KernelAXPY {
 
         sham::distributed_data_kernel_call(
             shamsys::instance::get_compute_scheduler_ptr(),
-            sham::DDMultiRef{spans_x},
+            sham::DDMultiRef{spans_block_cell_sizes, spans_x},
             sham::DDMultiRef{spans_y},
             cell_counts,
-            [alpha](u32 i, const T *__restrict x, T *__restrict y) {
-                y[i] = y[i] + alpha * x[i];
-
-                if (sycl::isnan(y[i]) || sycl::isnan(x[i])) {
-                    logger::raw_ln(
-                        "nan in AXPY @ \t",
-                        i,
-                        "\t {1st} x \t",
-                        x[i],
-                        "\t {2nd} y \t",
-                        y[i],
-
-                        "\n");
-                }
+            [block_size](u32 i, const T *__restrict bsize, const T *__restrict x, T *__restrict y) {
+                const u32 block_id = i / block_size;
+                auto delta_cell    = bsize[block_id];
+                // y[i]               = x[i] / (6. * delta_cell);
+                y[i] = (x[i] * delta_cell * delta_cell) / (6.);
             });
     }
 };
 
 template<class T>
-void shammodels::basegodunov::modules::NodeAXPY<T>::_impl_evaluate_internal() {
+void shammodels::basegodunov::modules::NodePrecondRes<T>::_impl_evaluate_internal() {
     auto edges = get_edges();
 
     edges.spans_y.ensure_sizes(edges.sizes.indexes);
 
-    KernelAXPY<T>::kernel(
+    KernelPrecondRes<T>::kernel(
+        edges.sizes.indexes,
+        edges.block_cell_sizes.get_spans(),
         edges.spans_x.get_spans(),
         edges.spans_y.get_spans(),
-        edges.alpha.value,
-        edges.sizes.indexes,
         block_size);
 }
 
-template class shammodels::basegodunov::modules::NodeAXPY<f64>;
-// template class shammodels::basegodunov::modules::NodeAXPY<f64_3>;
+template class shammodels::basegodunov::modules::NodePrecondRes<f64>;
+template class shammodels::basegodunov::modules::NodePrecondRes<f64_3>;

@@ -9,6 +9,9 @@ coverage:
         # Don't fail the status check if coverage decreases.
         informational: true
 
+comment:
+  layout: "condensed_header, components, condensed_files, condensed_footer" # show component info in the PR comment
+
 component_management:
 
   # Shamrock components (should match the targets declared in src/CMakeLists.txt)

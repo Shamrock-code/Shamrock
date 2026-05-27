@@ -170,9 +170,10 @@ jobs:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: acpp_omp_debug/coverage.info
           fail_ci_if_error: false
           verbose: true

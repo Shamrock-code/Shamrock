@@ -20,6 +20,16 @@ jobs:
 
     timeout-minutes: 120
     steps:
+
+      - name: Debug Codecov token
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
       - name: Reconfigure git
@@ -145,7 +155,7 @@ jobs:
               -Xdemangler -n \
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"
 
-          # export LCOV for Codecov
+          # export LCOV for Codeco
           llvm-cov-${{matrix.clang}} export shamrock_test \
               -instr-profile=utests.profdata \
               -format=lcov \
@@ -169,15 +179,6 @@ jobs:
         with:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
-
-      - name: Debug Codecov token
-        run: |
-          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
-            echo "TOKEN IS EMPTY"
-            exit 1
-          else
-            echo "TOKEN EXISTS"
-          fi
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5

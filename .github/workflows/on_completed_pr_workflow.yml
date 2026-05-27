@@ -37,6 +37,16 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
+            const { owner, repo } = context.repo;
+            const runId = context.payload.workflow_run.id;
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: runId, per_page: 100 }
+            );
+
+            console.log("artifacts:",artifacts);
+
             const allArtifacts = await github.paginate(
               github.rest.actions.listWorkflowRunArtifacts,
               {

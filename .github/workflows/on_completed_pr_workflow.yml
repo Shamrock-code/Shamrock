@@ -16,7 +16,7 @@ on:
   workflow_run:
     workflows: ['on PR']
     types:
-    - completed
+      - completed
 
 jobs:
   deploy:
@@ -33,19 +33,20 @@ jobs:
           status: pending
           context: Post workflow comment
 
-
       - name: 'Download reports artifact'
         uses: actions/github-script@v9
         with:
           script: |
-            let allArtifacts = await github.paginate(
+            const allArtifacts = await github.paginate(
               github.rest.actions.listWorkflowRunArtifacts,
               {
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 run_id: context.payload.workflow_run.id,
-              }
+              },
+              (response) => response.data.artifacts
             );
+
 
             console.log(
               "All artifacts:",

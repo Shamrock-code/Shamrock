@@ -26,6 +26,7 @@ jobs:
     steps:
 
       - name: Debug Codecov token
+        if: ${{ github.event_name == 'push' }}
         run: |
           if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
             echo "TOKEN IS EMPTY"

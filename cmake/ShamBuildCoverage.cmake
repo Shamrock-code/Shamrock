@@ -5,7 +5,7 @@
 # Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
 # ~~~
 
-set(coverage_flags "-O1 -fprofile-instr-generate -fcoverage-mapping")
+set(coverage_flags "-fprofile-instr-generate -fcoverage-mapping")
 
 set(CMAKE_C_FLAGS_COVERAGE "${coverage_flags}")
 set(CMAKE_CXX_FLAGS_COVERAGE "${coverage_flags}")

@@ -1,3 +1,14 @@
+coverage:
+  status:
+    project:
+      default:
+        # Don't fail the status check if coverage decreases.
+        informational: true
+    patch:
+      default:
+        # Don't fail the status check if coverage decreases.
+        informational: true
+
 component_management:
 
   # Shamrock components (should match the targets declared in src/CMakeLists.txt)

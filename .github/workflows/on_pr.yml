@@ -11,6 +11,21 @@ concurrency:
 
 jobs:
 
+  check_codecov_secret:
+    name: Check Codecov secret
+    # Secrets are not exposed to forked PRs.
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Codecov token
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
   main_workflow:
     name: CI
     uses: ./.github/workflows/main_workflow.yml

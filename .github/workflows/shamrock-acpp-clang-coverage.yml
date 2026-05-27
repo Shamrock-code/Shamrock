@@ -159,7 +159,7 @@ jobs:
               -Xdemangler -n \
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"
 
-          # export LCOV for Codeco
+          # export LCOV for Codecov
           llvm-cov-${{matrix.clang}} export shamrock_test \
               -instr-profile=utests.profdata \
               -format=lcov \

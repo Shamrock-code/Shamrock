@@ -29,6 +29,8 @@ jobs:
   main_workflow:
     name: CI
     uses: ./.github/workflows/main_workflow.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       run_build_push_docker: true
       light_ci: false

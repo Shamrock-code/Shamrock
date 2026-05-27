@@ -2,6 +2,10 @@ name: Acpp/clang (Coverage)
 
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov upload token"
+        required: false
 
 jobs:
 

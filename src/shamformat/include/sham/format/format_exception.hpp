@@ -66,5 +66,5 @@ namespace sham {
      *
      * @return format_except_builder_t The current format exception builder
      */
-    format_except_builder_t get_format_exception_builder();
+    format_except_builder_t get_format_exception_builder() noexcept;
 } // namespace sham

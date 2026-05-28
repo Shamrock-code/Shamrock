@@ -26,7 +26,7 @@ jobs:
 
       # How to restore docker cache mount in github actions
       # https://docs.docker.com/build/ci/github-actions/cache/#cache-mounts
-      
+
       - name: ccache mount cache for Docker
         uses: actions/cache@v5
         with:

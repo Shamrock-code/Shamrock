@@ -49,6 +49,7 @@ RUN ls -la
 # Build
 # ----------------------------
 RUN --mount=type=cache,target=/tmp/ccache \
+    ccache --show-stats && \
     ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp && \
     cd build && \
     sed -i "s/-DBUILD_TEST=Yes /-DBUILD_TEST=Yes -DCXX_FLAG_ARCH_NATIVE=off /" activate && \

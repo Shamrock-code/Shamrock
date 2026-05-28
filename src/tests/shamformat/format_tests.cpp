@@ -39,6 +39,14 @@ NEW_TEST(Unittest, "shamformat/format(throwing)", 1) {
     REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
 }
 
+NEW_TEST(Unittest, "shamformat/format(throwing_builder_reset)", 1) {
+    auto current_handle = sham::get_format_exception_builder();
+    sham::set_format_exception_builder(nullptr); // reset to default
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
+    sham::set_format_exception_builder(current_handle);
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
+}
+
 NEW_TEST(Unittest, "shamformat/human_readable", 1) {
     using sham::human_readable_t;
     using sham::to_human_readable;

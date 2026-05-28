@@ -9,8 +9,13 @@ RUN wget https://apt.llvm.org/llvm.sh && \
     sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
     rm llvm.sh
 
-RUN sudo apt install -y gfortran ffmpeg
+RUN sudo apt install -y gfortran ffmpeg ccache
 RUN pip3 install matplotlib numpy scipy h5py
+
+ENV CCACHE_DIR=/tmp/ccache
+
+RUN --mount=type=cache,target=/tmp/ccache \
+    ccache --show-config
 
 WORKDIR /opt/Shamrock_src
 

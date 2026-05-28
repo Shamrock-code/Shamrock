@@ -515,13 +515,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
         storage.grad_phi_update_m = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "grad-phi-up-1", "grad-phi-up-1");
-
         storage.grad_phi_update_p = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "grad-phi-up-2", "grad-phi-up-2");
-
         storage.grad_phi_update_m2 = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "grad-phi-up-1", "grad-phi-up-1");
-
         storage.grad_phi_update_p2 = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
             AMRBlock::block_size, "grad-phi-up-2", "grad-phi-up-2");
     }

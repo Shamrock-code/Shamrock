@@ -9,37 +9,40 @@ import shamrock
 
 #####============================== matplot config start ===============================
 
-lw, ms = 1, 1  # linewidth  #markersize
+lw, ms = 5, 7  # linewidth  #markersize
 elw, cs = 0.75, 0.75  # elinewidth and capthick #capsize for errorbar specifically
-fontsize = 5
-tickwidth, ticksize = 1.5, 1
-# mpl.rcParams["axes.titlesize"] = fontsize * 1.5
-# mpl.rcParams["axes.labelsize"] = fontsize * 1.5
-# mpl.rcParams["xtick.major.size"] = ticksize
-# mpl.rcParams["ytick.major.size"] = ticksize
-# mpl.rcParams["xtick.major.width"] = tickwidth
-# mpl.rcParams["ytick.major.width"] = tickwidth
-# mpl.rcParams["xtick.minor.size"] = ticksize
-# mpl.rcParams["ytick.minor.size"] = ticksize
-# mpl.rcParams["xtick.minor.width"] = tickwidth
-# mpl.rcParams["ytick.minor.width"] = tickwidth
-# mpl.rcParams["lines.linewidth"] = lw
-# mpl.rcParams["lines.markersize"] = ms
-# mpl.rcParams["lines.markeredgewidth"] = 1.15
-# mpl.rcParams["lines.dash_joinstyle"] = "bevel"
-# mpl.rcParams["markers.fillstyle"] = "top"
-# mpl.rcParams["lines.dashed_pattern"] = 6.4, 1.6, 1, 1.6
-# mpl.rcParams["xtick.labelsize"] = fontsize
-# mpl.rcParams["ytick.labelsize"] = fontsize
-# mpl.rcParams["legend.fontsize"] = fontsize
-# mpl.rcParams["grid.linewidth"] = 8
-# mpl.rcParams["font.weight"] = "normal"
-# mpl.rcParams["font.serif"] = "latex"
+fontsize = 10
+tickwidth, ticksize = 1.5, 4
+mpl.rcParams["axes.titlesize"] = fontsize * 1.5
+mpl.rcParams["axes.labelsize"] = fontsize * 1.5
+mpl.rcParams["xtick.major.size"] = ticksize
+mpl.rcParams["ytick.major.size"] = ticksize
+mpl.rcParams["xtick.major.width"] = tickwidth
+mpl.rcParams["ytick.major.width"] = tickwidth
+mpl.rcParams["xtick.minor.size"] = ticksize
+mpl.rcParams["ytick.minor.size"] = ticksize
+mpl.rcParams["xtick.minor.width"] = tickwidth
+mpl.rcParams["ytick.minor.width"] = tickwidth
+mpl.rcParams["lines.linewidth"] = lw
+mpl.rcParams["lines.markersize"] = ms
+mpl.rcParams["lines.markeredgewidth"] = 1.15
+mpl.rcParams["lines.dash_joinstyle"] = "bevel"
+mpl.rcParams["markers.fillstyle"] = "top"
+mpl.rcParams["lines.dashed_pattern"] = 6.4, 1.6, 1, 1.6
+mpl.rcParams["xtick.labelsize"] = fontsize
+mpl.rcParams["ytick.labelsize"] = fontsize
+mpl.rcParams["legend.fontsize"] = fontsize
+mpl.rcParams["grid.linewidth"] = 8
+mpl.rcParams["font.weight"] = "normal"
+mpl.rcParams["font.serif"] = "latex"
 
 ####============================ matplot config end ===================
 
 
-def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
+shamrock.enable_experimental_features()
+
+
+def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2, NJ=4):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
 
@@ -48,6 +51,9 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     multx = 1
     multy = 1
     multz = 1
+
+    max_amr_lev = 1
+    # sz= 2 << max_amr_lev
 
     sz = 1 << 1
     base = 32
@@ -61,14 +67,20 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     cfg.set_eos_gamma(1.0000001)
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
+
+    # ===========
     cfg.set_gravity_mode_cg()
+    # ===========
+
+    # cfg.set_gravity_mode_bicgstab()
     cfg.set_riemann_solver_hllc()
 
     cfg.set_self_gravity_G_values(True, 1.0)
     cfg.set_self_gravity_Niter_max(500)
     cfg.set_self_gravity_tol(1e-6)
-    cfg.set_self_gravity_happy_breakdown_tol(1e-6)
+    # cfg.set_self_gravity_happy_breakdown_tol(1e-6)
     cfg.set_coupling_gravity_mode_ramses_like()
+    # cfg.set_amr_mode_jeans_length_based(N_jeans=NJ, T_init=cs)
 
     model.set_solver_config(cfg)
     model.init_scheduler(int(50000), 1)
@@ -94,7 +106,6 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
         return rho0 * (1.0 + pertubation(x, A_rho))
 
     def rhovel_map(rmin, rmax) -> tuple[float, float, float]:
-
         return (0, 0, 0)
 
     def rhoe_map(rmin, rmax) -> float:
@@ -106,14 +117,18 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
         rhoekin = 0.5 * rho * (vx * vx + 0.0)
         return rhoeint + rhoekin
 
-    def phi_map(rmin, rmax):
-        rho = rho_map(rmin, rmax)
-        return 0
+    # def phi_map(rmin, rmax):
+    #     rho = rho_map(rmin, rmax)
+    #     return 0
+
+    # def phi_old_map(rmin, rmax):
+    #     return 0
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
-    model.set_field_value_lambda_f64("phi", phi_map)
+    # model.set_field_value_lambda_f64("phi", phi_map)
+    # model.set_field_value_lambda_f64("phi_old", phi_old_map)
 
     def convert_to_cell_coords(dic):
 
@@ -128,7 +143,6 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
         zmax = []
 
         for i in range(len(cmin)):
-
             m, M = cmin[i], cmax[i]
 
             mx, my, mz = m
@@ -165,7 +179,6 @@ def run_sim(rhog, vg, etot, cs, times, lembda=0.5, rho0=1, amp=1e-2):
     c = None
     mask = None
     for i in range(100000):
-
         dic = ctx.collect_data()
 
         if shamrock.sys.world_rank() == 0:
@@ -259,8 +272,19 @@ rho0 = 1
 L = 1.0
 G = 1.0
 
+t_ff = np.sqrt((3.0 * np.pi) / (32.0 * G * rho0))  # [s]
+lamb_J = np.sqrt((cs * cs * np.pi) / (G * rho0))  # [m]
+print(f"Jeans length = {lamb_J}\n")
+print(f"free fall time = {t_ff} \n")
+N_J = 100
+L = 1
+min_reso = (L * N_J) / (lamb_J)
+print(f"min reso = {min_reso}\n")
 
-rho_last, vel_last, X, mask = run_sim(rg_num, vg_num, etot_num, cs, times, lembda, rho0, amp)
+
+rho_last, vel_last, X, mask = run_sim(
+    rg_num, vg_num, etot_num, cs, times, lembda, rho0, amp, NJ=N_J
+)
 
 
 if shamrock.sys.world_rank() == 0:
@@ -283,7 +307,6 @@ if shamrock.sys.world_rank() == 0:
     vel_fix_time = None
 
     if lembda < Lambd_jeans:
-
         w_lambd = 2 * np.pi * cs * np.sqrt((1.0 / (lembda**2) - 1.0 / (Lambd_jeans**2)))
         dens_in_time, vel_in_time = plot_analytical_solution_osc_times(
             amp, k, rho0, lembda, w_lambd, times, x0
@@ -316,7 +339,7 @@ if shamrock.sys.world_rank() == 0:
     # datas_extrema = np.stack((maxima_pos, maxima , minima_pos, minima)).T
     # np.savetxt(f"Jeans-instablity-test-datas-extremas-for-{shamrock.sys.world_size()}-amp-{amp}-cs-{cs}-rho0-{rho0}-lambda-{lembda}-{len(X)}--{len(rg_num)}", datas_extrema)
 
-    fig, axs = plt.subplots(2, 2, figsize=(10, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(8, 8))
     plt.subplots_adjust(wspace=0.25)
     axs[0][0].plot(times, rg_num, "co", label="$\\rho_{num}$")
     axs[0][0].plot(times, dens_in_time, "k--", label="$\\rho_{ana}$")

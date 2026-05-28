@@ -115,7 +115,7 @@ def run_sim(X, Y, Z, rho, phi, phi_ana, Lx=1, Ly=1, Lz=1, rho0=2, G=1, A=1, phi0
     # dt = 0.01226171192153859
     t = 0
     tend = 0.245
-    Max_iter = 5
+    Max_iter = 1
 
     for k in range(Max_iter):
         # if k % freq == 0:
@@ -224,4 +224,5 @@ plt.plot(np.array(X), ana, ".", label="phi-ana")
 plt.plot(np.array(X), phi, "+", label="phi-num")
 plt.plot(np.array(X), diff, "*", label="diff")
 plt.legend()
+plt.show()
 plt.savefig(f"Poisson-solver-convergence-test-{len(X)}.png", format="png")

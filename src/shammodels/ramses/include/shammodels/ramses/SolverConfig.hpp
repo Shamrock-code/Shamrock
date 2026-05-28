@@ -31,6 +31,7 @@
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <functional>
 #include <stdexcept>
 
 namespace shammodels::basegodunov {

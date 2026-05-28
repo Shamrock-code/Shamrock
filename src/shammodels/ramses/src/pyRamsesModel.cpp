@@ -24,6 +24,7 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
 #include <pybind11/functional.h>
+#include <functional>
 #include <memory>
 
 namespace shammodels::basegodunov {
@@ -251,6 +252,11 @@ namespace shammodels::basegodunov {
                 py::arg("field_name"),
                 py::arg("pos_to_val"),
                 py::arg("offset") = 0)
+            .def(
+                "set_a_grav",
+                [](T &self, const std::function<Tvec(Tvec, Tvec)> acc_grav) {
+                    return;
+                })
             .def(
                 "set_field_value_lambda_f64_3",
                 [](T &self,

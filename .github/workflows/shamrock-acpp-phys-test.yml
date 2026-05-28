@@ -36,7 +36,7 @@ jobs:
           key: ${{ runner.os }}-ccache-cache
 
       - name: Inject ccache mount cache
-        uses: reproducible-containers/buildkit-cache-dance@4b2444fec0c0fb9dbf175a96c094720a692ef810 # v2.1.4
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
         with:
           builder: ${{ steps.setup-buildx.outputs.name }}
           cache-map: |

@@ -33,7 +33,7 @@ RUN pip3 install matplotlib numpy scipy h5py
 ENV CCACHE_DIR=/tmp/ccache
 
 # sanity check (uses BuildKit cache)
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache \
+RUN --mount=type=cache,target=/tmp/ccache \
     ccache --show-config && ccache --show-stats
 
 # ----------------------------
@@ -48,7 +48,7 @@ RUN ls -la
 # ----------------------------
 # Build
 # ----------------------------
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache \
+RUN --mount=type=cache,target=/tmp/ccache \
     ccache --show-stats && \
     ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp && \
     cd build && \

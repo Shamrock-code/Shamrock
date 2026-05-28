@@ -37,4 +37,8 @@ namespace sham {
         internal_func_ptr_make_format_exception = callback;
     }
 
+    format_except_builder_t get_format_exception_builder() {
+        return internal_func_ptr_make_format_exception;
+    }
+
 } // namespace sham

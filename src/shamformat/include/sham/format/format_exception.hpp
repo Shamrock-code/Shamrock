@@ -58,4 +58,13 @@ namespace sham {
      *         resets to the default behavior
      */
     void set_format_exception_builder(format_except_builder_t callback);
+
+    /**
+     * @brief Get the current format exception builder
+     *
+     * This function returns the current format exception builder.
+     *
+     * @return format_except_builder_t The current format exception builder
+     */
+    format_except_builder_t get_format_exception_builder();
 } // namespace sham

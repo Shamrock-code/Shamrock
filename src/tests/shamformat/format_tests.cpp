@@ -13,19 +13,30 @@
 #include <string_view>
 
 namespace {
-    void throwing_format() {
+    void throwing_format_std() {
         std::string fmt = "{"; // runtime format string
         int value       = 42;
 
-        auto s = shambase::vformat(std::string_view{fmt}, fmt::make_format_args(value));
+        auto s = sham::vformat(std::string_view{fmt}, fmt::make_format_args(value));
+
+        // just to trap the result and avoid optimizations
+        std::cout << s << '\n';
+    }
+
+    void throwing_format_fmt() {
+        std::string fmt = "{"; // runtime format string
+        int value       = 42;
+
+        auto s = sham::vformat(fmt::string_view{fmt}, fmt::make_format_args(value));
 
         // just to trap the result and avoid optimizations
         std::cout << s << '\n';
     }
 } // namespace
 
-NEW_TEST(Unittest, "shamformat/format", 1) {
-    REQUIRE_EXCEPTION_THROW(throwing_format(), fmt::format_error);
+NEW_TEST(Unittest, "shamformat/format(throwing)", 1) {
+    REQUIRE_EXCEPTION_THROW(throwing_format_std(), fmt::format_error);
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
 }
 
 NEW_TEST(Unittest, "shamformat/human_readable", 1) {

@@ -10,7 +10,7 @@
 #include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shammodels/amr/AMRBlock", test_amr_block_coords, 1) {
+NEW_TEST(Unittest, "shammodels/amr/AMRBlock", 1) {
 
     using Block = shammodels::amr::AMRBlock<f64_3, i64_3, 1>;
 

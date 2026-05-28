@@ -17,7 +17,7 @@ class TestEdge : public shamrock::solvergraph::IEdge {
     void free_alloc() override {}
 };
 
-TestStart(Unittest, "shamrock::solvergraph", iedge_tests, 1) {
+NEW_TEST(Unittest, "shamrock::solvergraph", 1) {
     TestEdge edge{};
 
     REQUIRE_EQUAL(edge.get_label(), "dot");

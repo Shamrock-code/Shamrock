@@ -17,7 +17,7 @@
 #include "shamtest/shamtest.hpp"
 #include <iomanip>
 
-TestStart(Unittest, "shammath/matrix_exp", test_mat_exp, 1) {
+NEW_TEST(Unittest, "shammath/matrix_exp", 1) {
 
     shammath::mat<f64, 3, 3> A{
         // clang-format off

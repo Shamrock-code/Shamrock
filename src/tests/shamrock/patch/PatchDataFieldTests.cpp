@@ -123,7 +123,7 @@ inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vm
     }
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgetelemwithrange, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", 1) {
 
     {
         u32 len          = 10000;
@@ -145,7 +145,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgete
     }
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremoveids, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::remove_ids", 1) {
 
     std::vector<f64> values = {
         1,  2,  // obj 0
@@ -238,7 +238,7 @@ TestStart(
     REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), values_before);
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::append_subset_to", testappendsubsetto, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::append_subset_to", 1) {
 
     using T = f64;
 

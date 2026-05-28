@@ -21,7 +21,7 @@
 using Tvec    = f64_3;
 using Tmorton = u64;
 
-TestStart(Unittest, "shamtree/KarrasRadixTreeAABB", test_karras_radix_tree_aabb, 1) {
+NEW_TEST(Unittest, "shamtree/KarrasRadixTreeAABB", 1) {
 
     std::vector<Tvec> partpos{
         Tvec(0.0, 0.0, 0.0),

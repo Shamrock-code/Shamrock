@@ -474,11 +474,11 @@ inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {
     dtt_test_empty(ordered_result, allow_leaf_lowering);
 }
 
-TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", 1) {
     dtt_tests(false, false);
 }
 
-TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", dtt_testing2, 1) {
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", 1) {
     dtt_tests(true, false);
 }
 

@@ -68,7 +68,7 @@ TestStart(
     }
 }
 
-TestStart(Unittest, "shamalgs/primitives/is_all_true:USM", test_is_all_true_device_buffer, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:USM", 1) {
 
     auto test_impl = [&]() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();

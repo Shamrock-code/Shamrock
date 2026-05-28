@@ -384,7 +384,7 @@ test_exclusive_sum_in_place_atomic_decoupled_v5, 1){
 }
 */
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", exclsumtest_fallback, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", 1) {
 
     TestExclScan<u32> test(
         (TestExclScan<u32>::vFunctionCall) shamalgs::numeric::details::exclusive_sum_fallback);
@@ -508,7 +508,7 @@ TestStart(
 }
 #endif
 
-TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1) {
+NEW_TEST(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", 1) {
     py::dict results;
     /*
         {

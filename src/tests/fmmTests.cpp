@@ -397,7 +397,7 @@ NEW_TEST(ValidationTest, "models/generic/fmm/precision", 1) {
     )==")
 }
 
-NEW_TEST(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1) {
+NEW_TEST(Unittest, "models/generic/fmm/multipole_moment_offset", 1) {
     using namespace shammath;
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf64(-1, 1);
@@ -1505,9 +1505,9 @@ void run_test_no_mpi_fmm(std::string dset_name) {
     std::vector<f64> red8_leaf_rej;
 
     auto get_max_part = [&]() {
-        f64 gsz        = shamsys::instance::get_compute_queue()
-                             .get_device()
-                             .get_info<sycl::info::device::global_mem_size>();
+        f64 gsz = shamsys::instance::get_compute_queue()
+                      .get_device()
+                      .get_info<sycl::info::device::global_mem_size>();
         gsz            = 1024 * 1024 * 1024 * 1;
         f64 part_per_g = 2500000;
 
@@ -1609,7 +1609,7 @@ void run_test_no_mpi_fmm(std::string dset_name) {
     dset.add_data("red8_leaf_rej", red8_leaf_rej);
 }
 
-NEW_TEST(Benchmark, "fmm_no_mpi performance", fmm_no_mpi, 1) {
+NEW_TEST(Benchmark, "fmm_no_mpi performance", 1) {
     run_test_no_mpi_fmm<f32, u32, 3>("case f32,u32, order = 3");
 
     run_test_no_mpi_fmm<f32, u32, 4>("case f32,u32, order = 4");

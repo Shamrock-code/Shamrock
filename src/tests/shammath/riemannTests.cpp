@@ -13,7 +13,7 @@
 #include "shammath/riemann.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shammath/flux_symmetry", flux_rotate, 1) {
+NEW_TEST(Unittest, "shammath/flux_symmetry", 1) {
 
     using Tcons = shammath::ConsState<f64_3>;
 

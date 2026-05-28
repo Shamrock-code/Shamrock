@@ -346,7 +346,7 @@ void test_sparse_exchange(std::vector<TestElement> test_elements, size_t max_all
     }
 }
 
-TestStart(Unittest, "shamalgs/collective/test_sparse_exchange", testsparsexchg_2, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/test_sparse_exchange", -1) {
 
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("sparse exchange test", "empty comm");

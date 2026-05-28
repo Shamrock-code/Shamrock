@@ -421,46 +421,46 @@ namespace {
 // Test registrations
 //==============================================================================
 
-TestStart(Unittest, "shammodels/gsph/integration/constant_1d", test_gsph_const1d, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/constant_1d", 1) {
     test_constant_acceleration_1d();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/constant_3d", test_gsph_const3d, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/constant_3d", 1) {
     test_constant_acceleration_3d();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/oscillator", test_gsph_osc, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/oscillator", 1) {
     test_harmonic_oscillator();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/oscillator_energy", test_gsph_osc_e, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/oscillator_energy", 1) {
     test_harmonic_oscillator_energy();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/convergence", test_gsph_conv, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/convergence", 1) {
     test_convergence_order();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/energy_const", test_gsph_u_const, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/energy_const", 1) {
     test_energy_integration_constant_rate();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/energy_var", test_gsph_u_var, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/energy_var", 1) {
     test_energy_integration_varying_rate();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/average_accel", test_gsph_avg_a, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/average_accel", 1) {
     test_predictor_corrector_average();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/zero_accel", test_gsph_zero_a, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/zero_accel", 1) {
     test_zero_acceleration();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/stability", test_gsph_stable, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/stability", 1) {
     test_large_timestep_stability();
 }
 
-TestStart(Unittest, "shammodels/gsph/integration/multi_particle", test_gsph_multi, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/integration/multi_particle", 1) {
     test_multiple_particles();
 }

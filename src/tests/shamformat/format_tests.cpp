@@ -24,11 +24,11 @@ namespace {
     }
 } // namespace
 
-TestStart(Unittest, "shamformat/format", test_exception_throw, 1) {
+NEW_TEST(Unittest, "shamformat/format", 1) {
     REQUIRE_EXCEPTION_THROW(throwing_format(), fmt::format_error);
 }
 
-TestStart(Unittest, "shamformat/human_readable", test_to_human_readable, 1) {
+NEW_TEST(Unittest, "shamformat/human_readable", 1) {
     using sham::human_readable_t;
     using sham::to_human_readable;
 
@@ -133,7 +133,7 @@ TestStart(Unittest, "shamformat/human_readable", test_to_human_readable, 1) {
     }
 }
 
-TestStart(Unittest, "shamformat/human_readable", test_to_human_readable_no_below_1, 1) {
+NEW_TEST(Unittest, "shamformat/human_readable", 1) {
     using sham::to_human_readable;
 
     // Zero: no prefix (always)

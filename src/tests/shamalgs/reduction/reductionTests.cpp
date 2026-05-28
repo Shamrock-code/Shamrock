@@ -628,13 +628,13 @@ TestStart(
     1) {
     unit_test_reduc_max_usm_fallback_impl();
 }
-TestStart(Unittest, "shamalgs/reduction/sum(usm)", reduc_kernel_utestsum_usm, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/sum(usm)", 1) {
     unit_test_reduc_sum_usm();
 }
-TestStart(Unittest, "shamalgs/reduction/min(usm)", reduc_kernel_utestmin_usm, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/min(usm)", 1) {
     unit_test_reduc_min_usm();
 }
-TestStart(Unittest, "shamalgs/reduction/max(usm)", reduc_kernel_utestmax_usm, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/max(usm)", 1) {
     unit_test_reduc_max_usm();
 }
 
@@ -642,7 +642,7 @@ TestStart(Unittest, "shamalgs/reduction/max(usm)", reduc_kernel_utestmax_usm, 1)
 // benchmarks
 //////////////////////////////////////:
 
-TestStart(Benchmark, "shamalgs/reduction/sum", benchmark_reductionkernels, 1) {
+NEW_TEST(Benchmark, "shamalgs/reduction/sum", 1) {
 
     std::map<std::string, shambase::BenchmarkResult> results;
 

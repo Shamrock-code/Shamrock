@@ -754,7 +754,7 @@ inline void test_tree(std::string dset_name) {
     dset.add_data("times", times);
 }
 
-TestStart(Benchmark, "shamrock/tree/RadixTree:build:benchmark", morton_tree_build, 1) {
+NEW_TEST(Benchmark, "shamrock/tree/RadixTree:build:benchmark", 1) {
     test_tree<u32, f32, 0>("u32, f32, 0");
     test_tree<u64, f32, 0>("u64, f32, 0");
     test_tree<u32, f64, 0>("u32, f64, 0");

@@ -312,7 +312,7 @@ inline bool compare_ref_set(std::vector<f64_3> &a, std::vector<f64_3> &b) {
     return ret;
 }
 
-TestStart(Unittest, "shammath/crystalLattice/LatticeHCP/Iterator", lattice_iterator_test, 1) {
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/Iterator", 1) {
 
     std::array<i32, 3> coord_min = {-3, 6, 7};
     std::array<i32, 3> coord_max = {5, 10, 15};
@@ -493,7 +493,7 @@ TestStart(
 template<class T>
 void __attribute__((noinline)) trap(const T &val) {}
 
-TestStart(Benchmark, "shammath/crystalLattice/LatticeHCP/Iterator", lattice_iterator_bench, 1) {
+NEW_TEST(Benchmark, "shammath/crystalLattice/LatticeHCP/Iterator", 1) {
 
     std::array<i32, 3> coord_min = {0, 0, 0};
     std::array<i32, 3> coord_max = {1024, 1024, 1024};

@@ -10,7 +10,7 @@
 #include "shammath/sfc/morton.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/sfc/morton/min-max", mortonminmaxval, 1) {
+NEW_TEST(Unittest, "shamrock/sfc/morton/min-max", 1) {
 
     using Morton32 = shamrock::sfc::MortonCodes<u32, 3>;
     using Morton64 = shamrock::sfc::MortonCodes<u64, 3>;

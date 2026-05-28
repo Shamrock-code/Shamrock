@@ -136,10 +136,10 @@ inline void test_karras_alg() {
     REQUIRE_EQUAL(out_endrange[11], 12);
 }
 
-TestStart(Unittest, "core/tree/kernels/karras_alg (32)", karras_utest32, 1) {
+NEW_TEST(Unittest, "core/tree/kernels/karras_alg (32)", 1) {
     test_karras_alg<u32>();
 }
 
-TestStart(Unittest, "core/tree/kernels/karras_alg (64)", karras_utest64, 1) {
+NEW_TEST(Unittest, "core/tree/kernels/karras_alg (64)", 1) {
     test_karras_alg<u64>();
 }

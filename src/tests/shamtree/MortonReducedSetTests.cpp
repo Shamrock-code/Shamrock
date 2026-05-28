@@ -23,7 +23,7 @@
 using Tvec    = f64_3;
 using Tmorton = u64;
 
-TestStart(Unittest, "shamtree/MortonReducedSet", test_morton_reduced_set, 1) {
+NEW_TEST(Unittest, "shamtree/MortonReducedSet", 1) {
 
     std::vector<Tvec> partpos{
         Tvec(0, 0, 0),
@@ -154,7 +154,7 @@ TestStart(Unittest, "shamtree/MortonReducedSet", test_morton_reduced_set, 1) {
     REQUIRE_EQUAL(reduced_set.buf_reduc_index_map.copy_to_stdvec(), buf_reduc_index_map);
 }
 
-TestStart(Unittest, "shamtree/MortonReducedSet(single cell)", test_morton_reduced_set_onecell, 1) {
+NEW_TEST(Unittest, "shamtree/MortonReducedSet(single cell)", 1) {
 
     std::vector<Tvec> partpos{Tvec(0.1, 0.0, 0.0), Tvec(0.0, 0.1, 0.0), Tvec(0.0, 0.0, 0.1)};
 

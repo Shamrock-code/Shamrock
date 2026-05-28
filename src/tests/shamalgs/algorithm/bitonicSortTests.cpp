@@ -13,7 +13,7 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "sortTests.hpp"
 
-TestStart(Unittest, "shamalgs/algorithm/details/bitonicSort_legacy", test_bitonic_sort_legacy, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/details/bitonicSort_legacy", 1) {
 
     TestSortByKey<u32, u32> test((TestSortByKey<u32, u32>::vFunctionCall)
                                      shamalgs::algorithm::details::sort_by_key_bitonic_legacy);
@@ -257,7 +257,7 @@ TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
 }
 #endif
 
-TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", test_bitonic_sort, 1) {
+NEW_TEST(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 1) {
 
     PyScriptHandle hdnl{};
 

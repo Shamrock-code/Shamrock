@@ -34,7 +34,7 @@ inline void test() {
     REQUIRE_EQUAL_CUSTOM_COMP(sum, ref_sum, sham::equals);
 }
 
-TestStart(Unittest, "shamalgs/collective/reduction/allreduce_sum", testsallreducesum, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/reduction/allreduce_sum", -1) {
     test<f32>();
     test<u32>();
     test<f64_2>();

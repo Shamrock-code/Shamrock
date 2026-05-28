@@ -12,7 +12,7 @@
 #include "shamtest/shamtest.hpp"
 #include "shamtree/RadixTree.hpp"
 
-TestStart(Unittest, "shamrock/tree/RadixTree::serialize", testradixtreeserialize, 1) {
+NEW_TEST(Unittest, "shamrock/tree/RadixTree::serialize", 1) {
 
     u32 cnt = 1000;
     shammath::CoordRange<f32_3> range_coord{f32_3{0, 0, 0}, f32_3{1, 1, 1}};

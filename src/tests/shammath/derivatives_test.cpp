@@ -11,7 +11,7 @@
 #include "shamtest/shamtest.hpp"
 #include <cmath>
 
-TestStart(Unittest, "shammath/derivatives/derivative_upwind", test_derivative_upwind, 1) {
+NEW_TEST(Unittest, "shammath/derivatives/derivative_upwind", 1) {
 
     using namespace shammath;
 
@@ -31,7 +31,7 @@ TestStart(Unittest, "shammath/derivatives/derivative_upwind", test_derivative_up
     REQUIRE_FLOAT_EQUAL(df(x), val, 8.3e-06);
 }
 
-TestStart(Unittest, "shammath/derivatives/derivative_centered", test_derivative_centered, 1) {
+NEW_TEST(Unittest, "shammath/derivatives/derivative_centered", 1) {
 
     using namespace shammath;
 

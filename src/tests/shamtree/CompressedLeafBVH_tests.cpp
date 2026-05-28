@@ -14,7 +14,7 @@ using Tmorton = u64;
 using Tvec    = f64_3;
 using Tscal   = shambase::VecComponent<Tvec>;
 
-TestStart(Unittest, "shamtree/CompressedLeafBVH(is_empty)", test_compressed_leaf_bvh_is_empty, 1) {
+NEW_TEST(Unittest, "shamtree/CompressedLeafBVH(is_empty)", 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
     auto &q        = dev_sched->get_queue();

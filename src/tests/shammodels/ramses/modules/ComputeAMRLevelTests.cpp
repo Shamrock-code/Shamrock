@@ -23,7 +23,7 @@ using TgridVec  = i64_3;
 using TgridScal = i64;
 using TgridUint = u64;
 
-TestStart(Unittest, "shammodels/ramses/modules/ComputeAMRLevel", ComputeAMRLevel, 1) {
+NEW_TEST(Unittest, "shammodels/ramses/modules/ComputeAMRLevel", 1) {
 
     std::vector<TgridUint> levels_test = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
     TgridUint l0_ref                   = {1 << 20}; // largest block size

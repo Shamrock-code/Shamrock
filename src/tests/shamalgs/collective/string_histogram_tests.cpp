@@ -59,7 +59,7 @@ namespace {
 
 } // namespace
 
-TestStart(Unittest, "shamalgs/collective/string_histogram", test_string_histogram, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/string_histogram", -1) {
 
     for (bool hash_based : {true, false}) {
 
@@ -80,7 +80,7 @@ TestStart(Unittest, "shamalgs/collective/string_histogram", test_string_histogra
     }
 }
 
-TestStart(Unittest, "shamalgs/collective/all_string_histogram", test_all_string_histogram, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/all_string_histogram", -1) {
 
     for (bool hash_based : {true, false}) {
 

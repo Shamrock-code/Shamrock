@@ -22,7 +22,7 @@ using Tmorton = u64;
 using Tvec    = f64_3;
 using Tscal   = shambase::VecComponent<Tvec>;
 
-TestStart(Unittest, "shamtree/LCBVHObjectIterator", test_lcbvh_object_iterator, 1) {
+NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
 
     std::vector<Tvec> partpos{
         Tvec(0, 0, 0),

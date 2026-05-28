@@ -209,7 +209,7 @@ TestStart(
     }
 }
 
-TestStart(Unittest, "shambase/DistributedDataShared::map", distributedDataSharedTests_map, 1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::map", 1) {
     using namespace shambase;
 
     {

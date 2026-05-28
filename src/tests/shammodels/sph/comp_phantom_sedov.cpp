@@ -424,6 +424,4 @@ void do_test(bool long_version) {
 }
 
 // 16 cores phantom (i7-10700) = 5min 27sec (1000 iter)
-NEW_TEST(ValidationTest, "shammodels/sph/sedov_blast_phantom_fix_dt", 1) {
-    do_test(false);
-}
+NEW_TEST(ValidationTest, "shammodels/sph/sedov_blast_phantom_fix_dt", 1) { do_test(false); }

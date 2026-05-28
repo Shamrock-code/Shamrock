@@ -29,11 +29,16 @@ jobs:
       # https://docs.docker.com/build/ci/github-actions/cache/#cache-mounts
 
       - name: ccache mount cache for Docker
-        uses: actions/cache@v5
+        uses: actions/cache@v4
         id: cache-ccache
         with:
           path: ccache-cache
-          key: ${{ runner.os }}-ccache-cache
+          # Note: github.run_id is unique for each run, so it will be different for each build.
+          key: ${{ runner.os }}-ccache-cache-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-cache-${{ github.ref_name }}-
+            ${{ runner.os }}-ccache-cache-main-
+            ${{ runner.os }}-ccache-cache
 
       - name: Inject ccache mount cache
         uses: reproducible-containers/buildkit-cache-dance@v3.4.0
@@ -43,7 +48,7 @@ jobs:
             {
               "ccache-cache": "/tmp/ccache"
             }
-          skip-extraction: ${{ steps.cache-ccache.outputs.cache-hit }}
+          # skip-extraction: ${{ steps.cache-ccache.outputs.cache-hit }}
 
       # Note: here we are caching docker build cache which include ccache one.
       - name: Build Container

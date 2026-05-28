@@ -34,7 +34,8 @@ ENV CCACHE_DIR=/tmp/ccache
 
 # sanity check (uses BuildKit cache)
 RUN --mount=type=cache,target=/tmp/ccache \
-    ccache --show-config && ccache --show-stats
+    ccache --show-config && ccache --show-stats && \
+    ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
 
 # ----------------------------
 # Workspace

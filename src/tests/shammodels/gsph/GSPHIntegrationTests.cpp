@@ -429,17 +429,13 @@ NEW_TEST(Unittest, "shammodels/gsph/integration/constant_3d", 1) {
     test_constant_acceleration_3d();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/integration/oscillator", 1) {
-    test_harmonic_oscillator();
-}
+NEW_TEST(Unittest, "shammodels/gsph/integration/oscillator", 1) { test_harmonic_oscillator(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/integration/oscillator_energy", 1) {
     test_harmonic_oscillator_energy();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/integration/convergence", 1) {
-    test_convergence_order();
-}
+NEW_TEST(Unittest, "shammodels/gsph/integration/convergence", 1) { test_convergence_order(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/integration/energy_const", 1) {
     test_energy_integration_constant_rate();
@@ -453,14 +449,8 @@ NEW_TEST(Unittest, "shammodels/gsph/integration/average_accel", 1) {
     test_predictor_corrector_average();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/integration/zero_accel", 1) {
-    test_zero_acceleration();
-}
+NEW_TEST(Unittest, "shammodels/gsph/integration/zero_accel", 1) { test_zero_acceleration(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/integration/stability", 1) {
-    test_large_timestep_stability();
-}
+NEW_TEST(Unittest, "shammodels/gsph/integration/stability", 1) { test_large_timestep_stability(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/integration/multi_particle", 1) {
-    test_multiple_particles();
-}
+NEW_TEST(Unittest, "shammodels/gsph/integration/multi_particle", 1) { test_multiple_particles(); }

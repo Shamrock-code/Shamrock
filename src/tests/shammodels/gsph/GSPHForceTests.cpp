@@ -569,33 +569,21 @@ namespace {
 // Test registrations
 //==============================================================================
 
-NEW_TEST(Unittest, "shammodels/gsph/force/newtons_third", 1) {
-    test_sph_force_newtons_third_law();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/newtons_third", 1) { test_sph_force_newtons_third_law(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/symmetry", 1) {
-    test_gsph_force_symmetry();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/symmetry", 1) { test_gsph_force_symmetry(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/pstar_scaling", 1) {
-    test_force_linear_pstar_scaling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/pstar_scaling", 1) { test_force_linear_pstar_scaling(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/force/energy_comoving", 1) {
     test_energy_rate_zero_when_comoving();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/zero_density", 1) {
-    test_zero_density_handling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/zero_density", 1) { test_zero_density_handling(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/zero_omega", 1) {
-    test_zero_omega_handling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/zero_omega", 1) { test_zero_omega_handling(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/direction", 1) {
-    test_force_direction();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/direction", 1) { test_force_direction(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/force/complete_interaction", 1) {
     test_complete_gsph_interaction();
@@ -605,6 +593,4 @@ NEW_TEST(Unittest, "shammodels/gsph/force/different_directions", 1) {
     test_force_different_directions();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/force/different_kernels", 1) {
-    test_force_different_kernels();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/different_kernels", 1) { test_force_different_kernels(); }

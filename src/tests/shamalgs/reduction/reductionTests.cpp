@@ -628,15 +628,9 @@ TestStart(
     1) {
     unit_test_reduc_max_usm_fallback_impl();
 }
-NEW_TEST(Unittest, "shamalgs/reduction/sum(usm)", 1) {
-    unit_test_reduc_sum_usm();
-}
-NEW_TEST(Unittest, "shamalgs/reduction/min(usm)", 1) {
-    unit_test_reduc_min_usm();
-}
-NEW_TEST(Unittest, "shamalgs/reduction/max(usm)", 1) {
-    unit_test_reduc_max_usm();
-}
+NEW_TEST(Unittest, "shamalgs/reduction/sum(usm)", 1) { unit_test_reduc_sum_usm(); }
+NEW_TEST(Unittest, "shamalgs/reduction/min(usm)", 1) { unit_test_reduc_min_usm(); }
+NEW_TEST(Unittest, "shamalgs/reduction/max(usm)", 1) { unit_test_reduc_max_usm(); }
 
 //////////////////////////////////////:
 // benchmarks

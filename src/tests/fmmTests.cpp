@@ -1505,9 +1505,9 @@ void run_test_no_mpi_fmm(std::string dset_name) {
     std::vector<f64> red8_leaf_rej;
 
     auto get_max_part = [&]() {
-        f64 gsz = shamsys::instance::get_compute_queue()
-                      .get_device()
-                      .get_info<sycl::info::device::global_mem_size>();
+        f64 gsz        = shamsys::instance::get_compute_queue()
+                             .get_device()
+                             .get_info<sycl::info::device::global_mem_size>();
         gsz            = 1024 * 1024 * 1024 * 1;
         f64 part_per_g = 2500000;
 

@@ -474,13 +474,9 @@ inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {
     dtt_test_empty(ordered_result, allow_leaf_lowering);
 }
 
-NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", 1) {
-    dtt_tests(false, false);
-}
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", 1) { dtt_tests(false, false); }
 
-NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", 1) {
-    dtt_tests(true, false);
-}
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", 1) { dtt_tests(true, false); }
 
 TestStart(
     Unittest,

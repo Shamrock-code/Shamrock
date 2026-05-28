@@ -447,50 +447,30 @@ namespace {
 // Test registrations
 //==============================================================================
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/hllc_standard", 1) {
-    test_hllc_standard_problems();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/hllc_standard", 1) { test_hllc_standard_problems(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/iterative_standard", 1) {
     test_iterative_standard_problems();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/uniform_state", 1) {
-    test_uniform_state();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/uniform_state", 1) { test_uniform_state(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) {
-    test_symmetric_collision();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) { test_symmetric_collision(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_expansion", 1) {
-    test_symmetric_expansion();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_expansion", 1) { test_symmetric_expansion(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/near_vacuum", 1) {
-    test_near_vacuum_robustness();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/near_vacuum", 1) { test_near_vacuum_robustness(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/strong_shocks", 1) {
-    test_strong_shocks();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/strong_shocks", 1) { test_strong_shocks(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/supersonic", 1) {
-    test_supersonic_flows();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/supersonic", 1) { test_supersonic_flows(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/gamma_values", 1) {
-    test_different_gamma();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/gamma_values", 1) { test_different_gamma(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/formula_verification", 1) {
     test_hllc_formula_verification();
 }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/convergence", 1) {
-    test_iterative_convergence();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/convergence", 1) { test_iterative_convergence(); }
 
-NEW_TEST(Unittest, "shammodels/gsph/riemann/consistency", 1) {
-    test_solver_consistency();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/consistency", 1) { test_solver_consistency(); }

@@ -31,9 +31,6 @@ RUN pip3 install matplotlib numpy scipy h5py
 # ccache configuration
 # ----------------------------
 ENV CCACHE_DIR=/tmp/ccache
-ENV CCACHE_MAXSIZE=5G
-ENV CCACHE_COMPRESS=1
-ENV CCACHE_COMPRESSLEVEL=5
 
 # sanity check (uses BuildKit cache)
 RUN --mount=type=cache,target=/tmp/ccache \

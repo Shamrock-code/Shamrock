@@ -22,4 +22,4 @@ inline std::vector<f64> get_h_test_vals() {
     return ret;
 }
 
-TestStart(ValidationTest, "shammodels/sph/hfact_default", test_sph_hfact_default, 1) {}
+NEW_TEST(ValidationTest, "shammodels/sph/hfact_default", 1) {}

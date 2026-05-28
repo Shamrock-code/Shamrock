@@ -20,8 +20,7 @@
 #include "shamtest/shamtest.hpp"
 #include <algorithm>
 
-TestStart(
-    Unittest, "shamalgs/primitives/segmented_sort_in_place", test_segmented_sort_in_place, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/segmented_sort_in_place", 1) {
 
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();

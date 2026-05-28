@@ -13,11 +13,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(
-    Unittest,
-    "shamalgs/primitives/scan_exclusive_sum_in_place",
-    test_scan_exclusive_sum_in_place,
-    1) {
+NEW_TEST(Unittest, "shamalgs/primitives/scan_exclusive_sum_in_place", 1) {
 
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();

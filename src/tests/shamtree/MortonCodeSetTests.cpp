@@ -76,7 +76,7 @@ inline std::vector<Tmorton> test_mortons_sorted
 
 inline std::vector<u32> index_map_obj_idx = {13, 0, 3, 2, 5, 1, 6, 4, 7, 8, 9, 10, 11, 12, 15, 14};
 
-TestStart(Unittest, "shamtree/MortonCodeSet", test_morton_codeset, 1) {
+NEW_TEST(Unittest, "shamtree/MortonCodeSet", 1) {
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>(Tvec(0, 0, 0), Tvec(1, 1, 1));
 
@@ -94,7 +94,7 @@ TestStart(Unittest, "shamtree/MortonCodeSet", test_morton_codeset, 1) {
     REQUIRE_EQUAL(set.morton_codes.copy_to_stdvec(), test_mortons);
 }
 
-TestStart(Unittest, "shamtree/MortonCodeSortedSet", test_morton_code_sort_set, 1) {
+NEW_TEST(Unittest, "shamtree/MortonCodeSortedSet", 1) {
 
     shammath::AABB<Tvec> bb = shammath::AABB<Tvec>(Tvec(0, 0, 0), Tvec(1, 1, 1));
 

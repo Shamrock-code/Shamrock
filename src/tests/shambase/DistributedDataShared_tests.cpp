@@ -12,8 +12,7 @@
 #include <string>
 #include <vector>
 
-TestStart(
-    Unittest, "shambase/DistributedDataShared::add_obj", distributedDataSharedTests_add_obj, 1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::add_obj", 1) {
     using namespace shambase;
 
     {
@@ -40,8 +39,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shambase/DistributedDataShared::for_each", distributedDataSharedTests_for_each, 1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::for_each", 1) {
     using namespace shambase;
 
     {
@@ -91,11 +89,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest,
-    "shambase/DistributedDataShared::tranfer_all",
-    distributedDataSharedTests_transfer_all,
-    1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::tranfer_all", 1) {
     using namespace shambase;
 
     {
@@ -152,8 +146,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shambase/DistributedDataShared::has_key", distributedDataSharedTests_has_key, 1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::has_key", 1) {
     using namespace shambase;
 
     {
@@ -180,11 +173,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest,
-    "shambase/DistributedDataShared::get_element_count",
-    distributedDataSharedTests_get_element_count,
-    1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::get_element_count", 1) {
     using namespace shambase;
 
     {
@@ -209,7 +198,7 @@ TestStart(
     }
 }
 
-TestStart(Unittest, "shambase/DistributedDataShared::map", distributedDataSharedTests_map, 1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::map", 1) {
     using namespace shambase;
 
     {
@@ -270,11 +259,7 @@ TestStart(Unittest, "shambase/DistributedDataShared::map", distributedDataShared
     }
 }
 
-TestStart(
-    Unittest,
-    "shambase/DistributedDataShared::reset_and_is_empty",
-    distributedDataSharedTests_reset_and_is_empty,
-    1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::reset_and_is_empty", 1) {
     using namespace shambase;
 
     {
@@ -304,11 +289,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest,
-    "shambase/DistributedDataShared::get_native",
-    distributedDataSharedTests_get_native,
-    1) {
+NEW_TEST(Unittest, "shambase/DistributedDataShared::get_native", 1) {
     using namespace shambase;
 
     {

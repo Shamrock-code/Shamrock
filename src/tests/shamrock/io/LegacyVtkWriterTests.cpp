@@ -10,7 +10,7 @@
 #include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1) {
+NEW_TEST(Unittest, "vtk-write-parts", -1) {
 
     shamrock::LegacyVtkWriter writer("out-parts.vtk", true, shamrock::UnstructuredGrid);
 
@@ -41,7 +41,7 @@ TestStart(Unittest, "vtk-write-parts", vtk_write_test_particles, -1) {
     writer.write_field("field2", buffield_2, 5);
 }
 
-TestStart(Unittest, "vtk-write-cells", vtk_write_test_cells, -1) {
+NEW_TEST(Unittest, "vtk-write-cells", -1) {
 
     shamrock::LegacyVtkWriter writer("out-cell.vtk", true, shamrock::UnstructuredGrid);
 

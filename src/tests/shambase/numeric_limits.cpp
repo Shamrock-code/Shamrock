@@ -10,7 +10,7 @@
 #include "shambase/numeric_limits.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase/numeric_limits", testnumericlimits, 1) {
+NEW_TEST(Unittest, "shambase/numeric_limits", 1) {
 
     {
         using T = f64;

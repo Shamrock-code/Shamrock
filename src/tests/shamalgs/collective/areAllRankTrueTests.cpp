@@ -11,7 +11,7 @@
 #include "shamcomm/worldInfo.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/collective/are_all_rank_true", test_are_all_rank_true, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/are_all_rank_true", -1) {
 
     u32 world_size = shamcomm::world_size();
     u32 world_rank = shamcomm::world_rank();

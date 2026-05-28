@@ -12,7 +12,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathroundup_pow2_clz, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:roundup_pow2_clz", 1) {
 
     REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(0), 1);
     REQUIRE_EQUAL(sham::roundup_pow2_clz<u32>(1), 1);
@@ -27,7 +27,7 @@ TestStart(Unittest, "shambackends/math.hpp:roundup_pow2_clz", shambackendsmathro
 
 inline f64 nan_val = std::numeric_limits<f64>::quiet_NaN();
 
-TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:inv_sat", 1) {
 
     REQUIRE_EQUAL(sham::inv_sat<f64>(1._f64), 1._f64 / 1._f64);
     REQUIRE_EQUAL(sham::inv_sat<f64>(2._f64), 1._f64 / 2._f64);
@@ -57,7 +57,7 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat", shambackendsmathinv_sat, 1)
     REQUIRE_EQUAL(sham::inv_sat<f64>(nan_val), 0._f64);
 }
 
-TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathinv_satpos, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:inv_sat_positive", 1) {
 
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(1._f64), 1._f64 / 1._f64);
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(2._f64), 1._f64 / 2._f64);
@@ -75,7 +75,7 @@ TestStart(Unittest, "shambackends/math.hpp:inv_sat_positive", shambackendsmathin
     REQUIRE_EQUAL(sham::inv_sat_positive<f64>(nan_val), 0._f64);
 }
 
-TestStart(Unittest, "shambackends/math.hpp:inv_sat_zero", shambackendsmathinv_satzero, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:inv_sat_zero", 1) {
 
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(1._f64), 1._f64 / 1._f64);
     REQUIRE_EQUAL(sham::inv_sat_zero<f64>(2._f64), 1._f64 / 2._f64);
@@ -109,7 +109,7 @@ T __attribute__((noinline)) bitshift_noinline(T x, T amount) {
     return x << amount;
 }
 
-TestStart(Unittest, "shambackends/math.hpp:log2_pow2_num", shambackendsmathlog2_pow2_num, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:log2_pow2_num", 1) {
 
     // we have to prevent inline otherwise optimisation will optimize clz(1 << i) to bitsize - i-1
 
@@ -122,7 +122,7 @@ TestStart(Unittest, "shambackends/math.hpp:log2_pow2_num", shambackendsmathlog2_
     }
 }
 
-TestStart(Unittest, "shambackends/math.hpp:max_component", shambackendsmathmax_component, 1) {
+NEW_TEST(Unittest, "shambackends/math.hpp:max_component", 1) {
 
     sycl::vec<f32, 2> a = {1._f32, 2._f32};
     sycl::vec<f32, 3> b = {1._f32, 2._f32, 3._f32};

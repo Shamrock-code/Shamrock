@@ -21,7 +21,7 @@
 #include <random>
 #include <vector>
 
-TestStart(Unittest, "shamrock/solvergraph/ExchangeGhostField", testExchangeGhostField, -1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/ExchangeGhostField", -1) {
 
     std::string test_name = "shamrock/solvergraph/ExchangeGhostField";
 

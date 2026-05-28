@@ -15,6 +15,7 @@
  * @brief main include file for testing
  */
 
+#include "shambase/unique_name_macro.hpp"
 #include "details/Test.hpp"
 
 /**
@@ -118,22 +119,33 @@ namespace shamtest {
 
 } // namespace shamtest
 
+#define ANY_WORLD_SIZE -1
+
+#define _internal_new_test(type, name, func_name, func_ptr, class_name, node_cnt)                  \
+    static void func_name();                                                                       \
+    static void (*func_ptr)() = func_name;                                                         \
+    static shamtest::details::TestStaticInit class_name(                                           \
+        shamtest::details::Test{type, name, node_cnt, func_ptr});                                  \
+    static void func_name()
+
 /**
  * @brief Macro to declare a test
  *
  * Example :
  * \code{.cpp}
- * TestStart(Unittest, "testname", testfuncname, 1) {
- *     shamtest::asserts().assert_bool("what a reliable test", true);
+ * NEW_TEST(Unittest, "testname", 1) {
+ *     REQUIRE(true);
  * }
  * \endcode
  */
-#define TestStart(type, name, func_name, node_cnt)                                                 \
-    void test_func_##func_name();                                                                  \
-    void (*test_func_ptr_##func_name)() = test_func_##func_name;                                   \
-    shamtest::details::TestStaticInit test_class_obj_##func_name(                                  \
-        shamtest::details::Test{type, name, node_cnt, test_func_ptr_##func_name});                 \
-    void test_func_##func_name()
+#define NEW_TEST(type, name, node_cnt)                                                             \
+    _internal_new_test(                                                                            \
+        type,                                                                                      \
+        name,                                                                                      \
+        __shamrock_unique_name(test_func_),                                                        \
+        __shamrock_unique_name(test_func_ptr_),                                                    \
+        __shamrock_unique_name(test_class_),                                                       \
+        node_cnt)
 
 /**
  * @brief Macro to write stuff to the tex test report

@@ -10,7 +10,7 @@
 #include "shambase/FixedStack.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase/FixedStack", shambase_fixedstack_test, 1) {
+NEW_TEST(Unittest, "shambase/FixedStack", 1) {
 
     // Test default constructor
     {

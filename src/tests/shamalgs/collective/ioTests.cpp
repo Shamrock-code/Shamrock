@@ -15,7 +15,7 @@
 #define TEST_VAL2 0x123456
 #define TEST_FILE_NAME "iotest"
 
-TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_header_val, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/io/header_val", -1) {
 
     { // Write
         u64 head_ptr = 0;
@@ -44,7 +44,7 @@ TestStart(Unittest, "shamalgs/collective/io/header_val", test_collective_io_head
     }
 }
 
-TestStart(Unittest, "shamalgs/collective/io/header_read_write", test_collective_io_header_rw, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/io/header_read_write", -1) {
 
     static std::string ref_str = "dazjndazndzad azd azdijnazidiaz";
 

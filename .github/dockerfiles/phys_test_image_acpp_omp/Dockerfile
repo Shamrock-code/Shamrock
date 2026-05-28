@@ -53,7 +53,8 @@ RUN --mount=type=cache,target=/tmp/ccache \
     cd build && \
     sed -i "s/-DBUILD_TEST=Yes /-DBUILD_TEST=Yes -DCXX_FLAG_ARCH_NATIVE=off /" activate && \
     cat activate && \
-    pip3 install -v .
+    pip3 install -v . && \
+    ccache --show-stats
 
 # ----------------------------
 # Final environment

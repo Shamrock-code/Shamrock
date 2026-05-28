@@ -12,6 +12,7 @@ coverage:
 comment:
   require_changes: false # always post details even when patch coverage is fully covered
   layout: "header, diff, flags, components"  # show component info in the PR comment # show component info in the PR comment
+  hide_project_coverage: false # Show the full coverage dammit
 
 component_management:
 

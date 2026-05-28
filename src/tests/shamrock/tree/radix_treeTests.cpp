@@ -685,8 +685,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     }
 }
 
-TestStart(
-    Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1) {
+NEW_TEST(Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", 1) {
     test_inclusion<u32, f32>(1000, 0);
     test_inclusion<u64, f32>(1000, 0);
     test_inclusion<u32, f64>(1000, 0);
@@ -769,11 +768,7 @@ NEW_TEST(Benchmark, "shamrock/tree/RadixTree:build:benchmark", 1) {
     test_tree<u64, f64, 2>("u64, f64, 2");
 }
 
-TestStart(
-    Benchmark,
-    "article_shamrock1:shamrock/tree/RadixTree:build:benchmark",
-    morton_tree_build_article1,
-    1) {
+NEW_TEST(Benchmark, "article_shamrock1:shamrock/tree/RadixTree:build:benchmark", 1) {
     test_tree<u32, f32, 0>("morton = u32, field type = f32");
     test_tree<u64, f32, 0>("morton = u64, field type = f32");
     test_tree<u32, f64, 0>("morton = u32, field type = f64");

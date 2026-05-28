@@ -238,8 +238,7 @@ NEW_TEST(Unittest, "shamtree/KarrasRadixTreeAABB", 1) {
     REQUIRE_EQUAL_CUSTOM_COMP(ret_aabb_max, aabb_max, vec_equals);
 }
 
-TestStart(
-    Unittest, "shamtree/KarrasRadixTreeAABB(one-cell)", test_karras_radix_tree_aabb_one_cell, 1) {
+NEW_TEST(Unittest, "shamtree/KarrasRadixTreeAABB(one-cell)", 1) {
 
     std::vector<Tvec> partpos{
         Tvec(0.0, 0.0, 0.0),

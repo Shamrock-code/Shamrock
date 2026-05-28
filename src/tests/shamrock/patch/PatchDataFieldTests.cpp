@@ -16,8 +16,7 @@
 #include <set>
 #include <vector>
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataField::serialize_buf", testpatchdatafieldserialize, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::serialize_buf", 1) {
 
     u32 len                     = 1000;
     u32 nvar                    = 2;
@@ -41,8 +40,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataField::serialize_full", testpatchdatafieldserializefull, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::serialize_full", 1) {
 
     u32 len                     = 1000;
     u32 nvar                    = 2;
@@ -203,8 +201,7 @@ NEW_TEST(Unittest, "shamrock/patch/PatchDataField::remove_ids", 1) {
     REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), remaining_values);
 }
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataField::remove_ids duplicates", testpdatremoveidsdup, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::remove_ids duplicates", 1) {
 
     std::vector<f64> values = {
         1,

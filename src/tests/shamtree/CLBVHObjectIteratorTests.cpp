@@ -230,8 +230,7 @@ NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator", 1) {
     }
 }
 
-TestStart(
-    Unittest, "shamtree/LCBVHObjectIterator(one-cell)", test_lcbvh_object_iterator_one_cell, 1) {
+NEW_TEST(Unittest, "shamtree/LCBVHObjectIterator(one-cell)", 1) {
 
     std::vector<Tvec> partpos{
         Tvec(0, 0, 0),

@@ -51,8 +51,7 @@ NEW_TEST(Unittest, "shammath/derivatives/derivative_centered", 1) {
     REQUIRE_FLOAT_EQUAL(df(x), val, 6.8e-09);
 }
 
-TestStart(
-    Unittest, "shammath/derivatives/derivative_3point_forward", test_derivative_3point_forward, 1) {
+NEW_TEST(Unittest, "shammath/derivatives/derivative_3point_forward", 1) {
 
     using namespace shammath;
 
@@ -72,11 +71,7 @@ TestStart(
     REQUIRE_FLOAT_EQUAL(df(x), val, 1.4e-08);
 }
 
-TestStart(
-    Unittest,
-    "shammath/derivatives/derivative_3point_backward",
-    test_derivative_3point_backward,
-    1) {
+NEW_TEST(Unittest, "shammath/derivatives/derivative_3point_backward", 1) {
 
     using namespace shammath;
 
@@ -96,11 +91,7 @@ TestStart(
     REQUIRE_FLOAT_EQUAL(df(x), val, 1.4e-08);
 }
 
-TestStart(
-    Unittest,
-    "shammath/derivatives/derivative_5point_midpoint",
-    test_derivative_5point_midpoint,
-    1) {
+NEW_TEST(Unittest, "shammath/derivatives/derivative_5point_midpoint", 1) {
 
     using namespace shammath;
 

@@ -13,8 +13,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(
-    Unittest, "shambackends/gpu_core_timeline_profilier", gpu_core_timeline_profilier_test, 1) {
+NEW_TEST(Unittest, "shambackends/gpu_core_timeline_profilier", 1) {
 
     const size_t sz = 256 * 256;
     using T         = int;

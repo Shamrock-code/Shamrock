@@ -593,39 +593,24 @@ void unit_test_reduc_max_usm() {
 }
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-TestStart(
-    Unittest, "shamalgs/reduction/sum(usm:group_impl)", reduc_kernel_utestsum_usm_group_impl, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/sum(usm:group_impl)", 1) {
     unit_test_reduc_sum_usm_group_impl();
 }
-TestStart(
-    Unittest, "shamalgs/reduction/min(usm:group_impl)", reduc_kernel_utestmin_usm_group_impl, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/min(usm:group_impl)", 1) {
     unit_test_reduc_min_usm_group_impl();
 }
-TestStart(
-    Unittest, "shamalgs/reduction/max(usm:group_impl)", reduc_kernel_utestmax_usm_group_impl, 1) {
+NEW_TEST(Unittest, "shamalgs/reduction/max(usm:group_impl)", 1) {
     unit_test_reduc_max_usm_group_impl();
 }
 #endif
 
-TestStart(
-    Unittest,
-    "shamalgs/reduction/sum(usm:fallback_impl)",
-    reduc_kernel_utestsum_usm_fallback_impl,
-    1) {
+NEW_TEST(Unittest, "shamalgs/reduction/sum(usm:fallback_impl)", 1) {
     unit_test_reduc_sum_usm_fallback_impl();
 }
-TestStart(
-    Unittest,
-    "shamalgs/reduction/min(usm:fallback_impl)",
-    reduc_kernel_utestmin_usm_fallback_impl,
-    1) {
+NEW_TEST(Unittest, "shamalgs/reduction/min(usm:fallback_impl)", 1) {
     unit_test_reduc_min_usm_fallback_impl();
 }
-TestStart(
-    Unittest,
-    "shamalgs/reduction/max(usm:fallback_impl)",
-    reduc_kernel_utestmax_usm_fallback_impl,
-    1) {
+NEW_TEST(Unittest, "shamalgs/reduction/max(usm:fallback_impl)", 1) {
     unit_test_reduc_max_usm_fallback_impl();
 }
 NEW_TEST(Unittest, "shamalgs/reduction/sum(usm)", 1) { unit_test_reduc_sum_usm(); }

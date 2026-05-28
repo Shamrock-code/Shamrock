@@ -20,8 +20,7 @@ NEW_TEST(Unittest, "shamalgs/algorithm/details/bitonicSort_legacy", 1) {
     test.check();
 }
 
-TestStart(
-    Unittest, "shamalgs/algorithm/details/bitonicSort_updated", test_bitonic_sort_updated, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/details/bitonicSort_updated", 1) {
 
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall)
@@ -29,11 +28,7 @@ TestStart(
     test.check();
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/algorithm/details/bitonicSort_updated_usm",
-    test_bitonic_sort_updated_usm,
-    1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/details/bitonicSort_updated_usm", 1) {
 
     TestSortByKeyUSM<u32, u32> test(
         (TestSortByKeyUSM<u32, u32>::vFunctionCall)
@@ -41,8 +36,7 @@ TestStart(
     test.check();
 }
 
-TestStart(
-    Unittest, "shamalgs/algorithm/details/bitonicSort_fallback", test_bitonic_sort_fallback, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/details/bitonicSort_fallback", 1) {
 
     TestSortByKey<u32, u32> test((TestSortByKey<u32, u32>::vFunctionCall)
                                      shamalgs::algorithm::details::sort_by_key_bitonic_fallback);
@@ -50,8 +44,7 @@ TestStart(
 }
 
 /*
-TestStart(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3",
-test_sort_by_key_radix_onesweep_v3, 1){
+NEW_TEST(Unittest, "shamalgs/algorithm/details/sort_by_key_radix_onesweep_v3", 1) {
 
     TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
@@ -62,8 +55,7 @@ test_sort_by_key_radix_onesweep_v3, 1){
 */
 
 #if false
-TestStart(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark",
-    test_bitonic_sort_legacy_benchmark, 1){
+NEW_TEST(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 1) {
 
     /*
     {

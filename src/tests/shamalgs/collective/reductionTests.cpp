@@ -41,11 +41,7 @@ NEW_TEST(Unittest, "shamalgs/collective/reduction/allreduce_sum", -1) {
     test<f64_3>();
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/collective/reduction/reduce_buffer_in_place_sum",
-    testsallreducesum_buf,
-    -1) {
+NEW_TEST(Unittest, "shamalgs/collective/reduction/reduce_buffer_in_place_sum", -1) {
 
     u32 size = 50;
     using T  = u32;

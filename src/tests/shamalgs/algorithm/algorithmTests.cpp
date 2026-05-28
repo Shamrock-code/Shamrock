@@ -22,8 +22,7 @@ NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key(usm)", 1) {
     test.check();
 }
 
-TestStart(
-    Benchmark, "shamalgs/algorithm/sort_by_key:benchmark", test_sort_by_key_func_benchmark, 1) {
+NEW_TEST(Benchmark, "shamalgs/algorithm/sort_by_key:benchmark", 1) {
 
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key);

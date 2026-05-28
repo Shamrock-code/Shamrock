@@ -14,8 +14,7 @@
 #include "shamtest/shamtest.hpp"
 #include <vector>
 
-TestStart(
-    Unittest, "shamalgs/primitives/is_all_true:sycl_buffer", test_is_all_true_sycl_buffer, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:sycl_buffer", 1) {
 
     {
         // Test with all true values

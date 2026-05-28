@@ -91,8 +91,7 @@ NEW_TEST(Unittest, "shambackends/DeviceBuffer:copy_to_stdvec", 1) {
     }
 }
 
-TestStart(
-    Unittest, "shambackends/DeviceBuffer:copy_to_sycl_buffer", devbuf_testcopy_to_sycl_buffer, 1) {
+NEW_TEST(Unittest, "shambackends/DeviceBuffer:copy_to_sycl_buffer", 1) {
     using T = int;
 
     std::shared_ptr<sham::DeviceScheduler> dev_sched
@@ -209,11 +208,7 @@ NEW_TEST(Unittest, "shambackends/DeviceBuffer:fill_lambda", 1) {
     }
 }
 
-TestStart(
-    Unittest,
-    "shambackends/DeviceBuffer:fill_lambda(different size)",
-    DeviceBuffer_fill_lambda2,
-    1) {
+NEW_TEST(Unittest, "shambackends/DeviceBuffer:fill_lambda(different size)", 1) {
     std::shared_ptr<sham::DeviceScheduler> dev_sched
         = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -236,8 +231,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shambackends/DeviceBuffer:fill_lambda(empty buffer)", DeviceBuffer_fill_lambda3, 1) {
+NEW_TEST(Unittest, "shambackends/DeviceBuffer:fill_lambda(empty buffer)", 1) {
     std::shared_ptr<sham::DeviceScheduler> dev_sched
         = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -290,11 +284,7 @@ NEW_TEST(Unittest, "shambackends/DeviceBuffer:resize", 1) {
     REQUIRE(a.get_mem_usage() == 0);
 }
 
-TestStart(
-    Unittest,
-    "shambackends/DeviceBuffer:copy_to_stdvec_idx_range",
-    DeviceBuffer_copy_to_stdvec_idx_range,
-    1) {
+NEW_TEST(Unittest, "shambackends/DeviceBuffer:copy_to_stdvec_idx_range", 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 

@@ -103,11 +103,7 @@ bool check_periodicity(std::array<i32, 3> coord_min, std::array<i32, 3> coord_ma
     return true;
 }
 
-TestStart(
-    Unittest,
-    "shammath/crystalLattice/LatticeHCP/get_periodic_box",
-    lattice_get_periodic_box_test,
-    1) {
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/get_periodic_box", 1) {
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
@@ -136,11 +132,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest,
-    "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indices",
-    lattice_nearest_periodic_box_indices_test,
-    1) {
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/nearest_periodic_box_indices", 1) {
     std::mt19937 eng(0x1111);
 
     for (u32 i = 0; i < 100; i++) {
@@ -464,11 +456,7 @@ std::vector<f64_3> reference_set_discontinuous
        {-3, 15.588457268119894, 22.861904265976325}, {5, 15.588457268119894, 22.861904265976325},
        {1, 15.588457268119894, 22.861904265976325},  {9, 15.588457268119894, 22.861904265976325}};
 
-TestStart(
-    Unittest,
-    "shammath/crystalLattice/LatticeHCP/IteratorDiscontinuous",
-    lattice_IteratorDiscontinuous_test,
-    1) {
+NEW_TEST(Unittest, "shammath/crystalLattice/LatticeHCP/IteratorDiscontinuous", 1) {
 
     std::array<i32, 3> coord_min = {-3, 6, 7};
     std::array<i32, 3> coord_max = {5, 10, 15};
@@ -518,11 +506,7 @@ NEW_TEST(Benchmark, "shammath/crystalLattice/LatticeHCP/Iterator", 1) {
     logger::raw_ln("skip_perf : ", t2.elapsed_sec());
 }
 
-TestStart(
-    Benchmark,
-    "shammath/crystalLattice/LatticeHCP/IteratorDiscontinuous",
-    lattice_IteratorDiscontinuous_bench,
-    1) {
+NEW_TEST(Benchmark, "shammath/crystalLattice/LatticeHCP/IteratorDiscontinuous", 1) {
 
     std::array<i32, 3> coord_min = {0, 0, 0};
     std::array<i32, 3> coord_max = {1024, 1024, 1024};

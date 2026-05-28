@@ -106,9 +106,13 @@ namespace {
 
                             out[cell_global_id] = Ap_id;
 
+			    /*
+
                             if (sycl::isnan(Ap_id)) {
                                 logger::raw_ln("nan in SpMV3D @ \t", cell_global_id, "\n");
                             }
+
+			    */
                         });
                 });
         }

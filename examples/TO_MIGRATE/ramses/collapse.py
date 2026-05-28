@@ -138,7 +138,7 @@ def run_sim():
     tmax = 2.0 * t_ff
     t = 0
     dt = 0
-    freq = 10
+    freq = 50
     dX0 = []
     for i in range(int(1e7)):
         next_dt = model.evolve_once_override_time(t, dt)

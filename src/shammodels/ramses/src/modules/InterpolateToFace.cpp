@@ -149,6 +149,8 @@ namespace {
                 rho_face_b
                     += get_dt_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt_interp;
 
+
+		/*
                 if (sycl::isnan(rho_face_a) || sycl::isnan(rho_face_b)) {
                     logger::raw_ln(
                         "Nan in I=rho-interp @ face of \t",
@@ -161,6 +163,10 @@ namespace {
                         rho_face_b,
                         "\n\n");
                 }
+
+		*/
+
+
 
                 return {rho_face_a, rho_face_b};
             }

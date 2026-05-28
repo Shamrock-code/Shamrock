@@ -47,6 +47,7 @@ namespace {
                  beta](u32 i, const T *__restrict x, const T *__restrict y, T *__restrict z) {
                     z[i] = z[i] + alpha * x[i] + beta * y[i];
 
+		    /*
                     if (sycl::isnan(z[i]) || sycl::isnan(x[i]) || sycl::isnan(y[i])) {
                         logger::raw_ln(
                             "nan in AXPYVec @ \t",
@@ -59,6 +60,8 @@ namespace {
                             z[i],
                             "\n");
                     }
+
+		    */
                 });
         }
     };

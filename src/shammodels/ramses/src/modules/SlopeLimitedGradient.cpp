@@ -97,7 +97,7 @@ namespace {
                                         return field[var_per_cell * id + var_off_loc];
                                     });
 
-                                if (sycl::isnan(result[0]) || sycl::isnan(result[1])
+                                /* if (sycl::isnan(result[0]) || sycl::isnan(result[1])
                                     || sycl::isnan(result[2])) {
                                     logger::raw_ln(
                                         "Nan in scalar-grad @ \t ",
@@ -110,6 +110,8 @@ namespace {
                                         result[2],
                                         "\t\n");
                                 }
+
+				*/
 
                                 field_grad[var_per_cell * cell_global_id + var_off_loc]
                                     = {result[0], result[1], result[2]};

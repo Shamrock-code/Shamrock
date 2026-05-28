@@ -113,7 +113,9 @@ namespace {
                                                                   : rho[cell_global_id] - mean_rho)
                               * dV;
 
-                        if (sycl::isnan(rho[cell_global_id]) || sycl::isnan(phi[cell_global_id])) {
+                       /*
+			*
+			if (sycl::isnan(rho[cell_global_id]) || sycl::isnan(phi[cell_global_id])) {
                             logger::raw_ln(
                                 "nan in INIT @ \t",
                                 cell_global_id,
@@ -123,6 +125,11 @@ namespace {
                                 phi[cell_global_id],
                                 "\t \t");
                         }
+
+
+			*/
+
+
 
                         phi_res[cell_global_id]     = b_rhs - Aphi;
                         phi_res_bis[cell_global_id] = 0.5 * (b_rhs - Aphi);

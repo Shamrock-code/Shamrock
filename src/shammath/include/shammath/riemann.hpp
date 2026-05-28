@@ -392,6 +392,8 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
+
+/*
         if (sycl::isnan(csL) || sycl::isnan(csR)) {
             logger::raw_ln(
                 "Nan in HLLC solver \t csL \t",
@@ -410,6 +412,8 @@ namespace shammath {
                 gamma,
                 "\t\n");
         }
+
+*/
 
         // Left and right state fluxes
         const auto FL = hydro_flux_x(cL, gamma);
@@ -517,7 +521,6 @@ namespace shammath {
     inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma));
     }
-
     /**
      * @brief HLLC flux in the +z direction
      */

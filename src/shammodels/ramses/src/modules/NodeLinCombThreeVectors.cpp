@@ -52,6 +52,9 @@ namespace {
 
                     z[i] = alpha_0 * zi + alpha_1 * x[i] + alpha_2 * y[i];
 
+
+		    /*
+
                     if (sycl::isnan(z[i]) || sycl::isnan(x[i]) || sycl::isnan(y[i])) {
                         logger::raw_ln(
                             "nan in LinComb3Vec @ \t",
@@ -64,6 +67,8 @@ namespace {
                             z[i],
                             "\n");
                     }
+
+		    */
                 });
         }
     };

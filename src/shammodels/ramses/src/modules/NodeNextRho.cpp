@@ -51,7 +51,10 @@ namespace {
                 sham::DDMultiRef{spans_rho_new},
                 cell_counts,
                 [dt_over_2](u32 i, const Tscal *__restrict dt_rho_old, Tscal *__restrict rho_new) {
-                    if (sycl::isnan(rho_new[i]) || sycl::isnan(dt_rho_old[i])) {
+                   
+	/*
+
+		if (sycl::isnan(rho_new[i]) || sycl::isnan(dt_rho_old[i])) {
                         logger::raw_ln(
                             "nan in rho_next @ \t",
                             i,
@@ -61,6 +64,7 @@ namespace {
                             dt_rho_old[i],
                             "\n");
                     }
+		*/
 
                     rho_new[i] += (2. * dt_over_2) * dt_rho_old[i];
                 });

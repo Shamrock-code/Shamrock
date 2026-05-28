@@ -43,7 +43,9 @@ struct KernelAXPY {
             [alpha](u32 i, const T *__restrict x, T *__restrict y) {
                 y[i] = y[i] + alpha * x[i];
 
-                if (sycl::isnan(y[i]) || sycl::isnan(x[i])) {
+              
+	/*      
+		if (sycl::isnan(y[i]) || sycl::isnan(x[i])) {
                     logger::raw_ln(
                         "nan in AXPY @ \t",
                         i,
@@ -54,6 +56,9 @@ struct KernelAXPY {
 
                         "\n");
                 }
+
+
+	*/	
             });
     }
 };

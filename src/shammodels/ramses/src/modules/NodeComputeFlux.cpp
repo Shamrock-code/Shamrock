@@ -77,10 +77,16 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
                 Tprim{rho_ij[1], press_ij[1], vel_ij[1]},
                 gamma);
 
-            // if(sycl::isnan(flux_dir.rho)){
-            //     logger::raw_ln("nan in rho flux @ \t", link_id, "\t flux-rho \t", flux_dir.rho,
-            //     "\t\n");
-            // }
+            
+	    /*
+	     
+	    	if(sycl::isnan(flux_dir.rho)){
+               logger::raw_ln("nan in rho flux @ \t", link_id, "\t flux-rho \t", flux_dir.rho,
+                 "\t\n");
+            	 }
+		
+	    */
+
 
             flux_rho_face[link_id]  = flux_dir.rho;
             flux_rhov_face[link_id] = flux_dir.rhovel;

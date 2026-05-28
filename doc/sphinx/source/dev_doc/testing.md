@@ -48,10 +48,9 @@ Here is a basic template for a test file:
 #include "shamtest/shamtest.hpp"
 
 // Use the TestStart macro to define your test
-TestStart(
+NEW_TEST(
     Unittest, // Test suite (usually Unittest)
     "shammath/my_component/my_first_test", // Unique name for the test
-    test_my_first_component, // Unique identifier for this test block
     1) // Run only with this number of MPI ranks (-1 means always)
 {
     // Set up your test data
@@ -70,7 +69,7 @@ The TestStart macro registers the test. You can find other assertion macros (lik
 Each test case should be in its own scope using curly braces for clarity and variable isolation:
 
 ```c++
-TestStart(Unittest, "filepath:function", test_function_name, mpi_ranks) {
+NEW_TEST(Unittest, "filepath:function", test_function_name, mpi_ranks) {
     { // Test case 1
         // Test setup
         std::vector<T> expected = {...};

@@ -15,6 +15,7 @@
  * @brief main include file for testing
  */
 
+#include "shambase/unique_name_macro.hpp"
 #include "details/Test.hpp"
 
 /**
@@ -134,6 +135,24 @@ namespace shamtest {
     shamtest::details::TestStaticInit test_class_obj_##func_name(                                  \
         shamtest::details::Test{type, name, node_cnt, test_func_ptr_##func_name});                 \
     void test_func_##func_name()
+
+#define ANY_WORLD_SIZE -1
+
+#define TestStart2(type, name, func_name, func_ptr, class_name, node_cnt)                          \
+    static void func_name();                                                                       \
+    static void (*func_ptr)() = func_name;                                                         \
+    static shamtest::details::TestStaticInit class_name(                                           \
+        shamtest::details::Test{type, name, node_cnt, func_ptr});                                  \
+    static void func_name()
+
+#define NEW_TEST(type, name, node_cnt)                                                             \
+    TestStart2(                                                                                    \
+        type,                                                                                      \
+        name,                                                                                      \
+        __shamrock_unique_name(test_func_),                                                        \
+        __shamrock_unique_name(test_func_ptr_),                                                    \
+        __shamrock_unique_name(test_class_),                                                       \
+        node_cnt)
 
 /**
  * @brief Macro to write stuff to the tex test report

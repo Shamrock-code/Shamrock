@@ -211,7 +211,7 @@ class FMM_prec_eval {
     }
 };
 
-TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
+NEW_TEST(ValidationTest, "models/generic/fmm/precision", 1) {
 
     std::mt19937 eng(0x1111);
 
@@ -397,7 +397,7 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
     )==")
 }
 
-TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1) {
+NEW_TEST(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1) {
     using namespace shammath;
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf64(-1, 1);
@@ -1185,7 +1185,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt, 3>>> pos_partgen_distrib(u32 npart) 
 }
 
 #if false
-TestStart(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1) {
+NEW_TEST(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1) {
 
     constexpr u32 reduc_level = 5;
     constexpr f64 open_crit   = 0.3;
@@ -1609,7 +1609,7 @@ void run_test_no_mpi_fmm(std::string dset_name) {
     dset.add_data("red8_leaf_rej", red8_leaf_rej);
 }
 
-TestStart(Benchmark, "fmm_no_mpi performance", fmm_no_mpi, 1) {
+NEW_TEST(Benchmark, "fmm_no_mpi performance", fmm_no_mpi, 1) {
     run_test_no_mpi_fmm<f32, u32, 3>("case f32,u32, order = 3");
 
     run_test_no_mpi_fmm<f32, u32, 4>("case f32,u32, order = 4");

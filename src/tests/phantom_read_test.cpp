@@ -12,7 +12,7 @@
 #include "shamtest/shamtest.hpp"
 #include "tests/ref_files.hpp"
 
-TestStart(Unittest, "phantom-read-write", pahntomread, 1) {
+NEW_TEST(Unittest, "phantom-read-write", 1) {
 
     std::string fname_in  = get_reffile_path("blast_00010");
     std::string fname_out = get_reffile_path("zout_phantom");

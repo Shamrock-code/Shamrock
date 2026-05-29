@@ -202,9 +202,6 @@ namespace shammodels::sph {
                             "SPH::config",
                             "Dust config != None is work in progress, use it at your own risk"));
                 }
-
-            }
-
             }
         }
     };

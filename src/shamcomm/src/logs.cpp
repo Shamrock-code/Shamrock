@@ -85,10 +85,10 @@ While you wait for this simulation to run, give that cat a hug!
             "Node hours to burn? Leaf it to me.",
             "Ready for some shamazing simulations?",
             "SHAMROCKがきれいですね ~",
-            "シャムロック"
+            "シャムロック",
 
             // by the coagulator
-            "We're not here to make seagulls laugh"
+            "We're not here to make seagulls laugh",
 
             // in places
             "日本でも使ている", // used in japan

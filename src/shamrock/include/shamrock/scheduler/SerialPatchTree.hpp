@@ -174,95 +174,6 @@ class SerialPatchTree {
             sched.patch_tree, sched.get_patch_transform<fp_prec_vec>());
     }
 
-    template<class type, class reduc_func>
-    inline PatchFieldReduction<type> reduce_field(
-        sycl::queue &queue, PatchScheduler &sched, legacy::PatchField<type> &pfield) {
-
-        PatchFieldReduction<type> predfield;
-
-        std::cout << "resize to " << get_element_count() << std::endl;
-        predfield.tree_field.resize(get_element_count());
-
-        {
-            sycl::host_accessor lpid{*linked_patch_ids_buf, sycl::read_only};
-
-            // init reduction
-            std::unordered_map<u64, u64> &idp_to_gid = sched.patch_list.id_patch_to_global_idx;
-            for (u64 idx = 0; idx < get_element_count(); idx++) {
-                predfield.tree_field[idx]
-                    = (lpid[idx] != u64_max) ? pfield.global_values[idp_to_gid[lpid[idx]]] : type();
-
-                // std::cout << " el " << idx << " " << predfield.tree_field[idx]  << std::endl;
-            }
-        }
-
-        // std::cout << "predfield.attach_buf();" << std::endl;
-
-        predfield.attach_buf();
-
-        sycl::range<1> range{get_element_count()};
-
-        u32 end_loop = get_level_count();
-
-        for (u32 level = 0; level < end_loop; level++) {
-
-            // {
-            //     auto f = predfield.tree_field_buf->template
-            //     get_access<sycl::access::mode::read>(); std::cout << "["; for (u64 idx = 0; idx <
-            //     get_element_count() ; idx ++) {
-            //         std::cout  << f[idx] << ",";
-            //     }
-            //     std::cout << std::endl;
-            // }
-
-            std::cout << "queue submit : " << level << " " << end_loop << " " << (level < end_loop)
-                      << std::endl;
-            queue.submit([&](sycl::handler &cgh) {
-                auto tree
-                    = this->serial_tree_buf->template get_access<sycl::access::mode::read>(cgh);
-
-                auto f
-                    = predfield.tree_field_buf->template get_access<sycl::access::mode::read_write>(
-                        cgh);
-
-                cgh.parallel_for<class OctreeReduction>(range, [=](sycl::item<1> item) {
-                    u64 i = (u64) item.get_id(0);
-
-                    u64 idx_c0 = tree[i].childs_id0;
-                    u64 idx_c1 = tree[i].childs_id1;
-                    u64 idx_c2 = tree[i].childs_id2;
-                    u64 idx_c3 = tree[i].childs_id3;
-                    u64 idx_c4 = tree[i].childs_id4;
-                    u64 idx_c5 = tree[i].childs_id5;
-                    u64 idx_c6 = tree[i].childs_id6;
-                    u64 idx_c7 = tree[i].childs_id7;
-
-                    if (idx_c0 != u64_max) {
-                        f[i] = reduc_func::reduce(
-                            f[idx_c0],
-                            f[idx_c1],
-                            f[idx_c2],
-                            f[idx_c3],
-                            f[idx_c4],
-                            f[idx_c5],
-                            f[idx_c6],
-                            f[idx_c7]);
-                    }
-                });
-            });
-        }
-        // {
-        //     auto f = predfield.tree_field_buf->template get_access<sycl::access::mode::read>();
-        //     std::cout << "[";
-        //     for (u64 idx = 0; idx < get_element_count() ; idx ++) {
-        //         std::cout  << f[idx] << ",";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
-        return predfield;
-    }
-
     template<class T, class Func>
     inline shamrock::patch::PatchtreeField<T> make_patch_tree_field(
         PatchScheduler &sched,
@@ -304,7 +215,7 @@ class SerialPatchTree {
                             f[n[0]], f[n[1]], f[n[2]], f[n[3]], f[n[4]], f[n[5]], f[n[6]], f[n[7]]);
                     }
                 });
-            });
+                });
         }
         return ptfield;
     }
@@ -360,9 +271,9 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
         sycl::accessor new_id{new_owned_id, cgh, sycl::write_only, sycl::no_init};
 
         u32 root_cnt = roots_id.size();
-        auto max_lev = get_level_count();
+    auto max_lev = get_level_count();
 
-        using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
+    using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
 
         cgh.parallel_for(sycl::range(len), [=](sycl::item<1> item) {
             u32 i = (u32) item.get_id(0);
@@ -442,20 +353,6 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
 
                     result_node = linked_node_id[current_node];
                     break;
-                }
-            }
-
-            if constexpr (false) {
-                PtNode cur_node = tnode[current_node];
-                if (xyz[0] == 0 && xyz[1] == 0 && xyz[2] == 0) {
-                    logger::raw(
-                        shambase::format(
-                            "{:5} ({}) -> {} [{} {}]\n",
-                            i,
-                            Patch::is_in_patch_converted(xyz, cur_node.box_min, cur_node.box_max),
-                            xyz,
-                            cur_node.box_min,
-                            cur_node.box_max));
                 }
             }
 

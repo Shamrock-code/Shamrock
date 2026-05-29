@@ -164,9 +164,18 @@ jobs:
           path: acpp_omp_debug/out_cov/
 
       - name: Upload coverage reports to Codecov
+        if: github.event_name == 'push'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: acpp_omp_debug/coverage.info
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage reports to Codecov
+        if: github.event_name != 'push'
+        uses: codecov/codecov-action@v5
+        with:
           files: acpp_omp_debug/coverage.info
           fail_ci_if_error: false
           verbose: true

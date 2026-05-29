@@ -1,18 +1,16 @@
 coverage:
-  status:
-    project:
-      default:
-        # Don't fail the status check if coverage decreases.
-        informational: true
-    patch:
-      default:
-        # Don't fail the status check if coverage decreases.
-        informational: true
+  precision: 2
+  round: down
+  range: "0...100" # acceptable coverage range
 
 # PR comment layout
 comment:
-  layout: "header, files, footer" # remove "new" from "header" and "footer"
-  hide_project_coverage: false # set to false
+  layout: "reach,diff,flags,files,footer"
+  behavior: new
+  require_changes: false  # learn more in the Requiring Changes section below
+  require_base: false        # [true :: must have a base report to post]
+  require_head: true       # [true :: must have a head report to post]
+  hide_project_coverage: false # [true :: only show coverage on the git diff]
 
 component_management:
 

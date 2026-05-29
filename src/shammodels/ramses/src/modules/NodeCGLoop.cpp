@@ -55,10 +55,9 @@ namespace shammodels::basegodunov::modules {
 
             u32 k = 0;
             if (shamcomm::world_rank() == 0) {
-                logger::raw_ln(" k = ", k);
-                logger::raw_ln("RES (L2-squared) = ", edges.old_values.value);
+                logger::raw_ln("k = \t", k, "\t res = \t ", edges.old_values.value, "\t\n\n");
                 r_0 = edges.old_values.value;
-                logger::raw_ln("rhs value = \t", edges.rhs_norm_values.value, "\n\n");
+                logger::raw_ln("rhs value = \t", edges.rhs_norm_values.value, "\t\n\n");
             }
 
             /*** Main loop */
@@ -111,7 +110,8 @@ namespace shammodels::basegodunov::modules {
                 edges.old_values.value = edges.new_values.value;
 
                 if (shamcomm::world_rank() == 0) {
-                    logger::raw_ln("New-RES (L2-squared)  = \t ", (edges.old_values.value), "\n\n");
+                    logger::raw_ln(
+                        " k = \t ", k, " \t res  = \t ", (edges.old_values.value), "\t\n\n");
                 }
 
                 /** compute p_{k+1} = r_{k+1} + \beta_{k} p_{k} */

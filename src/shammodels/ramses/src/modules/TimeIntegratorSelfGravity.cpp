@@ -37,16 +37,18 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
     const u32 irho     = pdl.get_field_idx<Tscal>("rho");
     const u32 irhoetot = pdl.get_field_idx<Tscal>("rhoetot");
     const u32 irhovel  = pdl.get_field_idx<Tvec>("rhovel");
-    const u32 iphi     = pdl.get_field_idx<Tscal>("phi");
+    const u32 iphi     = pdl.get_field_idx<Tscal>("phi_old");
+    const u32 iphi_new = pdl.get_field_idx<Tscal>("phi");
 
     {
 
         // auto &rho_next  = shambase::get_check_ref(storage.refs_rho_next);
 
-        auto &rho_next  = shambase::get_check_ref(storage.refs_rho);
-        auto &rhov_next = shambase::get_check_ref(storage.refs_rhov_next);
-        auto &rhoe_next = shambase::get_check_ref(storage.refs_rhoe_next);
-        auto &phi_next  = shambase::get_check_ref(storage.refs_phi);
+        auto &rho_next     = shambase::get_check_ref(storage.refs_rho);
+        auto &rhov_next    = shambase::get_check_ref(storage.refs_rhov_next);
+        auto &rhoe_next    = shambase::get_check_ref(storage.refs_rhoe_next);
+        auto &phi_next     = shambase::get_check_ref(storage.refs_phi);
+        auto &phi_new_next = shambase::get_check_ref(storage.refs_phi_new);
 
         scheduler().for_each_patchdata_nonempty([&](const shamrock::patch::Patch p,
                                                     shamrock::patch::PatchDataLayer &pdat) {
@@ -55,10 +57,11 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
 
             sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            sham::DeviceBuffer<Tscal> &rho_next_patch  = rho_next.get(p.id_patch).get_buf();
-            sham::DeviceBuffer<Tvec> &rhov_next_patch  = rhov_next.get_buf(p.id_patch);
-            sham::DeviceBuffer<Tscal> &rhoe_next_patch = rhoe_next.get_buf(p.id_patch);
-            sham::DeviceBuffer<Tscal> &phi_new_patch   = phi_next.get(p.id_patch).get_buf();
+            sham::DeviceBuffer<Tscal> &rho_next_patch     = rho_next.get(p.id_patch).get_buf();
+            sham::DeviceBuffer<Tvec> &rhov_next_patch     = rhov_next.get_buf(p.id_patch);
+            sham::DeviceBuffer<Tscal> &rhoe_next_patch    = rhoe_next.get_buf(p.id_patch);
+            sham::DeviceBuffer<Tscal> &phi_old_next_patch = phi_next.get(p.id_patch).get_buf();
+            sham::DeviceBuffer<Tscal> &phi_new_next_patch = phi_new_next.get(p.id_patch).get_buf();
 
             u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
 
@@ -66,6 +69,7 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
             sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
             sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
             sham::DeviceBuffer<Tscal> &phi_old  = pdat.get_field_buf_ref<Tscal>(iphi);
+            sham::DeviceBuffer<Tscal> &phi_new  = pdat.get_field_buf_ref<Tscal>(iphi_new);
 
             sham::EventList depends_list;
             auto acc_rho_next_patch  = rho_next_patch.get_read_access(depends_list);
@@ -76,8 +80,11 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
             auto rhov_old = buf_rhov.get_write_access(depends_list);
             auto rhoe_old = buf_rhoe.get_write_access(depends_list);
 
-            auto acc_phi_new = phi_new_patch.get_read_access(depends_list);
+            auto acc_phi_new = phi_old_next_patch.get_read_access(depends_list);
             auto acc_phi_old = phi_old.get_write_access(depends_list);
+
+            auto acc_phi_next_new = phi_new_next_patch.get_read_access(depends_list);
+            auto acc_phi_next_old = phi_new.get_write_access(depends_list);
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
@@ -105,8 +112,9 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
                     rhov_old[id_a] = acc_rhov_next_patch[id_a];
                     // rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
 
-                    rhoe_old[id_a] = Ekin + Eint;
-                    // acc_phi_old[id_a] = acc_phi_new[id_a];
+                    rhoe_old[id_a]         = Ekin + Eint;
+                    acc_phi_old[id_a]      = acc_phi_new[id_a];
+                    acc_phi_next_old[id_a] = acc_phi_next_new[id_a];
                 });
             });
 
@@ -118,8 +126,11 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
             buf_rhov.complete_event_state(e);
             buf_rhoe.complete_event_state(e);
 
-            phi_new_patch.complete_event_state(e);
+            phi_old_next_patch.complete_event_state(e);
             phi_old.complete_event_state(e);
+
+            phi_new_next_patch.complete_event_state(e);
+            phi_new.complete_event_state(e);
         });
     }
 }

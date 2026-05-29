@@ -88,14 +88,14 @@ def run_sim():
     cfg.set_face_time_interpolation(True)
     ########
 
-    # cfg.set_gravity_mode_cg()
+    cfg.set_gravity_mode_cg()
 
     ####
-    cfg.set_gravity_mode_bicgstab()
+    # cfg.set_gravity_mode_bicgstab()
     cfg.set_riemann_solver_hllc()
 
     cfg.set_self_gravity_G_values(True, G)
-    cfg.set_self_gravity_Niter_max(100)
+    cfg.set_self_gravity_Niter_max(200)
     cfg.set_self_gravity_tol(1e-6)
     cfg.set_coupling_gravity_mode_ramses_like()
 

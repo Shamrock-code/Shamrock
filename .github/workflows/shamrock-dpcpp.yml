@@ -179,7 +179,7 @@ jobs:
         run: |
           cd build
           export SYCLCFG=0:0
-          export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
+          export MPIARGS="${{ matrix.mpi_args }}"
           ../tools/test_sequence.sh
 
       - name: Try starting Shamrock (installed version)

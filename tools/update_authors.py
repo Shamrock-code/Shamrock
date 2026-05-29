@@ -1,5 +1,7 @@
+import difflib
 import glob
 import os
+import re
 import subprocess
 import sys
 
@@ -152,10 +154,6 @@ def get_doxstring(path, filename, current_authors=None):
         print(err)
 
     return tmp
-
-
-import difflib
-import re
 
 
 def print_diff(before, after, beforename, aftername):

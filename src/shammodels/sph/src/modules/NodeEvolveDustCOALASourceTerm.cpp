@@ -179,7 +179,7 @@ namespace shammodels::sph::modules {
     }
 
     template<class Tvec>
-    inline std::string NodeEvolveDustCOALASourceTerm<Tvec>::_impl_get_tex() const {
+    std::string NodeEvolveDustCOALASourceTerm<Tvec>::_impl_get_tex() const {
 
         auto rhodust_eps         = get_ro_edge_base(0).get_tex_symbol();
         auto massgrid            = get_ro_edge_base(1).get_tex_symbol();

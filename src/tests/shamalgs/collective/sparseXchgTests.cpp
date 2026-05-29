@@ -153,7 +153,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     }
 }
 
-TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/sparseXchg", -1) {
 
     sparse_comm_test("", shamsys::instance::get_compute_scheduler_ptr());
 }

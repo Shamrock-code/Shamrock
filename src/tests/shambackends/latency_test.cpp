@@ -283,7 +283,7 @@ f64 test_usm_in_order_multi_queue(u32 buf_size, u32 stream_count, u32 repeat_cou
     return timer.elapsed_sec();
 }
 
-TestStart(Benchmark, "latency_sycl", latency_sycl, 1) {
+NEW_TEST(Benchmark, "latency_sycl", 1) {
     shamcomm::logs::raw_ln(test_buffer_out_of_order(1e4, 10, 1000));
     shamcomm::logs::raw_ln(test_buffer_in_order(1e4, 10, 1000));
     shamcomm::logs::raw_ln(test_buffer_in_order_multi_queue(1e4, 10, 1000));

@@ -6,7 +6,8 @@ Shamrock uses a custom testing framework to handle unit tests. This guide explai
 
 After writing your test, you can run it using the following steps.
 
-1.  **Build the project:** From the project root, run the `shammake` command to compile the code, including your new test.
+1. **Build the project:** From the project root, run the `shammake` command to compile the code, including your new test.
+
     ```bash
     # Activate the workspace
     source activate
@@ -14,16 +15,19 @@ After writing your test, you can run it using the following steps.
     shammake
     ```
 
-2.  **Run the tests:** Navigate to your build directory and execute the test runner.
+2. **Run the tests:** Navigate to your build directory and execute the test runner.
+
     ```bash
     # Navigate to the build directory
     cd build
     # Run the tests
     ./shamrock_test --sycl-cfg 0:0 --unittest
     ```
+
     The `--unittest` flag tells the executable to run all registered unit tests.
 
     You can also run tests with MPI to check tests enabled only when using multiple processes. Here are some examples:
+
     ```bash
     # Run with 2 MPI processes
     mpirun -n 2 ./shamrock_test --sycl-cfg 0:0 --unittest
@@ -48,10 +52,9 @@ Here is a basic template for a test file:
 #include "shamtest/shamtest.hpp"
 
 // Use the TestStart macro to define your test
-TestStart(
+NEW_TEST(
     Unittest, // Test suite (usually Unittest)
     "shammath/my_component/my_first_test", // Unique name for the test
-    test_my_first_component, // Unique identifier for this test block
     1) // Run only with this number of MPI ranks (-1 means always)
 {
     // Set up your test data
@@ -70,7 +73,7 @@ The TestStart macro registers the test. You can find other assertion macros (lik
 Each test case should be in its own scope using curly braces for clarity and variable isolation:
 
 ```c++
-TestStart(Unittest, "filepath:function", test_function_name, mpi_ranks) {
+NEW_TEST(Unittest, "filepath:function", mpi_ranks) {
     { // Test case 1
         // Test setup
         std::vector<T> expected = {...};

@@ -49,7 +49,7 @@ bool test_range(i32 min, i32 max, std::vector<i32> &table) {
     return set_compare(ref_set, test_set);
 }
 
-TestStart(Unittest, "shammath/DiscontinuousIterator", iterator, 1) {
+NEW_TEST(Unittest, "shammath/DiscontinuousIterator", 1) {
 
     {
         i32 min  = 0;

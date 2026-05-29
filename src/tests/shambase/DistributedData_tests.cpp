@@ -10,7 +10,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase/DistributedData::add_obj", distributedDatatests_add_obj, 1) {
+NEW_TEST(Unittest, "shambase/DistributedData::add_obj", 1) {
     using namespace shambase;
 
     {

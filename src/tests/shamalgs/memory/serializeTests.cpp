@@ -44,7 +44,7 @@ inline void check_buf(std::string prefix, sycl::buffer<T> &b1, sycl::buffer<T> &
     }
 }
 
-TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1) {
+NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper", 1) {
 
     u32 n1                     = 100;
     sycl::buffer<u8> buf_comp1 = shamalgs::random::mock_buffer<u8>(0x111, n1);
@@ -101,7 +101,7 @@ TestStart(Unittest, "shamalgs/memory/SerializeHelper", test_serialize_helper, 1)
     }
 }
 
-TestStart(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", bench_serializer, 1) {
+NEW_TEST(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", 1) {
 
     auto get_perf_knownsize = [](u32 buf_cnt, u32 buf_len) -> std::pair<f64, f64> {
         StackEntry stack{};

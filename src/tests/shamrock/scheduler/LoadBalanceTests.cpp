@@ -99,7 +99,7 @@ void add_strategy_plot(
     )tex")
 }
 
-TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadbalancestrat, 1) {
+NEW_TEST(TestType::ValidationTest, "shamrock/scheduler/loadbalance", 1) {
 
     i32 fake_world_size = 64;
 

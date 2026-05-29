@@ -16,7 +16,7 @@ on:
   workflow_run:
     workflows: ['on PR']
     types:
-    - completed
+      - completed
 
 jobs:
   deploy:
@@ -33,24 +33,27 @@ jobs:
           status: pending
           context: Post workflow comment
 
-
       - name: 'Download reports artifact'
         uses: actions/github-script@v9
         with:
           script: |
-            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               run_id: context.payload.workflow_run.id,
-            });
+            const { owner, repo } = context.repo;
+            const runId = context.payload.workflow_run.id;
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: runId, per_page: 100 }
+            );
+
+            console.log("artifacts:",artifacts);
 
             console.log(
-              "All artifacts:",
-              allArtifacts.data.artifacts.map((a) => ({ id: a.id, name: a.name }))
+              "All artifacts (id, name):",
+              artifacts.map((a) => ({ id: a.id, name: a.name }))
             );
 
             // Filter artifacts whose name starts with 'report_'
-            let reportArtifacts = allArtifacts.data.artifacts.filter((artifact) => {
+            let reportArtifacts = artifacts.filter((artifact) => {
               return artifact.name.startsWith("report_");
             });
 

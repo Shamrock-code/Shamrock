@@ -21,7 +21,6 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
-#include "shamrock/legacy/patch/utility/patch_reduc_tree.hpp"
 #include "shamrock/patch/PatchField.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
@@ -215,7 +214,7 @@ class SerialPatchTree {
                             f[n[0]], f[n[1]], f[n[2]], f[n[3]], f[n[4]], f[n[5]], f[n[6]], f[n[7]]);
                     }
                 });
-                });
+            });
         }
         return ptfield;
     }
@@ -271,9 +270,9 @@ sycl::buffer<u64> SerialPatchTree<vec>::compute_patch_owner(
         sycl::accessor new_id{new_owned_id, cgh, sycl::write_only, sycl::no_init};
 
         u32 root_cnt = roots_id.size();
-    auto max_lev = get_level_count();
+        auto max_lev = get_level_count();
 
-    using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
+        using PtNode = shamrock::scheduler::SerialPatchNode<vec>;
 
         cgh.parallel_for(sycl::range(len), [=](sycl::item<1> item) {
             u32 i = (u32) item.get_id(0);

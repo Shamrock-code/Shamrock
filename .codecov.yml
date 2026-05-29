@@ -2,6 +2,14 @@ coverage:
   precision: 2
   round: down
   range: "0...100" # acceptable coverage range
+  project:
+    default:
+      target: auto
+      threshold: 5%
+  patch:
+    default:
+      target: auto
+      threshold: 5%
 
 # PR comment layout
 comment:

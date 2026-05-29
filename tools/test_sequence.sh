@@ -48,10 +48,10 @@ if env CLICOLOR_FORCE=1 NO_COLOR=1 ./shamrock --help; then
 fi
 
 echo "running: ./shamrock --color (expect \\x1b\\[36m in output)"
-./shamrock --color | grep -P "\x1b\[36m" || exit 1
+./shamrock --color | grep -F $'\x1b[36m' || exit 1
 
 echo "running: ./shamrock --nocolor (expect no \\x1b\\[36m in output)"
-if ./shamrock --nocolor | grep -P "\x1b\[36m"; then
+if ./shamrock --nocolor | grep -F $'\x1b[36m'; then
     echo "Error: expected no ANSI cyan escape sequence in output" >&2
     exit 1
 fi

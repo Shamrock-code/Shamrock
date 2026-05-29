@@ -101,7 +101,7 @@ jobs:
 
       - name: run Shamrock test suite
         run: |
-          cd acpp_omp_debug
+          cd build
           export SYCLCFG=0:0
           export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
           export ACPP_VISIBILITY_MASK=omp

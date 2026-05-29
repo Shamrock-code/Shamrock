@@ -111,7 +111,7 @@ jobs:
           cd acpp_omp_debug
           export SYCLCFG=0:0
           export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
-          ./tools/test_sequence.sh
+          ../tools/test_sequence.sh
 
       - name: merge coverage reports
         run: |

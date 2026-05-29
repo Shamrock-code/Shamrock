@@ -43,6 +43,7 @@ namespace shammodels::sph::modules {
 
         u32 nbins;
         Tscal rho_eps;
+        Tscal dv_max;
         u32 corrected_len;
         u32 group_size;
         u32 true_size;
@@ -63,6 +64,7 @@ namespace shammodels::sph::modules {
 
             auto true_size = this->true_size;
             auto rho_eps   = this->rho_eps;
+            auto dv_max    = this->dv_max;
 
             return [=, nbins = this->nbins](sycl::handler &cgh) {
                 auto gij_acc  = sycl::local_accessor<Tscal>{local_acc_sz_nbins, cgh};
@@ -98,9 +100,10 @@ namespace shammodels::sph::modules {
                         return tmp * tmp;
                     };
 
-                    auto dv = [delta_v = delta_v_j + id_a_d](int i, int j) {
+                    auto dv = [&, delta_v = delta_v_j + id_a_d](int i, int j) {
                         // dv_ij = v_dust_j - v_dust_i = delta_v_j[j] - delta_v_j[i]
-                        return sycl::length(delta_v[j] - delta_v[i]);
+                        auto tmp = sycl::length(delta_v[j] - delta_v[i]);
+                        return (tmp > dv_max) ? 0 : tmp;
                     };
 
                     // should implement the same content as
@@ -137,6 +140,7 @@ namespace shammodels::sph::modules {
         auto S_coag_spans = edges.S_coag.get_spans();
 
         Tscal rho_eps                                 = edges.rhodust_eps.value;
+        Tscal dv_max                                  = edges.dv_max.value;
         const std::vector<Tscal> &massgrid            = edges.massgrid.value;
         const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.value;
 
@@ -164,7 +168,13 @@ namespace shammodels::sph::modules {
                     delta_v_j_spans.get(id_patch)},
                 sham::MultiRef{S_coag_spans.get(id_patch)},
                 count,
-                KernelGenCoala_k0<Tvec>{nbins, rho_eps, corrected_len, group_size, u32(count)});
+                KernelGenCoala_k0<Tvec>{
+                    .nbins         = nbins,
+                    .rho_eps       = rho_eps,
+                    .dv_max        = dv_max,
+                    .corrected_len = corrected_len,
+                    .group_size    = group_size,
+                    .true_size     = u32(count)});
         });
     }
 

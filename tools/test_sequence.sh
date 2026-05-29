@@ -66,6 +66,6 @@ for world_size in 1 2 3 4; do
     echo "::group::Shamrock Unittests world_size = ${world_size}"
 
     mpirun ${MPIARGS} -n ${world_size} ./shamrock_test --smi-full --sycl-cfg "${SYCLCFG}" --unittest --loglevel 0
-    
+
     echo "::endgroup::"
 done

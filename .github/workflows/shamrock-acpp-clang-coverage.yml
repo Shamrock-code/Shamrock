@@ -163,7 +163,7 @@ jobs:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
 
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage reports to Codecov (push)
         if: github.event_name == 'push'
         uses: codecov/codecov-action@v5
         with:
@@ -172,7 +172,7 @@ jobs:
           fail_ci_if_error: false
           verbose: true
 
-      - name: Upload coverage reports to Codecov
+      - name: Upload coverage reports to Codecov (not push)
         if: github.event_name != 'push'
         uses: codecov/codecov-action@v5
         with:

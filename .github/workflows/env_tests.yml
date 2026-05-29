@@ -231,7 +231,7 @@ jobs:
         run: |
           cd build
           export SYCLCFG=0:0
-          export MPIARGS=${{ matrix.mpiargs }}
+          export MPIARGS="${{ matrix.mpiargs }}"
           ../tools/test_sequence.sh
 
       - name: Create Python test script for next tests

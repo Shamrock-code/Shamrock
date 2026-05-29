@@ -27,6 +27,7 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, dv_max)                                         \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, massgrid)                          \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, tensor_tabflux_coag)               \
                                                                                                    \
@@ -62,7 +63,7 @@ namespace shammodels::sph::modules {
             return "NodeEvolveDustCOALASourceTerm";
         };
 
-        inline virtual std::string _impl_get_tex() const;
+        virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::sph::modules
 

@@ -99,22 +99,11 @@ jobs:
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: run Shamrock Unittests world_size = 1
+      - name: run Shamrock test suite
         run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 2
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 3
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 4
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
+          cd acpp_omp_debug
+          export SYCLCFG=0:0
+          export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
+          export ACPP_VISIBILITY_MASK=omp
+          export ASAN_OPTIONS=detect_leaks=0
+          ../tools/test_sequence.sh

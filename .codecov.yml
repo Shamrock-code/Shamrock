@@ -11,9 +11,8 @@ coverage:
 
 # PR comment layout
 comment:
-  layout: "diff, components, files"
-  behavior: default
-  require_changes: false
+  layout: "header, files, footer" # remove "new" from "header" and "footer"
+  hide_project_coverage: false # set to false
 
 component_management:
 

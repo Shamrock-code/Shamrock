@@ -140,7 +140,7 @@ namespace shammodels::sph {
 
         inline void mode_to_json(nlohmann::json &j) const {
             if (const None *cfg = std::get_if<None>(&current_mode)) {
-                j = {"type", "none"};
+                j = {{"type", "none"}};
             } else if (const MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
                 j = {{"type", "monofluid_tvi"}, {"ndust", cfg->ndust}};
             } else if (

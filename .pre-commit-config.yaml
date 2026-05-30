@@ -148,6 +148,6 @@ repos:
 
     # - id: update_authors
     #   name: "Update authors"
-    #   entry: python buildbot/update_authors.py
+    #   entry: python tools/update_authors.py
     #   language: python
     #   pass_filenames: true

@@ -1,10 +1,20 @@
+import difflib
 import glob
+import os
+import re
 import subprocess
 import sys
 
-from lib.buildbot import *
+# Paths computed from this script's new location (tools/update_authors.py)
+abs_proj_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+abs_src_dir = os.path.join(abs_proj_dir, "src")
 
-print_buildbot_info("Authors check tool")
+try:
+    import shamrock_tool_banner
+
+    shamrock_tool_banner.print_tool_info("Authors check tool")
+except ImportError:
+    print("--- Authors check tool ---")
 
 if len(sys.argv) > 1:
     print("Updating authors for files: ", sys.argv[1:])
@@ -146,10 +156,6 @@ def get_doxstring(path, filename, current_authors=None):
     return tmp
 
 
-import difflib
-import re
-
-
 def print_diff(before, after, beforename, aftername):
     sys.stdout.writelines(
         difflib.context_diff(
@@ -251,7 +257,7 @@ if missing_doxygenfilehead:
     report += (
         "The following files had their author headers updated by the author update script.\n\n"
     )
-    report += "Please run the script again (`python3 buildbot/update_authors.py`) and commit these changes.\n\n"
+    report += "Please run the script again (`python3 tools/update_authors.py`) and commit these changes.\n\n"
     report += "**Note:** The list below is only partial. Only the first 10 files are shown.\n\n"
     # end allow utf-8
     for fname in missing_doxygenfilehead[:10]:

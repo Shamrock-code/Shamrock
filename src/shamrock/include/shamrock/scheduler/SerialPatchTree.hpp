@@ -11,8 +11,8 @@
 
 /**
  * @file SerialPatchTree.hpp
+ * @author Thomas Applencourt (tapplencourt@anl.gov)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author tapplencourt (tapplencourt@anl.gov)
  * @brief
  *
  */

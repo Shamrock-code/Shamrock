@@ -244,7 +244,7 @@ namespace shammodels::sph {
             if (is_not_none) {
 
                 shambase::throw_unimplemented(
-                    "the Solver does not support dust. It will be comming soon !");
+                    "the Solver does not support dust. It will be coming soon !");
 
                 if (!shamrock::are_experimental_features_allowed()) {
                     shambase::throw_with_loc<std::runtime_error>(

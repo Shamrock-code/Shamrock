@@ -168,6 +168,7 @@ namespace shamphys {
         FuncRhoDust &&rho_dust,
         T rho_eps,
         shambase::is_mdspan_rank<1> auto massgrid,
+        /* COALA inputs */
         shambase::is_mdspan_rank<3> auto tabflux_coag,
         /* internal */
         shambase::is_mdspan_rank<1> auto gij,

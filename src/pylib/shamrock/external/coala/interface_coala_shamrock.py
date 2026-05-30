@@ -40,8 +40,12 @@ def coala_source_term_k0(nbins, massgrid, rhodust, rhodust_eps, tensor_tabflux_c
         if rhodust[j] > rhodust_eps:
             gij[j] = rhodust[j] / (massgrid[j + 1] - massgrid[j])
 
-    # dv_ij = v_dust_j - v_dust_i
-    dv = v_dust[None, :] - v_dust[:, None]
+    # dv_ij = \vec{v_dust}_j - \vec{v_dust}_i
+    dv = np.zeros((nbins, nbins))
+    for i in range(nbins):
+        for j in range(nbins):
+            delta_v = v_dust[j] - v_dust[i]
+            dv[i, j] = np.sqrt(delta_v[0] ** 2 + delta_v[1] ** 2 + delta_v[2] ** 2)
 
     # compute flux for all dust bins
     flux = compute_flux_coag_k0_kdv(gij, tensor_tabflux_coag, dv)

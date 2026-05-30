@@ -107,6 +107,7 @@ namespace shammodels::sph {
 
         Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
         Component<shamrock::ComputeField<Tvec>> old_dtdeltav;
+        Component<shamrock::ComputeField<Tscal>> old_ds_j_dt;
 
         Component<std::vector<SinkParticle<Tvec>>> sinks;
 

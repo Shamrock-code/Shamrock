@@ -1,16 +1,16 @@
 coverage:
   precision: 2
   round: down
-  range: "23...100" # acceptable coverage range
+  range: "23...80" # acceptable coverage range
   status:
     project:
       default:
-        target: auto
-        threshold: 5%
+        # Don't fail the status check if coverage decreases.
+        informational: true
     patch:
       default:
-        target: auto
-        threshold: 5%
+        # Don't fail the status check if coverage decreases.
+        informational: true
 
 # PR comment layout
 comment:

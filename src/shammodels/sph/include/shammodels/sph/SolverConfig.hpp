@@ -43,6 +43,7 @@
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -131,9 +132,44 @@ namespace shammodels::sph {
         inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
+        inline bool is_none() { return std::holds_alternative<None>(current_mode); }
+        inline bool is_monofluid_tvi() { return bool(std::get_if<MonofluidTVI>(&current_mode)); }
+        inline bool is_monofluid_complete() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline void mode_to_json(nlohmann::json &j) const {
+            if (const None *cfg = std::get_if<None>(&current_mode)) {
+                j = {{"type", "none"}};
+            } else if (const MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
+                j = {{"type", "monofluid_tvi"}, {"ndust", cfg->ndust}};
+            } else if (
+                const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
+                j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void mode_from_json(const nlohmann::json &j) {
+            const std::string type = j.at("type").get<std::string>();
+            if (type == "none") {
+                set_none();
+            } else if (type == "monofluid_tvi") {
+                set_monofluid_tvi(j.at("ndust").get<u32>());
+            } else if (type == "monofluid_complete") {
+                set_monofluid_complete(j.at("ndust").get<u32>());
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline bool has_s_j_field() {
+            return is_monofluid_tvi(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
         inline bool has_epsilon_field() {
-            return bool(std::get_if<MonofluidTVI>(&current_mode))
-                   || bool(std::get_if<MonofluidComplete>(&current_mode));
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
         }
 
         inline bool has_deltav_field() {
@@ -156,13 +192,17 @@ namespace shammodels::sph {
         }
 
         inline void check_config() {
-            bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
-                               || bool(std::get_if<MonofluidComplete>(&current_mode));
+            bool is_not_none = !is_none();
             if (is_not_none) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH::config",
-                        "Dust config != None is work in progress, use it at your own risk"));
+                if (!shamrock::are_experimental_features_allowed()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Dust config != None is experimental");
+                } else {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH::config",
+                            "Dust config != None is work in progress, use it at your own risk"));
+                }
             }
         }
     };
@@ -1113,6 +1153,19 @@ namespace shammodels::sph {
         }
     }
 
+    // JSON serialization for DustConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const DustConfig<Tvec> &p) {
+        j = {};
+
+        p.mode_to_json(j["mode"]);
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
+        p.mode_from_json(j.at("mode"));
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -1140,6 +1193,8 @@ namespace shammodels::sph {
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // dust config
+            {"dust_config", p.dust_config},
             // self gravity config
             {"self_grav_config", p.self_grav_config},
             // tree config
@@ -1230,6 +1285,7 @@ namespace shammodels::sph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("time_state", p.time_state);
         _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
         _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);

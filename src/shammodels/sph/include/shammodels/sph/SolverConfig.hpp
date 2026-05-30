@@ -205,7 +205,7 @@ namespace shammodels::sph {
 
         inline void drag_mode_to_json(nlohmann::json &j) const {
             if (std::holds_alternative<None>(dust_drag_mode)) {
-                j = {"type", "none"};
+                j = {{"type", "none"}};
             } else if (
                 const ConstantStoppingTimes *cfg
                 = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {

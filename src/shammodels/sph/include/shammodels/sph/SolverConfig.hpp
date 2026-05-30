@@ -242,6 +242,10 @@ namespace shammodels::sph {
         inline void check_config() {
             bool is_not_none = !is_none();
             if (is_not_none) {
+
+                shambase::throw_unimplemented(
+                    "the Solver does not support dust. It will be comming soon !");
+
                 if (!shamrock::are_experimental_features_allowed()) {
                     shambase::throw_with_loc<std::runtime_error>(
                         "Dust config != None is experimental");
@@ -272,7 +276,6 @@ namespace shammodels::sph {
                             "grains_sizes size does not match the number of dust bins");
                     }
                 }
-
             }
         }
     };

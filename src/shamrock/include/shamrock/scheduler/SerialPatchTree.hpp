@@ -257,10 +257,9 @@ sham::DeviceBuffer<u64> SerialPatchTree<vec>::compute_patch_owner(
     sham::DeviceScheduler_ptr dev_sched, sham::DeviceBuffer<vec> &position_buffer, u32 len) {
     sham::DeviceBuffer<u64> new_owned_id(len, dev_sched);
 
-
-   if(len == 0){
-   return new_owned_id;
-   }
+    if (len == 0) {
+        return new_owned_id;
+    }
 
     using namespace shamrock::patch;
 

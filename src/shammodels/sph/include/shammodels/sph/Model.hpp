@@ -891,11 +891,9 @@ namespace shammodels::sph {
             }
 
             // Load the context state and recover user metadata
-            std::string metadata_user{};
-            shamrock::load_shamrock_dump(fname, metadata_user, ctx);
+            nlohmann::json j;
+            shamrock::load_shamrock_dump(fname, j, ctx);
 
-            /// TODO: load solver config from metadata
-            nlohmann::json j = nlohmann::json::parse(metadata_user);
             // std::cout << j << std::endl;
             j.at("solver_config").get_to(solver.solver_config);
 
@@ -942,8 +940,7 @@ namespace shammodels::sph {
 
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json
-            shamrock::write_shamrock_dump(
-                fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
+            shamrock::write_shamrock_dump(fname, metadata, shambase::get_check_ref(ctx.sched));
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////

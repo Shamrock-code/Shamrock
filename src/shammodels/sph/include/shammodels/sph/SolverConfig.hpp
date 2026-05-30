@@ -191,6 +191,54 @@ namespace shammodels::sph {
             return 0;
         }
 
+        struct ConstantStoppingTimes {
+            std::vector<Tscal> stopping_times;
+        };
+
+        struct EpsteinDrag {
+            static constexpr bool supersonic_correction = false;
+            std::vector<Tscal> grains_sizes;
+            std::vector<Tscal> grains_densities;
+        };
+
+        std::variant<None, ConstantStoppingTimes, EpsteinDrag> dust_drag_mode = None{};
+
+        inline void drag_mode_to_json(nlohmann::json &j) const {
+            if (std::holds_alternative<None>(dust_drag_mode)) {
+                j = {"type", "none"};
+            } else if (
+                const ConstantStoppingTimes *cfg
+                = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                j = {{"type", "constant_stopping_times"}, {"stopping_times", cfg->stopping_times}};
+            } else if (const EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                j
+                    = {{"type", "epstein_drag"},
+                       {"grains_sizes", cfg->grains_sizes},
+                       {"grains_densities", cfg->grains_densities}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void drag_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_drag_mode = None{};
+            } else if (j.at("type").get<std::string>() == "constant_stopping_times") {
+                dust_drag_mode
+                    = ConstantStoppingTimes{j.at("stopping_times").get<std::vector<Tscal>>()};
+            } else if (j.at("type").get<std::string>() == "epstein_drag") {
+                dust_drag_mode = EpsteinDrag{
+                    j.at("grains_sizes").get<std::vector<Tscal>>(),
+                    j.at("grains_densities").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_drag_constant(ConstantStoppingTimes in) { dust_drag_mode = in; }
+
+        inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = in; }
+
         inline void check_config() {
             bool is_not_none = !is_none();
             if (is_not_none) {
@@ -203,6 +251,28 @@ namespace shammodels::sph {
                             "SPH::config",
                             "Dust config != None is work in progress, use it at your own risk"));
                 }
+
+                if (std::holds_alternative<None>(dust_drag_mode)) {
+                    throw "bro WTF";
+                } else if (
+                    ConstantStoppingTimes *cfg
+                    = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->stopping_times.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "stopping_times size does not match the number of dust bins");
+                    }
+                } else if (EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->grains_densities.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_densities size does not match the number of dust bins");
+                    }
+
+                    if (get_dust_nvar() != cfg->grains_sizes.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_sizes size does not match the number of dust bins");
+                    }
+                }
+
             }
         }
     };
@@ -1159,11 +1229,13 @@ namespace shammodels::sph {
         j = {};
 
         p.mode_to_json(j["mode"]);
+        p.drag_mode_to_json(j["drag_mode"]);
     }
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
         p.mode_from_json(j.at("mode"));
+        p.drag_mode_from_json(j.at("drag_mode"));
     }
 
     /**

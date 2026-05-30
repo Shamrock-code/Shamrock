@@ -235,9 +235,9 @@ namespace shammodels::sph {
             }
         }
 
-        inline void set_drag_constant(ConstantStoppingTimes in) { dust_drag_mode = in; }
+        inline void set_drag_constant(ConstantStoppingTimes in) { dust_drag_mode = std::move(in); }
 
-        inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = in; }
+        inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
 
         inline void check_config() {
             bool is_not_none = !is_none();

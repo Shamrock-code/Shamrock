@@ -1,7 +1,7 @@
 coverage:
   precision: 2
   round: down
-  range: "0...100" # acceptable coverage range
+  range: "23...100" # acceptable coverage range
   status:
     project:
       default:

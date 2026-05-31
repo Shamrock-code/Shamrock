@@ -8,7 +8,7 @@ import numpy as np
 rho = 1
 epsilon_0 = 0.5
 cs_g = 1
-ts = 1
+ts = 0.01
 
 delta_rho_0 = 0.01
 delta_v_0 = 0.01
@@ -119,6 +119,35 @@ rho_d_phi_list = []
 rho_g_offset_list = []
 rho_d_offset_list = []
 
+
+def dustywave_dispersion_relation(
+    omega_k: float, k: float, cs: float, ts: float, eps: float
+) -> float:
+    # w^4 + i w^3 / ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w / ts = 0
+    return (
+        omega_k**4
+        + 1j * (omega_k**3 / ts)
+        - (cs**2 * k**2 * omega_k**2)
+        - 1j * (cs**2 * k**2 * (1 - eps) * omega_k / ts)
+    )
+
+
+def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndarray:
+    # w^4 + i w^3/ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w/ts = 0
+    coeffs = [
+        1.0,
+        1j / ts,
+        -(cs**2 * k**2),
+        -1j * (cs**2 * k**2 * (1.0 - eps) / ts),
+        0.0,
+    ]
+    return np.roots(coeffs)
+
+
+k = 2 * np.pi / (xM - xm)
+omega_k = get_dustywave_omega_k(k, cs_g, ts, epsilon_0)
+print(omega_k)
+
 i = 0
 while model.get_time() < 2:
     ################################
@@ -175,8 +204,6 @@ while model.get_time() < 2:
     rho_d_data = np.asarray(rho_d_field.collect_data())
 
     from scipy.linalg import lstsq
-
-    k = 2 * np.pi / (xM - xm)
 
     def fit_sine_wave(x, y):
         design = np.column_stack([np.ones_like(x), np.sin(k * x), np.cos(k * x)])
@@ -237,11 +264,17 @@ while model.get_time() < 2:
     model.do_vtk_dump(f"dump_dustywave_tvi_{i:04}.vtk", False)
     i += 1
 
+delta_rho_0 = 0.01
+
 plt.figure(dpi=150)
-plt.subplot(2, 1, 1)
 plt.plot(t_list, rho_g_ampl_list, label="rho_g_ampl")
 plt.plot(t_list, rho_d_ampl_list, label="rho_d_ampl")
-plt.subplot(2, 1, 2)
-plt.plot(t_list, rho_g_phi_list, label="rho_g_phi")
-plt.plot(t_list, rho_d_phi_list, label="rho_d_phi")
+
+for i in range(len(omega_k)):
+    w_re = np.real(omega_k[i])
+    w_im = np.imag(omega_k[i])
+    rho_analytic = np.imag(delta_rho_0 * np.exp(-1j * omega_k[i] * np.array(t_list)))
+    plt.plot(t_list, rho_analytic, label=f"rho_analytic_{i}")
+
+plt.legend()
 plt.show()

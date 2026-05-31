@@ -19,17 +19,16 @@ scheduler_split_val = int(2e7)
 scheduler_merge_val = int(1)
 
 
-
 def func_rho_t(r):
     return rho
 
+
 def func_rho_d(r):
-    return func_rho_t(r) * 0.5 
+    return func_rho_t(r) * 0.5
+
 
 def func_rho_g(r):
     return func_rho_t(r) - func_rho_d(r)
-
-
 
 
 def func_s(r):

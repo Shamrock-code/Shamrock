@@ -24,6 +24,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
 #include <pybind11/pybind11.h>
+#include <vector>
 
 template<class T>
 void register_field(py::module &m, const char *class_name) {
@@ -36,13 +37,26 @@ void register_field(py::module &m, const char *class_name) {
                 return self.get_buf(id_patch);
             },
             py::return_value_policy::reference)
-        .def("__repr__", [=](Field<T> &self) {
-            return shambase::format(
-                "{}(label={}, tex_symbol={}, nvar={})",
-                class_name,
-                self.get_label(),
-                self.get_tex_symbol(),
-                self.get_nvar());
+        .def(
+            "__repr__",
+            [=](Field<T> &self) {
+                return shambase::format(
+                    "{}(label={}, tex_symbol={}, nvar={})",
+                    class_name,
+                    self.get_label(),
+                    self.get_tex_symbol(),
+                    self.get_nvar());
+            })
+        .def("collect_data", [](Field<T> &self) -> std::vector<T> {
+            std::vector<T> base = {};
+            self.get_refs().for_each([&](u64 id, std::reference_wrapper<PatchDataField<T>> &pdf) {
+                auto copy = pdf.get().get_buf().copy_to_stdvec();
+                base.insert(base.end(), copy.begin(), copy.end());
+            });
+
+            std::vector<T> collected = {};
+            shamalgs::collective::vector_allgatherv(base, collected, MPI_COMM_WORLD);
+            return collected;
         });
 }
 

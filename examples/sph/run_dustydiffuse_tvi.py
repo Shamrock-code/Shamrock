@@ -1,3 +1,11 @@
+"""
+Dusty diffusion SPH test
+========================
+
+Test that the diffusion of epsilon is correct when the 
+momentum & energy equation are disabled.
+"""
+
 import os
 
 import matplotlib as mpl

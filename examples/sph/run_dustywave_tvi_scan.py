@@ -7,11 +7,11 @@ import numpy as np
 
 rho = 1
 epsilon_0 = 0.5
-cs_g_list = np.logspace(-4, 0, 20).tolist()
+cs_g_list = np.logspace(-4, -1, 20).tolist()
 ts = 1
 
 delta_rho_0 = 0.01
-delta_v_0_list = [cs_g * 0.0001 for cs_g in cs_g_list]
+delta_v_0_list = [cs_g * 0.001 for cs_g in cs_g_list]
 
 bmin = (-0.6, -0.6 / 4, -0.6 / 4)
 bmax = (0.6, 0.6 / 4, 0.6 / 4)
@@ -100,7 +100,10 @@ def fit_damped_sine_ampl(t, ampl, omega_guess):
     print("omega_guess=", omega_guess)
     w_re0 = float(np.real(omega_guess))
     w_im0 = -float(np.imag(omega_guess))
-    p0 = [np.max(ampl_arr), w_re0, 0]
+    p0 = [np.abs(np.max(ampl_arr)), w_re0, 0]
+
+    up_bound = [np.abs(np.max(ampl_arr)) * 2, 2 * w_re0, 10 * w_im0]
+    print("up bound=", up_bound)
 
     print("p0=", p0)
     popt, _ = curve_fit(
@@ -108,7 +111,7 @@ def fit_damped_sine_ampl(t, ampl, omega_guess):
         t_arr,
         ampl_arr,
         p0=p0,
-        bounds=([0, 0.0, 0], [np.max(ampl_arr) * 2, 2 * w_re0, 2 * w_im0]),
+        bounds=([0, 0.0, 0], up_bound),
         maxfev=20000,
     )
 
@@ -228,7 +231,7 @@ for ics, cs_g in enumerate(cs_g_list):
     cfg.set_artif_viscosity_VaryingCD10(
         alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
     )
-    cfg.set_dust_mode_monofluid_tvi(1)
+    cfg.set_dust_mode_monofluid_tvi(nvar=1)
     cfg.set_dust_drag_constant([ts])
     cfg.set_boundary_periodic()
     cfg.set_eos_isothermal(cs_g)

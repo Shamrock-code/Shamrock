@@ -17,8 +17,6 @@ bmin = (-0.6, -0.6 / 4, -0.6 / 4)
 bmax = (0.6, 0.6 / 4, 0.6 / 4)
 
 N_target = 1e3
-scheduler_split_val = int(2e7)
-scheduler_merge_val = int(1)
 
 
 def func_rho_t(r):
@@ -38,6 +36,57 @@ def func_s(r):
     rho_d = func_rho_d(r)
     eps = rho_d / rho_t
     return np.sqrt(rho_t * eps)
+
+
+def dustywave_dispersion_relation(
+    omega_k: float, k: float, cs: float, ts: float, eps: float
+) -> float:
+    # w^4 + i w^3 / ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w / ts = 0
+    return (
+        omega_k**4
+        + 1j * (omega_k**3 / ts)
+        - (cs**2 * k**2 * omega_k**2)
+        - 1j * (cs**2 * k**2 * (1 - eps) * omega_k / ts)
+    )
+
+
+def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndarray:
+    # w^4 + i w^3/ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w/ts = 0
+    coeffs = [
+        1.0,
+        1j / ts,
+        -(cs**2 * k**2),
+        -1j * (cs**2 * k**2 * (1.0 - eps) / ts),
+        0.0,
+    ]
+    return np.roots(coeffs)
+
+
+# Note a v only mode is the sum of the w_+ and w_- modes -> no vanishing modes,
+# only oscillating ones at the w_+ = w_- complex frequency
+
+
+def damped_sine_ampl(t, a, b, c):
+    return a * np.sin(-b * t) * np.exp(-c * t)
+
+
+def fit_damped_sine_ampl(t, ampl, omega_guess):
+    from scipy.optimize import curve_fit
+
+    t_arr = np.asarray(t)
+    ampl_arr = np.asarray(ampl)
+    w_re0 = float(np.real(omega_guess))
+    w_im0 = float(np.imag(omega_guess))
+    p0 = [np.max(ampl_arr), w_re0, w_im0]
+    popt, _ = curve_fit(
+        damped_sine_ampl,
+        t_arr,
+        ampl_arr,
+        p0=p0,
+        bounds=([0, 0.0, -np.inf], [np.max(ampl_arr) * 2, np.inf, np.inf]),
+        maxfev=20000,
+    )
+    return popt
 
 
 xm, ym, zm = bmin
@@ -72,7 +121,10 @@ cfg.set_eos_isothermal(cs_g)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(1e8), 1)
+scheduler_split_val = int(2e7)
+scheduler_merge_val = int(1)
+
+model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
 
 bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
@@ -120,36 +172,19 @@ rho_g_offset_list = []
 rho_d_offset_list = []
 
 
-def dustywave_dispersion_relation(
-    omega_k: float, k: float, cs: float, ts: float, eps: float
-) -> float:
-    # w^4 + i w^3 / ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w / ts = 0
-    return (
-        omega_k**4
-        + 1j * (omega_k**3 / ts)
-        - (cs**2 * k**2 * omega_k**2)
-        - 1j * (cs**2 * k**2 * (1 - eps) * omega_k / ts)
-    )
-
-
-def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndarray:
-    # w^4 + i w^3/ts - cs^2 k^2 w^2 - i cs^2 k^2 (1-eps) w/ts = 0
-    coeffs = [
-        1.0,
-        1j / ts,
-        -(cs**2 * k**2),
-        -1j * (cs**2 * k**2 * (1.0 - eps) / ts),
-        0.0,
-    ]
-    return np.roots(coeffs)
-
-
 k = 2 * np.pi / (xM - xm)
 omega_k = get_dustywave_omega_k(k, cs_g, ts, epsilon_0)
 print(omega_k)
 
+omega_re_pos = 0
+for i in range(len(omega_k)):
+    if np.real(omega_k[i]) > 0:
+        omega_re_pos = omega_k[i]
+        break
+print(f"omega_re_pos={omega_re_pos}")
+
 i = 0
-while model.get_time() < 2:
+while model.get_time() < 10:
     ################################
     # x field
     ################################
@@ -264,17 +299,42 @@ while model.get_time() < 2:
     model.do_vtk_dump(f"dump_dustywave_tvi_{i:04}.vtk", False)
     i += 1
 
-delta_rho_0 = 0.01
 
 plt.figure(dpi=150)
-plt.plot(t_list, rho_g_ampl_list, label="rho_g_ampl")
-plt.plot(t_list, rho_d_ampl_list, label="rho_d_ampl")
+plt.plot(t_list, rho_g_ampl_list, ".", label="rho_g_ampl")
+plt.plot(t_list, rho_d_ampl_list, ".", label="rho_d_ampl")
 
-for i in range(len(omega_k)):
-    w_re = np.real(omega_k[i])
-    w_im = np.imag(omega_k[i])
-    rho_analytic = np.imag(delta_rho_0 * np.exp(-1j * omega_k[i] * np.array(t_list)))
-    plt.plot(t_list, rho_analytic, label=f"rho_analytic_{i}")
+t_arr = np.asarray(t_list)
+t_fit = np.linspace(t_arr.min(), t_arr.max(), 256)
+
+popt_g = fit_damped_sine_ampl(t_arr, rho_g_ampl_list, omega_re_pos)
+popt_d = fit_damped_sine_ampl(t_arr, rho_d_ampl_list, omega_re_pos)
+plt.plot(
+    t_fit,
+    damped_sine_ampl(t_fit, *popt_g),
+    "-",
+    label=rf"rho_g fit: $a={popt_g[0]:.3g}$, $b={popt_g[1]:.3g}$, $c={popt_g[2]:.3g}$",
+)
+plt.plot(
+    t_fit,
+    damped_sine_ampl(t_fit, *popt_d),
+    "-",
+    label=rf"rho_d fit: $a={popt_d[0]:.3g}$, $b={popt_d[1]:.3g}$, $c={popt_d[2]:.3g}$",
+)
+print(f"rho_g ampl fit: a={popt_g[0]:.6g}, b={popt_g[1]:.6g}, c={popt_g[2]:.6g}")
+print(f"rho_d ampl fit: a={popt_d[0]:.6g}, b={popt_d[1]:.6g}, c={popt_d[2]:.6g}")
+
+ampl_fit = np.max([popt_g[0], popt_d[0]])
+
+w_re = np.real(omega_re_pos)
+w_im = -np.imag(omega_re_pos)
+t = np.array(t_list)
+rho_analytic = ampl_fit * np.sin(-w_re * t) * np.exp(-w_im * t)
+plt.plot(t_list, rho_analytic, "--", color="black", label="rho_analytic")
+print(f"rho_analytic: ampl_fit={ampl_fit:.6g}, w_re={w_re:.6g}, w_im={w_im:.6g}")
+
+plt.xlabel("t")
+plt.ylabel("rho")
 
 plt.legend()
 plt.show()

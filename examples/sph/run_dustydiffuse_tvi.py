@@ -2,7 +2,7 @@
 Dusty diffusion SPH test
 ========================
 
-Test that the diffusion of epsilon is correct when the 
+Test that the diffusion of epsilon is correct when the
 momentum & energy equation are disabled.
 """
 

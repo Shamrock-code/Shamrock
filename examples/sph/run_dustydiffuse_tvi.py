@@ -18,7 +18,7 @@ rc = 0.25
 bmin = (-0.5, -0.5, -0.5)
 bmax = (0.5, 0.5, 0.5)
 
-N_target = 2e5
+N_target = 3e4
 
 
 def func_rho_t(r):
@@ -147,8 +147,8 @@ totmass = rho * vol_b
 pmass = model.total_mass_to_part_mass(totmass)
 model.set_particle_mass(pmass)
 
-model.set_cfl_cour(0.1)
-model.set_cfl_force(0.1)
+model.set_cfl_cour(0.3)
+model.set_cfl_force(0.3)
 
 model.timestep()
 
@@ -267,12 +267,19 @@ if shamrock.sys.world_rank() == 0:
 ####################################################
 
 plt.figure()
-for t, r_data, eps in snapshots:
+for i, (t, r_data, eps) in enumerate(snapshots):
+    plt.plot(
+        r_ana,
+        analytic_eps_curve(t),
+        "--",
+        color="black",
+        label="analytic" if i == 0 else "_nolegend_",
+    )
     plt.plot(r_data, eps, ".", label=f"t = {t:.2f}")
-    plt.plot(r_ana, analytic_eps_curve(t), "--", color="black", label="analytic")
 
-    plt.xlabel(r"$r$")
-    plt.ylabel(r"$\epsilon$")
+
+plt.xlabel(r"$r$")
+plt.ylabel(r"$\epsilon$")
 plt.xlim(0, 0.5)
 plt.ylim(0, 0.11)
 plt.legend()

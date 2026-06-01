@@ -89,6 +89,81 @@ def fit_damped_sine_ampl(t, ampl, omega_guess):
     return popt
 
 
+from scipy.linalg import lstsq
+
+
+def fit_sine_wave(x, y):
+    design = np.column_stack([np.ones_like(x), np.sin(k * x), np.cos(k * x)])
+    offset, a, b = lstsq(design, y)[0]
+    ampl = np.hypot(a, b)
+    phi = np.arctan2(b, a)
+    if phi < 0:
+        phi += np.pi
+        ampl = -ampl
+    return offset, ampl, phi
+
+
+def sine_model(x, offset, ampl, phi):
+    return offset + ampl * np.sin(phi + k * x)
+
+
+def get_field_results(model):
+    ################################
+    # x field
+    ################################
+    def custom_getter_x(size: int, dic_out: dict) -> np.array:
+        return dic_out["xyz"][:, 0]
+
+    x_field = model.compute_field("custom", "f64", custom_getter_x)
+
+    ################################
+    # x field
+    ################################
+    def custom_getter_vx(size: int, dic_out: dict) -> np.array:
+        return dic_out["vxyz"][:, 0]
+
+    vx_field = model.compute_field("custom", "f64", custom_getter_vx)
+
+    ################################
+    # rho field
+    ################################
+    pmass = model.get_particle_mass()
+    hfact = model.get_hfact()
+
+    def internal_rho(size: int, h: np.array) -> np.array:
+        return pmass * (hfact / h) ** 3
+
+    def custom_getter_rho(size: int, dic_out: dict) -> np.array:
+        return internal_rho(size, dic_out["hpart"])
+
+    rho_field = model.compute_field("custom", "f64", custom_getter_rho)
+
+    ################################
+    # rho_(g+d) field
+    ################################
+    def internal_eps(size: int, s: np.array, rho: np.array) -> np.array:
+        return (s**2) / rho
+
+    def custom_getter_rho_g(size: int, dic_out: dict) -> np.array:
+        rho = internal_rho(size, dic_out["hpart"])
+        eps = internal_eps(size, dic_out["s_j"], rho)
+        return (1 - eps) * rho
+
+    def custom_getter_rho_d(size: int, dic_out: dict) -> np.array:
+        rho = internal_rho(size, dic_out["hpart"])
+        eps = internal_eps(size, dic_out["s_j"], rho)
+        return eps * rho
+
+    rho_g_field = model.compute_field("custom", "f64", custom_getter_rho_g)
+    rho_d_field = model.compute_field("custom", "f64", custom_getter_rho_d)
+
+    x_data = np.asarray(x_field.collect_data())
+    rho_g_data = np.asarray(rho_g_field.collect_data())
+    rho_d_data = np.asarray(rho_d_field.collect_data())
+
+    return x_data, rho_g_data, rho_d_data
+
+
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 vol_b = (xM - xm) * (yM - ym) * (zM - zm)
@@ -185,73 +260,7 @@ print(f"omega_re_pos={omega_re_pos}")
 
 i = 0
 while model.get_time() < 10:
-    ################################
-    # x field
-    ################################
-    def custom_getter_x(size: int, dic_out: dict) -> np.array:
-        return dic_out["xyz"][:, 0]
-
-    x_field = model.compute_field("custom", "f64", custom_getter_x)
-
-    ################################
-    # x field
-    ################################
-    def custom_getter_vx(size: int, dic_out: dict) -> np.array:
-        return dic_out["vxyz"][:, 0]
-
-    vx_field = model.compute_field("custom", "f64", custom_getter_vx)
-
-    ################################
-    # rho field
-    ################################
-    pmass = model.get_particle_mass()
-    hfact = model.get_hfact()
-
-    def internal_rho(size: int, h: np.array) -> np.array:
-        return pmass * (hfact / h) ** 3
-
-    def custom_getter_rho(size: int, dic_out: dict) -> np.array:
-        return internal_rho(size, dic_out["hpart"])
-
-    rho_field = model.compute_field("custom", "f64", custom_getter_rho)
-
-    ################################
-    # rho_(g+d) field
-    ################################
-    def internal_eps(size: int, s: np.array, rho: np.array) -> np.array:
-        return (s**2) / rho
-
-    def custom_getter_rho_g(size: int, dic_out: dict) -> np.array:
-        rho = internal_rho(size, dic_out["hpart"])
-        eps = internal_eps(size, dic_out["s_j"], rho)
-        return (1 - eps) * rho
-
-    def custom_getter_rho_d(size: int, dic_out: dict) -> np.array:
-        rho = internal_rho(size, dic_out["hpart"])
-        eps = internal_eps(size, dic_out["s_j"], rho)
-        return eps * rho
-
-    rho_g_field = model.compute_field("custom", "f64", custom_getter_rho_g)
-    rho_d_field = model.compute_field("custom", "f64", custom_getter_rho_d)
-
-    x_data = np.asarray(x_field.collect_data())
-    rho_g_data = np.asarray(rho_g_field.collect_data())
-    rho_d_data = np.asarray(rho_d_field.collect_data())
-
-    from scipy.linalg import lstsq
-
-    def fit_sine_wave(x, y):
-        design = np.column_stack([np.ones_like(x), np.sin(k * x), np.cos(k * x)])
-        offset, a, b = lstsq(design, y)[0]
-        ampl = np.hypot(a, b)
-        phi = np.arctan2(b, a)
-        if phi < 0:
-            phi += np.pi
-            ampl = -ampl
-        return offset, ampl, phi
-
-    def sine_model(x, offset, ampl, phi):
-        return offset + ampl * np.sin(phi + k * x)
+    x_data, rho_g_data, rho_d_data = get_field_results(model)
 
     offset_g, ampl_g, phi_g = fit_sine_wave(x_data, rho_g_data)
     offset_d, ampl_d, phi_d = fit_sine_wave(x_data, rho_d_data)

@@ -1,9 +1,12 @@
+import os
+
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import numpy as np
 
 import shamrock
 
 shamrock.enable_experimental_features()
-import numpy as np
 
 rho = 1
 epsilon_0 = 0.1
@@ -15,7 +18,7 @@ rc = 0.25
 bmin = (-0.5, -0.5, -0.5)
 bmax = (0.5, 0.5, 0.5)
 
-N_target = 1e4
+N_target = 2e5
 
 
 def func_rho_t(r):
@@ -77,12 +80,14 @@ def get_field_results(model):
     rho_g_field = model.compute_field("custom", "f64", custom_getter_rho_g)
     rho_d_field = model.compute_field("custom", "f64", custom_getter_rho_d)
 
+    dsdt_field = model.compute_field("ds_j_dt", "f64")
+
     r_data = np.asarray(r_field.collect_data())
     rho_data = np.asarray(rho_field.collect_data())
     rho_g_data = np.asarray(rho_g_field.collect_data())
     rho_d_data = np.asarray(rho_d_field.collect_data())
-
-    return r_data, rho_data, rho_g_data, rho_d_data
+    dsdt_data = np.asarray(dsdt_field.collect_data())
+    return r_data, rho_data, rho_g_data, rho_d_data, dsdt_data
 
 
 xm, ym, zm = bmin
@@ -147,35 +152,128 @@ model.set_cfl_force(0.1)
 
 model.timestep()
 
-t_list = [0.0, 0.1, 0.3, 1, 3, 10]
+t_snapshot = [0.0, 0.1, 0.3, 1, 3, 10]
+snapshots = []
 
-fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
-i = 0
-for tst in t_list:
-    model.evolve_until(tst)
-    r_data, rho_data, rho_g_data, rho_d_data = get_field_results(model)
+mpl.rcParams.update(
+    {
+        "font.family": "serif",
+        "mathtext.fontset": "cm",
+        "font.size": 14,
+        "axes.labelsize": 16,
+        "axes.titlesize": 16,
+        "xtick.labelsize": 13,
+        "ytick.labelsize": 13,
+        "legend.fontsize": 13,
+        "axes.facecolor": "#f2f2f2",
+        "axes.linewidth": 1.0,
+        "xtick.direction": "in",
+        "ytick.direction": "in",
+        "xtick.top": True,
+        "ytick.right": True,
+        "xtick.major.size": 8,
+        "ytick.major.size": 8,
+        "xtick.minor.visible": True,
+        "ytick.minor.visible": True,
+        "legend.frameon": True,
+        "legend.fancybox": False,
+        "legend.edgecolor": "black",
+    }
+)
+os.makedirs("_to_trash", exist_ok=True)
 
+
+def analytic_eps(r, t, eta=0.1):
+
+    B = (rc**2) / epsilon_0  # that frac is in the wrong way in PL15
+    A = epsilon_0 * (B ** (3.0 / 5.0))
+
+    return A * np.abs(10 * eta * t + B) ** (-3.0 / 5.0) - (r**2 / (10 * eta * t + B))
+
+
+r_ana = np.linspace(0, 0.5, 100)
+
+
+def analytic_eps_curve(t):
+    return np.array([analytic_eps(r, t) for r in r_ana])
+
+
+def analytic_dsdt(t):
+    dt = 1e-4
+    deps_dt = (analytic_eps_curve(t + dt) - analytic_eps_curve(t - dt)) / (2 * dt)
+    s = np.sqrt(rho * analytic_eps_curve(t))
+    return deps_dt / (2 * s + 1e-9)
+
+
+for t in [0.1 * i for i in range(20)]:
+    model.evolve_until(t)
+    r_data, rho_data, rho_g_data, rho_d_data, dsdt_data = get_field_results(model)
     eps = rho_d_data / rho_data
 
-    axs[0].plot(r_data, rho_data, ".", label="rho")
-    axs[0].plot(r_data, rho_g_data, ".", label="rho_g")
-    axs[0].plot(r_data, rho_d_data, ".", label="rho_d")
-    axs[0].set_xlabel("r")
-    axs[0].set_ylabel("density")
-    axs[0].set_xlim(0, 0.5)
-    axs[0].set_ylim(0, 1.1)
-    axs[0].legend()
-    axs[1].plot(r_data, eps, ".", label="eps")
-    axs[1].set_xlabel("r")
-    axs[1].set_ylabel("epsilon")
-    axs[1].set_xlim(0, 0.5)
-    axs[1].set_ylim(0, 0.11)
-    axs[1].legend()
-    plt.suptitle(f"t = {model.get_time():.2f}")
-    plt.tight_layout()
-    plt.savefig(f"dump_dustydiffuse_tvi_{i:04}.png")
-    # plt.close()
+    if any(np.isclose(t, ts, atol=1e-6) for ts in t_snapshot):
+        snapshots.append((t, r_data, eps))
 
-    model.do_vtk_dump(f"dump_dustydiffuse_tvi_{i:04}.vtk", False)
-    i += 1
+    fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].plot(r_data, eps, ".", label="eps")
+    axs[0].plot(r_ana, analytic_eps_curve(t), "--", color="black", label="analytic")
+    axs[0].set_xlabel(r"$r$")
+    axs[0].set_ylabel(r"$\epsilon$")
+    axs[0].set_xlim(0, 0.5)
+    axs[0].set_ylim(0, 0.11)
+    axs[0].text(
+        0.02,
+        0.98,
+        f"t = {t:.2f}",
+        transform=axs[0].transAxes,
+        verticalalignment="top",
+        horizontalalignment="left",
+        bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5),
+    )
+    axs[1].plot(r_data, dsdt_data, ".", label="ds/dt")
+    axs[1].plot(r_ana, analytic_dsdt(t), "--", color="black", label="analytic")
+    axs[1].set_xlabel(r"$r$")
+    axs[1].set_ylabel(r"$\frac{d s}{d t}$")
+    axs[1].set_xlim(0, 0.5)
+    axs[1].set_ylim(-0.16, 0.4)
+    plt.tight_layout()
+    plt.savefig(f"_to_trash/dump_dustydiffuse_tvi_{t:.2f}.png")
+    plt.close()
+
+####################################################
+# Convert PNG sequence to Image sequence in mpl
+####################################################
+
+from shamrock.utils.plot import show_image_sequence
+
+# If the animation is not returned only a static image will be shown in the doc
+
+# %%
+# Rho plot
+glob_str = os.path.join("_to_trash", "dump_dustydiffuse_tvi_*.png")
+ani = show_image_sequence(glob_str)
+
+from matplotlib.animation import PillowWriter
+
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani.save("_to_trash/dump_dustydiffuse_tvi.gif", writer=writer)
+
+if shamrock.sys.world_rank() == 0:
+    # Show the animation
+    plt.show()
+
+####################################################
+# PL15 like figure
+####################################################
+
+plt.figure()
+for t, r_data, eps in snapshots:
+    plt.plot(r_data, eps, ".", label=f"t = {t:.2f}")
+    plt.plot(r_ana, analytic_eps_curve(t), "--", color="black", label="analytic")
+
+    plt.xlabel(r"$r$")
+    plt.ylabel(r"$\epsilon$")
+plt.xlim(0, 0.5)
+plt.ylim(0, 0.11)
+plt.legend()
+plt.show()

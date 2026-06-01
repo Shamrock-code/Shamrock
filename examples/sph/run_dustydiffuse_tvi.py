@@ -16,6 +16,12 @@ import shamrock
 
 shamrock.enable_experimental_features()
 
+# If we use the shamrock executable to run this script instead of the python interpreter,
+# we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+if not shamrock.sys.is_initialized():
+    shamrock.change_loglevel(1)
+    shamrock.sys.init("0:0")
+
 rho = 1
 epsilon_0 = 0.1
 cs_g = 1

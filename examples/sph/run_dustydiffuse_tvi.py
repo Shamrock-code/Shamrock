@@ -12,8 +12,8 @@ ts = 0.1
 rc = 0.25
 
 
-bmin = (-0.5, -0.5 , -0.5 )
-bmax = (0.5, 0.5 , 0.5 )
+bmin = (-0.5, -0.5, -0.5)
+bmax = (0.5, 0.5, 0.5)
 
 N_target = 1e4
 
@@ -21,9 +21,11 @@ N_target = 1e4
 def func_rho_t(r):
     return rho
 
+
 def func_eps(pos):
-    r = np.sqrt(pos[0]**2 + pos[1]**2 + pos[2]**2)
-    return epsilon_0 * max(0, 1 - (r / rc)**2)
+    r = np.sqrt(pos[0] ** 2 + pos[1] ** 2 + pos[2] ** 2)
+    return epsilon_0 * max(0, 1 - (r / rc) ** 2)
+
 
 def func_s(r):
     rho_t = func_rho_t(r)
@@ -31,13 +33,14 @@ def func_s(r):
     return np.sqrt(rho_t * eps)
 
 
-
 def get_field_results(model):
     ################################
     # r field
     ################################
     def custom_getter_r(size: int, dic_out: dict) -> np.array:
-        return np.sqrt(dic_out["xyz"][:, 0]**2 + dic_out["xyz"][:, 1]**2 + dic_out["xyz"][:, 2]**2)
+        return np.sqrt(
+            dic_out["xyz"][:, 0] ** 2 + dic_out["xyz"][:, 1] ** 2 + dic_out["xyz"][:, 2] ** 2
+        )
 
     r_field = model.compute_field("custom", "f64", custom_getter_r)
 
@@ -144,9 +147,9 @@ model.set_cfl_force(0.1)
 
 model.timestep()
 
-t_list = [0.0,0.1,0.3,1,3,10]
+t_list = [0.0, 0.1, 0.3, 1, 3, 10]
 
-fig, axs = plt.subplots(1,2, figsize=(10, 5))
+fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 
 i = 0
 for tst in t_list:
@@ -172,7 +175,7 @@ for tst in t_list:
     plt.suptitle(f"t = {model.get_time():.2f}")
     plt.tight_layout()
     plt.savefig(f"dump_dustydiffuse_tvi_{i:04}.png")
-    #plt.close()
+    # plt.close()
 
     model.do_vtk_dump(f"dump_dustydiffuse_tvi_{i:04}.vtk", False)
     i += 1

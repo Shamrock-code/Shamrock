@@ -1,3 +1,10 @@
+"""
+Dusty wave SPH test
+========================
+
+Test that the wave
+"""
+
 import matplotlib.pyplot as plt
 
 import shamrock

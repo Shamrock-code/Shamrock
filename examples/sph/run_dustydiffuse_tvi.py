@@ -22,6 +22,8 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# %%
+# Sim parameters
 rho = 1
 epsilon_0 = 0.1
 cs_g = 1
@@ -50,39 +52,36 @@ def func_s(r):
     return np.sqrt(rho_t * eps)
 
 
-def get_field_results(model):
-    def custom_getter_r(size: int, dic_out: dict) -> np.array:
-        return np.sqrt(
-            dic_out["xyz"][:, 0] ** 2 + dic_out["xyz"][:, 1] ** 2 + dic_out["xyz"][:, 2] ** 2
-        )
+# %%
+# mpl style
+mpl.rcParams.update(
+    {
+        "font.family": "serif",
+        "mathtext.fontset": "cm",
+        "font.size": 14,
+        "axes.labelsize": 16,
+        "axes.titlesize": 16,
+        "xtick.labelsize": 13,
+        "ytick.labelsize": 13,
+        "legend.fontsize": 13,
+        "axes.facecolor": "#f2f2f2",
+        "axes.linewidth": 1.0,
+        "xtick.direction": "in",
+        "ytick.direction": "in",
+        "xtick.top": True,
+        "ytick.right": True,
+        "xtick.major.size": 8,
+        "ytick.major.size": 8,
+        "xtick.minor.visible": True,
+        "ytick.minor.visible": True,
+        "legend.frameon": True,
+        "legend.fancybox": False,
+        "legend.edgecolor": "black",
+    }
+)
 
-    r_field = model.compute_field("custom", "f64", custom_getter_r)
-    rho_field = model.compute_field("rho", "f64")
-    s_j_field = model.compute_field("s_j", "f64")
-    dsdt_field = model.compute_field("ds_j_dt", "f64")
-
-    def internal_eps(size: int, s: np.array, rho: np.array) -> np.array:
-        return (s**2) / rho
-
-    eps_field = shamrock.map_fields_f64(internal_eps, s=s_j_field, rho=rho_field)
-
-    def internal_rho_g(size: int, rho: np.array, eps: np.array) -> np.array:
-        return rho * (1 - eps)
-
-    def internal_rho_d(size: int, rho: np.array, eps: np.array) -> np.array:
-        return rho * eps
-
-    rho_g_field = shamrock.map_fields_f64(internal_rho_g, rho=rho_field, eps=eps_field)
-    rho_d_field = shamrock.map_fields_f64(internal_rho_d, rho=rho_field, eps=eps_field)
-
-    r_data = np.asarray(r_field.collect_data())
-    rho_data = np.asarray(rho_field.collect_data())
-    rho_g_data = np.asarray(rho_g_field.collect_data())
-    rho_d_data = np.asarray(rho_d_field.collect_data())
-    dsdt_data = np.asarray(dsdt_field.collect_data())
-    return r_data, rho_data, rho_g_data, rho_d_data, dsdt_data
-
-
+# %%
+# Setup
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 vol_b = (xM - xm) * (yM - ym) * (zM - zm)
@@ -149,32 +148,44 @@ t_snapshot = [0.0, 0.1, 0.3, 1, 3, 10]
 snapshots = []
 
 
-mpl.rcParams.update(
-    {
-        "font.family": "serif",
-        "mathtext.fontset": "cm",
-        "font.size": 14,
-        "axes.labelsize": 16,
-        "axes.titlesize": 16,
-        "xtick.labelsize": 13,
-        "ytick.labelsize": 13,
-        "legend.fontsize": 13,
-        "axes.facecolor": "#f2f2f2",
-        "axes.linewidth": 1.0,
-        "xtick.direction": "in",
-        "ytick.direction": "in",
-        "xtick.top": True,
-        "ytick.right": True,
-        "xtick.major.size": 8,
-        "ytick.major.size": 8,
-        "xtick.minor.visible": True,
-        "ytick.minor.visible": True,
-        "legend.frameon": True,
-        "legend.fancybox": False,
-        "legend.edgecolor": "black",
-    }
-)
-os.makedirs("_to_trash", exist_ok=True)
+# %%
+# Field recovery for plots
+def get_field_results(model):
+    def custom_getter_r(size: int, dic_out: dict) -> np.array:
+        return np.sqrt(
+            dic_out["xyz"][:, 0] ** 2 + dic_out["xyz"][:, 1] ** 2 + dic_out["xyz"][:, 2] ** 2
+        )
+
+    r_field = model.compute_field("custom", "f64", custom_getter_r)
+    rho_field = model.compute_field("rho", "f64")
+    s_j_field = model.compute_field("s_j", "f64")
+    dsdt_field = model.compute_field("ds_j_dt", "f64")
+
+    def internal_eps(size: int, s: np.array, rho: np.array) -> np.array:
+        return (s**2) / rho
+
+    eps_field = shamrock.map_fields_f64(internal_eps, s=s_j_field, rho=rho_field)
+
+    def internal_rho_g(size: int, rho: np.array, eps: np.array) -> np.array:
+        return rho * (1 - eps)
+
+    def internal_rho_d(size: int, rho: np.array, eps: np.array) -> np.array:
+        return rho * eps
+
+    rho_g_field = shamrock.map_fields_f64(internal_rho_g, rho=rho_field, eps=eps_field)
+    rho_d_field = shamrock.map_fields_f64(internal_rho_d, rho=rho_field, eps=eps_field)
+
+    r_data = np.asarray(r_field.collect_data())
+    rho_data = np.asarray(rho_field.collect_data())
+    rho_g_data = np.asarray(rho_g_field.collect_data())
+    rho_d_data = np.asarray(rho_d_field.collect_data())
+    dsdt_data = np.asarray(dsdt_field.collect_data())
+    return r_data, rho_data, rho_g_data, rho_d_data, dsdt_data
+
+
+# %%
+# Analytical solutions
+r_ana = np.linspace(0, 0.5, 100)
 
 
 def analytic_eps(r, t, eta=0.1):
@@ -183,9 +194,6 @@ def analytic_eps(r, t, eta=0.1):
     A = epsilon_0 * (B ** (3.0 / 5.0))
 
     return A * np.abs(10 * eta * t + B) ** (-3.0 / 5.0) - (r**2 / (10 * eta * t + B))
-
-
-r_ana = np.linspace(0, 0.5, 100)
 
 
 def analytic_eps_curve(t):
@@ -199,6 +207,9 @@ def analytic_dsdt(t):
     return deps_dt / (2 * s + 1e-9)
 
 
+# %%
+# Perform the simulation
+os.makedirs("_to_trash", exist_ok=True)
 for t in [0.1 * i for i in range(20)]:
     model.evolve_until(t)
     r_data, rho_data, rho_g_data, rho_d_data, dsdt_data = get_field_results(model)
@@ -232,6 +243,9 @@ for t in [0.1 * i for i in range(20)]:
     plt.tight_layout()
     plt.savefig(f"_to_trash/dump_dustydiffuse_tvi_{t:.2f}.png")
     plt.close()
+
+# %%
+# Plot making
 
 ####################################################
 # Convert PNG sequence to Image sequence in mpl

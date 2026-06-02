@@ -7,7 +7,7 @@ momentum & energy equation are disabled.
 """
 
 # sphinx_gallery_multi_image = "single"
-# sphinx_gallery_thumbnail_number = 1
+# sphinx_gallery_thumbnail_number = 2
 
 import os
 

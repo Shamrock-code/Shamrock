@@ -29,12 +29,7 @@ if _HAS_MATPLOTLIB and _HAS_PIL:
     __all__.append("show_image_sequence")
 
     def show_image_sequence(
-        glob_str,
-        render_gif=True,
-        dpi=200,
-        interval=50,
-        repeat_delay=10,
-        fig = None
+        glob_str, render_gif=True, dpi=200, interval=50, repeat_delay=10, fig=None
     ):
         """
         Create a matplotlib animation from a sequence of image files.

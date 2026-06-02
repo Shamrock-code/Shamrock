@@ -34,6 +34,7 @@ if _HAS_MATPLOTLIB and _HAS_PIL:
         dpi=200,
         interval=50,
         repeat_delay=10,
+        fig = None
     ):
         """
         Create a matplotlib animation from a sequence of image files.
@@ -81,7 +82,8 @@ if _HAS_MATPLOTLIB and _HAS_PIL:
 
         pixel_x, pixel_y = image_array[0].size
 
-        fig = plt.figure(dpi=dpi)
+        if fig is None:
+            fig = plt.figure(dpi=dpi)
         plt.gca().set_position((0, 0, 1, 1))
         plt.gcf().set_size_inches(pixel_x / dpi, pixel_y / dpi)
         plt.axis("off")

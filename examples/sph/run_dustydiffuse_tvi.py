@@ -6,6 +6,9 @@ Test that the diffusion of epsilon is correct when the
 momentum & energy equation are disabled.
 """
 
+# sphinx_gallery_multi_image = "single"
+# sphinx_gallery_thumbnail_number = 1
+
 import os
 
 import matplotlib as mpl
@@ -255,8 +258,6 @@ from shamrock.utils.plot import show_image_sequence
 
 # If the animation is not returned only a static image will be shown in the doc
 
-# %%
-# Rho plot
 glob_str = os.path.join("_to_trash", "dump_dustydiffuse_tvi_*.png")
 ani = show_image_sequence(glob_str)
 

@@ -109,7 +109,7 @@ def fit_damped_sine_ampl(t, ampl, omega_guess):
     w_im0 = -float(np.imag(omega_guess))
     p0 = [np.abs(np.max(ampl_arr)), w_re0, 0]
 
-    up_bound = [np.abs(np.max(ampl_arr)) * 2, 2 * w_re0, 10 * w_im0]
+    up_bound = [np.abs(np.max(ampl_arr)) * 2, 2 * w_re0, max(1.0, 10 * w_im0)]
     print("up bound=", up_bound)
 
     print("p0=", p0)

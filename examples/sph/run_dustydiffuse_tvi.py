@@ -51,50 +51,29 @@ def func_s(r):
 
 
 def get_field_results(model):
-    ################################
-    # r field
-    ################################
     def custom_getter_r(size: int, dic_out: dict) -> np.array:
         return np.sqrt(
             dic_out["xyz"][:, 0] ** 2 + dic_out["xyz"][:, 1] ** 2 + dic_out["xyz"][:, 2] ** 2
         )
 
     r_field = model.compute_field("custom", "f64", custom_getter_r)
+    rho_field = model.compute_field("rho", "f64")
+    s_j_field = model.compute_field("s_j", "f64")
+    dsdt_field = model.compute_field("ds_j_dt", "f64")
 
-    ################################
-    # rho field
-    ################################
-    pmass = model.get_particle_mass()
-    hfact = model.get_hfact()
-
-    def internal_rho(size: int, h: np.array) -> np.array:
-        return pmass * (hfact / h) ** 3
-
-    def custom_getter_rho(size: int, dic_out: dict) -> np.array:
-        return internal_rho(size, dic_out["hpart"])
-
-    rho_field = model.compute_field("custom", "f64", custom_getter_rho)
-
-    ################################
-    # rho_(g+d) field
-    ################################
     def internal_eps(size: int, s: np.array, rho: np.array) -> np.array:
         return (s**2) / rho
 
-    def custom_getter_rho_g(size: int, dic_out: dict) -> np.array:
-        rho = internal_rho(size, dic_out["hpart"])
-        eps = internal_eps(size, dic_out["s_j"], rho)
-        return (1 - eps) * rho
+    eps_field = shamrock.map_fields_f64(internal_eps, s=s_j_field, rho=rho_field)
 
-    def custom_getter_rho_d(size: int, dic_out: dict) -> np.array:
-        rho = internal_rho(size, dic_out["hpart"])
-        eps = internal_eps(size, dic_out["s_j"], rho)
-        return eps * rho
+    def internal_rho_g(size: int, rho: np.array, eps: np.array) -> np.array:
+        return rho * (1 - eps)
 
-    rho_g_field = model.compute_field("custom", "f64", custom_getter_rho_g)
-    rho_d_field = model.compute_field("custom", "f64", custom_getter_rho_d)
+    def internal_rho_d(size: int, rho: np.array, eps: np.array) -> np.array:
+        return rho * eps
 
-    dsdt_field = model.compute_field("ds_j_dt", "f64")
+    rho_g_field = shamrock.map_fields_f64(internal_rho_g, rho=rho_field, eps=eps_field)
+    rho_d_field = shamrock.map_fields_f64(internal_rho_d, rho=rho_field, eps=eps_field)
 
     r_data = np.asarray(r_field.collect_data())
     rho_data = np.asarray(rho_field.collect_data())

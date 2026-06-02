@@ -6,6 +6,39 @@ Test that the diffusion of epsilon is correct when the
 momentum & energy equation are disabled.
 """
 
+
+# %%
+# Here are the initial condition for the dustydiffuse test
+#
+# .. math::
+#    \rho(\mathbf{r}, 0) = \rho_0
+#
+# .. math::
+#    \epsilon(\mathbf{r}, 0) =
+#    \epsilon_0 \max \left(0, 1 - \left(\frac{r}{r_c}\right)^2\right),\quad
+#    r = \sqrt{x^2 + y^2 + z^2}
+#
+# with :math:`\rho_0 = 1`, :math:`\epsilon_0 = 0.1`, :math:`r_c = 0.25`.
+#
+# Then we use the dust TVI solver but force :math:`d \mathbf{v} / dt = 0` and :math:`d u / dt = 0`.
+# In that context the epsilon equation becomes:
+#
+# .. math::
+#    \frac{d \epsilon}{dt} = \nabla \cdot \left( \epsilon \eta \nabla \epsilon \right)
+#
+# With the initial condition above, the analytical solution is:
+#
+# .. math::
+#    \epsilon(r, t) =
+#    A\,|10\eta t + B|^{-3/5} - \frac{r^2}{10\eta t + B},
+#
+# where
+#
+# .. math::
+#    B = \frac{r_c^2}{\epsilon_0},\qquad
+#    A = \epsilon_0 B^{3/5}.
+#
+
 # sphinx_gallery_multi_image = "single"
 # sphinx_gallery_thumbnail_number = 2
 
@@ -247,8 +280,16 @@ for t in [0.1 * i for i in range(20)]:
     plt.savefig(f"_to_trash/dump_dustydiffuse_tvi_{t:.2f}.png")
     plt.close()
 
-# %%
+####################################################
 # Plot making
+####################################################
+
+# %%
+# You may notice the precense of a small kink at the edge of the diffusion or a spike in the ds/dt
+# This is due to the low resolution of the test. If you push it is will soften.
+#
+# Also remember that :math:`s = \sqrt{\rho \epsilon}` raise sharply from 0 which does not help.
+# In that context using the :math:`\epsilon` behaves better.
 
 ####################################################
 # Convert PNG sequence to Image sequence in mpl

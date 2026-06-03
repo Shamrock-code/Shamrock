@@ -2,8 +2,7 @@
 Dusty wave SPH test
 ========================
 
-Test that the diffusion of epsilon is correct when the
-momentum & energy equation are disabled.
+Test that the dust/gas wave evolution match the eigen mode analysis.
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -237,6 +236,7 @@ def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndar
         0.0,
     ]
     return np.roots(coeffs)
+
 
 def eigen_model(x, t, offset, ampl, omega, k):
     return offset + np.real(ampl * np.exp(1j * (k * x - omega * t)))

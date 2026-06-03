@@ -68,27 +68,38 @@ mpl.rcParams.update(
 # %%
 # Do setup
 
+xm = None
+ym = None
+zm = None
+xM = None
+yM = None
+zM = None
+dr = None
+
 
 def do_setup(model, cs, delta_v_0):
-    global bmin, bmax, xm, xM
+    global xm, ym, zm, xM, yM, zM, bmin, bmax, dr
 
-    xm, ym, zm = bmin
-    xM, yM, zM = bmax
-    vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+    if xm is None:
+        xm, ym, zm = bmin
+        xM, yM, zM = bmax
+        vol_b = (xM - xm) * (yM - ym) * (zM - zm)
 
-    part_vol = vol_b / N_target
+        part_vol = vol_b / N_target
 
-    # lattice volume
-    HCP_PACKING_DENSITY = 0.74
-    part_vol_lattice = HCP_PACKING_DENSITY * part_vol
+        # lattice volume
+        HCP_PACKING_DENSITY = 0.74
+        part_vol_lattice = HCP_PACKING_DENSITY * part_vol
 
-    dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
+        dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
 
-    pmass = -1
+        print(f"dr={dr}, bmin={bmin}, bmax={bmax}")
 
-    bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
-    xm, ym, zm = bmin
-    xM, yM, zM = bmax
+        pmass = -1
+
+        bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+        xm, ym, zm = bmin
+        xM, yM, zM = bmax
 
     cfg = model.gen_default_config()
     # cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
@@ -153,6 +164,7 @@ def get_field_results(model):
 
     def custom_getter_vx(size: int, dic_out: dict) -> np.array:
         return dic_out["vxyz"][:, 0]
+
     x_field = model.compute_field("custom", "f64", custom_getter_x)
     vx_field = model.compute_field("custom", "f64", custom_getter_vx)
     rho_field = model.compute_field("rho", "f64")
@@ -178,7 +190,7 @@ def get_field_results(model):
     rho_data = np.asarray(rho_field.collect_data())
     rho_g_data = np.asarray(rho_g_field.collect_data())
     rho_d_data = np.asarray(rho_d_field.collect_data())
-    return x_data, rho_data, rho_g_data, rho_d_data,vx_data, eps_data
+    return x_data, rho_data, rho_g_data, rho_d_data, vx_data, eps_data
 
 
 # %%
@@ -195,13 +207,13 @@ def dustywave_tvi_matrix(k, cs, ts, eps):
     """
 
     a = k * cs
-    b = k*k*ts*cs*cs*eps
+    b = k * k * ts * cs * cs * eps
 
     return np.array(
         [
             [0, 0, -1j * a],
-            [b*(1-eps),-b, 0],
-            [-1j * a * (1 - eps), -1j * a, 0],
+            [b * (1 - eps), -b, 0],
+            [-1j * a * (1 - eps), 1j * a, 0],
         ],
         dtype=complex,
     )
@@ -210,7 +222,7 @@ def dustywave_tvi_matrix(k, cs, ts, eps):
 def eigensystem_dustywave_tvi(k, cs, ts, eps):
     M = dustywave_tvi_matrix(k, cs, ts, eps)
     vals, vecs = np.linalg.eig(M)
-    return 1j*vals, vecs
+    return 1j * vals, vecs
 
 
 def dustywave_dispersion_relation(omega_k: float, k: float, cs: float, ts: float, eps: float):
@@ -234,6 +246,7 @@ def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndar
     ]
     return np.roots(coeffs)
 
+
 ## Use the matrix version above this one give slightly different result i dunno why
 def dustywave_dispersion_relation_tvi(omega_k: float, k: float, cs: float, ts: float, eps: float):
     # i w^3/ts - cs^2 k^2 w^2 eps - i cs^2 k^2 (1-eps) w/ts = 0
@@ -255,15 +268,41 @@ def get_dustywave_tvi_omega_k(k: float, cs: float, ts: float, eps: float) -> np.
     return np.roots(coeffs)
 
 
-def corresponding_root(omega_list):
-    omega_re_pos = 0
-    for ome in omega_list:
-        if np.real(ome) > np.real(omega_re_pos):
-            omega_re_pos = ome
-    return omega_re_pos
+def eigen_model(x, t, offset, ampl, omega, k):
+    return offset + np.real(ampl * np.exp(1j * (k * x - omega * t)))
 
 
-# def analytical_wave(omega, x, t):
+def project_eigenmode(
+    eigenvec: complex, eigenval: complex, rho_on_rho_0: complex, eps: complex, v_on_cs: complex
+):
+    v = np.array([rho_on_rho_0, eps, v_on_cs], dtype=complex)
+    print(f"eigenvec={eigenvec}")
+    print(f"v={v}")
+
+    c = np.linalg.solve(eigenvec, v)
+
+    print(f"c={c}")
+    return c
+
+
+def find_eigen_decomp(x_data, rho_data, eps_data, vx_data, eigval, eigvec):
+
+    offset_rho, ampl_rho, phi_rho = fit_sine_wave(x_data, rho_data)
+    offset_eps, ampl_eps, phi_eps = fit_sine_wave(x_data, eps_data)
+    offset_vx, ampl_vx, phi_vx = fit_sine_wave(x_data, vx_data)
+
+    print(f"offset_rho={offset_rho:.6g}, ampl_rho={ampl_rho:.6g}, phi_rho={phi_rho:.6g} rad")
+    print(f"offset_eps={offset_eps:.6g}, ampl_eps={ampl_eps:.6g}, phi_eps={phi_eps:.6g} rad")
+    print(f"offset_vx={offset_vx:.6g}, ampl_vx={ampl_vx:.6g}, phi_vx={phi_vx:.6g} rad")
+
+    print(f"eigenval = {eigval}")
+    print(f"eigenvec = {eigvec}")
+
+    coefs = project_eigenmode(eigvec, eigval, ampl_rho / rho, ampl_eps, -1j * ampl_vx / cs)
+    print(f"coefs={coefs}")
+
+    return coefs
+
 
 # %%
 # Curve fitting
@@ -271,143 +310,159 @@ from scipy.linalg import lstsq
 from scipy.optimize import curve_fit
 
 
-def fit_sine_wave(x, y):
-    design = np.column_stack([np.ones_like(x), np.sin(k * x), np.cos(k * x)])
-    offset, a, b = lstsq(design, y)[0]
-    ampl = np.hypot(a, b)
-    phi = np.arctan2(b, a)
-    if phi < 0:
-        phi += np.pi
-        ampl = -ampl
+def fit_sine_wave(x, y, prev_phi=None):
+    offset = np.mean(y)
+    y0 = y - offset
+
+    z = np.exp(1j * k * x)
+
+    lam = np.vdot(z, y0) / np.vdot(z, z)
+
+    ampl = 2 * np.abs(lam)
+    phi = np.angle(lam)
+
+    # enforce continuity with previous phase if available
+    if prev_phi is not None:
+        # candidate 1
+        phi1 = phi
+        a1 = ampl
+
+        # candidate 2 (flip sign via phase shift)
+        phi2 = phi + np.pi
+        a2 = -ampl
+
+        # choose whichever is closer to previous phase
+        if abs(np.angle(np.exp(1j * (phi1 - prev_phi)))) > abs(
+            np.angle(np.exp(1j * (phi2 - prev_phi)))
+        ):
+            phi, ampl = phi2, a2
+
+    # wrap phase
+    phi = np.mod(phi, 2 * np.pi)
+
     return offset, ampl, phi
-
-
-def sine_model(x, offset, ampl, phi):
-    return offset + ampl * np.sin(phi + k * x)
-
-
-def damped_sine_ampl(t, a, b, c):
-    return a * np.sin(-b * t) * np.exp(-c * t)
-
-
-def fit_damped_sine_ampl(t, ampl, omega_guess):
-    t_arr = np.asarray(t)
-    ampl_arr = np.asarray(ampl)
-    print("omega_guess=", omega_guess)
-    w_re0 = float(np.real(omega_guess))
-    w_im0 = -float(np.imag(omega_guess))
-    p0 = [np.abs(np.max(ampl_arr)), w_re0, 0]
-
-    up_bound = [np.abs(np.max(ampl_arr)) * 2, 2 * w_re0, max(1.0, 10 * w_im0)]
-    print("up bound=", up_bound)
-
-    print("p0=", p0)
-    popt, _ = curve_fit(
-        damped_sine_ampl,
-        t_arr,
-        ampl_arr,
-        p0=p0,
-        bounds=([0, 0.0, 0], up_bound),
-        maxfev=20000,
-    )
-
-    print("popt=", popt)
-    return popt
 
 
 # %%
 # Perform the simulation
 for ics, cs in enumerate(cs_g_list):
-    for ieigen in range(3):
-        ctx = shamrock.Context()
-        ctx.pdata_layout_new()
+    ctx = shamrock.Context()
+    ctx.pdata_layout_new()
 
-        model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
-        do_setup(model, cs, delta_v_0_list[ics])
+    model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
+    do_setup(model, cs, delta_v_0_list[ics])
 
-        k = 2 * np.pi / (xM - xm)
+    k = 2 * np.pi / (xM - xm)
 
-        # Compute Omega
-        omega_k = get_dustywave_omega_k(k, cs, ts, epsilon_0)
-        omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
-        print(omega_k)
-        print(omega_k_tvi)
-        eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
-        eigval = eigval[0]
-        eigvec = eigvec[0]
-        print(f"eigenval = {eigval}")
-        print(f"eigenvec = {eigvec}")
+    # Compute Omega
+    omega_k = get_dustywave_omega_k(k, cs, ts, epsilon_0)
+    omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
+    print(omega_k)
+    print(omega_k_tvi)
 
-    # Find the root corresponding to this setup
-    omega_re_pos = corresponding_root(omega_k)
-    omega_re_pos_tvi = corresponding_root(omega_k_tvi)
-    print(f"omega_re_pos={omega_re_pos}")
-    print(f"omega_re_pos_tvi={omega_re_pos_tvi}")
+    print(f"k={k} cs={cs} ts={ts} epsilon_0={epsilon_0}")
+    eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
 
-    Twave = 2 * np.pi / (np.real(omega_re_pos_tvi))
+    print(f"eigenval = {eigval}")
+    print(f"eigenvec = {eigvec}")
+
+    Twave = 2 * np.pi / np.max(np.abs(np.real(eigval)))
     print(Twave)
 
-    Twave_cnt = 10
-    nwave = 1
+    Twave_cnt = 40
+    nwave = 2
 
     t_list = []
-    rho_g_ampl_list = []
-    rho_d_ampl_list = []
-    rho_g_phi_list = []
-    rho_d_phi_list = []
-    rho_g_offset_list = []
-    rho_d_offset_list = []
+    rho_t_list = []
+    eps_t_list = []
+    vx_t_list = []
+    rho_t_list_analytic = []
+    eps_t_list_analytic = []
+    vx_t_list_analytic = []
+
+    rho_last_phi = np.pi
+    eps_last_phi = 0
+    vx_last_phi = 3 * np.pi / 2
 
     os.makedirs("_to_trash", exist_ok=True)
     for i in range(int(Twave_cnt * nwave)):
         t = Twave * i / (Twave_cnt)
         model.evolve_until(t)
+
         x_data, rho_data, rho_g_data, rho_d_data, vx_data, eps_data = get_field_results(model)
 
         x_ana = np.linspace(xm, xM, 256)
 
-        offset_g, ampl_g, phi_g = fit_sine_wave(x_data, rho_g_data)
-        offset_d, ampl_d, phi_d = fit_sine_wave(x_data, rho_d_data)
+        if i == 0:
+            coefs = find_eigen_decomp(x_data, rho_data, eps_data, vx_data, eigval, eigvec)
+            print(f"coefs={coefs}")
 
-        if model.get_time() == 0:
-            phi_g = np.pi / 2
-            phi_d = np.pi / 2
+            decomp = np.array(eigvec[0] * 0)
+            for ieig in range(len(eigval)):
+                decomp += coefs[ieig] * eigvec[:, ieig]
+            print(f"decomp={decomp}")
 
-        rho_g_fit = sine_model(x_ana, offset_g, ampl_g, phi_g)
-        rho_d_fit = sine_model(x_ana, offset_d, ampl_d, phi_d)
+        model_rho_on_rho_0 = np.zeros_like(x_ana, dtype=complex)
+        model_eps = np.zeros_like(x_ana, dtype=complex)
+        model_vx_on_cs = np.zeros_like(x_ana, dtype=complex)
 
-        print(f"rho_g fit: offset={offset_g:.6g}, ampl={ampl_g:.6g}, phi={phi_g:.6g} rad")
-        print(f"rho_d fit: offset={offset_d:.6g}, ampl={ampl_d:.6g}, phi={phi_d:.6g} rad")
+        for ieig in range(len(eigval)):
+            model_rho_on_rho_0 += eigen_model(
+                x_ana, model.get_time(), 0.0, coefs[ieig] * eigvec[0, ieig], eigval[ieig], k
+            )
+            model_eps += eigen_model(
+                x_ana, model.get_time(), 0.0, coefs[ieig] * eigvec[1, ieig], eigval[ieig], k
+            )
+            model_vx_on_cs += eigen_model(
+                x_ana, model.get_time(), 0.0, coefs[ieig] * eigvec[2, ieig], eigval[ieig], k
+            )
+
+        model_rho = rho * np.real(model_rho_on_rho_0)
+        model_eps = np.real(model_eps)
+        model_vx = cs * np.real(model_vx_on_cs)
+
+        model_rho += 1
+        model_eps += 0.5
+        model_vx += 0
+
+        _, rho_t_ampl, rho_t_phi = fit_sine_wave(x_data, rho_data, rho_last_phi)
+        _, eps_t_ampl, eps_t_phi = fit_sine_wave(x_data, eps_data, eps_last_phi)
+        _, vx_t_ampl, vx_t_phi = fit_sine_wave(x_data, vx_data, vx_last_phi)
+        _, rho_ana_ampl, _ = fit_sine_wave(x_ana, model_rho, rho_last_phi)
+        _, eps_ana_ampl, _ = fit_sine_wave(x_ana, model_eps, eps_last_phi)
+        _, vx_ana_ampl, _ = fit_sine_wave(x_ana, model_vx, vx_last_phi)
+
+        print(f"rho_t_ampl={rho_t_ampl:.6g}, rho_t_phi={rho_t_phi:.6g} rad")
+        print(f"eps_t_ampl={eps_t_ampl:.6g}, eps_t_phi={eps_t_phi:.6g} rad")
+        print(f"vx_t_ampl={vx_t_ampl:.6g}, vx_t_phi={vx_t_phi:.6g} rad")
 
         t_list.append(model.get_time())
-        rho_g_ampl_list.append(ampl_g)
-        rho_d_ampl_list.append(ampl_d)
-        rho_g_phi_list.append(phi_g)
-        rho_d_phi_list.append(phi_d)
-        rho_g_offset_list.append(offset_g)
-        rho_d_offset_list.append(offset_d)
+        rho_t_list.append(rho_t_ampl)
+        eps_t_list.append(eps_t_ampl)
+        vx_t_list.append(vx_t_ampl)
+        rho_t_list_analytic.append(rho_ana_ampl)
+        eps_t_list_analytic.append(eps_ana_ampl)
+        vx_t_list_analytic.append(vx_ana_ampl)
+
+        rho_last_phi = rho_t_phi
+        eps_last_phi = eps_t_phi
+        vx_last_phi = vx_t_phi
 
         fig, axs = plt.subplots(1, 1, figsize=(10, 5))
-        axs.plot(x_data, rho_g_data, ".", label="gas")
-        axs.plot(x_data, rho_d_data, ".", label="dust")
 
-        axs.plot(
-            x_ana,
-            rho_g_fit,
-            "-",
-            label=rf"rho_g fit: $A={ampl_g:.3g}$, $\phi={phi_g:.3g}$",
-        )
-        axs.plot(
-            x_ana,
-            rho_d_fit,
-            "-",
-            label=rf"rho_d fit: $A={ampl_d:.3g}$, $\phi={phi_d:.3g}$",
-        )
+        axs.plot(x_data, rho_data - 1, ".", label=r"$\delta \rho$")
+        axs.plot(x_data, eps_data - 0.5, ".", label=r"$\delta \epsilon$")
+        axs.plot(x_data, vx_data / cs, ".", label=r"$\delta v_x / c_s$")
 
-        axs.set_xlabel(r"$x$")
-        axs.set_ylabel(r"$\rho_{g,d}$")
+        axs.plot(x_ana, model_rho - 1, "-", label=r"$\delta \rho$ analytic")
+        axs.plot(x_ana, model_eps - 0.5, "-", label=r"$\delta \epsilon$ analytic")
+        axs.plot(x_ana, model_vx / cs, "-", label=r"$\delta v_x / c_s$ analytic")
+
+        axs.set_xlabel(r"$x$ [code unit]")
+        axs.set_ylabel(r"$\delta$ fields [code unit]")
         axs.set_xlim(xm, xM)
-        axs.set_ylim(rho / 2 - 1e-3, rho / 2 + 1e-3)
+        # axs.set_ylim(rho / 2 - 1e-3, rho / 2 + 1e-3)
+        axs.set_ylim(-1e-3, +1e-3)
         axs.text(
             0.02,
             0.98,
@@ -422,43 +477,34 @@ for ics, cs in enumerate(cs_g_list):
         plt.savefig(f"_to_trash/dump_dustywave_tvi_{ics:02d}_{i:02d}.png")
         plt.close()
 
+        # if i == 1:
+        #    break
+
     t_arr = np.asarray(t_list)
-    t_fit = np.linspace(t_arr.min(), t_arr.max(), 256)
 
-    try:
-        popt_g = fit_damped_sine_ampl(t_arr, rho_g_ampl_list, omega_re_pos)
-        popt_d = fit_damped_sine_ampl(t_arr, rho_d_ampl_list, omega_re_pos)
-
-        print(f"rho_g ampl fit: a={popt_g[0]:.6g}, b={popt_g[1]:.6g}, c={popt_g[2]:.6g}")
-        print(f"rho_d ampl fit: a={popt_d[0]:.6g}, b={popt_d[1]:.6g}, c={popt_d[2]:.6g}")
-    except ValueError:
-        popt_g = None
-        popt_d = None
+    rho_t_list = np.array(rho_t_list)
+    eps_t_list = np.array(eps_t_list)
+    vx_t_list = np.array(vx_t_list)
+    rho_t_list_analytic = np.array(rho_t_list_analytic)
+    eps_t_list_analytic = np.array(eps_t_list_analytic)
+    vx_t_list_analytic = np.array(vx_t_list_analytic)
 
     plt.figure(dpi=150)
-    plt.plot(t_list, rho_g_ampl_list, ".", label="rho_g_ampl")
-    plt.plot(t_list, rho_d_ampl_list, ".", label="rho_d_ampl")
-    if popt_g is not None and popt_d is not None:
-        plt.plot(
-            t_fit,
-            damped_sine_ampl(t_fit, *popt_g),
-            "-",
-            label=rf"rho_g fit: $a={popt_g[0]:.3g}$, $b={popt_g[1]:.3g}$, $c={popt_g[2]:.3g}$",
-        )
-        plt.plot(
-            t_fit,
-            damped_sine_ampl(t_fit, *popt_d),
-            "-",
-            label=rf"rho_d fit: $a={popt_d[0]:.3g}$, $b={popt_d[1]:.3g}$, $c={popt_d[2]:.3g}$",
-        )
-    plt.xlabel("t")
-    plt.ylabel("rho")
+    plt.plot(t_arr, rho_t_list, ".", label=r"$\delta \rho (t)$")
+    plt.plot(t_arr, eps_t_list, ".", label=r"$\delta \epsilon (t)$")
+    plt.plot(t_arr, vx_t_list / cs, ".", label=r"$\delta v_x / c_s (t)$")
+    plt.plot(t_arr, rho_t_list_analytic, "-", label=r"$\delta \rho (t)$ analytic")
+    plt.plot(t_arr, eps_t_list_analytic, "-", label=r"$\delta \epsilon (t)$ analytic")
+    plt.plot(t_arr, vx_t_list_analytic / cs, "-", label=r"$\delta v_x / c_s(t)$ analytic")
+    plt.xlabel("$t$ [code unit]")
+    plt.ylabel("$\delta$ fields [code unit]")
     plt.title(f"cs={cs:.6g}")
-    plt.legend()
+    plt.legend(fontsize=12, loc="upper right")
     plt.savefig(f"_to_trash/dustywave_tvi_scan_{ics:04}.png")
 
 # %%
 # make gifs
+from matplotlib.animation import PillowWriter
 from shamrock.utils.plot import show_image_sequence
 
 keep_list = []
@@ -466,12 +512,18 @@ keep_list = []
 # %%
 # show them the gifs (i have to unroll the loop otherwise the doc does not capture the gifs ...)
 ani0 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{0:02d}_*.png")
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani0.save(f"_to_trash/dustywave_tvi_scan_{0:04}.gif", writer=writer)
 plt.show()
 # %%
 ani1 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{1:02d}_*.png")
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani1.save(f"_to_trash/dustywave_tvi_scan_{1:04}.gif", writer=writer)
 plt.show()
 # %%
 ani2 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{2:02d}_*.png")
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani2.save(f"_to_trash/dustywave_tvi_scan_{2:04}.gif", writer=writer)
 plt.show()
 
 plt.show()

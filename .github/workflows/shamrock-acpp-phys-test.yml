@@ -50,7 +50,7 @@ jobs:
             }
           # skip-extraction: ${{ steps.cache-ccache.outputs.cache-hit }}
 
-      # Note: here we are caching docker build cache which include ccache one.
+          # Note: here we are caching docker build cache which include ccache one.
       - name: Build Container
         uses: docker/build-push-action@v6
         with:
@@ -200,6 +200,8 @@ jobs:
             artifact_name: gallery_sph_dustydiffuse_tvi
           - testfile: "examples/sph/run_dustywave_tvi.py"
             artifact_name: gallery_sph_dustywave_tvi
+          - testfile: "examples/sph/run_dustysettle_tvi.py"
+            artifact_name: gallery_sph_dustysettle_tvi
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"

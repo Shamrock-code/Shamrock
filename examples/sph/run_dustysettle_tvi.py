@@ -8,12 +8,13 @@ Perform a dust settling test in a local stratified box.
 # sphinx_gallery_multi_image = "single"
 
 import os
+
+import matplotlib as mpl
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
-import matplotlib as mpl
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.lines import Line2D
 from scipy.special import erfinv
 
 import shamrock
@@ -74,7 +75,7 @@ box_H_count = 8
 
 ndust = 5
 mrn_pow = 3.5
-mrn_cutoff_si = np.inf # would be 250e-9 normally
+mrn_cutoff_si = np.inf  # would be 250e-9 normally
 
 epsilon_base = 0.01
 
@@ -135,6 +136,8 @@ cs_g = cs
 
 
 gamma = 1.4
+
+
 def uint_g(r):
     rho_g = func_rho_g(r)
     P = rho_g * cs_g * cs_g / gamma
@@ -337,7 +340,7 @@ def analyse_and_plot(j):
     to_dens = codeu.to("kg") * codeu.to("m") ** -3
 
     dust_cmap = plt.colormaps[cmap]
-    dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max()*10)
+    dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max() * 10)
     dust_colors = dust_cmap(dust_norm(grain_size_si))
 
     rho_dust_all = np.zeros(len(z))
@@ -361,15 +364,14 @@ def analyse_and_plot(j):
     axs[0].set_xlabel(r"$z$")
     axs[0].set_yscale("log")
     axs[0].set_ylim(1e-20, 1e-8)
-    axs[0].set_xlim(-4*H, 4*H)
+    axs[0].set_xlim(-4 * H, 4 * H)
     # axs[0].set_ylim(1e-12, 10**2)
 
     axs[1].set_ylabel(r"$\epsilon_j$")
     axs[1].set_xlabel(r"$z$")
     axs[1].set_yscale("log")
     axs[1].set_ylim(1e-12, 2)
-    axs[1].set_xlim(-4*H, 4*H)
-
+    axs[1].set_xlim(-4 * H, 4 * H)
 
     gas_handle = Line2D(
         [0],
@@ -400,10 +402,9 @@ def analyse_and_plot(j):
     cbar.set_label(r"grain size $s$ [m]")
 
     os.makedirs(f"{dump_folder}/plots", exist_ok=True)
-    plt.savefig(f"{dump_folder}/plots/vert_slice_{j}.png")
+    plt.savefig(f"{dump_folder}/plots/vert_slice_dens_{j:04d}.png")
     # model.do_vtk_dump(f"dump_stratif_{j}.vtk", True)
     plt.close()
-
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
     time = model.get_time()
@@ -421,7 +422,6 @@ def analyse_and_plot(j):
         axs[0].scatter(z, s_j[:, i], s=sz, color=c, edgecolors="none")
         axs[1].scatter(z, ds_j_dt[:, i], s=sz, color=c, edgecolors="none")
 
-
     axs[0].set_ylabel(r"$s_j$")
     axs[0].set_xlabel(r"$z$")
     axs[0].set_xlim(-4 * H, 4 * H)
@@ -432,18 +432,18 @@ def analyse_and_plot(j):
     axs[1].set_xlim(-4 * H, 4 * H)
     axs[1].set_yscale("symlog", linthresh=1e-10)
 
-
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
     dust_sm.set_array([])
     cbar = fig.colorbar(dust_sm, ax=axs, pad=0.02, shrink=0.85)
     cbar.set_label(r"grain size $s$ [m]")
 
-    plt.savefig(f"{dump_folder}/plots/vert_slice_s_{j}.png")
+    plt.savefig(f"{dump_folder}/plots/vert_slice_s_{j:04d}.png")
     plt.close()
+
 
 t_start = model.get_time()
 
-tlist = [0.1*i for i in range(20)] + [i * 0.1 +2 for i in range(3000)]
+tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
 
 tnext = 0
 for j in range(1000):
@@ -469,5 +469,37 @@ for j in range(1000):
 
         dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] > 5.0:
+    if tlist[j] >= 5.0:
         break
+
+####################################################
+# Convert PNG sequence to Image sequence in mpl
+####################################################
+
+from shamrock.utils.plot import show_image_sequence
+
+# %%
+glob_str = f"{dump_folder}/plots/vert_slice_dens_*.png"
+ani = show_image_sequence(glob_str)
+
+from matplotlib.animation import PillowWriter
+
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
+
+if shamrock.sys.world_rank() == 0:
+    # Show the animation
+    plt.show()
+
+# %%
+glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
+ani = show_image_sequence(glob_str)
+
+from matplotlib.animation import PillowWriter
+
+writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
+
+if shamrock.sys.world_rank() == 0:
+    # Show the animation
+    plt.show()

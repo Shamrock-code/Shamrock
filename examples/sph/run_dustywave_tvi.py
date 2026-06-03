@@ -198,14 +198,6 @@ def get_field_results(model):
 
 
 def dustywave_tvi_matrix(k, cs, ts, eps):
-    """
-    Create the matrix
-
-    [[0, 0, -i*k*cs],
-     [-k^2*ts*cs^2*eps*(1-eps), k^2*ts*cs^2*eps, 0],
-     [i*k*cs*(1-eps), -i*k*cs, 0]]
-    """
-
     a = k * cs
     b = k * k * ts * cs * cs * eps
 
@@ -245,28 +237,6 @@ def get_dustywave_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndar
         0.0,
     ]
     return np.roots(coeffs)
-
-
-## Use the matrix version above this one give slightly different result i dunno why
-def dustywave_dispersion_relation_tvi(omega_k: float, k: float, cs: float, ts: float, eps: float):
-    # i w^3/ts - cs^2 k^2 w^2 eps - i cs^2 k^2 (1-eps) w/ts = 0
-    return (
-        +1j * (omega_k**3 / ts)
-        - (cs**2 * k**2 * omega_k**2 * eps)
-        - 1j * (cs**2 * k**2 * (1 - eps) * omega_k / ts)
-    )
-
-
-def get_dustywave_tvi_omega_k(k: float, cs: float, ts: float, eps: float) -> np.ndarray:
-    # i w^3/ts - cs^2 k^2 w^2 eps - i cs^2 k^2 (1-eps) w/ts = 0
-    coeffs = [
-        1j / ts,
-        -(cs**2 * k**2 * eps),
-        -1j * (cs**2 * k**2 * (1.0 - eps) / ts),
-        0.0,
-    ]
-    return np.roots(coeffs)
-
 
 def eigen_model(x, t, offset, ampl, omega, k):
     return offset + np.real(ampl * np.exp(1j * (k * x - omega * t)))
@@ -356,9 +326,7 @@ for ics, cs in enumerate(cs_g_list):
 
     # Compute Omega
     omega_k = get_dustywave_omega_k(k, cs, ts, epsilon_0)
-    omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
     print(omega_k)
-    print(omega_k_tvi)
 
     print(f"k={k} cs={cs} ts={ts} epsilon_0={epsilon_0}")
     eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)

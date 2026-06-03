@@ -60,8 +60,15 @@ void register_field(py::module &m, const char *class_name) {
             return collected;
         });
 
-    std::string map_fields_name = "map_fields_" + shambase::get_type_name<T>();
-    printf("map_fields_name: %s\n", map_fields_name.c_str());
+    std::string map_fields_name = []() -> std::string {
+        if (std::is_same_v<T, f64>) {
+            return "map_fields_f64";
+        } else if (std::is_same_v<T, f64_3>) {
+            return "map_fields_f64_3";
+        } else {
+            throw shambase::make_except_with_loc<std::runtime_error>("Unsupported type");
+        }
+    }();
 
     m.def(
         map_fields_name.c_str(),

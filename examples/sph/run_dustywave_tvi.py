@@ -151,7 +151,10 @@ def get_field_results(model):
     def custom_getter_x(size: int, dic_out: dict) -> np.array:
         return dic_out["xyz"][:, 0]
 
+    def custom_getter_vx(size: int, dic_out: dict) -> np.array:
+        return dic_out["vxyz"][:, 0]
     x_field = model.compute_field("custom", "f64", custom_getter_x)
+    vx_field = model.compute_field("custom", "f64", custom_getter_vx)
     rho_field = model.compute_field("rho", "f64")
     s_j_field = model.compute_field("s_j", "f64")
 
@@ -170,10 +173,12 @@ def get_field_results(model):
     rho_d_field = shamrock.map_fields_f64(internal_rho_d, rho=rho_field, eps=eps_field)
 
     x_data = np.asarray(x_field.collect_data())
+    vx_data = np.asarray(vx_field.collect_data())
+    eps_data = np.asarray(eps_field.collect_data())
     rho_data = np.asarray(rho_field.collect_data())
     rho_g_data = np.asarray(rho_g_field.collect_data())
     rho_d_data = np.asarray(rho_d_field.collect_data())
-    return x_data, rho_data, rho_g_data, rho_d_data
+    return x_data, rho_data, rho_g_data, rho_d_data,vx_data, eps_data
 
 
 # %%
@@ -326,7 +331,9 @@ for ics, cs in enumerate(cs_g_list):
     omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
     print(omega_k)
     print(omega_k_tvi)
-    print(eigensystem_dustywave_tvi(k, cs, ts, epsilon_0))
+    eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
+    print(f"eigenval = {eigval}")
+    print(f"eigenvec = {eigvec}")
 
     # Find the root corresponding to this setup
     omega_re_pos = corresponding_root(omega_k)
@@ -337,7 +344,7 @@ for ics, cs in enumerate(cs_g_list):
     Twave = 2 * np.pi / (np.real(omega_re_pos_tvi))
     print(Twave)
 
-    Twave_cnt = 1
+    Twave_cnt = 10
     nwave = 1
 
     t_list = []
@@ -352,7 +359,7 @@ for ics, cs in enumerate(cs_g_list):
     for i in range(int(Twave_cnt * nwave)):
         t = Twave * i / (Twave_cnt)
         model.evolve_until(t)
-        x_data, rho_data, rho_g_data, rho_d_data = get_field_results(model)
+        x_data, rho_data, rho_g_data, rho_d_data, vx_data, eps_data = get_field_results(model)
 
         x_ana = np.linspace(xm, xM, 256)
 

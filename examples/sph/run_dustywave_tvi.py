@@ -318,22 +318,25 @@ def fit_damped_sine_ampl(t, ampl, omega_guess):
 # %%
 # Perform the simulation
 for ics, cs in enumerate(cs_g_list):
-    ctx = shamrock.Context()
-    ctx.pdata_layout_new()
+    for ieigen in range(3):
+        ctx = shamrock.Context()
+        ctx.pdata_layout_new()
 
-    model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
-    do_setup(model, cs, delta_v_0_list[ics])
+        model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
+        do_setup(model, cs, delta_v_0_list[ics])
 
-    k = 2 * np.pi / (xM - xm)
+        k = 2 * np.pi / (xM - xm)
 
-    # Compute Omega
-    omega_k = get_dustywave_omega_k(k, cs, ts, epsilon_0)
-    omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
-    print(omega_k)
-    print(omega_k_tvi)
-    eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
-    print(f"eigenval = {eigval}")
-    print(f"eigenvec = {eigvec}")
+        # Compute Omega
+        omega_k = get_dustywave_omega_k(k, cs, ts, epsilon_0)
+        omega_k_tvi = get_dustywave_tvi_omega_k(k, cs, ts, epsilon_0)
+        print(omega_k)
+        print(omega_k_tvi)
+        eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
+        eigval = eigval[0]
+        eigvec = eigvec[0]
+        print(f"eigenval = {eigval}")
+        print(f"eigenvec = {eigvec}")
 
     # Find the root corresponding to this setup
     omega_re_pos = corresponding_root(omega_k)

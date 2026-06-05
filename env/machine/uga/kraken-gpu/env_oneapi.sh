@@ -1,3 +1,5 @@
+pip install -U ninja
+
 module load compiler-intel-llvm/latest
 module load cuda/12.9.41.patched
 module load openmpi/5.0.7/cuda-12.9-gcc-12.4.0

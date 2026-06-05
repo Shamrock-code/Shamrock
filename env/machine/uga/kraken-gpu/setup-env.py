@@ -24,7 +24,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     args = parser.parse_args(argv)
 
-    args.gen = "make"
+    args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 

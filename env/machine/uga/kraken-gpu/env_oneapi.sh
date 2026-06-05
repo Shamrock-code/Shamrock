@@ -8,7 +8,7 @@ function shamconfigure {
     cmake \
         -S $SHAMROCK_DIR \
         -B $BUILD_DIR \
-        -G "Unix Makefiles" \
+        -G "Ninja" \
         -DSHAMROCK_ENABLE_BACKEND=SYCL \
         -DSYCL_IMPLEMENTATION=IntelLLVM \
         -DINTEL_LLVM_PATH=$(dirname $(which icpx))/.. \

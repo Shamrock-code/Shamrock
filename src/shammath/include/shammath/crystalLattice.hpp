@@ -389,8 +389,6 @@ namespace shammath {
 
             auto [bmin, bmax] = box;
 
-            StackEntry stack_loc{};
-
             auto [idxs_min, idxs_max] = LatticeHCP::get_box_index_bounds(dr, bmin, bmax);
 
             auto [idxs_min_per, idxs_max_per]

@@ -35,7 +35,7 @@ bmin = (-0.6, -0.6, -0.1)
 bmax = (0.6, 0.6, 0.1)
 pmass = -1
 
-bmin, bmax = shamrock.math.get_ideal_fcc_box(dr, bmin, bmax)
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 

@@ -67,7 +67,7 @@ for N_target_base in [32e6]:
     model.set_solver_config(cfg)
     model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
-    bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+    bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
     xm, ym, zm = bmin
     xM, yM, zM = bmax
 

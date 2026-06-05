@@ -219,7 +219,7 @@ def setup_model():
 
     model.init_scheduler(int(1e8), 1)
 
-    bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+    bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
     xm, ym, zm = bmin
     xM, yM, zM = bmax
 

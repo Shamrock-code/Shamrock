@@ -96,7 +96,7 @@ def do_setup(model, cs, delta_v_0):
 
         pmass = -1
 
-        bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+        bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
         xm, ym, zm = bmin
         xM, yM, zM = bmax
 

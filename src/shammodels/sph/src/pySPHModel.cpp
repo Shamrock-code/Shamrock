@@ -20,7 +20,9 @@
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -647,12 +649,24 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_fcc_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_fcc_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "get_ideal_hcp_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_hcp_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_hcp_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "resize_simulation_box",

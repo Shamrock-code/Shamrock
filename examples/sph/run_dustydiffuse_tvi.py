@@ -156,7 +156,7 @@ scheduler_merge_val = int(1)
 model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
 
-bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 

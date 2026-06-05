@@ -67,38 +67,30 @@ mpl.rcParams.update(
 # %%
 # Do setup
 
-xm = None
-ym = None
-zm = None
-xM = None
-yM = None
-zM = None
-dr = None
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+
+part_vol = vol_b / N_target
+
+# lattice volume
+HCP_PACKING_DENSITY = 0.74
+part_vol_lattice = HCP_PACKING_DENSITY * part_vol
+
+dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
+
+print(f"dr={dr}, bmin={bmin}, bmax={bmax}")
+
+
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+totmass = rho * vol_b
 
 
 def do_setup(model, cs, delta_v_0):
-    global xm, ym, zm, xM, yM, zM, bmin, bmax, dr
-
-    if xm is None:
-        xm, ym, zm = bmin
-        xM, yM, zM = bmax
-        vol_b = (xM - xm) * (yM - ym) * (zM - zm)
-
-        part_vol = vol_b / N_target
-
-        # lattice volume
-        HCP_PACKING_DENSITY = 0.74
-        part_vol_lattice = HCP_PACKING_DENSITY * part_vol
-
-        dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
-
-        print(f"dr={dr}, bmin={bmin}, bmax={bmax}")
-
-        pmass = -1
-
-        bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
-        xm, ym, zm = bmin
-        xM, yM, zM = bmax
 
     cfg = model.gen_default_config()
     # cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
@@ -142,9 +134,6 @@ def do_setup(model, cs, delta_v_0):
         return (vel, 0.0, 0.0)
 
     model.set_field_value_lambda_f64_3("vxyz", vel_func)
-
-    vol_b = (xM - xm) * (yM - ym) * (zM - zm)
-    totmass = rho * vol_b
 
     pmass = model.total_mass_to_part_mass(totmass)
     model.set_particle_mass(pmass)

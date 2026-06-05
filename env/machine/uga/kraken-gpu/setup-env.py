@@ -42,6 +42,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/use_py_venv.sh",
     ]
 
     envgen.gen_env_file("env_oneapi.sh")

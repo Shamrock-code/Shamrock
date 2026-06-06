@@ -2,13 +2,18 @@
 Set the matplotlib style for shamrock (doc and standard plots).
 """
 
-import matplotlib as mpl
-
 
 def set_shamrock_mpl_style():
     """
     Set the matplotlib style for shamrock (doc and standard plots).
     """
+    try:
+        import matplotlib as mpl
+    except ImportError:
+        raise ImportError(
+            "matplotlib is required to use the shamrock matplotlib style. "
+            "Please install it using 'pip install matplotlib'."
+        )
 
     mpl.rcParams.update(
         {

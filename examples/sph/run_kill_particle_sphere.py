@@ -22,6 +22,11 @@ def is_in_sphere(pt):
 
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Setup parameters
 
 dr = 0.1

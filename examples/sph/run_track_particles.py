@@ -19,6 +19,11 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
 def is_in_sphere(pt):
     x, y, z = pt
     return (x**2 + y**2 + z**2) < 1

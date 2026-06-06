@@ -10,6 +10,11 @@ import numpy as np
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Define the unit system
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)

@@ -25,7 +25,6 @@ def set_shamrock_mpl_style():
             "xtick.labelsize": 13,
             "ytick.labelsize": 13,
             "legend.fontsize": 13,
-            "axes.facecolor": "#f2f2f2",
             "axes.linewidth": 1.0,
             "xtick.direction": "in",
             "ytick.direction": "in",
@@ -38,5 +37,6 @@ def set_shamrock_mpl_style():
             "legend.frameon": True,
             "legend.fancybox": False,
             "legend.edgecolor": "black",
+            "axes.grid.which": "major",  # grid only on major ticks
         }
     )

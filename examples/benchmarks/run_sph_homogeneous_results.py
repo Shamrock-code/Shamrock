@@ -15,6 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
+# %%
+# Use shamrock documentation style for matplotlib
+import shamrock
+
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
 try:
     base_path = os.path.dirname(os.path.abspath(__file__))
 except NameError:

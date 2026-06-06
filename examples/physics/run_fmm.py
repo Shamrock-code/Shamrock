@@ -222,6 +222,7 @@ def plot_mass_moment_case(s_B, box_B_size, x_j):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.minorticks_off()
 
     draw_arrow(ax, s_B, x_j, "black", "$b_j = x_j - s_B$")
 
@@ -350,6 +351,7 @@ def plot_grav_moment_case(s_A, box_A_size, s_B, box_B_size, x_j):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.minorticks_off()
 
     draw_arrow(ax, s_B, x_j, "black", "$b_j = x_j - s_B$")
 
@@ -456,6 +458,7 @@ def plot_fmm_case(s_A, box_A_size, x_i, s_B, box_B_size, x_j, f_i_fmm, f_i_exact
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.minorticks_off()
 
     draw_arrow(ax, s_B, x_j, "black", "$b_j = x_j - s_B$")
     draw_arrow(ax, s_A, x_i, "blue", "$a_i = x_i - s_A$")
@@ -975,6 +978,7 @@ def plot_mass_moment_offset(s_B, s_B_new, box_B_size):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.minorticks_off()
 
     draw_arrow(ax, s_B, x_j, "black", "$b_j = x_j - s_B$")
     draw_arrow(ax, s_B_new, x_j, "red", "$b_j' = x_j - s_B'$")
@@ -1317,6 +1321,7 @@ def plot_grav_moment_offset(s_A, s_Ap, s_B, box_A_size, box_B_size, x_j):
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+    ax.minorticks_off()
 
     draw_arrow(ax, s_A, s_B, "purple", "$r = s_B - s_A$")
     draw_arrow(ax, s_Ap, s_B, "purple", "$r' = s_B - s_A'$")

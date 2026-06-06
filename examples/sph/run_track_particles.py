@@ -159,4 +159,6 @@ ax.set_zlim(-4, 4)
 
 ax.legend()
 
+ax.minorticks_off()
+
 plt.show()

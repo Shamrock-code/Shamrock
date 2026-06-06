@@ -134,6 +134,8 @@ def plot_state(iplot):
 
         ax.scatter(X, Y, Z, s=1)
 
+        ax.minorticks_off()
+
         ax.set_title(f"t = {model.get_time():.2f} ")
 
         plt.savefig(os.path.join(dump_folder, f"{sim_name}_{iplot:04}.png"))

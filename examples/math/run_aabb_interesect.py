@@ -84,6 +84,7 @@ def draw_aabb(ax, aabb, color, alpha):
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
+ax.minorticks_off()
 
 aabb1 = shamrock.math.AABB_f64_3((-1.0, -1.0, -1.0), (2.0, 2.0, 2.0))
 aabb2 = shamrock.math.AABB_f64_3((-2.0, -2.0, -2.0), (1.0, 1.0, 1.0))

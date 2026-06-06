@@ -180,5 +180,8 @@ sc = ax.scatter(
     c=dat["hpart"],
     cmap=cm,
 )
+
+ax.minorticks_off()
+
 plt.colorbar(sc)
 plt.show()

@@ -194,6 +194,9 @@ def make_plot(model, iplot):
         edgecolors="black",
         linewidths=0.5,
     )
+
+    ax.minorticks_off()
+
     cbar = plt.colorbar(sc, ax=ax, orientation="horizontal", pad=0.1, aspect=30)
     cbar.set_label("hpart")
     ax.set_title(f"t = {model.get_time():0.3f}")

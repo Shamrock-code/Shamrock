@@ -36,6 +36,7 @@ def plot_orbits(m1, m2, a, e, roll, pitch, yaw):
     import matplotlib.pyplot as plt
 
     ax = plt.figure().add_subplot(projection="3d")
+    ax.minorticks_off()
 
     x1, x2, y1, y2, z1, z2 = [], [], [], [], [], []
 

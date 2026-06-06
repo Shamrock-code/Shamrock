@@ -109,6 +109,7 @@ def draw_ray(ax, ray, color):
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
+ax.minorticks_off()
 
 aabb1 = shamrock.math.AABB_f64_3((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0))
 

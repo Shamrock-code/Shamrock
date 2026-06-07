@@ -142,5 +142,5 @@ plt.yscale("log")
 
 plt.grid(True)
 
-plt.legend()
+plt.legend(fontsize=10)
 plt.show()

@@ -133,6 +133,17 @@ struct KernelUpdateDerivsVaryingAlphaAV {
                 tmpdU_pressure);
         });
 
+        if (id_a == 1408)
+            logger::raw_ln(
+                "force_pressure 1 ",
+                force_pressure,
+                tmpdU_pressure,
+                P_a,
+                omega_a,
+                rho_a,
+                rho_a_sq,
+                rho_a_inv);
+
         axyz[id_a]  = force_pressure;
         duint[id_a] = tmpdU_pressure;
     }

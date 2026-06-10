@@ -109,6 +109,44 @@ namespace shammodels::sph::modules {
                     // should implement the same content as
                     // src/pylib/shamrock/external/coala/interface_coala_shamrock.py
 
+                    if (id_a == 1408) {
+                        // print coala inputs
+
+                        std::vector<Tvec> delta_v_vec(nbins);
+                        for (int i = 0; i < nbins; ++i) {
+                            delta_v_vec[i] = (delta_v_j + id_a_d)[i];
+                        }
+
+                        std::vector<Tscal> rho_dust_vec(nbins);
+                        for (int i = 0; i < nbins; ++i) {
+                            rho_dust_vec[i] = rho_dust(i);
+                        }
+
+                        std::vector<Tscal> massgrid_vec(nbins + 1);
+                        for (int i = 0; i < nbins + 1; ++i) {
+                            massgrid_vec[i] = massgrid[i];
+                        }
+
+                        Tscal max_tabflux_coag = 0;
+                        Tscal min_tabflux_coag = 1000000;
+
+                        std::vector<Tscal> tabflux_coag_vec(nbins * nbins * nbins);
+                        for (int i = 0; i < nbins * nbins * nbins; ++i) {
+                            tabflux_coag_vec[i] = tensor_tabflux_coag[i];
+                            max_tabflux_coag    = std::max(max_tabflux_coag, tabflux_coag_vec[i]);
+                            if (tabflux_coag_vec[i] > 0)
+                                min_tabflux_coag = std::min(min_tabflux_coag, tabflux_coag_vec[i]);
+                        }
+
+                        logger::raw_ln("delta_v = ", delta_v_vec);
+                        logger::raw_ln("rho_dust = ", rho_dust_vec);
+                        logger::raw_ln("rho_eps = ", rho_eps);
+                        logger::raw_ln("massgrid = ", massgrid_vec);
+                        // logger::raw_ln("tabflux_coag = ", tabflux_coag_vec);
+                        logger::raw_ln("max_tabflux_coag = ", max_tabflux_coag);
+                        logger::raw_ln("min_tabflux_coag = ", min_tabflux_coag);
+                    }
+
                     shamphys::coala_k0_source_term(
                         nbins,
                         dv,
@@ -119,6 +157,24 @@ namespace shammodels::sph::modules {
                         gij,
                         flux,
                         S_coag_span);
+
+                    Tscal S_coag_max_norm = 0;
+                    Tscal S_coag_sum      = 0;
+                    for (int j = 0; j < S_coag_span.extent(0); ++j) {
+                        S_coag_sum += S_coag_span(j);
+                        S_coag_max_norm = std::max(S_coag_max_norm, std::abs(S_coag_span(j)));
+                    }
+
+                    if (id_a == 1408) {
+                        std::vector<Tscal> S_coag_vec(nbins);
+                        for (int i = 0; i < nbins; ++i) {
+                            S_coag_vec[i] = S_coag_span(i);
+                        }
+                        logger::raw_ln("S_coag = ", S_coag_vec);
+
+                        logger::raw_ln(
+                            "S_coag_sum = ", S_coag_sum, " S_coag_max_norm = ", S_coag_max_norm);
+                    }
                 });
             };
         }

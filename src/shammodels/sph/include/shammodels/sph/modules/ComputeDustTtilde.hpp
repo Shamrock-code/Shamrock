@@ -139,6 +139,9 @@ namespace shammodels::sph::modules {
                     }
                     Tscal Ttilde_sj_a = (tj_a - sum_Tseps) / (1 - sum_eps);
 
+                    if (id_a == 1408)
+                        logger::raw_ln("Ttilde_sj_a", jdust, Ttilde_sj_a, eps_j_a, sj_a, tj_a);
+
                     Ttilde_sj[thread_id] = Ttilde_sj_a;
                 });
         }

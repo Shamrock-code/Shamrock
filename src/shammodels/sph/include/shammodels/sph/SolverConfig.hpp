@@ -111,6 +111,14 @@ namespace shammodels::sph {
     };
 
     template<class Tscal>
+    struct DustEvolCoalaCoag {
+        Tscal rhodust_eps;
+        Tscal dv_max;
+        std::vector<Tscal> massgrid;
+        std::vector<Tscal> tabflux_coag;
+    };
+
+    template<class Tscal>
     struct DustConfig {
 
         struct None {};
@@ -246,6 +254,41 @@ namespace shammodels::sph {
 
         inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
 
+        std::variant<None, DustEvolCoalaCoag<Tscal>> dust_evol_config = None{};
+
+        inline void evol_mode_to_json(nlohmann::json &j) const {
+            if (std::holds_alternative<None>(dust_evol_config)) {
+                j = {"type", "none"};
+            } else if (
+                const DustEvolCoalaCoag<Tscal> *cfg
+                = std::get_if<DustEvolCoalaCoag<Tscal>>(&dust_evol_config)) {
+                j
+                    = {{"type", "coala_coag"},
+                       {"rhodust_eps", cfg->rhodust_eps},
+                       {"dv_max", cfg->dv_max},
+                       {"massgrid", cfg->massgrid},
+                       {"tabflux_coag", cfg->tabflux_coag}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void evol_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_evol_config = None{};
+            } else if (j.at("type").get<std::string>() == "coala_coag") {
+                dust_evol_config = DustEvolCoalaCoag<Tscal>{
+                    .rhodust_eps  = j.at("rhodust_eps").get<Tscal>(),
+                    .dv_max       = j.at("dv_max").get<Tscal>(),
+                    .massgrid     = j.at("massgrid").get<std::vector<Tscal>>(),
+                    .tabflux_coag = j.at("tabflux_coag").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_dust_evol_coala(DustEvolCoalaCoag<Tscal> cfg) { dust_evol_config = cfg; }
+
         inline void check_config() {
             bool is_not_none = !is_none();
             if (is_not_none) {
@@ -281,6 +324,42 @@ namespace shammodels::sph {
                             "grains_sizes size does not match the number of dust bins");
                     }
                 }
+            }
+
+            if (!std::holds_alternative<None>(dust_evol_config) && is_not_none) {
+
+                if (DustEvolCoalaCoag<Tscal> *cfg
+                    = std::get_if<DustEvolCoalaCoag<Tscal>>(&dust_evol_config)) {
+
+                    u32 ndust = get_dust_nvar();
+
+                    if (cfg->massgrid.size() - 1 != ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "massgrid size does not match the number of dust bins");
+                    }
+
+                    if (cfg->tabflux_coag.size() != ndust * ndust * ndust) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "tabflux_coag size does not match the number of dust bins");
+                    }
+
+                    if (cfg->rhodust_eps <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "rhodust_eps must be positive");
+                    }
+
+                    if (cfg->dv_max <= 0) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "dv_max must be positive");
+                    }
+
+                } else {
+                    shambase::throw_unimplemented();
+                }
+
+            } else if (!std::holds_alternative<None>(dust_evol_config) && is_none()) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "can not enable dust evol if dust not enabled");
             }
         }
     };
@@ -1238,12 +1317,14 @@ namespace shammodels::sph {
 
         p.mode_to_json(j["mode"]);
         p.drag_mode_to_json(j["drag_mode"]);
+        p.evol_mode_to_json(j["evol_mode"]);
     }
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
         p.mode_from_json(j.at("mode"));
         p.drag_mode_from_json(j.at("drag_mode"));
+        p.evol_mode_from_json(j.at("evol_mode"));
     }
 
     /**

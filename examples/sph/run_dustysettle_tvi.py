@@ -53,6 +53,7 @@ box_H_count = 8
 ndust = 5
 mrn_pow = 3.5
 mrn_cutoff_si = np.inf  # would be 250e-9 normally
+gamma = 1.4
 
 epsilon_base = 0.01
 
@@ -110,9 +111,6 @@ def func_rho_g(r):
 
 
 cs_g = cs
-
-
-gamma = 1.4
 
 
 def uint_g(r):
@@ -192,7 +190,7 @@ def setup_model():
     )
 
     cfg.set_dust_mode_monofluid_tvi(nvar=ndust)
-    cfg.set_dust_drag_epstein(grain_size, rho_grains)
+    cfg.set_dust_drag_epstein(gamma, grain_size, rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=5)
     cfg.set_boundary_periodic()
@@ -497,7 +495,7 @@ for j in range(1000):
 
         dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] >= 5.0:
+    if tlist[j] >= 3.0:
         break
 
 ####################################################
@@ -513,7 +511,7 @@ ani = show_image_sequence(glob_str)
 from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
+# ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     # Show the animation
@@ -526,7 +524,7 @@ ani = show_image_sequence(glob_str)
 from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
+# ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     # Show the animation
@@ -541,7 +539,7 @@ dust_mass = np.array(dust_mass)
 plt.figure()
 for k in range(ndust):
     mh = dust_mass[:, k]
-    deviation = (mh - mh[0]) / mh[0]
+    deviation = (mh / mh[0]) - 1
 
     t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
@@ -550,6 +548,16 @@ for k in range(ndust):
     St = ts / t_dyn
 
     plt.plot(t, deviation, label=f"dust {k}, s = {grain_size_si[k]:.1e} [m], St = {St:.1e}")
+
+total_dust_mass = np.sum(dust_mass, axis=1)
+plt.plot(
+    t,
+    (total_dust_mass / total_dust_mass[0]) - 1,
+    color="grey",
+    label="total dust mass",
+    linestyle="--",
+)
+
 plt.xlabel("t")
 plt.ylabel("$\delta M_{dust} / M_{dust,0}$")
 plt.yscale("log")

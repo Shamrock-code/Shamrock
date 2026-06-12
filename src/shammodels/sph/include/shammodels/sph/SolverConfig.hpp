@@ -204,6 +204,7 @@ namespace shammodels::sph {
 
         struct EpsteinDrag {
             static constexpr bool supersonic_correction = false;
+            Tscal gamma;
             std::vector<Tscal> grains_sizes;
             std::vector<Tscal> grains_densities;
         };
@@ -220,6 +221,7 @@ namespace shammodels::sph {
             } else if (const EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
                 j
                     = {{"type", "epstein_drag"},
+                       {"gamma", cfg->gamma},
                        {"grains_sizes", cfg->grains_sizes},
                        {"grains_densities", cfg->grains_densities}};
             } else {
@@ -235,6 +237,7 @@ namespace shammodels::sph {
                     = ConstantStoppingTimes{j.at("stopping_times").get<std::vector<Tscal>>()};
             } else if (j.at("type").get<std::string>() == "epstein_drag") {
                 dust_drag_mode = EpsteinDrag{
+                    j.at("gamma").get<Tscal>(),
                     j.at("grains_sizes").get<std::vector<Tscal>>(),
                     j.at("grains_densities").get<std::vector<Tscal>>()};
             } else {

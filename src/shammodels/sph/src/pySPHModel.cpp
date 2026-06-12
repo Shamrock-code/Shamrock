@@ -283,14 +283,22 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_dust_drag_constant",
             [](TConfig &self, std::vector<Tscal> ts) {
-                self.dust_config.set_drag_constant({.stopping_times = ts});
+                self.dust_config.set_drag_constant({.stopping_times = std::move(ts)});
             })
         .def(
             "set_dust_drag_epstein",
-            [](TConfig &self, std::vector<Tscal> grain_sizes, std::vector<Tscal> grain_densities) {
+            [](TConfig &self,
+               Tscal gamma,
+               std::vector<Tscal> grain_sizes,
+               std::vector<Tscal> grain_densities) {
                 self.dust_config.set_drag_epstein(
-                    {.grains_sizes = grain_sizes, .grains_densities = grain_densities});
-            })
+                    {.gamma            = gamma,
+                     .grains_sizes     = std::move(grain_sizes),
+                     .grains_densities = std::move(grain_densities)});
+            },
+            py::arg("gamma"),
+            py::arg("grain_sizes"),
+            py::arg("grain_densities"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",

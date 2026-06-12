@@ -1180,7 +1180,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> input_gamma
             = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-        input_gamma->value = 7. / 5.;
+        input_gamma->value = cfg_drag->gamma;
 
         std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_sgrain_j
             = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");

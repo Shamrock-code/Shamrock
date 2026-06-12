@@ -495,7 +495,7 @@ for j in range(1000):
 
         dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] >= 3.0:
+    if tlist[j] >= 5.0:
         break
 
 ####################################################
@@ -511,11 +511,11 @@ ani = show_image_sequence(glob_str)
 from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-# ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
+ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     # Show the animation
-    plt.show()
+    plt.close()
 
 # %%
 glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
@@ -524,11 +524,11 @@ ani = show_image_sequence(glob_str)
 from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-# ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
+ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     # Show the animation
-    plt.show()
+    plt.close()
 
 # %%
 # Plot the mass history

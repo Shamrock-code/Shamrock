@@ -30,6 +30,7 @@
 #include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisDustMass.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
@@ -1437,6 +1438,23 @@ void add_analysisAngularMomentum_instance(py::module &m, const std::string &name
             return self.get_angular_momentum();
         });
 }
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisDustMass_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisDustMass<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisDustMass<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_dust_mass", [](modules::AnalysisDustMass<Tvec, SPHKernel> &self) {
+            return self.get_dust_mass();
+        });
+}
+
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1636,4 +1654,14 @@ ON_PYTHON_INIT {
         msph, "analysisTotalMomentum");
     register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
         msph, "analysisAngularMomentum");
+
+    add_analysisDustMass_instance<f64_3, shammath::M4>(msph, "AnalysisDustMass_f64_3_M4");
+    add_analysisDustMass_instance<f64_3, shammath::M6>(msph, "AnalysisDustMass_f64_3_M6");
+    add_analysisDustMass_instance<f64_3, shammath::M8>(msph, "AnalysisDustMass_f64_3_M8");
+
+    add_analysisDustMass_instance<f64_3, shammath::C2>(msph, "AnalysisDustMass_f64_3_C2");
+    add_analysisDustMass_instance<f64_3, shammath::C4>(msph, "AnalysisDustMass_f64_3_C4");
+    add_analysisDustMass_instance<f64_3, shammath::C6>(msph, "AnalysisDustMass_f64_3_C6");
+
+    register_analysis_impl_for_each_kernel<modules::AnalysisDustMass>(msph, "analysisDustMass");
 }

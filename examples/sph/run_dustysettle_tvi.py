@@ -417,6 +417,14 @@ def analyse_and_plot(j):
     plt.close()
 
 
+# %%
+# Timestep loop
+
+analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
+
+mass_history = [[] for _ in range(ndust)]
+mass_history_t = []
+
 t_start = model.get_time()
 
 tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
@@ -428,6 +436,11 @@ for j in range(1000):
             model.evolve_until(tlist[j])
             # model.timestep()
 
+            dust_mass = analysis_dust_mass.get_dust_mass()
+            for k in range(ndust):
+                mass_history[k].append(dust_mass[k])
+            mass_history_t.append(model.get_time())
+
         if j == 20:
             for k in range(ndust):
 
@@ -438,6 +451,13 @@ for j in range(1000):
 
                 model.set_cfl_cour(0.1)
                 model.set_cfl_force(0.1)
+
+                mass_history_t = []  # reset the mass history
+                dust_mass = analysis_dust_mass.get_dust_mass()
+                for k in range(ndust):
+                    mass_history[k] = []  # reset the mass history
+                    mass_history[k].append(dust_mass[k])
+                mass_history_t.append(model.get_time())
 
             model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
@@ -479,3 +499,18 @@ ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 if shamrock.sys.world_rank() == 0:
     # Show the animation
     plt.show()
+
+# %%
+# Plot the mass history
+
+plt.figure()
+for k in range(ndust):
+    mh = np.array(mass_history[k])
+    deviation = (mh - mh[0]) / mh[0]
+    plt.plot(mass_history_t, deviation, label=f"dust {k}, s = {grain_size_si[k]:.1e} [m]")
+plt.xlabel("t")
+plt.ylabel("dust mass deviation ($M_{dust} / M_{dust,0} - 1$)")
+plt.legend()
+plt.tight_layout()
+plt.savefig(f"{dump_folder}/plots/dust_mass_history.png")
+plt.show()

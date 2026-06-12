@@ -21,10 +21,10 @@
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/DeviceScheduler.hpp"
 #include "shammodels/sph/Model.hpp"
+#include "shammodels/sph/math/density.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <shambackends/sycl.hpp>
-#include "shammodels/sph/math/density.hpp"
 
 namespace shammodels::sph::modules {
 

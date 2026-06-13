@@ -446,7 +446,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     if (!velocity_field && !rot_profile) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
                             "make_generator_disc_mc: either velocity_field or rot_profile must be "
-                            "provided");
+                            "provided, you must provide one of them");
+                    }
+
+                    if (velocity_field && rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you cannot provide both");
                     }
 
                     if (velocity_field) {
@@ -485,7 +491,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     if (!cs_field && !cs_profile) {
                         throw shambase::make_except_with_loc<std::invalid_argument>(
                             "make_generator_disc_mc: either cs_field or cs_profile must be "
-                            "provided");
+                            "provided, you must provide one of them");
+                    }
+
+                    if (cs_field && cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you cannot provide both");
                     }
 
                     if (cs_field) {

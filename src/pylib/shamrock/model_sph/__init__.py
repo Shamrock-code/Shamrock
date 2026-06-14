@@ -9,6 +9,7 @@ except ImportError:
     # then it is a library mode, we import from the local namespace
     from ..pyshamrock.model_sph import *
 
+from .disc_setup import DiscProfiles, StandardDisc
 
 # explicitly re-export public API
 __all__ = [name for name in globals() if not name.startswith("_")]

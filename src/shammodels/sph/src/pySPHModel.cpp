@@ -535,7 +535,47 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("velocity_field") = std::function<Tvec(Tvec)>{},
             py::arg("cs_field")       = std::function<Tscal(Tvec)>{},
             py::arg("random_seed"),
-            py::arg("init_h_factor") = 0.8)
+            py::arg("init_h_factor") = 0.8,
+            R"pbdoc(
+        Create a Monte Carlo disc particle generator.
+
+        Particles are sampled in cylindrical coordinates: the radius is drawn
+        with rejection sampling from ``sigma_profile``, the azimuth is uniform,
+        and the vertical coordinate follows a Gaussian with scale ``H_profile(r)``.
+        The initial density is extrapolated from the surface density profile, and
+        smoothing lengths are set from that density.
+
+        Args:
+            part_mass: Mass of each SPH particle.
+            disc_mass: Total disc mass. The particle count is ``disc_mass / part_mass``.
+            r_in: Inner disc radius.
+            r_out: Outer disc radius.
+            sigma_profile: Surface density profile ``sigma(r)``.
+            H_profile: Disc scale height profile ``H(r)``.
+            rot_profile: Azimuthal speed profile ``v_theta(r)``. The velocity is
+                projected along the cylindrical azimuthal direction at each
+                particle position. Mutually exclusive with ``velocity_field``.
+            cs_profile: Sound speed profile ``c_s(r)``. Evaluated at the cylindrical
+                radius of each particle. Required when the solver uses a locally
+                isothermal EOS. Mutually exclusive with ``cs_field``.
+            velocity_field: Velocity profile ``v(x, y, z)``. Mutually exclusive
+                with ``rot_profile``.
+            cs_field: Sound speed profile ``c_s(x, y, z)``. Required when the solver
+                uses a locally isothermal EOS. Mutually exclusive with ``cs_profile``.
+            random_seed: Seed for the Monte Carlo sampler.
+            init_h_factor: Multiplier applied to the smoothing length inferred from
+                the generated density. Defaults to ``0.8``.
+
+        Notes:
+            Exactly one of ``velocity_field`` or ``rot_profile`` must be provided.
+
+            If the solver uses a locally isothermal EOS, exactly one of ``cs_field``
+            or ``cs_profile`` must be provided. Otherwise both sound-speed profiles
+            are ignored and a warning is emitted if either is supplied.
+
+        Returns:
+            A setup node to pass to :py:meth:`apply_setup`.
+    )pbdoc")
         .def(
             "make_generator_from_context",
             [](TSPHSetup &self, ShamrockCtx &context_other) {

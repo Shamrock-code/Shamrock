@@ -19,6 +19,7 @@ class DiscProfiles:
     """
     Helper class to store the profiles of the disc.
     """
+
     sigma: Any
     H: Any
     vtheta_kepler: Any

@@ -1319,6 +1319,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             auto mu  = 2.3;                // molecular gas
 
             auto gamma = 5. / 3.;
+	    auto rho_c =  3.7e-13 * 1e3; // [g/cm^3 ===> kg/m^3]
 
             //--------------------------------
             Tscal block_max_jeans_length = shambase::VectorProperties<Tscal>::get_zero();
@@ -1329,14 +1330,20 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 block_rho_max = sham::details::g_sycl_max(block_rho_max, block_rho[idx]);
             }
 
-            Tscal block_min_jeans_length = sycl::sqrt(
-                (shamunits::pi<Tscal> * kb * T_0)
-                / (N_J * N_J * ctes.G() * block_rho_max * mu * m_H));
+            //Tscal block_min_jeans_length = sycl::sqrt(
+              //  (shamunits::pi<Tscal> * kb * T_0)
+             //   / (N_J * N_J * ctes.G() * block_rho_max * mu * m_H));
 
             // auto cs = T_0;
             // auto G = 1.;
-            // Tscal block_min_jeans_length = sycl::sqrt(shamunits::pi<Tscal> * cs*cs / ( N_J * N_J
+            // Tscal block_min_jeansength = sycl::sqrt(shamunits::pi<Tscal> * cs*cs / ( N_J * N_J
             // * G * block_rho_max));
+	    //
+	    auto cs0_sqr = (kb * T_0) / (mu * m_H);
+            auto cs_sqr = cs0_sqr * (1. + (5.0/3.0) * sycl::pow(block_rho_max/rho_c,2./3.));
+
+
+            Tscal block_min_jeans_length = sycl::sqrt(shamunits::pi<Tscal> * cs_sqr / ( N_J * N_J *  ctes.G() * block_rho_max));
 
             should_refine   = false;
             should_derefine = false;

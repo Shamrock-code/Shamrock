@@ -58,6 +58,8 @@ min_reso = (L0 * N_J) / (lamb_J)
 print(f"min reso = {min_reso}\n")
 gamma = 5.0 / 3.0
 
+rho_c =  3.7e-13*1e3 #[g/cm^3 ==> kg/m^3]
+
 
 def run_sim():
 
@@ -71,12 +73,12 @@ def run_sim():
     multy = 1
     multz = 1
 
-    max_amr_lev = 2
+    max_amr_lev = 8
     sz = 2 << max_amr_lev
 
     # sz= 2
 
-    base = 16
+    base = 32
 
     cfg = model.gen_default_config()
     scale_fact = L0 / (sz * base * multx)
@@ -95,7 +97,7 @@ def run_sim():
     cfg.set_riemann_solver_hllc()
 
     cfg.set_self_gravity_G_values(True, G)
-    cfg.set_self_gravity_Niter_max(200)
+    cfg.set_self_gravity_Niter_max(1500)
     cfg.set_self_gravity_tol(1e-6)
     cfg.set_coupling_gravity_mode_ramses_like()
 
@@ -105,7 +107,7 @@ def run_sim():
     cfg.set_amr_mode_jeans_length_based(N_jeans=N_J, T_init=T0)
 
     model.set_solver_config(cfg)
-    model.init_scheduler(int(50000), 1)
+    model.init_scheduler(int(5000), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     ### Gas maps
@@ -128,18 +130,25 @@ def run_sim():
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
-        P = cs_sqr * rho
-        return P / (gamma - 1.0)
+        rhov = rhovel_map(rmin, rmax)
+        Ekin = 0.5 * (rhov[0]**2)/rho
+        x = rho / rho_c
+        P = cs_sqr * rho * (1. + x**(2./3.))
+        Eint = P / (gamma - 1.0)
+
+        return  Ekin + Eint
+
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-    tmax = 2.0 * t_ff
+    tmax = 5.0 * t_ff
     t = 0
     dt = 0
     freq = 50
     dX0 = []
+    times = []
     for i in range(int(1e7)):
         next_dt = model.evolve_once_override_time(t, dt)
 
@@ -147,13 +156,19 @@ def run_sim():
         dt = next_dt
 
         if i % freq == 0:
-            model.dump_vtk(f"_iso_collapse_{i:04d}.vtk")
+            if shamrock.sys.world_rank() == 0:
+                model.dump_vtk(f"base32_NJ16_Max_8_bar_collapse_{i:04d}.vtk")
+                times.append(t)
 
         if tmax < t + next_dt:
             dt = tmax - t
         if t == tmax:
-            model.dump_vtk(f"_iso_collapse{i:04d}.vtk")
-            break
+            if shamrock.sys.world_rank() == 0:
+
+                model.dump_vtk(f"base32_NJ16_Max_8_bar_collapse{i:04d}.vtk")
+                times.append(t)
+                break
+    print(f"times = {times}\n")
 
 
 run_sim()

@@ -93,8 +93,8 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.02
-nstop = 30
+dt_stop = 0.5
+nstop = 2
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
@@ -130,7 +130,7 @@ plot_folder = analysis_folder + "plots/"
 
 dump_prefix = dump_folder + "dump_"
 
-disc = shamrock.model_sph.StandardDisc(
+disc = shamrock.utils.disc_setup.StandardDisc(
     units=codeu,
     center_mass=center_mass,
     disc_mass=disc_mass,
@@ -140,6 +140,8 @@ disc = shamrock.model_sph.StandardDisc(
     q=q,
     p=p,
     r0=r0,
+    rotation="subkeplerian_3d",
+    inner_tapering=True,
 )
 profiles = disc.get_profiles()
 cs0 = disc.cs0()
@@ -240,7 +242,7 @@ def setup_model():
     # Create the setup
 
     setup = model.get_setup()
-    gen_disc = disc.make_generator(setup, Npart, random_seed=666)
+    gen_disc = disc.make_generator(setup, Npart, init_h_factor=0.4, random_seed=666)
 
     # Print the dot graph of the setup
     print(gen_disc.get_dot())
@@ -721,6 +723,8 @@ def profile_plot_func(iplot, data):
 
     plt.xscale("log")
     plt.yscale("log")
+
+    plt.ylim(1e-6, 1e-3)
 
     text = f"t = {time:0.3f}"
     from matplotlib.offsetbox import AnchoredText

@@ -2,18 +2,23 @@
 Standard SPH disc setup helpers.
 """
 
+# pylint: disable=invalid-name
+
 from dataclasses import dataclass
 from typing import Any, Literal
 
 import shamrock
 from shamrock.utils.numba_helper import maybe_njit
 
-RotationMode = Literal["keplerian", "subkeplerian", "vertical_subkeplerian"]
-_VALID_ROTATIONS = ("keplerian", "subkeplerian", "vertical_subkeplerian")
+RotationMode = Literal["keplerian", "subkeplerian", "subkeplerian_3d"]
+_VALID_ROTATIONS = ("keplerian", "subkeplerian", "subkeplerian_3d")
 
 
 @dataclass
 class DiscProfiles:
+    """
+    Helper class to store the profiles of the disc.
+    """
     sigma: Any
     H: Any
     vtheta_kepler: Any
@@ -146,6 +151,9 @@ class StandardDisc:
         return None, self._get_velocity_vertical(vtheta_kepler, cs)
 
     def get_profiles(self) -> DiscProfiles:
+        """
+        Get the profiles of the disc.
+        """
         sigma = self._get_sigma()
         vtheta_kepler = self._get_vtheta_kepler()
         omega_k = self._get_omega_k(vtheta_kepler)
@@ -164,9 +172,15 @@ class StandardDisc:
         )
 
     def part_mass(self, npart: int) -> float:
+        """
+        Get the mass of a single particle from the total mass & number of particles.
+        """
         return self.disc_mass / npart
 
     def cs0(self) -> float:
+        """
+        Get the sound speed at the reference radius.
+        """
         return self.get_profiles().cs(self.r0)
 
     def make_generator(
@@ -177,6 +191,9 @@ class StandardDisc:
         random_seed: int = 666,
         init_h_factor: float = 0.8,
     ):
+        """
+        Make a SPH generator for the disc.
+        """
         profiles = self.get_profiles()
         kwargs = {
             "part_mass": self.part_mass(npart),

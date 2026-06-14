@@ -60,6 +60,10 @@ namespace shammodels::sph::modules {
         void update_derivs_cd10(VaryingCD10 cfg);
         void update_derivs_disc_visco(ConstantDisc cfg);
 
+        using DustConfig = typename Config::DustConfig;
+
+        void update_derivs_dust_monofluid_tvi_Sj(DustConfig cfg);
+
         using Cfg_MHD = typename Config::MHDConfig;
 
         using NoneMHD     = typename Cfg_MHD::None;

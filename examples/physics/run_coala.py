@@ -12,9 +12,15 @@ import numpy as np
 import shamrock.external.coala as coala
 from matplotlib import pyplot as plt
 
+import shamrock
+
 # %%
 # Where is coala located?
 print(f"coala path : {coala.__file__}")
+
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
 
 
 # %%

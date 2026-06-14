@@ -82,7 +82,8 @@ struct KernelUpdateDerivsMonofluidTVI {
             Tscal s_j_b       = s_j[id_b * ndust + jdust];
             Tscal Ttilde_sj_b = Ttilde_sj[id_b * ndust + jdust];
 
-            Tscal rab = sycl::sqrt(rab2);
+            Tscal rab         = sycl::sqrt(rab2);
+            Tscal rab_inv_sat = sham::inv_sat_positive(rab);
 
             Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
 
@@ -91,18 +92,26 @@ struct KernelUpdateDerivsMonofluidTVI {
 
             Tvec v_ab = vxyz_a - vxyz_b;
 
-            Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
+            Tvec r_ab_unit = dr * rab_inv_sat;
 
             Tscal F_ab_bar    = (Fab_a + Fab_b) / 2;
             Tscal delta_P     = P_a - P_b;
             Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
 
-            term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar;
+            term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
             term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
         });
 
         // eq 51, Hutchison 2018
-        ds_j_dt[thread_id] = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
+        Tscal ds_j_dt_a = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
+
+        // if we dip in the negative range do not dip further
+        ds_j_dt_a *= (s_j_a < 0 && ds_j_dt_a < 0) ? 0 : 1;
+
+        // restore it slowly to 0
+        ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
+
+        ds_j_dt[thread_id] = ds_j_dt_a;
     }
 };
 

@@ -119,9 +119,23 @@ namespace shammodels::sph::modules {
                      * Hutchison 2018 eq 15
                      * T_{sj} = \epsilon_j (1 - \epsilon_j) t_j
                      * delta_v = \epsilon_j t_j \nabla P / rho = T_{sj} \nabla P / rho_g
+                     * but now if i assume that Tsj in Hutchison 2018 meant tsj, then
+                     * delta_v = t_j \nabla P / rho_g
                      */
 
-                    delta_v[thread_id] = (eps_j_a * tj_a) * grad_P_on_rho_a;
+                    // old with ts_a
+                    // delta_v[thread_id] = (eps_j_a * tj_a) * grad_P_on_rho_a;
+
+                    Tscal sum_eps = 0;
+                    for (u32 k = 0; k < ndust; k++) {
+                        Tscal sk_a    = s_j[id_a * ndust + k];
+                        Tscal eps_k_a = epsilon(sk_a);
+                        sum_eps += eps_k_a;
+                    }
+
+                    Tvec grad_P_on_rho_g_a = grad_P_on_rho_a / (1 - sum_eps);
+
+                    delta_v[thread_id] = tj_a * grad_P_on_rho_g_a;
                 });
         }
 

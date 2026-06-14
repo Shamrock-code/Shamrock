@@ -36,7 +36,7 @@ jobs:
         id: author-update
         continue-on-error: true
         run: |
-          python3 buildbot/update_authors.py
+          python3 tools/update_authors.py
 
       - name: Check for changes
         id: check-changes

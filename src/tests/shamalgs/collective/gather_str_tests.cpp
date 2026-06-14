@@ -16,7 +16,7 @@
 #include <array>
 #include <random>
 
-TestStart(Unittest, "shamalgs/collective/gather_str", test_gather_str, 4) {
+NEW_TEST(Unittest, "shamalgs/collective/gather_str", 4) {
 
     std::array<std::string, 4> ref_base{
         "I'm a very important string",
@@ -41,7 +41,7 @@ TestStart(Unittest, "shamalgs/collective/gather_str", test_gather_str, 4) {
     REQUIRE_EQUAL(recv, result);
 }
 
-TestStart(Unittest, "shamalgs/collective/allgather_str", test_allgather_str, 4) {
+NEW_TEST(Unittest, "shamalgs/collective/allgather_str", 4) {
 
     std::array<std::string, 4> ref_base{
         "I'm a very important string",

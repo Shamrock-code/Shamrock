@@ -16,7 +16,7 @@
 
 using Tmorton = u64;
 
-TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
+NEW_TEST(Unittest, "shamtree/KarrasRadixTree", 1) {
 
     std::vector<Tmorton> test_morton_codes = {
         0b0000000000000000000000000000000000000000000000000000000000000000, // 0
@@ -70,7 +70,7 @@ TestStart(Unittest, "shamtree/KarrasRadixTree", test_karras_radix_tree, 1) {
     REQUIRE_EQUAL(tree.buf_endrange.get_size(), 11);
 }
 
-TestStart(Unittest, "shamtree/KarrasRadixTree(one-cell)", test_karras_radix_tree_one_cell, 1) {
+NEW_TEST(Unittest, "shamtree/KarrasRadixTree(one-cell)", 1) {
 
     // In this test we supply only a single morton code, as such the tree is just a single leaf.
     // As such every buffer should be empty as there is no tree structure.

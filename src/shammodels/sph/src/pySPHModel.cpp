@@ -20,7 +20,9 @@
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -28,6 +30,7 @@
 #include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisDustMass.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
@@ -264,9 +267,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "set_dust_mode_monofluid_tvi",
-            [](TConfig &self, u32 nvar) {
-                self.dust_config.set_monofluid_tvi(nvar);
-            })
+            [](TConfig &self, u32 nvar, bool pure_diffusion_mode) {
+                self.dust_config.set_monofluid_tvi(nvar, pure_diffusion_mode);
+            },
+            py::kw_only(),
+            py::arg("nvar"),
+            py::arg("pure_diffusion_mode") = false)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {
@@ -274,6 +280,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("ndust"))
+        .def(
+            "set_dust_drag_constant",
+            [](TConfig &self, std::vector<Tscal> ts) {
+                self.dust_config.set_drag_constant({.stopping_times = std::move(ts)});
+            })
+        .def(
+            "set_dust_drag_epstein",
+            [](TConfig &self,
+               Tscal gamma,
+               std::vector<Tscal> grain_sizes,
+               std::vector<Tscal> grain_densities) {
+                self.dust_config.set_drag_epstein(
+                    {.gamma            = gamma,
+                     .grains_sizes     = std::move(grain_sizes),
+                     .grains_densities = std::move(grain_densities)});
+            },
+            py::arg("gamma"),
+            py::arg("grain_sizes"),
+            py::arg("grain_densities"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",
@@ -633,12 +658,24 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_fcc_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_fcc_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "get_ideal_hcp_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_hcp_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_hcp_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "resize_simulation_box",
@@ -1409,6 +1446,23 @@ void add_analysisAngularMomentum_instance(py::module &m, const std::string &name
             return self.get_angular_momentum();
         });
 }
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisDustMass_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisDustMass<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisDustMass<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_dust_mass", [](modules::AnalysisDustMass<Tvec, SPHKernel> &self) {
+            return self.get_dust_mass();
+        });
+}
+
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1608,4 +1662,14 @@ ON_PYTHON_INIT {
         msph, "analysisTotalMomentum");
     register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
         msph, "analysisAngularMomentum");
+
+    add_analysisDustMass_instance<f64_3, shammath::M4>(msph, "AnalysisDustMass_f64_3_M4");
+    add_analysisDustMass_instance<f64_3, shammath::M6>(msph, "AnalysisDustMass_f64_3_M6");
+    add_analysisDustMass_instance<f64_3, shammath::M8>(msph, "AnalysisDustMass_f64_3_M8");
+
+    add_analysisDustMass_instance<f64_3, shammath::C2>(msph, "AnalysisDustMass_f64_3_C2");
+    add_analysisDustMass_instance<f64_3, shammath::C4>(msph, "AnalysisDustMass_f64_3_C4");
+    add_analysisDustMass_instance<f64_3, shammath::C6>(msph, "AnalysisDustMass_f64_3_C6");
+
+    register_analysis_impl_for_each_kernel<modules::AnalysisDustMass>(msph, "analysisDustMass");
 }

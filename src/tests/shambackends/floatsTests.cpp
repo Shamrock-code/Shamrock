@@ -13,7 +13,7 @@
 #include "shambackends/vec.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "sham::has_nan", testshambasehasnan, 1) {
+NEW_TEST(Unittest, "sham::has_nan", 1) {
 
     f32_3 v1{0, 0, 0};
     f32_3 v2{std::nan(""), 0, 0};
@@ -24,7 +24,7 @@ TestStart(Unittest, "sham::has_nan", testshambasehasnan, 1) {
     REQUIRE_EQUAL_NAMED("v3", sham::has_nan(v3), false);
 }
 
-TestStart(Unittest, "sham::has_inf", testshambasehasinf, 1) {
+NEW_TEST(Unittest, "sham::has_inf", 1) {
 
     f32_3 v1{0, 0, 0};
     f32_3 v2{std::nan(""), 0, 0};
@@ -35,7 +35,7 @@ TestStart(Unittest, "sham::has_inf", testshambasehasinf, 1) {
     REQUIRE_EQUAL_NAMED("v3", sham::has_inf(v3), true);
 }
 
-TestStart(Unittest, "sham::has_nan_or_inf", testshambasehasnaninf, 1) {
+NEW_TEST(Unittest, "sham::has_nan_or_inf", 1) {
 
     f32_3 v1{0, 0, 0};
     f32_3 v2{std::nan(""), 0, 0};

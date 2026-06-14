@@ -98,7 +98,7 @@ void bench_memcpy_sycl_host_dev(std::string dset_name, sycl::queue &q1, u64 max_
     dset.add_data("bandwidth (GB.s^-1)", bandwidth_GBsm1);
 }
 
-TestStart(Benchmark, "bandwidth-tests/memcpy-sycl", compcompbandwidthtest, 1) {
+NEW_TEST(Benchmark, "bandwidth-tests/memcpy-sycl", 1) {
     using namespace shamsys::instance;
 
     u64 max_sz = get_compute_device().get_info<sycl::info::device::global_mem_size>() / 16;
@@ -253,7 +253,7 @@ void make_bandwidth_matrix(std::string dset_name, sycl::queue &q1, u32 comm_size
     sycl::free(ptr2, q1);
 }
 
-TestStart(Benchmark, "bandwidth-tests/mpi-pair-comm/bw-matrix", mpi_pair_comm_bw_matrix, -1) {
+NEW_TEST(Benchmark, "bandwidth-tests/mpi-pair-comm/bw-matrix", -1) {
     make_bandwidth_matrix<f32>("(f32)", shamsys::instance::get_compute_queue(), 1024 * 1024 * 16);
     make_bandwidth_matrix<f32_3>(
         "(f32_3)", shamsys::instance::get_compute_queue(), 1024 * 1024 * 16 / 256);

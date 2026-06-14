@@ -18,6 +18,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/derivatives.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
@@ -854,4 +855,8 @@ ON_PYTHON_INIT {
                 "SymTensorCollection_f64_1_1(\n  t1={}\n)",
                 py::str(py::cast(c.t1)).cast<std::string>());
         });
+
+    math_module.def("get_ideal_hcp_box", [](f64 dr, f64_3 box_min, f64_3 box_max) {
+        return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
+    });
 }

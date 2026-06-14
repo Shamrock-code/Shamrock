@@ -16,11 +16,7 @@
 #include <random>
 #include <stdexcept>
 
-TestStart(
-    Unittest,
-    "shamrock/solvergraph/CopyPatchDataLayerFields",
-    testCopyPatchDataLayerFieldsComplexFields,
-    1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/CopyPatchDataLayerFields", 1) {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
 

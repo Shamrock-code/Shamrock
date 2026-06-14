@@ -1160,25 +1160,19 @@ void test_fmm_nbody_iter_overhead(std::string dset_name, flt crit_theta) {
     // dat_test.add_data("rpart", rpart_vec);
 }
 
-TestStart(
-    Benchmark, "shamrock_article1:sph_walk_perf", tree_walk_sph_paper_results_tree_perf_steps, 1) {
+NEW_TEST(Benchmark, "shamrock_article1:sph_walk_perf", 1) {
     test_sph_iter_overhead<u32, f32, 15>("sph uniform distrib reduction level 15");
     test_sph_iter_overhead<u32, f32, 6>("sph uniform distrib reduction level 6");
     test_sph_iter_overhead<u32, f32, 3>("sph uniform distrib reduction level 3");
     test_sph_iter_overhead<u32, f32, 0>("sph uniform distrib no reduction");
 }
 
-TestStart(
-    Benchmark, "shamrock_article1:amr_walk_perf", tree_walk_amr_paper_results_tree_perf_steps, 1) {
+NEW_TEST(Benchmark, "shamrock_article1:amr_walk_perf", 1) {
     test_amr_iter_overhead_collapse<u32, 0>("collapse distrib no reduction");
     test_amr_iter_overhead_uniform<u32, 0>("uniform distrib no reduction");
 }
 
-TestStart(
-    Benchmark,
-    "shamrock_article1:tree_build_perf",
-    tree_building_paper_results_tree_perf_steps,
-    1) {
+NEW_TEST(Benchmark, "shamrock_article1:tree_build_perf", 1) {
 
     test_tree_build_steps<u32, f32, 0>("morton = u32, field type = f32");
     test_tree_build_steps<u64, f32, 0>("morton = u64, field type = f32");
@@ -1188,8 +1182,7 @@ TestStart(
     test_tree_build_steps<u64, u64, 0>("morton = u64, field type = u64");
 }
 
-TestStart(
-    Benchmark, "shamrock_article1:fmm_walk_perf", tree_walk_fmm_paper_results_tree_perf_steps, 1) {
+NEW_TEST(Benchmark, "shamrock_article1:fmm_walk_perf", 1) {
 
     test_fmm_nbody_iter_overhead<u32, f32, 6>(
         "fmm uniform distrib reduction level = 6 thetac = 1", 1);

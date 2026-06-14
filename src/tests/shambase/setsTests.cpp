@@ -11,7 +11,7 @@
 #include "shamtest/shamtest.hpp"
 #include <vector>
 
-TestStart(Unittest, "shambase/sets::set_diff", set_diff_test, 1) {
+NEW_TEST(Unittest, "shambase/sets::set_diff", 1) {
 
     std::vector<int> v1{0, 1, 3, 4, 5};
     std::vector<int> ref{0, 1, 2, 8, 4, 5};

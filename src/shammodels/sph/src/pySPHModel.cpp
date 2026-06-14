@@ -734,12 +734,14 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("evolve_once", &T::evolve_once)
         .def(
             "evolve_until",
-            [](T &self, f64 target_time, i32 niter_max) {
-                return self.evolve_until(target_time, niter_max);
+            [](T &self, f64 target_time, i32 niter_max, f64 max_walltime, f64 max_global_walltime) {
+                return self.evolve_until(target_time, niter_max, max_walltime, max_global_walltime);
             },
             py::arg("target_time"),
             py::kw_only(),
-            py::arg("niter_max") = -1)
+            py::arg("niter_max")           = -1,
+            py::arg("max_walltime")        = -1,
+            py::arg("max_global_walltime") = -1)
         .def(
             "set_dt",
             [](T &self, f64 dt) {

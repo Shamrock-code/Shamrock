@@ -93,8 +93,8 @@ scheduler_merge_val = scheduler_split_val // 16
 dump_freq_stop = 2
 plot_freq_stop = 1
 
-dt_stop = 0.5
-nstop = 2
+dt_stop = 0.02
+nstop = 30
 
 # The list of times at which the simulation will pause for analysis / dumping
 t_stop = [i * dt_stop for i in range(nstop + 1)]
@@ -242,7 +242,7 @@ def setup_model():
     # Create the setup
 
     setup = model.get_setup()
-    gen_disc = disc.make_generator(setup, Npart, init_h_factor=0.4, random_seed=666)
+    gen_disc = disc.make_generator(setup, Npart, random_seed=666)
 
     # Print the dot graph of the setup
     print(gen_disc.get_dot())

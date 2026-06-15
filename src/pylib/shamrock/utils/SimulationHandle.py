@@ -258,7 +258,9 @@ class SimulationHandle(metaclass=SimulationMeta):
 
         print(f"Next triggers at t={next_time}")
 
-        self.model.evolve_until(next_time)
+        result = self.model.evolve_until(next_time)
+
+        print(result)
 
         for ic, c in enumerate(self._callbacks):
             trig = self._callbacks_state[ic].should_trigger(self.model.get_time())

@@ -126,7 +126,7 @@ class ShamrockDumpHandleHelper:
         if purge_old_dumps:
             self.purge_old_dumps(keep_first, keep_last)
 
-    def load_last_dump_or(self, functor_no_last_dump):
+    def load_last_dump_or(self, functor_no_last_dump) -> None:
         """
         Load the last dump or call a function if no dump is found.
 
@@ -134,12 +134,11 @@ class ShamrockDumpHandleHelper:
         ----------
         functor_no_last_dump : callable
             The function to call if no dump are found (i.e. the setup function).
-
-        Returns
-        -------
         """
         idump = self.get_last_dump()
         if idump is None:
-            functor_no_last_dump()
+            result = functor_no_last_dump()
+            if result is not None:
+                raise ValueError("functor_no_last_dump must not return a value")
         else:
             self.load_dump(idump)

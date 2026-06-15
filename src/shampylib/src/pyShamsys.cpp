@@ -156,6 +156,10 @@ ON_PYTHON_INIT {
         dump profiling data
     )pbdoc");
 
+    m.def("get_wtime", []() {
+        return shambase::details::get_wtime();
+    });
+
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
     sys_module.def("signal_handler", &shamsys::details::signal_callback_handler);
 

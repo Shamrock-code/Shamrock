@@ -303,7 +303,11 @@ namespace shammodels::sph {
 
                     auto get_remaining_iters = [&](f64 delta_walltime, f64 factor) -> i32 {
                         if (sec_per_iter > 0) {
-                            return static_cast<i32>(factor * delta_walltime / sec_per_iter);
+                            f64 tmp = factor * delta_walltime / sec_per_iter;
+                            if (tmp > std::numeric_limits<i32>::max()) {
+                                return std::numeric_limits<i32>::max();
+                            }
+                            return shambase::narrow_or_throw<i32>(tmp);
                         }
                         return 1000; // default to 1000 iterations if sec_per_iter is 0
                     };

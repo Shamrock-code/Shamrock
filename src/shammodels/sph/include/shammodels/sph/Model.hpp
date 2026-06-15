@@ -185,6 +185,37 @@ namespace shammodels::sph {
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
         }
 
+        inline bool remove_last_sink() {
+            if (solver.storage.sinks.is_empty()) {
+                return false;
+            }
+
+            auto &sinks = solver.storage.sinks.get();
+            if (sinks.empty()) {
+                return false;
+            }
+
+            sinks.pop_back();
+            return true;
+        }
+
+        // Modify an existing sink at index idx, if it exists and change its mass, position,
+        // velocity and accretion radius to the provided values
+        inline void modify_sink(
+            u32 idx, Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
+            if (solver.storage.sinks.is_empty()) {
+                throw shambase::make_except_with_loc<std::runtime_error>("No sinks to modify");
+            }
+
+            auto &sinks = solver.storage.sinks.get();
+            if (idx >= sinks.size()) {
+                throw shambase::make_except_with_loc<std::out_of_range>(shambase::format(
+                    "Sink index out of range (idx={}, size={})", idx, sinks.size()));
+            }
+
+            sinks[idx] = {pos, velocity, {}, {}, mass, {}, accretion_radius};
+        }
+
         template<class T>
         inline void set_field_value_lambda(
             std::string field_name, const std::function<T(Tvec)> pos_to_val, const u32 offset) {

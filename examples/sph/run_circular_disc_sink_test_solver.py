@@ -128,8 +128,6 @@ dump_folder = sim_folder + "dump/"
 analysis_folder = sim_folder + "analysis/"
 plot_folder = analysis_folder + "plots/"
 
-dump_prefix = dump_folder + "dump_"
-
 disc = shamrock.utils.disc_setup.StandardDisc(
     units=codeu,
     center_mass=center_mass,
@@ -177,25 +175,6 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
-
-# %%
-# Dump handling
-
-
-def get_vtk_dump_name(idump):
-    return dump_prefix + f"{idump:07}" + ".vtk"
-
-
-def get_ph_dump_name(idump):
-    return dump_prefix + f"{idump:07}" + ".phdump"
-
-
-dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_prefix)
-
-# %%
-# Load the last dump if it exists, setup otherwise
-
-
 # %%
 # On the fly analysis
 from shamrock.utils.analysis import ColumnDensityPlot
@@ -231,25 +210,33 @@ from shamrock.utils.SimulationHandle import SimulationHandle, callback, simulati
 
 
 class Simulation(SimulationHandle):
+    # The end time of the simulation (code units)
     t_end = 10.0
+
+    # If you set this, the simulation will try to restore from the last checkpoint
     dump_prefix = dump_folder + "dump_"
 
+    # If you want to inspect the decorator detection, set this to True
     # __debug_class_creation__ = True
 
     @callback(tsim_interval=0.5)
     def analysis(self, icallback):
+        """very 0.5 time units, save the column density plot"""
         column_density_plot.analysis_save(icallback)
 
     @callback(tsim_interval=0.05, iter_count_interval=10)
     def analysis_hollywood(self, icallback):
+        """every 0.05 time units or 10 iterations, save the column density plot (hollywood style)"""
         column_density_plot_hollywood.analysis_save(icallback)
 
     @callback(walltime_interval=10.0)
     def checkpoint(self, icheckpoint):
+        """every 10 seconds, do a rolling checkpoint"""
         self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
     @simulation_setup
     def setup(self):
+        """setup the simulation (only triggered if no checkpoints are found)"""
         global disc_mass
 
         # Generate the default config

@@ -1,5 +1,6 @@
 import types
 from dataclasses import dataclass
+from math import inf
 from typing import Callable
 
 from shamrock.utils.dump import ShamrockDumpHandleHelper
@@ -9,17 +10,17 @@ from shamrock.utils.dump import ShamrockDumpHandleHelper
 # ----------------------------
 
 
-def callback(*, time_step):
+def callback(*, tsim_interval):
     """
     Decorator to mark a function as a simulation callback.
 
     Example:
-        @callback(time_step=1.0)
+        @callback(tsim_interval=1.0)
         def analysis(self, icallback):
             print("analysis", icallback)
 
     Args:
-        time_step: The time step of the callback.
+        tsim_interval: The time step of the callback.
 
     Returns:
         The decorated function.
@@ -27,8 +28,8 @@ def callback(*, time_step):
 
     def deco(func):
         func.__simulation_callback__ = {
-            "time_step": time_step,
             "func_name": func.__name__,
+            "tsim_interval": tsim_interval,
         }
 
         return func
@@ -135,22 +136,74 @@ class CallbackInfo:
     func: Callable
     name: str
 
-    time_step: float | None = None
+    tsim_interval: float | None = None
+    # iter_count_interval: int | None = None
+    # walltime_interval: float | None = None
 
-    def compute_next_time(self, t_model: float) -> float:
 
-        if self.time_step is None:
-            raise ValueError(f"{type(self).__name__}.time_step must be defined")
+@dataclass
+class CallbackState:
+    counter: int = 0
 
-        t_model_modf = t_model % self.time_step
+    next_tsim: float | None = None
+    # next_iter_count:int | None = None
+    # next_walltime:float | None = None
 
-        if t_model_modf == 0:
-            return t_model + self.time_step
+    def __init__(self, info: CallbackInfo, tsim_start: float):
+        self.info = info
 
-        return t_model + self.time_step - t_model_modf
+        if self.info.tsim_interval is not None:
+            self.next_tsim = tsim_start
+        # if self.info.iter_count_interval is not None:
+        #    self.next_iter_count = 0
+        # if self.info.walltime_interval is not None:
+        #    self.next_walltime = 0.0
+
+    def advance(self, t_model: float):
+        self.counter += 1
+
+        if self.info.tsim_interval is not None:
+            self.next_tsim = t_model + self.info.tsim_interval
+        # if self.info.iter_count_interval is not None:
+        #    self.next_iter_count += self.info.iter_count_interval
+        # if self.info.walltime_interval is not None:
+        #    self.next_walltime += self.info.walltime_interval
+
+    def should_trigger(self, t_model: float) -> bool:
+        trig = False
+        if self.info.tsim_interval is not None:
+            trig = trig or t_model >= self.next_tsim  # should i add a tolerance here ?
+        # if self.info.iter_count_interval is not None:
+        #    trig = trig or self.counter >= self.next_iter_count
+        # if self.info.walltime_interval is not None:
+        #    trig = trig or self.counter >= self.next_walltime
+        return trig
 
 
 class SimulationHandle(metaclass=SimulationMeta):
+    """
+    SimulationHandle is a base class to declare a simulation with setup & callbacks.
+
+    A derived class must define:
+    - t_end: float = <end time of the simulation>
+    - a setup (any function decorated with @simulation_setup)
+
+    And can define callbacks (any function decorated with @callback):
+
+    < call every tsim = i * time_step >
+    - @callback(time_step=1.0)
+      def analysis(self, icallback):
+          print("analysis")
+
+    < call when tsim = dt_stop, niter_max is reached or walltime_step is reached >
+    - @callback(time_step=dt_stop, niter_max=1000, walltime_step=30*60)
+      def do_checkpoint(self, icheckpoint):
+          self.dump_helper.dump(icheckpoint)
+
+    Note that for the last one that this reset the counters until next callback.
+    The trigger conditions are inclusive and reset the counters for all triggers of that callback.
+    """
+
     t_end: float | None = None
 
     _declared_callbacks: list  # Will be filled by the metaclass
@@ -165,10 +218,12 @@ class SimulationHandle(metaclass=SimulationMeta):
             copied = CallbackInfo(
                 func=getattr(self, name),
                 name=name,
-                time_step=info["time_step"],
+                tsim_interval=info["tsim_interval"],
             )
 
             self._callbacks.append(copied)
+
+        self._callbacks_state = None
 
     def __post_init__(self):
 
@@ -187,22 +242,33 @@ class SimulationHandle(metaclass=SimulationMeta):
         print(f"Running setup function: {name}")
         func(self)
 
+        print("Setting up callbacks states")
+        self._callbacks_state = [CallbackState(c, self.model.get_time()) for c in self._callbacks]
+
     def goto_run_next_callback(self):
-        cur_t = self.model.get_time()
 
         next_time = self.t_end
-        callbacks_to_execute = []
 
-        for c in self._callbacks:
-            next_time_callback = c.compute_next_time(cur_t)
-            if next_time_callback < next_time:
-                next_time = next_time_callback
-                callbacks_to_execute.clear()
-                callbacks_to_execute.append(c)
-            elif next_time_callback == next_time:
-                callbacks_to_execute.append(c)
+        for ic, _ in enumerate(self._callbacks):
+            state = self._callbacks_state[ic]
+            next_time = min(next_time, state.next_tsim)
 
-        return next_time, callbacks_to_execute
+        if next_time < self.model.get_time():
+            raise ValueError(f"Next callback time {next_time} is in the past")
+
+        print(f"Next triggers at t={next_time}")
+
+        self.model.evolve_until(next_time)
+
+        for ic, c in enumerate(self._callbacks):
+            trig = self._callbacks_state[ic].should_trigger(self.model.get_time())
+            if trig:
+                counter = self._callbacks_state[ic].counter
+                print(
+                    f"Triggering callback {c.name} at t={self.model.get_time()} (counter={counter})"
+                )
+                c.func(counter)
+                self._callbacks_state[ic].advance(self.model.get_time())
 
     def run(self):
         self.run_setup()

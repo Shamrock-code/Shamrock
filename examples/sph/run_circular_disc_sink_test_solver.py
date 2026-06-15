@@ -235,11 +235,11 @@ class Simulation(SimulationHandle):
 
     # __debug_class_creation__ = True
 
-    @callback(time_step=dt_stop)
+    @callback(tsim_interval=dt_stop * 4)
     def analysis(self, icallback):
         column_density_plot.analysis_save(icallback)
 
-    @callback(time_step=dt_stop / 4)
+    @callback(tsim_interval=dt_stop)
     def analysis_hollywood(self, icallback):
         column_density_plot_hollywood.analysis_save(icallback)
 

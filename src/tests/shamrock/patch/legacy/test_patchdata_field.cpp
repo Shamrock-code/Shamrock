@@ -13,12 +13,7 @@
 #include "shamtest/shamtest.hpp"
 #include <random>
 
-const std::string base = "core/patch/base/patchdata_field";
-
-/**
- *   Checking PatchDataField status after constructor
- */
-TestStart(Unittest, base + ":constructor", patch_data_field_constructor, 1) {
+NEW_TEST(Unittest, "core/patch/base/patchdata_field:constructor", 1) {
 
     PatchDataField<f32> d_check("test", 1);
 
@@ -30,7 +25,7 @@ TestStart(Unittest, base + ":constructor", patch_data_field_constructor, 1) {
     REQUIRE_NAMED("is new field empty", d_check.get_obj_cnt() == 0);
 }
 
-TestStart(Unittest, base + ":patch_data_field_check_match", patch_data_field_check_match, 1) {
+NEW_TEST(Unittest, "core/patch/base/patchdata_field:patch_data_field_check_match", 1) {
     std::mt19937 eng(0x1111);
 
     PatchDataField<f32> d_check("test", 1);

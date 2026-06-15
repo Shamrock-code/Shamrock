@@ -440,7 +440,7 @@ namespace shamrock {
         inline ~LegacyVtkWriter() {
             shamlog_debug_mpi_ln("LegacyVtkWriter", "calling : shamcomm::mpi::File_close");
             shamcomm::mpi::File_close(&mfile);
-            timer.end();
+            timer.stop();
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
@@ -449,7 +449,7 @@ namespace shamrock {
                         "dump to {}\n              - took {}, bandwidth = {}/s",
                         fname,
                         timer.get_time_str(),
-                        shambase::readable_sizeof(file_head_ptr / timer.elasped_sec())));
+                        shambase::readable_sizeof(file_head_ptr / timer.elapsed_sec())));
             }
         }
 

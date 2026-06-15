@@ -34,11 +34,7 @@ void verify_copy(
     REQUIRE_EQUAL_CUSTOM_COMP(source_data, target_data, sham::equals);
 }
 
-TestStart(
-    Unittest,
-    "shamrock/solvergraph/CopyPatchDataFieldFromLayer",
-    testCopyPatchDataFieldFromLayerMultipleFields,
-    1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/CopyPatchDataFieldFromLayer", 1) {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
 

@@ -20,7 +20,9 @@
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
@@ -28,6 +30,7 @@
 #include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisDustMass.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
@@ -264,9 +267,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "set_dust_mode_monofluid_tvi",
-            [](TConfig &self, u32 nvar) {
-                self.dust_config.set_monofluid_tvi(nvar);
-            })
+            [](TConfig &self, u32 nvar, bool pure_diffusion_mode) {
+                self.dust_config.set_monofluid_tvi(nvar, pure_diffusion_mode);
+            },
+            py::kw_only(),
+            py::arg("nvar"),
+            py::arg("pure_diffusion_mode") = false)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {
@@ -274,6 +280,25 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("ndust"))
+        .def(
+            "set_dust_drag_constant",
+            [](TConfig &self, std::vector<Tscal> ts) {
+                self.dust_config.set_drag_constant({.stopping_times = std::move(ts)});
+            })
+        .def(
+            "set_dust_drag_epstein",
+            [](TConfig &self,
+               Tscal gamma,
+               std::vector<Tscal> grain_sizes,
+               std::vector<Tscal> grain_densities) {
+                self.dust_config.set_drag_epstein(
+                    {.gamma            = gamma,
+                     .grains_sizes     = std::move(grain_sizes),
+                     .grains_densities = std::move(grain_densities)});
+            },
+            py::arg("gamma"),
+            py::arg("grain_sizes"),
+            py::arg("grain_densities"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def(
             "add_ext_force_lense_thirring",
@@ -390,9 +415,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max});
-            })
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
+                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true)
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -409,17 +438,88 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::function<Tscal(Tscal)> H_profile,
                std::function<Tscal(Tscal)> rot_profile,
                std::function<Tscal(Tscal)> cs_profile,
+               std::function<Tvec(Tvec)> velocity_field,
+               std::function<Tscal(Tvec)> cs_field,
                u64 random_seed,
                Tscal init_h_factor) {
+                auto build_vel_lambda = [&]() -> std::function<Tvec(Tvec)> {
+                    if (!velocity_field && !rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (velocity_field && rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (velocity_field) {
+                        return std::move(velocity_field);
+                    }
+                    return [vth_r = std::move(rot_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+
+                        auto etheta = sycl::vec<Tscal, 3>{-pos.y(), pos.x(), 0};
+                        etheta /= sycl::length(etheta);
+
+                        return vth_r(r) * etheta;
+                    };
+                };
+
+                auto build_cs_lambda = [&]() -> std::function<Tscal(Tvec)> {
+                    bool need_cs = self.solver_config.is_eos_locally_isothermal();
+
+                    if (!need_cs) {
+                        if (cs_field) {
+                            logger::warn_ln(
+                                "SPHSetup",
+                                "make_generator_disc_mc: with the current EOS, cs_field is "
+                                "ignored");
+                        }
+                        if (cs_profile) {
+                            logger::warn_ln(
+                                "SPHSetup",
+                                "make_generator_disc_mc: with the current EOS, cs_profile is "
+                                "ignored");
+                        }
+                        return std::function<Tscal(Tvec)>{};
+                    }
+
+                    if (!cs_field && !cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (cs_field && cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (cs_field) {
+                        return std::move(cs_field);
+                    }
+
+                    return [cs_r = std::move(cs_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+                        return cs_r(r);
+                    };
+                };
+
                 return self.make_generator_disc_mc(
                     part_mass,
                     disc_mass,
                     r_in,
                     r_out,
-                    sigma_profile,
-                    H_profile,
-                    rot_profile,
-                    cs_profile,
+                    std::move(sigma_profile),
+                    std::move(H_profile),
+                    build_vel_lambda(),
+                    build_cs_lambda(),
                     std::mt19937_64(random_seed),
                     init_h_factor);
             },
@@ -430,10 +530,52 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("r_out"),
             py::arg("sigma_profile"),
             py::arg("H_profile"),
-            py::arg("rot_profile"),
-            py::arg("cs_profile"),
+            py::arg("rot_profile")    = std::function<Tscal(Tscal)>{},
+            py::arg("cs_profile")     = std::function<Tscal(Tscal)>{},
+            py::arg("velocity_field") = std::function<Tvec(Tvec)>{},
+            py::arg("cs_field")       = std::function<Tscal(Tvec)>{},
             py::arg("random_seed"),
-            py::arg("init_h_factor") = 0.8)
+            py::arg("init_h_factor") = 0.8,
+            R"pbdoc(
+        Create a Monte Carlo disc particle generator.
+
+        Particles are sampled in cylindrical coordinates: the radius is drawn
+        with rejection sampling from ``sigma_profile``, the azimuth is uniform,
+        and the vertical coordinate follows a Gaussian with scale ``H_profile(r)``.
+        The initial density is extrapolated from the surface density profile, and
+        smoothing lengths are set from that density.
+
+        Args:
+            part_mass: Mass of each SPH particle.
+            disc_mass: Total disc mass. The particle count is ``disc_mass / part_mass``.
+            r_in: Inner disc radius.
+            r_out: Outer disc radius.
+            sigma_profile: Surface density profile ``sigma(r)``.
+            H_profile: Disc scale height profile ``H(r)``.
+            rot_profile: Azimuthal speed profile ``v_theta(r)``. The velocity is
+                projected along the cylindrical azimuthal direction at each
+                particle position. Mutually exclusive with ``velocity_field``.
+            cs_profile: Sound speed profile ``c_s(r)``. Evaluated at the cylindrical
+                radius of each particle. Required when the solver uses a locally
+                isothermal EOS. Mutually exclusive with ``cs_field``.
+            velocity_field: Velocity profile ``v(x, y, z)``. Mutually exclusive
+                with ``rot_profile``.
+            cs_field: Sound speed profile ``c_s(x, y, z)``. Required when the solver
+                uses a locally isothermal EOS. Mutually exclusive with ``cs_profile``.
+            random_seed: Seed for the Monte Carlo sampler.
+            init_h_factor: Multiplier applied to the smoothing length inferred from
+                the generated density. Defaults to ``0.8``.
+
+        Notes:
+            Exactly one of ``velocity_field`` or ``rot_profile`` must be provided.
+
+            If the solver uses a locally isothermal EOS, exactly one of ``cs_field``
+            or ``cs_profile`` must be provided. Otherwise both sound-speed profiles
+            are ignored and a warning is emitted if either is supplied.
+
+        Returns:
+            A setup node to pass to :py:meth:`apply_setup`.
+    )pbdoc")
         .def(
             "make_generator_from_context",
             [](TSPHSetup &self, ShamrockCtx &context_other) {
@@ -523,7 +665,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::optional<u64> msg_size_limit,
                std::optional<u64> max_msg_size,
                bool do_setup_log,
-               bool use_new_setup) {
+               bool use_new_setup,
+               bool speculative_balancing) {
                 if (use_new_setup) {
                     return self.apply_setup_new(
                         setup,
@@ -533,7 +676,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         msg_count_limit,
                         msg_size_limit,
                         max_msg_size,
-                        do_setup_log);
+                        do_setup_log,
+                        speculative_balancing);
                 } else {
                     if (bool(gen_step)) {
                         ON_RANK_0(
@@ -565,14 +709,15 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering")      = true,
-            py::arg("gen_step")             = std::nullopt,
-            py::arg("insert_step")          = std::nullopt,
-            py::arg("msg_count_limit")      = std::nullopt,
-            py::arg("rank_comm_size_limit") = std::nullopt,
-            py::arg("max_msg_size")         = std::nullopt,
-            py::arg("do_setup_log")         = false,
-            py::arg("use_new_setup")        = true);
+            py::arg("part_reordering")       = true,
+            py::arg("gen_step")              = std::nullopt,
+            py::arg("insert_step")           = std::nullopt,
+            py::arg("msg_count_limit")       = std::nullopt,
+            py::arg("rank_comm_size_limit")  = std::nullopt,
+            py::arg("max_msg_size")          = std::nullopt,
+            py::arg("do_setup_log")          = false,
+            py::arg("use_new_setup")         = true,
+            py::arg("speculative_balancing") = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -626,12 +771,24 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_fcc_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_fcc_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "get_ideal_hcp_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_hcp_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_hcp_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "resize_simulation_box",
@@ -1404,6 +1561,23 @@ void add_analysisAngularMomentum_instance(py::module &m, const std::string &name
             return self.get_angular_momentum();
         });
 }
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisDustMass_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisDustMass<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisDustMass<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_dust_mass", [](modules::AnalysisDustMass<Tvec, SPHKernel> &self) {
+            return self.get_dust_mass();
+        });
+}
+
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1472,7 +1646,9 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
         py::arg("model"));
 }
 
-Register_pymod(pysphmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
+
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
 
     using namespace shammodels::sph;
@@ -1601,4 +1777,14 @@ Register_pymod(pysphmodel) {
         msph, "analysisTotalMomentum");
     register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
         msph, "analysisAngularMomentum");
+
+    add_analysisDustMass_instance<f64_3, shammath::M4>(msph, "AnalysisDustMass_f64_3_M4");
+    add_analysisDustMass_instance<f64_3, shammath::M6>(msph, "AnalysisDustMass_f64_3_M6");
+    add_analysisDustMass_instance<f64_3, shammath::M8>(msph, "AnalysisDustMass_f64_3_M8");
+
+    add_analysisDustMass_instance<f64_3, shammath::C2>(msph, "AnalysisDustMass_f64_3_C2");
+    add_analysisDustMass_instance<f64_3, shammath::C4>(msph, "AnalysisDustMass_f64_3_C4");
+    add_analysisDustMass_instance<f64_3, shammath::C6>(msph, "AnalysisDustMass_f64_3_C6");
+
+    register_analysis_impl_for_each_kernel<modules::AnalysisDustMass>(msph, "analysisDustMass");
 }

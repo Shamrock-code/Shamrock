@@ -24,6 +24,11 @@ if not shamrock.sys.is_initialized():
 
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Main benchmark functions
 def benchmark_u32_balanced(N, slice_size, nb_repeat=10):
     assert N % slice_size == 0, "N must be divisible by slice_size"

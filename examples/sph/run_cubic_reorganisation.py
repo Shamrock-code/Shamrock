@@ -24,6 +24,11 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Setup parameters
 
 gamma = 5.0 / 3.0
@@ -189,6 +194,9 @@ def make_plot(model, iplot):
         edgecolors="black",
         linewidths=0.5,
     )
+
+    ax.minorticks_off()
+
     cbar = plt.colorbar(sc, ax=ax, orientation="horizontal", pad=0.1, aspect=30)
     cbar.set_label("hpart")
     ax.set_title(f"t = {model.get_time():0.3f}")

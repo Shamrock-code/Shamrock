@@ -164,9 +164,9 @@ namespace shammodels::sph::modules {
                     buf_custom.copy_from_stdvec(acc_custom);
                 });
 
-                timer.end();
+                timer.stop();
 
-                f64 worse_time_rank = shamalgs::collective::allreduce_max(timer.elasped_sec());
+                f64 worse_time_rank = shamalgs::collective::allreduce_max(timer.elapsed_sec());
 
                 if (shamcomm::world_rank() == 0) {
                     logger::raw_ln(

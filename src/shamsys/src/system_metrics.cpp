@@ -206,11 +206,11 @@ namespace shamsys {
         }
         f64 wall_time = shambase::details::get_wtime();
         auto ret      = SystemMetrics{
-            wall_time,
-            get_rank_energy_consummed(),
-            get_gpu_energy_consummed(),
-            get_cpu_energy_consummed(),
-            get_dram_energy_consummed()};
+            .wall_time             = wall_time,
+            .rank_energy_consummed = get_rank_energy_consummed(),
+            .gpu_energy_consummed  = get_gpu_energy_consummed(),
+            .cpu_energy_consummed  = get_cpu_energy_consummed(),
+            .dram_energy_consummed = get_dram_energy_consummed()};
         if (barrier) {
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
         }
@@ -236,19 +236,21 @@ namespace shamsys {
 
         for (u32 i = 0; i < shamcomm::world_size(); i++) {
             ret[i] = SystemMetrics{
-                metric_time_all_ranks[i],
-                (shamsys::support_rank_energy_consummed())
-                    ? std::optional<f64>{rank_energy_consummed_all_ranks[i]}
-                    : std::nullopt,
-                (shamsys::support_gpu_energy_consummed())
-                    ? std::optional<f64>{gpu_energy_consummed_all_ranks[i]}
-                    : std::nullopt,
-                (shamsys::support_cpu_energy_consummed())
-                    ? std::optional<f64>{cpu_energy_consummed_all_ranks[i]}
-                    : std::nullopt,
-                (shamsys::support_dram_energy_consummed())
-                    ? std::optional<f64>{dram_energy_consummed_all_ranks[i]}
-                    : std::nullopt,
+                .wall_time = metric_time_all_ranks[i],
+                .rank_energy_consummed
+                = (shamsys::support_rank_energy_consummed())
+                      ? std::optional<f64>{rank_energy_consummed_all_ranks[i]}
+                      : std::nullopt,
+                .gpu_energy_consummed = (shamsys::support_gpu_energy_consummed())
+                                            ? std::optional<f64>{gpu_energy_consummed_all_ranks[i]}
+                                            : std::nullopt,
+                .cpu_energy_consummed = (shamsys::support_cpu_energy_consummed())
+                                            ? std::optional<f64>{cpu_energy_consummed_all_ranks[i]}
+                                            : std::nullopt,
+                .dram_energy_consummed
+                = (shamsys::support_dram_energy_consummed())
+                      ? std::optional<f64>{dram_energy_consummed_all_ranks[i]}
+                      : std::nullopt,
             };
         }
 
@@ -311,15 +313,15 @@ namespace shamsys {
         };
 
         FormattedSystemMetrics ret{
-            shambase::format("{:.1f} s", input.wall_time),
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
+            .wall_time             = shambase::format("{:.1f} s", input.wall_time),
+            .rank_energy_consummed = std::nullopt,
+            .gpu_energy_consummed  = std::nullopt,
+            .cpu_energy_consummed  = std::nullopt,
+            .dram_energy_consummed = std::nullopt,
+            .rank_power            = std::nullopt,
+            .gpu_power             = std::nullopt,
+            .cpu_power             = std::nullopt,
+            .dram_power            = std::nullopt,
         };
 
         format_metric(

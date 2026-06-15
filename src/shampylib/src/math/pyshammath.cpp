@@ -18,6 +18,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/derivatives.hpp"
 #include "shammath/matrix.hpp"
 #include "shammath/matrix_op.hpp"
@@ -34,9 +35,9 @@
 #include <pybind11/numpy.h>
 #include <functional>
 
-Register_pymod(pysham_mathinit) {
+ON_PYTHON_INIT {
 
-    py::module math_module = m.def_submodule("math", "Shamrock math lib");
+    py::module math_module = root_module.def_submodule("math", "Shamrock math lib");
 
     shampylib::init_shamrock_math_AABB<f64_3>(math_module, "AABB_f64_3");
     shampylib::init_shamrock_math_Ray<f64_3>(math_module, "Ray_f64_3");
@@ -102,7 +103,11 @@ Register_pymod(pysham_mathinit) {
                         bool is_z_periodic) {
                 return std::make_unique<shammath::paving_function_general_3d<f64_3>>(
                     shammath::paving_function_general_3d<f64_3>{
-                        box_size, box_center, is_x_periodic, is_y_periodic, is_z_periodic});
+                        .box_size      = box_size,
+                        .box_center    = box_center,
+                        .is_x_periodic = is_x_periodic,
+                        .is_y_periodic = is_y_periodic,
+                        .is_z_periodic = is_z_periodic});
             }))
         .def("f", &shammath::paving_function_general_3d<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d<f64_3>::f_inv)
@@ -123,12 +128,12 @@ Register_pymod(pysham_mathinit) {
                         f64 shear_x) {
                 return std::make_unique<shammath::paving_function_general_3d_shear_x<f64_3>>(
                     shammath::paving_function_general_3d_shear_x<f64_3>{
-                        box_size,
-                        box_center,
-                        is_x_periodic,
-                        is_y_periodic,
-                        is_z_periodic,
-                        shear_x});
+                        .box_size      = box_size,
+                        .box_center    = box_center,
+                        .is_x_periodic = is_x_periodic,
+                        .is_y_periodic = is_y_periodic,
+                        .is_z_periodic = is_z_periodic,
+                        .shear_x       = shear_x});
             }))
         .def("f", &shammath::paving_function_general_3d_shear_x<f64_3>::f)
         .def("f_inv", &shammath::paving_function_general_3d_shear_x<f64_3>::f_inv)
@@ -850,4 +855,8 @@ Register_pymod(pysham_mathinit) {
                 "SymTensorCollection_f64_1_1(\n  t1={}\n)",
                 py::str(py::cast(c.t1)).cast<std::string>());
         });
+
+    math_module.def("get_ideal_hcp_box", [](f64 dr, f64_3 box_min, f64_3 box_max) {
+        return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
+    });
 }

@@ -43,6 +43,7 @@
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -116,6 +117,7 @@ namespace shammodels::sph {
 
         struct MonofluidTVI {
             u32 ndust;
+            bool pure_diffusion_mode = false;
         };
 
         struct MonofluidComplete {
@@ -128,12 +130,53 @@ namespace shammodels::sph {
         Variant current_mode = None{};
 
         inline void set_none() { current_mode = None{}; }
-        inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
+        inline void set_monofluid_tvi(u32 nvar, bool pure_diffusion_mode = false) {
+            current_mode = MonofluidTVI{nvar, pure_diffusion_mode};
+        }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
+        inline bool is_none() { return std::holds_alternative<None>(current_mode); }
+        inline bool is_monofluid_tvi() { return bool(std::get_if<MonofluidTVI>(&current_mode)); }
+        inline bool is_monofluid_complete() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline void mode_to_json(nlohmann::json &j) const {
+            if (const None *cfg = std::get_if<None>(&current_mode)) {
+                j = {{"type", "none"}};
+            } else if (const MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
+                j
+                    = {{"type", "monofluid_tvi"},
+                       {"ndust", cfg->ndust},
+                       {"pure_diffusion_mode", cfg->pure_diffusion_mode}};
+            } else if (
+                const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
+                j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void mode_from_json(const nlohmann::json &j) {
+            const std::string type = j.at("type").get<std::string>();
+            if (type == "none") {
+                set_none();
+            } else if (type == "monofluid_tvi") {
+                set_monofluid_tvi(
+                    j.at("ndust").get<u32>(), j.at("pure_diffusion_mode").get<bool>());
+            } else if (type == "monofluid_complete") {
+                set_monofluid_complete(j.at("ndust").get<u32>());
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline bool has_s_j_field() {
+            return is_monofluid_tvi(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
         inline bool has_epsilon_field() {
-            return bool(std::get_if<MonofluidTVI>(&current_mode))
-                   || bool(std::get_if<MonofluidComplete>(&current_mode));
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
         }
 
         inline bool has_deltav_field() {
@@ -155,14 +198,92 @@ namespace shammodels::sph {
             return 0;
         }
 
+        struct ConstantStoppingTimes {
+            std::vector<Tscal> stopping_times;
+        };
+
+        struct EpsteinDrag {
+            static constexpr bool supersonic_correction = false;
+            Tscal gamma;
+            std::vector<Tscal> grains_sizes;
+            std::vector<Tscal> grains_densities;
+        };
+
+        std::variant<None, ConstantStoppingTimes, EpsteinDrag> dust_drag_mode = None{};
+
+        inline void drag_mode_to_json(nlohmann::json &j) const {
+            if (std::holds_alternative<None>(dust_drag_mode)) {
+                j = {{"type", "none"}};
+            } else if (
+                const ConstantStoppingTimes *cfg
+                = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                j = {{"type", "constant_stopping_times"}, {"stopping_times", cfg->stopping_times}};
+            } else if (const EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                j
+                    = {{"type", "epstein_drag"},
+                       {"gamma", cfg->gamma},
+                       {"grains_sizes", cfg->grains_sizes},
+                       {"grains_densities", cfg->grains_densities}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void drag_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_drag_mode = None{};
+            } else if (j.at("type").get<std::string>() == "constant_stopping_times") {
+                dust_drag_mode
+                    = ConstantStoppingTimes{j.at("stopping_times").get<std::vector<Tscal>>()};
+            } else if (j.at("type").get<std::string>() == "epstein_drag") {
+                dust_drag_mode = EpsteinDrag{
+                    j.at("gamma").get<Tscal>(),
+                    j.at("grains_sizes").get<std::vector<Tscal>>(),
+                    j.at("grains_densities").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_drag_constant(ConstantStoppingTimes in) { dust_drag_mode = std::move(in); }
+
+        inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
+
         inline void check_config() {
-            bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
-                               || bool(std::get_if<MonofluidComplete>(&current_mode));
+            bool is_not_none = !is_none();
             if (is_not_none) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH::config",
-                        "Dust config != None is work in progress, use it at your own risk"));
+
+                if (!shamrock::are_experimental_features_allowed()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Dust config != None is experimental");
+                } else {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH::config",
+                            "Dust config != None is work in progress, use it at your own risk"));
+                }
+
+                if (std::holds_alternative<None>(dust_drag_mode)) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "you must select a drag mode for the dust if the dust is on !");
+                } else if (
+                    ConstantStoppingTimes *cfg
+                    = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->stopping_times.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "stopping_times size does not match the number of dust bins");
+                    }
+                } else if (EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->grains_densities.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_densities size does not match the number of dust bins");
+                    }
+
+                    if (get_dust_nvar() != cfg->grains_sizes.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_sizes size does not match the number of dust bins");
+                    }
+                }
             }
         }
     };
@@ -221,13 +342,21 @@ namespace shammodels::sph {
         void set_none() { config = None{}; }
         void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
         void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
-            config = MM{mm_order, opening_angle, reduction_level};
+            config = MM{
+                .order           = mm_order,
+                .opening_angle   = opening_angle,
+                .reduction_level = reduction_level};
         }
         void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
-            config = FMM{order, opening_angle, reduction_level};
+            config = FMM{
+                .order = order, .opening_angle = opening_angle, .reduction_level = reduction_level};
         }
         void set_sfmm(u32 order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
-            config = SFMM{order, opening_angle, leaf_lowering, reduction_level};
+            config = SFMM{
+                .order           = order,
+                .opening_angle   = opening_angle,
+                .leaf_lowering   = leaf_lowering,
+                .reduction_level = reduction_level};
         }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
@@ -1070,20 +1199,20 @@ namespace shammodels::sph {
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
         if (j.at("type").get<std::string>() == "sfmm") {
             p.config = SelfGravConfig::SFMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("leaf_lowering").get<bool>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .leaf_lowering   = j.at("leaf_lowering").get<bool>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "fmm") {
             p.config = SelfGravConfig::FMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "mm") {
             p.config = SelfGravConfig::MM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "direct") {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {
@@ -1103,6 +1232,21 @@ namespace shammodels::sph {
                     "Invalid softening mode: " + softening_mode);
             }
         }
+    }
+
+    // JSON serialization for DustConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const DustConfig<Tvec> &p) {
+        j = {};
+
+        p.mode_to_json(j["mode"]);
+        p.drag_mode_to_json(j["drag_mode"]);
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
+        p.mode_from_json(j.at("mode"));
+        p.drag_mode_from_json(j.at("drag_mode"));
     }
 
     /**
@@ -1132,6 +1276,8 @@ namespace shammodels::sph {
             {"time_state", p.time_state},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // dust config
+            {"dust_config", p.dust_config},
             // self gravity config
             {"self_grav_config", p.self_grav_config},
             // tree config
@@ -1222,6 +1368,7 @@ namespace shammodels::sph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("time_state", p.time_state);
         _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
         _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);

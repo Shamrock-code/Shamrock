@@ -65,7 +65,8 @@ namespace sham {
 
 } // namespace sham
 
-Register_pymod(shammodelcommonlibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     m.def(
         "compute_histogram",

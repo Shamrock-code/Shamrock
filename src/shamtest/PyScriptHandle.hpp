@@ -16,7 +16,7 @@
 
  * Example :
  * \code{.cpp}
- * TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
+ * NEW_TEST(Unittest, "shamtest/PyScriptHandle(plot)", 1) {
  *
  *     std::vector<f64> x = {0, 1, 2, 4, 5};
  *     std::vector<f64> y = {1, 2, 4, 6, 1};

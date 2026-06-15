@@ -45,12 +45,12 @@ namespace shamalgs::collective {
         }
 
         return CommMessageInfo{
-            message_size,
-            static_cast<i32>(sender),
-            static_cast<i32>(receiver),
-            std::nullopt,
-            std::nullopt,
-            std::nullopt};
+            .message_size                = message_size,
+            .rank_sender                 = static_cast<i32>(sender),
+            .rank_receiver               = static_cast<i32>(receiver),
+            .message_tag                 = std::nullopt,
+            .message_bytebuf_offset_send = std::nullopt,
+            .message_bytebuf_offset_recv = std::nullopt};
     };
 
     /// fetch u64_2 from global message data
@@ -162,7 +162,8 @@ namespace shamalgs::collective {
                         // logger::info_ln("sparse comm", "is using multiple buffers (send) !");
                     }
 
-                    message_info.message_bytebuf_offset_send = {send_buf_id, tmp_send_offset};
+                    message_info.message_bytebuf_offset_send
+                        = {.buf_id = send_buf_id, .data_offset = tmp_send_offset};
                     tmp_send_offset += message_info.message_size;
                     send_buf_sizes.at(send_buf_id) += message_info.message_size;
 
@@ -191,7 +192,8 @@ namespace shamalgs::collective {
                         // logger::info_ln("sparse comm", "is using multiple buffers (recv) !");
                     }
 
-                    message_info.message_bytebuf_offset_recv = {recv_buf_id, tmp_recv_offset};
+                    message_info.message_bytebuf_offset_recv
+                        = {.buf_id = recv_buf_id, .data_offset = tmp_recv_offset};
                     tmp_recv_offset += message_info.message_size;
                     recv_buf_sizes.at(recv_buf_id) += message_info.message_size;
 
@@ -235,13 +237,13 @@ namespace shamalgs::collective {
         }
 
         return CommTable{
-            ret_message_send,
-            message_all,
-            ret_message_recv,
-            send_message_global_ids,
-            recv_message_global_ids,
-            send_buf_sizes,
-            recv_buf_sizes};
+            .messages_send           = ret_message_send,
+            .message_all             = message_all,
+            .messages_recv           = ret_message_recv,
+            .send_message_global_ids = send_message_global_ids,
+            .recv_message_global_ids = recv_message_global_ids,
+            .send_total_sizes        = send_buf_sizes,
+            .recv_total_sizes        = recv_buf_sizes};
     }
 
     void sparse_exchange(

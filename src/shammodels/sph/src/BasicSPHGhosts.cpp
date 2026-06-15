@@ -153,8 +153,8 @@ int main(){
 
 #include "shambase/exception.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include <functional>
@@ -206,9 +206,9 @@ inline void for_each_patch_shift(
 
     // a bit of dirty fix doesn't hurt
     // this should be done in a better way a some point
-    i32 repetition_x = 1 + abs(shearinfo.shear_dir.x());
-    i32 repetition_y = 1 + abs(shearinfo.shear_dir.y());
-    i32 repetition_z = 1 + abs(shearinfo.shear_dir.z());
+    i32 repetition_x = 1 + sham::abs(shearinfo.shear_dir.x());
+    i32 repetition_y = 1 + sham::abs(shearinfo.shear_dir.y());
+    i32 repetition_z = 1 + sham::abs(shearinfo.shear_dir.z());
 
     T sz = bsize.x() * shearinfo.shear_dir.x() + bsize.y() * shearinfo.shear_dir.y()
            + bsize.z() * shearinfo.shear_dir.z();
@@ -487,7 +487,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
         }
     }
 
-    base_timer.end();
+    base_timer.stop();
 
     // f64 worse_time = shamalgs::collective::allreduce_max(base_timer.elasped_sec());
     //  if (shamcomm::world_rank() == 0) {
@@ -599,7 +599,7 @@ void BasicSPHGhostHandler<vec>::gen_debug_patch_ghost(
         });
 
     std::string dot_graph = "";
-    shamcomm::gather_str(loc_graph, dot_graph);
+    shamalgs::collective::gather_str(loc_graph, dot_graph);
 
     dot_graph = "strict digraph {\n" + dot_graph + "}";
 

@@ -22,6 +22,11 @@ if not shamrock.sys.is_initialized():
 
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Main benchmark functions
 def benchmark_u32(N, nb_repeat=10):
     times = []

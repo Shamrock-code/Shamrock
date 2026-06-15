@@ -211,7 +211,7 @@ class FMM_prec_eval {
     }
 };
 
-TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
+NEW_TEST(ValidationTest, "models/generic/fmm/precision", 1) {
 
     std::mt19937 eng(0x1111);
 
@@ -256,18 +256,18 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
 
         vec_result.push_back(
             Entry{
-                angle,
-                FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
-                FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)});
+                .angle          = angle,
+                .result_pot_5   = FMM_prec_eval<f64, 5>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_pot_4   = FMM_prec_eval<f64, 4>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_pot_3   = FMM_prec_eval<f64, 3>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_pot_2   = FMM_prec_eval<f64, 2>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_pot_1   = FMM_prec_eval<f64, 1>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_pot_0   = FMM_prec_eval<f64, 0>::eval_prec_fmm_pot(x_i, x_j, s_a, s_b),
+                .result_force_5 = FMM_prec_eval<f64, 5>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                .result_force_4 = FMM_prec_eval<f64, 4>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                .result_force_3 = FMM_prec_eval<f64, 3>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                .result_force_2 = FMM_prec_eval<f64, 2>::eval_prec_fmm_force(x_i, x_j, s_a, s_b),
+                .result_force_1 = FMM_prec_eval<f64, 1>::eval_prec_fmm_force(x_i, x_j, s_a, s_b)});
 
         if (i % 10000 == 0) {
             shamlog_debug_ln("Tests", "i =", i, "\\", 100000);
@@ -397,7 +397,7 @@ TestStart(ValidationTest, "models/generic/fmm/precision", fmm_prec, 1) {
     )==")
 }
 
-TestStart(Unittest, "models/generic/fmm/multipole_moment_offset", multipole_moment_offset, 1) {
+NEW_TEST(Unittest, "models/generic/fmm/multipole_moment_offset", 1) {
     using namespace shammath;
     std::mt19937 eng(0x1111);
     std::uniform_real_distribution<f64> distf64(-1, 1);
@@ -1032,7 +1032,7 @@ Result_nompi_fmm_testing<flt, morton_mode, fmm_order> nompi_fmm_testing(
     // #endif
 
     shamsys::instance::get_compute_queue().wait();
-    timer.end();
+    timer.stop();
 
     f64 r_f, r_r;
 
@@ -1185,7 +1185,7 @@ std::unique_ptr<sycl::buffer<sycl::vec<flt, 3>>> pos_partgen_distrib(u32 npart) 
 }
 
 #if false
-TestStart(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1) {
+NEW_TEST(ValidationTest, "models/generic/fmm/fmm_1_gpu_prec", fmm_1_gpu_prec, 1) {
 
     constexpr u32 reduc_level = 5;
     constexpr f64 open_crit   = 0.3;
@@ -1609,7 +1609,7 @@ void run_test_no_mpi_fmm(std::string dset_name) {
     dset.add_data("red8_leaf_rej", red8_leaf_rej);
 }
 
-TestStart(Benchmark, "fmm_no_mpi performance", fmm_no_mpi, 1) {
+NEW_TEST(Benchmark, "fmm_no_mpi performance", 1) {
     run_test_no_mpi_fmm<f32, u32, 3>("case f32,u32, order = 3");
 
     run_test_no_mpi_fmm<f32, u32, 4>("case f32,u32, order = 4");

@@ -64,6 +64,11 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Setup units
 
 si = shamrock.UnitSystem()
@@ -73,8 +78,6 @@ codeu = shamrock.UnitSystem(
     unit_length=sicte.au(),
     unit_mass=sicte.sol_mass(),
 )
-ucte = shamrock.Constants(codeu)
-G = ucte.G()
 
 # %%
 # List parameters
@@ -127,25 +130,21 @@ plot_folder = analysis_folder + "plots/"
 
 dump_prefix = dump_folder + "dump_"
 
-
-# Disc profiles
-def sigma_profile(r):
-    sigma_0 = 1.0  # We do not care as it will be renormalized
-    return sigma_0 * (r / r0) ** (-p)
-
-
-def kep_profile(r):
-    return (G * center_mass / r) ** 0.5
-
-
-def omega_k(r):
-    return kep_profile(r) / r
-
-
-def cs_profile(r):
-    cs_in = (H_r_0 * r0) * omega_k(r0)
-    return ((r / r0) ** (-q)) * cs_in
-
+disc = shamrock.utils.disc_setup.StandardDisc(
+    units=codeu,
+    center_mass=center_mass,
+    disc_mass=disc_mass,
+    rin=rin,
+    rout=rout,
+    H_r_0=H_r_0,
+    q=q,
+    p=p,
+    r0=r0,
+    rotation="subkeplerian_3d",
+    inner_tapering=True,
+)
+profiles = disc.get_profiles()
+cs0 = disc.cs0()
 
 # %%
 # Create the dump directory if it does not exist
@@ -159,25 +158,11 @@ if shamrock.sys.world_rank() == 0:
 # Utility functions and quantities deduced from the base one
 
 # Deduced quantities
-pmass = disc_mass / Npart
+pmass = disc.part_mass(Npart)
 
 bsize = rout * 2
 bmin = (-bsize, -bsize, -bsize)
 bmax = (bsize, bsize, bsize)
-
-cs0 = cs_profile(r0)
-
-
-def rot_profile(r):
-    return ((kep_profile(r) ** 2) - (2 * p + q) * cs_profile(r) ** 2) ** 0.5
-
-
-def H_profile(r):
-    H = cs_profile(r) / omega_k(r)
-    # fact = (2.**0.5) * 3. # factor taken from phantom, to fasten thermalizing
-    fact = 1.0
-    return fact * H
-
 
 # %%
 # Start the context
@@ -257,17 +242,7 @@ def setup_model():
     # Create the setup
 
     setup = model.get_setup()
-    gen_disc = setup.make_generator_disc_mc(
-        part_mass=pmass,
-        disc_mass=disc_mass,
-        r_in=rin,
-        r_out=rout,
-        sigma_profile=sigma_profile,
-        H_profile=H_profile,
-        rot_profile=rot_profile,
-        cs_profile=cs_profile,
-        random_seed=666,
-    )
+    gen_disc = disc.make_generator(setup, Npart, random_seed=666)
 
     # Print the dot graph of the setup
     print(gen_disc.get_dot())
@@ -426,7 +401,7 @@ relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
     center=((rin + rout) / 2, 0, 0),
     analysis_folder=analysis_folder,
     analysis_prefix="relative_azy_velocity_slice",
-    velocity_profile=kep_profile,
+    velocity_profile=profiles.vtheta_kepler,
     do_normalization=True,
     min_normalization=1e-9,
 )
@@ -748,6 +723,8 @@ def profile_plot_func(iplot, data):
 
     plt.xscale("log")
     plt.yscale("log")
+
+    plt.ylim(1e-6, 1e-3)
 
     text = f"t = {time:0.3f}"
     from matplotlib.offsetbox import AnchoredText

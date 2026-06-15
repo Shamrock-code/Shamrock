@@ -10,17 +10,14 @@
 #pragma once
 
 /**
- * @file format.hpp
+ * @file aliases.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Type aliases for fmt types used throughout shamformat
  */
 
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fmt/printf.h>
-#include <fmt/ranges.h>
+#include <fmt/base.h>
 
-namespace shambase {
+namespace sham {
 
     /**
      * @brief Formatter alias for `fmt::formatter`
@@ -34,4 +31,6 @@ namespace shambase {
     template<class T>
     using formatter = fmt::formatter<T>;
 
-} // namespace shambase
+    /// Alias for `fmt::format_error`, the exception type thrown by format errors
+    using format_error = fmt::format_error;
+} // namespace sham

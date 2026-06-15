@@ -33,7 +33,14 @@ abs_proj_dir = os.path.abspath(os.path.join(__file__, "../../.."))
 abs_src_dir = os.path.join(abs_proj_dir, "src")
 
 
+def is_a_precommit_call():
+    return os.environ.get("PRE_COMMIT") == "1"
+
+
 def print_tool_info(utility_name):
+    if is_a_precommit_call():
+        return
+
     col_cnt = 100
 
     try:

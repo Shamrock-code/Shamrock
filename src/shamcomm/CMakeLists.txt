@@ -13,7 +13,6 @@ set(Sources
     src/worldInfo.cpp
     src/mpiErrorCheck.cpp
     src/mpiInfo.cpp
-    src/collectives.cpp
     src/io.cpp
     src/logs.cpp
     src/wrapper.cpp

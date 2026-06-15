@@ -410,7 +410,11 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
 
                 pdat_new.check_field_obj_cnt_match();
 
-                return MergedPatchData{or_elem, total_elements, std::move(pdat_new), ghost_layout};
+                return MergedPatchData{
+                    .original_elements = or_elem,
+                    .total_elements    = total_elements,
+                    .pdat              = std::move(pdat_new),
+                    .pdl               = ghost_layout};
             },
             [](MergedPatchData &mpdat, PatchDataLayer &pdat_interf) {
                 mpdat.total_elements += pdat_interf.get_obj_cnt();
@@ -422,8 +426,8 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::exchange_ghost() {
             "Merged patch", id, ",", mpdat.original_elements, "->", mpdat.total_elements);
     });
 
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    timer_interf.stop();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
 }
 
 template<class Tvec, class TgridVec>
@@ -482,8 +486,8 @@ shamrock::ComputeField<T> shammodels::zeus::modules::GhostZones<Tvec, TgridVec>:
             out.field_data.add_obj(p.id_patch, std::move(new_pdat));
         });
 
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    timer_interf.stop();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
     return out;
 }
 

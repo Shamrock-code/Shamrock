@@ -10,19 +10,21 @@
 #pragma once
 
 /**
- * @file source_location.hpp
+ * @file error_callback.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief
+ * @brief Shared callback type definition for parsing error handling
+ *
  */
 
-#if __cplusplus >= 202002L
-    #include <source_location>
-#else
-    #include "cxxbackports/source_location.hpp"
-#endif
+#include <source_location>
+#include <functional>
+#include <stdexcept>
 
-namespace shambase::cxxstd {
+namespace sham::term {
 
-    using source_location = std::source_location;
+    /// @brief Callback signature for parsing error reporting (returns what, receives source
+    /// location)
+    using term_parse_callback_t
+        = std::function<std::invalid_argument(const char *what, std::source_location where)>;
 
-} // namespace shambase::cxxstd
+} // namespace sham::term

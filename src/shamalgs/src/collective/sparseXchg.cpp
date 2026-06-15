@@ -170,18 +170,18 @@ namespace {
                       done = true;
                   }
 
-                  twait.end();
+                  twait.stop();
 
-                  if (twait.elasped_sec() > t_last_print + 10) {
+                  if (twait.elapsed_sec() > t_last_print + 10) {
 
                       std::string msg
                           = shambase::format("Sparse comm : {} / {} done", done_count, rqs.size());
                       logger::warn_ln("Sparse comm", msg);
 
-                      t_last_print = twait.elasped_sec();
+                      t_last_print = twait.elapsed_sec();
                   }
 
-                  if (twait.elasped_sec() > timeout_t) {
+                  if (twait.elapsed_sec() > timeout_t) {
                       std::string err_msg = "";
                       for (u32 i = 0; i < rqs.size(); i++) {
                           if (!done_map[i]) {
@@ -268,7 +268,7 @@ namespace shamalgs::collective {
             }
 
             std::string matrix;
-            shamcomm::gather_str(accum, matrix);
+            shamalgs::collective::gather_str(accum, matrix);
 
             matrix = "\n" + matrix;
 
@@ -292,7 +292,7 @@ namespace shamalgs::collective {
 
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
             std::string log;
-            shamcomm::gather_str(accum, log);
+            shamalgs::collective::gather_str(accum, log);
 
             log = "\n" + log;
 
@@ -466,7 +466,13 @@ namespace shamalgs::collective {
 
                 auto &rq = rqs.new_request();
 
-                rqs_infos.push_back({sender, receiver, payload->get_size(), tag, true, false});
+                rqs_infos.push_back(
+                    {.sender   = sender,
+                     .receiver = receiver,
+                     .size     = payload->get_size(),
+                     .tag      = tag,
+                     .is_send  = true,
+                     .is_recv  = false});
 
                 SHAM_ASSERT(payload->get_size() == comm_sizes_loc[send_idx]);
 
@@ -496,7 +502,13 @@ namespace shamalgs::collective {
 
                 auto &rq = rqs.new_request();
 
-                rqs_infos.push_back({sender, receiver, u64(comm_sizes[i]), tag, false, true});
+                rqs_infos.push_back(
+                    {.sender   = sender,
+                     .receiver = receiver,
+                     .size     = u64(comm_sizes[i]),
+                     .tag      = tag,
+                     .is_send  = false,
+                     .is_recv  = true});
 
                 // logger::raw_ln(shambase::format(
                 //     "[{}] recv {} bytes from rank {}, tag {}",
@@ -524,19 +536,19 @@ namespace shamalgs::collective {
                 shambase::Timer twait;
                 twait.start();
                 do {
-                    twait.end();
-                    if (twait.elasped_sec() > timeout) {
+                    twait.stop();
+                    if (twait.elapsed_sec() > timeout) {
                         report_unfinished_requests(rqs, rqs_infos);
                     }
 
-                    if (twait.elasped_sec() - last_print_time > print_freq) {
+                    if (twait.elapsed_sec() - last_print_time > print_freq) {
                         logger::warn_ln(
                             "SparseComm",
                             "too many messages in flight :",
                             in_flight,
                             "/",
                             in_flight_lim);
-                        last_print_time = twait.elasped_sec();
+                        last_print_time = twait.elapsed_sec();
                     }
                     in_flight = rqs.remain_count();
                 } while (in_flight > in_flight_lim);

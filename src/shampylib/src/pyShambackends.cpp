@@ -66,7 +66,8 @@ inline void register_DeviceBuffer(py::module &m, const char *class_name) {
         });
 }
 
-Register_pymod(shambackendslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module shambackends_module = m.def_submodule("backends", "backend library");
 

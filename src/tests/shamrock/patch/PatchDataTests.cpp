@@ -41,8 +41,7 @@ inline void test_serialize_basic(
     }
 }
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", testpatchdatalayerserialize, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataLayer::serialize_buf", 1) {
     using namespace shamrock::patch;
 
     { // basic case
@@ -123,11 +122,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest,
-    "shamrock/patch/PatchDataLayer::extract_elements",
-    testpatchdatalayerextractelements,
-    1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataLayer::extract_elements", 1) {
     using namespace shamrock::patch;
 
     { // Test extract_elements with multi-variable fields

@@ -91,8 +91,8 @@ namespace shamalgs {
             return lhs; // return the result by value (uses move constructor)
         }
 
-        static SerializeSize Header(u64 sz) { return {sz, 0}; }
-        static SerializeSize Content(u64 sz) { return {0, sz}; }
+        static SerializeSize Header(u64 sz) { return {.head_size = sz, .content_size = 0}; }
+        static SerializeSize Content(u64 sz) { return {.head_size = 0, .content_size = sz}; }
 
         inline u64 get_total_size() { return head_size + content_size; }
     };

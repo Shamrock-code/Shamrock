@@ -18,6 +18,8 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "sham/term/tty.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
 #include "shambackends/DeviceScheduler.hpp"
@@ -28,8 +30,6 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/local_rank.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
@@ -74,7 +74,7 @@ namespace shamsys::instance::details {
         });
 
         std::string recv;
-        shamcomm::gather_str(print_buf, recv);
+        shamalgs::collective::gather_str(print_buf, recv);
 
         if (rank == 0) {
             std::string print = "Cluster SYCL Info : \n";
@@ -189,7 +189,7 @@ namespace shamsys::instance {
         }
 
         std::string recv;
-        shamcomm::gather_str(print_buf, recv);
+        shamalgs::collective::gather_str(print_buf, recv);
 
         if (rank == 0) {
             std::string print = "Queue map : \n";
@@ -331,7 +331,7 @@ namespace shamsys::instance {
 
             // shamlog_debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            init_sycl_mpi(sycl_cfg, {argc, argv, forced_state});
+            init_sycl_mpi(sycl_cfg, {.argc = argc, .argv = argv, .forced_state = forced_state});
 
         } else {
 

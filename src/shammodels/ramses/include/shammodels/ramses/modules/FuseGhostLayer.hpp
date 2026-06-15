@@ -42,8 +42,8 @@ namespace shammodels::basegodunov::modules {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
-                get_rw_edge<shamrock::solvergraph::IPatchDataLayerRefs>(0),
+                .ghost_layer       = get_ro_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
+                .patch_data_layers = get_rw_edge<shamrock::solvergraph::IPatchDataLayerRefs>(0),
             };
         }
 

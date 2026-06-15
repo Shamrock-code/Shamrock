@@ -15,7 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shammodels/gsph/modules/GSPHGhostHandler.hpp"
 #include <functional>
 #include <vector>
@@ -62,9 +62,9 @@ inline void for_each_patch_shift(
 
     std::vector<i32_3> list_possible;
 
-    i32 repetition_x = 1 + abs(shearinfo.shear_dir.x());
-    i32 repetition_y = 1 + abs(shearinfo.shear_dir.y());
-    i32 repetition_z = 1 + abs(shearinfo.shear_dir.z());
+    i32 repetition_x = 1 + sham::abs(shearinfo.shear_dir.x());
+    i32 repetition_y = 1 + sham::abs(shearinfo.shear_dir.y());
+    i32 repetition_z = 1 + sham::abs(shearinfo.shear_dir.z());
 
     T sz = bsize.x() * shearinfo.shear_dir.x() + bsize.y() * shearinfo.shear_dir.y()
            + bsize.z() * shearinfo.shear_dir.z();
@@ -383,7 +383,7 @@ void GSPHGhostHandler<vec>::gen_debug_patch_ghost(
         });
 
     std::string dot_graph = "";
-    shamcomm::gather_str(loc_graph, dot_graph);
+    shamalgs::collective::gather_str(loc_graph, dot_graph);
 
     dot_graph = "strict digraph {\n" + dot_graph + "}";
 

@@ -76,8 +76,8 @@ namespace shamtree {
          */
         inline acc get_read_access(sham::EventList &deps) const {
             return acc{
-                buf_sort_index_map.get_read_access(deps),
-                buf_reduc_index_map.get_read_access(deps)};
+                .sort_index_map  = buf_sort_index_map.get_read_access(deps),
+                .reduc_index_map = buf_reduc_index_map.get_read_access(deps)};
         }
 
         /**
@@ -104,7 +104,8 @@ namespace shamtree {
 
         /// get read only accessor
         inline acc get_read_access() const {
-            return acc{sort_index_map.data(), reduc_index_map.data()};
+            return acc{
+                .sort_index_map = sort_index_map.data(), .reduc_index_map = reduc_index_map.data()};
         }
     };
 

@@ -163,18 +163,18 @@ namespace shamalgs::primitives {
     inline shamalgs::impl_param scan_exclusive_sum_in_place_impl_to_params(
         const EXSCAN_IN_PLACE_IMPL &impl) {
         if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN) {
-            return {"std_scan", ""};
+            return {.impl_name = "std_scan", .params = ""};
 #ifdef __ACPP__
         } else if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP) {
-            return {"std_scan_single_task_acpp", ""};
+            return {.impl_name = "std_scan_single_task_acpp", .params = ""};
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
-            return {"decoupled_lookback_512", ""};
+            return {.impl_name = "decoupled_lookback_512", .params = ""};
 #endif
 #ifdef ACPP_ALG_AVAILABLE
         } else if (impl == EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG) {
-            return {"acpp_alg", ""};
+            return {.impl_name = "acpp_alg", .params = ""};
 #endif
         }
 
@@ -184,15 +184,15 @@ namespace shamalgs::primitives {
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_scan_exclusive_sum_in_place() {
         return {
-            {"std_scan", ""},
+            {.impl_name = "std_scan", .params = ""},
 #ifdef __ACPP__
-            {"std_scan_single_task_acpp", ""},
+            {.impl_name = "std_scan_single_task_acpp", .params = ""},
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {"decoupled_lookback_512", ""},
+            {.impl_name = "decoupled_lookback_512", .params = ""},
 #endif
 #ifdef ACPP_ALG_AVAILABLE
-            {"acpp_alg", ""},
+            {.impl_name = "acpp_alg", .params = ""},
 #endif
         };
     }

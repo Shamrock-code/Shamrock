@@ -55,9 +55,9 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
             u64 rnd                             = eng();
             elements.push_back(
                 RefBuff{
-                    shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
-                    shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
-                    shamalgs::random::mock_buffer_usm<u8>(
+                    .sender_rank   = shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
+                    .receiver_rank = shamalgs::primitives::mock_value<i32>(eng, 0, wsize - 1),
+                    .payload       = shamalgs::random::mock_buffer_usm<u8>(
                         dev_sched, rnd, shamalgs::primitives::mock_value<i32>(eng, 1, bytes))});
         }
 
@@ -83,8 +83,8 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
         if (bufinfo.sender_rank == world_rank()) {
             sendop.push_back(
                 SendPayload{
-                    bufinfo.receiver_rank,
-                    std::make_unique<CommunicationBuffer>(bufinfo.payload, qdet)});
+                    .receiver_rank = bufinfo.receiver_rank,
+                    .payload       = std::make_unique<CommunicationBuffer>(bufinfo.payload, qdet)});
 
             REQUIRE_EQUAL(sendop[idx].payload->get_size(), bufinfo.payload.get_size());
 
@@ -99,9 +99,9 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     for (RecvPayload &load : recvop) {
         recv_data.push_back(
             RefBuff{
-                load.sender_ranks,
-                wrank,
-                shamcomm::CommunicationBuffer::convert_usm(
+                .sender_rank   = load.sender_ranks,
+                .receiver_rank = wrank,
+                .payload       = shamcomm::CommunicationBuffer::convert_usm(
                     shambase::extract_pointer(load.payload))});
     }
 
@@ -153,7 +153,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     }
 }
 
-TestStart(Unittest, "shamalgs/collective/sparseXchg", testsparsexchg, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/sparseXchg", -1) {
 
     sparse_comm_test("", shamsys::instance::get_compute_scheduler_ptr());
 }

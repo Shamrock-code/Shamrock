@@ -36,7 +36,11 @@ str_ += "\n\n"
 
 str_ += 'const std::string git_commit_hash = "' + git_hash + '";\n'
 
-str_ += 'const std::string compile_arg = "' + sys.argv[2] + '";\n'
+str_ += (
+    'const std::string compile_arg = "'
+    + sys.argv[2].replace("\\", "\\\\").replace('"', '\\"')
+    + '";\n'
+)
 
 str_ += 'const std::string version_string = "' + sys.argv[3] + '";\n'
 

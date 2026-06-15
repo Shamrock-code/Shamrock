@@ -12,7 +12,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/primitives/gen_buffer_index", test_gen_buffer_index_primitive, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/gen_buffer_index", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -44,7 +44,7 @@ TestStart(Unittest, "shamalgs/primitives/gen_buffer_index", test_gen_buffer_inde
     }
 }
 
-TestStart(Unittest, "shamalgs/primitives/gen_buffer_index", test_fill_buffer_index_primitive, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/gen_buffer_index", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

@@ -122,7 +122,8 @@ namespace shammodels::zeus {
     }
 } // namespace shammodels::zeus
 
-Register_pymod(pyamrzeusmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mzeus = m.def_submodule("model_zeus", "Shamrock Zeus solver");
 

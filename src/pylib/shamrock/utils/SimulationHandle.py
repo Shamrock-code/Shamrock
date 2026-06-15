@@ -137,6 +137,9 @@ class SimulationMeta(type):
 # ----------------------------
 # base class
 # ----------------------------
+def rank_0_print(*args, **kwargs):
+    if shamrock.sys.world_rank() == 0:
+        print(*args, **kwargs)
 
 
 @dataclass
@@ -177,13 +180,13 @@ class CallbackState:
         if self.info.walltime_interval is not None:
             self.next_walltime = walltime + self.info.walltime_interval
 
-        print(f'[Simulation] Advancing callback "{self.info.name}"')
+        rank_0_print(f'[Simulation] Advancing callback "{self.info.name}"')
         if self.info.tsim_interval is not None:
-            print(f"   -> t = {t_model} -> {self.next_tsim}")
+            rank_0_print(f"   -> t = {t_model} -> {self.next_tsim}")
         if self.info.iter_count_interval is not None:
-            print(f"   -> iter = {iter_count} -> {self.next_iter_count}")
+            rank_0_print(f"   -> iter = {iter_count} -> {self.next_iter_count}")
         if self.info.walltime_interval is not None:
-            print(f"   -> walltime = {walltime} -> {self.next_walltime}")
+            rank_0_print(f"   -> walltime = {walltime} -> {self.next_walltime}")
 
     def should_trigger(self, t_model: float, iter_count: int, walltime: float) -> bool:
         trig = False
@@ -204,7 +207,7 @@ class CallbackState:
                 log.append(f"   -> walltime = {walltime} >= {self.next_walltime}")
 
         if trig:
-            print(
+            rank_0_print(
                 f'[Simulation] Triggering callback "{self.info.name}" (counter = {self.counter}):\n{"\n".join(log)}'
             )
 
@@ -238,7 +241,7 @@ class SimulationHandle(metaclass=SimulationMeta):
     < call every tsim = i * time_step >
     - @callback(time_step=1.0)
       def analysis(self, icallback):
-          print("analysis")
+          rank_0_print("analysis")
 
     < call when tsim = dt_stop, niter_max is reached or walltime_step is reached >
     - @callback(time_step=dt_stop, niter_max=1000, walltime_step=30*60)
@@ -305,37 +308,38 @@ class SimulationHandle(metaclass=SimulationMeta):
         for ic, c in enumerate(self._callbacks):
             metadata[c.name] = self._callbacks_state[ic].to_dict()
 
-        print("[Simulation] Doing checkpoint")
+        rank_0_print("[Simulation] Doing checkpoint")
         self.dump_helper.write_dump(icheckpoint, metadata=metadata, **kwargs)
-        print("[Simulation] Checkpoint done")
+        rank_0_print("[Simulation] Checkpoint done")
 
     def run_setup(self):
 
         name, func = self._setup
-        print()
-        print(f"[Simulation] Running setup function: {name}")
-        print()
+        rank_0_print()
+        rank_0_print(f"[Simulation] Running setup function: {name}")
+        rank_0_print()
         func(self)
 
         self.cur_t = self.model.get_time()
         self.cur_iter_count = 0
 
-        print()
-        print("[Simulation] Setting up callbacks states")
+        rank_0_print()
+        rank_0_print("[Simulation] Setting up callbacks states")
         self._callbacks_state = [CallbackState(c, self.cur_t) for c in self._callbacks]
 
-        print("[Simulation] Setup done")
+        rank_0_print("[Simulation] Setup done")
 
     def restore_from_checkpoint(self, metadata: dict):
         self.cur_t = metadata["cur_t"]
         self.cur_iter_count = metadata["cur_iter_count"]
 
-        print("[Simulation] Setting up callbacks states")
+        rank_0_print("[Simulation] Setting up callbacks states")
         self._callbacks_state = [CallbackState(c, self.cur_t) for c in self._callbacks]
-        print("[Simulation] Restoring callbacks states")
+        rank_0_print("[Simulation] Restoring callbacks states")
         for ic, c in enumerate(self._callbacks):
             self._callbacks_state[ic].from_dict(metadata[c.name])
 
+        # in case we checkpoint in the middle of the callback sequence
         self.trigger_and_advance_callbacks()
 
     def evolve_until(
@@ -366,12 +370,13 @@ class SimulationHandle(metaclass=SimulationMeta):
             trig = self._callbacks_state[ic].should_trigger(self.cur_t, self.cur_iter_count, wtime)
             if trig:
                 counter = self._callbacks_state[ic].counter
-                print("--------------------------------")
+                rank_0_print("--------------------------------")
                 c.func(counter)
-                print("--------------------------------")
+                rank_0_print("--------------------------------")
                 callback_to_advance.append(ic)
 
         # in case there is a long running callback this won't fuck up the walltimes
+        # Also if a callback checkpoints we won't be in a partially advanced state
 
         for ic in callback_to_advance:
             self._callbacks_state[ic].advance(self.cur_t, self.cur_iter_count, wtime)
@@ -400,14 +405,14 @@ class SimulationHandle(metaclass=SimulationMeta):
                 else:
                     next_walltime = min(next_walltime, state.next_walltime)
 
-        print()
-        print(
+        rank_0_print()
+        rank_0_print(
             f"[Simulation] Evolve until next trigger(s) :\n"
             f"   -> t = {next_time} (current = {self.cur_t})\n"
             f"   -> iter = {next_iter_count} (current = {self.cur_iter_count})\n"
             f"   -> walltime = {next_walltime} (current = {shamrock.get_wtime_sync()})"
         )
-        print()
+        rank_0_print()
 
         self.evolve_until(next_time, next_iter_count, next_walltime)
 
@@ -418,7 +423,7 @@ class SimulationHandle(metaclass=SimulationMeta):
         if self.dump_helper is not None:
             metadata = self.dump_helper.load_last_dump_or(self.run_setup)
             if metadata is not None:
-                print("[Simulation] Restoring Simulation handle from checkpoint")
+                rank_0_print("[Simulation] Restoring Simulation handle from checkpoint")
                 self.restore_from_checkpoint(metadata)
         else:
             self.run_setup()

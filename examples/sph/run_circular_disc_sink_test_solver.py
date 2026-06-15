@@ -232,16 +232,21 @@ from shamrock.utils.SimulationHandle import SimulationHandle, callback, simulati
 
 class Simulation(SimulationHandle):
     t_end = 10.0
+    dump_prefix = dump_folder + "dump_"
 
     # __debug_class_creation__ = True
 
-    @callback(tsim_interval=dt_stop * 4)
+    @callback(tsim_interval=0.5)
     def analysis(self, icallback):
         column_density_plot.analysis_save(icallback)
 
-    @callback(tsim_interval=dt_stop)
+    @callback(tsim_interval=0.05, iter_count_interval=10)
     def analysis_hollywood(self, icallback):
         column_density_plot_hollywood.analysis_save(icallback)
+
+    @callback(walltime_interval=10.0)
+    def checkpoint(self, icheckpoint):
+        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
     @simulation_setup
     def setup(self):

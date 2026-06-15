@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from math import inf
 from typing import Callable
 
+import shamrock
 from shamrock.utils.dump import ShamrockDumpHandleHelper
 
 # ----------------------------
@@ -10,7 +11,7 @@ from shamrock.utils.dump import ShamrockDumpHandleHelper
 # ----------------------------
 
 
-def callback(*, tsim_interval):
+def callback(*, tsim_interval=None, iter_count_interval=None, walltime_interval=None):
     """
     Decorator to mark a function as a simulation callback.
 
@@ -21,15 +22,22 @@ def callback(*, tsim_interval):
 
     Args:
         tsim_interval: The time step of the callback.
-
+        iter_count_interval: The iteration count interval of the callback.
+        walltime_interval: The walltime interval of the callback.
     Returns:
         The decorated function.
     """
+
+    # at least one of the intervals must be provided
+    if tsim_interval is None and iter_count_interval is None and walltime_interval is None:
+        raise ValueError("At least one of the intervals must be provided")
 
     def deco(func):
         func.__simulation_callback__ = {
             "func_name": func.__name__,
             "tsim_interval": tsim_interval,
+            "iter_count_interval": iter_count_interval,
+            "walltime_interval": walltime_interval,
         }
 
         return func
@@ -137,8 +145,8 @@ class CallbackInfo:
     name: str
 
     tsim_interval: float | None = None
-    # iter_count_interval: int | None = None
-    # walltime_interval: float | None = None
+    iter_count_interval: int | None = None
+    walltime_interval: float | None = None
 
 
 @dataclass
@@ -146,38 +154,75 @@ class CallbackState:
     counter: int = 0
 
     next_tsim: float | None = None
-    # next_iter_count:int | None = None
-    # next_walltime:float | None = None
+    next_iter_count: int | None = None
+    next_walltime: float | None = None
 
     def __init__(self, info: CallbackInfo, tsim_start: float):
         self.info = info
 
         if self.info.tsim_interval is not None:
             self.next_tsim = tsim_start
-        # if self.info.iter_count_interval is not None:
-        #    self.next_iter_count = 0
-        # if self.info.walltime_interval is not None:
-        #    self.next_walltime = 0.0
+        if self.info.iter_count_interval is not None:
+            self.next_iter_count = 0
+        if self.info.walltime_interval is not None:
+            self.next_walltime = 0.0
 
-    def advance(self, t_model: float):
+    def advance(self, t_model: float, iter_count: int, walltime: float):
         self.counter += 1
 
         if self.info.tsim_interval is not None:
             self.next_tsim = t_model + self.info.tsim_interval
-        # if self.info.iter_count_interval is not None:
-        #    self.next_iter_count += self.info.iter_count_interval
-        # if self.info.walltime_interval is not None:
-        #    self.next_walltime += self.info.walltime_interval
+        if self.info.iter_count_interval is not None:
+            self.next_iter_count = iter_count + self.info.iter_count_interval
+        if self.info.walltime_interval is not None:
+            self.next_walltime = walltime + self.info.walltime_interval
 
-    def should_trigger(self, t_model: float) -> bool:
-        trig = False
+        print(f'[Simulation] Advancing callback "{self.info.name}"')
         if self.info.tsim_interval is not None:
-            trig = trig or t_model >= self.next_tsim  # should i add a tolerance here ?
-        # if self.info.iter_count_interval is not None:
-        #    trig = trig or self.counter >= self.next_iter_count
-        # if self.info.walltime_interval is not None:
-        #    trig = trig or self.counter >= self.next_walltime
+            print(f"   -> t = {t_model} -> {self.next_tsim}")
+        if self.info.iter_count_interval is not None:
+            print(f"   -> iter = {iter_count} -> {self.next_iter_count}")
+        if self.info.walltime_interval is not None:
+            print(f"   -> walltime = {walltime} -> {self.next_walltime}")
+
+    def should_trigger(self, t_model: float, iter_count: int, walltime: float) -> bool:
+        trig = False
+
+        log = []
+
+        if self.info.tsim_interval is not None:
+            if t_model >= self.next_tsim:  # should i add a tolerance here ?
+                trig = True
+                log.append(f"   -> t = {t_model} >= {self.next_tsim}")
+        if self.info.iter_count_interval is not None:
+            if iter_count >= self.next_iter_count:
+                trig = True
+                log.append(f"   -> iter = {iter_count} >= {self.next_iter_count}")
+        if self.info.walltime_interval is not None:
+            if walltime >= self.next_walltime:
+                trig = True
+                log.append(f"   -> walltime = {walltime} >= {self.next_walltime}")
+
+        if trig:
+            print(
+                f'[Simulation] Triggering callback "{self.info.name}" (counter = {self.counter}):\n{"\n".join(log)}'
+            )
+
         return trig
+
+    def to_dict(self):
+        return {
+            "counter": self.counter,
+            "next_tsim": self.next_tsim,
+            "next_iter_count": self.next_iter_count,
+            "next_walltime": self.next_walltime,
+        }
+
+    def from_dict(self, data: dict):
+        self.counter = data["counter"]
+        self.next_tsim = data["next_tsim"]
+        self.next_iter_count = data["next_iter_count"]
+        self.next_walltime = data["next_walltime"]
 
 
 class SimulationHandle(metaclass=SimulationMeta):
@@ -205,6 +250,10 @@ class SimulationHandle(metaclass=SimulationMeta):
     """
 
     t_end: float | None = None
+    dump_prefix: str | None = None
+
+    cur_t: float = 0.0
+    cur_iter_count: int = 0
 
     _declared_callbacks: list  # Will be filled by the metaclass
     _setup: tuple[str, Callable]  # Will be filled by the metaclass
@@ -219,11 +268,18 @@ class SimulationHandle(metaclass=SimulationMeta):
                 func=getattr(self, name),
                 name=name,
                 tsim_interval=info["tsim_interval"],
+                iter_count_interval=info["iter_count_interval"],
+                walltime_interval=info["walltime_interval"],
             )
 
             self._callbacks.append(copied)
 
         self._callbacks_state = None
+
+        if self.dump_prefix is not None:
+            self.dump_helper = ShamrockDumpHandleHelper(self.model, self.dump_prefix, metadata=True)
+        else:
+            self.dump_helper = None
 
     def __post_init__(self):
 
@@ -236,44 +292,136 @@ class SimulationHandle(metaclass=SimulationMeta):
         if self._setup is None:
             raise ValueError(f"{type(self).__name__}._setup must be defined")
 
+    def do_checkpoint(self, icheckpoint: int, **kwargs):
+
+        if self.dump_prefix is None:
+            raise ValueError(f"{type(self).__name__}.dump_prefix must be defined")
+
+        metadata = {
+            "cur_t": self.cur_t,
+            "cur_iter_count": self.cur_iter_count,
+        }
+
+        for ic, c in enumerate(self._callbacks):
+            metadata[c.name] = self._callbacks_state[ic].to_dict()
+
+        print("[Simulation] Doing checkpoint")
+        self.dump_helper.write_dump(icheckpoint, metadata=metadata, **kwargs)
+        print("[Simulation] Checkpoint done")
+
     def run_setup(self):
 
         name, func = self._setup
-        print(f"Running setup function: {name}")
+        print()
+        print(f"[Simulation] Running setup function: {name}")
+        print()
         func(self)
 
-        print("Setting up callbacks states")
-        self._callbacks_state = [CallbackState(c, self.model.get_time()) for c in self._callbacks]
+        self.cur_t = self.model.get_time()
+        self.cur_iter_count = 0
+
+        print()
+        print("[Simulation] Setting up callbacks states")
+        self._callbacks_state = [CallbackState(c, self.cur_t) for c in self._callbacks]
+
+        print("[Simulation] Setup done")
+
+    def restore_from_checkpoint(self, metadata: dict):
+        self.cur_t = metadata["cur_t"]
+        self.cur_iter_count = metadata["cur_iter_count"]
+
+        print("[Simulation] Setting up callbacks states")
+        self._callbacks_state = [CallbackState(c, self.cur_t) for c in self._callbacks]
+        print("[Simulation] Restoring callbacks states")
+        for ic, c in enumerate(self._callbacks):
+            self._callbacks_state[ic].from_dict(metadata[c.name])
+
+        self.trigger_and_advance_callbacks()
+
+    def evolve_until(
+        self, next_time: float, next_iter_count: int | None, next_walltime: float | None
+    ):
+
+        if next_time < self.cur_t:
+            raise ValueError(f"Next callback time {next_time} is in the past")
+
+        if next_iter_count is not None:
+            if next_iter_count < self.cur_iter_count:
+                raise ValueError(f"Next callback iter count {next_iter_count} is in the past")
+
+        if next_iter_count is None:
+            next_iter_count = -1
+        else:
+            next_iter_count = next_iter_count - self.cur_iter_count
+
+        result = self.model.evolve_until(next_time, niter_max=next_iter_count)
+        self.cur_t = self.model.get_time()
+        self.cur_iter_count += result.iter_count
+
+    def trigger_and_advance_callbacks(self):
+        callback_to_advance = []
+
+        wtime = shamrock.get_wtime_sync()
+        for ic, c in enumerate(self._callbacks):
+            trig = self._callbacks_state[ic].should_trigger(self.cur_t, self.cur_iter_count, wtime)
+            if trig:
+                counter = self._callbacks_state[ic].counter
+                print("--------------------------------")
+                c.func(counter)
+                print("--------------------------------")
+                callback_to_advance.append(ic)
+
+        # in case there is a long running callback this won't fuck up the walltimes
+
+        for ic in callback_to_advance:
+            self._callbacks_state[ic].advance(self.cur_t, self.cur_iter_count, wtime)
 
     def goto_run_next_callback(self):
 
         next_time = self.t_end
+        next_iter_count = None
+        next_walltime = None
 
         for ic, _ in enumerate(self._callbacks):
             state = self._callbacks_state[ic]
-            next_time = min(next_time, state.next_tsim)
 
-        if next_time < self.model.get_time():
-            raise ValueError(f"Next callback time {next_time} is in the past")
+            if state.next_tsim is not None:
+                next_time = min(next_time, state.next_tsim)
 
-        print(f"Next triggers at t={next_time}")
+            if state.next_iter_count is not None:
+                if next_iter_count is None:
+                    next_iter_count = state.next_iter_count
+                else:
+                    next_iter_count = min(next_iter_count, state.next_iter_count)
 
-        result = self.model.evolve_until(next_time)
+            if state.next_walltime is not None:
+                if next_walltime is None:
+                    next_walltime = state.next_walltime
+                else:
+                    next_walltime = min(next_walltime, state.next_walltime)
 
-        print(result)
+        print()
+        print(
+            f"[Simulation] Evolve until next trigger(s) :\n"
+            f"   -> t = {next_time} (current = {self.cur_t})\n"
+            f"   -> iter = {next_iter_count} (current = {self.cur_iter_count})\n"
+            f"   -> walltime = {next_walltime} (current = {shamrock.get_wtime_sync()})"
+        )
+        print()
 
-        for ic, c in enumerate(self._callbacks):
-            trig = self._callbacks_state[ic].should_trigger(self.model.get_time())
-            if trig:
-                counter = self._callbacks_state[ic].counter
-                print(
-                    f"Triggering callback {c.name} at t={self.model.get_time()} (counter={counter})"
-                )
-                c.func(counter)
-                self._callbacks_state[ic].advance(self.model.get_time())
+        self.evolve_until(next_time, next_iter_count, next_walltime)
+
+        self.trigger_and_advance_callbacks()
 
     def run(self):
-        self.run_setup()
 
-        while self.model.get_time() < self.t_end:
+        if self.dump_helper is not None:
+            metadata = self.dump_helper.load_last_dump_or(self.run_setup)
+            if metadata is not None:
+                print("[Simulation] Restoring Simulation handle from checkpoint")
+                self.restore_from_checkpoint(metadata)
+        else:
+            self.run_setup()
+
+        while self.cur_t < self.t_end:
             self.goto_run_next_callback()

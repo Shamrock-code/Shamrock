@@ -44,10 +44,27 @@ def helper_get_last_dump(dump_prefix, ext=".sham") -> int | None:
 
 class ShamrockDumpHandleHelper:
     """
-    Helper class to handle dump files.
+    Helper class to handle Shamrock checkpoint dump files.
+
+    When ``metadata`` is enabled at construction, a JSON companion file is written
+    and read alongside each checkpoint to store simulation metadata.
     """
 
     def __init__(self, model, dump_prefix, ext=".sham", metadata=False):
+        """
+        Parameters
+        ----------
+        model
+            The Shamrock model instance used to write and load dumps.
+        dump_prefix : str
+            Path prefix for dump files; the dump index is appended as a
+            zero-padded seven-digit number (e.g. ``prefix0000042``).
+        ext : str, optional
+            File extension for checkpoint dumps (default is ``".sham"``).
+        metadata : bool, optional
+            If ``True``, also write/read a ``.json`` companion with per-checkpoint
+            metadata (default is ``False``).
+        """
         self.model = model
         self.dump_prefix = dump_prefix
         self.ext = ext
@@ -84,7 +101,7 @@ class ShamrockDumpHandleHelper:
         """
         helper_purge_old_dumps(self.dump_prefix, keep_first, keep_last, self.ext)
 
-    def load_dump(self, idump) -> None:
+    def load_dump(self, idump) -> dict | None:
         """
         Load a dump file.
 
@@ -95,8 +112,9 @@ class ShamrockDumpHandleHelper:
 
         Returns
         -------
-        None
-            This method does not return a value.
+        dict or None
+            If ``metadata`` was enabled at construction, the JSON metadata
+            loaded from the companion file; otherwise ``None``.
         """
         dump_name = self.get_dump_name(idump)
         if shamrock.sys.world_rank() == 0:
@@ -117,8 +135,9 @@ class ShamrockDumpHandleHelper:
         ----------
         idump : int
             The dump identifier to write.
-        metadata: object
-            Metadata to be dumped alongside the checkpoint as json
+        metadata : object, optional
+            JSON-serializable metadata stored in a ``.json`` companion next to the
+            checkpoint. Required when ``metadata`` was enabled at construction.
         purge_old_dumps : bool, optional
             Whether to purge old dumps (default is False).
         keep_first : int, optional
@@ -145,19 +164,26 @@ class ShamrockDumpHandleHelper:
         if purge_old_dumps:
             self.purge_old_dumps(keep_first, keep_last)
 
-    def load_last_dump_or(self, functor_no_last_dump) -> None:
+    def load_last_dump_or(self, functor_no_last_dump) -> dict | None:
         """
         Load the last dump or call a function if no dump is found.
 
         Parameters
         ----------
         functor_no_last_dump : callable
-            The function to call if no dump are found (i.e. the setup function).
+            Setup function invoked when no dump exists. Must not return a value.
+
+        Returns
+        -------
+        dict or None
+            If a dump was loaded and ``metadata`` was enabled at construction,
+            the JSON metadata from the companion; otherwise ``None``.
         """
         idump = self.get_last_dump()
         if idump is None:
             result = functor_no_last_dump()
             if result is not None:
                 raise ValueError("functor_no_last_dump must not return a value")
+            return None
         else:
-            self.load_dump(idump)
+            return self.load_dump(idump)

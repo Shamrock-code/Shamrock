@@ -134,12 +134,13 @@ class ShamrockDumpHandleHelper:
         dump_name = self.get_dump_name(idump)
         self.model.dump(dump_name)
 
-        if self.metadata and shamrock.sys.world_rank() == 0:
+        if self.metadata:
             if metadata is None:
                 raise ValueError("metadata is required when metadata is enabled")
 
-            with open(self.get_dump_name_extension(idump, ".json"), "w") as f:
-                json.dump(metadata, f)
+            if shamrock.sys.world_rank() == 0:
+                with open(self.get_dump_name_extension(idump, ".json"), "w") as f:
+                    json.dump(metadata, f)
 
         if purge_old_dumps:
             self.purge_old_dumps(keep_first, keep_last)

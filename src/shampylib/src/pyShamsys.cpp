@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shampylib/pyNodeInstance.hpp"
 #include "shamrock/experimental_features.hpp"
@@ -155,6 +156,14 @@ ON_PYTHON_INIT {
         R"pbdoc(
         dump profiling data
     )pbdoc");
+
+    m.def("get_wtime", []() {
+        return shambase::details::get_wtime();
+    });
+
+    m.def("get_wtime_sync", []() {
+        return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+    });
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
     sys_module.def("signal_handler", &shamsys::details::signal_callback_handler);

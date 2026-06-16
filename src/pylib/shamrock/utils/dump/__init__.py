@@ -43,19 +43,16 @@ def helper_get_last_dump(dump_prefix, ext=".sham") -> int | None:
 
 
 class ShamrockDumpHandleHelper:
-    def __init__(self, model, dump_prefix, ext=".sham", metadata=False):
-        """
-        Helper class to handle dump files.
-        """
+    """
+    Helper class to handle dump files.
+    """
 
+    def __init__(self, model, dump_prefix, ext=".sham", metadata=False):
         self.model = model
         self.dump_prefix = dump_prefix
         self.ext = ext
         os.makedirs(os.path.dirname(self.dump_prefix), exist_ok=True)
         self.metadata = metadata
-
-    def get_dump_name_extension(self, idump, ext):
-        return self.dump_prefix + f"{idump:07}" + ext
 
     def get_dump_name_extension(self, idump, ext) -> str:
         """Get the name of the dump file with the extension"""

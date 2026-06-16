@@ -80,12 +80,30 @@ class ShamrockDumpHandleHelper:
         return self.get_dump_name_extension(idump, self.ext)
 
     def get_last_dump(self) -> int | None:
-        """Find the last dump number"""
-        return helper_get_last_dump(self.dump_prefix, self.ext)
+        """Find the last dump number.
+
+        When metadata mode is enabled, validate that checkpoint dumps and JSON
+        companion files agree on the latest checkpoint index.
+        """
+        last_dump = helper_get_last_dump(self.dump_prefix, self.ext)
+        if not self.metadata:
+            return last_dump
+
+        last_metadata_dump = helper_get_last_dump(self.dump_prefix, ".json")
+        if last_dump != last_metadata_dump:
+            raise ValueError(
+                "Detected inconsistent checkpoint files: "
+                f"last {self.ext} dump is {last_dump}, "
+                f"last .json dump is {last_metadata_dump}. "
+                "This may indicate a botched checkpoint."
+            )
+        return last_dump
 
     def purge_old_dumps(self, keep_first=1, keep_last=3) -> None:
         """
         Purge old dump files.
+
+        When metadata mode is enabled, also purge old JSON companion files.
 
         Parameters
         ----------
@@ -100,6 +118,9 @@ class ShamrockDumpHandleHelper:
             This method does not return a value.
         """
         helper_purge_old_dumps(self.dump_prefix, keep_first, keep_last, self.ext)
+
+        if self.metadata:
+            helper_purge_old_dumps(self.dump_prefix, keep_first, keep_last, ".json")
 
     def load_dump(self, idump) -> dict | None:
         """

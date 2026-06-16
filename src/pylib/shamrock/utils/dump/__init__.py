@@ -148,7 +148,7 @@ class ShamrockDumpHandleHelper:
         else:
             return None
 
-    def write_dump(self, idump, metadata=None, purge_old_dumps=False, keep_first=1, keep_last=3):
+    def write_dump(self, idump, metadata=None, purge_old_dumps=False, keep_first=1, keep_last=3) -> None:
         """
         Write a dump file.
 

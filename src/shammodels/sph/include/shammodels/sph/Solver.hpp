@@ -251,7 +251,7 @@ namespace shammodels::sph {
             f64 start_wall_time
                 = shamalgs::collective::allreduce_max(shambase::details::get_wtime());
 
-            const bool walltime_limit_active = (max_walltime != -1);
+            const bool walltime_limit_active = (max_walltime > 0);
             i32 next_walltime_check_iter
                 = walltime_limit_active ? 1 : std::numeric_limits<i32>::max();
 

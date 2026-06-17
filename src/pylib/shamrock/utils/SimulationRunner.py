@@ -208,7 +208,8 @@ class CallbackState:
 
         if trig:
             rank_0_print(
-                f'[Simulation] Triggering callback "{self.info.name}" (counter = {self.counter}):\n{"\n".join(log)}'
+                f'[Simulation] Triggering callback "{self.info.name}" (counter = {self.counter}):\n'
+                + "\n".join(log)
             )
 
         return trig

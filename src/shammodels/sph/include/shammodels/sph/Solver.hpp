@@ -248,12 +248,26 @@ namespace shammodels::sph {
         inline EvolveUntilResults evolve_until(
             Tscal target_time, i32 niter_max, f64 max_walltime = -1) {
 
-            f64 start_wall_time
-                = shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+            const bool niter_limit_active    = (niter_max >= 0);
+            const bool walltime_limit_active = (max_walltime >= 0);
 
-            const bool walltime_limit_active = (max_walltime != -1);
-            i32 next_walltime_check_iter
-                = walltime_limit_active ? 1 : std::numeric_limits<i32>::max();
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH",
+                    shambase::format(
+                        "evolve_until (target_time = {:.2f}s, niter_max = {}, max_walltime = "
+                        "{:.2f}s)",
+                        target_time,
+                        niter_max,
+                        max_walltime));
+            }
+
+            auto synced_wtime = [&]() -> f64 {
+                if (walltime_limit_active) {
+                    return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+                }
+                return 0;
+            };
 
             auto step = [&]() {
                 Tscal dt = solver_config.get_dt_sph();
@@ -270,14 +284,23 @@ namespace shammodels::sph {
                 evolve_once();
             };
 
+            f64 start_wall_time = (walltime_limit_active) ? synced_wtime() : 0;
+
+            i32 next_walltime_check_iter
+                = walltime_limit_active ? 1 : std::numeric_limits<i32>::max();
+
             i32 iter_count = 0;
 
             while (solver_config.get_time() < target_time) {
                 step();
                 iter_count++;
 
-                if ((iter_count >= niter_max) && (niter_max != -1)) {
-                    logger::info_ln("SPH", "stopping evolve until because of niter =", iter_count);
+                // if the iteration count is greater than the maximum iteration count
+                if (niter_limit_active && iter_count >= niter_max) {
+                    if (shamcomm::world_rank() == 0) {
+                        logger::info_ln(
+                            "SPH", "stopping evolve until because of niter =", iter_count);
+                    }
                     return {
                         .reach_target_time  = false,
                         .reach_niter_max    = true,
@@ -286,18 +309,21 @@ namespace shammodels::sph {
                     };
                 }
 
+                // if walltime limit is active and the next walltime check is due
                 if (walltime_limit_active && iter_count >= next_walltime_check_iter) {
-                    f64 global_walltime
-                        = shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+                    f64 global_walltime = synced_wtime();
 
-                    if ((max_walltime != -1) && (global_walltime >= max_walltime)) {
-                        logger::info_ln(
-                            "SPH",
-                            shambase::format(
-                                "stopping evolve until because of "
-                                "max_walltime = {:.2f}s > {:.2f}s",
-                                global_walltime,
-                                max_walltime));
+                    // if the global walltime is greater than the max walltime
+                    if (global_walltime >= max_walltime) {
+                        if (shamcomm::world_rank() == 0) {
+                            logger::info_ln(
+                                "SPH",
+                                shambase::format(
+                                    "stopping evolve until because of "
+                                    "max_walltime = {:.2f}s > {:.2f}s",
+                                    global_walltime,
+                                    max_walltime));
+                        }
                         return {
                             .reach_target_time  = false,
                             .reach_niter_max    = false,
@@ -320,28 +346,22 @@ namespace shammodels::sph {
                         return 1000; // default to 1000 iterations if sec_per_iter is 0
                     };
 
-                    i32 iters_to_next_check = std::numeric_limits<i32>::max();
-
-                    i32 next_walltime_type = 0; // 0 for walltime, 1 for global walltime
-
-                    if (max_walltime != -1) {
-                        i32 iters_to_limit
-                            = get_remaining_iters(max_walltime - global_walltime, 0.1);
-                        if (iters_to_limit < iters_to_next_check) {
-                            next_walltime_type  = 1;
-                            iters_to_next_check = iters_to_limit;
-                        }
-                    }
+                    i32 iters_to_limit = get_remaining_iters(max_walltime - global_walltime, 0.25);
+                    i32 iters_to_next_check = iters_to_limit;
 
                     next_walltime_check_iter = iter_count + std::max(1, iters_to_next_check);
 
-                    logger::info_ln(
-                        "SPH",
-                        shambase::format(
-                            "next walltime check in {:.2f}s (niter = {}) global walltime = {:.2f}s",
-                            iters_to_next_check * sec_per_iter,
-                            iters_to_next_check,
-                            global_walltime));
+                    if (shamcomm::world_rank() == 0) {
+                        logger::info_ln(
+                            "SPH",
+                            shambase::format(
+                                "next walltime check in {:.2f}s (niter = {}) global walltime = "
+                                "{:.2f}s (max_walltime = {:.2f}s)",
+                                iters_to_next_check * sec_per_iter,
+                                iters_to_next_check,
+                                global_walltime,
+                                max_walltime));
+                    }
                 }
             }
 

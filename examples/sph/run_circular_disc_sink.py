@@ -197,6 +197,21 @@ from shamrock.utils.analysis import (
 
 perf_analysis = PerfHistory(model, analysis_folder, "perf_history")
 
+face_on_render_kwargs = {
+    "x_unit": "au",
+    "y_unit": "au",
+    "time_unit": "year",
+    "x_label": "x",
+    "y_label": "y",
+}
+
+sink_params = {
+    "sink_scale_factor": 1,
+    "sink_color": "green",
+    "sink_linewidth": 1,
+    "sink_fill": False,
+}
+
 column_density_plot = ColumnDensityPlot(
     model,
     ext_r=rout * 1.5,
@@ -208,6 +223,16 @@ column_density_plot = ColumnDensityPlot(
     analysis_folder=analysis_folder,
     analysis_prefix="rho_integ_normal",
 )
+
+column_density_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-2",
+    "field_label": "$\\int \\rho \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e4,
+    "norm": "log",
+    **sink_params,
+}
 
 column_density_plot_hollywood = ColumnDensityPlot(
     model,
@@ -221,6 +246,17 @@ column_density_plot_hollywood = ColumnDensityPlot(
     analysis_prefix="rho_integ_hollywood",
 )
 
+column_density_plot_hollywood.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-2",
+    "field_label": "$\\int \\rho \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e4,
+    "norm": "log",
+    "holywood_mode": True,
+    **sink_params,
+}
+
 vertical_density_plot = SliceDensityPlot(
     model,
     ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
@@ -232,6 +268,16 @@ vertical_density_plot = SliceDensityPlot(
     analysis_folder=analysis_folder,
     analysis_prefix="rho_slice",
 )
+
+vertical_density_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "kg.m^-3",
+    "field_label": "$\\rho$",
+    "vmin": 1e-10,
+    "vmax": 1e-6,
+    "norm": "log",
+    **sink_params,
+}
 
 v_z_slice_plot = SliceVzPlot(
     model,
@@ -245,6 +291,17 @@ v_z_slice_plot = SliceVzPlot(
     analysis_prefix="v_z_slice",
     do_normalization=True,
 )
+
+v_z_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "m.s^-1",
+    "field_label": "$\\mathrm{v}_z$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -300,
+    "vmax": 300,
+    **sink_params,
+}
 
 relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
     model,
@@ -261,6 +318,18 @@ relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
     min_normalization=1e-9,
 )
 
+relative_azy_velocity_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "m.s^-1",
+    "field_label": "$\\mathrm{v}_{\\theta} - v_k$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -300,
+    "vmax": 300,
+    **sink_params,
+}
+
+
 vertical_shear_gradient_slice_plot = VerticalShearGradient(
     model,
     ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
@@ -275,6 +344,17 @@ vertical_shear_gradient_slice_plot = VerticalShearGradient(
     min_normalization=1e-9,
 )
 
+vertical_shear_gradient_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "yr^-1",
+    "field_label": "${{\\partial R \\Omega}}/{{\\partial z}}$",
+    "cmap": "seismic",
+    "cmap_bad_color": "white",
+    "vmin": -1,
+    "vmax": 1,
+    **sink_params,
+}
+
 dt_part_slice_plot = SliceDtPart(
     model,
     ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
@@ -287,6 +367,18 @@ dt_part_slice_plot = SliceDtPart(
     analysis_prefix="dt_part_slice",
 )
 
+dt_part_slice_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": "year",
+    "field_label": "$\\Delta t$",
+    "vmin": 1e-4,
+    "vmax": 1,
+    "norm": "log",
+    "contour_list": [1e-4, 1e-3, 1e-2, 1e-1, 1],
+    **sink_params,
+}
+
+
 column_particle_count_plot = ColumnParticleCount(
     model,
     ext_r=rout * 1.5,
@@ -298,6 +390,17 @@ column_particle_count_plot = ColumnParticleCount(
     analysis_folder=analysis_folder,
     analysis_prefix="particle_count",
 )
+
+column_particle_count_plot.render_args = {
+    **face_on_render_kwargs,
+    "field_unit": None,
+    "field_label": "$\\int \\frac{1}{h_\\mathrm{part}} \\, \\mathrm{{d}} z$",
+    "vmin": 1,
+    "vmax": 1e2,
+    "norm": "log",
+    "contour_list": [1, 10, 100, 1000],
+    **sink_params,
+}
 
 profile_plot = AnalysisHelper(
     analysis_folder=os.path.join(analysis_folder, "plots"),
@@ -558,105 +661,29 @@ Simulation(model).run()
 import matplotlib
 import matplotlib.pyplot as plt
 
-face_on_render_kwargs = {
-    "x_unit": "au",
-    "y_unit": "au",
-    "time_unit": "year",
-    "x_label": "x",
-    "y_label": "y",
-}
-
-sink_params = {
-    "sink_scale_factor": 1,
-    "sink_color": "green",
-    "sink_linewidth": 1,
-    "sink_fill": False,
-}
-
 column_density_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="kg.m^-2",
-    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
-    vmin=1,
-    vmax=1e4,
-    norm="log",
-    **sink_params,
+    **column_density_plot.render_args,
 )
-
 column_density_plot_hollywood.render_all(
-    **face_on_render_kwargs,
-    field_unit="kg.m^-2",
-    field_label="$\\int \\rho \\, \\mathrm{{d}} z$",
-    vmin=1,
-    vmax=1e4,
-    norm="log",
-    holywood_mode=True,
-    **sink_params,
+    **column_density_plot_hollywood.render_args,
 )
-
 vertical_density_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="kg.m^-3",
-    field_label="$\\rho$",
-    vmin=1e-10,
-    vmax=1e-6,
-    norm="log",
-    **sink_params,
+    **vertical_density_plot.render_args,
 )
-
 v_z_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="m.s^-1",
-    field_label="$\\mathrm{v}_z$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-300,
-    vmax=300,
-    **sink_params,
+    **v_z_slice_plot.render_args,
 )
-
 relative_azy_velocity_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="m.s^-1",
-    field_label="$\\mathrm{v}_{\\theta} - v_k$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-300,
-    vmax=300,
-    **sink_params,
+    **relative_azy_velocity_slice_plot.render_args,
 )
-
 vertical_shear_gradient_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="yr^-1",
-    field_label="${{\\partial R \\Omega}}/{{\\partial z}}$",
-    cmap="seismic",
-    cmap_bad_color="white",
-    vmin=-1,
-    vmax=1,
-    **sink_params,
+    **vertical_shear_gradient_slice_plot.render_args,
 )
-
 dt_part_slice_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit="year",
-    field_label="$\\Delta t$",
-    vmin=1e-4,
-    vmax=1,
-    norm="log",
-    contour_list=[1e-4, 1e-3, 1e-2, 1e-1, 1],
-    **sink_params,
+    **dt_part_slice_plot.render_args,
 )
-
 column_particle_count_plot.render_all(
-    **face_on_render_kwargs,
-    field_unit=None,
-    field_label="$\\int \\frac{1}{h_\\mathrm{part}} \\, \\mathrm{{d}} z$",
-    vmin=1,
-    vmax=1e2,
-    norm="log",
-    contour_list=[1, 10, 100, 1000],
-    **sink_params,
+    **column_particle_count_plot.render_args,
 )
 
 

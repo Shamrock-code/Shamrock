@@ -90,14 +90,20 @@ t_end = 30 * dt_stop  # So 30 analysis here
 center_mass = 1.0
 center_racc = 0.8
 
-# Disc parameter
-disc_mass = 0.01  # sol mass
-rout = 10.0  # au
-rin = 1.0  # au
-H_r_0 = 0.05
-q = 0.5
-p = 3.0 / 2.0
-r0 = 1.0
+# Disc parameters
+disc = shamrock.utils.disc_setup.StandardDisc(
+    units=codeu,
+    center_mass=center_mass,
+    disc_mass=0.01,  # sol mass
+    rin=1.0,  # au
+    rout=10.0,  # au
+    H_r_0=0.05,
+    q=0.5,
+    p=3.0 / 2.0,
+    r0=1.0,
+    rotation="subkeplerian_3d",
+    inner_tapering=True,
+)
 
 # Viscosity parameter
 alpha_AV = 1.0e-3 / 0.08
@@ -116,21 +122,11 @@ plot_folder = analysis_folder + "plots/"
 dump_prefix = dump_folder + "dump_"
 
 
-disc = shamrock.utils.disc_setup.StandardDisc(
-    units=codeu,
-    center_mass=center_mass,
-    disc_mass=disc_mass,
-    rin=rin,
-    rout=rout,
-    H_r_0=H_r_0,
-    q=q,
-    p=p,
-    r0=r0,
-    rotation="subkeplerian_3d",
-    inner_tapering=True,
-)
+bsize = disc.rout * 2
+bmin = (-bsize, -bsize, -bsize)
+bmax = (bsize, bsize, bsize)
+
 profiles = disc.get_profiles()
-cs0 = disc.cs0()
 
 # %%
 # Create the dump directory if it does not exist
@@ -139,16 +135,6 @@ if shamrock.sys.world_rank() == 0:
     os.makedirs(dump_folder, exist_ok=True)
     os.makedirs(analysis_folder, exist_ok=True)
     os.makedirs(plot_folder, exist_ok=True)
-
-# %%
-# Utility functions and quantities deduced from the base one
-
-# Deduced quantities
-pmass = disc.part_mass(Npart)
-
-bsize = rout * 2
-bmin = (-bsize, -bsize, -bsize)
-bmax = (bsize, bsize, bsize)
 
 # %%
 # Start the context
@@ -192,19 +178,18 @@ class Simulation(SimulationRunner):
         self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
     def setup_config(self):
-        global disc_mass
 
         # Generate the default config
         cfg = model.gen_default_config()
         cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
-        cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
+        cfg.set_eos_locally_isothermalLP07(cs0=disc.cs0(), q=disc.q, r0=disc.r0)
 
         cfg.add_kill_sphere(
             center=(0, 0, 0), radius=bsize
         )  # kill particles outside the simulation box
 
         cfg.set_units(codeu)
-        cfg.set_particle_mass(pmass)
+        cfg.set_particle_mass(disc.part_mass(Npart))
         # Set the CFL
         cfg.set_cfl_cour(C_cour)
         cfg.set_cfl_force(C_force)
@@ -341,7 +326,7 @@ sink_params = {
 
 column_density_plot = ColumnDensityPlot(
     model,
-    ext_r=rout * 1.5,
+    ext_r=disc.rout * 1.5,
     nx=1024,
     ny=1024,
     ex=(1, 0, 0),
@@ -363,7 +348,7 @@ column_density_plot.render_args = {
 
 column_density_plot_hollywood = ColumnDensityPlot(
     model,
-    ext_r=rout * 1.5,
+    ext_r=disc.rout * 1.5,
     nx=1024,
     ny=1024,
     ex=(1, 0, 0),
@@ -386,7 +371,7 @@ column_density_plot_hollywood.render_args = {
 
 vertical_density_plot = SliceDensityPlot(
     model,
-    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    ext_r=disc.rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
     nx=1920,
     ny=1080,
     ex=(1, 0, 0),
@@ -408,7 +393,7 @@ vertical_density_plot.render_args = {
 
 v_z_slice_plot = SliceVzPlot(
     model,
-    ext_r=rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
+    ext_r=disc.rout * 1.1 / (16.0 / 9.0),  # aspect ratio of 16:9
     nx=1920,
     ny=1080,
     ex=(1, 0, 0),
@@ -432,12 +417,12 @@ v_z_slice_plot.render_args = {
 
 relative_azy_velocity_slice_plot = SliceDiffVthetaProfile(
     model,
-    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
     nx=1920,
     ny=1080,
     ex=(1, 0, 0),
     ey=(0, 0, 1),
-    center=((rin + rout) / 2, 0, 0),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
     analysis_folder=analysis_folder,
     analysis_prefix="relative_azy_velocity_slice",
     velocity_profile=profiles.vtheta_kepler,
@@ -459,12 +444,12 @@ relative_azy_velocity_slice_plot.render_args = {
 
 vertical_shear_gradient_slice_plot = VerticalShearGradient(
     model,
-    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
     nx=1920,
     ny=1080,
     ex=(1, 0, 0),
     ey=(0, 0, 1),
-    center=((rin + rout) / 2, 0, 0),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
     analysis_folder=analysis_folder,
     analysis_prefix="vertical_shear_gradient_slice",
     do_normalization=True,
@@ -484,12 +469,12 @@ vertical_shear_gradient_slice_plot.render_args = {
 
 dt_part_slice_plot = SliceDtPart(
     model,
-    ext_r=rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
+    ext_r=disc.rout * 0.5 / (16.0 / 9.0),  # aspect ratio of 16:9
     nx=1920,
     ny=1080,
     ex=(1, 0, 0),
     ey=(0, 0, 1),
-    center=((rin + rout) / 2, 0, 0),
+    center=((disc.rin + disc.rout) / 2, 0, 0),
     analysis_folder=analysis_folder,
     analysis_prefix="dt_part_slice",
 )
@@ -508,7 +493,7 @@ dt_part_slice_plot.render_args = {
 
 column_particle_count_plot = ColumnParticleCount(
     model,
-    ext_r=rout * 1.5,
+    ext_r=disc.rout * 1.5,
     nx=1024,
     ny=1024,
     ex=(1, 0, 0),
@@ -561,7 +546,7 @@ class profiles_plot_analysis:
         print(rho_field, r_field)
 
         x_min = center_racc / 2.0
-        x_max = rout * 1.1
+        x_max = disc.rout * 1.1
         x_min_log = np.log10(x_min)
         x_max_log = np.log10(x_max)
 

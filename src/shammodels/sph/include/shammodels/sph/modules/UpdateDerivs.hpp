@@ -41,7 +41,7 @@ namespace shammodels::sph::modules {
         UpdateDerivs(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void update_derivs();
+        void update_derivs(Tscal dt_hydro);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
@@ -62,7 +62,7 @@ namespace shammodels::sph::modules {
 
         using DustConfig = typename Config::DustConfig;
 
-        void update_derivs_dust_monofluid_tvi_Sj(DustConfig cfg);
+        void update_derivs_dust_monofluid_tvi_Sj(DustConfig cfg, Tscal dt_hydro);
 
         using Cfg_MHD = typename Config::MHDConfig;
 

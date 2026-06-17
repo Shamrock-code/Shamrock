@@ -47,7 +47,7 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tscal dt_hydro) {
 
     Cfg_AV cfg_av       = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd     = solver_config.mhd_config;
@@ -75,7 +75,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
     if (cfg_dust.has_s_j_field()) {
         // we can do it separately because the backreaction is done only through the pressure
-        update_derivs_dust_monofluid_tvi_Sj(cfg_dust);
+        update_derivs_dust_monofluid_tvi_Sj(cfg_dust, dt_hydro);
     }
 }
 
@@ -1070,7 +1070,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tvi_Sj(
-    DustConfig cfg) {
+    DustConfig cfg, Tscal dt_hydro) {
 
     using MonofluidTVI = typename DustConfig::MonofluidTVI;
 
@@ -1239,6 +1239,74 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     }
     node->evaluate();
 
+    if (DustEvolCoalaCoag<Tscal> *cfg_evol
+        = std::get_if<DustEvolCoalaCoag<Tscal>>(&cfg.dust_evol_config)) {
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> massgrid
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
+        massgrid->value = cfg_evol->massgrid;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> tabflux_coag
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
+        tabflux_coag->value = cfg_evol->tabflux_coag;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rhodust_eps
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        rhodust_eps->value = cfg_evol->rhodust_eps;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dv_max
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        dv_max->value = cfg_evol->dv_max;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> dt_hydro_edge
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
+        dt_hydro_edge->value = dt_hydro;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_P_on_rho
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad P/rho", "grad P/rho");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> delta_v
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(ndust, "Delta v", "Delta v");
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> S_coag
+            = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "S_coag", "S_coag");
+
+        auto press_grad_node      = std::make_shared<NodeComputePressureGrad<Tvec, SPHKernel>>();
+        auto delta_v_node         = std::make_shared<MonoFluidTVIDeltav<Tvec, SPHKernel>>(ndust);
+        auto node                 = std::make_shared<NodeEvolveDustCOALASourceTerm<Tvec>>(ndust);
+        auto node_add_source_term = std::make_shared<NodeMonofluidTVIAddSourceTerm<Tvec>>(ndust);
+
+        press_grad_node->set_edges(
+            gpart_mass,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            omega_refs,
+            pressure_field,
+            storage.neigh_cache,
+            grad_P_on_rho);
+
+        delta_v_node->set_edges(
+            gpart_mass, part_counts, hpart_refs, grad_P_on_rho, s_j_refs, t_j_field, delta_v);
+
+        node->set_edges(
+            rhodust_eps, dv_max, massgrid, tabflux_coag, part_counts, s_j_refs, delta_v, S_coag);
+
+        node_add_source_term->set_edges(
+            part_counts, rhodust_eps, dt_hydro_edge, S_coag, s_j_refs, ds_j_dt_refs);
+
+        press_grad_node->evaluate();
+        delta_v_node->evaluate();
+        node->evaluate();
+
+        // here we could compute the sum of S_coag to see if we are fucking up the dust mass
+        // conservation
+
+        node_add_source_term->evaluate();
+    }
+
+    // logger::raw_ln("S_coag = ", S_coag->get(0).get_buf().copy_to_stdvec());
     MonofluidTVI &cfg_monofluid_tvi
         = shambase::get_check_ref((std::get_if<MonofluidTVI>(&cfg.current_mode)));
 

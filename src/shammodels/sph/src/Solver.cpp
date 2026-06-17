@@ -1607,10 +1607,10 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::update_derivs() {
+void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
-    derivs.update_derivs();
+    derivs.update_derivs(dt_hydro);
 
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
@@ -2108,7 +2108,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         // save old acceleration
         prepare_corrector();
 
-        update_derivs();
+        update_derivs(dt);
 
         bool has_luminosity = solver_config.compute_luminosity;
 
@@ -2239,7 +2239,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
 
         if (solver_config.dust_config.has_s_j_field()) {
-            ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>("s_j s_j^2", 1);
+            ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>(
+                "s_j s_j^2", solver_config.dust_config.get_dust_nvar());
             utility.fields_leapfrog_corrector<Tscal>(
                 is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
         }

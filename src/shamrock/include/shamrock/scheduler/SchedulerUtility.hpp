@@ -77,7 +77,7 @@ namespace shamrock {
                     pdat.get_field<T>(derfield_idx).get_buf(),
                     derfield_old.get_field(cur_p.id_patch).get_buf(),
                     field_epsilon.get_field(cur_p.id_patch).get_buf(),
-                    pdat.get_obj_cnt(),
+                    pdat.get_obj_cnt() * derfield_old.get_nvar(),
                     hdt);
             });
         }

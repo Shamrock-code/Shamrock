@@ -336,8 +336,17 @@ class SimulationRunner(metaclass=SimulationMeta):
         rank_0_print("[Simulation] Setting up callbacks states")
         self._callbacks_state = [CallbackState(c, self.cur_t) for c in self._callbacks]
         rank_0_print("[Simulation] Restoring callbacks states")
+
+        wtime = shamrock.get_wtime_sync()
+
         for ic, c in enumerate(self._callbacks):
             self._callbacks_state[ic].from_dict(metadata[c.name])
+
+        # Correct the walltime to be the current walltime
+        # If not done it will be the next_walltime relative to when the dump was done
+        for ic, c in enumerate(self._callbacks):
+            if c.walltime_interval is not None:
+                self._callbacks_state[ic].next_walltime = wtime + c.walltime_interval
 
         # in case we checkpoint in the middle of the callback sequence
         self.trigger_and_advance_callbacks()

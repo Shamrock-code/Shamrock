@@ -152,23 +152,13 @@ class CallbackInfo:
     walltime_interval: float | None = None
 
 
-@dataclass
 class CallbackState:
-    counter: int = 0
-
-    next_tsim: float | None = None
-    next_iter_count: int | None = None
-    next_walltime: float | None = None
-
     def __init__(self, info: CallbackInfo, tsim_start: float):
         self.info = info
-
-        if self.info.tsim_interval is not None:
-            self.next_tsim = tsim_start
-        if self.info.iter_count_interval is not None:
-            self.next_iter_count = 0
-        if self.info.walltime_interval is not None:
-            self.next_walltime = 0.0
+        self.counter = 0
+        self.next_tsim = tsim_start if info.tsim_interval is not None else None
+        self.next_iter_count = 0 if info.iter_count_interval is not None else None
+        self.next_walltime = 0.0 if info.walltime_interval is not None else None
 
     def advance(self, t_model: float, iter_count: int, walltime: float):
         self.counter += 1

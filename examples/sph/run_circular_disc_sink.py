@@ -163,24 +163,150 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
+# %%
+# Declare the simulation class
+
+class Simulation(SimulationRunner):
+    # Use the global vars defined at the top of the file
+    t_end = t_end
+    dump_prefix = dump_prefix
+
+    # If there are multiple callbacks at the same time, they will be run in the declaration order
+
+    @callback(tsim_interval=dt_stop)  # Do the analysis every dt_stop
+    def analysis_plots(self, ianalysis):
+        # Run all the analysis modules (declared below)
+        for a in self.analysis_modules:
+            a.analysis_save(ianalysis)
+
+    def get_vtk_dump_name(self, idump):
+        return self.dump_prefix + f"{idump:07}" + ".vtk"
+
+    @callback(tsim_interval=dt_stop * 4)  # So once every 4 analysis
+    def vtk_dump(self, idump):
+        self.model.do_vtk_dump(self.get_vtk_dump_name(idump), True)
+
+    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
+    def checkpoint(self, icheckpoint):
+        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
+
+    def setup_config(self):
+        global disc_mass
+
+        # Generate the default config
+        cfg = model.gen_default_config()
+        cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
+        cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
+
+        cfg.add_kill_sphere(
+            center=(0, 0, 0), radius=bsize
+        )  # kill particles outside the simulation box
+
+        cfg.set_units(codeu)
+        cfg.set_particle_mass(pmass)
+        # Set the CFL
+        cfg.set_cfl_cour(C_cour)
+        cfg.set_cfl_force(C_force)
+
+        # Enable this to debug the neighbor counts
+        # cfg.set_show_neigh_stats(True)
+
+        # Standard way to set the smoothing length (e.g. Price et al. 2018)
+        # cfg.set_smoothing_length_density_based()
+
+        # To use the dt field analysis
+        cfg.set_save_dt_to_fields(True)
+
+        # Standard density based smoothing length but with a neighbor count limit
+        # Use it if you have large slowdowns due to giant particles
+        # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
+        cfg.set_smoothing_length_density_based_neigh_lim(500)
+
+        # Set the solver config to be the one stored in cfg
+        self.model.set_solver_config(cfg)
+
+    def setup_sph_particles(self):
+
+        setup = model.get_setup()
+        gen_disc = disc.make_generator(setup, Npart, random_seed=666)
+
+        # Print the dot graph of the setup
+        print(gen_disc.get_dot())
+
+        # Apply the setup
+        setup.apply_setup(gen_disc)
+
+        # correct the momentum and barycenter of the disc to 0
+        analysis_momentum = shamrock.model_sph.analysisTotalMomentum(model=model)
+        total_momentum = analysis_momentum.get_total_momentum()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc momentum = {total_momentum}")
+
+        model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
+
+        # Correct the barycenter before adding the sink
+        analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
+        barycenter, disc_mass = analysis_barycenter.get_barycenter()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc barycenter = {barycenter}")
+
+        model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
+
+        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc momentum after correction = {total_momentum}")
+
+        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+        if shamrock.sys.world_rank() == 0:
+            print(f"disc barycenter after correction = {barycenter}")
+
+        if not np.allclose(total_momentum, 0.0):
+            raise RuntimeError("disc momentum is not 0")
+        if not np.allclose(barycenter, 0.0):
+            raise RuntimeError("disc barycenter is not 0")
+
+        # now that the barycenter & momentum are 0, we can add the sink
+        model.add_sink(center_mass, (0, 0, 0), (0, 0, 0), center_racc)
+
+    @simulation_setup
+    def setup(self):
+
+        self.setup_config()
+
+        # Print the solver config
+        model.get_current_config().print_status()
+
+        # Init the scheduler & fields
+        model.init_scheduler(scheduler_split_val, scheduler_merge_val)
+
+        # Set the simulation box size
+        model.resize_simulation_box(bmin, bmax)
+
+        # Setup particles & sink
+        self.setup_sph_particles()
+
+        # Run a single step to init the integrator and smoothing length of the particles
+        # Here the htolerance is the maximum factor of evolution of the smoothing length in each
+        # Smoothing length iterations, increasing it affect the performance negatively but
+        # increase the convergence rate of the smoothing length
+        # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
+        # Note that both ``change_htolerances`` can be removed and it will work the same but
+        # would converge more slowly at the first timestep
+
+        model.change_htolerances(coarse=1.3, fine=1.1)
+        model.timestep()
+        model.change_htolerances(coarse=1.1, fine=1.1)
+
+        model.solver_logs_reset_cumulated_step_time()
+        model.solver_logs_reset_step_count()
+
 
 # %%
 # On the fly analysis
-
-
-def save_analysis_data(filename, key, value, ianalysis):
-    """Helper to save analysis data to a JSON file."""
-    if shamrock.sys.world_rank() == 0:
-        filepath = os.path.join(analysis_folder, filename)
-        try:
-            with open(filepath, "r") as fp:
-                data = json.load(fp)
-        except (FileNotFoundError, json.JSONDecodeError):
-            data = {key: []}
-        data[key] = data[key][:ianalysis]
-        data[key].append({"t": model.get_time(), key: value})
-        with open(filepath, "w") as fp:
-            json.dump(data, fp, indent=4)
 
 
 from shamrock.utils.analysis import (
@@ -402,177 +528,16 @@ column_particle_count_plot.render_args = {
     **sink_params,
 }
 
+
 profile_plot = AnalysisHelper(
     analysis_folder=os.path.join(analysis_folder, "plots"),
     analysis_prefix="density_profile",
 )
 
 
-# %%
-# Evolve the simulation
+class profiles_plot_analysis:
+    def analysis_save(self, ianalysis):
 
-
-class Simulation(SimulationRunner):
-    # Use the global vars defined at the top of the file
-    t_end = t_end
-    dump_prefix = dump_prefix
-
-    def setup_config(self):
-        global disc_mass
-
-        # Generate the default config
-        cfg = model.gen_default_config()
-        cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
-        cfg.set_eos_locally_isothermalLP07(cs0=cs0, q=q, r0=r0)
-
-        cfg.add_kill_sphere(
-            center=(0, 0, 0), radius=bsize
-        )  # kill particles outside the simulation box
-
-        cfg.set_units(codeu)
-        cfg.set_particle_mass(pmass)
-        # Set the CFL
-        cfg.set_cfl_cour(C_cour)
-        cfg.set_cfl_force(C_force)
-
-        # Enable this to debug the neighbor counts
-        # cfg.set_show_neigh_stats(True)
-
-        # Standard way to set the smoothing length (e.g. Price et al. 2018)
-        # cfg.set_smoothing_length_density_based()
-
-        # To use the dt field analysis
-        cfg.set_save_dt_to_fields(True)
-
-        # Standard density based smoothing length but with a neighbor count limit
-        # Use it if you have large slowdowns due to giant particles
-        # I recommend to use it if you have a circumbinary discs as the issue is very likely to happen
-        cfg.set_smoothing_length_density_based_neigh_lim(500)
-
-        # Set the solver config to be the one stored in cfg
-        self.model.set_solver_config(cfg)
-
-    def setup_sph_particles(self):
-
-        setup = model.get_setup()
-        gen_disc = disc.make_generator(setup, Npart, random_seed=666)
-
-        # Print the dot graph of the setup
-        print(gen_disc.get_dot())
-
-        # Apply the setup
-        setup.apply_setup(gen_disc)
-
-        # correct the momentum and barycenter of the disc to 0
-        analysis_momentum = shamrock.model_sph.analysisTotalMomentum(model=model)
-        total_momentum = analysis_momentum.get_total_momentum()
-
-        if shamrock.sys.world_rank() == 0:
-            print(f"disc momentum = {total_momentum}")
-
-        model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
-
-        # Correct the barycenter before adding the sink
-        analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
-        barycenter, disc_mass = analysis_barycenter.get_barycenter()
-
-        if shamrock.sys.world_rank() == 0:
-            print(f"disc barycenter = {barycenter}")
-
-        model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
-
-        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
-
-        if shamrock.sys.world_rank() == 0:
-            print(f"disc momentum after correction = {total_momentum}")
-
-        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
-
-        if shamrock.sys.world_rank() == 0:
-            print(f"disc barycenter after correction = {barycenter}")
-
-        if not np.allclose(total_momentum, 0.0):
-            raise RuntimeError("disc momentum is not 0")
-        if not np.allclose(barycenter, 0.0):
-            raise RuntimeError("disc barycenter is not 0")
-
-        # now that the barycenter & momentum are 0, we can add the sink
-        model.add_sink(center_mass, (0, 0, 0), (0, 0, 0), center_racc)
-
-    @simulation_setup
-    def setup(self):
-
-        self.setup_config()
-
-        # Print the solver config
-        model.get_current_config().print_status()
-
-        # Init the scheduler & fields
-        model.init_scheduler(scheduler_split_val, scheduler_merge_val)
-
-        # Set the simulation box size
-        model.resize_simulation_box(bmin, bmax)
-
-        # Setup particles & sink
-        self.setup_sph_particles()
-
-        # Run a single step to init the integrator and smoothing length of the particles
-        # Here the htolerance is the maximum factor of evolution of the smoothing length in each
-        # Smoothing length iterations, increasing it affect the performance negatively but
-        # increase the convergence rate of the smoothing length
-        # this is why we increase it temporely to 1.3 before lowering it back to 1.1 (default value)
-        # Note that both ``change_htolerances`` can be removed and it will work the same but
-        # would converge more slowly at the first timestep
-
-        model.change_htolerances(coarse=1.3, fine=1.1)
-        model.timestep()
-        model.change_htolerances(coarse=1.1, fine=1.1)
-
-        model.solver_logs_reset_cumulated_step_time()
-        model.solver_logs_reset_step_count()
-
-    # If there are multiple callbacks at the same time, they will be run in the declaration order
-
-    @callback(tsim_interval=dt_stop)  # Do the analysis every dt_stop
-    def analysis_plots(self, ianalysis):
-        column_density_plot.analysis_save(ianalysis)
-        column_density_plot_hollywood.analysis_save(ianalysis)
-        vertical_density_plot.analysis_save(ianalysis)
-        v_z_slice_plot.analysis_save(ianalysis)
-        relative_azy_velocity_slice_plot.analysis_save(ianalysis)
-        vertical_shear_gradient_slice_plot.analysis_save(ianalysis)
-        dt_part_slice_plot.analysis_save(ianalysis)
-        column_particle_count_plot.analysis_save(ianalysis)
-
-    @callback(tsim_interval=dt_stop)  # Do the analysis every dt_stop
-    def analysis_curves(self, ianalysis):
-        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
-
-        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
-        angular_momentum = shamrock.model_sph.analysisAngularMomentum(
-            model=model
-        ).get_angular_momentum()
-
-        potential_energy = shamrock.model_sph.analysisEnergyPotential(
-            model=model
-        ).get_potential_energy()
-
-        kinetic_energy = shamrock.model_sph.analysisEnergyKinetic(model=model).get_kinetic_energy()
-
-        save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
-        save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
-        save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
-        save_analysis_data("angular_momentum.json", "angular_momentum", angular_momentum, ianalysis)
-        save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
-        save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
-
-        sinks = model.get_sinks()
-        save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
-
-        perf_analysis.analysis_save(ianalysis)
-
-    @callback(tsim_interval=dt_stop)  # Do the analysis every dt_stop
-    def analysis_profile(self, ianalysis):
         rho_field = model.compute_field("rho", "f64")
         hpart_field = model.compute_field("hpart", "f64")
 
@@ -638,19 +603,73 @@ class Simulation(SimulationRunner):
 
         profile_plot.analysis_save(ianalysis, data)
 
-    def get_vtk_dump_name(self, idump):
-        return self.dump_prefix + f"{idump:07}" + ".vtk"
 
-    @callback(tsim_interval=dt_stop * 4)  # So once every 4 analysis
-    def vtk_dump(self, idump):
-        self.model.do_vtk_dump(self.get_vtk_dump_name(idump), True)
+def save_analysis_data(filename, key, value, ianalysis):
+    """Helper to save analysis data to a JSON file."""
+    if shamrock.sys.world_rank() == 0:
+        filepath = os.path.join(analysis_folder, filename)
+        try:
+            with open(filepath, "r") as fp:
+                data = json.load(fp)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {key: []}
+        data[key] = data[key][:ianalysis]
+        data[key].append({"t": model.get_time(), key: value})
+        with open(filepath, "w") as fp:
+            json.dump(data, fp, indent=4)
 
-    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
-    def checkpoint(self, icheckpoint):
-        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
+
+class curves_analysis:
+    def analysis_save(self, ianalysis):
+        barycenter, disc_mass = shamrock.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+        total_momentum = shamrock.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+        angular_momentum = shamrock.model_sph.analysisAngularMomentum(
+            model=model
+        ).get_angular_momentum()
+
+        potential_energy = shamrock.model_sph.analysisEnergyPotential(
+            model=model
+        ).get_potential_energy()
+
+        kinetic_energy = shamrock.model_sph.analysisEnergyKinetic(model=model).get_kinetic_energy()
+
+        save_analysis_data("barycenter.json", "barycenter", barycenter, ianalysis)
+        save_analysis_data("disc_mass.json", "disc_mass", disc_mass, ianalysis)
+        save_analysis_data("total_momentum.json", "total_momentum", total_momentum, ianalysis)
+        save_analysis_data("angular_momentum.json", "angular_momentum", angular_momentum, ianalysis)
+        save_analysis_data("potential_energy.json", "potential_energy", potential_energy, ianalysis)
+        save_analysis_data("kinetic_energy.json", "kinetic_energy", kinetic_energy, ianalysis)
+
+        sinks = model.get_sinks()
+        save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
 
 
-Simulation(model).run()
+
+# %%
+# Declare the simulation and add analysis modules
+
+sim = Simulation(model)
+
+sim.analysis_modules = [
+    perf_analysis,
+    column_density_plot,
+    column_density_plot_hollywood,
+    vertical_density_plot,
+    v_z_slice_plot,
+    relative_azy_velocity_slice_plot,
+    vertical_shear_gradient_slice_plot,
+    dt_part_slice_plot,
+    column_particle_count_plot,
+    profiles_plot_analysis(),
+    curves_analysis(),
+]
+
+
+# %%
+# Run the simulation
+
+sim.run()
 
 # %%
 # Plot generation
@@ -661,30 +680,12 @@ Simulation(model).run()
 import matplotlib
 import matplotlib.pyplot as plt
 
-column_density_plot.render_all(
-    **column_density_plot.render_args,
-)
-column_density_plot_hollywood.render_all(
-    **column_density_plot_hollywood.render_args,
-)
-vertical_density_plot.render_all(
-    **vertical_density_plot.render_args,
-)
-v_z_slice_plot.render_all(
-    **v_z_slice_plot.render_args,
-)
-relative_azy_velocity_slice_plot.render_all(
-    **relative_azy_velocity_slice_plot.render_args,
-)
-vertical_shear_gradient_slice_plot.render_all(
-    **vertical_shear_gradient_slice_plot.render_args,
-)
-dt_part_slice_plot.render_all(
-    **dt_part_slice_plot.render_args,
-)
-column_particle_count_plot.render_all(
-    **column_particle_count_plot.render_args,
-)
+for analysis_module in sim.analysis_modules:
+    # if it has a render_all function, call it
+    if hasattr(analysis_module, "render_all"):
+        analysis_module.render_all(
+            **analysis_module.render_args,
+        )
 
 
 def profile_plot_func(iplot, data):

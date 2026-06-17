@@ -358,6 +358,9 @@ class SimulationRunner(metaclass=SimulationMeta):
         else:
             next_iter_count = next_iter_count - self.cur_iter_count
 
+        if next_walltime is None:
+            next_walltime = -1.0
+
         result = self.model.evolve_until(
             next_time, niter_max=next_iter_count, max_walltime=next_walltime
         )

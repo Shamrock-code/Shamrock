@@ -957,8 +957,8 @@ namespace shammodels::sph {
         }
 
         inline EvolveUntilResults evolve_until(
-            Tscal target_time, i32 niter_max, f64 max_global_walltime = -1) {
-            return solver.evolve_until(target_time, niter_max, max_global_walltime);
+            Tscal target_time, i32 niter_max, f64 max_walltime = -1) {
+            return solver.evolve_until(target_time, niter_max, max_walltime);
         }
 
         private:

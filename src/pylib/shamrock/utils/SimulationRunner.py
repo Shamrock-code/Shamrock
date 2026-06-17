@@ -86,7 +86,7 @@ class SimulationMeta(type):
             print()
 
         # skip base class
-        if name == "SimulationHandle":
+        if name == "SimulationRunner":
             return cls
 
         callbacks = []
@@ -228,9 +228,9 @@ class CallbackState:
         self.next_walltime = data["next_walltime"]
 
 
-class SimulationHandle(metaclass=SimulationMeta):
+class SimulationRunner(metaclass=SimulationMeta):
     """
-    SimulationHandle is a base class to declare a simulation with setup & callbacks.
+    SimulationRunner is a base class to declare a simulation with setup & callbacks.
 
     A derived class must define:
     - t_end: float = <end time of the simulation>
@@ -358,7 +358,9 @@ class SimulationHandle(metaclass=SimulationMeta):
         else:
             next_iter_count = next_iter_count - self.cur_iter_count
 
-        result = self.model.evolve_until(next_time, niter_max=next_iter_count)
+        result = self.model.evolve_until(
+            next_time, niter_max=next_iter_count, max_walltime=next_walltime
+        )
         self.cur_t = self.model.get_time()
         self.cur_iter_count += result.iter_count
 

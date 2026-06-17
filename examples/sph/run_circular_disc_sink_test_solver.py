@@ -206,10 +206,10 @@ column_density_plot_hollywood = ColumnDensityPlot(
 
 # %%
 # Callback model
-from shamrock.utils.SimulationHandle import SimulationHandle, callback, simulation_setup
+from shamrock.utils.SimulationRunner import SimulationRunner, callback, simulation_setup
 
 
-class Simulation(SimulationHandle):
+class Simulation(SimulationRunner):
     # The end time of the simulation (code units)
     t_end = 10.0
 

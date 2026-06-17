@@ -166,6 +166,7 @@ model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4"
 # %%
 # Declare the simulation class
 
+
 class Simulation(SimulationRunner):
     # Use the global vars defined at the top of the file
     t_end = t_end
@@ -643,7 +644,6 @@ class curves_analysis:
 
         sinks = model.get_sinks()
         save_analysis_data("sinks.json", "sinks", sinks, ianalysis)
-
 
 
 # %%

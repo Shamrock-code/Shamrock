@@ -275,8 +275,6 @@ class SimulationRunner(metaclass=SimulationMeta):
         else:
             self.dump_helper = None
 
-    def __post_init__(self):
-
         if self.t_end is None:
             raise ValueError(f"{type(self).__name__}.t_end must be defined")
 

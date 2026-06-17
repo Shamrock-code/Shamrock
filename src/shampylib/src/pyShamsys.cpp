@@ -157,13 +157,27 @@ ON_PYTHON_INIT {
         dump profiling data
     )pbdoc");
 
-    m.def("get_wtime", []() {
-        return shambase::details::get_wtime();
-    });
+    m.def(
+        "get_wtime",
+        []() {
+            return shambase::details::get_wtime();
+        },
+        R"pbdoc(
+        Get the wall time.
+    )pbdoc");
 
-    m.def("get_wtime_sync", []() {
-        return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
-    });
+    m.def(
+        "get_wtime_sync",
+        []() {
+            return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+        },
+        R"pbdoc(
+        Get the synchronized wall time across all MPI ranks.
+
+        .. warning::
+            This is an MPI collective operation and MUST be called by all ranks
+            simultaneously to avoid deadlocks.
+    )pbdoc");
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");
     sys_module.def("signal_handler", &shamsys::details::signal_callback_handler);

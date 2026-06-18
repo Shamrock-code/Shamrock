@@ -474,16 +474,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                     if (!need_cs) {
                         if (cs_field) {
-                            logger::warn_ln(
-                                "SPHSetup",
-                                "make_generator_disc_mc: with the current EOS, cs_field is "
-                                "ignored");
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_field is "
+                                    "ignored");
+                            }
                         }
                         if (cs_profile) {
-                            logger::warn_ln(
-                                "SPHSetup",
-                                "make_generator_disc_mc: with the current EOS, cs_profile is "
-                                "ignored");
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_profile is "
+                                    "ignored");
+                            }
                         }
                         return std::function<Tscal(Tvec)>{};
                     }

@@ -217,7 +217,8 @@ class Simulation(SimulationRunner):
         gen_disc = disc.make_generator(setup, Npart, random_seed=666)
 
         # Print the dot graph of the setup
-        print(gen_disc.get_dot())
+        if shamrock.sys.world_rank() == 0:
+            print(gen_disc.get_dot())
 
         # Apply the setup
         setup.apply_setup(gen_disc)

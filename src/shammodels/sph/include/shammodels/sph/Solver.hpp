@@ -203,7 +203,7 @@ namespace shammodels::sph {
         /// @brief Saves old derivative fields for predictor-corrector integration
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
-        void update_derivs();
+        void update_derivs(Tscal dt_hydro);
         /**
          * @brief
          *

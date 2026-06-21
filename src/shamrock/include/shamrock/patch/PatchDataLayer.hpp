@@ -41,6 +41,34 @@ namespace shamrock::patch {
         std::vector<var_t> fields;
         std::shared_ptr<PatchDataLayerLayout> pdl_ptr;
 
+        inline var_t &get_field_variant(u32 idx) {
+            try {
+                return fields.at(idx);
+            } catch (const std::out_of_range &) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "the requested field index is out of bounds\n"
+                    "   current map is : \n"
+                    + pdl().get_description_str()
+                    + "\n"
+                      "    arg : idx = "
+                    + std::to_string(idx));
+            }
+        }
+
+        inline const var_t &get_field_variant(u32 idx) const {
+            try {
+                return fields.at(idx);
+            } catch (const std::out_of_range &) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "the requested field index is out of bounds\n"
+                    "   current map is : \n"
+                    + pdl().get_description_str()
+                    + "\n"
+                      "    arg : idx = "
+                    + std::to_string(idx));
+            }
+        }
+
         public:
         using field_variant_t = var_t;
 
@@ -249,7 +277,7 @@ namespace shamrock::patch {
 
         template<class T>
         bool check_field_type(u32 idx) {
-            var_t &tmp = fields.at(idx);
+            var_t &tmp = get_field_variant(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
@@ -263,7 +291,7 @@ namespace shamrock::patch {
         template<class T>
         PatchDataField<T> &get_field(u32 idx) {
 
-            var_t &tmp = fields.at(idx);
+            var_t &tmp = get_field_variant(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
@@ -283,7 +311,7 @@ namespace shamrock::patch {
         template<class T>
         const PatchDataField<T> &get_field(u32 idx) const {
 
-            const var_t &tmp = fields.at(idx);
+            const var_t &tmp = get_field_variant(idx);
 
             const PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 
@@ -313,7 +341,7 @@ namespace shamrock::patch {
         template<class T>
         sham::DeviceBuffer<T> &get_field_buf_ref(u32 idx) {
 
-            var_t &tmp = fields.at(idx);
+            var_t &tmp = get_field_variant(idx);
 
             PatchDataField<T> *pval = std::get_if<PatchDataField<T>>(&tmp.value);
 

@@ -2524,9 +2524,9 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         return scheduler().patch_data.get_pdat(id).get_obj_cnt();
                     });
 
-            solvergraph::Field<Tscal> cfl_dt
-                = solvergraph::Field<Tscal>(1, "cfl_dt", "\\Delta t_{cfl}");
-            cfl_dt.ensure_sizes(storage.part_counts);
+            shamrock::solvergraph::Field<Tscal> cfl_dt
+                = shamrock::solvergraph::Field<Tscal>(1, "cfl_dt", "\\Delta t_{cfl}");
+            cfl_dt.ensure_sizes(shambase::get_check_ref(storage.part_counts).indexes);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -2552,12 +2552,12 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     [C_cour, C_force](
                         u32 id_a,
                         const Tscal *hpart,
-                        const Tscal *axyz,
+                        const Tvec *axyz,
                         const Tscal *vsig,
                         Tscal *cfl_dt) {
                         Tscal h_a     = hpart[id_a];
                         Tscal vsig_a  = vsig[id_a];
-                        Tscal abs_a_a = sycl::length(a[id_a]);
+                        Tscal abs_a_a = sycl::length(axyz[id_a]);
 
                         Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
@@ -2583,11 +2583,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                             cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_divB_cleaning);
                         });
                 };
-
-                buf_hpart.complete_event_state(e);
-                buf_axyz.complete_event_state(e);
-                vsig_buf.complete_event_state(e);
-                cfl_dt_buf.complete_event_state(e);
             });
 
             Tscal rank_dt = cfl_dt.get_native().compute_rank_min();
@@ -2599,7 +2594,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                     sham::DeviceBuffer<Tscal> &buf_dt_part
                         = pdat.get_field_buf_ref<Tscal>(idt_part);
-                    sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf_check(cur_p.id_patch);
+                    sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf(cur_p.id_patch);
 
                     buf_dt_part.copy_from(buf_dt, pdat.get_obj_cnt());
                 });

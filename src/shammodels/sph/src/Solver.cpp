@@ -2651,7 +2651,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 shamlog_info_ln("SPH", "CFL hydro =", hydro_cfl, "sink sink =", sink_sink_cfl);
             }
 
-            next_cfl = sham::min(hydro_cfl, sink_sink_cfl);
+            next_cfl
+                = sham::min(hydro_cfl, sink_sink_cfl) * solver_config.time_state.cfl_multiplier;
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(

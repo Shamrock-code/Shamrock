@@ -42,9 +42,7 @@ namespace shamrock::patch {
         std::shared_ptr<PatchDataLayerLayout> pdl_ptr;
 
         inline var_t &get_field_variant(u32 idx) {
-            try {
-                return fields.at(idx);
-            } catch (const std::out_of_range &) {
+            if (idx >= fields.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     "the requested field index is out of bounds\n"
                     "   current map is : \n"
@@ -53,12 +51,11 @@ namespace shamrock::patch {
                       "    arg : idx = "
                     + std::to_string(idx));
             }
+            return fields[idx];
         }
 
         inline const var_t &get_field_variant(u32 idx) const {
-            try {
-                return fields.at(idx);
-            } catch (const std::out_of_range &) {
+            if (idx >= fields.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     "the requested field index is out of bounds\n"
                     "   current map is : \n"
@@ -67,6 +64,7 @@ namespace shamrock::patch {
                       "    arg : idx = "
                     + std::to_string(idx));
             }
+            return fields[idx];
         }
 
         public:

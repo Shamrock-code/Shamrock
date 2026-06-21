@@ -2517,7 +2517,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             });
 
-            ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", 1);
+            // Update element counts
+            shambase::get_check_ref(storage.part_counts).indexes
+                = storage.merged_xyzh.get().template map<u32>(
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return scheduler().patch_data.get_pdat(id).get_obj_cnt();
+                    });
+
+            solvergraph::Field<Tscal> cfl_dt
+                = solvergraph::Field<Tscal>(1, "cfl_dt", "\\Delta t_{cfl}");
+            cfl_dt.ensure_sizes(storage.part_counts);
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
@@ -2526,53 +2535,53 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
                 sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
-                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-                sham::EventList depends_list;
 
-                auto hpart  = buf_hpart.get_read_access(depends_list);
-                auto a      = buf_axyz.get_read_access(depends_list);
-                auto vsig   = vsig_buf.get_read_access(depends_list);
-                auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
+                Tscal C_cour
+                    = solver_config.cfl_config.cfl_cour * solver_config.time_state.cfl_multiplier;
+                Tscal C_force
+                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
 
-                auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal C_cour  = solver_config.cfl_config.cfl_cour
-                                    * solver_config.time_state.cfl_multiplier;
-                    Tscal C_force = solver_config.cfl_config.cfl_force
-                                    * solver_config.time_state.cfl_multiplier;
-
-                    cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                        Tscal h_a     = hpart[item];
-                        Tscal vsig_a  = vsig[item];
-                        Tscal abs_a_a = sycl::length(a[item]);
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_hpart, buf_axyz, vsig_buf},
+                    sham::MultiRef{cfl_dt_buf},
+                    pdat.get_obj_cnt(),
+                    [C_cour, C_force](
+                        u32 id_a,
+                        const Tscal *hpart,
+                        const Tscal *axyz,
+                        const Tscal *vsig,
+                        Tscal *cfl_dt) {
+                        Tscal h_a     = hpart[id_a];
+                        Tscal vsig_a  = vsig[id_a];
+                        Tscal abs_a_a = sycl::length(a[id_a]);
 
                         Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
 
-                        cfl_dt[item] = sycl::min(dt_c, dt_f);
+                        cfl_dt[id_a] = sycl::min(dt_c, dt_f);
                     });
-                });
 
                 if (has_psi_field) {
                     sham::DeviceBuffer<Tscal> &vclean_buf
                         = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
-                    auto vclean = vclean_buf.get_read_access(depends_list);
-                    auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        Tscal C_cour = solver_config.cfl_config.cfl_cour
-                                       * solver_config.time_state.cfl_multiplier;
 
-                        cgh.parallel_for(
-                            sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
-                                Tscal h_a      = hpart[item];
-                                Tscal vclean_a = vclean[item];
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{buf_hpart, vclean_buf},
+                        sham::MultiRef{cfl_dt_buf},
+                        pdat.get_obj_cnt(),
+                        [C_cour](u32 id_a, const Tscal *hpart, const Tscal *vclean, Tscal *cfl_dt) {
+                            Tscal h_a      = hpart[id_a];
+                            Tscal vclean_a = vclean[id_a];
 
-                                Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
+                            Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
 
-                                cfl_dt[item] = sycl::min(cfl_dt[item], dt_divB_cleaning);
-                            });
-                    });
-                    vclean_buf.complete_event_state(e);
+                            cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_divB_cleaning);
+                        });
                 };
 
                 buf_hpart.complete_event_state(e);
@@ -2581,7 +2590,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 cfl_dt_buf.complete_event_state(e);
             });
 
-            Tscal rank_dt = cfl_dt.compute_rank_min();
+            Tscal rank_dt = cfl_dt.get_native().compute_rank_min();
 
             if (solver_config.should_save_dt_to_fields()) {
 
@@ -2707,7 +2716,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         if (solver_config.has_field_alphaAV()) {
             storage.alpha_av_ghost.reset();
         }
-
     } while (need_rerun_corrector);
 
     reset_merge_ghosts_fields();

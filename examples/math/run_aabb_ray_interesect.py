@@ -13,6 +13,11 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 
 
 def draw_aabb(ax, aabb, color, alpha):
@@ -104,6 +109,7 @@ def draw_ray(ax, ray, color):
 
 fig = plt.figure()
 ax = fig.add_subplot(111, projection="3d")
+ax.minorticks_off()
 
 aabb1 = shamrock.math.AABB_f64_3((-1.0, -1.0, -1.0), (1.0, 1.0, 1.0))
 

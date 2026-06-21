@@ -225,12 +225,15 @@ def check_regression(data_dict1, data_dict2, tolerances):
         )
 
     # Compare if values are equal
+    errors = []
+
     for dset_name in data_dict1:
         # Compare same size
         if data_dict1[dset_name].shape != data_dict2[dset_name].shape:
             print(f"Data {dset_name} has different shape")
             print(f"shape: {data_dict1[dset_name].shape} != {data_dict2[dset_name].shape}")
-            raise ValueError(f"Data {dset_name} has different shape")
+            errors.append(ValueError(f"Data {dset_name} has different shape"))
+            continue
 
         # Compare values
         delta = np.isclose(
@@ -262,7 +265,13 @@ def check_regression(data_dict1, data_dict2, tolerances):
             print(
                 f"Data {dset_name} has {offenses} offenses, absolute diff: {np.abs(data_dict1[dset_name] - data_dict2[dset_name]).max()}"
             )
-            raise ValueError(f"Data {dset_name} is not equal")
+            errors.append(ValueError(f"Data {dset_name} is not equal"))
+
+    if errors:
+        if len(errors) == 1:
+            raise errors[0]
+        msg = "Regression check failed:\n" + "\n".join(f"  - {err}" for err in errors)
+        raise ValueError(msg)
 
     print(" -> Regression test passed successfully")
 

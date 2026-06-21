@@ -99,7 +99,14 @@ namespace sham {
             return {.value = 0.0, .prefix = "", .ratio = 1.0};
         }
 
-        for (int i = static_cast<int>(si.size()) - 1; i >= 0; --i) {
+        // too large, clamp to largest unit
+        const auto &largest = si.back();
+        if (ax >= largest.second) {
+            return {
+                .value = value / largest.second, .prefix = largest.first, .ratio = largest.second};
+        }
+
+        for (int i = static_cast<int>(si.size()) - 2; i >= 0; --i) {
             if (ax >= si[i].second) {
                 return {
                     .value = value / si[i].second, .prefix = si[i].first, .ratio = si[i].second};
@@ -108,16 +115,8 @@ namespace sham {
 
         // too small, clamp to smallest unit
         const auto &smallest = si.front();
-        if (ax < si.front().second) {
-            return {
-                .value  = value / smallest.second,
-                .prefix = smallest.first,
-                .ratio  = smallest.second};
-        }
-
-        // too large, clamp to largest unit (other possibilities are unreachable)
-        const auto &largest = si.back();
-        return {.value = value / largest.second, .prefix = largest.first, .ratio = largest.second};
+        return {
+            .value = value / smallest.second, .prefix = smallest.first, .ratio = smallest.second};
     }
 
 } // namespace sham

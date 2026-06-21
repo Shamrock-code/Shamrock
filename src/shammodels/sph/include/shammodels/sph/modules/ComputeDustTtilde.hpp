@@ -109,6 +109,7 @@ namespace shammodels::sph::modules {
                         return sj * sj / rho_a;
                     };
 
+#if false
                     /*
                      * Hutchison 2018 eq 15
                      * \tilde{T}_{sj} = \epsilon_j t_j - \sum_{k} \epsilon_k^2 t_k
@@ -124,6 +125,19 @@ namespace shammodels::sph::modules {
                         Tscal eps_k_a = epsilon(sk_a);
                         Ttilde_sj_a -= eps_k_a * eps_k_a * tk_a;
                     }
+#endif
+
+                    // Now if i assume that Tsj in Hutchison 2018 meant tsj, then
+                    Tscal sum_eps   = 0;
+                    Tscal sum_Tseps = 0;
+                    for (u32 k = 0; k < ndust; k++) {
+                        Tscal sk_a    = s_j[id_a * ndust + k];
+                        Tscal tk_a    = t_j[id_a * ndust + k];
+                        Tscal eps_k_a = epsilon(sk_a);
+                        sum_eps += eps_k_a;
+                        sum_Tseps += eps_k_a * tk_a;
+                    }
+                    Tscal Ttilde_sj_a = (tj_a - sum_Tseps) / (1 - sum_eps);
 
                     Ttilde_sj[thread_id] = Ttilde_sj_a;
                 });

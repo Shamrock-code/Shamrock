@@ -73,8 +73,8 @@ namespace shammodels::sph::modules {
             Tscal r_out,
             std::function<Tscal(Tscal)> sigma_profile,
             std::function<Tscal(Tscal)> H_profile,
-            std::function<Tscal(Tscal)> rot_profile,
-            std::function<Tscal(Tscal)> cs_profile,
+            std::function<Tvec(Tvec)> vel_profile,
+            std::function<Tscal(Tvec)> cs_profile,
             std::mt19937_64 eng,
             Tscal init_h_factor);
 

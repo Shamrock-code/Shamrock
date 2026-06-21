@@ -13,6 +13,12 @@ import numpy as np
 
 import shamrock
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+# %%
+# Machida06 EoS
 cs = 190.0
 rho_c1 = 1.92e-13 * 1000  # g/cm^3 -> kg/m^3
 rho_c2 = 3.84e-8 * 1000  # g/cm^3 -> kg/m^3

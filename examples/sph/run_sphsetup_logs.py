@@ -36,6 +36,11 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
 gamma = 5.0 / 3.0
 rho_g = 1
 target_tot_u = 1
@@ -84,7 +89,7 @@ model.set_solver_config(cfg)
 model.init_scheduler(scheduler_split_val, scheduler_merge_val)
 
 
-bmin, bmax = model.get_ideal_hcp_box(dr, bmin, bmax)
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 

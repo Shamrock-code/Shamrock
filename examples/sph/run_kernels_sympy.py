@@ -13,6 +13,11 @@ from sympy import *
 
 import shamrock
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+# %%
 # Set precision to 32 digits
 mpmath.mp.dps = 32
 

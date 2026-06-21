@@ -37,6 +37,11 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # List parameters
 
 kernel = "M4"

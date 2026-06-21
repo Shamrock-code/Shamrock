@@ -150,6 +150,14 @@ NEW_TEST(Unittest, "shamformat/human_readable", 1) {
         REQUIRE_FLOAT_EQUAL(hr.value, 5.0, 1e-6);
         REQUIRE_EQUAL(hr.prefix, "P");
     }
+
+    // Too large (above yotta): clamped to yotta
+    {
+        auto hr = to_human_readable(5e26);
+        REQUIRE_FLOAT_EQUAL(hr.value, 500.0, 1e-6);
+        REQUIRE_EQUAL(hr.prefix, "Y");
+        REQUIRE_FLOAT_EQUAL(hr.ratio, 1e24, 1e20);
+    }
 }
 
 NEW_TEST(Unittest, "shamformat/human_readable", 1) {
@@ -226,5 +234,12 @@ NEW_TEST(Unittest, "shamformat/human_readable", 1) {
         auto hr = to_human_readable<false>(2500.0);
         REQUIRE_FLOAT_EQUAL(hr.value, 2.5, 1e-3);
         REQUIRE_EQUAL(hr.prefix, "k");
+    }
+
+    // Too large (above yotta): clamped to yotta
+    {
+        auto hr = to_human_readable<false>(5e26);
+        REQUIRE_FLOAT_EQUAL(hr.value, 500.0, 1e-6);
+        REQUIRE_EQUAL(hr.prefix, "Y");
     }
 }

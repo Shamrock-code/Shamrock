@@ -12,6 +12,11 @@ import numpy as np
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 sedov_sol = shamrock.phys.SedovTaylor()
 
 # %%

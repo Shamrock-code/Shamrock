@@ -88,6 +88,8 @@ function _run_sphinx_doc_gen {
 
         echo "-- Generating Sphinx documentation ($description) --"
         export PYTHONPATH=$SPHINX_SHAMROCK_PYTHON_DIR:$PYTHONPATH
+        export LD_LIBRARY_PATH=$SPHINX_SHAMROCK_INSTALL_DIR/lib:$LD_LIBRARY_PATH
+
         case "$script" in
         single)
             bash gen_sphinx_doc_single_example.sh $3

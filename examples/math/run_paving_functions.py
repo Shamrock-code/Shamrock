@@ -13,6 +13,11 @@ import numpy as np
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Set box size
 
 box_size_x = 2.0

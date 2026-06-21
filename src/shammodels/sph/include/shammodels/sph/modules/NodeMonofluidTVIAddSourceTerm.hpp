@@ -30,6 +30,7 @@
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, dt_hydro)                                       \
                                                                                                    \
     /* fields */                                                                                   \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, S)                                              \
@@ -69,27 +70,27 @@ namespace shammodels::sph::modules {
                     return count * nbins;
                 });
 
+            auto epsilon  = sycl::sqrt(rhodust_eps);
+            auto dt_hydro = edges.dt_hydro.value;
+
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 sham::DDMultiRef{edges.S.get_spans(), edges.s_j.get_spans()},
                 sham::DDMultiRef{edges.ds_j_dt.get_spans()},
                 counts,
-                [rhodust_eps](
+                [rhodust_eps, epsilon, dt_hydro, nbins = this->nbins](
                     u32 id,
                     const Tscal *__restrict S,
                     const Tscal *__restrict s_j,
                     Tscal *__restrict ds_j_dt) {
-                    auto sj = s_j[id];
+                    Tscal sj = s_j[id];
 
-                    Tscal ds_j_dt_val = 0;
+                    Tscal ds_j_dt_val = S[id] / (2 * (sham::abs(sj) + epsilon));
 
-                    if (sj * sj > rhodust_eps) {
-                        ds_j_dt_val = S[id] / (2 * sham::abs(sj));
-                    } else {
-                        // we need this trick otherwise the bin would never start to get filled
-                        // because of the cuttof, so the trick is to add the threshold in the
-                        // denominator. yeah dirty i know i know  ...
-                        ds_j_dt_val = S[id] / (2 * (sham::abs(sj) + sycl::sqrt(rhodust_eps)));
+                    if (sham::abs(dt_hydro * ds_j_dt_val) > 1e-2 * sham::abs(sj) || dt_hydro == 0) {
+                        // here there is high likelihood of overshoot, so we go semi implicit
+                        Tscal s_next = sycl::sqrt(sj * sj + S[id] * dt_hydro);
+                        ds_j_dt_val  = (dt_hydro > 0) ? (s_next - sj) / dt_hydro : 0;
                     }
 
                     ds_j_dt[id] += ds_j_dt_val;

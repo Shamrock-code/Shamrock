@@ -2537,10 +2537,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 auto cfl_dt = cfl_dt_buf.get_write_access(depends_list);
 
                 auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-                    Tscal C_cour  = solver_config.cfl_config.cfl_cour
-                                    * solver_config.time_state.cfl_multiplier;
-                    Tscal C_force = solver_config.cfl_config.cfl_force
-                                    * solver_config.time_state.cfl_multiplier;
+                    Tscal C_cour  = solver_config.cfl_config.cfl_cour;
+                    Tscal C_force = solver_config.cfl_config.cfl_force;
 
                     cgh.parallel_for(sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
                         Tscal h_a     = hpart[item];
@@ -2559,8 +2557,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
                     auto vclean = vclean_buf.get_read_access(depends_list);
                     auto e      = q.submit(depends_list, [&](sycl::handler &cgh) {
-                        Tscal C_cour = solver_config.cfl_config.cfl_cour
-                                       * solver_config.time_state.cfl_multiplier;
+                        Tscal C_cour = solver_config.cfl_config.cfl_cour;
 
                         cgh.parallel_for(
                             sycl::range<1>{pdat.get_obj_cnt()}, [=](sycl::item<1> item) {
@@ -2602,8 +2599,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 Tscal G = solver_config.get_constant_G();
 
-                Tscal C_force
-                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+                Tscal C_force = solver_config.cfl_config.cfl_force;
                 Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
                 std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();

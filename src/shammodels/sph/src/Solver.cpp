@@ -1628,6 +1628,57 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
     scheduler().scheduler_step(false, false);
 }
 
+template<class T>
+void map_field_refs(
+    PatchScheduler &sched, u32 field_idx, shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = pdat.get_field<T>(field_idx);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
+template<class T>
+void map_field_refs_ext(
+    PatchScheduler &sched,
+    shambase::DistributedData<shamrock::patch::PatchDataLayer> &mpdats,
+    u32 field_idx,
+    shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        PatchDataLayer &mpdat = mpdats.get(p.id_patch);
+        auto &field           = mpdat.get_field<T>(field_idx);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
+template<class T>
+void map_field_refs_ext(
+    PatchScheduler &sched,
+    shamrock::ComputeField<T> &field_data,
+    shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = field_data.get_field(p.id_patch);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
 template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
 
@@ -2341,11 +2392,23 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             shamlog_debug_ln("BasicGas", "computing next CFL");
 
-            ComputeField<Tscal> vsig_max_dt = utility.make_compute_field<Tscal>("vsig_a", 1);
-            std::unique_ptr<ComputeField<Tscal>> vclean_dt;
+            // Update element counts
+            shambase::get_check_ref(storage.part_counts).indexes
+                = storage.merged_xyzh.get().template map<u32>(
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return scheduler().patch_data.get_pdat(id).get_obj_cnt();
+                    });
+
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> vsig_max_dt
+                = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                    1, "vsig_a", "v_{\\rm sig}");
+            vsig_max_dt->ensure_sizes(shambase::get_check_ref(storage.part_counts).indexes);
+
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> vclean_dt;
             if (has_psi_field) {
-                vclean_dt = std::make_unique<ComputeField<Tscal>>(
-                    utility.make_compute_field<Tscal>("vclean_a", 1));
+                vclean_dt = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+                    1, "vclean_a", "v_{\\rm clean}");
+                vclean_dt->ensure_sizes(shambase::get_check_ref(storage.part_counts).indexes);
             }
 
             shambase::DistributedData<PatchDataLayer> &mpdats
@@ -2366,7 +2429,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                                                         .get_field(cur_p.id_patch)
                                                         .get_buf();
 
-                sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                sham::DeviceBuffer<Tscal> &vsig_buf = vsig_max_dt->get_buf(cur_p.id_patch);
 
                 sycl::range range_npart{pdat.get_obj_cnt()};
 
@@ -2467,9 +2530,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                     if (has_psi_field) {
                         NamedStackEntry tmppp{"compute vclean"};
-                        Tscal const mu_0 = solver_config.get_constant_mu_0();
-                        sham::DeviceBuffer<Tscal> &vclean_buf
-                            = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
+                        Tscal const mu_0                      = solver_config.get_constant_mu_0();
+                        sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
 
                         Tvec *B_on_rho = mpdat.get_field_buf_ref<Tvec>(iB_on_rho_interf)
                                              .get_write_access(depends_list);
@@ -2517,24 +2579,26 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             });
 
-            // Update element counts
-            shambase::get_check_ref(storage.part_counts).indexes
-                = storage.merged_xyzh.get().template map<u32>(
-                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
-                        return scheduler().patch_data.get_pdat(id).get_obj_cnt();
-                    });
-
             shamrock::solvergraph::Field<Tscal> cfl_dt
                 = shamrock::solvergraph::Field<Tscal>(1, "cfl_dt", "\\Delta t_{cfl}");
             cfl_dt.ensure_sizes(shambase::get_check_ref(storage.part_counts).indexes);
 
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> axyz_refs
+                = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("axyz", "\\mathbf{a}");
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hpart_refs
+                = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("hpart", "h");
+
+            map_field_refs(scheduler(), iaxyz, *axyz_refs);
+            map_field_refs_ext(scheduler(), mpdats, ihpart_interf, *hpart_refs);
+
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
 
-                sham::DeviceBuffer<Tvec> &buf_axyz = pdat.get_field<Tvec>(iaxyz).get_buf();
+                sham::DeviceBuffer<Tvec> &buf_axyz = axyz_refs->get_field(cur_p.id_patch).get_buf();
                 sham::DeviceBuffer<Tscal> &buf_hpart
-                    = mpdat.get_field<Tscal>(ihpart_interf).get_buf();
-                sham::DeviceBuffer<Tscal> &vsig_buf   = vsig_max_dt.get_buf_check(cur_p.id_patch);
+                    = hpart_refs->get_field(cur_p.id_patch).get_buf();
+                sham::DeviceBuffer<Tscal> &vsig_buf
+                    = vsig_max_dt->get_field(cur_p.id_patch).get_buf();
                 sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
 
                 auto &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -2566,8 +2630,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     });
 
                 if (has_psi_field) {
-                    sham::DeviceBuffer<Tscal> &vclean_buf
-                        = shambase::get_check_ref(vclean_dt).get_buf_check(cur_p.id_patch);
+                    sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
 
                     sham::kernel_call(
                         q,

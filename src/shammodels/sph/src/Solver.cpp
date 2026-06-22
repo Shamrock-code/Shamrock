@@ -2628,8 +2628,21 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                         cfl_dt[id_a] = sycl::min(dt_c, dt_f);
                     });
+            });
 
-                if (has_psi_field) {
+            if (has_psi_field) {
+                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                    PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+
+                    sham::DeviceBuffer<Tscal> &buf_hpart
+                        = hpart_refs->get_field(cur_p.id_patch).get_buf();
+                    sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
+
+                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+
+                    Tscal C_cour = solver_config.cfl_config.cfl_cour
+                                   * solver_config.time_state.cfl_multiplier;
+
                     sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
 
                     sham::kernel_call(
@@ -2645,8 +2658,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                             cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_divB_cleaning);
                         });
-                };
-            });
+                });
+            }
 
             Tscal rank_dt = cfl_dt.get_native().compute_rank_min();
 

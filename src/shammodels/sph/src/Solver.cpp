@@ -2624,13 +2624,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 }
             };
 
+            // reset the cfl_dt field
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                cfl_dt.get_buf(cur_p.id_patch).fill(shambase::get_infty<Tscal>());
+            });
+
             Tscal C_cour
                 = solver_config.cfl_config.cfl_cour * solver_config.time_state.cfl_multiplier;
             Tscal C_force
                 = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
             Tscal eta_phi = solver_config.cfl_config.eta_sink;
-
-            reset_dt_part_field();
 
             scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tscal> &buf_hpart
@@ -2650,7 +2653,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                         Tscal dt_c = C_cour * h_a / vsig_a;
 
-                        cfl_dt[id_a] = dt_c;
+                        cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_c);
                     });
             });
 
@@ -2700,6 +2703,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             Tscal rank_dt = cfl_dt.get_native().compute_rank_min();
 
+            reset_dt_part_field();
             save_dt_min_to_dt_part();
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();

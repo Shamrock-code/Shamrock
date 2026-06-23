@@ -1202,6 +1202,7 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::gen_config_from_phantom_dump(
 
     conf.eos_config      = get_shamrock_eosconfig<Tvec>(phdump, bypass_error);
     conf.artif_viscosity = get_shamrock_avconfig<Tvec>(phdump);
+    conf.mhd_config      = get_shamrock_mhdconfig<Tvec>(phdump);
 
     conf.set_units(get_shamrock_units<Tscal>(phdump));
 
@@ -1224,9 +1225,12 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
 
     std::vector<Tvec> xyz, vxyz;
     std::vector<Tscal> h, u, alpha;
+    std::vector<Tvec> Brhoxyz;
+    std::vector<Tscal> psich;
 
     {
         std::vector<Tscal> x, y, z, vx, vy, vz;
+        std::vector<Tscal> Brhox, Brhoy, Brhoz;
 
         phdump.blocks[0].fill_vec("x", x);
         phdump.blocks[0].fill_vec("y", y);
@@ -1261,6 +1265,13 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
             // expand the box
             d *= box_tolerance;
 
+            // Log the original calculated box dimensions for reference
+	        if (shamcomm::world_rank() == 0) {
+	    	    logger::info_ln("Model",
+			    "Box domain (from particles): center = ", center,
+			    ", half-size = ", d);
+	        }
+
             resize_simulation_box({center - d, center + d});
         }
 
@@ -1273,11 +1284,24 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
         phdump.blocks[0].fill_vec("u", u);
         phdump.blocks[0].fill_vec("alpha", alpha);
 
+        // MHD fields
+        for (auto &block : phdump.blocks) {
+            block.fill_vec("B/rhox", Brhox);
+            block.fill_vec("B/rhoy", Brhoy);
+            block.fill_vec("B/rhoz", Brhoz);
+            block.fill_vec("psi/ch", psich);
+        }
+
         for (u32 i = 0; i < x.size(); i++) {
             xyz.push_back({x[i], y[i], z[i]});
         }
+
         for (u32 i = 0; i < vx.size(); i++) {
             vxyz.push_back({vx[i], vy[i], vz[i]});
+        }
+
+        for (u32 i = 0; i < Brhox.size(); i++) {
+            Brhoxyz.push_back({Brhox[i], Brhoy[i], Brhoz[i]});
         }
     }
 
@@ -1332,8 +1356,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
                 patch_coord.lower,
                 patch_coord.upper);
 
-            std::vector<Tvec> ins_xyz, ins_vxyz;
-            std::vector<Tscal> ins_h, ins_u, ins_alpha;
+            std::vector<Tvec> ins_xyz, ins_vxyz, ins_Brhoxyz;
+            std::vector<Tscal> ins_h, ins_u, ins_alpha, ins_psich;
             for (u64 i : sel_index) {
                 ins_xyz.push_back(xyz[i]);
             }
@@ -1353,6 +1377,16 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
                     ins_alpha.push_back(alpha[i]);
                 }
             }
+            if (Brhoxyz.size() > 0) {
+                for (u64 i : sel_index) {
+                    ins_Brhoxyz.push_back(Brhoxyz[i]);
+                }
+            }
+            if (psich.size() > 0) {
+                for (u64 i : sel_index) {
+                    ins_psich.push_back(psich[i]);
+                }
+            }
 
             PatchDataLayer ptmp(sched.get_layout_ptr_old());
             ptmp.resize(sel_index.size());
@@ -1368,6 +1402,14 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
 
             if (ins_u.size() > 0) {
                 ptmp.override_patch_field("uint", ins_u);
+            }
+
+            if (ins_Brhoxyz.size() > 0) {
+                ptmp.override_patch_field("B/rho", ins_Brhoxyz);
+            }
+
+            if (ins_psich.size() > 0) {
+                ptmp.override_patch_field("psi/ch", ins_psich);
             }
 
             pdat.insert_elements(ptmp);

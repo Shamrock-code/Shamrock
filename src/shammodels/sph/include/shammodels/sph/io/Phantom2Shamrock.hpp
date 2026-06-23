@@ -18,6 +18,7 @@
 
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/sph/config/AVConfig.hpp"
+#include "shammodels/sph/config/MHDConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamunits/UnitSystem.hpp"
@@ -53,6 +54,16 @@ namespace shammodels::sph {
      */
     template<class Tvec>
     AVConfig<Tvec> get_shamrock_avconfig(PhantomDump &phdump);
+
+    /**
+     * @brief Generate an Shamrock MHD configuration from a PhantomDump object.
+     *
+     * @param phdump Reference to the PhantomDump object.
+     *
+     * @return The MHD configuration corresponding to the given PhantomDump object.
+     */
+    template<class Tvec>
+    MHDConfig<Tvec> get_shamrock_mhdconfig(PhantomDump &phdump);
 
     /**
      * @brief Get the shamrock units object

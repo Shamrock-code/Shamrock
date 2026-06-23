@@ -2591,58 +2591,95 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             map_field_refs(scheduler(), iaxyz, *axyz_refs);
             map_field_refs_ext(scheduler(), mpdats, ihpart_interf, *hpart_refs);
 
-            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
+            auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-                sham::DeviceBuffer<Tvec> &buf_axyz = axyz_refs->get_field(cur_p.id_patch).get_buf();
+            auto reset_dt_part_field = [&]() {
+                if (solver_config.should_save_dt_to_fields()) {
+                    const u32 idt_part = pdl.get_field_idx<Tscal>("dt_part");
+                    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                        sham::DeviceBuffer<Tscal> &buf_dt_part
+                            = pdat.get_field_buf_ref<Tscal>(idt_part);
+                        buf_dt_part.fill(shambase::get_infty<Tscal>());
+                    });
+                }
+            };
+
+            auto save_dt_min_to_dt_part = [&]() {
+                if (solver_config.should_save_dt_to_fields()) {
+                    const u32 idt_part = pdl.get_field_idx<Tscal>("dt_part");
+                    scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                        sham::DeviceBuffer<Tscal> &buf_dt_part
+                            = pdat.get_field_buf_ref<Tscal>(idt_part);
+                        sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf(cur_p.id_patch);
+
+                        sham::kernel_call(
+                            q,
+                            sham::MultiRef{buf_dt},
+                            sham::MultiRef{buf_dt_part},
+                            pdat.get_obj_cnt(),
+                            [](u32 id_a, const Tscal *dt, Tscal *dt_part) {
+                                dt_part[id_a] = sycl::min(dt_part[id_a], dt[id_a]);
+                            });
+                    });
+                }
+            };
+
+            Tscal C_cour
+                = solver_config.cfl_config.cfl_cour * solver_config.time_state.cfl_multiplier;
+            Tscal C_force
+                = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+            Tscal eta_phi = solver_config.cfl_config.eta_sink;
+
+            reset_dt_part_field();
+
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
                 sham::DeviceBuffer<Tscal> &buf_hpart
                     = hpart_refs->get_field(cur_p.id_patch).get_buf();
                 sham::DeviceBuffer<Tscal> &vsig_buf
                     = vsig_max_dt->get_field(cur_p.id_patch).get_buf();
                 sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
 
-                auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+                sham::kernel_call(
+                    q,
+                    sham::MultiRef{buf_hpart, vsig_buf},
+                    sham::MultiRef{cfl_dt_buf},
+                    pdat.get_obj_cnt(),
+                    [C_cour](u32 id_a, const Tscal *hpart, const Tscal *vsig, Tscal *cfl_dt) {
+                        Tscal h_a    = hpart[id_a];
+                        Tscal vsig_a = vsig[id_a];
 
-                Tscal C_cour
-                    = solver_config.cfl_config.cfl_cour * solver_config.time_state.cfl_multiplier;
-                Tscal C_force
-                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+                        Tscal dt_c = C_cour * h_a / vsig_a;
+
+                        cfl_dt[id_a] = dt_c;
+                    });
+            });
+
+            scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                sham::DeviceBuffer<Tvec> &buf_axyz = axyz_refs->get_field(cur_p.id_patch).get_buf();
+                sham::DeviceBuffer<Tscal> &buf_hpart
+                    = hpart_refs->get_field(cur_p.id_patch).get_buf();
+                sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
 
                 sham::kernel_call(
                     q,
-                    sham::MultiRef{buf_hpart, buf_axyz, vsig_buf},
+                    sham::MultiRef{buf_hpart, buf_axyz},
                     sham::MultiRef{cfl_dt_buf},
                     pdat.get_obj_cnt(),
-                    [C_cour, C_force](
-                        u32 id_a,
-                        const Tscal *hpart,
-                        const Tvec *axyz,
-                        const Tscal *vsig,
-                        Tscal *cfl_dt) {
+                    [C_force](u32 id_a, const Tscal *hpart, const Tvec *axyz, Tscal *cfl_dt) {
                         Tscal h_a     = hpart[id_a];
-                        Tscal vsig_a  = vsig[id_a];
                         Tscal abs_a_a = sycl::length(axyz[id_a]);
 
-                        Tscal dt_c = C_cour * h_a / vsig_a;
                         Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
 
-                        cfl_dt[id_a] = sycl::min(dt_c, dt_f);
+                        cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_f);
                     });
             });
 
             if (has_psi_field) {
                 scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                    PatchDataLayer &mpdat = mpdats.get(cur_p.id_patch);
-
                     sham::DeviceBuffer<Tscal> &buf_hpart
                         = hpart_refs->get_field(cur_p.id_patch).get_buf();
                     sham::DeviceBuffer<Tscal> &cfl_dt_buf = cfl_dt.get_buf(cur_p.id_patch);
-
-                    auto &q = shamsys::instance::get_compute_scheduler().get_queue();
-
-                    Tscal C_cour = solver_config.cfl_config.cfl_cour
-                                   * solver_config.time_state.cfl_multiplier;
-
                     sham::DeviceBuffer<Tscal> &vclean_buf = vclean_dt->get_buf(cur_p.id_patch);
 
                     sham::kernel_call(
@@ -2663,28 +2700,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             Tscal rank_dt = cfl_dt.get_native().compute_rank_min();
 
-            if (solver_config.should_save_dt_to_fields()) {
-
-                const u32 idt_part = pdl.get_field_idx<Tscal>("dt_part");
-
-                scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-                    sham::DeviceBuffer<Tscal> &buf_dt_part
-                        = pdat.get_field_buf_ref<Tscal>(idt_part);
-                    sham::DeviceBuffer<Tscal> &buf_dt = cfl_dt.get_buf(cur_p.id_patch);
-
-                    buf_dt_part.copy_from(buf_dt, pdat.get_obj_cnt());
-                });
-            }
+            save_dt_min_to_dt_part();
 
             Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
             if (!storage.sinks.is_empty()) {
                 // sink sink CFL
 
                 Tscal G = solver_config.get_constant_G();
-
-                Tscal C_force
-                    = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
-                Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
                 std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
 

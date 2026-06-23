@@ -193,6 +193,7 @@ class Simulation(SimulationRunner):
         # Set the CFL
         cfg.set_cfl_cour(C_cour)
         cfg.set_cfl_force(C_force)
+        cfg.set_show_cfl_detail(True)
 
         # Enable this to debug the neighbor counts
         # cfg.set_show_neigh_stats(True)

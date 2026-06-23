@@ -2829,6 +2829,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
 
             if (!show_cfl_detail) {
+                save_dt_min_to_dt_part();
                 cfl_detail.push_back({"all SPH", cfl_dt->get_native().compute_rank_min()});
             }
 

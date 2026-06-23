@@ -1521,6 +1521,57 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_pdat_to_phantom_block(
 }
 
 template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::Model<Tvec, SPHKernel>::add_pdat_to_phantom_block_mhd(
+    PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat) {
+
+    if (solver.solver_config.has_field_B_on_rho()) {
+        std::vector<Tvec> Brhoxyz = pdat.fetch_data<Tvec>("B/rho");
+
+        u64 Brhoxid = block.get_ref_fort_real("B/rhox");
+        u64 Brhoyid = block.get_ref_fort_real("B/rhoy");
+        u64 Brhozid = block.get_ref_fort_real("B/rhoz");
+
+        for (auto vec : Brhoxyz) {
+            block.blocks_fort_real[Brhoxid].vals.push_back(vec.x());
+            block.blocks_fort_real[Brhoyid].vals.push_back(vec.y());
+            block.blocks_fort_real[Brhozid].vals.push_back(vec.z());
+        }
+
+        block.tot_count = block.blocks_fort_real[Brhoxid].vals.size();
+    }
+
+    if (solver.solver_config.has_field_psi_on_ch()) {
+        std::vector<Tscal> psich = pdat.fetch_data<Tscal>("psi/ch");
+        u64 psid                 = block.get_ref_fort_real("psi/ch");
+        for (auto ps_ : psich) {
+            block.blocks_fort_real[psid].vals.push_back(ps_);
+        }
+    }
+
+    if (solver.solver_config.has_field_divB()) {
+        std::vector<Tscal> divB = pdat.fetch_data<Tscal>("divB");
+        u64 divBid              = block.get_ref_f32("divB");
+        for (auto d_ : divB) {
+            block.blocks_f32[divBid].vals.push_back(d_);
+        }
+    }
+
+    if (solver.solver_config.has_field_curlB()) {
+        std::vector<Tvec> curlB = pdat.fetch_data<Tvec>("curlB");
+
+        u64 curlBxid = block.get_ref_f32("curlBx");
+        u64 curlByid = block.get_ref_f32("curlBy");
+        u64 curlBzid = block.get_ref_f32("curlBz");
+
+        for (auto vec : curlB) {
+            block.blocks_f32[curlBxid].vals.push_back(vec.x());
+            block.blocks_f32[curlByid].vals.push_back(vec.y());
+            block.blocks_f32[curlBzid].vals.push_back(vec.z());
+        }
+    }
+}
+
+template<class Tvec, template<class> class SPHKernel>
 shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phantom_dump() {
     StackEntry stack_loc{};
 
@@ -1621,6 +1672,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
     write_shamrock_units_in_phantom_dump(solver.solver_config.unit_sys, dump, bypass_error_check);
 
     PhantomDumpBlock block_part;
+    PhantomDumpBlock block_mhd;
 
     {
         NamedStackEntry stack_loc{"gather data"};
@@ -1629,6 +1681,10 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
         for (auto &dat : gathered) {
             add_pdat_to_phantom_block(block_part, shambase::get_check_ref(dat));
+        }
+
+        for (auto &dat : gathered) {
+            add_pdat_to_phantom_block_mhd(block_mhd, shambase::get_check_ref(dat));
         }
     }
 
@@ -1664,6 +1720,10 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
         dump.blocks.push_back(std::move(sink_block));
     }
+
+    PhantomDumpBlock block_3rd;
+    dump.blocks.push_back(std::move(block_3rd));
+    dump.blocks.push_back(std::move(block_mhd));
 
     return dump;
 }

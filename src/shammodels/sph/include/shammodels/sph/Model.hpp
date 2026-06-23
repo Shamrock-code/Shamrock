@@ -964,6 +964,8 @@ namespace shammodels::sph {
         private:
         void add_pdat_to_phantom_block(
             PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);
+        void add_pdat_to_phantom_block_mhd(
+            PhantomDumpBlock &block, shamrock::patch::PatchDataLayer &pdat);
 
         template<class Tscal>
         inline void warp_disc(

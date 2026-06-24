@@ -185,7 +185,7 @@ shamalgs::SerializeHelper::SerializeHelper(
     : dev_sched(std::move(_dev_sched)), storage(std::forward<sham::DeviceBuffer<u8>>(input)) {
 
     if (!allow_large_int_size) {
-        shambase::narrow_or_throw<u32>(input.get_size());
+        shambase::narrow_or_throw<u32>(storage.get_size());
     }
 
     header_size = extract_preahead(dev_sched->get_queue(), storage);

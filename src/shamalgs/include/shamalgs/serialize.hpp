@@ -198,9 +198,11 @@ namespace shamalgs {
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
 
         SerializeHelper(
-            std::shared_ptr<sham::DeviceScheduler> dev_sched, sham::DeviceBuffer<u8> &&storage);
+            std::shared_ptr<sham::DeviceScheduler> dev_sched,
+            sham::DeviceBuffer<u8> &&storage,
+            bool allow_large_int_size = false);
 
-        void allocate(SerializeSize szinfo);
+        void allocate(SerializeSize szinfo, bool allow_large_int_size = false);
 
         sham::DeviceBuffer<u8> finalize();
 

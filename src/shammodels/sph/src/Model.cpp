@@ -1266,11 +1266,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
             d *= box_tolerance;
 
             // Log the original calculated box dimensions for reference
-	        if (shamcomm::world_rank() == 0) {
-	    	    logger::info_ln("Model",
-			    "Box domain (from particles): center = ", center,
-			    ", half-size = ", d);
-	        }
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "Model", "Box domain (from particles): center = ", center, ", half-size = ", d);
+            }
 
             resize_simulation_box({center - d, center + d});
         }
@@ -1429,7 +1428,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
             .update_load_balancing();
 
         post_insert_data<Tvec>(sched);
-
     }
     // add sinks
 

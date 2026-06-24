@@ -18,8 +18,8 @@
 
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/sph/config/AVConfig.hpp"
-#include "shammodels/sph/config/MHDConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp"
+#include "shammodels/sph/config/MHDConfig.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <cstdlib>

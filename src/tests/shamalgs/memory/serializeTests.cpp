@@ -9,6 +9,7 @@
 
 #include "shambase/time.hpp"
 #include "shamalgs/memory.hpp"
+#include "shamalgs/primitives/mock_vector.hpp"
 #include "shamalgs/random.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/math.hpp"
@@ -16,6 +17,30 @@
 #include "shamtest/PyScriptHandle.hpp"
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
+#include <algorithm>
+#include <cstring>
+#include <limits>
+#include <vector>
+
+namespace {
+
+    std::vector<u8> mock_vector_tiled(u64 seed, size_t len) {
+        constexpr size_t mock_vector_tile_size = 65536;
+        static_assert(mock_vector_tile_size <= std::numeric_limits<u32>::max());
+
+        const size_t tile_len = mock_vector_tile_size;
+        std::vector<u8> tile
+            = shamalgs::primitives::mock_vector<u8>(seed, tile_len, u8{0}, u8{255});
+
+        std::vector<u8> buf(len);
+        for (size_t off = 0; off < len; off += tile_len) {
+            const size_t n = std::min<size_t>(tile_len, len - off);
+            std::memcpy(buf.data() + off, tile.data(), n);
+        }
+        return buf;
+    }
+
+} // namespace
 
 template<class T>
 inline void check_buf(std::string prefix, sycl::buffer<T> &b1, sycl::buffer<T> &b2) {
@@ -99,6 +124,55 @@ NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper", 1) {
         check_buf("buf 1", buf_comp1, buf1);
         check_buf("buf 2", buf_comp2, buf2);
     }
+}
+
+NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper/large_buffer", 1) {
+
+    constexpr size_t buf_len = 2'600'000'000ull;
+
+    std::vector<u8> ref;
+    try {
+        ref = mock_vector_tiled(0x1111, buf_len);
+    } catch (const std::bad_alloc &) {
+        REQUIRE(false);
+        return;
+    }
+
+    auto sched = shamsys::instance::get_compute_scheduler_ptr();
+    auto &q    = shambase::get_check_ref(sched).get_queue().q;
+
+    sycl::buffer<u8> buf(ref.data(), buf_len);
+
+    shamalgs::SerializeHelper ser(sched);
+    shamalgs::SerializeSize sz = shamalgs::SerializeHelper::serialize_byte_size<u8>(buf_len);
+    ser.allocate(sz, true);
+    ser.write_buf(buf, buf_len);
+    auto recov = ser.finalize();
+    q.wait();
+
+    sham::DeviceBuffer<u8> buf_out(buf_len, sched);
+    shamalgs::SerializeHelper ser2(sched, std::move(recov), true);
+    ser2.load_buf(buf_out, buf_len);
+    q.wait();
+
+    std::vector<u8> got = buf_out.copy_to_stdvec();
+    REQUIRE_EQUAL(ref, got);
+}
+
+NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper/large_buffer_narrowing", 1) {
+
+    // Total serialized byte length must exceed u32_max for narrow_or_throw<u32> to fail.
+    constexpr size_t buf_len = 4'300'000'000ull;
+
+    auto sched                 = shamsys::instance::get_compute_scheduler_ptr();
+    shamalgs::SerializeSize sz = shamalgs::SerializeHelper::serialize_byte_size<u8>(buf_len);
+
+    shamalgs::SerializeHelper ser(sched);
+    REQUIRE_EXCEPTION_THROW(ser.allocate(sz), std::runtime_error);
+
+    sham::DeviceBuffer<u8> storage(buf_len, sched);
+    REQUIRE_EXCEPTION_THROW(
+        shamalgs::SerializeHelper(sched, std::move(storage), false), std::runtime_error);
 }
 
 NEW_TEST(Benchmark, "shamalgs/memory/SerializeHelper:benchmark", 1) {

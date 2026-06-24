@@ -166,6 +166,18 @@ namespace shamalgs::collective {
             MPI_STATUS_IGNORE);
     }
 
+    /**
+     * @brief Writes a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to write_at<u8>. Use this instead of write_at when len may exceed
+     * the range safely representable as an MPI count (write_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the bytes to be written
+     * @param len number of bytes to write
+     * @param file_head_ptr offset in the file where the data should be written
+     */
     inline void write_at_large(MPI_File fh, const u8 *buf, size_t len, u64 file_head_ptr) {
 
         size_t max_message = 1 << 30;
@@ -197,6 +209,18 @@ namespace shamalgs::collective {
             MPI_STATUS_IGNORE);
     }
 
+    /**
+     * @brief Reads a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to read_at<u8>. Use this instead of read_at when len may exceed
+     * the range safely representable as an MPI count (read_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the buffer that should receive the bytes
+     * @param len number of bytes to read
+     * @param file_head_ptr offset in the file where the data should be read
+     */
     inline void read_at_large(MPI_File fh, u8 *buf, size_t len, u64 file_head_ptr) {
         size_t max_message = 1 << 30;
 

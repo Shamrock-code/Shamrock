@@ -128,7 +128,8 @@ NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper", 1) {
 
 NEW_TEST(Unittest, "shamalgs/memory/SerializeHelper/large_buffer", 1) {
 
-    constexpr size_t buf_len = 2'600'000'000ull;
+    // TODO: find a way to do 4GB but Github CI is too small
+    constexpr size_t buf_len = 600'000'000ull;
 
     std::vector<u8> ref;
     try {

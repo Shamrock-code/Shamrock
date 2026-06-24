@@ -65,7 +65,18 @@ NEW_TEST(Unittest, "shambackends/kernel_call", 1) {
             P[i]  = r;
             cs[i] = u;
         });
+    sham::kernel_call(
+        dev_sched->get_queue(),
+        sham::MultiRef{rho_field_const, uint_field_const},
+        sham::MultiRef{P_field, cs_field},
+        size,
+        [](u32 i, const T *__restrict rho, T *__restrict U, T *__restrict P, T *__restrict cs) {
+            T r = rho[i];
+            T u = U[i];
 
+            P[i]  = r;
+            cs[i] = u;
+        });
     REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
     REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
 }

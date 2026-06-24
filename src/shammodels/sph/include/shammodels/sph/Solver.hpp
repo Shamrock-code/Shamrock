@@ -180,9 +180,6 @@ namespace shammodels::sph {
         /// @brief Applies position-based boundary conditions
         void apply_position_boundary(Tscal time_val);
 
-        /// @brief Performs predictor step for leapfrog integration
-        void do_predictor_leapfrog(Tscal dt);
-
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 

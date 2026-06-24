@@ -45,6 +45,9 @@
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
+#include "shammodels/sph/modules/ComputeCFLCourant.hpp"
+#include "shammodels/sph/modules/ComputeCFLDivBCleaning.hpp"
+#include "shammodels/sph/modules/ComputeCFLForce.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/ComputeLuminosity.hpp"
@@ -891,70 +894,6 @@ void shammodels::sph::Solver<Tvec, Kern>::clear_merged_pos_trees() {
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::sph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
-
-    StackEntry stack_loc{};
-    using namespace shamrock::patch;
-    PatchDataLayerLayout &pdl = scheduler().pdl_old();
-    const u32 ixyz            = pdl.get_field_idx<Tvec>("xyz");
-    const u32 ivxyz           = pdl.get_field_idx<Tvec>("vxyz");
-    const u32 iaxyz           = pdl.get_field_idx<Tvec>("axyz");
-    const u32 iuint           = pdl.get_field_idx<Tscal>("uint");
-    const u32 iduint          = pdl.get_field_idx<Tscal>("duint");
-
-    bool has_B_field       = solver_config.has_field_B_on_rho();
-    bool has_psi_field     = solver_config.has_field_psi_on_ch();
-    bool has_epsilon_field = solver_config.dust_config.has_epsilon_field();
-    bool has_deltav_field  = solver_config.dust_config.has_deltav_field();
-
-    const u32 iB_on_rho   = (has_B_field) ? pdl.get_field_idx<Tvec>("B/rho") : 0;
-    const u32 idB_on_rho  = (has_B_field) ? pdl.get_field_idx<Tvec>("dB/rho") : 0;
-    const u32 ipsi_on_ch  = (has_psi_field) ? pdl.get_field_idx<Tscal>("psi/ch") : 0;
-    const u32 idpsi_on_ch = (has_psi_field) ? pdl.get_field_idx<Tscal>("dpsi/ch") : 0;
-
-    const u32 iepsilon   = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("epsilon") : 0;
-    const u32 idtepsilon = (has_epsilon_field) ? pdl.get_field_idx<Tscal>("dtepsilon") : 0;
-    const u32 ideltav    = (has_deltav_field) ? pdl.get_field_idx<Tvec>("deltav") : 0;
-    const u32 idtdeltav  = (has_deltav_field) ? pdl.get_field_idx<Tvec>("dtdeltav") : 0;
-
-    shamrock::SchedulerUtility utility(scheduler());
-
-    // forward euler step f dt/2
-    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2");
-    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
-    utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
-
-    if (has_B_field) {
-        utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
-    }
-    if (has_psi_field) {
-        utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
-    }
-
-    // forward euler step positions dt
-    shamlog_debug_ln("sph::BasicGas", "forward euler step positions dt");
-    utility.fields_forward_euler<Tvec>(ixyz, ivxyz, dt);
-
-    // forward euler step f dt/2
-    shamlog_debug_ln("sph::BasicGas", "forward euler step f dt/2");
-    utility.fields_forward_euler<Tvec>(ivxyz, iaxyz, dt / 2);
-    utility.fields_forward_euler<Tscal>(iuint, iduint, dt / 2);
-
-    if (has_B_field) {
-        utility.fields_forward_euler<Tvec>(iB_on_rho, idB_on_rho, dt / 2);
-    }
-    if (has_psi_field) {
-        utility.fields_forward_euler<Tscal>(ipsi_on_ch, idpsi_on_ch, dt / 2);
-    }
-    if (has_epsilon_field) {
-        utility.fields_forward_euler<Tscal>(iepsilon, idtepsilon, dt / 2);
-    }
-    if (has_deltav_field) {
-        utility.fields_forward_euler<Tvec>(ideltav, idtdeltav, dt / 2);
-    }
-}
-
-template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
@@ -1679,140 +1618,6 @@ void map_field_refs_ext(
     });
     refs.set_refs(field_refs);
 }
-
-#define NODE_EDGES(X_RO, X_RW)                                                                     \
-    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_cour)                                         \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, vsig)                                           \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
-
-template<class Tscal>
-class ComputeCFL_Courant : public shamrock::solvergraph::INode {
-
-    public:
-    ComputeCFL_Courant() {}
-
-    EXPAND_NODE_EDGES(NODE_EDGES)
-
-    inline void _impl_evaluate_internal() {
-        auto edges = get_edges();
-
-        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-        Tscal C_cour = edges.C_cour.value;
-
-        sham::distributed_data_kernel_call(
-            dev_sched,
-            sham::DDMultiRef{edges.hpart.get_spans(), edges.vsig.get_spans()},
-            sham::DDMultiRef{edges.cfl_dt.get_spans()},
-            edges.part_counts.indexes,
-            [C_cour](u32 id_a, const Tscal *hpart, const Tscal *vsig, Tscal *cfl_dt) {
-                Tscal h_a    = hpart[id_a];
-                Tscal vsig_a = vsig[id_a];
-
-                Tscal dt_c = C_cour * h_a / vsig_a;
-
-                cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_c);
-            });
-    }
-
-    inline virtual std::string _impl_get_label() const { return "ComputeCFL_Courant"; };
-
-    inline virtual std::string _impl_get_tex() const { return "C_{cour}"; };
-};
-
-#undef NODE_EDGES
-
-#define NODE_EDGES(X_RO, X_RW)                                                                     \
-    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_force)                                        \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
-
-template<class Tvec>
-class ComputeCFL_Force : public shamrock::solvergraph::INode {
-
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    public:
-    ComputeCFL_Force() {}
-
-    EXPAND_NODE_EDGES(NODE_EDGES)
-
-    inline void _impl_evaluate_internal() {
-        auto edges = get_edges();
-
-        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-        Tscal C_force = edges.C_force.value;
-
-        sham::distributed_data_kernel_call(
-            dev_sched,
-            sham::DDMultiRef{edges.hpart.get_spans(), edges.axyz.get_spans()},
-            sham::DDMultiRef{edges.cfl_dt.get_spans()},
-            edges.part_counts.indexes,
-            [C_force](u32 id_a, const Tscal *hpart, const Tvec *axyz, Tscal *cfl_dt) {
-                Tscal h_a     = hpart[id_a];
-                Tscal abs_a_a = sycl::length(axyz[id_a]);
-
-                Tscal dt_f = C_force * sycl::sqrt(h_a / abs_a_a);
-
-                cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_f);
-            });
-    }
-
-    inline virtual std::string _impl_get_label() const { return "ComputeCFL_Force"; };
-
-    inline virtual std::string _impl_get_tex() const { return "C_{force}"; };
-};
-
-#undef NODE_EDGES
-
-#define NODE_EDGES(X_RO, X_RW)                                                                     \
-    X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_cour)                                         \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
-    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, vclean)                                         \
-    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
-
-template<class Tscal>
-class ComputeCFL_DivB_Cleaning : public shamrock::solvergraph::INode {
-
-    public:
-    ComputeCFL_DivB_Cleaning() {}
-
-    EXPAND_NODE_EDGES(NODE_EDGES)
-
-    inline void _impl_evaluate_internal() {
-        auto edges = get_edges();
-
-        auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-
-        Tscal C_cour = edges.C_cour.value;
-
-        sham::distributed_data_kernel_call(
-            dev_sched,
-            sham::DDMultiRef{edges.hpart.get_spans(), edges.vclean.get_spans()},
-            sham::DDMultiRef{edges.cfl_dt.get_spans()},
-            edges.part_counts.indexes,
-            [C_cour](u32 id_a, const Tscal *hpart, const Tscal *vclean, Tscal *cfl_dt) {
-                Tscal h_a      = hpart[id_a];
-                Tscal vclean_a = vclean[id_a];
-
-                Tscal dt_divB_cleaning = C_cour * h_a / vclean_a;
-
-                cfl_dt[id_a] = sycl::min(cfl_dt[id_a], dt_divB_cleaning);
-            });
-    }
-
-    inline virtual std::string _impl_get_label() const { return "ComputeCFL_DivB_Cleaning"; };
-
-    inline virtual std::string _impl_get_tex() const { return "C_{divB_cleaning}"; };
-};
-
-#undef NODE_EDGES
 
 template<class Tvec, template<class> class Kern>
 shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() {
@@ -2785,19 +2590,19 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     "eta_phi", "\\eta_{\\phi}");
             eta_phi_edge->value = eta_phi;
 
-            std::shared_ptr<ComputeCFL_Courant<Tscal>> compute_cfl_courant
-                = std::make_shared<ComputeCFL_Courant<Tscal>>();
+            std::shared_ptr<ComputeCFLCourant<Tscal>> compute_cfl_courant
+                = std::make_shared<ComputeCFLCourant<Tscal>>();
             compute_cfl_courant->set_edges(
                 storage.part_counts, C_cour_edge, hpart_refs, vsig_max_dt, cfl_dt);
 
-            std::shared_ptr<ComputeCFL_Force<Tvec>> compute_cfl_force
-                = std::make_shared<ComputeCFL_Force<Tvec>>();
+            std::shared_ptr<ComputeCFLForce<Tvec>> compute_cfl_force
+                = std::make_shared<ComputeCFLForce<Tvec>>();
             compute_cfl_force->set_edges(
                 storage.part_counts, C_force_edge, hpart_refs, axyz_refs, cfl_dt);
 
-            std::shared_ptr<ComputeCFL_DivB_Cleaning<Tscal>> compute_cfl_divB_cleaning;
+            std::shared_ptr<ComputeCFLDivBCleaning<Tscal>> compute_cfl_divB_cleaning;
             if (has_psi_field) {
-                compute_cfl_divB_cleaning = std::make_shared<ComputeCFL_DivB_Cleaning<Tscal>>();
+                compute_cfl_divB_cleaning = std::make_shared<ComputeCFLDivBCleaning<Tscal>>();
                 compute_cfl_divB_cleaning->set_edges(
                     storage.part_counts, C_cour_edge, hpart_refs, vclean_dt, cfl_dt);
             }

@@ -2,19 +2,56 @@ import os
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib as mpl
 import numpy as np
+#==============================
 
+plt.rcParams.update({
+    "font.size": 15,
+    "axes.labelsize": 20,
+    "axes.titlesize": 15,
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+    "legend.fontsize": 15,
+})
+
+mpl.rcParams.update({
+    "text.usetex": True,              # Use LaTeX
+    "font.family": "serif",
+    "font.serif": ["Latin Modern Roman"],  # Match lmodern
+    
+    # LaTeX preamble to match your class
+    "text.latex.preamble": r"""
+        \usepackage{lmodern}
+        \usepackage{amsmath}
+        \usepackage{amssymb}
+    """,
+
+    # Optional but recommended
+    "axes.unicode_minus": False
+})
+mpl.rcParams["pgf.texsystem"] = "pdflatex"
+
+#=============================
 import shamrock
 
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
+# If we use the shamrock executable to run this script instead of the python interpreter,
+# we should not initialize the system as the shamrock executable needs to handle specific MPI logic
+if not shamrock.sys.is_initialized():
+    shamrock.change_loglevel(1)
+    shamrock.sys.init("0:0")
 
-model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
 
-def run_case(nb_blocks, amr_lev, case="amr"):
-    multx = 1
-    multy = 1
-    multz = 1
+
+
+def run_case(nb_blocks, xnb_box=1, zynb_box=1, amr_lev=1, case="amr"):
+
+    ctx = shamrock.Context()
+    ctx.pdata_layout_new()
+    model = shamrock.get_Model_Ramses(context=ctx, vector_type="f64_3", grid_repr="i64_3")
+    multx = xnb_box
+    multy = zynb_box
+    multz = zynb_box
     max_amr_lev = amr_lev
     cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
     base = nb_blocks
@@ -30,8 +67,6 @@ def run_case(nb_blocks, amr_lev, case="amr"):
     cfg.set_boundary_condition("y", "reflective")
     cfg.set_boundary_condition("z", "reflective")
     cfg.set_riemann_solver_hllc()
-
-
     cfg.set_slope_lim_minmod()
     cfg.set_face_time_interpolation(True)
 
@@ -49,7 +84,7 @@ def run_case(nb_blocks, amr_lev, case="amr"):
 
 
     def rho_map(rmin, rmax):
-        x, y, z = rmin
+        x, _, _ = rmin
         if x < 0.5:
             return 1
         else:
@@ -61,7 +96,7 @@ def run_case(nb_blocks, amr_lev, case="amr"):
 
 
     def rhoetot_map(rmin, rmax):
-        x, y, z = rmin
+        x, _, _ = rmin
         if x < 0.5:
             return etot_L
         else:
@@ -122,13 +157,17 @@ def run_case(nb_blocks, amr_lev, case="amr"):
 
     dt = 0
     t = 0
-    freq = 100
+    freq = 20
     dX0 = 0
     for i in range(20000):
         next_dt = model.evolve_once_override_time(t, dt)
         if i == 0:
             dic0 = convert_to_cell_coords(ctx.collect_data())
             dX0 = dic0["xmax"][0] - dic0["xmin"][0]
+        
+        if i%freq ==  0:
+            model.dump_vtk(f"sod_tube"+case+"{t}.vtk")
+
 
         t += dt
         dt = next_dt
@@ -136,12 +175,13 @@ def run_case(nb_blocks, amr_lev, case="amr"):
         if t_target < t + next_dt:
             dt = t_target - t
         if t == t_target:
+            model.dump_vtk(f"sod_tube"+case+"{t}.vtk")
             break
 
     xref = 0.5
     xrange = 0.5
     sod = shamrock.phys.SodTube(gamma=gamma, rho_1=1, P_1=1, rho_5=0.125, P_5=0.1)
-    sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, 0.0, 1.0)
+    # sodanalysis = model.make_analysis_sodtube(sod, (1, 0, 0), t_target, xref, 0.0, 1.0)
 
     #################
     ### Plot
@@ -151,23 +191,33 @@ def run_case(nb_blocks, amr_lev, case="amr"):
         dic = convert_to_cell_coords(ctx.collect_data())
 
         X = dic["xmin"]
-        dX = dic["xmax"] - dic["xmin"]
-        rho = dic["rho"]
-        rhovel = dic["rhovel"]
-        rhovelx = rhovel[:, 0]
-        rhovely = rhovel[:, 1]
-        rhovelz = rhovel[:, 2]
-        rhoetot = dic["rhoetot"]
+        idx = np.argsort(X)
+        X = X[idx]
+
+        #### add analytical soluce
+        arr_x = np.linspace(xref - xrange, xref + xrange, X.shape[0])[idx]
+
+        dX = dic["xmax"][idx] - dic["xmin"][idx]
+
+        l_0 = np.log2(base * multx * 2)
+        l = -np.log2(dX / max(dX0, dX.max())) + l_0
+
+
+        #============= numerical ============
+        rho = dic["rho"][idx]
+        rhovel = dic["rhovel"][idx]
+        rhovelx = rhovel[:, 0][idx]
+        rhovely = rhovel[:, 1][idx]
+        rhovelz = rhovel[:, 2][idx]
+        rhoetot = dic["rhoetot"][idx]
 
         u = rhovelx / rho
         v = rhovely / rho
         w = rhovelz / rho
         internal_energy = rhoetot / rho - 0.5 * (u**2 + v**2 + w**2)
-        pressure = (rhoetot - 0.5 * rho * (u**2)) * (gamma - 1)
+        pressure = (rhoetot - 0.5 * rho * (u**2 + v**2 + w**2)) * (gamma - 1)
 
-        #### add analytical soluce
-        arr_x = np.linspace(xref - xrange, xref + xrange, rho.shape[0])
-
+        #============ analytical ============
         arr_rho = []
         arr_P = []
         arr_vx = []
@@ -179,20 +229,19 @@ def run_case(nb_blocks, amr_lev, case="amr"):
             arr_rho.append(_rho)
             arr_vx.append(_vx)
             arr_P.append(_P)
-        arr_rho = np.array(arr_rho)
-        arr_P = np.array(arr_P)
-        arr_vx = np.array(arr_vx)
+    
+        arr_rho = np.array(arr_rho)[idx]
+        arr_P = np.array(arr_P)[idx]
+        arr_vx = np.array(arr_vx)[idx]
 
-        output = np.column_stack((rho, u, internal_energy, pressure, arr_rho, arr_vx, arr_P))
+        output = np.column_stack((l, rho, u, internal_energy, pressure, arr_rho, arr_vx, arr_P))
         np.savetxt(
-            f"data_sod_tube_text_{base * 2}.txt",
+            f"data_sod_tube_text_{cell_size * base * multx}.txt",
             output,
-            fmt=["%.10f", "%.10f", "%.10f", "%.10f", "%.10f", "%.10f", "%.10f"],
-            header="rho u internal_energy press rho_ana, u_ana, press_ana",
+            fmt=["%.10f", "%.10f", "%.10f", "%.10f", "%.10f", "%.10f", "%.10f", "%.10f"],
+            header="amr_L, rho u internal_energy press rho_ana, u_ana, press_ana",
         )
 
-        l_0 = np.log2(base * 2)
-        l = -np.log2(dX / max(dX0, dX.max())) + l_0
 
         fig, axs = plt.subplots(2, 2, figsize=(10, 10), dpi=125, constrained_layout=True)
 
@@ -206,14 +255,13 @@ def run_case(nb_blocks, amr_lev, case="amr"):
 
         ax00_1.scatter(X, rho, rasterized=True, s=12 * np.ones(X.shape), color="red", label="numeric")
         ax00_1.plot(arr_x, arr_rho, ls="--", lw=2.0, color="black", label="exact")
-        ax00_1.set_xlabel("$X$")
-        ax00_1.set_ylabel("density")
+        ax00_1.set_xlabel(r"$x$")
+        ax00_1.set_ylabel(r"$\rho$")
         ax00_1.legend(loc=0)
         ax00_1.grid()
 
         if(case == "amr"):
-            idx = np.argsort(X)
-            ax00_2.plot(X[idx], l[idx], color="purple", marker="*", linewidth=1.0, ls="-.")
+            ax00_2.plot(X, l, color="purple", marker="*", linewidth=1.0, ls="-.")
             ax00_2.set_ylabel("AMR level")
             ax00_2.legend(loc=0)
 
@@ -227,14 +275,13 @@ def run_case(nb_blocks, amr_lev, case="amr"):
 
         ax01_1.scatter(X, u, rasterized=True, s=12 * np.ones(X.shape), color="red", label="numeric")
         ax01_1.plot(arr_x, arr_vx, ls="--", lw=2.0, color="black", label="exact")
-        ax01_1.set_xlabel("$X$")
-        ax01_1.set_ylabel("velocity")
+        ax01_1.set_xlabel(r"$x$")
+        ax01_1.set_ylabel(r"$v_{x}$")
         ax01_1.legend(loc=0)
         ax01_1.grid()
 
         if(case=="amr"):
-            idx = np.argsort(X)
-            ax01_2.plot(X[idx], l[idx], color="purple", marker="*", linewidth=1.0, ls="-.")
+            ax01_2.plot(X, l, color="purple", marker="*", linewidth=1.0, ls="-.")
             ax01_2.set_ylabel("AMR level")
             ax01_2.legend(loc=0)
 
@@ -250,14 +297,13 @@ def run_case(nb_blocks, amr_lev, case="amr"):
             X, pressure, rasterized=True, s=12 * np.ones(X.shape), color="red", label="numeric"
         )
         ax11_1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black", label="exact")
-        ax11_1.set_xlabel("$X$")
-        ax11_1.set_ylabel("pressure")
+        ax11_1.set_xlabel(r"$x$")
+        ax11_1.set_ylabel(r"$P$")
         ax11_1.legend(loc=0)
         ax11_1.grid()
         
         if(case == "amr"):
-            idx = np.argsort(X)
-            ax11_2.plot(X[idx], l[idx], color="purple", marker="*", linewidth=1.0, ls="-.")
+            ax11_2.plot(X, l, color="purple", marker="*", linewidth=1.0, ls="-.")
             ax11_2.set_ylabel("AMR level")
             ax11_2.legend(loc=0)
 
@@ -275,18 +321,17 @@ def run_case(nb_blocks, amr_lev, case="amr"):
         ax10_1.plot(
             arr_x, arr_P / (arr_rho * (gamma - 1.0)), ls="--", lw=2.0, color="black", label="exact"
         )
-        ax10_1.set_xlabel("$X$")
-        ax10_1.set_ylabel("internal energy")
+        ax10_1.set_xlabel(r"$x$")
+        ax10_1.set_ylabel(r"$E_{int}$")
         ax10_1.legend(loc=0)
         ax10_1.grid()
 
         if(case=="amr"):
-            idx = np.argsort(X)
-            ax10_2.plot(X[idx], l[idx], color="purple", marker="*", linewidth=1.0, ls="-.")
+            ax10_2.plot(X, l, color="purple", marker="*", linewidth=1.0, ls="-.")
             ax10_2.set_ylabel("AMR level")
             ax10_2.legend(loc=0)
 
-        plt.savefig(f"sod-{case}-new-bb.pdf")
+        plt.savefig(f"sod-{case}.pdf")
 
 
 run_case(16, 3,"amr")

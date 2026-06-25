@@ -17,7 +17,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (sz * base * multx)

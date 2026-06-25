@@ -71,25 +71,8 @@ namespace {
 
                     vel[i] = prim_state.vel;
                     P[i]   = prim_state.press;
-                    // P[i]         = (prim_state.press > 0.0) ? prim_state.press : 1e-6;
+               
                     // rho_field[i] = prim_state.rho;
-
-		    /*
-                    if (sycl::isnan(prim_state.rho) || sycl::isnan(prim_state.vel[0])
-                        || sycl::isnan(P[i]) || (P[i] < 0.0)) {
-                        logger::raw_ln(
-                            "Nan in CtoP @ \t ",
-                            i,
-                            "\t rho = \t",
-                            prim_state.rho,
-                            "\t vel = \t ",
-                            prim_state.vel[0],
-                            "\t P \t",
-                            P[i],
-                            "\t\n");
-                    }
-
-		    */
                 });
         }
     };

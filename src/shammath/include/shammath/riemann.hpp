@@ -142,18 +142,19 @@ namespace shammath {
         prim.vel[2] = cons.rhovel[2] / cons.rho;
 
         const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
-        // prim.press         = (gamma - 1.0) * rhoeint;
+        prim.press         = (gamma - 1.0) * rhoeint;
 
         /** This just for testing purpose. Will be remove*/
 
-        auto m_H = 1.6735e-27; //[kg]
-        auto kb  = 1.380649e-23;
-        auto mu  = 2.3; // molecular gas
-        auto T   = 10;
+        // auto m_H = 1.67262192e-27; //[kg]
+        // auto kb  = 1.380649e-23;
+        // auto mu  = 2.3; // molecular gas
+        // auto T   = 10.;
+        // auto rho_c =  2.7e-11 * 1e3; // [g/cm^3 ===> kg/m^3]
 
-        auto cs0_sqr = (kb * T) / (mu * m_H);
+        // auto cs0_sqr = (kb * T) / (mu * m_H);
 
-        prim.press = cons.rho * cs0_sqr;
+        // prim.press = cons.rho * cs0_sqr * (1.0 + sycl::pow(cons.rho / rho_c, 2./3.));
 
         return prim;
     }
@@ -179,7 +180,20 @@ namespace shammath {
     template<class Tvec>
     inline constexpr shambase::VecComponent<Tvec> sound_speed(
         PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
+        // auto rho_c =  2.7e-11 * 1e3; // [g/cm^3 ===> kg/m^3]
+
+        // auto m_H = 1.67262192e-27; // [kg]
+        // auto kb  =  1.380649e-23;          // []
+        // auto mu  = 2.3;                // molecular gas
+        
+              
+        // auto T = 10.;
+        // auto cs0_sqr  = (kb * T) / (mu * m_H);
+        // auto cs_sqr = cs0_sqr * (1. + (5.0/3.0) * sycl::pow(prim.rho/rho_c,2./3.));
+        // return sycl::sqrt(cs_sqr);
+
         return sycl::sqrt(gamma * prim.press / prim.rho);
+       
     }
 
     // template<class Tcons>

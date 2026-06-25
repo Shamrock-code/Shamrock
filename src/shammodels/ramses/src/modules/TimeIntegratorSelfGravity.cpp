@@ -96,25 +96,31 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
                     auto m_H = ctes.proton_mass(); // [kg]
                     auto kb  = ctes.kb();          // []
                     auto mu  = 2.3;                // molecular gas
-                    // auto m_H = 1.6735e-27;  //[kg]
-                    // auto kb = 1.380649e-23;
-                    auto T = 10;
+              
+                    auto T = 10.;
+                    auto gamma = 5./3.;
 
                     auto cs0_sqr  = (kb * T) / (mu * m_H);
-                    auto rho_crit = 1; //[kg*m^-3]
-                    // auto P = acc_rho_next_patch[id_a] * cs0_sqr
-                    //          * (1. + sycl::pow(acc_rho_next_patch[id_a] / rho_crit, 2. / 3.));
-                    auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5. / 3.;
-                    auto P         = acc_rho_next_patch[id_a] * cs0_sqr;
-                    auto Eint      = P / (gamma_eff - 1.);
+                    auto rho_crit = 2.7e-11 * 1e3; // [g/cm^3 -> kg/m^3]
+                    auto P = acc_rho_next_patch[id_a] * cs0_sqr
+                             * (1. + sycl::pow(acc_rho_next_patch[id_a] / rho_crit, 2. / 3.));
+    
+                    auto Eint      = P / (gamma - 1.);
                     rho_old[id_a]  = acc_rho_next_patch[id_a];
 
                     rhov_old[id_a] = acc_rhov_next_patch[id_a];
-                    // rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
-
+      
                     rhoe_old[id_a]         = Ekin + Eint;
                     acc_phi_old[id_a]      = acc_phi_new[id_a];
                     acc_phi_next_old[id_a] = acc_phi_next_new[id_a];
+
+                    // auto m_H = 1.67262192e-27;  //[kg]
+                    // auto kb = 1.380649e-23;
+
+                    // rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
+
+                    // auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5. / 3.;
+                    // auto P         = acc_rho_next_patch[id_a] * cs0_sqr;
                 });
             });
 

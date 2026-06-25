@@ -275,8 +275,12 @@ namespace {
                 Tvec dt_v_a = get_dt_v(v_a, dx_vel_a, dy_vel_a, dz_vel_a, rho_a, grad_P_a);
                 Tvec dt_v_b = get_dt_v(v_b, dx_vel_b, dy_vel_b, dz_vel_b, rho_b, grad_P_b);
 
-                Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp;
+                Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp ;
                 Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
+
+                // // //================== add constant gravity source term for RT  ===============
+                // vel_face_a += (-dt_interp * 0.1);
+                // vel_face_b += (-dt_interp * 0.1);
 
                 return {vel_face_a, vel_face_b};
             }

@@ -67,9 +67,23 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
                 shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
 
+                    //=======================================
                     rho[id_a] += dt * acc_dt_rho_patch[id_a];
                     rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
                     rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
+
+
+                    // // //============== Adding the source term 
+                    // auto old_rho = rho[id_a];
+                    // auto old_rhov = rhov[id_a];
+                    // auto old_rhoe = rhoe[id_a];
+
+                    // rho[id_a]       += dt * acc_dt_rho_patch[id_a];
+                    // rhov[id_a]      += dt * acc_dt_rhov_patch[id_a];
+                    // rhoe[id_a]      += dt * (acc_dt_rhoe_patch[id_a] -0.1*old_rhov[1]);
+
+                    // rhov[id_a][1]   += dt*(-0.1*old_rho);
+                    
                 });
             });
 

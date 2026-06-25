@@ -5,6 +5,8 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 
+
+
 import shamrock
 
 if not shamrock.sys.is_initialized():
@@ -57,6 +59,8 @@ L0 = 4 * R0  # [m]
 min_reso = (L0 * N_J) / (lamb_J)
 print(f"min reso = {min_reso}\n")
 gamma = 5.0 / 3.0
+
+rho_c = 2.7e-11 * 1e3 # [g/cm^3 -> kg/m^3]
 
 
 def run_sim():
@@ -128,14 +132,18 @@ def run_sim():
 
     def rhoe_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
-        P = cs_sqr * rho
-        return P / (gamma - 1.0)
+        rhov = rhovel_map(rmin, rmax)
+        Ekin = 0.5 * (rhov[0]**2)/rho
+        x = rho / rho_c
+        P = cs_sqr * rho * (1. + x**(2./3.))
+        Eint = P / (gamma - 1.0) 
+        return  Ekin + Eint
 
     model.set_field_value_lambda_f64("rho", rho_map)
     model.set_field_value_lambda_f64("rhoetot", rhoe_map)
     model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
 
-    tmax = 2.0 * t_ff
+    tmax = 1.012 * t_ff
     t = 0
     dt = 0
     freq = 50
@@ -147,12 +155,12 @@ def run_sim():
         dt = next_dt
 
         if i % freq == 0:
-            model.dump_vtk(f"_iso_collapse_{i:04d}.vtk")
+            model.dump_vtk(f"_iso_collapse_{t/t_ff:5f}.vtk")
 
         if tmax < t + next_dt:
             dt = tmax - t
         if t == tmax:
-            model.dump_vtk(f"_iso_collapse{i:04d}.vtk")
+            model.dump_vtk(f"_iso_collapse{t/t_ff:5f}.vtk")
             break
 
 

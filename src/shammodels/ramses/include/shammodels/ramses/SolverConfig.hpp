@@ -119,7 +119,11 @@ namespace shammodels::basegodunov {
             Tscal T_0 = 10.;
         };
 
-        using mode = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased>;
+        struct ShearBased{
+            Tscal threshold;
+        };
+
+        using mode = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased, ShearBased >;
 
         mode config = None{};
         void set_refine_none() { config = None{}; }
@@ -130,6 +134,10 @@ namespace shammodels::basegodunov {
 
         void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
             config = JeansLengthBased{N_J, T_0};
+        }
+
+        void set_refine_shear_based(Tscal thresh){
+            config = ShearBased{thresh};
         }
 
         bool need_level_zero_compute() { return true; }

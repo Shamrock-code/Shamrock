@@ -125,7 +125,7 @@ for c_num in list(range(1)):
     y_0 = 0.5
 
     sim_folder = (
-        "_to_trash/ramses_riemann_2d_van_leer_"
+        "_to_trash_rm_pbs_hll_minmod/ramses_riemann_2d_van_leer_"
         + "grid_reso_"
         + str(base * 2)
         + "_config_"
@@ -194,8 +194,10 @@ for c_num in list(range(1)):
         set_bc_func(cfg)
         cfg.set_eos_gamma(gamma)
         cfg.set_Csafe(0.3)
-        cfg.set_riemann_solver_hllc()
-        cfg.set_slope_lim_vanleer_sym()
+        cfg.set_riemann_solver_hll()
+        # cfg.set_riemann_solver_hllc()
+        # cfg.set_slope_lim_vanleer_sym()
+        cfg.set_slope_lim_minmod()
         cfg.set_face_time_interpolation(True)
         # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
@@ -275,6 +277,20 @@ for c_num in list(range(1)):
         def plot(t, iplot):
             metadata = {"extent": [0, 1.0, 0, 1.0], "time": t}
             arr_rho_pos = model.render_slice("rho", "f64", positions)
+            rhov_vals = model.render_slice("rhovel", "f64_3", positions)
+            rhoetot_vals = model.render_slice("rhoetot", "f64", positions)
+            vx = np.array(rhov_vals)[:, 0] / np.array(arr_rho_pos)
+            P = (np.array(rhoetot_vals) - 0.5 * np.array(arr_rho_pos) * vx**2) * (gamma - 1)
+            e_int = P/((gamma - 1.) * np.array(arr_rho_pos))
+    
+        
+            output = np.column_stack((np.array(arr_rho_pos), np.array(vx), np.array(P), np.array(e_int)))
+            filename= f"data_interacting_blast_wave_reso_{2*base*multx}_at_{t}.txt"
+            np.savetxt(os.path.join(sim_folder,filename),
+                       output,
+                       fmt=["%.10f", "%.10f", "%.10f", "%.10f"],
+                       header="rho vx P e_int",
+                       )
             plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name)
 
         current_time = 0.0

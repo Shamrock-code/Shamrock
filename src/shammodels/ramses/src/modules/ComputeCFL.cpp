@@ -97,15 +97,15 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
                 constexpr Tscal div = 1. / 3.;
 
-                // Tscal cs    = sound_speed(prim_state, gamma);
+                Tscal cs    = sound_speed(prim_state, gamma);
 
                 /** Will be remove later. Only for testing the the spherical collapse */
-                auto m_H     = 1.6735e-27; //[kg]
-                auto kb      = 1.380649e-23;
-                auto mu      = 2.3; // molecular gas
-                auto T       = 10;
-                auto cs0_sqr = (kb * T) / (mu * m_H);
-                Tscal cs     = cs0_sqr;
+                // auto m_H     = 1.67262192e-27; //[kg]
+                // auto kb      = 1.380649e-23;
+                // auto mu      = 2.3; // molecular gas
+                // auto T       = 10;
+                // auto cs0_sqr = (kb * T) / (mu * m_H);
+                // Tscal cs     = cs0_sqr;
                 /** ------------------------ **/
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);

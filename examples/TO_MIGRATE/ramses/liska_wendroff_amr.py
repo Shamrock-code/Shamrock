@@ -22,9 +22,9 @@ scale_fact = 0.3 / (cell_size * base * multx)
 gamma = 1.4
 err_min = 0.30
 err_max = 0.10
-nx = base * 2
-ny = base * 2
-sim_folder = f"_to_trash/ramses_liska_wendroff/check_nan_reso_{nx}_hll/"
+nx = base * cell_size
+ny = base * cell_size
+sim_folder = f"_to_trash/ramses_liska_wendroff/"
 if shamrock.sys.world_rank() == 0:
     os.makedirs(sim_folder, exist_ok=True)
 
@@ -155,6 +155,12 @@ def run_case(set_bc_func, case_name):
     def plot(t, iplot):
         metadata = {"extent": [0, 0.3, 0, 0.3], "time": t}
         arr_rho_pos = model.render_slice("rho", "f64", positions)
+        rhov_vals = model.render_slice("rhovel", "f64_3", positions)
+        rhoetot_vals = model.render_slice("rhoetot", "f64", positions)
+        vx = np.array(rhov_vals)[:, 0] / np.array(arr_rho_pos)
+        vy = np.array(rhov_vals)[:, 0] / np.array(arr_rho_pos)
+        P = (np.array(rhoetot_vals) - 0.5 * np.array(arr_rho_pos) * vx**2) * (gamma - 1)
+
         plot_rho_slice_cartesian(metadata, arr_rho_pos, iplot, case_name)
 
     current_time = 0.0

@@ -216,6 +216,13 @@ namespace shammodels::basegodunov {
                 py::arg("N_jeans"),
                 py::arg("T_init"))
             .def(
+                "set_amr_mode_shear_based",
+                [](TConfig &self, Tscal threshold) {
+                    self.amr_mode.set_refine_shear_based(threshold);
+                },
+                py::kw_only(),
+                py::arg("Threshold"))
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;

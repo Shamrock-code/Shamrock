@@ -57,7 +57,8 @@
 #include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
+#include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp" 
+#include "shamrock/solvergraph/CopyPatchDataField.hpp" 
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
 #include "shamrock/solvergraph/Field.hpp"
@@ -2062,22 +2063,39 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         modules::TimeIntegratorSelfGravity dt_integ_self_gravity(context, solver_config, storage);
         dt_integ_self_gravity.forward_euler(dt_input);
     }
-    // {
-    //     modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
-    //         AMRBlock::block_size, solver_config.eos_gamma};
-    //     node_ctp_after_updated.set_edges(
-    //         storage.block_counts_with_ghost,
-    //         storage.refs_rho,
-    //         storage.refs_rhov,
-    //         storage.refs_rhoe,
-    //         // /**/
-    //         storage.rho_primitive,
-    //         // /**/
-    //         storage.vel,
-    //         storage.press);
 
-    //     node_ctp_after_updated.evaluate();
-    // }
+    {
+
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
+        node_copy_rho.set_edges(
+            storage.refs_rho,
+            storage.rho_primitive
+        );
+
+        node_copy_rho.evaluate();
+
+    }
+
+
+
+    {
+        modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
+            AMRBlock::block_size, solver_config.eos_gamma};
+        node_ctp_after_updated.set_edges(
+            storage.block_counts_with_ghost,
+            storage.refs_rho,
+            storage.refs_rhov,
+            storage.refs_rhoe,
+            // /**/
+            // storage.rho_primitive,
+            // /**/
+            storage.vel,
+            storage.press);
+
+        node_ctp_after_updated.evaluate();
+    }
+
+ 
 
     /**
      * When compute primitive varibales second times as above, the input variable still unchanged

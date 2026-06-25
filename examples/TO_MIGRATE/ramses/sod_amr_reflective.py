@@ -229,5 +229,5 @@ if True:
     ax1.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
     ax2.set_ylabel("AMR level")
     plt.title(f"Threshold = {err_max}, derefinement factor = {err_min}")
-    plt.savefig("sod_tube_amr_new_test.png")
+    plt.savefig("sod_tube_amr_24_06_2026.png")
     #######

@@ -449,4 +449,69 @@ namespace {
         return (res_x + res_y + res_z);
     }
 
+
+
+
+
+        /**
+     */
+    template<class Tvec, class ACCField>
+    inline shambase::VecComponent<Tvec> normalized_shear(
+        const u32 cell_global_id,
+        const f32 sound_speed,
+        const Tvec delta_cells,
+        const AMRGraphLinkiterator &graph_iter_xp,
+        const AMRGraphLinkiterator &graph_iter_xm,
+        const AMRGraphLinkiterator &graph_iter_yp,
+        const AMRGraphLinkiterator &graph_iter_ym,
+        const AMRGraphLinkiterator &graph_iter_zp,
+        const AMRGraphLinkiterator &graph_iter_zm,
+        ACCField &&field_access)
+
+    {
+
+        using namespace sham;
+        using namespace sham::details;
+
+        auto get_avg_neigh = [&](auto &graph_links, u32 dir) -> Tvec {
+            Tvec acc   = shambase::VectorProperties<Tvec>::get_zero();
+            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                acc += field_access(id_b);
+            });
+
+            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tvec>::get_zero();
+        };
+
+ 
+        Tvec u_xp       = get_avg_neigh(graph_iter_xp, 0);
+        Tvec u_xm       = get_avg_neigh(graph_iter_xm, 1);
+        Tvec u_yp       = get_avg_neigh(graph_iter_yp, 2);
+        Tvec u_ym       = get_avg_neigh(graph_iter_ym, 3);
+        Tvec u_zp       = get_avg_neigh(graph_iter_zp, 4);
+        Tvec u_zm       = get_avg_neigh(graph_iter_zm, 5);
+
+        auto vgy = 0.25 * (u_xp[1] - u_xm[1]) * (u_xp[1] - u_xm[1]);
+        auto vgx = 0.25 * (u_yp[0] - u_ym[0]) * (u_yp[0] - u_ym[0]);
+
+        return vgy + vgx;
+        // auto dv_xdir = 0.5 * sycl::abs(u_xp - u_xm);
+        // // /delta_cells.x();
+
+        // auto dv_ydir = 0.5 * sycl::abs(u_yp - u_ym);
+        // //  / delta_cells.y();
+
+        // auto dv_zdir = 0.5 * sycl::abs(u_zp - u_zm) ;
+        // // / delta_cells.z();
+
+ 
+
+        // auto shear_1 =  (dv_ydir[0] + dv_xdir[1])*(dv_ydir[0] + dv_xdir[1]);
+        // auto shear_2 = (dv_ydir[2] + dv_zdir[1]) * (dv_ydir[2] + dv_zdir[1]);
+        // auto shear_3 = (dv_zdir[0] + dv_xdir[2]) * (dv_zdir[0] + dv_xdir[2]);
+        
+
+        // return  (shear_1 + shear_2 + shear_3) * (delta_cells.x() * delta_cells.x())/(sound_speed * sound_speed);
+
+    }
+
 } // namespace

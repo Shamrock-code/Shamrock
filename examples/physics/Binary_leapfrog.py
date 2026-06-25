@@ -6,7 +6,6 @@ This example shows how to use binary orbit functions with the Post-Newtonian dev
 and how to attach sink particles to an SPH model.
 """
 
-from xml.parsers.expat import model
 
 import numpy as np
 import shamrock as chama                 # chama: argot brésilien  qui signifie "allez!" ou "courage!"

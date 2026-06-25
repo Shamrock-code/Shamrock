@@ -32,7 +32,7 @@ G = ucte.G()       #bien 4pi^2 (compatible Ms,années UA)
 # %%
 # Simulation parameters
 T=100  #nombre de période de la Terre autour du Soleil (nombre d'années) 
-dt = 0.0005 # time step in code units
+dt = 0.01# time step in code units
 n_steps=int(T / dt)  # number of steps to evolve
 
 # %%

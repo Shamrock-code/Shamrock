@@ -8,7 +8,7 @@ and how to attach sink particles to an SPH model.
 
 import numpy as np
 
-import shamrock as chama  # chama: argot brésilien  qui signifie "allez!" ou "courage!"
+import shamrock as chama
 
 # %%
 # Use shamrock documentation style for matplotlib

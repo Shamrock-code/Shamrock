@@ -260,11 +260,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_s
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
     for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * s.sph_acceleration;
-    }
-
-    for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * s.ext_acceleration;
+        s.velocity += (dt / 2) * (s.sph_acceleration + s.ext_acceleration);
     }
 
     for (Sink &s : sink_parts) {
@@ -284,11 +280,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_s
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
     for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * s.ext_acceleration;
-    }
-
-    for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * s.sph_acceleration;
+        s.velocity += (dt / 2) * (s.sph_acceleration + s.ext_acceleration);
     }
 }
 

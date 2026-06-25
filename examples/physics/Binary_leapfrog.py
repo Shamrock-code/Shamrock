@@ -153,7 +153,7 @@ def get_sink_positions(model):
 
 # %%
 # Run a simple orbit evolution and collect sink snapshots
-def run_binary_orbit_PN(model):
+def run_binary_orbit_PN(model, n_steps=n_steps, dt=dt):
     """Evolve binary orbit for n_steps with timestep dt"""
     snapshots = []
     current_time = 0.0

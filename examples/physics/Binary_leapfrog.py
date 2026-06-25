@@ -6,9 +6,9 @@ This example shows how to use binary orbit functions with the Post-Newtonian dev
 and how to attach sink particles to an SPH model.
 """
 
-
 import numpy as np
-import shamrock as chama                 # chama: argot brésilien  qui signifie "allez!" ou "courage!"
+
+import shamrock as chama  # chama: argot brésilien  qui signifie "allez!" ou "courage!"
 
 # %%
 # Use shamrock documentation style for matplotlib
@@ -25,18 +25,19 @@ codeu = chama.UnitSystem(
     unit_mass=sicte.sol_mass(),
 )
 ucte = chama.Constants(codeu)
-G = ucte.G()       #bien 4pi^2 (compatible Ms,années UA)
-#c = ucte.c()      #bien 63000 (compatible Ms,années UA)
+G = ucte.G()  # bien 4pi^2 (compatible Ms,années UA)
+# c = ucte.c()      #bien 63000 (compatible Ms,années UA)
 
 
 # %%
 # Simulation parameters
-T=100  #nombre de période de la Terre autour du Soleil (nombre d'années) 
-dt = 0.01# time step in code units
-n_steps=int(T / dt)  # number of steps to evolve
+T = 100  # nombre de période de la Terre autour du Soleil (nombre d'années)
+dt = 0.01  # time step in code units
+n_steps = int(T / dt)  # number of steps to evolve
 
 # %%
 # Orbital initialization without get_binary_rotated
+
 
 def rotation_matrix(roll, pitch, yaw):
     cr, sr = np.cos(roll), np.sin(roll)
@@ -52,18 +53,20 @@ def rotation_matrix(roll, pitch, yaw):
 
 def binary_initial_conditions(m1, m2, a, e, nu=0.0, G=G, roll=0.0, pitch=0.0, yaw=0.0):
     M = m1 + m2
-    r = a * (1.0 - e * e) / (1.0 + e * np.cos(nu))  #juste Newton pour les conditions initiales
+    r = a * (1.0 - e * e) / (1.0 + e * np.cos(nu))  # juste Newton pour les conditions initiales
 
     h = np.sqrt(G * M * a * (1.0 - e * e))
     vr = G * M / h * e * np.sin(nu)
     vtheta = h / r
 
     x_rel = np.array([r * np.cos(nu), r * np.sin(nu), 0.0])
-    v_rel = np.array([
-        vr * np.cos(nu) - vtheta * np.sin(nu),
-        vr * np.sin(nu) + vtheta * np.cos(nu),
-        0.0,
-    ])
+    v_rel = np.array(
+        [
+            vr * np.cos(nu) - vtheta * np.sin(nu),
+            vr * np.sin(nu) + vtheta * np.cos(nu),
+            0.0,
+        ]
+    )
 
     x1 = -m2 / M * x_rel
     x2 = m1 / M * x_rel
@@ -129,7 +132,6 @@ def build_binary_sph_model(
     model.add_sink(m1, tuple(x1.tolist()), tuple(v1.tolist()), racc)
     model.add_sink(m2, tuple(x2.tolist()), tuple(v2.tolist()), racc)
 
-
     # Initialise the scheduler first, then set a simulation box large enough
     model.init_scheduler(split_load, merge_load)
 
@@ -157,12 +159,12 @@ def run_binary_orbit_PN(model, n_steps=n_steps, dt=dt):
     """Evolve binary orbit for n_steps with timestep dt"""
     snapshots = []
     current_time = 0.0
-    
+
     # Print initial conditions
     initial_sinks = model.get_sinks()
     print("\n=== INITIAL CONDITIONS ===")
     for i, sink in enumerate(initial_sinks):
-        print(f"Sink {i+1}: pos={sink['pos']}, vel={sink['velocity']}, mass={sink['mass']}")
+        print(f"Sink {i + 1}: pos={sink['pos']}, vel={sink['velocity']}, mass={sink['mass']}")
     print()
 
     for _ in range(n_steps):
@@ -170,22 +172,24 @@ def run_binary_orbit_PN(model, n_steps=n_steps, dt=dt):
         # (no SPH particles, so CFL would be zero with evolve_until)
         next_dt = model.evolve_once_override_time(current_time, dt)
         current_time += dt
-        
+
         positions, velocities = get_sink_positions(model)
-        
+
         # Compute distance between sinks
         pos1 = np.array(positions[0])
         pos2 = np.array(positions[1])
         distance = np.linalg.norm(pos2 - pos1)
-        
+
         # DEBUG: verify dt was used and distance between sinks
         print(f"t = {current_time:.4f}, dt = {next_dt:.6f}, distance = {distance:.6f}")
 
-        snapshots.append({
-            "time": current_time,
-            "positions": positions,
-            "velocities": velocities,
-        })
+        snapshots.append(
+            {
+                "time": current_time,
+                "positions": positions,
+                "velocities": velocities,
+            }
+        )
 
     return snapshots
 
@@ -219,33 +223,59 @@ def plot_orbit_trajectory(snapshots):
     sink2_positions = np.array([snap["positions"][1] for snap in snapshots])
 
     fig = plt.figure(figsize=(12, 5))
-    
+
     # 3D plot
     ax3d = fig.add_subplot(121, projection="3d")
-    ax3d.plot(sink1_positions[:, 0], sink1_positions[:, 1], sink1_positions[:, 2], 
-              "o-", label="Sink 1", markersize=3, linewidth=1)
-    ax3d.plot(sink2_positions[:, 0], sink2_positions[:, 1], sink2_positions[:, 2], 
-              "s-", label="Sink 2", markersize=3, linewidth=1)
+    ax3d.plot(
+        sink1_positions[:, 0],
+        sink1_positions[:, 1],
+        sink1_positions[:, 2],
+        "o-",
+        label="Sink 1",
+        markersize=3,
+        linewidth=1,
+    )
+    ax3d.plot(
+        sink2_positions[:, 0],
+        sink2_positions[:, 1],
+        sink2_positions[:, 2],
+        "s-",
+        label="Sink 2",
+        markersize=3,
+        linewidth=1,
+    )
     ax3d.set_xlabel("x (AU)")
     ax3d.set_ylabel("y (AU)")
     ax3d.set_zlabel("z (AU)")
     ax3d.set_title("3D Binary Orbit")
     ax3d.legend()
     ax3d.set_aspect("equal")
-    
+
     # 2D plot (xy plane)
     ax2d = fig.add_subplot(122)
-    ax2d.plot(sink1_positions[:, 0], sink1_positions[:, 1], "o-", 
-              label="Sink 1", markersize=0.025, linewidth=0.025)
-    ax2d.plot(sink2_positions[:, 0], sink2_positions[:, 1], "s-", 
-              label="Sink 2", markersize=0.025, linewidth=0.025)
+    ax2d.plot(
+        sink1_positions[:, 0],
+        sink1_positions[:, 1],
+        "o-",
+        label="Sink 1",
+        markersize=0.025,
+        linewidth=0.025,
+    )
+    ax2d.plot(
+        sink2_positions[:, 0],
+        sink2_positions[:, 1],
+        "s-",
+        label="Sink 2",
+        markersize=0.025,
+        linewidth=0.025,
+    )
     ax2d.set_xlabel("x (AU)")
     ax2d.set_ylabel("y (AU)")
     ax2d.set_title("Binary Orbit (xy plane)")
     ax2d.legend()
     ax2d.set_aspect("equal")
     ax2d.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
     plt.show()
 
@@ -253,7 +283,7 @@ def plot_orbit_trajectory(snapshots):
 # %%
 # Example usage
 if __name__ == "__main__":
-    m1 = 1 
+    m1 = 1
     m2 = 0.000006
     a = 1.0
     e = 0.0
@@ -266,4 +296,3 @@ if __name__ == "__main__":
         print("time", snapshot["time"], "positions", snapshot["positions"])
 
     plot_orbit_trajectory(snapshots)
-

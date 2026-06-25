@@ -25,8 +25,8 @@ codeu = chama.UnitSystem(
     unit_mass=sicte.sol_mass(),
 )
 ucte = chama.Constants(codeu)
-G = ucte.G()  # bien 4pi^2 (compatible Ms,années UA)
-# c = ucte.c()      #bien 63000 (compatible Ms,années UA)
+G = ucte.G()
+# c = ucte.c()
 
 
 # %%

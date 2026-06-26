@@ -269,8 +269,154 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
     std::string _impl_get_tex() { return "TODO"; }
 };
 
+class GraphTracer {
+    public:
+    std::string filename;
+
+    std::queue<std::string> events;
+
+    public:
+    inline void add_event(std::string event) { events.push(event); }
+
+    inline void maybe_flush() {
+
+        // open the file for writing
+        std::ofstream file(filename, std::ios::app);
+
+        // lock the file with flock
+
+        // flush the events
+        while (!events.empty()) {
+            std::string event = events.front();
+            events.pop();
+            file << event << std::endl;
+        }
+
+        // close the file
+        file.close();
+    }
+};
+
+GraphTracer graph_tracer("graph_trace.txt");
+
+void on_node_create(u64 uuid) {
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "node_create"},
+            {"uuid", uuid},
+            {"wtime", shambase::details::get_wtime()},
+        }
+            .dump());
+    graph_tracer.maybe_flush();
+}
+
+void on_node_destroy(u64 uuid) {
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "node_destroy"},
+            {"uuid", uuid},
+            {"wtime", shambase::details::get_wtime()},
+        }
+            .dump());
+    graph_tracer.maybe_flush();
+}
+
+void on_edge_create(u64 uuid) {
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "edge_create"},
+            {"uuid", uuid},
+            {"wtime", shambase::details::get_wtime()},
+        }
+            .dump());
+}
+
+void on_edge_destroy(u64 uuid) {
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "edge_destroy"},
+            {"uuid", uuid},
+            {"wtime", shambase::details::get_wtime()},
+        }
+            .dump());
+}
+
+void on_node_update(shamrock::solvergraph::INode &node) {
+
+    nlohmann::json edge_list = nlohmann::json::array();
+
+    node.on_edge_ro_edges([&](shamrock::solvergraph::IEdge &e) {
+        edge_list.push_back(
+            nlohmann::json{{"type", "read"}, {"label", e.get_label()}, {"uuid", e.get_uuid()}});
+    });
+
+    node.on_edge_rw_edges([&](shamrock::solvergraph::IEdge &e) {
+        edge_list.push_back(
+            nlohmann::json{
+                {"type", "read_write"}, {"label", e.get_label()}, {"uuid", e.get_uuid()}});
+    });
+
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "node_update"},
+            {"uuid", node.get_uuid()},
+            {"type", typeid(node).name()},
+            {"label", node.get_label()},
+            {"wtime", shambase::details::get_wtime()},
+            {"edges", edge_list}}
+            .dump());
+    graph_tracer.maybe_flush();
+}
+
+void on_node_op(u64 uuid, u64 op_id) {
+    if (op_id == 0) {
+        graph_tracer.add_event(
+            nlohmann::json{
+                {"event", "node_evaluate_begin"},
+                {"uuid", uuid},
+                {"wtime", shambase::details::get_wtime()},
+            }
+                .dump());
+    } else if (op_id == 1) {
+        graph_tracer.add_event(
+            nlohmann::json{
+                {"event", "node_evaluate_end"},
+                {"uuid", uuid},
+                {"wtime", shambase::details::get_wtime()},
+            }
+                .dump());
+    } else {
+        shambase::throw_with_loc<std::runtime_error>(shambase::format("Invalid op_id: {}", op_id));
+    }
+    graph_tracer.maybe_flush();
+}
+
+void on_node_evaluate_end(u64 uuid) {
+    graph_tracer.add_event(
+        nlohmann::json{
+            {"event", "node_evaluate_end"},
+            {"uuid", uuid},
+            {"wtime", shambase::details::get_wtime()},
+        }
+            .dump());
+    graph_tracer.maybe_flush();
+}
+
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
+
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::INode>::on_create
+        = on_node_create;
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::INode>::on_destroy
+        = on_node_destroy;
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::INode>::on_state_update
+        = on_node_update;
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::INode>::on_op = on_node_op;
+
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::IEdge>::on_create
+        = on_edge_create;
+    shamrock::solvergraph::LifetimeTracker<shamrock::solvergraph::IEdge>::on_destroy
+        = on_edge_destroy;
 
     bool enable_mem_free = false;
 

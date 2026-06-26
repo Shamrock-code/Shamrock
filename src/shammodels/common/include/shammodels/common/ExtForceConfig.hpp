@@ -12,6 +12,7 @@
 /**
  * @file ExtForceConfig.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  *
  */
@@ -34,6 +35,12 @@ namespace shammodels {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
         struct PointMass {
             Tscal central_mass;
+            Tscal Racc;
+        };
+
+        struct PN_PW {
+            Tscal central_mass;
+            Tvec central_pos;
             Tscal Racc;
         };
 
@@ -81,6 +88,7 @@ namespace shammodels {
 
         using VariantForce = std::variant<
             PointMass,
+            PN_PW,
             LenseThirring,
             ShearingBoxForce,
             VerticalDiscPotential,
@@ -95,6 +103,7 @@ namespace shammodels {
         static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
         using PointMass             = typename ExtForceVariant<Tvec>::PointMass;
+        using PN_PW                 = typename ExtForceVariant<Tvec>::PN_PW;
         using LenseThirring         = typename ExtForceVariant<Tvec>::LenseThirring;
         using ShearingBoxForce      = typename ExtForceVariant<Tvec>::ShearingBoxForce;
         using VerticalDiscPotential = typename ExtForceVariant<Tvec>::VerticalDiscPotential;
@@ -104,6 +113,10 @@ namespace shammodels {
 
         inline void add_point_mass(Tscal central_mass, Tscal Racc) {
             ext_forces.push_back(ExtForceVariant<Tvec>{PointMass{central_mass, Racc}});
+        }
+
+        inline void add_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+            ext_forces.push_back(ExtForceVariant<Tvec>{PN_PW{central_mass, central_pos, Racc}});
         }
 
         inline void add_lense_thirring(
@@ -142,6 +155,7 @@ namespace shammodels {
         using T = ExtForceVariant<Tvec>;
 
         using PointMass             = typename T::PointMass;
+        using PN_PW                 = typename T::PN_PW;
         using LenseThirring         = typename T::LenseThirring;
         using ShearingBoxForce      = typename T::ShearingBoxForce;
         using VerticalDiscPotential = typename T::VerticalDiscPotential;
@@ -150,6 +164,13 @@ namespace shammodels {
         if (const PointMass *v = std::get_if<PointMass>(&p.val)) {
             j = {
                 {"force_type", "point_mass"}, {"central_mass", v->central_mass}, {"Racc", v->Racc}};
+
+        } else if (const PN_PW *v = std::get_if<PN_PW>(&p.val)) {
+            j
+                = {{"force_type", "paczynski_wiita"},
+                   {"central_mass", v->central_mass},
+                   {"central_pos", v->central_pos},
+                   {"Racc", v->Racc}};
         } else if (const LenseThirring *v = std::get_if<LenseThirring>(&p.val)) {
             j = {
                 {"force_type", "lense_thirring"},
@@ -192,6 +213,7 @@ namespace shammodels {
         j.at("force_type").get_to(force_type);
 
         using PointMass             = typename T::PointMass;
+        using PN_PW                 = typename T::PN_PW;
         using LenseThirring         = typename T::LenseThirring;
         using ShearingBoxForce      = typename T::ShearingBoxForce;
         using VerticalDiscPotential = typename T::VerticalDiscPotential;
@@ -200,6 +222,12 @@ namespace shammodels {
         if (force_type == "point_mass") {
             p.val = PointMass{
                 j.at("central_mass").get<Tscal>(),
+                j.at("Racc").get<Tscal>(),
+            };
+        } else if (force_type == "paczynski_wiita") {
+            p.val = PN_PW{
+                j.at("central_mass").get<Tscal>(),
+                j.at("central_pos").get<Tvec>(),
                 j.at("Racc").get<Tscal>(),
             };
         } else if (force_type == "lense_thirring") {

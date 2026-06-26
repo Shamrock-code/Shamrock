@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 from scipy.special import erfinv
+from shamrock.utils.DustMRNDistribution import DustMRNDistribution
 
 import shamrock
 
@@ -56,6 +57,10 @@ mrn_cutoff_si = np.inf  # would be 250e-9 normally
 gamma = 1.4
 
 epsilon_base = 0.01
+
+tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
+tinject = 2
+iinject = 20
 
 
 sim_folder = "_to_trash/dusty_settle/"
@@ -122,26 +127,9 @@ def uint_g(r):
 rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
 grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
 
-print(f"grains sizes = {grain_size_si_edges} [m]")
-print(f"grains dens  = {rho_grains_si_edges} [kg.m^-3]")
-
-grain_size_edges = grain_size_si_edges * codeu.get("m")
-rho_grains_edges = codeu.get("kg") * codeu.get("m", power=-3) * np.array(rho_grains_si_edges)
-
-print(f"grains sizes = {grain_size_edges} [code u]")
-print(f"grains dens  = {rho_grains_edges} [code u]")
-
-grain_size = np.sqrt(grain_size_edges[:-1] * grain_size_edges[1:])
-rho_grains = np.sqrt(rho_grains_edges[:-1] * rho_grains_edges[1:])
-
-grain_size_si = np.sqrt(grain_size_si_edges[:-1] * grain_size_si_edges[1:])
-rho_grains_si = np.sqrt(rho_grains_si_edges[:-1] * rho_grains_si_edges[1:])
-
-print(f"grains sizes = {grain_size_si} [m]")
-print(f"grains dens  = {rho_grains_si} [kg.m^-3]")
-
-print(f"grains sizes = {grain_size} [code units]")
-print(f"grains dens  = {rho_grains} [code units]")
+mrn_distribution = DustMRNDistribution(
+    codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
+)
 
 bmin = (-box / 8, -box / 8, -box)
 bmax = (box / 8, box / 8, box)
@@ -190,7 +178,7 @@ def setup_model():
     )
 
     cfg.set_dust_mode_monofluid_tvi(nvar=ndust)
-    cfg.set_dust_drag_epstein(gamma, grain_size, rho_grains)
+    cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=5)
     cfg.set_boundary_periodic()
@@ -242,11 +230,6 @@ def setup_model():
 
 dump_helper.load_last_dump_or(setup_model)
 
-mrn_weight = grain_size ** (4 - mrn_pow)
-mrn_weight *= grain_size_si < mrn_cutoff_si
-mrn_weight = mrn_weight / np.sum(mrn_weight)
-
-print(f"mrn_weight = {mrn_weight}")
 
 pmass = model.get_particle_mass()
 
@@ -261,12 +244,12 @@ def compute_sj_new_j(patchdata, j):
     # mask to only modify particles with |z| < H
     mask = 1 / (1 + np.exp((np.abs(z) - 1.75 * H) / (H / 16)))
 
-    epsilon_target = epsilon_base * mrn_weight[j] * mask
+    epsilon_target = epsilon_base * mrn_distribution.mrn_weight[j] * mask
     print(f"epsilon_target = {epsilon_target} {j}")
     s = np.sqrt(rho * epsilon_target)
 
     print(
-        f"s = {s} {np.isnan(s).any()} epsilon_target = {epsilon_target} mrn_weight = {mrn_weight[j]} mask = {mask}, rho = {rho}"
+        f"s = {s} {np.isnan(s).any()} epsilon_target = {epsilon_target} mrn_weight = {mrn_distribution.mrn_weight[j]} mask = {mask}, rho = {rho}"
     )
 
     return s
@@ -335,16 +318,18 @@ def analyse_and_plot(j):
     sz = 1
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
-    time = model.get_time()
-    fig.suptitle(f"t = {time:.2f}")
+    time = model.get_time() - tinject
+    fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
 
     to_dens = codeu.to("kg") * codeu.to("m") ** -3
 
     dust_cmap = plt.colormaps[cmap]
-    dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max() * 10)
-    dust_colors = dust_cmap(dust_norm(grain_size_si))
+    dust_norm = mcolors.LogNorm(
+        vmin=mrn_distribution.grain_size_si.min(), vmax=mrn_distribution.grain_size_si.max() * 10
+    )
+    dust_colors = dust_cmap(dust_norm(mrn_distribution.grain_size_si))
 
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
@@ -367,14 +352,15 @@ def analyse_and_plot(j):
     axs[0].set_xlabel(r"$z$")
     axs[0].set_yscale("log")
     axs[0].set_ylim(1e-20, 1e-8)
-    axs[0].set_xlim(-4 * H, 4 * H)
+    axs[0].set_xlim(-2.2 * H, 2.2 * H)
     # axs[0].set_ylim(1e-12, 10**2)
 
     axs[1].set_ylabel(r"$\epsilon_j$")
     axs[1].set_xlabel(r"$z$")
     axs[1].set_yscale("log")
-    axs[1].set_ylim(1e-12, 2)
-    axs[1].set_xlim(-4 * H, 4 * H)
+    # axs[1].set_ylim(1e-12, 2) # if you want the full range
+    axs[1].set_ylim(1e-4, 1e-1)  # if you want to see the dust only
+    axs[1].set_xlim(-2.2 * H, 2.2 * H)
 
     gas_handle = Line2D(
         [0],
@@ -410,8 +396,8 @@ def analyse_and_plot(j):
     plt.close()
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
-    time = model.get_time()
-    fig.suptitle(f"t = {time:.2f}")
+    time = model.get_time() - tinject
+    fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
 
@@ -451,8 +437,6 @@ analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
 
 t_start = model.get_time()
 
-tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
-
 dust_injected = False
 
 idust_analysis = 0
@@ -475,7 +459,7 @@ for j in range(1000):
             if dust_injected:
                 dust_mass_analysis()
 
-        if j == 20:
+        if j == iinject:
             for k in range(ndust):
 
                 def compute_sj_new(patchdata):
@@ -543,11 +527,19 @@ for k in range(ndust):
 
     t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
-        rho_grain=rho_grains[k], s_grain=grain_size[k], rho=rho_i, cs=cs, gamma=gamma
+        rho_grain=mrn_distribution.rho_grains[k],
+        s_grain=mrn_distribution.grain_size[k],
+        rho=rho_i,
+        cs=cs,
+        gamma=gamma,
     )
     St = ts / t_dyn
 
-    plt.plot(t, deviation, label=f"dust {k}, s = {grain_size_si[k]:.1e} [m], St = {St:.1e}")
+    plt.plot(
+        t,
+        deviation,
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St:.1e}",
+    )
 
 total_dust_mass = np.sum(dust_mass, axis=1)
 plt.plot(

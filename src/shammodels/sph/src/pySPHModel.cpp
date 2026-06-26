@@ -358,6 +358,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
         .def(
+            "set_show_cfl_detail",
+            [](TConfig &self, bool show_cfl_detail) {
+                self.show_cfl_detail = show_cfl_detail;
+            },
+            py::arg("show_cfl_detail"))
+        .def(
             "set_particle_mass",
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
@@ -474,16 +480,20 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
                     if (!need_cs) {
                         if (cs_field) {
-                            logger::warn_ln(
-                                "SPHSetup",
-                                "make_generator_disc_mc: with the current EOS, cs_field is "
-                                "ignored");
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_field is "
+                                    "ignored");
+                            }
                         }
                         if (cs_profile) {
-                            logger::warn_ln(
-                                "SPHSetup",
-                                "make_generator_disc_mc: with the current EOS, cs_profile is "
-                                "ignored");
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_profile is "
+                                    "ignored");
+                            }
                         }
                         return std::function<Tscal(Tvec)>{};
                     }
@@ -734,12 +744,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("evolve_once", &T::evolve_once)
         .def(
             "evolve_until",
-            [](T &self, f64 target_time, i32 niter_max) {
-                return self.evolve_until(target_time, niter_max);
+            [](T &self, f64 target_time, i32 niter_max, f64 max_walltime) {
+                return self.evolve_until(target_time, niter_max, max_walltime);
             },
             py::arg("target_time"),
             py::kw_only(),
-            py::arg("niter_max") = -1)
+            py::arg("niter_max")    = -1,
+            py::arg("max_walltime") = -1)
         .def(
             "set_dt",
             [](T &self, f64 dt) {
@@ -1650,6 +1661,21 @@ ON_PYTHON_INIT {
     auto &m = root_module;
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
+
+    py::class_<EvolveUntilResults>(m, "EvolveUntilResults")
+        .def_readwrite("reach_target_time", &EvolveUntilResults::reach_target_time)
+        .def_readwrite("reach_niter_max", &EvolveUntilResults::reach_niter_max)
+        .def_readwrite("reach_max_walltime", &EvolveUntilResults::reach_max_walltime)
+        .def_readwrite("iter_count", &EvolveUntilResults::iter_count)
+        .def("__repr__", [](const EvolveUntilResults &self) {
+            return shambase::format(
+                "EvolveUntilResults(reach_target_time={}, reach_niter_max={}, "
+                "reach_max_walltime={}, iter_count={})",
+                self.reach_target_time,
+                self.reach_niter_max,
+                self.reach_max_walltime,
+                self.iter_count);
+        });
 
     using namespace shammodels::sph;
 

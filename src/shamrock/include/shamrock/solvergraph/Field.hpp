@@ -128,10 +128,14 @@ namespace shamrock::solvergraph {
         }
 
         inline PatchDataField<T> &get(u64 id_patch) { return field.field_data.get(id_patch); }
+
         inline const PatchDataField<T> &get(u64 id_patch) const {
             return field.field_data.get(id_patch);
         }
 
         inline u32 get_nvar() const { return nvar; }
+
+        inline ComputeField<T> &get_native() { return field; }
+        inline const ComputeField<T> &get_native() const { return field; }
     };
 } // namespace shamrock::solvergraph

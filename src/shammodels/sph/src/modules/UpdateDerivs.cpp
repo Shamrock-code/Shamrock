@@ -47,7 +47,7 @@
 #include <vector>
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tscal dt_hydro) {
 
     Cfg_AV cfg_av       = solver_config.artif_viscosity;
     Cfg_MHD cfg_mhd     = solver_config.mhd_config;
@@ -75,7 +75,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs() {
 
     if (cfg_dust.has_s_j_field()) {
         // we can do it separately because the backreaction is done only through the pressure
-        update_derivs_dust_monofluid_tvi_Sj(cfg_dust);
+        update_derivs_dust_monofluid_tvi_Sj(cfg_dust, dt_hydro);
     }
 }
 
@@ -1070,7 +1070,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tvi_Sj(
-    DustConfig cfg) {
+    DustConfig cfg, Tscal dt_hydro) {
 
     using MonofluidTVI = typename DustConfig::MonofluidTVI;
 

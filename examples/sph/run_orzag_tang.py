@@ -107,6 +107,7 @@ print(f"mu_0: {mu_0}")
 
 cfg.set_artif_viscosity_None()  # artificial viscosity terms are computed in the MHD solver
 cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+cfg.set_show_cfl_detail(True)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 model.set_solver_config(cfg)

@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/narrowing.hpp"
 #include "shamalgs/collective/indexing.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/typeAliasVec.hpp"
@@ -157,7 +158,35 @@ namespace shamalgs::collective {
     inline void write_at(MPI_File fh, const void *buf, size_t len, u64 file_head_ptr) {
 
         shamcomm::mpi::File_write_at(
-            fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE);
+            fh,
+            file_head_ptr,
+            buf,
+            shambase::narrow_or_throw<int>(len),
+            get_mpi_type<T>(),
+            MPI_STATUS_IGNORE);
+    }
+
+    /**
+     * @brief Writes a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to write_at<u8>. Use this instead of write_at when len may exceed
+     * the range safely representable as an MPI count (write_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the bytes to be written
+     * @param len number of bytes to write
+     * @param file_head_ptr offset in the file where the data should be written
+     */
+    inline void write_at_large(MPI_File fh, const u8 *buf, size_t len, u64 file_head_ptr) {
+
+        size_t max_message = 1 << 30;
+
+        for (size_t offset = 0; offset < len; offset += max_message) {
+            const u8 *buf_ptr = buf + offset;
+            size_t msg_len    = std::min(max_message, len - offset);
+            write_at<u8>(fh, buf_ptr, msg_len, file_head_ptr + offset);
+        }
     }
 
     /**
@@ -172,7 +201,34 @@ namespace shamalgs::collective {
     inline void read_at(MPI_File fh, void *buf, size_t len, u64 file_head_ptr) {
 
         shamcomm::mpi::File_read_at(
-            fh, file_head_ptr, buf, len, get_mpi_type<T>(), MPI_STATUS_IGNORE);
+            fh,
+            file_head_ptr,
+            buf,
+            shambase::narrow_or_throw<int>(len),
+            get_mpi_type<T>(),
+            MPI_STATUS_IGNORE);
+    }
+
+    /**
+     * @brief Reads a large byte buffer at a given offset in a file using MPI.
+     *
+     * This function splits the transfer into chunks of at most 1 GiB and delegates
+     * each chunk to read_at<u8>. Use this instead of read_at when len may exceed
+     * the range safely representable as an MPI count (read_at narrows len to int).
+     *
+     * @param fh MPI file handle
+     * @param buf pointer to the buffer that should receive the bytes
+     * @param len number of bytes to read
+     * @param file_head_ptr offset in the file where the data should be read
+     */
+    inline void read_at_large(MPI_File fh, u8 *buf, size_t len, u64 file_head_ptr) {
+        size_t max_message = 1 << 30;
+
+        for (size_t offset = 0; offset < len; offset += max_message) {
+            u8 *buf_ptr    = buf + offset;
+            size_t msg_len = std::min(max_message, len - offset);
+            read_at<u8>(fh, buf_ptr, msg_len, file_head_ptr + offset);
+        }
     }
 
     /**

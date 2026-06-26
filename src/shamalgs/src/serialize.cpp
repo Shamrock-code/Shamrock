@@ -144,11 +144,16 @@ u64 shamalgs::SerializeHelper::pre_head_length() {
         .head_size;
 }
 
-void shamalgs::SerializeHelper::allocate(SerializeSize szinfo) {
+void shamalgs::SerializeHelper::allocate(SerializeSize szinfo, bool allow_large_int_size) {
     StackEntry stack_loc{false};
     u64 bytelen = szinfo.head_size + szinfo.content_size + pre_head_length();
 
-    storage.resize(shambase::narrow_or_throw<u32>(bytelen));
+    if (allow_large_int_size) {
+        storage.resize(bytelen);
+    } else {
+        storage.resize(shambase::narrow_or_throw<u32>(bytelen));
+    }
+
     header_size = szinfo.head_size;
     storage_header.resize(header_size);
 
@@ -174,8 +179,14 @@ shamalgs::SerializeHelper::SerializeHelper(std::shared_ptr<sham::DeviceScheduler
     : dev_sched(std::move(_dev_sched)), storage(0, _dev_sched) {}
 
 shamalgs::SerializeHelper::SerializeHelper(
-    std::shared_ptr<sham::DeviceScheduler> _dev_sched, sham::DeviceBuffer<u8> &&input)
+    std::shared_ptr<sham::DeviceScheduler> _dev_sched,
+    sham::DeviceBuffer<u8> &&input,
+    bool allow_large_int_size)
     : dev_sched(std::move(_dev_sched)), storage(std::forward<sham::DeviceBuffer<u8>>(input)) {
+
+    if (!allow_large_int_size) {
+        shambase::narrow_or_throw<u32>(storage.get_size());
+    }
 
     header_size = extract_preahead(dev_sched->get_queue(), storage);
 

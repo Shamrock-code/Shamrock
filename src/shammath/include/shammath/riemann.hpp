@@ -21,6 +21,7 @@
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include "shamcomm/logs.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -141,7 +142,19 @@ namespace shammath {
         prim.vel[2] = cons.rhovel[2] / cons.rho;
 
         const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
-        prim.press         = (gamma - 1.0) * rhoeint;
+        // prim.press         = (gamma - 1.0) * rhoeint;
+
+        /** This just for testing purpose. Will be remove*/
+
+        auto m_H = 1.67262192e-27; //[kg]
+        auto kb  = 1.380649e-23;
+        auto mu  = 2.3; // molecular gas
+        auto T   = 10.;
+	 auto rho_c =  3.7e-13 * 1e3; // [g/cm^3 ===> kg/m^3]
+
+        auto cs0_sqr = (kb * T) / (mu * m_H);
+
+        prim.press = cons.rho * cs0_sqr * (1.0 + sycl::pow(cons.rho / rho_c, 2./3.));
 
         return prim;
     }
@@ -167,7 +180,22 @@ namespace shammath {
     template<class Tvec>
     inline constexpr shambase::VecComponent<Tvec> sound_speed(
         PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
-        return sycl::sqrt(gamma * prim.press / prim.rho);
+        //return sycl::sqrt(gamma * prim.press / prim.rho);
+	//
+	auto rho_c =  3.7e-13 * 1e3; // [g/cm^3 ===> kg/m^3]
+
+        auto m_H = 1.67262192e-27; // [kg]
+        auto kb  =  1.380649e-23;          // []
+        auto mu  = 2.3;                // molecular gas
+        
+              
+        auto T = 10.;
+        auto cs0_sqr  = (kb * T) / (mu * m_H);
+        auto cs_sqr = cs0_sqr * (1. + (5.0/3.0) * sycl::pow(prim.rho/rho_c,2./3.));
+
+
+        // return sycl::sqrt(gamma * prim.press / prim.rho);
+        return sycl::sqrt(cs_sqr);
     }
 
     // template<class Tcons>
@@ -380,6 +408,29 @@ namespace shammath {
         const auto csL = sound_speed(primL, gamma);
         const auto csR = sound_speed(primR, gamma);
 
+
+/*
+        if (sycl::isnan(csL) || sycl::isnan(csR)) {
+            logger::raw_ln(
+                "Nan in HLLC solver \t csL \t",
+                csL,
+                "\t pL \t",
+                primL.press,
+                "\t rhoL \t",
+                primL.rho,
+                "\t csR \t",
+                csR,
+                "\t pR \t",
+                primR.press,
+                "\t rhoR \t",
+                primR.rho,
+                "\t gamma \t",
+                gamma,
+                "\t\n");
+        }
+
+*/
+
         // Left and right state fluxes
         const auto FL = hydro_flux_x(cL, gamma);
         const auto FR = hydro_flux_x(cR, gamma);
@@ -486,7 +537,6 @@ namespace shammath {
     inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma));
     }
-
     /**
      * @brief HLLC flux in the +z direction
      */

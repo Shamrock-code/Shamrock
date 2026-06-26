@@ -300,6 +300,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("grain_sizes"),
             py::arg("grain_densities"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
+        .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
             "add_ext_force_lense_thirring",
             [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {

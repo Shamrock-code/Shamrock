@@ -891,6 +891,16 @@ struct shammodels::sph::SolverConfig {
     }
 
     /**
+     * @brief Add a post-newtonian Paczynski-Wiita potential
+     *
+     * @param[in] central_mass The mass of the central object
+     * @param[in] Racc The accretion radius of the central object
+     */
+    inline void add_ext_force_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        ext_force_config.add_paczynski_wiita(central_mass, central_pos, Racc);
+    }
+
+    /**
      * @brief Add a Lense-Thirring external force
      *
      * @param[in] central_mass The mass of the central object

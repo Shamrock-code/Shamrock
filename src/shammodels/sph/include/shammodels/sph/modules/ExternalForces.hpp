@@ -59,6 +59,7 @@ namespace shammodels::sph::modules {
         private:
         using SolverConfigExtForce     = typename Config::ExtForceConfig;
         using EF_PointMass             = typename SolverConfigExtForce::PointMass;
+        using EF_PN_PW                 = typename SolverConfigExtForce::PN_PW;
         using EF_LenseThirring         = typename SolverConfigExtForce::LenseThirring;
         using EF_ShearingBoxForce      = typename SolverConfigExtForce::ShearingBoxForce;
         using EF_VerticalDiscPotential = typename SolverConfigExtForce::VerticalDiscPotential;

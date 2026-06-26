@@ -358,6 +358,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
         .def(
+            "set_show_cfl_detail",
+            [](TConfig &self, bool show_cfl_detail) {
+                self.show_cfl_detail = show_cfl_detail;
+            },
+            py::arg("show_cfl_detail"))
+        .def(
             "set_particle_mass",
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;

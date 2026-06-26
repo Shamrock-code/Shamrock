@@ -516,6 +516,8 @@ struct shammodels::sph::SolverConfig {
     /// Get the CFL multiplier for the stiffness
     inline Tscal get_cfl_mult_stiffness() { return cfl_config.cfl_multiplier_stiffness; }
 
+    bool show_cfl_detail = false;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -1274,6 +1276,7 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", p.unit_sys},
             {"time_state", p.time_state},
+            {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
             // dust config
@@ -1367,6 +1370,7 @@ namespace shammodels::sph {
         _get_to_if_contains("cfl_config", p.cfl_config);
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("time_state", p.time_state);
+        _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
         _get_to_if_contains("mhd_config", p.mhd_config);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);

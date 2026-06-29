@@ -121,4 +121,18 @@ NEW_TEST(Unittest, "shamrock/solvergraph/SolverGraph", 1) {
 
         REQUIRE_EXCEPTION_THROW(graph.register_edge("dup", TestEdge{}), std::invalid_argument);
     }
+
+    {
+        SolverGraph graph{};
+
+        REQUIRE_EXCEPTION_THROW(
+            graph.register_node_ptr_base("null_node", std::shared_ptr<INode>{}),
+            std::invalid_argument);
+        REQUIRE_EQUAL(graph.get_node_names().size(), 0);
+
+        REQUIRE_EXCEPTION_THROW(
+            graph.register_edge_ptr_base("null_edge", std::shared_ptr<IEdge>{}),
+            std::invalid_argument);
+        REQUIRE_EQUAL(graph.get_edge_names().size(), 0);
+    }
 }

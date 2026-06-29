@@ -45,6 +45,11 @@ namespace shamrock::solvergraph {
         }
 
         inline bool check_node(const std::shared_ptr<INode> &node) const {
+            if (!bool(node)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "node == nullptr is not allowed, please pass a shared pointer with a valid "
+                    "node"));
+            }
             if (!node_check) {
                 return true;
             }
@@ -52,6 +57,11 @@ namespace shamrock::solvergraph {
         }
 
         inline bool check_edge(const std::shared_ptr<IEdge> &edge) const {
+            if (!bool(edge)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "edge == nullptr is not allowed, please pass a shared pointer with a valid "
+                    "edge"));
+            }
             if (!edge_check) {
                 return true;
             }

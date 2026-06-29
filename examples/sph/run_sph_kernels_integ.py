@@ -12,6 +12,12 @@ import numpy as np
 
 import shamrock
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+# %%
+# Do the plots
 Rkern = shamrock.math.sphkernel.M4_Rkern()
 q = np.linspace(0, Rkern, 1000)
 

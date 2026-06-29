@@ -569,42 +569,28 @@ namespace {
 // Test registrations
 //==============================================================================
 
-TestStart(Unittest, "shammodels/gsph/force/newtons_third", test_gsph_newton3, 1) {
-    test_sph_force_newtons_third_law();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/newtons_third", 1) { test_sph_force_newtons_third_law(); }
 
-TestStart(Unittest, "shammodels/gsph/force/symmetry", test_gsph_force_sym, 1) {
-    test_gsph_force_symmetry();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/symmetry", 1) { test_gsph_force_symmetry(); }
 
-TestStart(Unittest, "shammodels/gsph/force/pstar_scaling", test_gsph_pstar, 1) {
-    test_force_linear_pstar_scaling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/pstar_scaling", 1) { test_force_linear_pstar_scaling(); }
 
-TestStart(Unittest, "shammodels/gsph/force/energy_comoving", test_gsph_energy_como, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/force/energy_comoving", 1) {
     test_energy_rate_zero_when_comoving();
 }
 
-TestStart(Unittest, "shammodels/gsph/force/zero_density", test_gsph_zero_rho, 1) {
-    test_zero_density_handling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/zero_density", 1) { test_zero_density_handling(); }
 
-TestStart(Unittest, "shammodels/gsph/force/zero_omega", test_gsph_zero_omega, 1) {
-    test_zero_omega_handling();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/zero_omega", 1) { test_zero_omega_handling(); }
 
-TestStart(Unittest, "shammodels/gsph/force/direction", test_gsph_force_dir, 1) {
-    test_force_direction();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/direction", 1) { test_force_direction(); }
 
-TestStart(Unittest, "shammodels/gsph/force/complete_interaction", test_gsph_complete, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/force/complete_interaction", 1) {
     test_complete_gsph_interaction();
 }
 
-TestStart(Unittest, "shammodels/gsph/force/different_directions", test_gsph_dirs, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/force/different_directions", 1) {
     test_force_different_directions();
 }
 
-TestStart(Unittest, "shammodels/gsph/force/different_kernels", test_gsph_kernels, 1) {
-    test_force_different_kernels();
-}
+NEW_TEST(Unittest, "shammodels/gsph/force/different_kernels", 1) { test_force_different_kernels(); }

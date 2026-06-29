@@ -18,6 +18,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "sham/term/tty.hpp"
 #include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/Device.hpp"
@@ -29,7 +30,6 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
 #include "shamcomm/local_rank.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
@@ -331,7 +331,7 @@ namespace shamsys::instance {
 
             // shamlog_debug_ln("NodeInstance", "chosen sycl config :",sycl_cfg);
 
-            init_sycl_mpi(sycl_cfg, {argc, argv, forced_state});
+            init_sycl_mpi(sycl_cfg, {.argc = argc, .argv = argv, .forced_state = forced_state});
 
         } else {
 

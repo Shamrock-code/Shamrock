@@ -17,9 +17,9 @@
 
 #include "shambase/SourceLocation.hpp"
 #include "shambase/aliases_int.hpp"
-#include "shambase/format.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 
 // forward declare PatchDataField

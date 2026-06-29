@@ -29,6 +29,14 @@ std::optional<std::string> shamcmdopt::getenv_str(const char *env_var) {
     return {};
 }
 
+std::optional<std::string_view> shamcmdopt::getenv_str_view(const char *env_var) {
+    const char *val = std::getenv(env_var);
+    if (val != nullptr) {
+        return std::string_view(val);
+    }
+    return {};
+}
+
 /// List of documented env variables
 std::vector<std::pair<std::string, std::string>> env_var_reg = {};
 

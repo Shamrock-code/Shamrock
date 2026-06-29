@@ -10,6 +10,11 @@ import numpy as np
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Define the unit system
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
@@ -31,6 +36,7 @@ def plot_orbits(m1, m2, a, e, roll, pitch, yaw):
     import matplotlib.pyplot as plt
 
     ax = plt.figure().add_subplot(projection="3d")
+    ax.minorticks_off()
 
     x1, x2, y1, y2, z1, z2 = [], [], [], [], [], []
 

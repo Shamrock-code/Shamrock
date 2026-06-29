@@ -17,6 +17,6 @@
 #include "shamsys/stacktrace_log.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamsys/stacktrace_log", stacktrace_log_tests, -1) {
+NEW_TEST(Unittest, "shamsys/stacktrace_log", -1) {
     shamcomm::logs::raw_ln(shamsys::crash_report_backtrace());
 }

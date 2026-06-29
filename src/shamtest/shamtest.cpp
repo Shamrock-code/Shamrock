@@ -64,11 +64,11 @@ namespace shamtest {
             output += shambase::format("- [{}/{}] :", test_num + 1, test_count);
         }
 
-        bool any_node_cnt = test.node_count == -1;
+        bool any_node_cnt = test.world_size == -1;
         if (any_node_cnt) {
             output += (" [any] ");
         } else {
-            output += shambase::format(" [{:03}] ", test.node_count);
+            output += shambase::format(" [{:03}] ", test.world_size);
         }
 
         output += "\033[;34m" + test.name + "\033[0m\n";
@@ -282,10 +282,10 @@ namespace shamtest {
         auto print_list = [&](TestType t) {
             for (auto test : static_init_vec_tests) {
                 if (test.type == t) {
-                    if (test.node_count == -1) {
+                    if (test.world_size == -1) {
                         printf("- [any] %-15s\n", test.name.c_str());
                     } else {
-                        printf("- [%03d] %-15s\n", test.node_count, test.name.c_str());
+                        printf("- [%03d] %-15s\n", test.world_size, test.name.c_str());
                     }
                 }
             }
@@ -384,8 +384,8 @@ namespace shamtest {
         bool run_longbenchmark_test  = cfg.run_benchmark && cfg.run_long_tests;
 
         auto can_run = [&](shamtest::details::Test &t) -> bool {
-            bool any_node_cnt  = (t.node_count == -1);
-            bool world_size_ok = t.node_count == shamcomm::world_size();
+            bool any_node_cnt  = (t.world_size == -1);
+            bool world_size_ok = t.world_size == shamcomm::world_size();
 
             bool can_run_type = false;
 
@@ -400,7 +400,7 @@ namespace shamtest {
         };
 
         auto print_test = [&](shamtest::details::Test &t, bool enabled) {
-            bool any_node_cnt = (t.node_count == -1);
+            bool any_node_cnt = (t.world_size == -1);
 
             std::string output = "";
 
@@ -409,7 +409,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;32many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;32m{:03}\033[0m] ", t.node_count);
+                    output += shambase::format(" - [\033[;32m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;32m" + t.name + "\033[0m\n";
 
@@ -417,7 +417,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;31many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;31m{:03}\033[0m] ", t.node_count);
+                    output += shambase::format(" - [\033[;31m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;31m" + t.name + "\033[0m\n";
             }
@@ -529,7 +529,7 @@ namespace shamtest {
             shambase::Timer timer;
             timer.start();
             TestResult res = test.run();
-            timer.end();
+            timer.stop();
             mpi::barrier(MPI_COMM_WORLD);
 
             usize gather_bytecount           = 0;
@@ -649,12 +649,12 @@ namespace shamtest {
         for (const Test &t : static_init_vec_tests) {
             if (t.type == Benchmark || t.type == LongBenchmark)
                 continue;
-            if (t.node_count == -1) {
+            if (t.world_size == -1) {
                 for (int ncount : rank_list) {
                     add_test(t, ncount);
                 }
             } else {
-                add_test(t, t.node_count);
+                add_test(t, t.world_size);
             }
         }
 

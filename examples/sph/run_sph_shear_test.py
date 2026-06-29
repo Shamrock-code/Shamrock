@@ -15,6 +15,10 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
 
 # %%
 # Initialize context & attach a SPH model to it
@@ -35,7 +39,7 @@ bmin = (-0.6, -0.6, -0.1)
 bmax = (0.6, 0.6, 0.1)
 pmass = -1
 
-bmin, bmax = model.get_ideal_fcc_box(dr, bmin, bmax)
+bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 

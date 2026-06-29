@@ -2,7 +2,7 @@
 
 ## What is this project
 
-SHAMROCK is a C++17 hydrodynamics framework built with SYCL, MPI,
+SHAMROCK is a C++20 hydrodynamics framework built with SYCL, MPI,
 and Python. SYCL backend support covers every major implementation
 (AdaptiveCpp, DPC++, intel/llvm). It uses CMake (generators: make or
 Ninja depending on availability) and has submodules.

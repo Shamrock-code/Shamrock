@@ -26,12 +26,12 @@ namespace shamtest::details {
     struct Test {
         TestType type;          ///< Type of test
         std::string name;       ///< Name of the test
-        i32 node_count;         ///< Node count of the test
+        i32 world_size;         ///< Node count of the test
         void (*test_functor)(); ///< Test function
 
         /// CTOR of the test
-        inline Test(const TestType &type, std::string name, const i32 &node_count, void (*func)())
-            : type(type), name(std::move(name)), node_count(node_count), test_functor(func) {}
+        inline Test(const TestType &type, std::string name, const i32 &world_size, void (*func)())
+            : type(type), name(std::move(name)), world_size(world_size), test_functor(func) {}
 
         /// Run the test
         TestResult run();

@@ -37,6 +37,11 @@ if not shamrock.sys.is_initialized():
     shamrock.sys.init("0:0")
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # List parameters
 
 kernel = "M4"
@@ -70,9 +75,12 @@ uuzero = przero / (gam1 * rhozero)
 
 render_gif = True
 
-dump_folder = ""
+dump_folder = "_to_trash"
 sim_name = "orztang"
 analysis_folder = dump_folder  # store analysis data alongside dumps
+
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(dump_folder, exist_ok=True)
 
 # %%
 # Configure the solver
@@ -99,6 +107,7 @@ print(f"mu_0: {mu_0}")
 
 cfg.set_artif_viscosity_None()  # artificial viscosity terms are computed in the MHD solver
 cfg.set_IdealMHD(sigma_mhd=1, sigma_u=1)
+cfg.set_show_cfl_detail(True)
 cfg.set_boundary_periodic()
 cfg.set_eos_adiabatic(gamma)
 model.set_solver_config(cfg)
@@ -228,13 +237,13 @@ t_target = 1.0
 dt_dump = 0.025
 
 analysis(0)
-model.do_vtk_dump(f"{sim_name}_{0:05}.vtk", True)
+model.do_vtk_dump(f"{dump_folder}/{sim_name}_{0:05}.vtk", True)
 
 i_dump = 1
 
 while t_sum < t_target:
     model.evolve_until(t_sum + dt_dump)
-    model.do_vtk_dump(f"{sim_name}_{i_dump:05}.vtk", True)
+    model.do_vtk_dump(f"{dump_folder}/{sim_name}_{i_dump:05}.vtk", True)
     analysis(i_dump)
     t_sum += dt_dump
     i_dump += 1

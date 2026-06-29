@@ -351,24 +351,24 @@ namespace sham {
         }
 
         DeviceProperties ret = {
-            Vendor::UNKNOWN,         // We cannot determine the vendor
-            get_device_backend(dev), // Query the backend based on the platform name
-            get_device_type(dev),
-            name,
-            dev.get_platform().get_info<sycl::info::platform::name>(),
-            shambase::get_check_ref(global_mem_size),
-            shambase::get_check_ref(global_mem_cache_line_size),
-            shambase::get_check_ref(global_mem_cache_size),
-            shambase::get_check_ref(local_mem_size),
-            shambase::get_check_ref(max_compute_units),
-            max_alloc_dev,
-            max_alloc_host,
+            .vendor   = Vendor::UNKNOWN,         // We cannot determine the vendor
+            .backend  = get_device_backend(dev), // Query the backend based on the platform name
+            .type     = get_device_type(dev),
+            .name     = name,
+            .platform = dev.get_platform().get_info<sycl::info::platform::name>(),
+            .global_mem_size            = shambase::get_check_ref(global_mem_size),
+            .global_mem_cache_line_size = shambase::get_check_ref(global_mem_cache_line_size),
+            .global_mem_cache_size      = shambase::get_check_ref(global_mem_cache_size),
+            .local_mem_size             = shambase::get_check_ref(local_mem_size),
+            .max_compute_units          = shambase::get_check_ref(max_compute_units),
+            .max_mem_alloc_size_dev     = max_alloc_dev,
+            .max_mem_alloc_size_host    = max_alloc_host,
             // the SYCL standard returns the alignment in bits, we convert to bytes for convenience
-            shambase::get_check_ref(mem_base_addr_align) / CHAR_BIT,
-            shambase::get_check_ref(sub_group_sizes),
-            default_work_group_size,
-            std::nullopt,
-            warnings};
+            .mem_base_addr_align     = shambase::get_check_ref(mem_base_addr_align) / CHAR_BIT,
+            .sub_group_sizes         = shambase::get_check_ref(sub_group_sizes),
+            .default_work_group_size = default_work_group_size,
+            .pci_address             = std::nullopt,
+            .warnings                = warnings};
 
         { // PCI id infos
 #if defined(SYCL_EXT_INTEL_DEVICE_INFO) && SYCL_EXT_INTEL_DEVICE_INFO >= 5
@@ -454,10 +454,10 @@ namespace sham {
         DeviceProperties prop       = fetch_properties(dev); // Get the properties of the device
         DeviceMPIProperties propmpi = {false};               // Get the MPI properties
         return Device{
-            i,      // The index of the device
-            dev,    // The SYCL device
-            prop,   // The properties of the device
-            propmpi // The MPI properties of the device
+            .device_id = i,      // The index of the device
+            .dev       = dev,    // The SYCL device
+            .prop      = prop,   // The properties of the device
+            .mpi_prop  = propmpi // The MPI properties of the device
         };
     }
 

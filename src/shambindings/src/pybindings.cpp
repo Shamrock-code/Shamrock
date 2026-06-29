@@ -17,8 +17,8 @@
 #include "shambase/exception.hpp"
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
+#include "sham/term/tty.hpp"
 #include "shambindings/pybindaliases.hpp"
-#include "shamcmdopt/tty.hpp"
 #include <pybind11/eval.h>
 #include <pybind11/iostream.h>
 #include <pybind11/pybind11.h>
@@ -71,7 +71,7 @@ void register_py_to_sham_print(py::module &m) {
         wrapper_io(int fileno) : _fileno(fileno) {}
         void write(py::object &buffer) { shambase::print(buffer.cast<std::string>()); }
         void flush() { shambase::flush(); }
-        bool isatty() { return shamcmdopt::is_a_tty(); }
+        bool isatty() { return sham::term::is_a_tty(); }
         int fileno() { return _fileno; }
     };
 

@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-TestStart(Unittest, "shambackends/DeviceBuffer", DeviceBuffer_consttructor, 1) {
+NEW_TEST(Unittest, "shambackends/DeviceBuffer", 1) {
     using namespace sham;
 
     constexpr USMKindTarget target = USMKindTarget::device;

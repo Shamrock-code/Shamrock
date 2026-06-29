@@ -15,6 +15,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
+# %%
+# Use shamrock documentation style for matplotlib
+import shamrock
+
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
 try:
     base_path = os.path.dirname(os.path.abspath(__file__))
 except NameError:
@@ -94,11 +101,13 @@ for _, r in items:
 h_in = max(3.0, 0.45 * len(names) + 5)
 y = np.arange(len(names))
 
+size_fact_fig = 1.4
+
 fig, (ax_rate, ax_micro) = plt.subplots(
     1,
     2,
     sharey=True,
-    figsize=(15, h_in),
+    figsize=(15 * size_fact_fig, h_in * size_fact_fig),
     gridspec_kw={"width_ratios": [75, 25], "wspace": 0.025},
 )
 

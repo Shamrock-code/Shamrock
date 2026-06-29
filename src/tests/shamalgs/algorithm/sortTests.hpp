@@ -72,7 +72,7 @@ struct TestSortByKey {
         t.start();
         fct(q, buf_key, buf_vals, len);
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }

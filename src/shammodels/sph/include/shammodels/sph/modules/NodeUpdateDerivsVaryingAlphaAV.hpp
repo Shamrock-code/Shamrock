@@ -23,7 +23,7 @@
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 
-#define NODE_UPDATE_DERIVS_VARYING_ALPHA_AV_EDGES(X_RO, X_RW)                                      \
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, alpha_u)                                        \
@@ -62,7 +62,7 @@ namespace shammodels::sph::modules {
         public:
         NodeUpdateDerivsVaryingAlphaAV() {}
 
-        EXPAND_NODE_EDGES(NODE_UPDATE_DERIVS_VARYING_ALPHA_AV_EDGES)
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
@@ -71,3 +71,5 @@ namespace shammodels::sph::modules {
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };
 } // namespace shammodels::sph::modules
+
+#undef NODE_EDGES

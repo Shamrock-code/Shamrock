@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-TestStart(Unittest, "shambackends/kernel_call", testing_func_kernel_call_base, 1) {
+NEW_TEST(Unittest, "shambackends/kernel_call", 1) {
 
     using T = f64;
 
@@ -70,7 +70,7 @@ TestStart(Unittest, "shambackends/kernel_call", testing_func_kernel_call_base, 1
     REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
 }
 
-TestStart(Unittest, "shambackends/kernel_call_hndl", testing_func_kernel_call_hndl_base, 1) {
+NEW_TEST(Unittest, "shambackends/kernel_call_hndl", 1) {
 
     using T = f64;
 

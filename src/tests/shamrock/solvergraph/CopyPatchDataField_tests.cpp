@@ -14,7 +14,7 @@
 #include "shamtest/shamtest.hpp"
 #include <memory>
 
-TestStart(Unittest, "shamrock/solvergraph/CopyPatchDataField", testCopyPatchDataFieldBasic, 1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/CopyPatchDataField", 1) {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
 

@@ -125,9 +125,6 @@ namespace shammodels::sph {
 
         f64 total_mass_to_part_mass(f64 totmass);
 
-        std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
-        std::pair<Tvec, Tvec> get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> box);
-
         Tscal get_hfact() { return Kernel::hfactd; }
 
         Tscal rho_h(Tscal h) {
@@ -959,8 +956,9 @@ namespace shammodels::sph {
             solver.print_timestep_logs();
         }
 
-        inline bool evolve_until(Tscal target_time, i32 niter_max) {
-            return solver.evolve_until(target_time, niter_max);
+        inline EvolveUntilResults evolve_until(
+            Tscal target_time, i32 niter_max, f64 max_walltime = -1) {
+            return solver.evolve_until(target_time, niter_max, max_walltime);
         }
 
         private:

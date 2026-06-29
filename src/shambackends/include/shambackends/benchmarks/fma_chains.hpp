@@ -117,9 +117,9 @@ namespace sham::benchmarks {
                 });
             });
             e.wait();
-            t.end();
+            t.stop();
 
-            return t.elasped_sec();
+            return t.elapsed_sec();
         };
 
         // warmup kernel
@@ -147,7 +147,11 @@ namespace sham::benchmarks {
         double flop_count   = double(N) * flop_per_thread;
         double flops        = flop_count / (sec);
 
-        return {SourceLocation{}.loc.function_name(), sec, flops, nrotation};
+        return {
+            .func_name  = SourceLocation{}.loc.function_name(),
+            .seconds    = sec,
+            .flops      = flops,
+            .nrotations = nrotation};
     }
 
 } // namespace sham::benchmarks

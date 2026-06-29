@@ -13,8 +13,7 @@
 #include <random>
 #include <vector>
 
-TestStart(
-    Unittest, "shamalgs/primitives/binary_search_lower_bound", test_binary_search_lower_bound, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/binary_search_lower_bound", 1) {
 
     {
         // Test with empty array

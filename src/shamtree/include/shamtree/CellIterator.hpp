@@ -96,10 +96,10 @@ namespace shamtree {
          */
         inline acc get_read_access(sham::EventList &deps) const {
             return acc{
-                buf_sort_index_map.get_read_access(deps),
-                buf_reduc_index_map.get_read_access(deps),
-                buf_endrange.get_read_access(deps),
-                offset_leaf};
+                .sort_index_map  = buf_sort_index_map.get_read_access(deps),
+                .reduc_index_map = buf_reduc_index_map.get_read_access(deps),
+                .endrange        = buf_endrange.get_read_access(deps),
+                .offset_leaf     = offset_leaf};
         }
 
         /**
@@ -129,7 +129,11 @@ namespace shamtree {
 
         /// get read only accessor
         inline acc get_read_access() const {
-            return acc{sort_index_map.data(), reduc_index_map.data(), endrange.data(), offset_leaf};
+            return acc{
+                .sort_index_map  = sort_index_map.data(),
+                .reduc_index_map = reduc_index_map.data(),
+                .endrange        = endrange.data(),
+                .offset_leaf     = offset_leaf};
         }
     };
 

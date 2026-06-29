@@ -8,7 +8,6 @@ This simple example shows how to use units in Shamrock
 import shamrock
 
 # %%
-
 # The default constructor will provide SI units
 si = shamrock.UnitSystem()
 

@@ -202,7 +202,7 @@ namespace shammodels::sph {
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                vecarg.push_back({sender,receiver,build_table});
+                vecarg.push_back({.sender = sender, .receiver = receiver, .build_table = build_table});
             });
             // clang-format on
 
@@ -257,7 +257,8 @@ namespace shammodels::sph {
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                vecarg.push_back({sender, receiver, build_table});
+                vecarg.push_back(
+                    {.sender = sender, .receiver = receiver, .build_table = build_table});
 
                 return gen_1(
                     sender,
@@ -483,7 +484,7 @@ namespace shammodels::sph {
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
                     positioninterfs),
-                [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                [=, this](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<vec> &pos   = pdat.get_field<vec>(0);
                     PatchDataField<flt> &hpart = pdat.get_field<flt>(ihpart);
 

@@ -99,7 +99,7 @@ void add_strategy_plot(
     )tex")
 }
 
-TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadbalancestrat, 1) {
+NEW_TEST(TestType::ValidationTest, "shamrock/scheduler/loadbalance", 1) {
 
     i32 fake_world_size = 64;
 
@@ -110,8 +110,8 @@ TestStart(TestType::ValidationTest, "shamrock/scheduler/loadbalance", testloadba
         for (u32 i = 0; i < count; i++) {
             res.push_back(
                 LBTile{
-                    shamalgs::primitives::mock_value(eng, 0_u64, u64_max),
-                    shamalgs::primitives::mock_value(eng, min_load, max_load),
+                    .ordering_val = shamalgs::primitives::mock_value(eng, 0_u64, u64_max),
+                    .load_value   = shamalgs::primitives::mock_value(eng, min_load, max_load),
                 });
         }
 

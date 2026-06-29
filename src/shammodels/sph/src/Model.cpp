@@ -143,14 +143,6 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> T
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
-    -> std::pair<Tvec, Tvec> {
-    StackEntry stack_loc{};
-    auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
-    return {a, b};
-}
-
-template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::remap_positions(std::function<Tvec(Tvec)> map) {
     StackEntry stack_loc{};
 
@@ -474,24 +466,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(
-    Tscal dr, std::pair<Tvec, Tvec> _box) -> std::pair<Tvec, Tvec> {
-    StackEntry stack_loc{};
-
-    using Lattice     = shammath::LatticeHCP<Tvec>;
-    using LatticeIter = typename shammath::LatticeHCP<Tvec>::Iterator;
-
-    shammath::CoordRange<Tvec> box = _box;
-    auto [idxs_min, idxs_max]      = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
-
-    auto [idxs_min_per, idxs_max_per] = Lattice::nearest_periodic_box_indices(idxs_min, idxs_max);
-
-    shammath::CoordRange<Tvec> ret = Lattice::get_periodic_box(dr, idxs_min_per, idxs_max_per);
-
-    return {ret.lower, ret.upper};
-}
-
-template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
     Tscal dr, std::pair<Tvec, Tvec> _box) {
     shambase::Timer time_setup;
@@ -611,9 +585,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -712,9 +686,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d_v2(
         shamlog_debug_ln("Gen", "gen.is_done()", gen.is_done());
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_cube_hcp took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -1098,9 +1072,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("Model", "add_big_disc took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("Model", "add_big_disc took :", time_setup.elapsed_sec(), "s");
     }
 }
 

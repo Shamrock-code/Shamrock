@@ -16,9 +16,7 @@
  *
  */
 
-#include "shambase/aliases_int.hpp"
-
-namespace shamcmdopt {
+namespace sham::term {
 
     /**
      * @brief Test if current terminal is a tty
@@ -36,7 +34,7 @@ namespace shamcmdopt {
      *
      * @return Number of columns if the current terminal
      */
-    u32 get_tty_columns();
+    int get_tty_columns();
 
     /**
      * @brief Get the number of lines of the current terminal
@@ -45,7 +43,7 @@ namespace shamcmdopt {
      *
      * @return Number of lines if the current terminal
      */
-    u32 get_tty_lines();
+    int get_tty_lines();
 
     /**
      * @brief Set the forced width of the terminal
@@ -57,7 +55,7 @@ namespace shamcmdopt {
      * @param columns The width of the terminal. If zero, the default behavior of get_tty_columns()
      * is restored.
      */
-    void set_tty_columns(u32 columns);
+    void set_tty_columns(int columns);
 
     /**
      * @brief Reset the forced width of the terminal
@@ -65,4 +63,4 @@ namespace shamcmdopt {
      * Calls set_tty_columns(0) to restore the default behavior of get_tty_columns().
      */
     inline void reset_tty_columns() { set_tty_columns(0); }
-} // namespace shamcmdopt
+} // namespace sham::term

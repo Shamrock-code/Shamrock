@@ -12,7 +12,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shammath/AABB::contains", test_contains, 1) {
+NEW_TEST(Unittest, "shammath/AABB::contains", 1) {
 
     // Test case 1: Basic containment in 3D
     {

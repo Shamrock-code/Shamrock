@@ -48,7 +48,7 @@ void test_field_extraction(
         sham::equals);
 }
 
-TestStart(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", testGetFieldRefFromLayer, 1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/GetFieldRefFromLayer", 1) {
     using namespace shamrock::solvergraph;
     using namespace shamrock::patch;
 

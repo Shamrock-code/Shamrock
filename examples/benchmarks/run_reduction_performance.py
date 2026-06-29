@@ -24,6 +24,11 @@ if not shamrock.sys.is_initialized():
 
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Main benchmark functions
 def benchmark_f32(N, nb_repeat=10):
     times = []
@@ -124,5 +129,5 @@ plt.yscale("log")
 
 plt.grid(True)
 
-plt.legend()
+plt.legend(fontsize=10)
 plt.show()

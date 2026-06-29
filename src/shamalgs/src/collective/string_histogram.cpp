@@ -84,7 +84,7 @@ namespace {
             auto rank = data[i].y();
 
             if (hash_case_info.find(hash) == hash_case_info.end()) {
-                hash_case_info[hash] = {rank, 1};
+                hash_case_info[hash] = {.min_rank_id = rank, .count = 1};
             } else {
                 hash_case_info[hash].count += 1;
                 hash_case_info[hash].min_rank_id = std::min(hash_case_info[hash].min_rank_id, rank);

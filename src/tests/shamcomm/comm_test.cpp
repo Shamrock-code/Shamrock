@@ -10,6 +10,6 @@
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamtest/shamtest.hpp"
 
-// TestStart(Unittest, "shamcomm/???", shamcommtest, 1) {
+// NEW_TEST(Unittest, "shamcomm/???", 1) {
 //
 // }

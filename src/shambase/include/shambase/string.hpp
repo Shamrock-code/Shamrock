@@ -17,7 +17,9 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "exception.hpp"
+#include "shambase/exception.hpp"
+#include "sham/format/format.hpp"
+#include "sham/format/human_readable.hpp"
 #include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
@@ -29,65 +31,6 @@
 #include <vector>
 
 namespace shambase {
-
-    inline __attribute__((always_inline)) auto vformat(std::string_view fmt, fmt::format_args args)
-        -> std::string {
-        try {
-            return fmt::vformat(fmt, args);
-        } catch (const std::exception &e) {
-
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what()) + "\n fmt string : " + std::string(fmt));
-        }
-    }
-
-    inline __attribute__((always_inline)) auto vformat(fmt::string_view fmt, fmt::format_args args)
-        -> std::string {
-        try {
-            return fmt::vformat(fmt, args);
-        } catch (const std::exception &e) {
-
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what())
-                + "\n fmt string : " + fmt::to_string(fmt));
-        }
-    }
-
-    /**
-     * @brief format a string using fmtlib style
-     * Cheat sheet : https://hackingcpp.com/cpp/libs/fmt.html
-     *
-     * @tparam T
-     * @param fmt the format string
-     * @param args the arguments to format agains
-     * @return std::string the formatted string
-     */
-    template<typename... T>
-    inline __attribute__((always_inline)) auto format(fmt::format_string<T...> fmt, T &&...args)
-        -> std::string {
-        return shambase::vformat(fmt, fmt::make_format_args(args...));
-    }
-
-    /**
-     * @brief format a string using C printf style
-     * https://cplusplus.com/reference/cstdio/printf/
-     *
-     * @tparam T
-     * @param fmt the format string
-     * @param args the arguments to format agains
-     * @return std::string the formatted string
-     */
-    template<typename... T>
-    inline std::string format_printf(std::string_view format, const T &...args) {
-        try {
-            return fmt::sprintf(format, args...);
-        } catch (const std::exception &e) {
-
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what())
-                + "\n fmt string : " + std::string(format));
-        }
-    }
 
     /**
      * @brief Format an array of elements into a string
@@ -131,32 +74,16 @@ namespace shambase {
 
     /**
      * @brief given a sizeof value return a readble string
-     * Example : readable_sizeof(1024*1024*1024) -> "1.00 GB"
+     * Example : readable_sizeof(1e9) -> "1.00 GB"
+     *
+     * Use to be in base 1024 but was error prone
      *
      * @param size the size
      * @return std::string the formated string
      */
     inline std::string readable_sizeof(double size) {
-
-        i32 i = 0;
-
-        using namespace std::string_literals;
-        const std::array units{"B"s, "kB"s, "MB"s, "GB"s, "TB"s, "PB"s, "EB"s, "ZB"s, "YB"s};
-
-        if (size >= 0) {
-            while (size > 1024) {
-                size /= 1024;
-                i++;
-            }
-        } else {
-            i = 9;
-        }
-
-        if (i > 8) {
-            return format_printf("%s", "err val");
-        } else {
-            return format_printf("%.2f %s", size, units[i]);
-        }
+        auto res = sham::to_human_readable<false>(size);
+        return sham::format("{:.2f} {}B", res.value, res.prefix);
     }
 
     /**

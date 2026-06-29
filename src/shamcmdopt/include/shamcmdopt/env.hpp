@@ -30,6 +30,15 @@ namespace shamcmdopt {
     std::optional<std::string> getenv_str(const char *env_var);
 
     /**
+     * @brief Get the content of the environment variable if it exist
+     *
+     * @param env_var the name of the env variable
+     * @return std::optional<std::string_view> return the value of the env variable if it exist,
+     * none otherwise
+     */
+    std::optional<std::string_view> getenv_str_view(const char *env_var);
+
+    /**
      * @brief Get the content of the environment variable if it exist, otherwise return the default
      * value
      *

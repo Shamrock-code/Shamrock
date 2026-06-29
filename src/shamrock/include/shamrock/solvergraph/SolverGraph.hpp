@@ -37,28 +37,28 @@ namespace shamrock::solvergraph {
 
     struct SolverGraphConstraint {
         std::string name;
-        std::optional<SolverGraphNodeCheck> node_check;
-        std::optional<SolverGraphEdgeCheck> edge_check;
+        SolverGraphNodeCheck node_check;
+        SolverGraphEdgeCheck edge_check;
 
         inline static SolverGraphConstraint no_constraint() {
-            return {.name = {}, .node_check = std::nullopt, .edge_check = std::nullopt};
+            return {.name = {}, .node_check = nullptr, .edge_check = nullptr};
         }
 
         inline bool check_node(const std::shared_ptr<INode> &node) const {
             if (!node_check) {
                 return true;
             }
-            return (*node_check)(node);
+            return (node_check) (node);
         }
 
         inline bool check_edge(const std::shared_ptr<IEdge> &edge) const {
             if (!edge_check) {
                 return true;
             }
-            return (*edge_check)(edge);
+            return (edge_check) (edge);
         }
 
-        inline bool is_active() const { return node_check.has_value() || edge_check.has_value(); }
+        inline bool is_active() const { return bool(node_check) || bool(edge_check); }
     };
 
     /**

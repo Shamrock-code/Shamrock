@@ -104,8 +104,12 @@ def rhovel_map(rmin, rmax):
     cs, inner_radius = get_cs(rc_soft, z)
     omega = get_omega(rs_soft, rc_soft, cs, inner_radius)
 
-    x_soft = x * (rs_soft / rs)
-    y_soft = y * (rs_soft / rs)
+    if rs > 0:
+        x_soft = x * (rs_soft / rs)
+        y_soft = y * (rs_soft / rs)
+    else:
+        x_soft = 0.0
+        y_soft = 0.0
 
     vx = -omega * y_soft
     vy = omega * x_soft

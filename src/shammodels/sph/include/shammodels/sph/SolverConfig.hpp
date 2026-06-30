@@ -540,7 +540,21 @@ struct shammodels::sph::SolverConfig {
         mhd_config.set(v);
     }
 
-    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) { mhd_config.set(v); }
+    inline void set_NonIdealMHD(typename MHDConfig::NonIdealMHD v) {
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln(" ______   _______  __    _  _______  _______  ______  ");
+        logger::raw_ln("|      | |   _   ||  |  | ||       ||       ||    _ | ");
+        logger::raw_ln("|  _    ||  |_|  ||   |_| ||    ___||    ___||   | ||");
+        logger::raw_ln("| | |   ||       ||       ||   | __ |   |___ |   |_||_");
+        logger::raw_ln("| |_|   ||       ||  _    ||   ||  ||    ___||    __  |");
+        logger::raw_ln("|       ||   _   || | |   ||   |_| ||   |___ |   |  | |");
+        logger::raw_ln("|______| |__| |__||_|  |__||_______||_______||___|  |_|");
+        logger::raw_ln("$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$DANGER$");
+        logger::raw_ln("The Non-ideal MHD solver is UNDER DEVELOPMENT.");
+        logger::raw_ln("It is. NOT. FULLY. TESTED. YET.");
+        logger::raw_ln("Use at your own risk.");
+        mhd_config.set(v);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // MHD Config (END)
@@ -985,6 +999,9 @@ struct shammodels::sph::SolverConfig {
         return artif_viscosity.has_field_soundspeed() || is_eos_locally_isothermal();
     }
 
+    /// @brief Whether the solver is set for non ideal MHD
+    inline bool do_NIMHD() { return mhd_config.do_NIMHD(); }
+
     /// @brief Whether the solver has a field for B_on_rho
     inline bool has_field_B_on_rho() { return mhd_config.has_B_field() && (dim == 3); }
 
@@ -1016,6 +1033,7 @@ struct shammodels::sph::SolverConfig {
 
     inline void check_config() {
         dust_config.check_config();
+        mhd_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
             shamrock::experimental_feature_check(
@@ -1029,6 +1047,11 @@ struct shammodels::sph::SolverConfig {
         if (!self_grav_config.is_none()) {
             shamrock::experimental_feature_check(
                 "Self gravity is experimental, please enable experimental features to use it");
+        }
+
+        if (mhd_config.do_NIMHD()) {
+            shamrock::experimental_feature_check(
+                "Non-ideal MHD is experimental, please enable experimental features to use it");
         }
     }
 

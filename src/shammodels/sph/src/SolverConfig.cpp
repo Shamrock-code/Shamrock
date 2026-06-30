@@ -80,6 +80,10 @@ namespace shammodels::sph {
             pdl.add_field<Tvec>("curlB", 1);
         }
 
+        if (do_NIMHD()) {
+            pdl.add_field<Tvec>("J", 1);
+        }
+
         if (dust_config.has_epsilon_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tscal>("epsilon", ndust);
@@ -142,6 +146,10 @@ namespace shammodels::sph {
 
         if (has_field_psi_on_ch()) {
             ghost_layout.add_field<Tscal>("psi/ch", 1);
+        }
+
+        if (do_NIMHD()) {
+            ghost_layout.add_field<Tvec>("J", 1); // @@@ only for ni mhd
         }
 
         if (has_field_curlB()) {

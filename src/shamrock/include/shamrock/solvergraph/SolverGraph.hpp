@@ -21,33 +21,54 @@
 #include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include <unordered_map>
+#include <algorithm>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace shamrock::solvergraph {
 
-    struct SolverGraphContraint {
-        std::optional<std::function<bool(const std::shared_ptr<INode> &)>> _validate_node;
-        std::optional<std::function<bool(const std::shared_ptr<IEdge> &)>> _validate_edge;
+    using SolverGraphNodeCheck = std::function<bool(const std::shared_ptr<INode> &node)>;
+    using SolverGraphEdgeCheck = std::function<bool(const std::shared_ptr<IEdge> &edge)>;
 
-        inline static SolverGraphContraint no_constraint() { return {std::nullopt, std::nullopt}; }
+    struct SolverGraphConstraint {
+        std::string name;
+        SolverGraphNodeCheck node_check;
+        SolverGraphEdgeCheck edge_check;
 
-        inline bool validate_node(const std::shared_ptr<INode> &node) {
-            if (_validate_node) {
-                return (*_validate_node)(node);
-            }
-            return true;
+        inline static SolverGraphConstraint no_constraint() {
+            return {.name = {}, .node_check = nullptr, .edge_check = nullptr};
         }
 
-        inline bool validate_edge(const std::shared_ptr<IEdge> &edge) {
-            if (_validate_edge) {
-                return (*_validate_edge)(edge);
+        inline bool check_node(const std::shared_ptr<INode> &node) const {
+            if (!bool(node)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "node == nullptr is not allowed, please pass a shared pointer with a valid "
+                    "node"));
             }
-            return true;
+            if (!node_check) {
+                return true;
+            }
+            return (node_check) (node);
         }
+
+        inline bool check_edge(const std::shared_ptr<IEdge> &edge) const {
+            if (!bool(edge)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                    "edge == nullptr is not allowed, please pass a shared pointer with a valid "
+                    "edge"));
+            }
+            if (!edge_check) {
+                return true;
+            }
+            return (edge_check) (edge);
+        }
+
+        inline bool is_active() const { return bool(node_check) || bool(edge_check); }
     };
 
     /**
@@ -77,6 +98,13 @@ namespace shamrock::solvergraph {
      * // Or get shared pointers for polymorphic access
      * auto node_ptr = graph.get_node_ptr<MyNodeType>("my_node");
      * auto edge_ptr = graph.get_edge_ptr<MyEdgeType>("my_edge");
+     *
+     * // Or create a graph with registration constraints under a single name
+     * auto constrained = SolverGraph::with_constraint(SolverGraphConstraint{
+     *     .name = "sph_solver_graph",
+     *     .node_check = [](const std::shared_ptr<INode> &n) { return true; },
+     *     .edge_check = [](const std::shared_ptr<IEdge> &e) { return true; },
+     * });
      * @endcode
      */
     class SolverGraph {
@@ -86,7 +114,10 @@ namespace shamrock::solvergraph {
         /// Registry of edges by name
         std::unordered_map<std::string, std::shared_ptr<IEdge>> edges = {};
 
-        SolverGraphContraint constraint = SolverGraphContraint::no_constraint();
+        SolverGraphConstraint constraint = SolverGraphConstraint::no_constraint();
+
+        explicit SolverGraph(SolverGraphConstraint graph_constraint)
+            : constraint(std::move(graph_constraint)) {}
 
         public:
         ///////////////////////////////////////
@@ -95,15 +126,13 @@ namespace shamrock::solvergraph {
 
         SolverGraph() = default;
 
-        SolverGraph(
-            std::optional<std::function<bool(const std::shared_ptr<INode> &)>> _validate_node,
-            std::optional<std::function<bool(const std::shared_ptr<IEdge> &)>> _validate_edge)
-            : constraint(SolverGraphContraint{_validate_node, _validate_edge}) {}
-
-        inline static SolverGraph with_constraint(
-            std::optional<std::function<bool(const std::shared_ptr<INode> &)>> _validate_node,
-            std::optional<std::function<bool(const std::shared_ptr<IEdge> &)>> _validate_edge) {
-            return SolverGraph{_validate_node, _validate_edge};
+        /**
+         * @brief Create a solver graph with registration constraints.
+         *
+         * @param graph_constraint Named constraint with optional node and edge checks
+         */
+        inline static SolverGraph with_constraint(SolverGraphConstraint graph_constraint) {
+            return SolverGraph{std::move(graph_constraint)};
         }
 
         /**
@@ -111,14 +140,19 @@ namespace shamrock::solvergraph {
          *
          * @param name Unique identifier for the node
          * @param node Shared pointer to the node instance
-         * @throws std::invalid_argument if a node with the same name already exists
+         * @throws std::invalid_argument if constraint validation fails or a node with the same name
+         * already exists
          */
         inline std::shared_ptr<INode> register_node_ptr_base(
             const std::string &name, std::shared_ptr<INode> node) {
 
-            if (!constraint.validate_node(node)) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(
-                    "node validation failed under solvergraph constraint");
+            if (!constraint.check_node(node)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "Solvergraph constraint '{}' rejected node '{}' (label='{}', uuid={})",
+                    constraint.name,
+                    name,
+                    node->get_label(),
+                    node->get_uuid()));
             }
 
             const auto [it, inserted] = nodes.try_emplace(name, std::move(node));
@@ -134,14 +168,19 @@ namespace shamrock::solvergraph {
          *
          * @param name Unique identifier for the edge
          * @param edge Shared pointer to the edge instance
-         * @throws std::invalid_argument if an edge with the same name already exists
+         * @throws std::invalid_argument if constraint validation fails or an edge with the same
+         * name already exists
          */
         inline std::shared_ptr<IEdge> register_edge_ptr_base(
             const std::string &name, std::shared_ptr<IEdge> edge) {
 
-            if (!constraint.validate_edge(edge)) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(
-                    "edge validation failed under solvergraph constraint");
+            if (!constraint.check_edge(edge)) {
+                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                    "Solvergraph constraint '{}' rejected edge '{}' (label='{}', uuid={})",
+                    constraint.name,
+                    name,
+                    edge->get_label(),
+                    edge->get_uuid()));
             }
 
             const auto [it, inserted] = edges.try_emplace(name, std::move(edge));
@@ -254,7 +293,8 @@ namespace shamrock::solvergraph {
          * @tparam T Type of the node (must derive from INode)
          * @param name Unique identifier for the node
          * @param node Node instance to register (will be moved)
-         * @throws std::invalid_argument if a node with the same name already exists
+         * @throws std::invalid_argument if constraint validation fails or a node with the same name
+         * already exists
          */
         template<class T>
         inline std::shared_ptr<T> register_node(const std::string &name, T &&node) {
@@ -273,7 +313,8 @@ namespace shamrock::solvergraph {
          * @tparam T Type of the edge (must derive from IEdge)
          * @param name Unique identifier for the edge
          * @param edge Edge instance to register (will be moved)
-         * @throws std::invalid_argument if an edge with the same name already exists
+         * @throws std::invalid_argument if constraint validation fails or an edge with the same
+         * name already exists
          */
         template<class T>
         inline std::shared_ptr<T> register_edge(const std::string &name, T &&edge) {
@@ -390,21 +431,27 @@ namespace shamrock::solvergraph {
             return shambase::get_check_ref(get_edge_ptr<T>(name));
         }
 
-        std::vector<std::string> get_edge_names() {
+        /// Returns edge registration keys in lexicographic order (deterministic).
+        inline std::vector<std::string> get_edge_names() const {
             std::vector<std::string> ret{};
+            ret.reserve(edges.size());
 
-            for (auto &[k, e] : edges) {
-                ret.push_back(k);
+            for (const auto &entry : edges) {
+                ret.push_back(entry.first);
             }
+            std::sort(ret.begin(), ret.end());
             return ret;
         }
 
-        std::vector<std::string> get_node_names() {
+        /// Returns node registration keys in lexicographic order (deterministic).
+        inline std::vector<std::string> get_node_names() const {
             std::vector<std::string> ret{};
+            ret.reserve(nodes.size());
 
-            for (auto &[k, n] : nodes) {
-                ret.push_back(k);
+            for (const auto &entry : nodes) {
+                ret.push_back(entry.first);
             }
+            std::sort(ret.begin(), ret.end());
             return ret;
         }
     };

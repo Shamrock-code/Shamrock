@@ -42,6 +42,7 @@ set(Sources
     src/modules/SPHSetup.cpp
     src/modules/KillParticles.cpp
     src/modules/GetParticlesOutsideSphere.cpp
+    src/modules/GetParticlesInWall.cpp
     src/modules/IterateSmoothingLengthDensity.cpp
     src/modules/IterateSmoothingLengthDensityNeighLim.cpp
     src/modules/LoopSmoothingLengthIter.cpp

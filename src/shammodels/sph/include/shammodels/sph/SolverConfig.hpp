@@ -110,6 +110,24 @@ namespace shammodels::sph {
         }
     };
 
+    template<class Tvec>
+    struct ParticleDisableConfig {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        struct Wall {
+            Tvec pos;
+            std::function<bool(Tvec)> wall_func;
+        };
+
+        using disable_t = std::variant<Wall>;
+
+        std::vector<disable_t> disable_list;
+
+        inline void add_disable_wall(const Tvec &pos, std::function<bool(Tvec)> wall_func) {
+            disable_list.push_back(Wall{pos, wall_func});
+        }
+    };
+
     template<class Tscal>
     struct DustConfig {
 
@@ -853,6 +871,11 @@ struct shammodels::sph::SolverConfig {
     inline void set_boundary_shearing_periodic(i32_3 shear_base, i32_3 shear_dir, Tscal speed) {
         boundary_config.set_shearing_periodic(shear_base, shear_dir, speed);
     }
+
+    ParticleDisableConfig<Tvec> particle_disable;
+
+    bool haswall = false;
+    inline void use_wall(bool enable) { haswall = enable; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Boundary Config (END)

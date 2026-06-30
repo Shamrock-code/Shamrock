@@ -100,6 +100,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_particle_reordering_step_freq", &TConfig::set_particle_reordering_step_freq)
         .def("set_show_ghost_zone_graph", &TConfig::set_show_ghost_zone_graph)
         .def("use_luminosity", &TConfig::use_luminosity)
+        .def("use_wall", &TConfig::use_wall)
         .def("set_save_dt_to_fields", &TConfig::set_save_dt_to_fields)
         .def("should_save_dt_to_fields", &TConfig::should_save_dt_to_fields)
         .def("set_eos_isothermal", &TConfig::set_eos_isothermal)
@@ -757,6 +758,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self, f64 dt) {
                 self.solver.solver_config.set_next_dt(dt);
             })
+        .def("apply_ghost_particles", &T::apply_ghost_particles)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -964,6 +966,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("field_name"),
             py::arg("pos_to_val"),
             py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_u32",
+            [](T &self,
+               std::string field_name,
+               const std::function<u32(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<u32>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
         .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
         .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
@@ -1018,6 +1032,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "get_current_config",
             [](T &self) {
                 return self.solver.solver_config;
+            })
+        .def(
+            "add_wall",
+            [](T &self, Tvec pos, std::function<bool(Tvec)> wall_func) {
+                self.solver.solver_config.particle_disable.add_disable_wall(pos, wall_func);
             })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)

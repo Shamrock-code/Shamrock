@@ -209,6 +209,9 @@ namespace shammodels::sph {
          */
         bool apply_corrector(Tscal dt, u64 Npart_all);
 
+        /// @brief Applies ghost particles (wall)
+        void apply_ghost_particles();
+
         /// @brief Updates load balancing values and synchronizes patch ownership
         void update_sync_load_values();
 

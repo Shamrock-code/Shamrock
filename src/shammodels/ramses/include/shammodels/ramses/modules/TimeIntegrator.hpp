@@ -46,7 +46,7 @@ namespace shammodels::basegodunov::modules {
         TimeIntegrator(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void forward_euler(Tscal dt);
+        void forward_euler(Tscal dt, bool precall = false);
 
         private:
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }

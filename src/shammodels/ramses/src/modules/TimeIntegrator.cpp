@@ -16,7 +16,8 @@
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_euler(Tscal dt) {
+void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_euler(
+    Tscal dt, bool precall) {
 
     StackEntry stack_loc{};
 
@@ -27,41 +28,98 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
     shamrock::solvergraph::Field<Tscal> &cfield_dtrho  = shambase::get_check_ref(storage.dtrho);
     shamrock::solvergraph::Field<Tvec> &cfield_dtrhov  = shambase::get_check_ref(storage.dtrhov);
     shamrock::solvergraph::Field<Tscal> &cfield_dtrhoe = shambase::get_check_ref(storage.dtrhoe);
+    shamrock::solvergraph::Field<Tvec> &cfield_gravitational_force
+        = shambase::get_check_ref(storage.gravitational_force);
 
     // load layout info
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
-    const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
-    const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
-    const u32 irho      = pdl.get_field_idx<Tscal>("rho");
-    const u32 irhoetot  = pdl.get_field_idx<Tscal>("rhoetot");
-    const u32 irhovel   = pdl.get_field_idx<Tvec>("rhovel");
+    const u32 icell_min  = pdl.get_field_idx<TgridVec>("cell_min");
+    const u32 icell_max  = pdl.get_field_idx<TgridVec>("cell_max");
+    const u32 irho       = pdl.get_field_idx<Tscal>("rho");
+    const u32 irhoetot   = pdl.get_field_idx<Tscal>("rhoetot");
+    const u32 irhovel    = pdl.get_field_idx<Tvec>("rhovel");
+    const u32 igravforce = pdl.get_field_idx<Tvec>("gravitational_force");
 
-    scheduler().for_each_patchdata_nonempty(
-        [&, dt](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
-            shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
+    Tscal min_rho_for_analytical_gravity
+        = solver_config.analytical_gravity_config.min_rho_for_analytical_gravity;
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-            u32 id               = p.id_patch;
+    scheduler().for_each_patchdata_nonempty([&, dt, min_rho_for_analytical_gravity, precall](
+                                                const shamrock::patch::Patch p,
+                                                shamrock::patch::PatchDataLayer &pdat) {
+        shamlog_debug_ln("[AMR Flux]", "forward euler integration patch", p.id_patch);
+
+        sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+        u32 id               = p.id_patch;
+
+        u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+
+        sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
+        sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
+        sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
+
+        sham::EventList depends_list;
+
+        auto rho  = buf_rho.get_write_access(depends_list);
+        auto rhov = buf_rhov.get_write_access(depends_list);
+        auto rhoe = buf_rhoe.get_write_access(depends_list);
+
+        if (precall && solver_config.is_analytical_gravity_on()) {
+            sham::DeviceBuffer<Tvec> &gravitational_force_patch
+                = cfield_gravitational_force.get_buf(id);
+            sham::DeviceBuffer<Tvec> &buf_gravforce = pdat.get_field_buf_ref<Tvec>(igravforce);
+            auto acc_gravitational_force_patch
+                = gravitational_force_patch.get_read_access(depends_list);
+            auto gravforce = buf_gravforce.get_write_access(depends_list);
+
+            auto grav_event = q.submit(
+                depends_list, [&, dt, min_rho_for_analytical_gravity](sycl::handler &cgh) {
+                    shambase::parallel_for(
+                        cgh, cell_count, "add analytical gravity", [=](u32 id_a) {
+                            Tvec g_vec = acc_gravitational_force_patch[id_a];
+
+                            rho[id_a]     = std::max(min_rho_for_analytical_gravity, rho[id_a]);
+                            Tvec rhov_old = rhov[id_a];
+
+                            Tscal ekin_old = 0;
+                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
+                                ekin_old += rhov_old[d] * rhov_old[d];
+                            }
+                            ekin_old *= 0.5 / rho[id_a];
+
+                            Tscal e_other = rhoe[id_a] - ekin_old;
+
+                            // Update momentum
+                            rhov[id_a] += dt * g_vec * rho[id_a];
+
+                            Tscal ekin_new = 0;
+                            for (u32 d = 0; d < shambase::VectorProperties<Tvec>::dimension; d++) {
+                                ekin_new += rhov[id_a][d] * rhov[id_a][d];
+                            }
+                            ekin_new *= 0.5 / rho[id_a];
+
+                            rhoe[id_a] = e_other + ekin_new;
+
+                            gravforce[id_a] = g_vec;
+                        });
+                });
+
+            gravitational_force_patch.complete_event_state(grav_event);
+
+            buf_rho.complete_event_state(grav_event);
+            buf_rhov.complete_event_state(grav_event);
+            buf_rhoe.complete_event_state(grav_event);
+            buf_gravforce.complete_event_state(grav_event);
+        }
+
+        if (!precall) {
 
             sham::DeviceBuffer<Tscal> &dt_rho_patch  = cfield_dtrho.get_buf(id);
             sham::DeviceBuffer<Tvec> &dt_rhov_patch  = cfield_dtrhov.get_buf(id);
             sham::DeviceBuffer<Tscal> &dt_rhoe_patch = cfield_dtrhoe.get_buf(id);
-
-            u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
-
-            sham::DeviceBuffer<Tscal> &buf_rho  = pdat.get_field_buf_ref<Tscal>(irho);
-            sham::DeviceBuffer<Tvec> &buf_rhov  = pdat.get_field_buf_ref<Tvec>(irhovel);
-            sham::DeviceBuffer<Tscal> &buf_rhoe = pdat.get_field_buf_ref<Tscal>(irhoetot);
-
-            sham::EventList depends_list;
-            auto acc_dt_rho_patch  = dt_rho_patch.get_read_access(depends_list);
-            auto acc_dt_rhov_patch = dt_rhov_patch.get_read_access(depends_list);
-            auto acc_dt_rhoe_patch = dt_rhoe_patch.get_read_access(depends_list);
-
-            auto rho  = buf_rho.get_write_access(depends_list);
-            auto rhov = buf_rhov.get_write_access(depends_list);
-            auto rhoe = buf_rhoe.get_write_access(depends_list);
+            auto acc_dt_rho_patch                    = dt_rho_patch.get_read_access(depends_list);
+            auto acc_dt_rhov_patch                   = dt_rhov_patch.get_read_access(depends_list);
+            auto acc_dt_rhoe_patch                   = dt_rhoe_patch.get_read_access(depends_list);
 
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
@@ -80,55 +138,60 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             buf_rho.complete_event_state(e);
             buf_rhov.complete_event_state(e);
             buf_rhoe.complete_event_state(e);
-        });
+        }
+    });
 
-    if (solver_config.is_dust_on()) {
+    if (!precall) {
+        if (solver_config.is_dust_on()) {
 
-        shamrock::solvergraph::Field<Tscal> &cfield_dtrho_dust
-            = shambase::get_check_ref(storage.dtrho_dust);
-        shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_dust
-            = shambase::get_check_ref(storage.dtrhov_dust);
+            shamrock::solvergraph::Field<Tscal> &cfield_dtrho_dust
+                = shambase::get_check_ref(storage.dtrho_dust);
+            shamrock::solvergraph::Field<Tvec> &cfield_dtrhov_dust
+                = shambase::get_check_ref(storage.dtrhov_dust);
 
-        const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
-        const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
+            const u32 irho_dust    = pdl.get_field_idx<Tscal>("rho_dust");
+            const u32 irhovel_dust = pdl.get_field_idx<Tvec>("rhovel_dust");
 
-        scheduler().for_each_patchdata_nonempty([&, dt](
-                                                    const shamrock::patch::Patch p,
-                                                    shamrock::patch::PatchDataLayer &pdat) {
-            shamlog_debug_ln(
-                "[AMR Flux]", "forward euler integration patch for dust fields", p.id_patch);
+            scheduler().for_each_patchdata_nonempty([&, dt](
+                                                        const shamrock::patch::Patch p,
+                                                        shamrock::patch::PatchDataLayer &pdat) {
+                shamlog_debug_ln(
+                    "[AMR Flux]", "forward euler integration patch for dust fields", p.id_patch);
 
-            sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
-            u32 id               = p.id_patch;
+                sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
+                u32 id               = p.id_patch;
 
-            sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf(id);
-            sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf(id);
+                sham::DeviceBuffer<Tscal> &dt_rho_dust_patch = cfield_dtrho_dust.get_buf(id);
+                sham::DeviceBuffer<Tvec> &dt_rhov_dust_patch = cfield_dtrhov_dust.get_buf(id);
 
-            u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
-            u32 ndust      = solver_config.dust_config.ndust;
+                u32 cell_count = pdat.get_obj_cnt() * AMRBlock::block_size;
+                u32 ndust      = solver_config.dust_config.ndust;
 
-            sham::DeviceBuffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
-            sham::DeviceBuffer<Tvec> &buf_rhov_dust = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
+                sham::DeviceBuffer<Tscal> &buf_rho_dust = pdat.get_field_buf_ref<Tscal>(irho_dust);
+                sham::DeviceBuffer<Tvec> &buf_rhov_dust
+                    = pdat.get_field_buf_ref<Tvec>(irhovel_dust);
 
-            sham::EventList depends_list;
-            auto acc_dt_rho_dust_patch  = dt_rho_dust_patch.get_read_access(depends_list);
-            auto acc_dt_rhov_dust_patch = dt_rhov_dust_patch.get_read_access(depends_list);
+                sham::EventList depends_list;
+                auto acc_dt_rho_dust_patch  = dt_rho_dust_patch.get_read_access(depends_list);
+                auto acc_dt_rhov_dust_patch = dt_rhov_dust_patch.get_read_access(depends_list);
 
-            auto rho_dust  = buf_rho_dust.get_write_access(depends_list);
-            auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
+                auto rho_dust  = buf_rho_dust.get_write_access(depends_list);
+                auto rhov_dust = buf_rhov_dust.get_write_access(depends_list);
 
-            auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
-                shambase::parallel_for(cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
-                    rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
-                    rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
+                auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
+                    shambase::parallel_for(
+                        cgh, ndust * cell_count, "accumulate fluxes", [=](u32 id_a) {
+                            rho_dust[id_a] += dt * acc_dt_rho_dust_patch[id_a];
+                            rhov_dust[id_a] += dt * acc_dt_rhov_dust_patch[id_a];
+                        });
                 });
-            });
 
-            dt_rho_dust_patch.complete_event_state(e);
-            dt_rhov_dust_patch.complete_event_state(e);
-            buf_rho_dust.complete_event_state(e);
-            buf_rhov_dust.complete_event_state(e);
-        });
+                dt_rho_dust_patch.complete_event_state(e);
+                dt_rhov_dust_patch.complete_event_state(e);
+                buf_rho_dust.complete_event_state(e);
+                buf_rhov_dust.complete_event_state(e);
+            });
+        }
     }
 }
 

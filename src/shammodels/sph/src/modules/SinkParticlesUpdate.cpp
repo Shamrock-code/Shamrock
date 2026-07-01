@@ -395,21 +395,126 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
+    
+    
+    // Ajout des booléens qui permettent l'activation des termes Post-Newtoniens
+    bool OP = false; // true pour ajouter le terme 1PN (précesssion des orbites), ordre 1PN
+    bool SO = false; // true pour ajouter le terme Spin-Orbit (précession des spins), ordre 1.5PN
+    bool SS = false; // true pour ajouter le terme Spin-Spin (précession des spins), odre 2PN
+    bool RR = true; // true pour ajouter le terme Radiation Reaction (perte d'énergie par rayonnement gravitationnel), ordre 2.5PN
+
+    std::cout << "===== CONFIG PHYSIQUE =====" << std::endl;
+
+    if (true) {
+        std::cout << "Newton : ACTIVÉ" << std::endl;
+    }
+
+    if (OP)
+        std::cout << "1PN : ACTIVÉ" << std::endl;
+    else
+        std::cout << "1PN : DÉSACTIVÉ" << std::endl;
+
+    if (SO)
+        std::cout << "Spin-Orbit (1.5PN) : ACTIVÉ" << std::endl;
+    else
+        std::cout << "Spin-Orbit (1.5PN) : DÉSACTIVÉ" << std::endl;
+
+    if (SS)
+        std::cout << "Spin-Spin (2PN) : ACTIVÉ" << std::endl;
+    else
+        std::cout << "Spin-Spin (2PN) : DÉSACTIVÉ" << std::endl;
+
+    if (RR)
+        std::cout << "Radiation Reaction (2.5PN) : ACTIVÉ" << std::endl;
+    else
+        std::cout << "Radiation Reaction (2.5PN) : DÉSACTIVÉ" << std::endl;
+
+    std::cout << "===========================" << std::endl;
+    
+    
+    
     for (Sink &s : sink_parts) {
         s.ext_acceleration = Tvec{};
     }
 
-    Tscal G                 = solver_config.get_constant_G();
+    Tscal G  = solver_config.get_constant_G();
+    Tscal c  =solver_config.get_constant_c();
+    //Tscal c  = 100;
     Tscal epsilon_grav_sink = 1e-9;
 
+
+
+
+
     for (Sink &s1 : sink_parts) {
+        
         Tvec sum{};
+
         for (Sink &s2 : sink_parts) {
-            Tvec rij       = s1.pos - s2.pos;
+
+            Tscal M = s1.mass + s2.mass;
+            Tscal nu = s1.mass * s2.mass / M;
+            Tscal eta = nu / M;
+
+            if (&s1 == &s2)
+                continue;
+
+            Tvec term0{};
+            Tvec term1{};
+            Tvec term2{};
+            Tvec term3{};
+            Tvec term4{};
+
+            Tvec rij = s1.pos - s2.pos;
             Tscal rij_scal = sycl::length(rij);
-            sum -= G * s2.mass * rij / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
+
+            Tvec nij = rij / rij_scal;
+            Tvec vij = s1.velocity - s2.velocity;
+
+            Tscal vij_nij = sycl::dot(vij, nij);
+            Tscal v2 = sycl::dot(vij, vij);
+
+            
+
+            term0 = -G * s2.mass * rij
+                    / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
+            sum+=term0;
+
+            if(OP==true){
+                term1 =
+                    -G *  s2.mass / (rij_scal * rij_scal + epsilon_grav_sink)
+                    * (
+                        ((1 + 3 * eta) * v2 * nij) 
+                        - 2 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink) ) * nij
+                        - 1.5 * eta * vij_nij * vij_nij* nij
+                        - 2 * (2 - eta) * vij_nij * vij
+                    );
+                sum += 1/(c*c)*term1;
+            } 
+
+            if(SO){
+                term2 = 0;
+
+                sum += term2;
+            }
+
+            if(SS){
+                term3 = 0;
+
+                sum += term3;
+            }
+            if(RR){
+                term4 = 8/5*G*G*eta* s2.mass *M/(c*c*c*c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
+                * (
+                    vij_nij*nij*(18*v2 + 2/3*G*M/(rij_scal + epsilon_grav_sink)-25*vij_nij*vij_nij) 
+                    - (6*v2 - 2*G*M/(rij_scal + epsilon_grav_sink)-15*vij_nij*vij_nij)*vij
+                );
+                
+                sum += term4;
+            } 
+
         }
-        s1.ext_acceleration = sum;
+        s1.ext_acceleration += sum;
     }
 }
 

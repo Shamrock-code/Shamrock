@@ -270,7 +270,39 @@ namespace shammodels::basegodunov {
                 })
             .def("set_self_gravity_tol", [](TConfig &self, f32 tol) {
                 self.gravity_config.tol = tol;
-            });
+            })
+            .def("set_status_grav_acc", [](TConfig &self, bool status) {
+                self.gravity_config.constant_gravity = status;
+            })
+            .def("set_constant_grav_acc", [](TConfig &self, Tscal gx, Tscal gy, Tscal gz){
+                self.gravity_config.g_grav[0] = gx;
+                self.gravity_config.g_grav[1] = gy;
+                self.gravity_config.g_grav[2] = gz;
+            },
+            py::kw_only(),
+            py::arg("gx"),
+            py::arg("gy"),
+            py::arg("gy")
+            )
+            .def("set_eos_isothermal", [](TConfig &self, Tscal cs){
+                self.set_eos_isothermal(cs);
+            },
+            py::kw_only(),
+            py::arg("cs"))
+            .def("set_eos_adiabatic", [](TConfig &self, Tscal gamma){
+                self.set_eos_adiabatic(gamma);
+            },
+            py::kw_only(),
+            py::arg("gamma"))
+            .def("set_eos_barotropic", [](TConfig &self, Tscal rho_c, Tscal T0, Tscal mu, Tscal gamma){
+                self.set_eos_barotropic(rho_c, T0, mu, gamma);
+            },
+             py::kw_only(),
+             py::arg("rho_c"),
+             py::arg("T0"),
+             py::arg("mu"),
+             py::arg("gamma")
+            );
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())

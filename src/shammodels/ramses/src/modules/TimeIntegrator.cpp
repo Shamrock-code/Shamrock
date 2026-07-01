@@ -63,20 +63,48 @@ void shammodels::basegodunov::modules::TimeIntegrator<Tvec, TgridVec>::forward_e
             auto rhov = buf_rhov.get_write_access(depends_list);
             auto rhoe = buf_rhoe.get_write_access(depends_list);
 
+            auto const_grav_acc = solver_config.get_constant_gravity_acceleration();
+
             auto e = q.submit(depends_list, [&, dt](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cell_count, "accumulate fluxes", [=](u32 id_a) {
                     const u32 cell_global_id = (u32) id_a;
 
                     //=======================================
-                    rho[id_a] += dt * acc_dt_rho_patch[id_a];
+
+                    auto old_rho  = rho[id_a];
+                    auto old_rhov = rhov[id_a];
+
+                    // Flux update
+                    rho[id_a]  += dt * acc_dt_rho_patch[id_a];
                     rhov[id_a] += dt * acc_dt_rhov_patch[id_a];
                     rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
 
+                    // Density at t^{n+1/2}
+                    auto rho_half = 0.5 * (old_rho + rho[id_a]);
 
-                    // // //============== Adding the source term 
+                    // Momentum at t^{n+1/2}
+                    auto half_rhov = 0.5 * (old_rhov + rhov[id_a]);
+
+                    // Gravity source
+                    rhov[id_a] += dt * rho_half * const_grav_acc;
+
+                    // Energy source
+                    rhoe[id_a] += dt * sycl::dot(const_grav_acc, half_rhov);
+                                
+                    // auto old_rhov = rhov[id_a];
+                   
+                    // rhov[id_a] += dt * (acc_dt_rhov_patch[id_a]  + rho[id_a] * const_grav_acc);
+                    // rho[id_a] += dt * acc_dt_rho_patch[id_a];
+                    // rhoe[id_a] += dt * acc_dt_rhoe_patch[id_a];
+                    // auto half_rhov = 0.5 * (old_rhov + rhov[id_a]);
+                    // rhoe[id_a] += dt * sycl::dot(const_grav_acc, half_rhov);
+
+
+                    // // // //============== Adding the source term 
                     // auto old_rho = rho[id_a];
                     // auto old_rhov = rhov[id_a];
                     // auto old_rhoe = rhoe[id_a];
+                    // auto old_v = old_rhov/old_rho;
 
                     // rho[id_a]       += dt * acc_dt_rho_patch[id_a];
                     // rhov[id_a]      += dt * acc_dt_rhov_patch[id_a];

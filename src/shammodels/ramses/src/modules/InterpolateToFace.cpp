@@ -149,25 +149,6 @@ namespace {
                 rho_face_b
                     += get_dt_rho(rho_b, vel_b, grad_rho_b, dx_v_b, dy_v_b, dz_v_b) * dt_interp;
 
-
-		/*
-                if (sycl::isnan(rho_face_a) || sycl::isnan(rho_face_b)) {
-                    logger::raw_ln(
-                        "Nan in I=rho-interp @ face of \t",
-                        id_a,
-                        "\t and \t ",
-                        id_b,
-                        "\t rho_a = \t",
-                        rho_face_a,
-                        "\t rho_b = \t",
-                        rho_face_b,
-                        "\n\n");
-                }
-
-		*/
-
-
-
                 return {rho_face_a, rho_face_b};
             }
         };
@@ -212,6 +193,7 @@ namespace {
         shamrock::PatchDataFieldSpanPointer<Tvec> dz_v_cell;
         // For time interpolation
         Tscal dt_interp;
+        Tvec  grav_acc;
         shamrock::PatchDataFieldSpanPointer<Tscal> rho_cell;
         shamrock::PatchDataFieldSpanPointer<Tvec> grad_P_cell;
 
@@ -229,6 +211,7 @@ namespace {
             const Tvec *acc_grad_P_cell;
 
             Tscal dt_interp;
+            Tvec grav_acc;
 
             acc(const Tvec *aabb_block_lower,
                 const Tscal *aabb_cell_size,
@@ -238,11 +221,12 @@ namespace {
                 const Tvec *dz_v_cell,
                 // For time interpolation
                 Tscal dt_interp,
+                Tvec grav_acc,
                 const Tscal *rho_cell,
                 const Tvec *grad_P_cell)
                 : shift_get(aabb_block_lower, aabb_cell_size), acc_vel_cell{vel_cell},
                   acc_dx_v_cell{dx_v_cell}, acc_dy_v_cell{dy_v_cell}, acc_dz_v_cell{dz_v_cell},
-                  dt_interp(dt_interp), acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
+                  dt_interp(dt_interp), grav_acc{grav_acc} ,acc_rho_cell{rho_cell}, acc_grad_P_cell{grad_P_cell} {}
 
             Tvec get_dt_v(Tvec v, Tvec dx_v, Tvec dy_v, Tvec dz_v, Tscal rho, Tvec grad_P) const {
                 return -(v[0] * dx_v + v[1] * dy_v + v[2] * dz_v + grad_P / rho);
@@ -278,10 +262,11 @@ namespace {
                 Tvec vel_face_a = v_a + dx_v_a_dot_shift + dt_v_a * dt_interp ;
                 Tvec vel_face_b = v_b + dx_v_b_dot_shift + dt_v_b * dt_interp;
 
-                // // //================== add constant gravity source term for RT  ===============
-                // vel_face_a += (-dt_interp * 0.1);
-                // vel_face_b += (-dt_interp * 0.1);
 
+                // if no constant gravitatonal acceleration vel_face_a/b doesn't change
+                vel_face_a += (dt_interp * grav_acc);
+                vel_face_b += (dt_interp * grav_acc);
+                
                 return {vel_face_a, vel_face_b};
             }
         };
@@ -296,6 +281,7 @@ namespace {
                 dz_v_cell.get_read_access(deps),
                 // For time interpolation
                 dt_interp,
+                grav_acc,
                 rho_cell.get_read_access(deps),
                 grad_P_cell.get_read_access(deps));
         }
@@ -392,9 +378,6 @@ namespace {
 
                 SHAM_ASSERT(P_face_a >= 0.0);
                 SHAM_ASSERT(P_face_b >= 0.0);
-
-                // P_face_a = (P_face_a > 0.0) ? P_face_a : 1e-10;
-                // P_face_b = (P_face_b > 0.0) ? P_face_b : 1e-10;
 
                 return {P_face_a, P_face_b};
             }
@@ -880,6 +863,7 @@ void shammodels::basegodunov::modules::InterpolateToFaceVel<Tvec, TgridVec>::
                   spans_dy_vel.get(id),
                   spans_dz_vel.get(id),
                   dt_interp,
+                  grav_acc,
                   spans_rhos.get(id),
                   spans_grad_P.get(id)};
           });

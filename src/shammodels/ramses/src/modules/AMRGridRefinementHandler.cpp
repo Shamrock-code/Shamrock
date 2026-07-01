@@ -1307,30 +1307,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             // }
 
             Tscal block_rho_slope = shambase::VectorProperties<Tscal>::get_zero();
-            for (u32 i = 0; i < AMRBlock::block_size; i++) {
-                block_rho_slope = sham::details::g_sycl_max(
-                    block_rho_slope,
-                    baryonic_normalized_slope_criterion<Tscal>
-                    // get_pseudo_grad<Tscal, Tvec>
-                    (
-                        i + block_id * AMRBlock::block_size,
-                        cell_graph_xp,
-                        cell_graph_xm,
-                        cell_graph_yp,
-                        cell_graph_ym,
-                        cell_graph_zp,
-                        cell_graph_zm,
-                        [=](u32 id) {
-                            // return rho_cons[id];
-                            return  acc.block_rho[id];
-                        }));
-            }
-
-            Tscal block_press_grad = shambase::VectorProperties<Tscal>::get_zero();
             // for (u32 i = 0; i < AMRBlock::block_size; i++) {
-            //     block_press_grad = sham::details::g_sycl_max(
-            //         block_press_grad,
-            //         get_pseudo_grad<Tscal, Tvec>(
+            //     block_rho_slope = sham::details::g_sycl_max(
+            //         block_rho_slope,
+            //         // baryonic_normalized_slope_criterion<Tscal>
+            //         // get_pseudo_grad<Tscal, Tvec>
+            //         (
             //             i + block_id * AMRBlock::block_size,
             //             cell_graph_xp,
             //             cell_graph_xm,
@@ -1339,9 +1321,27 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             //             cell_graph_zp,
             //             cell_graph_zm,
             //             [=](u32 id) {
-            //                 return acc.block_pressure[id];
+            //                 // return rho_cons[id];
+            //                 return  acc.block_rho[id];
             //             }));
             // }
+
+            Tscal block_press_grad = shambase::VectorProperties<Tscal>::get_zero();
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                block_press_grad = sham::details::g_sycl_max(
+                    block_press_grad,
+                    get_pseudo_grad<Tscal, Tvec>(
+                        i + block_id * AMRBlock::block_size,
+                        cell_graph_xp,
+                        cell_graph_xm,
+                        cell_graph_yp,
+                        cell_graph_ym,
+                        cell_graph_zp,
+                        cell_graph_zm,
+                        [=](u32 id) {
+                            return block_pressure[id];
+                        }));
+            }
 
             Tscal error = sham::details::g_sycl_max(
                 block_press_grad, sham::details::g_sycl_max(block_rho_slope, 0.0));
@@ -1350,7 +1350,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             should_derefine = false;
             if (error > error_max) {
                 should_refine = true;
-            } else if (error < error_min /*(error_min * error_max)*/) {
+            } else if (error < (error_min * error_max)) {
                 should_derefine = true;
             }
 

@@ -387,6 +387,7 @@ namespace {
         T norm_slope_y = g_sycl_abs((u_ym - u_yp) / (2 * u_cur + epsilon));
         T norm_slope_z = g_sycl_abs((u_zm - u_zp) / (2 * u_cur + epsilon));
 
+
         T res = g_sycl_max(norm_slope_x, g_sycl_max(norm_slope_y, norm_slope_z));
 
         return res;

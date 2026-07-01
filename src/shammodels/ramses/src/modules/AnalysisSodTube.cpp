@@ -92,7 +92,7 @@ auto shammodels::basegodunov::modules::AnalysisSodTube<Tvec, TgridVec>::compute_
                     Tscal rhoe = acc_rhoe[i];
 
                     auto conststate = shammath::ConsState<Tvec>{rho, rhoe, rhov};
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                    auto prim_state = shammath::cons_to_prim(conststate, gamma, solver_config.eos_config.config);
 
                     Tscal P = prim_state.press;
                     Tvec v  = prim_state.vel;

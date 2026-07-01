@@ -23,9 +23,11 @@
 
 namespace {
 
-    template<class Tvec>
+    template<class Tvec, class TgridVec>
     struct KernelConsToPrimGas {
         using Tscal = shambase::VecComponent<Tvec>;
+            using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+       
 
         inline static void kernel(
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
@@ -39,7 +41,7 @@ namespace {
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size,
-            Tscal gamma) {
+            Tscal gamma, SolverConfig::EOSConfig& actual_cfg ) {
 
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
@@ -52,7 +54,7 @@ namespace {
                 sham::DDMultiRef{spans_rho, spans_rhov, spans_rhoe},
                 sham::DDMultiRef{/*spans_rho_fields,*/ spans_vel, spans_P},
                 cell_counts,
-                [gamma](
+                [gamma, actual_cfg](
                     u32 i,
                     const Tscal *__restrict rho,
                     const Tvec *__restrict rhov,
@@ -65,7 +67,7 @@ namespace {
                     Tscal *__restrict P) {
                     auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
 
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                    auto prim_state = shammath::cons_to_prim(conststate, gamma,actual_cfg);
 
                     SHAM_ASSERT(prim_state.press >= 0.0);
 

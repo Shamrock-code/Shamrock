@@ -140,9 +140,11 @@ namespace shammodels::basegodunov::modules {
         using SlopeMode = shammodels::basegodunov::SlopeMode;
 
         u32 block_size;
+        Tvec grav_acc;
+    
 
         public:
-        InterpolateToFaceVel(u32 block_size) : block_size(block_size) {}
+        InterpolateToFaceVel(u32 block_size, Tvec grav_acc) : block_size(block_size), grav_acc(grav_acc) {}
 
         struct Edges {
             const shamrock::solvergraph::ScalarEdge<Tscal> &dt_interp;

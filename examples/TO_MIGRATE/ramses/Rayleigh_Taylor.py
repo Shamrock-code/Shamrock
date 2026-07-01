@@ -127,11 +127,12 @@ def plot_rt_density(ext, time, rho, nx, ny, dpi=200):
 
 def run_simulation(output_freq, t_final, extent, base, multx, multy, multz):
 
+    g = 0.1
     gamma = 1.4
-    amr_lev = 2
+    amr_lev = 0
     sz = 2 << amr_lev
     base = base
-    scale_fact = 0.5 / (sz * base * multy)
+    scale_fact = 0.5 / (sz * base * multx)
     nx = base * sz * multx
     ny = base * sz * multy
     positions = make_cartesian_coords(nx, ny, 0.2, 0, 0.5 - 1e-6, 0, 1.5 - 1e-6)
@@ -151,25 +152,27 @@ def run_simulation(output_freq, t_final, extent, base, multx, multy, multz):
     # cfg.set_riemann_solver_hll()
     cfg.set_slope_lim_vanleer_sym()
     cfg.set_face_time_interpolation(True)
+    cfg.set_status_grav_acc(True)
+    cfg.set_constant_grav_acc(gx = 0., gy =-g, gz = 0.)
     cfg.set_boundary_condition("x", "periodic")
     cfg.set_boundary_condition("y", "reflective")
     cfg.set_boundary_condition("z", "reflective")
     err_min = 0.05
     err_max = 0.10
-    cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
+    # cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
     model.set_solver_config(cfg)
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
     ###------------
-    g = 0.1
     y_half = 1.5 / 2.
     P0 = 2.5
 
 
     def rho_map(rmin, rmax):
         _, y, _ = rmin
-        if y <= y_half:
+        yloc = y - y_half
+        if yloc <= 0.:
             return 1.
         else:
             return 2.
@@ -179,7 +182,7 @@ def run_simulation(output_freq, t_final, extent, base, multx, multy, multz):
         rho = rho_map(rmin, rmax)
         x,y,_ =rmin
         xloc = x - 0.25
-        yloc = y - 0.75
+        yloc = y - y_half
         vy = 1e-2 * (1./4.)*(1. + np.cos(4. * np.pi * xloc))*(1. + np.cos(3. * np.pi * yloc))
         return (0, vy*rho, 0)
 
@@ -187,9 +190,9 @@ def run_simulation(output_freq, t_final, extent, base, multx, multy, multz):
     def rhoetot_map(rmin, rmax):
         rho = rho_map(rmin, rmax)
         x, y, _ = rmin
-        P = P0 -0.1*rho*(y-y_half)
+        P = P0 -g*rho*(y-y_half)
         xloc = x - 0.25
-        yloc = y - 0.75
+        yloc = y - y_half
         vy = 1e-2 * (1./4.)*(1. + np.cos(4. * np.pi * xloc))*(1. + np.cos(3. * np.pi * yloc))
         Eint = P/(gamma - 1.0)
         Ekin = 0.5*rho*(vy**2)
@@ -206,7 +209,7 @@ def run_simulation(output_freq, t_final, extent, base, multx, multy, multz):
     dt = 0.0000
     t = 0
 
-    for i in range(15):
+    for i in range(100000):
         if i % freq == 0:
             model.dump_vtk("Rayleigh_Taylor" + str(i // freq) + ".vtk")
 
@@ -246,6 +249,6 @@ multy = 3
 
 
 extent =  [0, 0.5, 0, 1.5]
-out_freq = 1
+out_freq = 50
 tend = 5
 run_simulation(out_freq, tend, extent, base, multx, multy, multz)

@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include "shammodels/ramses/SolverConfig.hpp"
 #include <iostream>
 namespace shammath {
 
@@ -130,9 +131,9 @@ namespace shammath {
         return cons;
     }
 
-    template<class Tvec>
+    template<class Tvec, class TgridVec>
     inline constexpr PrimState<Tvec> cons_to_prim(
-        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
         PrimState<Tvec> prim;
 
         prim.rho = cons.rho;
@@ -141,8 +142,31 @@ namespace shammath {
         prim.vel[1] = cons.rhovel[1] / cons.rho;
         prim.vel[2] = cons.rhovel[2] / cons.rho;
 
-        const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
-        prim.press         = (gamma - 1.0) * rhoeint;
+        // const auto rhoeint = cons.rhoe - rhoekin(prim.rho, prim.vel);
+        const auto eint = (cons.rhoe - rhoekin(prim.rho, prim.vel))*(1./prim.rho);
+
+
+        using Tscal              = shambase::VecComponent<Tvec>;
+        using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+        using EOSConfig    =  typename  SolverConfig::EOSConfig;
+        using EOS_Isothermal =  typename  EOSConfig::Isothermal;
+        using EOS_Adiabatic = typename  EOSConfig::Adiabatic;
+        using EOS_Barotropic = typename EOSConfig::Barotropic;
+
+        if (EOS_Isothermal *eos_config = std::get_if<EOS_Isothermal>(actual_eos_config)){
+            prim.press =  shamphys::EOS_Isothermal<Tscal>::pressure(eos_config->cs, prim.rho);
+        }
+
+        else if(EOS_Adiabatic *eos_config = std::get_if<EOS_Adiabatic>(actual_eos_config)){
+            prim.press = shamphys::EOS_Adiabatic<Tscal>::pressure(eos_config->gamma, prim.rho, eint);
+        }
+
+        else if (EOS_Barotropic * eos_config = std::get_if<EOS_Barotropic>(actual_eos_config)){
+            prim.press = shamphys::EOS_Config_Barotropic<Tscal>::pressure(eos_config->rho_critic, prim.rho, eos_config->gamma, eos_config->temp, eos_config->mu );
+        }
+
+
+        // prim.press         = (gamma - 1.0) * rhoeint;
 
         /** This just for testing purpose. Will be remove*/
 
@@ -161,10 +185,10 @@ namespace shammath {
 
     template<class Tvec>
     inline constexpr ConsState<Tvec> hydro_flux_x(
-        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma) {
+        const ConsState<Tvec> cons, typename ConsState<Tvec>::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
         ConsState<Tvec> flux;
 
-        const PrimState<Tvec> prim = cons_to_prim(cons, gamma);
+        const PrimState<Tvec> prim = cons_to_prim(cons, gamma, actual_eos_config);
 
         flux.rho = cons.rhovel[0];
 
@@ -179,7 +203,26 @@ namespace shammath {
 
     template<class Tvec>
     inline constexpr shambase::VecComponent<Tvec> sound_speed(
-        PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma) {
+        PrimState<Tvec> prim, shambase::VecComponent<Tvec> gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+
+
+        using Tscal              = shambase::VecComponent<Tvec>;
+        using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+        using EOSConfig    =  typename  SolverConfig::EOSConfig;
+        using EOS_Isothermal =  typename  EOSConfig::Isothermal;
+        using EOS_Adiabatic = typename  EOSConfig::Adiabatic;
+        using EOS_Barotropic = typename EOSConfig::Barotropic;
+
+        if (EOS_Isothermal *eos_config = std::get_if<EOS_Isothermal>(actual_eos_config)){
+           return eos_config->cs;
+        }
+        else if(EOS_Adiabatic *eos_config = std::get_if<EOS_Adiabatic>(actual_eos_config)){
+            return shamphys::EOS_Adiabatic<Tscal>::cs_from_p(eos_config->gamma,  prim.rho, prim.press);
+        }
+       else if (EOS_Barotropic * eos_config = std::get_if<EOS_Barotropic>(actual_eos_config)){
+            return  shamphys::EOS_Config_Barotropic<Tscal>::soundspeed(eos_config->rho_critic, prim.rho, eos_config->gamma, eos_config->temp, eos_config->mu);
+       }
+
         // auto rho_c =  2.7e-11 * 1e3; // [g/cm^3 ===> kg/m^3]
 
         // auto m_H = 1.67262192e-27; // [kg]
@@ -192,7 +235,7 @@ namespace shammath {
         // auto cs_sqr = cs0_sqr * (1. + (5.0/3.0) * sycl::pow(prim.rho/rho_c,2./3.));
         // return sycl::sqrt(cs_sqr);
 
-        return sycl::sqrt(gamma * prim.press / prim.rho);
+        // return sycl::sqrt(gamma * prim.press / prim.rho);
        
     }
 
@@ -216,21 +259,21 @@ namespace shammath {
     //     return (fL + fR) * 0.5 - (cR - cL) * S;
     // }
 
-    template<class Tcons>
-    inline constexpr Tcons rusanov_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+    template<class Tcons, class Tvec>
+    inline constexpr Tcons rusanov_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
         Tcons flux;
 
-        const auto primL = cons_to_prim(cL, gamma);
-        const auto primR = cons_to_prim(cR, gamma);
+        const auto primL = cons_to_prim(cL, gamma, actual_eos_config);
+        const auto primR = cons_to_prim(cR, gamma, actual_eos_config);
 
-        const auto csL = sound_speed(primL, gamma);
-        const auto csR = sound_speed(primR, gamma);
+        const auto csL = sound_speed(primL, gamma, actual_eos_config);
+        const auto csR = sound_speed(primR, gamma, actual_eos_config);
 
         // Equation (10.56) from Toro 3rd Edition , Springer 2009
         const auto S = sham::max((sham::abs(primL.vel[0]) + csL), (sham::abs(primR.vel[0]) + csR));
 
-        const auto fL = hydro_flux_x(cL, gamma);
-        const auto fR = hydro_flux_x(cR, gamma);
+        const auto fL = hydro_flux_x(cL, gamma, actual_eos_config);
+        const auto fR = hydro_flux_x(cR, gamma, actual_eos_config);
 
         // Equation (10.55) from Toro 3rd Edition , Springer 2009
         return 0.5 * ((fL + fR) - (cR - cL) * S);
@@ -292,38 +335,38 @@ namespace shammath {
     }
 
     template<class Tcons>
-    inline constexpr Tcons rusanov_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(rusanov_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    inline constexpr Tcons rusanov_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_y(rusanov_flux_x(y_to_x(cL), y_to_x(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons rusanov_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    inline constexpr Tcons rusanov_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_z(rusanov_flux_x(z_to_x(cL), z_to_x(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons rusanov_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons rusanov_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(rusanov_flux_x(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons rusanov_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons rusanov_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(rusanov_flux_y(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons rusanov_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(rusanov_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons rusanov_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(rusanov_flux_z(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
     inline constexpr auto hll_flux_x(
-        const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma) {
-        const auto primL = cons_to_prim(consL, gamma);
-        const auto primR = cons_to_prim(consR, gamma);
+        const Tcons consL, const Tcons consR, const typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        const auto primL = cons_to_prim(consL, gamma, actual_eos_config);
+        const auto primR = cons_to_prim(consR, gamma, actual_eos_config);
 
-        const auto csL = sound_speed(primL, gamma);
-        const auto csR = sound_speed(primR, gamma);
+        const auto csL = sound_speed(primL, gamma, actual_eos_config);
+        const auto csR = sound_speed(primR, gamma, actual_eos_config);
 
         // Teyssier form
         // const auto S_L = sham::min(primL.vel[0], primR.vel[0]) - sham::max(csL, csR);
@@ -333,8 +376,8 @@ namespace shammath {
         const auto S_L = sham::min(primL.vel[0] - csL, primR.vel[0] - csR);
         const auto S_R = sham::max(primL.vel[0] + csL, primR.vel[0] + csR);
 
-        const auto fluxL = hydro_flux_x(consL, gamma);
-        const auto fluxR = hydro_flux_x(consR, gamma);
+        const auto fluxL = hydro_flux_x(consL, gamma, actual_eos_config);
+        const auto fluxR = hydro_flux_x(consR, gamma, actual_eos_config);
 
         // Equation (10.26) from Toro 3rd Edition , Springer 2009
         auto hll_flux = [=]() {
@@ -359,28 +402,28 @@ namespace shammath {
     }
 
     template<class Tcons>
-    inline constexpr Tcons hll_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(hll_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    inline constexpr Tcons hll_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_y(hll_flux_x(y_to_x(cL), y_to_x(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons hll_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(hll_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    inline constexpr Tcons hll_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_z(hll_flux_x(z_to_x(cL), z_to_x(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons hll_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hll_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hll_flux_x(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons hll_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hll_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hll_flux_y(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     template<class Tcons>
-    inline constexpr Tcons hll_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hll_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hll_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hll_flux_z(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     /**
@@ -393,45 +436,22 @@ namespace shammath {
      * @param gamma adiabatic index
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
         Tcons flux;
         using Tscal = typename Tcons::Tscal;
         using Tvec  = typename Tcons::Tvec;
 
         // const to prim
-        const auto primL = cons_to_prim(cL, gamma);
-        const auto primR = cons_to_prim(cR, gamma);
+        const auto primL = cons_to_prim(cL, gamma, actual_eos_config);
+        const auto primR = cons_to_prim(cR, gamma, actual_eos_config);
 
         // sound speeds
-        const auto csL = sound_speed(primL, gamma);
-        const auto csR = sound_speed(primR, gamma);
-
-
-/*
-        if (sycl::isnan(csL) || sycl::isnan(csR)) {
-            logger::raw_ln(
-                "Nan in HLLC solver \t csL \t",
-                csL,
-                "\t pL \t",
-                primL.press,
-                "\t rhoL \t",
-                primL.rho,
-                "\t csR \t",
-                csR,
-                "\t pR \t",
-                primR.press,
-                "\t rhoR \t",
-                primR.rho,
-                "\t gamma \t",
-                gamma,
-                "\t\n");
-        }
-
-*/
+        const auto csL = sound_speed(primL, gamma, actual_eos_config);
+        const auto csR = sound_speed(primR, gamma, actual_eos_config);
 
         // Left and right state fluxes
-        const auto FL = hydro_flux_x(cL, gamma);
-        const auto FR = hydro_flux_x(cR, gamma);
+        const auto FL = hydro_flux_x(cL, gamma, actual_eos_config);
+        const auto FR = hydro_flux_x(cR, gamma, actual_eos_config);
 
         // Left variables
         const auto rhoL   = primL.rho;
@@ -532,39 +552,39 @@ namespace shammath {
      * @brief HLLC flux in the +y direction
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma, actual_eos_config));
     }
     /**
      * @brief HLLC flux in the +z direction
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(hllc_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    inline constexpr Tcons hllc_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return x_to_z(hllc_flux_x(z_to_x(cL), z_to_x(cR), gamma, actual_eos_config));
     }
 
     /**
      * @brief HLLC flux in the -x direction
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hllc_flux_x(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     /**
      * @brief HLLC flux in the -y direction
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hllc_flux_y(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
     /**
      * @brief HLLC flux in the -z direction
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma, shammodels::EOSConfig<Tvec>& actual_eos_config) {
+        return invert_axis(hllc_flux_z(invert_axis(cL), invert_axis(cR), gamma, actual_eos_config));
     }
 
 } // namespace shammath

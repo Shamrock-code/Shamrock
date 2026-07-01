@@ -93,7 +93,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
 
-                auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                auto prim_state = shammath::cons_to_prim(conststate, gamma, solver_config.eos_config.config);
 
                 constexpr Tscal div = 1. / 3.;
 

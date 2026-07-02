@@ -123,6 +123,8 @@ namespace shamrock::solvergraph {
         inline std::string get_tex() { return _impl_get_tex(); };
         /// Get the TeX of the node partial
         inline std::string get_tex_partial() { return _impl_get_tex(); };
+        /// Get the label of the node
+        inline std::string get_label() const { return _impl_get_label(); };
 
         /// print the node info
         inline virtual std::string print_node_info() const {

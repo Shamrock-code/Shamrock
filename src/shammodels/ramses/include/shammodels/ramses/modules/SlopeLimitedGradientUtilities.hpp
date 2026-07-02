@@ -293,6 +293,10 @@ namespace {
         return {lim_slope_W_x, lim_slope_W_y, lim_slope_W_z};
     }
 
+
+    /**
+    * @brief Pseudo-gradient
+    */
     template<class T, class Tvec, class ACCField>
     inline T get_pseudo_grad(
         const u32 cell_global_id,
@@ -393,8 +397,9 @@ namespace {
         return res;
     }
 
-    /**
-     */
+    /***
+    *  Lohner second order criterion
+    */
     template<class T, class Tvec, class ACCField>
     inline T modif_second_derivative(
         const u32 cell_global_id,
@@ -454,7 +459,8 @@ namespace {
 
 
 
-        /**
+    /**
+    * @brief Normalized Shear criterion
      */
     template<class Tvec, class ACCField>
     inline shambase::VecComponent<Tvec> normalized_shear(
@@ -495,22 +501,16 @@ namespace {
         auto vgx = 0.25 * (u_yp[0] - u_ym[0]) * (u_yp[0] - u_ym[0]);
 
         return vgy + vgx;
+
+        /**---------------
+        * Shear criterion in 3D
+        ------------------*/
         // auto dv_xdir = 0.5 * sycl::abs(u_xp - u_xm);
-        // // /delta_cells.x();
-
         // auto dv_ydir = 0.5 * sycl::abs(u_yp - u_ym);
-        // //  / delta_cells.y();
-
         // auto dv_zdir = 0.5 * sycl::abs(u_zp - u_zm) ;
-        // // / delta_cells.z();
-
- 
-
         // auto shear_1 =  (dv_ydir[0] + dv_xdir[1])*(dv_ydir[0] + dv_xdir[1]);
         // auto shear_2 = (dv_ydir[2] + dv_zdir[1]) * (dv_ydir[2] + dv_zdir[1]);
         // auto shear_3 = (dv_zdir[0] + dv_xdir[2]) * (dv_zdir[0] + dv_xdir[2]);
-        
-
         // return  (shear_1 + shear_2 + shear_3) * (delta_cells.x() * delta_cells.x())/(sound_speed * sound_speed);
 
     }

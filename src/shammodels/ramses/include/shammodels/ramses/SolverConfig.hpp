@@ -104,6 +104,7 @@ namespace shammodels::basegodunov {
         using Tscal = shambase::VecComponent<Tvec>;
 
         struct None {};
+
         struct DensityBased {
             Tscal crit_mass;
         };
@@ -180,11 +181,6 @@ struct shammodels::basegodunov::SolverConfig {
     using Tscal = shambase::VecComponent<Tvec>;
 
     Tscal eos_gamma = 5. / 3.;
-
-    // Tscal eos_baro_temp_init = 1.;
-    // Tscal eos_baro_rho_crit = 1e-10;
-    // Tscal eos_baro_mu       = 2.3;
-    // Tscal eos_iso_cs      = 1.;
 
     Tscal grid_coord_to_pos_fact = 1;
 

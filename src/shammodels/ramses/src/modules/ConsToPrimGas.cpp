@@ -26,22 +26,19 @@ namespace {
     template<class Tvec, class TgridVec>
     struct KernelConsToPrimGas {
         using Tscal = shambase::VecComponent<Tvec>;
-            using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+            // using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
        
 
         inline static void kernel(
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe,
-            // /**/
-            // shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
-            // &spans_rho_fields,
-            // /**/
+
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
             const shambase::DistributedData<u32> &sizes,
             u32 block_size,
-            Tscal gamma, SolverConfig::EOSConfig& actual_cfg ) {
+            Tscal gamma, const typename shammodels::EOSConfig<Tvec>& actual_cfg ) {
 
             shambase::DistributedData<u32> cell_counts
                 = sizes.map<u32>([&](u64 id, u32 block_count) {
@@ -52,29 +49,24 @@ namespace {
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 sham::DDMultiRef{spans_rho, spans_rhov, spans_rhoe},
-                sham::DDMultiRef{/*spans_rho_fields,*/ spans_vel, spans_P},
+                sham::DDMultiRef{ spans_vel, spans_P},
                 cell_counts,
                 [gamma, actual_cfg](
                     u32 i,
                     const Tscal *__restrict rho,
                     const Tvec *__restrict rhov,
                     const Tscal *__restrict rhoe,
-
-                    // /**/
-                    // Tscal *__restrict rho_field,
-                    // /**/
                     Tvec *__restrict vel,
                     Tscal *__restrict P) {
                     auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
 
-                    auto prim_state = shammath::cons_to_prim(conststate, gamma,actual_cfg);
+                    auto prim_state = shammath::cons_to_prim<Tvec,TgridVec>(conststate, gamma,actual_cfg);
 
                     SHAM_ASSERT(prim_state.press >= 0.0);
 
                     vel[i] = prim_state.vel;
                     P[i]   = prim_state.press;
-               
-                    // rho_field[i] = prim_state.rho;
+
                 });
         }
     };
@@ -83,8 +75,8 @@ namespace {
 
 namespace shammodels::basegodunov::modules {
 
-    template<class Tvec>
-    void NodeConsToPrimGas<Tvec>::_impl_evaluate_internal() {
+    template<class Tvec, class TgridVec>
+    void NodeConsToPrimGas<Tvec,TgridVec>::_impl_evaluate_internal() {
         auto edges = get_edges();
 
         edges.spans_rho.check_sizes(edges.sizes.indexes);
@@ -95,7 +87,7 @@ namespace shammodels::basegodunov::modules {
         edges.spans_vel.ensure_sizes(edges.sizes.indexes);
         edges.spans_P.ensure_sizes(edges.sizes.indexes);
 
-        KernelConsToPrimGas<Tvec>::kernel(
+        KernelConsToPrimGas<Tvec,TgridVec>::kernel(
             edges.spans_rho.get_spans(),
             edges.spans_rhov.get_spans(),
             edges.spans_rhoe.get_spans(),
@@ -106,11 +98,11 @@ namespace shammodels::basegodunov::modules {
             edges.spans_P.get_spans(),
             edges.sizes.indexes,
             block_size,
-            gamma);
+            gamma, eos_config);
     }
 
-    template<class Tvec>
-    std::string NodeConsToPrimGas<Tvec>::_impl_get_tex() const {
+    template<class Tvec, class TgridVec>
+    std::string NodeConsToPrimGas<Tvec,TgridVec>::_impl_get_tex() const {
 
         auto block_count = get_ro_edge_base(0).get_tex_symbol();
         auto rho         = get_ro_edge_base(1).get_tex_symbol();
@@ -145,4 +137,4 @@ namespace shammodels::basegodunov::modules {
 
 } // namespace shammodels::basegodunov::modules
 
-template class shammodels::basegodunov::modules::NodeConsToPrimGas<f64_3>;
+template class shammodels::basegodunov::modules::NodeConsToPrimGas<f64_3, i64_3>;

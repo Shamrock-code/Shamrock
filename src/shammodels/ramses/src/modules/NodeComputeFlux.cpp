@@ -48,7 +48,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
               return graph.get().link_count; //* ndust;
           });
 
-    using Flux = FluxCompute<Tvec, mode, dir>;
+    using Flux = FluxCompute<Tvec, TgridVec, mode, dir>;
 
     sham::distributed_data_kernel_call(
         dev_sched,
@@ -59,7 +59,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
             edges.flux_rhov_face.link_fields,
             edges.flux_rhoe_face.link_fields},
         counts_dir,
-        [gamma = this->gamma](
+        [gamma = this->gamma, eos_config = this->eos_config](
             u32 link_id,
             const std::array<Tscal, 2> *rho_face,
             const std::array<Tvec, 2> *vel_face,
@@ -75,18 +75,7 @@ void shammodels::basegodunov::modules::NodeComputeFluxGasDirMode<Tvec, TgridVec,
             auto flux_dir = Flux::flux(
                 Tprim{rho_ij[0], press_ij[0], vel_ij[0]},
                 Tprim{rho_ij[1], press_ij[1], vel_ij[1]},
-                gamma);
-
-            
-	    /*
-	     
-	    	if(sycl::isnan(flux_dir.rho)){
-               logger::raw_ln("nan in rho flux @ \t", link_id, "\t flux-rho \t", flux_dir.rho,
-                 "\t\n");
-            	 }
-		
-	    */
-
+                gamma, eos_config);
 
             flux_rho_face[link_id]  = flux_dir.rho;
             flux_rhov_face[link_id] = flux_dir.rhovel;

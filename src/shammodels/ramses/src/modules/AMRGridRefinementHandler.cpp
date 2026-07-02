@@ -232,8 +232,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         auto dev_buf_ref
             = shamalgs::numeric::stream_compact(dev_sched, patch_refine_flags, obj_cnt);
 
-        // logger::raw_ln("block marked for refinement + 2:1 \t ",dev_buf_ref.get_size() , "\n\n");
-
         shamlog_debug_ln(
             "AMRGrid", "patch ", id_patch, dev_buf_ref.get_size(), "marked for refinement + 2:1");
     });
@@ -617,9 +615,6 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             stream_compaction_result.complete_event_state(e);
             uacc.finalize(resulting_events, storage, id_patch, pdat);
         }
-
-        // logger::raw_ln("New block count \t ",  pdat.get_obj_cnt(), "\t old  obj count \t ",
-        // old_obj_cnt, "\t and diff \t", pdat.get_obj_cnt() - old_obj_cnt, "\n\n");
 
         shamlog_debug_ln("AMRGrid", "patch ", id_patch, "new block count = ", pdat.get_obj_cnt());
         sum_block_count += pdat.get_obj_cnt();
@@ -1133,6 +1128,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
+    /**
+    *   @brief Pseudo-Gradient refinement  accessor 
+    */
     class RefineCritPseudoGradientAccessor {
         public:
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
@@ -1361,10 +1359,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     };
 
 
-
-
-
-
+    /** 
+    * @brief Shear Refinement accessor
+    */
     class RefineCritShearAccessor {
         public:
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
@@ -1545,8 +1542,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                             return  acc.block_velocity[id];
                         }));
             }
-
-
             should_refine   = false;
             should_derefine = false;
             if (block_normalized_shear > threshold*threshold) {
@@ -1563,11 +1558,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
 
 
-
-
-
-
-
+    /**
+    * @brief JeansLength refinement accessor
+    */
     class RefineCritJeansLengthAccessor {
 
         public:
@@ -1577,8 +1570,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const Tscal *block_rho;
         const Tscal *rho_cons;
         u32 N_J;
-        Tscal T_0;
         Tscal dxfact;
+
+        using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+        using EOSConfig    =  typename  SolverConfig::EOSConfig;
+        using EOS_Barotropic = typename EOSConfig::Barotropic;
+
+
+        typename  shammodels::EOSConfig<Tvec> eos_cfg;
 
         RefineCritJeansLengthAccessor(
             sham::EventList &depends_list,
@@ -1588,8 +1587,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             shamrock::patch::PatchDataLayer &pdat,
             Tscal dxfact,
             u32 N_J,
-            Tscal T_0)
-            : dxfact(dxfact), N_J(N_J), T_0(T_0) {
+            typename  shammodels::EOSConfig<Tvec> eos_cfg_in
+           )
+            : dxfact(dxfact), N_J(N_J), eos_cfg(eos_cfg_in) {
             block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
             block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
             rho_cons         = pdat.get_field<Tscal>(pdat.pdl().get_field_idx<Tscal>("rho"))
@@ -1609,7 +1609,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             shamrock::patch::PatchDataLayer &pdat,
             Tscal dxfact,
             u32 N_J,
-            Tscal T_0) {
+           typename  shammodels::EOSConfig<Tvec> eos_cfg_in) {
 
             pdat.get_field<i64_3>(0).get_buf().complete_event_state(resulting_events);
             pdat.get_field<i64_3>(1).get_buf().complete_event_state(resulting_events);
@@ -1637,12 +1637,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             //-------------------------------
             shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-            auto m_H = ctes.proton_mass(); // [kg]
-            auto kb  = ctes.kb();          // []
-            auto mu  = 2.3;                // molecular gas
+            // auto m_H = ctes.proton_mass(); // [kg]
+            // auto kb  = ctes.kb();          // []
+            // auto mu  = 2.3;                // molecular gas
 
-            auto gamma = 5. / 3.;
-            auto rho_c = 2.7e-11 * 1e3; // [g/cm^3 ===> kg/m^3]
+            // auto gamma = 5. / 3.;
+            // auto rho_c = 2.7e-11 * 1e3; // [g/cm^3 ===> kg/m^3]
 
             //--------------------------------
             Tscal block_max_jeans_length = shambase::VectorProperties<Tscal>::get_zero();
@@ -1653,26 +1653,30 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 block_rho_max = sham::details::g_sycl_max(block_rho_max, block_rho[idx]);
             }
 
+            using EOSConfig = shammodels::EOSConfig<Tvec>;
+            using EOS_Barotropic = typename EOSConfig::Barotropic;
+
+           
+                const auto* eos = std::get_if<EOS_Barotropic>(&acc.eos_cfg.config);
+
+                SHAM_ASSERT(eos != nullptr);
+
+       
+
+            Tscal cs =  shamphys::EOS_Barotropic<Tscal>::soundspeed(eos->rho_critic, block_rho_max, eos->gamma, eos->temp, eos->mu);
+            Tscal cs_sqr = cs * cs;
+
             // Tscal block_min_jeans_length = sycl::sqrt(
             //     (shamunits::pi<Tscal> * kb * T_0)
             //     / (N_J * N_J * ctes.G() * block_rho_max * mu * m_H));
-            auto cs0_sqr = (kb * T_0) / (mu * m_H);
-            auto cs_sqr  = cs0_sqr * (1. + (5.0 / 3.0) * sycl::pow(block_rho_max / rho_c, 2. / 3.));
+            // auto cs0_sqr = (kb * T_0) / (mu * m_H);
+            // auto cs_sqr  = cs0_sqr * (1. + (5.0 / 3.0) * sycl::pow(block_rho_max / rho_c, 2. / 3.));
 
             Tscal block_min_jeans_length = sycl::sqrt(
                 shamunits::pi<Tscal> * cs_sqr / (N_J * N_J * ctes.G() * block_rho_max));
 
             should_refine   = false;
             should_derefine = false;
-
-            // logger::raw_ln(
-            //     "dxfact = \t ",
-            //     dxfact,
-            //     "\t Delta cell =  \t ",
-            //     block_cell_size.x(),
-            //     "\t ",
-            //     "crit_jeans = \t ",
-            //     block_min_jeans_length);
 
             if (block_cell_size.x() > block_min_jeans_length) {
                 should_refine = true;
@@ -1684,6 +1688,11 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
+
+
+    /**
+    *@brief Autogravity accessor
+    */
     class RefineCellAccessorAutogravity {
         public:
         f64 *rho;
@@ -2002,57 +2011,28 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     bool has_cell_order_changed = false;
 
+    // get refine and derefine list
+    shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
+    shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
+
     if (AMRmode_None *cfg = std::get_if<AMRmode_None>(&solver_config.amr_mode.config)) {
         // no refinment here turn around there is nothing to see
-    } else if (
+    } 
+    else if (
         AMRmode_DensityBased *cfg
         = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {
+
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-
-        // get refine and derefine list
-        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
-
         gen_refine_block_changes<RefineCritBlock>(
             refine_list, derefine_list, dxfact, cfg->crit_mass);
-
-        //////// apply refine ////////
-        // Note that this only add new blocks at the end of the patchdata
-        bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
-
-        //////// apply derefine ////////
-        // Note that this will perform the merge then remove the old blocks
-        // This is ok to call straight after the refine without edditing the index list in
-        // derefine_list since no permutations were applied in internal_refine_grid and no cells can
-        // be both refined and derefined in the same pass
-        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
-
-        has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
     }
 
     else if (
         AMRmode_PseudoGradientBased *cfg
         = std::get_if<AMRmode_PseudoGradientBased>(&solver_config.amr_mode.config)) {
 
-        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
-
         gen_refine_block_changes<RefineCritPseudoGradientAccessor>(
             refine_list, derefine_list, cfg->error_min, cfg->error_max);
-
-        ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_refinement(std::move(refine_list));
-
-        /////// enforce 2:1 for derefinement //////
-        enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
-
-        //////// apply refine ////////
-        // Note that this only add new blocks at the end of the patchdata
-        bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
-
-        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
-
-        has_cell_order_changed = has_cell_order_changed || (change_refine) || (change_derefine);
     }
 
     else if (
@@ -2060,62 +2040,53 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         = std::get_if<AMRmode_JeansLengthBased>(&solver_config.amr_mode.config)) {
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
 
-        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
+        using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+        using EOSConfig    =  typename  SolverConfig::EOSConfig;
+        using EOS_Barotropic = typename EOSConfig::Barotropic;
 
+        if ( EOS_Barotropic * eos_config = std::get_if<EOS_Barotropic>(&solver_config.eos_config.config))
+        {
+            logger::raw_ln("Barotropic EOS for Jeans Lenght");
+        }
+        else {
+             shambase::throw_with_loc<std::runtime_error>("EOS is not Barotropic");
+        }
         gen_refine_block_changes<RefineCritJeansLengthAccessor>(
-            refine_list, derefine_list, dxfact, cfg->N_J, cfg->T_0);
-
-        // ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_refinement(std::move(refine_list));
-
-        // /////// enforce 2:1 for derefinement //////
-        // enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
-
-        //////// apply refine ////////
-        // Note that this only add new blocks at the end of the patchdata
-        bool change_refine
-            = internal_refine_grid<RefineCellAccessorAutogravity>(std::move(refine_list));
-
-        // bool change_derefine =
-        // internal_derefine_grid<RefineCellAccessorAutogravity>(std::move(derefine_list));
-
-        has_cell_order_changed = has_cell_order_changed || (change_refine);
-        // || (change_derefine);
+            refine_list, derefine_list, dxfact, cfg->N_J, solver_config.eos_config);
     }
 
-     else if (
+    else if (
         AMRmode_ShearBased *cfg
         = std::get_if<AMRmode_ShearBased>(&solver_config.amr_mode.config)) {
         Tscal dxfact(solver_config.grid_coord_to_pos_fact);
         Tscal gamma (solver_config.eos_gamma);
 
-        shambase::DistributedData<sham::DeviceBuffer<u32>> refine_list;
-        shambase::DistributedData<sham::DeviceBuffer<u32>> derefine_list;
-
         gen_refine_block_changes<RefineCritShearAccessor>(
             refine_list, derefine_list, cfg->threshold,  gamma , dxfact);
 
-        // ///// enforce 2:1 for refinement ///////
-        enforce_two_to_one_refinement(std::move(refine_list));
-
-    //     /////// enforce 2:1 for derefinement //////
-        enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
-
-    //     //////// apply refine ////////
-    //     // Note that this only add new blocks at the end of the patchdata
-        bool change_refine
-            = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
-
-        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
-
-        has_cell_order_changed = has_cell_order_changed || (change_refine) || (change_derefine);
     }
 
+    ///// enforce 2:1 for refinement ///////
+    enforce_two_to_one_refinement(std::move(refine_list));
+    /////// enforce 2:1 for derefinement //////
+    enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
+    //////// apply refine ////////
+    // Note that this only add new blocks at the end of the patchdata
+    bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+
+    //////// apply derefine ////////
+    // Note that this will perform the merge then remove the old blocks
+    // This is ok to call straight after the refine without edditing the index list in
+    // derefine_list since no permutations were applied in internal_refine_grid and no cells can
+    // be both refined and derefined in the same pass
+    bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+
+    has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
+
     if (has_cell_order_changed) {
-        // Ensure that the blocks are sorted before refinement
-        AMRSortBlocks block_sorter(context, solver_config, storage);
-        block_sorter.reorder_amr_blocks();
+    // Ensure that the blocks are sorted before refinement
+    AMRSortBlocks block_sorter(context, solver_config, storage);
+    block_sorter.reorder_amr_blocks();
     }
 }
 

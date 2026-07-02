@@ -38,9 +38,11 @@ namespace shammodels::basegodunov::modules {
         using Tscal = shambase::VecComponent<Tvec>;
 
         Tscal gamma;
+        using Config = SolverConfig<Tvec, TgridVec>;
+        Config::EOSConfig &eos_config;
 
         public:
-        NodeComputeFluxGasDirMode(Tscal gamma) : gamma(gamma) {}
+        NodeComputeFluxGasDirMode(Tscal gamma, Config::EOSConfig &eos_config) : gamma(gamma), eos_config(eos_config) {}
 
         struct Edges {
             const solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec> &cell_neigh_graph;
@@ -130,8 +132,11 @@ namespace shammodels::basegodunov::modules {
     class NodeComputeFluxGasMode : public shamrock::solvergraph::OperationSequence {
         using Tscal = shambase::VecComponent<Tvec>;
 
+        using Config = SolverConfig<Tvec, TgridVec>;
+
         inline static auto make_sequence(
             Tscal gamma,
+            Config::EOSConfig &eos_config,
 
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
 
@@ -188,7 +193,7 @@ namespace shammodels::basegodunov::modules {
             std::vector<std::shared_ptr<shamrock::solvergraph::INode>> flux_sequence;
 
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::xm>
-                node_xm(gamma);
+                node_xm(gamma,eos_config);
             node_xm.set_edges(
                 cell_neigh_graph,
                 rho_face_xm,
@@ -198,7 +203,7 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_face_xm,
                 flux_rhoe_face_xm);
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::xp>
-                node_xp(gamma);
+                node_xp(gamma,eos_config);
             node_xp.set_edges(
                 cell_neigh_graph,
                 rho_face_xp,
@@ -209,7 +214,7 @@ namespace shammodels::basegodunov::modules {
                 flux_rhoe_face_xp);
 
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::ym>
-                node_ym(gamma);
+                node_ym(gamma,eos_config);
             node_ym.set_edges(
                 cell_neigh_graph,
                 rho_face_ym,
@@ -219,7 +224,7 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_face_ym,
                 flux_rhoe_face_ym);
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::yp>
-                node_yp(gamma);
+                node_yp(gamma,eos_config);
             node_yp.set_edges(
                 cell_neigh_graph,
                 rho_face_yp,
@@ -229,7 +234,7 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_face_yp,
                 flux_rhoe_face_yp);
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zm>
-                node_zm(gamma);
+                node_zm(gamma,eos_config);
             node_zm.set_edges(
                 cell_neigh_graph,
                 rho_face_zm,
@@ -239,7 +244,7 @@ namespace shammodels::basegodunov::modules {
                 flux_rhov_face_zm,
                 flux_rhoe_face_zm);
             modules::NodeComputeFluxGasDirMode<Tvec, TgridVec, mode, modules::Direction::zp>
-                node_zp(gamma);
+                node_zp(gamma,eos_config);
             node_zp.set_edges(
                 cell_neigh_graph,
                 rho_face_zp,
@@ -263,6 +268,8 @@ namespace shammodels::basegodunov::modules {
         NodeComputeFluxGasMode(
             std::string name,
             Tscal gamma,
+            Config::EOSConfig &eos_config,
+
 
             std::shared_ptr<solvergraph::OrientedAMRGraphEdge<Tvec, TgridVec>> cell_neigh_graph,
 
@@ -317,6 +324,7 @@ namespace shammodels::basegodunov::modules {
                   std::move(name),
                   make_sequence(
                       gamma,
+                      eos_config,
                       cell_neigh_graph,
                       rho_face_xp,
                       rho_face_xm,

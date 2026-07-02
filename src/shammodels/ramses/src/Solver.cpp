@@ -1252,7 +1252,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> const_to_prim_sequence;
 
         {
-            modules::NodeConsToPrimGas<Tvec> node{AMRBlock::block_size, solver_config.eos_gamma};
+            modules::NodeConsToPrimGas<Tvec,TgridVec> node{AMRBlock::block_size, solver_config.eos_gamma, solver_config.eos_config};
             node.set_edges(
                 storage.block_counts_with_ghost,
                 storage.refs_rho,
@@ -1481,6 +1481,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 node(
                     "Gas flux compute",
                     solver_config.eos_gamma,
+                    solver_config.eos_config,
                     storage.cell_graph_edge,
                     storage.rho_face_xp,
                     storage.rho_face_xm,
@@ -1523,6 +1524,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLL> node(
                 "Gas flux compute",
                 solver_config.eos_gamma,
+                solver_config.eos_config,
                 storage.cell_graph_edge,
                 storage.rho_face_xp,
                 storage.rho_face_xm,
@@ -1565,6 +1567,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             modules::NodeComputeFluxGasMode<Tvec, TgridVec, modules::RiemannSolverMode::HLLC> node(
                 "Gas flux compute",
                 solver_config.eos_gamma,
+                solver_config.eos_config,
                 storage.cell_graph_edge,
                 storage.rho_face_xp,
                 storage.rho_face_xm,

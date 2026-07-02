@@ -30,76 +30,76 @@ namespace shammodels::basegodunov::modules {
     using DustRiemannSolverMode = shammodels::basegodunov::DustRiemannSolverMode;
     using Direction             = shammodels::basegodunov::modules::Direction;
 
-    template<class Tvec, RiemannSolverMode mode, Direction dir>
+    template<class Tvec, class TgridVec, RiemannSolverMode mode, Direction dir>
     class FluxCompute {
         public:
         using Tcons = shammath::ConsState<Tvec>;
         using Tprim = shammath::PrimState<Tvec>;
         using Tscal = typename Tcons::Tscal;
 
-        inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma) {
+        inline static constexpr Tcons flux(Tprim pL, Tprim pR, typename Tcons::Tscal gamma, const shammodels::EOSConfig<Tvec>& actual_eos_config) {
             Tcons cL = shammath::prim_to_cons(pL, gamma);
             Tcons cR = shammath::prim_to_cons(pR, gamma);
 
             if constexpr (mode == RiemannSolverMode::Rusanov) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::rusanov_flux_x(cL, cR, gamma);
+                    return shammath::rusanov_flux_x<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::rusanov_flux_y(cL, cR, gamma);
+                    return shammath::rusanov_flux_y<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::rusanov_flux_z(cL, cR, gamma);
+                    return shammath::rusanov_flux_z<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::rusanov_flux_mx(cL, cR, gamma);
+                    return shammath::rusanov_flux_mx<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::rusanov_flux_my(cL, cR, gamma);
+                    return shammath::rusanov_flux_my<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::rusanov_flux_mz(cL, cR, gamma);
+                    return shammath::rusanov_flux_mz<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
             }
             if constexpr (mode == RiemannSolverMode::HLL) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::hll_flux_x(cL, cR, gamma);
+                    return shammath::hll_flux_x<Tcons,Tvec,TgridVec>(cL, cR, gamma,actual_eos_config);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::hll_flux_y(cL, cR, gamma);
+                    return shammath::hll_flux_y<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::hll_flux_z(cL, cR, gamma);
+                    return shammath::hll_flux_z<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::hll_flux_mx(cL, cR, gamma);
+                    return shammath::hll_flux_mx<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::hll_flux_my(cL, cR, gamma);
+                    return shammath::hll_flux_my<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::hll_flux_mz(cL, cR, gamma);
+                    return shammath::hll_flux_mz<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
             }
 
             if constexpr (mode == RiemannSolverMode::HLLC) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::hllc_flux_x(cL, cR, gamma);
+                    return shammath::hllc_flux_x<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::hllc_flux_y(cL, cR, gamma);
+                    return shammath::hllc_flux_y<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::hllc_flux_z(cL, cR, gamma);
+                    return shammath::hllc_flux_z<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::hllc_flux_mx(cL, cR, gamma);
+                    return shammath::hllc_flux_mx<Tcons,Tvec,TgridVec>(cL, cR, gamma, actual_eos_config);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::hllc_flux_my(cL, cR, gamma);
+                    return shammath::hllc_flux_my<Tcons,Tvec,TgridVec>(cL, cR, gamma,actual_eos_config);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::hllc_flux_mz(cL, cR, gamma);
+                    return shammath::hllc_flux_mz<Tcons,Tvec,TgridVec>(cL, cR, gamma,actual_eos_config);
                 }
             }
         }
@@ -162,7 +162,7 @@ namespace shammodels::basegodunov::modules {
         }
     };
 
-    template<RiemannSolverMode mode, class Tvec, class Tscal, Direction dir>
+    template<RiemannSolverMode mode, class Tvec,  class TgridVec, class Tscal, Direction dir>
     void compute_fluxes_dir(
         sham::DeviceQueue &q,
         u32 link_count,
@@ -172,9 +172,9 @@ namespace shammodels::basegodunov::modules {
         sham::DeviceBuffer<Tscal> &flux_rho_face_dir,
         sham::DeviceBuffer<Tvec> &flux_rhov_face_dir,
         sham::DeviceBuffer<Tscal> &flux_rhoe_face_dir,
-        Tscal gamma) {
+        Tscal gamma, const shammodels::EOSConfig<Tvec>& actual_eos_config) {
 
-        using Flux            = FluxCompute<Tvec, mode, dir>;
+        using Flux            = FluxCompute<Tvec, TgridVec, mode, dir>;
         std::string flux_name = " ";
         if (mode == RiemannSolverMode::HLL)
             flux_name = "hll flux";

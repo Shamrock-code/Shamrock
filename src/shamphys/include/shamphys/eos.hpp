@@ -230,11 +230,10 @@ namespace shamphys {
     template<class T>
     struct EOS_Barotropic {
 
-        shamunits::Constants<T> ctes{shamunits::UnitSystem<T>{}};
-        auto m_H = ctes.proton_mass(); 
-        auto kb  = ctes.kb();          
-  
-        static inline T cs0_sqr(T temp, T mu){return (kb * temp)/(mu *m_H);}
+        static inline T cs0_sqr(T temp, T mu){
+            shamunits::Constants<T> ctes{shamunits::UnitSystem<T>{}};
+            return (ctes.kb() * temp)/(mu *ctes.proton_mass());
+        }
 
         static inline T pressure(T rho_crit, T rho, T gamma, T temp, T mu){
             const T cs0_2 = cs0_sqr(temp, mu);
@@ -242,7 +241,7 @@ namespace shamphys {
             return cs0_2*rho * (1 + sycl::pow(x, gamma- T(1.)));
         }
 
-        static inline soundspeed(T rho_crit, T rho, T gamma, T temp, T mu){
+        static inline T soundspeed(T rho_crit, T rho, T gamma, T temp, T mu){
             const T cs0_2 = cs0_sqr(temp, mu);
             const T x   = rho /rho_crit;
             return sycl::sqrt(cs0_2 * (1 + gamma * sycl::pow(x, gamma - T(1.))));

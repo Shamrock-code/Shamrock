@@ -25,6 +25,7 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+cfg.set_eos_adiabatic(gamma=gamma)
 # cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
 

@@ -308,6 +308,7 @@ Analytical soluce for dusty settling
 
 from scipy.linalg import solve
 
+
 def S_rho(rho, v, vp, hz, tau, Nz):
     """
     Step rho forward using Crank-Nicolson on continuity equation.

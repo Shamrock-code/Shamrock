@@ -1717,7 +1717,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
     }
 
-    sink_update.compute_ext_forces();
+    sink_update.compute_ext_forces(dt);
 
     ext_forces.compute_ext_forces_indep_v();
 

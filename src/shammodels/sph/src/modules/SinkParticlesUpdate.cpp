@@ -255,7 +255,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_s
         return;
     }
 
-    compute_ext_forces();
+    compute_ext_forces(dt);
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
@@ -385,7 +385,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext_forces() {
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext_forces(Tscal dt) {
 
     StackEntry stack_loc{};
 
@@ -395,12 +395,25 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
+
+
+
+
+
+
+
+
+
+
+
     
     
     // Ajout des booléens qui permettent l'activation des termes Post-Newtoniens
-    bool OP = false; // true pour ajouter le terme 1PN (précesssion des orbites), ordre 1PN
-    bool SO = false; // true pour ajouter le terme Spin-Orbit (précession des spins), ordre 1.5PN
-    bool SS = false; // true pour ajouter le terme Spin-Spin (précession des spins), odre 2PN
+    //termes valables uniquement si il y a deux sinks, avec strictement plus de 2 sinks, merci de mettre tous les booléns en "false"
+    //Je n'aurai malheureusement pas le temps de faire des développements PN pour N quelconque de sinks mais faites le svv!
+    bool OP = true; // true pour ajouter le terme 1PN (précesssion des orbites), ordre 1PN
+    bool SO = true; // true pour ajouter le terme Spin-Orbit (précession des spins), ordre 1.5PN
+    bool SS = true; // true pour ajouter le terme Spin-Spin (précession des spins), odre 2PN
     bool RR = true; // true pour ajouter le terme Radiation Reaction (perte d'énergie par rayonnement gravitationnel), ordre 2.5PN
 
     std::cout << "===== CONFIG PHYSIQUE =====" << std::endl;
@@ -438,8 +451,8 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
     }
 
     Tscal G  = solver_config.get_constant_G();
-    Tscal c  =solver_config.get_constant_c();
-    //Tscal c  = 100;
+    //Tscal c  =solver_config.get_constant_c();
+    Tscal c  = 5000;
     Tscal epsilon_grav_sink = 1e-9;
 
 
@@ -473,16 +486,20 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
             Tscal vij_nij = sycl::dot(vij, nij);
             Tscal v2 = sycl::dot(vij, vij);
+            Tvec S1= s1.angular_momentum;
+            Tvec S2= s2.angular_momentum;
+            Tvec S = S1+S2;
+            Tvec Delta = M*(s2.angular_momentum/s2.mass - s1.angular_momentum/s1.mass);
+            Tscal dm = s1.mass - s2.mass;
 
-            
 
-            term0 = -G * s2.mass * rij
+            term0 = G * M * rij
                     / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
             sum+=term0;
 
             if(OP==true){
                 term1 =
-                    -G *  s2.mass / (rij_scal * rij_scal + epsilon_grav_sink)
+                    -G *  M / (rij_scal * rij_scal + epsilon_grav_sink)
                     * (
                         ((1 + 3 * eta) * v2 * nij) 
                         - 2 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink) ) * nij
@@ -493,18 +510,26 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             } 
 
             if(SO){
-                term2 = 0;
+                term2 = G*M/(c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
+                * (
+                        6*nij*(sycl::dot(sycl::cross(nij,vij), 2*S +dm/M*Delta))
+                        -sycl::cross(vij, 7*S + 3*dm/M*Delta)
+                        +3*sycl::cross(vij_nij*nij, 3*S + dm/M*Delta)
+                );
 
                 sum += term2;
             }
 
             if(SS){
-                term3 = 0;
+                term3 = -G/(c*c*nu*(rij_scal*rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
+                * (
+                    nij*sycl::dot(S1,S2) + S1*sycl::dot(nij,S2) + S2*sycl::dot(nij,S1) - 5*nij*sycl::dot(nij,S1)*sycl::dot(nij,S2)
+                );
 
                 sum += term3;
             }
             if(RR){
-                term4 = 8/5*G*G*eta* s2.mass *M/(c*c*c*c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
+                term4 = 8/5*G*G*eta* M *M/(c*c*c*c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
                 * (
                     vij_nij*nij*(18*v2 + 2/3*G*M/(rij_scal + epsilon_grav_sink)-25*vij_nij*vij_nij) 
                     - (6*v2 - 2*G*M/(rij_scal + epsilon_grav_sink)-15*vij_nij*vij_nij)*vij
@@ -512,9 +537,47 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                 
                 sum += term4;
             } 
-
+            sum = -s2.mass/M * sum;
         }
-        s1.ext_acceleration += sum;
+        s1.ext_acceleration +=  sum;
+    }
+
+    update_sink_spins(dt);
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink_spins(Tscal dt) {
+
+    if (storage.sinks.is_empty()) {
+        return;
+    }
+
+    std::vector<Sink> &sink_parts = storage.sinks.get();
+
+    Tscal G = solver_config.get_constant_G();
+    Tscal epsilon_spin = 1e-9;
+
+    for (Sink &s1 : sink_parts) {
+        Tvec dS = {};
+
+        for (Sink &s2 : sink_parts) {
+            if (&s1 == &s2) {
+                continue;
+            }
+
+            Tvec rij = s1.pos - s2.pos;
+            Tscal rij_scal = sycl::length(rij) + epsilon_spin;
+            Tvec nij = rij / rij_scal;
+            Tvec S1 = s1.angular_momentum;
+            Tvec S2 = s2.angular_momentum;
+
+            // Simple spin precession structure.
+            // TODO: replace with the desired PN spin evolution equation.
+            Tvec omega_prec = G * sycl::cross(nij, S2) / (rij_scal * rij_scal * rij_scal + epsilon_spin);
+            dS += sycl::cross(omega_prec, S1);
+        }
+
+        s1.angular_momentum += dS * dt;
     }
 }
 

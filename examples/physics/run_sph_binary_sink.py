@@ -26,14 +26,34 @@ codeu = chama.UnitSystem(
 )
 ucte = chama.Constants(codeu)
 G = ucte.G()
-# c = ucte.c()
+c = ucte.c()
 
+#Paramètres de la binaire à tracer
+M1 = 700.0 # masse du premier corps en masses solaires
+M2 = 1 # masse du second corps en masses solaires
+A = 1.0  # demi-grand axe en unités astronomiques
+E = 0.55  # excentricité de l'orbite
 
+# Spins (aligned with the orbital angular momentum)
+a1 = 0.95   # entre 0 et 1, spin du premier corps
+a2 = 0.8
+theta =np.pi/2
+spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
+spin_mag_1 = a1 * G * M1 * M1 / c
+spin_mag_2 = a2 * G * M2 * M2 / c
+spin_vec_1 = spin_mag_1 * spin_axis
+spin_vec_2 = spin_mag_2 * spin_axis
+
+X = np.sqrt(A**3/(G*(M1+M2)))  # période orbitale en années
 # %%
 # Simulation parameters
-T = 10 # number of years
-dt = 0.00001 # time step in code units
-n_steps = int(T / dt)  # number of steps to evolve
+T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
+n_orbits = 100                                                 #nombre d'orbite qu'on veut
+SF=50                                                              #safety factor                
+N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
+n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
+dt = T/N_per_orbits                                                # time step in years
+
 
 # %%
 # Orbital initialization without get_binary_rotated
@@ -51,27 +71,31 @@ def rotation_matrix(roll, pitch, yaw):
     return Rz @ Ry @ Rx
 
 
-def binary_initial_conditions(m1, m2, a, e, nu=0.0, G=G, roll=0.0, pitch=0.0, yaw=0.0):
+def binary_initial_conditions(
+    m1,
+    m2,
+    a,
+    e,
+    nu=0.0,
+    G=G,
+    roll=0.0,
+    pitch=0.0,
+    yaw=0.0,
+):
     M = m1 + m2
-    r = a * (1.0 - e * e) / (1.0 + e * np.cos(nu))  # juste Newton pour les conditions initiales
 
-    h = np.sqrt(G * M * a * (1.0 - e * e))
-    vr = G * M / h * e * np.sin(nu)
-    vtheta = h / r
+    # mêmes conditions que ton code Leapfrog
+    r = a * (1 - e)
+    v = np.sqrt((1 + e) * G * M / r)
 
-    x_rel = np.array([r * np.cos(nu), r * np.sin(nu), 0.0])
-    v_rel = np.array(
-        [
-            vr * np.cos(nu) - vtheta * np.sin(nu),
-            vr * np.sin(nu) + vtheta * np.cos(nu),
-            0.0,
-        ]
-    )
+    x_rel = np.array([r, 0.0, 0.0])
+    v_rel = np.array([0.0, v, 0.0])
 
     x1 = -m2 / M * x_rel
-    x2 = m1 / M * x_rel
+    x2 =  m1 / M * x_rel
+
     v1 = -m2 / M * v_rel
-    v2 = m1 / M * v_rel
+    v2 =  m1 / M * v_rel
 
     if roll != 0.0 or pitch != 0.0 or yaw != 0.0:
         R = rotation_matrix(roll, pitch, yaw)
@@ -110,7 +134,7 @@ def build_binary_sph_model(
     cfg.set_self_gravity_none()
     cfg.set_artif_viscosity_Constant(alpha_u=1.0, alpha_AV=1.0, beta_AV=2.0)
     cfg.set_particle_mass(1e-6)
-    cfg.set_eta_sink(0.01)
+    cfg.set_eta_sink(1)
     cfg.set_eos_isothermal(1.0)
     # Set code units so warnings about unit system disappear
     cfg.set_units(codeu)
@@ -129,8 +153,20 @@ def build_binary_sph_model(
         yaw=yaw,
     )
 
-    model.add_sink(m1, tuple(x1.tolist()), tuple(v1.tolist()), racc)
-    model.add_sink(m2, tuple(x2.tolist()), tuple(v2.tolist()), racc)
+    model.add_sink(
+        m1,
+        tuple(x1.tolist()),
+        tuple(v1.tolist()),
+        racc,
+        tuple(spin_vec_1.tolist()),
+    )
+    model.add_sink(
+        m2,
+        tuple(x2.tolist()),
+        tuple(v2.tolist()),
+        racc,
+        tuple(spin_vec_2.tolist()),
+    )
 
     # Initialise the scheduler first, then set a simulation box large enough
     model.init_scheduler(split_load, merge_load)
@@ -241,8 +277,8 @@ def plot_orbit_trajectory(snapshots):
         sink2_positions[:, 2],
         "s-",
         label="Sink 2",
-        markersize=3,
-        linewidth=1,
+        markersize=0.025,
+        linewidth=0.025,
     )
     ax3d.set_xlabel("x (AU)")
     ax3d.set_ylabel("y (AU)")
@@ -283,10 +319,10 @@ def plot_orbit_trajectory(snapshots):
 # %%
 # Example usage
 if __name__ == "__main__":
-    m1 = 30000
-    m2 = 800
-    a = 3
-    e = 0.5
+    m1 = M1
+    m2 = M2
+    a = A
+    e = E
 
     # racc=0.001 AU is much smaller than binary separation (~0.7 AU at periapsis)
     ctx, model = build_binary_sph_model(m1, m2, a, e, roll=0.0, pitch=0.0, yaw=0.0, racc=0.001)
@@ -296,3 +332,55 @@ if __name__ == "__main__":
         print("time", snapshot["time"], "positions", snapshot["positions"])
 
     plot_orbit_trajectory(snapshots)
+
+def compute_eccentricity(snapshot, m1, m2, G=G):
+
+    r1 = np.array(snapshot["positions"][0])
+    r2 = np.array(snapshot["positions"][1])
+
+    v1 = np.array(snapshot["velocities"][0])
+    v2 = np.array(snapshot["velocities"][1])
+
+    r_vec = r2 - r1
+    v_vec = v2 - v1
+
+    r = np.linalg.norm(r_vec)
+    v = np.linalg.norm(v_vec)
+
+    mu = G * (m1 + m2)
+
+    # énergie spécifique
+    eps = 0.5 * v**2 - mu / r
+
+    # moment cinétique spécifique
+    h = np.linalg.norm(np.cross(r_vec, v_vec))
+
+    e = np.sqrt(1 + 2 * eps * h**2 / mu**2)
+
+    return e
+
+def plot_eccentricity(snapshots, m1, m2):
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    times = np.array([snap["time"] for snap in snapshots])
+    ecc = np.array([
+        compute_eccentricity(snap, m1, m2)
+        for snap in snapshots
+    ])
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(times, ecc, lw=2)
+
+    plt.xlabel("Temps (années)")
+    plt.ylabel("Excentricité e")
+    plt.title("Excentricité en fct du temps")
+
+    plt.ylim(0, 1)  # 👈 ici
+
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
+
+plot_eccentricity(snapshots, m1, m2)

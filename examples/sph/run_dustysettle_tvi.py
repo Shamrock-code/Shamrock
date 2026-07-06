@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 from scipy.special import erfinv
+from shamrock.utils.DustMRNDistribution import DustMRNDistribution
+from shamrock.utils.numba_helper import maybe_njit
 
 import shamrock
 
@@ -56,6 +58,11 @@ mrn_cutoff_si = np.inf  # would be 250e-9 normally
 gamma = 1.4
 
 epsilon_base = 0.01
+
+tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
+tinject = 2
+iinject = 20
+t_end = 5.0
 
 
 sim_folder = "_to_trash/dusty_settle/"
@@ -122,26 +129,9 @@ def uint_g(r):
 rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
 grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
 
-print(f"grains sizes = {grain_size_si_edges} [m]")
-print(f"grains dens  = {rho_grains_si_edges} [kg.m^-3]")
-
-grain_size_edges = grain_size_si_edges * codeu.get("m")
-rho_grains_edges = codeu.get("kg") * codeu.get("m", power=-3) * np.array(rho_grains_si_edges)
-
-print(f"grains sizes = {grain_size_edges} [code u]")
-print(f"grains dens  = {rho_grains_edges} [code u]")
-
-grain_size = np.sqrt(grain_size_edges[:-1] * grain_size_edges[1:])
-rho_grains = np.sqrt(rho_grains_edges[:-1] * rho_grains_edges[1:])
-
-grain_size_si = np.sqrt(grain_size_si_edges[:-1] * grain_size_si_edges[1:])
-rho_grains_si = np.sqrt(rho_grains_si_edges[:-1] * rho_grains_si_edges[1:])
-
-print(f"grains sizes = {grain_size_si} [m]")
-print(f"grains dens  = {rho_grains_si} [kg.m^-3]")
-
-print(f"grains sizes = {grain_size} [code units]")
-print(f"grains dens  = {rho_grains} [code units]")
+mrn_distribution = DustMRNDistribution(
+    codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
+)
 
 bmin = (-box / 8, -box / 8, -box)
 bmax = (box / 8, box / 8, box)
@@ -190,7 +180,7 @@ def setup_model():
     )
 
     cfg.set_dust_mode_monofluid_tvi(nvar=ndust)
-    cfg.set_dust_drag_epstein(gamma, grain_size, rho_grains)
+    cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=5)
     cfg.set_boundary_periodic()
@@ -225,7 +215,7 @@ def setup_model():
 
         rn = max(abs(zM), abs(zm))
         # print(y, H, H * erfinv(y / rn))
-        z = H * erfinv(z / rn)
+        z = H * erfinv(z / rn)  # * (2**0.5)
 
         z = min(z, zM)
         z = max(z, zm)
@@ -242,11 +232,16 @@ def setup_model():
 
 dump_helper.load_last_dump_or(setup_model)
 
-mrn_weight = grain_size ** (4 - mrn_pow)
-mrn_weight *= grain_size_si < mrn_cutoff_si
-mrn_weight = mrn_weight / np.sum(mrn_weight)
 
-print(f"mrn_weight = {mrn_weight}")
+def get_max_rho():
+    pmass = model.get_particle_mass()
+    hfact = model.get_hfact()
+    dic = ctx.collect_data()
+    hpart = dic["hpart"]
+    rho = pmass * (hfact / np.array(hpart)) ** 3
+    to_dens = codeu.to("kg") * codeu.to("m") ** -3
+    return rho.max() * to_dens
+
 
 pmass = model.get_particle_mass()
 
@@ -261,12 +256,12 @@ def compute_sj_new_j(patchdata, j):
     # mask to only modify particles with |z| < H
     mask = 1 / (1 + np.exp((np.abs(z) - 1.75 * H) / (H / 16)))
 
-    epsilon_target = epsilon_base * mrn_weight[j] * mask
+    epsilon_target = epsilon_base * mrn_distribution.mrn_weight[j] * mask
     print(f"epsilon_target = {epsilon_target} {j}")
     s = np.sqrt(rho * epsilon_target)
 
     print(
-        f"s = {s} {np.isnan(s).any()} epsilon_target = {epsilon_target} mrn_weight = {mrn_weight[j]} mask = {mask}, rho = {rho}"
+        f"s = {s} {np.isnan(s).any()} epsilon_target = {epsilon_target} mrn_weight = {mrn_distribution.mrn_weight[j]} mask = {mask}, rho = {rho}"
     )
 
     return s
@@ -307,6 +302,249 @@ def load_data_from_json(filename, key):
     return t, values
 
 
+"""
+Analytical soluce for dusty settling
+"""
+
+from scipy.linalg import solve
+
+
+def S_rho(rho, v, vp, hz, tau, Nz):
+    """
+    Step rho forward using Crank-Nicolson on continuity equation.
+    """
+
+    npts = Nz + 2
+
+    A = np.zeros((npts, npts))
+    B = np.zeros((npts, npts))
+
+    # Interior points
+    for j in range(1, Nz + 1):
+        C1 = -tau / (8 * hz) * (v[j + 1] + vp[j + 1])
+        C2 = -tau / (8 * hz) * (v[j - 1] + vp[j - 1])
+
+        A[j, j - 1] = C2
+        A[j, j] = 1.0
+        A[j, j + 1] = -C1
+
+        B[j, j - 1] = -C2
+        B[j, j] = 1.0
+        B[j, j + 1] = C1
+
+    # Left boundary
+    C = -tau / (8 * hz) * (vp[0] + v[0] - vp[1] - v[1])
+
+    A[0, 0] = 0.5 + C
+    A[0, 1] = 0.5 + C
+
+    B[0, 0] = 0.5 - C
+    B[0, 1] = 0.5 - C
+
+    # Right boundary
+    C = -tau / (8 * hz) * (vp[-1] + v[-1] - vp[-2] - v[-2])
+
+    A[-1, -2] = 0.5 - C
+    A[-1, -1] = 0.5 - C
+
+    B[-1, -2] = 0.5 + C
+    B[-1, -1] = 0.5 + C
+
+    r = B @ rho
+
+    ret = solve(A, r)
+    ret = np.maximum(ret, 0)
+
+    ###################
+    # If there are zero values, propagate the zero value to the edges
+    ###################
+    n = len(ret)
+    center = n // 2
+
+    # Right side (center -> end)
+    right = ret[center:]
+    zero_mask_right = right == 0
+    propagate_right = np.cumsum(zero_mask_right) > 0
+    ret[center:] = right * (~propagate_right)
+
+    # Left side (center -> start)
+    left = ret[: center + 1][::-1]  # reverse
+    zero_mask_left = left == 0
+    propagate_left = np.cumsum(zero_mask_left) > 0
+    ret[: center + 1] = (left * (~propagate_left))[::-1]
+
+    return ret
+
+
+def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
+    """
+    Step velocity forward using Crank-Nicolson.
+    """
+
+    npts = Nz + 2
+
+    A = np.zeros((npts, npts))
+    B = np.zeros((npts, npts))
+    E0 = np.zeros_like(v)
+
+    for j in range(1, Nz + 1):
+        E0[j] = -zbar[j] / (1 + zbar[j] ** 2) ** 1.5
+
+        E1 = (vbar[j] + vbarp[j]) / (8 * hz)
+        E2 = 1.0 / (2.0 * Stj[j])
+
+        A[j, j - 1] = -E1
+        A[j, j] = 1.0 / tau + E2
+        A[j, j + 1] = E1
+
+        B[j, j - 1] = E1
+        B[j, j] = 1.0 / tau - E2
+        B[j, j + 1] = -E1
+
+    # Boundary conditions
+    A[0, 0] = 1
+    A[0, 1] = 1
+
+    A[-1, -2] = 1
+    A[-1, -1] = 1
+
+    r = B @ v + E0
+
+    return solve(A, r)
+
+
+S_rho = maybe_njit(S_rho)
+S_v = maybe_njit(S_v)
+
+
+class ReferenceDustySettle:
+    def __init__(self, Nz, H, rho_mid, R0, dust_to_gas, dt):
+        self.H = H
+        self.rho_mid = rho_mid
+        self.rho_0 = rho_mid * np.sqrt(2 * np.pi)
+        self.R0 = R0
+        self.dust_to_gas = dust_to_gas
+        self.dt = dt
+
+        self.Nz = Nz
+
+        zout = 3 * H / R0
+        zmin = -zout
+        zmax = zout
+
+        self.hz = (zmax - zmin) / self.Nz
+
+        # exactly Nz+2 points
+        self.zbar = np.linspace(zmin - 0.5 * self.hz, zmax + 0.5 * self.hz, Nz + 2)
+
+    def z_arr(self):
+        return self.zbar * self.R0
+
+    def rho_g_func(self, z):
+        loc_h = self.H
+        print(loc_h)
+        ampl = self.rho_0 / (np.sqrt(2 * np.pi))
+        print(ampl)
+        return ampl * np.exp(-(z**2) / (2 * loc_h * loc_h))
+
+    def rho_g_bar_func(self, z):
+        return self.rho_g_func(z) / self.rho_mid
+
+    def rho_d_bar_func(self, z):
+
+        mask = 1 / (1 + np.exp((np.abs(z) - 1.75 * H) / (H / 16)))
+        # mask = 1
+
+        return mask * self.dust_to_gas * self.rho_g_func(z) / self.rho_mid
+
+    def rho_g(self):
+        return self.rho_g_func(self.z_arr())
+
+    def rho_d_bar(self):
+        return self.rho_d_bar_func(self.z_arr())
+
+    def gen_IC(self, rhoeff, sj, cs, OmegaK):
+
+        self.z = self.z_arr()
+        self.rhog = self.rho_g()
+
+        self.rhodin = self.rho_d_bar()
+        self.rho = self.rhodin.copy()
+
+        self.vdin = np.zeros_like(self.rhodin)
+        self.v = self.vdin.copy()
+
+        self.ts = rhoeff * sj / (cs * self.rhog)
+        self.Stj = self.ts * OmegaK
+
+        self.tbar = 0.0
+
+    def advance(self, tau):
+
+        rhop = S_rho(self.rho, self.v, self.v, self.hz, tau, self.Nz)
+
+        vp = S_v(self.v, self.v, self.v, self.rho, rhop, self.hz, self.zbar, tau, self.Nz, self.Stj)
+
+        rhop = S_rho(self.rho, self.v, vp, self.hz, tau, self.Nz)
+
+        self.v = S_v(self.v, self.v, vp, self.rho, rhop, self.hz, self.zbar, tau, self.Nz, self.Stj)
+
+        self.rho = rhop
+
+        self.tbar += tau
+
+    def advance_until(self, tfinal):
+        print(f"tfinal = {tfinal}")
+        while self.tbar < tfinal:
+            print(self.tbar)
+            self.advance(self.dt)
+
+        return
+
+    def setup(self):
+        return
+
+
+class ReferenceDustySettleAll:
+    def __init__(self):
+        self.rhomid = get_max_rho()
+        self.tau = 0.025
+
+        self.vK = kep_profile(R0) * codeu.to("m") / codeu.to("s")
+        self.OmegaK = omega_k(R0) * codeu.to("s") ** -1
+        self.tK = 1 / self.OmegaK
+
+        self.rscale = R0
+        self.rhoscale = self.rhomid
+        self.vscale = self.vK
+        self.tscale = self.tK
+
+        self.cs = cs * codeu.to("m") / codeu.to("s")
+
+        print(f"vK = {self.vK}")
+        print(f"OmegaK = {self.OmegaK}")
+        print(f"tK = {self.tK}")
+
+        self.soluces = []
+        for j in range(ndust):
+            mrn_weight_j = mrn_distribution.mrn_weight[j]
+            eps_j = mrn_weight_j * epsilon_base
+            dtg_j = eps_j / (1 - epsilon_base)
+            self.soluces.append(ReferenceDustySettle(2000, H, self.rhomid, R0, dtg_j, self.tau))
+
+            rhoeff = mrn_distribution.rho_grains_si_edges[j] * np.sqrt(np.pi * gamma / 8)
+
+            self.soluces[j].setup()
+            self.soluces[j].gen_IC(rhoeff, mrn_distribution.grain_size_si[j], self.cs, self.OmegaK)
+
+    def evolve_until(self, t):
+        for k in range(ndust):
+            self.soluces[k].advance_until(t * codeu.to("s") / self.tscale)
+
+
+reference_dusty_settle = None
+
+
 def analyse_and_plot(j):
 
     pmass = model.get_particle_mass()
@@ -335,16 +573,18 @@ def analyse_and_plot(j):
     sz = 1
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
-    time = model.get_time()
-    fig.suptitle(f"t = {time:.2f}")
+    time = model.get_time() - tinject
+    fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
 
     to_dens = codeu.to("kg") * codeu.to("m") ** -3
 
     dust_cmap = plt.colormaps[cmap]
-    dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max() * 10)
-    dust_colors = dust_cmap(dust_norm(grain_size_si))
+    dust_norm = mcolors.LogNorm(
+        vmin=mrn_distribution.grain_size_si.min(), vmax=mrn_distribution.grain_size_si.max() * 10
+    )
+    dust_colors = dust_cmap(dust_norm(mrn_distribution.grain_size_si))
 
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
@@ -357,6 +597,22 @@ def analyse_and_plot(j):
         rho_dust_all += s_j[:, i] ** 2 * to_dens
         epsilon_dust_all += s_j[:, i] ** 2 / rho
 
+        if reference_dusty_settle is not None:
+            axs[0].plot(
+                reference_dusty_settle.soluces[i].zbar,
+                reference_dusty_settle.soluces[i].rho * reference_dusty_settle.rhoscale,
+                "--",
+                color="0.0",
+            )
+
+            ana_epsilon = (
+                reference_dusty_settle.soluces[i].rho
+                * reference_dusty_settle.rhoscale
+                / reference_dusty_settle.soluces[i].rhog
+            )
+            print(ana_epsilon.max(), ana_epsilon.min())
+            axs[1].plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
+
     axs[0].scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
     axs[0].scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
     axs[1].scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
@@ -367,14 +623,15 @@ def analyse_and_plot(j):
     axs[0].set_xlabel(r"$z$")
     axs[0].set_yscale("log")
     axs[0].set_ylim(1e-20, 1e-8)
-    axs[0].set_xlim(-4 * H, 4 * H)
+    axs[0].set_xlim(-2.2 * H, 2.2 * H)
     # axs[0].set_ylim(1e-12, 10**2)
 
     axs[1].set_ylabel(r"$\epsilon_j$")
     axs[1].set_xlabel(r"$z$")
     axs[1].set_yscale("log")
-    axs[1].set_ylim(1e-12, 2)
-    axs[1].set_xlim(-4 * H, 4 * H)
+    # axs[1].set_ylim(1e-12, 2) # if you want the full range
+    axs[1].set_ylim(1e-4, 1e-1)  # if you want to see the dust only
+    axs[1].set_xlim(-2.2 * H, 2.2 * H)
 
     gas_handle = Line2D(
         [0],
@@ -397,7 +654,16 @@ def analyse_and_plot(j):
         markeredgecolor="none",
         label="dust",
     )
-    axs[0].legend(handles=[gas_handle, dust_handle], loc="upper right", fontsize=8)
+
+    analytic_handle = Line2D(
+        [0],
+        [0],
+        linestyle="--",
+        color="0.0",
+        label="analytic",
+    )
+
+    axs[0].legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
 
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
     dust_sm.set_array([])
@@ -410,8 +676,8 @@ def analyse_and_plot(j):
     plt.close()
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
-    time = model.get_time()
-    fig.suptitle(f"t = {time:.2f}")
+    time = model.get_time() - tinject
+    fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
 
@@ -451,8 +717,6 @@ analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
 
 t_start = model.get_time()
 
-tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
-
 dust_injected = False
 
 idust_analysis = 0
@@ -467,6 +731,9 @@ def dust_mass_analysis():
 
 tnext = 0
 for j in range(1000):
+    if j == iinject:
+        reference_dusty_settle = ReferenceDustySettleAll()
+
     if tlist[j] >= t_start:
         if j > 0:
             model.evolve_until(tlist[j])
@@ -475,7 +742,7 @@ for j in range(1000):
             if dust_injected:
                 dust_mass_analysis()
 
-        if j == 20:
+        if j == iinject:
             for k in range(ndust):
 
                 def compute_sj_new(patchdata):
@@ -491,11 +758,14 @@ for j in range(1000):
 
             model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
+        if reference_dusty_settle is not None:
+            reference_dusty_settle.evolve_until(tlist[j] - tinject)
+
         analyse_and_plot(j)
 
         dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] >= 5.0:
+    if tlist[j] >= t_end:
         break
 
 ####################################################
@@ -543,11 +813,19 @@ for k in range(ndust):
 
     t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
-        rho_grain=rho_grains[k], s_grain=grain_size[k], rho=rho_i, cs=cs, gamma=gamma
+        rho_grain=mrn_distribution.rho_grains[k],
+        s_grain=mrn_distribution.grain_size[k],
+        rho=rho_i,
+        cs=cs,
+        gamma=gamma,
     )
     St = ts / t_dyn
 
-    plt.plot(t, deviation, label=f"dust {k}, s = {grain_size_si[k]:.1e} [m], St = {St:.1e}")
+    plt.plot(
+        t,
+        deviation,
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St:.1e}",
+    )
 
 total_dust_mass = np.sum(dust_mass, axis=1)
 plt.plot(
@@ -559,7 +837,7 @@ plt.plot(
 )
 
 plt.xlabel("t")
-plt.ylabel("$\delta M_{dust} / M_{dust,0}$")
+plt.ylabel("$\|delta M_{dust} / M_{dust,0}$")
 plt.yscale("log")
 plt.title("Dust mass conservation")
 plt.legend()

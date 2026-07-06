@@ -7,7 +7,7 @@ and how to attach sink particles to an SPH model.
 """
 
 import numpy as np
-
+import matplotlib.pyplot as plt
 import shamrock as chama
 
 # %%
@@ -29,15 +29,15 @@ G = ucte.G()
 c = ucte.c()
 
 #Paramètres de la binaire à tracer
-M1 = 700.0 # masse du premier corps en masses solaires
-M2 = 1 # masse du second corps en masses solaires
+M1 = 1000.0 # masse du premier corps en masses solaires
+M2 = 600 # masse du second corps en masses solaires
 A = 1.0  # demi-grand axe en unités astronomiques
-E = 0.55  # excentricité de l'orbite
+E = 0.2  # excentricité de l'orbite
 
 # Spins (aligned with the orbital angular momentum)
-a1 = 0.95   # entre 0 et 1, spin du premier corps
-a2 = 0.8
-theta =np.pi/2
+a1 = 0.99  # entre 0 et 1, spin du premier corps
+a2 = 0.5
+theta =np.pi/4
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
 spin_mag_1 = a1 * G * M1 * M1 / c
 spin_mag_2 = a2 * G * M2 * M2 / c
@@ -48,8 +48,9 @@ X = np.sqrt(A**3/(G*(M1+M2)))  # période orbitale en années
 # %%
 # Simulation parameters
 T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
-n_orbits = 100                                                 #nombre d'orbite qu'on veut
-SF=50                                                              #safety factor                
+n_orbits = 200                                                      #nombre d'orbite qu'on veut
+SF=20                                                              #safety factor, permet d'avoir plus de pas de temps par orbite pour une meilleure précision, nécessaire pour les cas extrêmes(excentricité proche de 1, spin très élevé, etc.)          
+                                                                   #augmente également le temps de calcul, à ajuster selon les besoins      
 N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
 n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
 dt = T/N_per_orbits                                                # time step in years
@@ -211,6 +212,13 @@ def run_binary_orbit_PN(model, n_steps=n_steps, dt=dt):
 
         positions, velocities = get_sink_positions(model)
 
+        sinks = model.get_sinks()
+
+        spins = [
+            np.array(sinks[0]["angular_momentum"]),
+            np.array(sinks[1]["angular_momentum"]),
+        ]
+
         # Compute distance between sinks
         pos1 = np.array(positions[0])
         pos2 = np.array(positions[1])
@@ -224,6 +232,7 @@ def run_binary_orbit_PN(model, n_steps=n_steps, dt=dt):
                 "time": current_time,
                 "positions": positions,
                 "velocities": velocities,
+                "spins": spins,
             }
         )
 
@@ -268,8 +277,8 @@ def plot_orbit_trajectory(snapshots):
         sink1_positions[:, 2],
         "o-",
         label="Sink 1",
-        markersize=3,
-        linewidth=1,
+        markersize=0.050,
+        linewidth=0.025,
     )
     ax3d.plot(
         sink2_positions[:, 0],
@@ -277,7 +286,7 @@ def plot_orbit_trajectory(snapshots):
         sink2_positions[:, 2],
         "s-",
         label="Sink 2",
-        markersize=0.025,
+        markersize=0.050,
         linewidth=0.025,
     )
     ax3d.set_xlabel("x (AU)")
@@ -355,13 +364,11 @@ def compute_eccentricity(snapshot, m1, m2, G=G):
     # moment cinétique spécifique
     h = np.linalg.norm(np.cross(r_vec, v_vec))
 
-    e = np.sqrt(1 + 2 * eps * h**2 / mu**2)
+    e = np.sqrt(1 + 2 * eps * h**2 / mu**2)      # e =sqrt(1 - h*2/a mu) = sqrt(1 + 2*eps*h^2/mu^2)
 
     return e
 
 def plot_eccentricity(snapshots, m1, m2):
-    import matplotlib.pyplot as plt
-    import numpy as np
 
     times = np.array([snap["time"] for snap in snapshots])
     ecc = np.array([
@@ -376,11 +383,187 @@ def plot_eccentricity(snapshots, m1, m2):
     plt.ylabel("Excentricité e")
     plt.title("Excentricité en fct du temps")
 
-    plt.ylim(0, 1)  # 👈 ici
+    plt.ylim(0, 1)  
 
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
 
 
+
+def compute_inclination(snapshot):
+
+    r1 = np.array(snapshot["positions"][0])
+    r2 = np.array(snapshot["positions"][1])
+
+    v1 = np.array(snapshot["velocities"][0])
+    v2 = np.array(snapshot["velocities"][1])
+
+    r_vec = r2 - r1
+    v_vec = v2 - v1
+
+    h = np.cross(r_vec, v_vec)                 #"specific angular momentum" doc Cart2kep de G.Laibe
+
+    h_norm = np.linalg.norm(h)
+    if h_norm < 1e-15:
+        return np.nan
+
+    i = np.arccos(np.clip(h[2] / h_norm, -1.0, 1.0))      # cos(i)= h_z/|h|
+
+    return np.degrees(i)
+
+def plot_inclination(snapshots):
+
+
+    times = np.array([snap["time"] for snap in snapshots])
+
+    inc = np.array([
+        compute_inclination(snap)
+        for snap in snapshots
+    ])
+
+    plt.figure(figsize=(8,4))
+    plt.plot(times, inc)
+
+    plt.xlabel("Temps (années)")
+    plt.ylabel("Inclinaison (°)")
+    plt.title("Inclinaison orbitale")
+    plt.ylim(-180, 180) 
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def compute_semimajor_axis(snapshot, m1, m2, G=G):
+
+    r1 = np.array(snapshot["positions"][0])
+    r2 = np.array(snapshot["positions"][1])
+
+    v1 = np.array(snapshot["velocities"][0])
+    v2 = np.array(snapshot["velocities"][1])
+
+    r_vec = r2 - r1
+    v_vec = v2 - v1
+
+    r = np.linalg.norm(r_vec)
+    v = np.linalg.norm(v_vec)
+
+    mu = G * (m1 + m2)
+
+    eps = 0.5 * v**2 - mu / r
+
+    if abs(eps) < 1e-15:
+        return np.nan
+
+    return -mu / (2 * eps)      # = a
+
+def plot_semimajor_axis(snapshots, m1, m2):
+
+
+    times = np.array([snap["time"] for snap in snapshots])
+
+    a = np.array([
+        compute_semimajor_axis(snap, m1, m2)
+        for snap in snapshots
+    ])
+
+    plt.figure(figsize=(8,4))
+    plt.plot(times, a)
+
+    plt.xlabel("Temps (années)")
+    plt.ylabel("Demi-grand axe (AU)")
+    plt.title("Évolution du demi-grand axe")
+    plt.ylim(0, 1.5*A) 
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+def compute_eccentricity_vector(snapshot, m1, m2, G=G):
+
+    r1 = np.array(snapshot["positions"][0])
+    r2 = np.array(snapshot["positions"][1])
+
+    v1 = np.array(snapshot["velocities"][0])
+    v2 = np.array(snapshot["velocities"][1])
+
+    r_vec = r2 - r1
+    v_vec = v2 - v1
+
+    r = np.linalg.norm(r_vec)
+
+    mu = G * (m1 + m2)
+
+    h = np.cross(r_vec, v_vec)
+
+    e_vec = np.cross(v_vec, h)/mu - r_vec/r
+    e=np.linalg.norm(e_vec)
+    e_vec = e_vec / e if e != 0 else np.zeros_like(e_vec)  #vecteur excentricité normé ou de Laplace-Runge-Lenz
+
+    return e_vec
+
+def plot_eccentricity_vector(snapshots, m1, m2):
+
+    times = np.array([snap["time"] for snap in snapshots])
+
+    e_vec = np.array([
+        compute_eccentricity_vector(snap, m1, m2)
+        for snap in snapshots
+    ])
+
+    plt.figure(figsize=(9,5))
+
+    plt.plot(times, e_vec[:,0], label=r"$e_x (OP) $")
+    plt.plot(times, e_vec[:,1], label=r"$e_y (OP) $")
+    plt.plot(times, e_vec[:,2], label=r"$e_z  (SO) $")
+
+    plt.xlabel("Temps (années)")
+    plt.ylabel("Composantes du vecteur d'excentricité")
+    plt.title("Évolution du vecteur d'excentricité")
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_spins(snapshots):
+
+    times = np.array([s["time"] for s in snapshots])
+
+    a1 = c/(G*m1*m1)*np.array([s["spins"][0] for s in snapshots])
+    a2 = c/(G*m2*m2)*np.array([s["spins"][1] for s in snapshots])
+
+    plt.figure(figsize=(10,6))
+
+    # BH1
+    plt.plot(times, a1[:,0], label=r"$a_{1x}$")
+    plt.plot(times, a1[:,1], label=r"$a_{1y}$")
+    plt.plot(times, a1[:,2], label=r"$a_{1z}$")
+
+    # BH2
+    plt.plot(times, a2[:,0], "--", label=r"$a_{2x}$")
+    plt.plot(times, a2[:,1], "--", label=r"$a_{2y}$")
+    plt.plot(times, a2[:,2], "--", label=r"$a_{2z}$")
+
+    plt.xlabel("Temps")
+    plt.ylabel("Spin")
+
+    plt.title("Évolution des composantes des spins")
+
+    plt.grid(alpha=0.3)
+    plt.legend(ncol=2)
+
+    plt.tight_layout()
+    plt.show()
+
+
+#Différents plots pour visualiser l'évolution de l'orbite binaire
 plot_eccentricity(snapshots, m1, m2)
+plot_eccentricity_vector(snapshots, m1, m2)
+plot_inclination(snapshots)
+plot_semimajor_axis(snapshots, m1, m2)
+
+sinks = model.get_sinks()
+print(sinks[0])
+
+
+plot_spins(snapshots)

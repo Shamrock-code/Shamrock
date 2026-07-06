@@ -449,10 +449,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
     for (Sink &s : sink_parts) {
         s.ext_acceleration = Tvec{};
     }
-
+    //Définition des constantes G et c pour les calculs des forces gravitationnelles et des termes Post-Newtoniens
     Tscal G  = solver_config.get_constant_G();
-    //Tscal c  =solver_config.get_constant_c();
-    Tscal c  = 5000;
+    Tscal c  =solver_config.get_constant_c();
+    //Tscal c  = 1000;
     Tscal epsilon_grav_sink = 1e-9;
 
 
@@ -493,7 +493,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             Tscal dm = s1.mass - s2.mass;
 
 
-            term0 = G * M * rij
+            term0 = -G * M * rij
                     / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
             sum+=term0;
 
@@ -537,7 +537,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                 
                 sum += term4;
             } 
-            sum = -s2.mass/M * sum;
+            sum = s2.mass/M * sum;
         }
         s1.ext_acceleration +=  sum;
     }
@@ -548,13 +548,17 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink_spins(Tscal dt) {
 
+//Définition des constantes G et c pour les calculs de précession des spins
+Tscal G = solver_config.get_constant_G();       //G=4*pi*2
+Tscal c = solver_config.get_constant_c();     //c= 63 241.077 UA/année
+//Tscal c = 1000;
     if (storage.sinks.is_empty()) {
         return;
     }
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
-    Tscal G = solver_config.get_constant_G();
+    
     Tscal epsilon_spin = 1e-9;
 
     for (Sink &s1 : sink_parts) {
@@ -564,17 +568,28 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink
             if (&s1 == &s2) {
                 continue;
             }
-
             Tvec rij = s1.pos - s2.pos;
+            Tvec vij = s1.velocity - s2.velocity;
+            Tscal m1=s1.mass;
+            Tscal m2=s2.mass;
+            Tscal M = m1 + m2;
+            Tscal nu = m1 * m2 / M;
+            Tvec L = nu * sycl::cross(rij, vij);
+
+        
             Tscal rij_scal = sycl::length(rij) + epsilon_spin;
             Tvec nij = rij / rij_scal;
             Tvec S1 = s1.angular_momentum;
             Tvec S2 = s2.angular_momentum;
-
+            Tscal prefactor = G / (c * c * rij_scal * rij_scal * rij_scal);
             // Simple spin precession structure.
             // TODO: replace with the desired PN spin evolution equation.
-            Tvec omega_prec = G * sycl::cross(nij, S2) / (rij_scal * rij_scal * rij_scal + epsilon_spin);
-            dS += sycl::cross(omega_prec, S1);
+
+
+
+            Tvec Omega_prec = prefactor * ((2 + 3 * m2 / (2 * m1)) * L - S2 + 3*sycl::dot(nij, S2) * nij) ;
+            
+            dS += sycl::cross(Omega_prec, S1);
         }
 
         s1.angular_momentum += dS * dt;

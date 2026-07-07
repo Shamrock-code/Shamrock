@@ -59,9 +59,9 @@ gamma = 1.4
 
 epsilon_base = 0.01
 
-tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
-tinject = 2
-iinject = 20
+tlist = [0.01 * i for i in range(1000)] 
+tinject = 0
+iinject = 0
 t_end = 5.0
 
 
@@ -141,7 +141,7 @@ scheduler_merge_val = int(1)
 
 lx = 12
 ly = 12
-lz = 64
+lz = 512
 lmin = (-lx // 2, -ly // 2, -lz // 2)
 lmax = (lx // 2, ly // 2, lz // 2)
 
@@ -215,7 +215,7 @@ def setup_model():
 
         rn = max(abs(zM), abs(zm))
         # print(y, H, H * erfinv(y / rn))
-        z = H * erfinv(z / rn)  # * (2**0.5)
+        z = H * erfinv(z / rn)  * (2**0.5)
 
         z = min(z, zM)
         z = max(z, zm)
@@ -660,7 +660,7 @@ def analyse_and_plot(j):
     axs[0].set_xlabel(r"$z$")
     axs[0].set_yscale("log")
     axs[0].set_ylim(1e-20, 1e-8)
-    axs[0].set_xlim(-2.2 * H, 2.2 * H)
+    axs[0].set_xlim(-box, box)
     # axs[0].set_ylim(1e-12, 10**2)
 
     axs[1].set_ylabel(r"$\epsilon_j$")
@@ -668,7 +668,7 @@ def analyse_and_plot(j):
     axs[1].set_yscale("log")
     # axs[1].set_ylim(1e-12, 2) # if you want the full range
     axs[1].set_ylim(1e-4, 1e-1)  # if you want to see the dust only
-    axs[1].set_xlim(-2.2 * H, 2.2 * H)
+    axs[1].set_xlim(-box, box)
 
     gas_handle = Line2D(
         [0],
@@ -730,12 +730,12 @@ def analyse_and_plot(j):
 
     axs[0].set_ylabel(r"$s_j$")
     axs[0].set_xlabel(r"$z$")
-    axs[0].set_xlim(-4 * H, 4 * H)
+    axs[0].set_xlim(-box, box)
     axs[0].set_yscale("symlog", linthresh=1e-10)
 
     axs[1].set_ylabel(r"$\dot{s}_j$")
     axs[1].set_xlabel(r"$z$")
-    axs[1].set_xlim(-4 * H, 4 * H)
+    axs[1].set_xlim(-box, box)
     axs[1].set_yscale("symlog", linthresh=1e-10)
 
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
@@ -770,6 +770,7 @@ tnext = 0
 for j in range(1000):
     if j == iinject:
         reference_dusty_settle = ReferenceDustySettleAll()
+        reference_dusty_settle = None
 
     if tlist[j] >= t_start:
         if j > 0:
@@ -800,7 +801,7 @@ for j in range(1000):
 
         analyse_and_plot(j)
 
-        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
+        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=5)
 
     if tlist[j] >= t_end:
         break

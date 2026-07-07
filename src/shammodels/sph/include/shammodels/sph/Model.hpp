@@ -182,7 +182,8 @@ namespace shammodels::sph {
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
         }
 
-        // Modify the sinks to the provided values of mass, position, velocity, and accretion radius.
+        // Modify the sinks to the provided values of mass, position, velocity, and accretion
+        // radius.
         inline void set_sink(u32 idx, Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
             if (solver.storage.sinks.is_empty()) {
                 solver.storage.sinks.set({});

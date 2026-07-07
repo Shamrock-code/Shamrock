@@ -182,27 +182,13 @@ namespace shammodels::sph {
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
         }
 
-        inline bool remove_last_sink() {
+        // Modify the sinks to the provided values of mass, position, velocity, and accretion radius.
+        inline void set_sink(u32 idx, Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
             if (solver.storage.sinks.is_empty()) {
-                return false;
+                solver.storage.sinks.set({});
             }
 
-            auto &sinks = solver.storage.sinks.get();
-            if (sinks.empty()) {
-                return false;
-            }
-
-            sinks.pop_back();
-            return true;
-        }
-
-        // Modify an existing sink at index idx, if it exists and change its mass, position,
-        // velocity and accretion radius to the provided values
-        inline void modify_sink(
-            u32 idx, Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
-            if (solver.storage.sinks.is_empty()) {
-                throw shambase::make_except_with_loc<std::runtime_error>("No sinks to modify");
-            }
+            shamlog_debug_ln("SPH", "set sink :", mass, pos, velocity, accretion_radius);
 
             auto &sinks = solver.storage.sinks.get();
             if (idx >= sinks.size()) {
@@ -210,7 +196,47 @@ namespace shammodels::sph {
                     "Sink index out of range (idx={}, size={})", idx, sinks.size()));
             }
 
+            auto &sink            = sinks[idx];
+            sink.mass             = mass;
+            sink.pos              = pos;
+            sink.velocity         = velocity;
+            sink.accretion_radius = accretion_radius;
+
             sinks[idx] = {pos, velocity, {}, {}, mass, {}, accretion_radius};
+        }
+
+        inline void set_sinks(
+            const std::vector<Tscal> &masses,
+            const std::vector<Tvec> &positions,
+            const std::vector<Tvec> &velocities,
+            const std::vector<Tscal> &accretion_radii) {
+            if (solver.storage.sinks.is_empty()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "set_sinks: sinks storage is empty");
+            }
+
+            auto &sinks = solver.storage.sinks.get();
+            if (masses.size() != sinks.size || positions.size() != sinks.size()
+                || velocities.size() != sinks.size() || accretion_radii.size() != sinks.size()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "set_sinks: invalid size for masses, positions, velocities or accretion_radii");
+            }
+            shamlog_debug_ln(
+                "SPH",
+                "set sinks :",
+                masses.size(),
+                positions.size(),
+                velocities.size(),
+                accretion_radii.size(),
+                sinks.size());
+
+            for (u32 i = 0; i < sinks.size(); i++) {
+                auto &sink            = sinks[i];
+                sink.pos              = positions[i];
+                sink.velocity         = velocities[i];
+                sink.mass             = masses[i];
+                sink.accretion_radius = accretion_radii[i];
+            }
         }
 
         template<class T>

@@ -84,6 +84,63 @@ def ColumnAverageVzPlot(
         compute_function=compute_v_z_slice,
     )
 
+def SliceVrPlot(
+    model,
+    ext_r,
+    nx,
+    ny,
+    ex,
+    ey,
+    center,
+    analysis_folder,
+    analysis_prefix,
+    do_normalization=True,
+    min_normalization=1e-9,
+):
+    def compute_vr_profile(helper):
+        def internal(
+            size: int, x: np.array, y: np.array, vx: np.array, vy: np.array, vz: np.array
+        ) -> np.array:
+            r = np.sqrt(x**2 + y**2)
+            r_safe = r + 1e-9
+            v_r = (x * vx + y * vy) / r_safe
+            return v_r
+
+        if _HAS_NUMBA:
+            internal = njit(internal)
+
+        def custom_getter(size: int, dic_out: dict) -> np.array:        # here, custom getter extracts the x and y positions and the velocity components from the rendered fields, and then calls the internal function to compute the difference in v_theta from the velocity profile. 
+            return internal(
+                size,
+                dic_out["xyz"][:, 0],
+                dic_out["xyz"][:, 1],
+                dic_out["vxyz"][:, 0],
+                dic_out["vxyz"][:, 1],
+                dic_out["vxyz"][:, 2],
+            )
+
+        arr_v = helper.slice_render(
+            "custom",
+            "f64",
+            do_normalization,
+            min_normalization,
+            custom_getter=custom_getter,
+        )
+
+        return arr_v
+
+    return StandardPlotHelper(
+        model,
+        ext_r,
+        nx,
+        ny,
+        ex,
+        ey,
+        center,
+        analysis_folder,
+        analysis_prefix,
+        compute_function=compute_vr_profile,
+    )
 
 def SliceDiffVthetaProfile(
     model,

@@ -416,33 +416,37 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
     bool SS = true; // true pour ajouter le terme Spin-Spin (précession des spins), odre 2PN
     bool RR = true; // true pour ajouter le terme Radiation Reaction (perte d'énergie par rayonnement gravitationnel), ordre 2.5PN
 
-    std::cout << "===== CONFIG PHYSIQUE =====" << std::endl;
+    static bool config_printed = false;
 
-    if (true) {
+    if (!config_printed) {
+        config_printed = true;
+
+        std::cout << "===== CONFIG PHYSIQUE =====" << std::endl;
+
         std::cout << "Newton : ACTIVÉ" << std::endl;
+
+        if (OP)
+            std::cout << "1PN : ACTIVÉ" << std::endl;
+        else
+            std::cout << "1PN : DÉSACTIVÉ" << std::endl;
+
+        if (SO)
+            std::cout << "Spin-Orbit (1.5PN) : ACTIVÉ" << std::endl;
+        else
+            std::cout << "Spin-Orbit (1.5PN) : DÉSACTIVÉ" << std::endl;
+
+        if (SS)
+            std::cout << "Spin-Spin (2PN) : ACTIVÉ" << std::endl;
+        else
+            std::cout << "Spin-Spin (2PN) : DÉSACTIVÉ" << std::endl;
+
+        if (RR)
+            std::cout << "Radiation Reaction (2.5PN) : ACTIVÉ" << std::endl;
+        else
+            std::cout << "Radiation Reaction (2.5PN) : DÉSACTIVÉ" << std::endl;
+
+        std::cout << "===========================" << std::endl;
     }
-
-    if (OP)
-        std::cout << "1PN : ACTIVÉ" << std::endl;
-    else
-        std::cout << "1PN : DÉSACTIVÉ" << std::endl;
-
-    if (SO)
-        std::cout << "Spin-Orbit (1.5PN) : ACTIVÉ" << std::endl;
-    else
-        std::cout << "Spin-Orbit (1.5PN) : DÉSACTIVÉ" << std::endl;
-
-    if (SS)
-        std::cout << "Spin-Spin (2PN) : ACTIVÉ" << std::endl;
-    else
-        std::cout << "Spin-Spin (2PN) : DÉSACTIVÉ" << std::endl;
-
-    if (RR)
-        std::cout << "Radiation Reaction (2.5PN) : ACTIVÉ" << std::endl;
-    else
-        std::cout << "Radiation Reaction (2.5PN) : DÉSACTIVÉ" << std::endl;
-
-    std::cout << "===========================" << std::endl;
     
     
     
@@ -495,7 +499,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
             term0 = -G * M * rij
                     / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
-            sum+=term0;
+            sum+= s2.mass/M*term0;
 
             if(OP==true){
                 term1 =
@@ -506,7 +510,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                         - 1.5 * eta * vij_nij * vij_nij* nij
                         - 2 * (2 - eta) * vij_nij * vij
                     );
-                sum += 1/(c*c)*term1;
+                sum += 1/(c*c)*s2.mass/M*term1;
             } 
 
             if(SO){
@@ -517,7 +521,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                         +3*sycl::cross(vij_nij*nij, 3*S + dm/M*Delta)
                 );
 
-                sum += term2;
+                sum += s2.mass/M*term2;
             }
 
             if(SS){
@@ -526,7 +530,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                     nij*sycl::dot(S1,S2) + S1*sycl::dot(nij,S2) + S2*sycl::dot(nij,S1) - 5*nij*sycl::dot(nij,S1)*sycl::dot(nij,S2)
                 );
 
-                sum += term3;
+                sum += s2.mass/M*term3;
             }
             if(RR){
                 term4 = 8/5*G*G*eta* M *M/(c*c*c*c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
@@ -535,9 +539,9 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                     - (6*v2 - 2*G*M/(rij_scal + epsilon_grav_sink)-15*vij_nij*vij_nij)*vij
                 );
                 
-                sum += term4;
+                sum += s2.mass/M*term4;
             } 
-            sum = s2.mass/M * sum;
+            
         }
         s1.ext_acceleration +=  sum;
     }

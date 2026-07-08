@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file ComputeCFLForce.hpp
+ * @file ComputeCFLDust1Fluid.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -101,13 +101,13 @@ class ComputeCFLDust1Fluid : public shamrock::solvergraph::INode {
                 Tscal cfl_tmp = std::numeric_limits<Tscal>::infinity();
 
                 for (int j = 0; j < nbins; j++) {
-                    Tscal eps_j  = epsilon_j(j);
-                    Tscal eps2_j = eps_j * eps_j;
+                    Tscal eps_j_a  = epsilon_j(j);
+                    Tscal eps2_j_a = eps_j_a * eps_j_a;
 
-                    Tscal Ts_j  = Ts_j[id_a_d + j];
-                    Tscal Ts2_j = Ts_j * Ts_j;
+                    Tscal Ts_j_a  = Ts_j[id_a_d + j];
+                    Tscal Ts2_j_a = Ts_j_a * Ts_j_a;
 
-                    Tscal dt_j = h_a / sycl::sqrt(cs_tilde_2_a + Ts2_j * eps2_j * cs4_over_h2);
+                    Tscal dt_j = h_a / sycl::sqrt(cs_tilde_2_a + Ts2_j_a * eps2_j_a * cs4_over_h2);
                     cfl_tmp    = sycl::min(cfl_tmp, dt_j);
                 }
 

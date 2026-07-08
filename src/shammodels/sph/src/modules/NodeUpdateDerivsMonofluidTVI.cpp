@@ -98,17 +98,17 @@ struct KernelUpdateDerivsMonofluidTVI {
             Tscal delta_P     = P_a - P_b;
             Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
 
-
-        if(id_a == 2320 && jdust == 4 && false){
-  printf("--------------------------------\n");
-            printf("id_b: %d, s_j_b: %e, Ttilde_sj_b: %e\n", id_b, s_j_b, Ttilde_sj_b);
-            printf("rho_b: %e, P_b: %e, omega_b: %f\n", rho_b, P_b, omega_b);
-            printf("Fab_a: %e, Fab_b: %e\n", Fab_a, Fab_b);
-            printf("F_ab_bar: %e, delta_P: %e, Ts_weighted: %e\n", F_ab_bar, delta_P, Ts_weighted);
-            printf("rab: %e, rab_inv_sat: %e\n", rab, rab_inv_sat);
-            printf("v_ab: %f, %f, %f\n", v_ab[0], v_ab[1], v_ab[2]);
-            printf("r_ab_unit: %f, %f, %f\n", r_ab_unit[0], r_ab_unit[1], r_ab_unit[2]);
-        }
+            if (id_a == 2320 && jdust == 4 && false) {
+                printf("--------------------------------\n");
+                printf("id_b: %d, s_j_b: %e, Ttilde_sj_b: %e\n", id_b, s_j_b, Ttilde_sj_b);
+                printf("rho_b: %e, P_b: %e, omega_b: %f\n", rho_b, P_b, omega_b);
+                printf("Fab_a: %e, Fab_b: %e\n", Fab_a, Fab_b);
+                printf(
+                    "F_ab_bar: %e, delta_P: %e, Ts_weighted: %e\n", F_ab_bar, delta_P, Ts_weighted);
+                printf("rab: %e, rab_inv_sat: %e\n", rab, rab_inv_sat);
+                printf("v_ab: %f, %f, %f\n", v_ab[0], v_ab[1], v_ab[2]);
+                printf("r_ab_unit: %f, %f, %f\n", r_ab_unit[0], r_ab_unit[1], r_ab_unit[2]);
+            }
 
             term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
             term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
@@ -123,7 +123,7 @@ struct KernelUpdateDerivsMonofluidTVI {
         // restore it slowly to 0
         ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
 
-        if(id_a == 2320 && jdust == 4&& false){
+        if (id_a == 2320 && jdust == 4 && false) {
             printf("s_j_a: %e\n", s_j_a);
             printf("ds_j_dt_a: %e\n", ds_j_dt_a);
             printf("h_a: %e\n", h_a);
@@ -135,10 +135,18 @@ struct KernelUpdateDerivsMonofluidTVI {
             printf("xyz_a: %f, %f, %f\n", xyz_a[0], xyz_a[1], xyz_a[2]);
         }
 
-        if(ds_j_dt_a > 1e-1&& false){
+        if (ds_j_dt_a > 1e-1 && false) {
             printf("id_a: %d, s_j_a: %e, ds_j_dt_a: %e\n", id_a, s_j_a, ds_j_dt_a);
-            printf("h_a: %e, rho_a: %e, omega_a: %f, Ttilde_sj_a: %f\n", h_a, rho_a, omega_a, Ttilde_sj_a);
-            printf("term1: %e, term2: %e\n", Tscal{-0.5} * term1, (s_j_a / (2 * rho_a * omega_a)) * term2);
+            printf(
+                "h_a: %e, rho_a: %e, omega_a: %f, Ttilde_sj_a: %f\n",
+                h_a,
+                rho_a,
+                omega_a,
+                Ttilde_sj_a);
+            printf(
+                "term1: %e, term2: %e\n",
+                Tscal{-0.5} * term1,
+                (s_j_a / (2 * rho_a * omega_a)) * term2);
             printf("xyz_a: %f, %f, %f\n", xyz_a[0], xyz_a[1], xyz_a[2]);
             throw std::runtime_error("ds_j_dt_a is too large");
         }

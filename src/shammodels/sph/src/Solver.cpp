@@ -2700,16 +2700,43 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     storage.part_counts, C_cour_edge, hpart_refs, vclean_dt, cfl_dt);
             }
 
-            // std::shared_ptr<ComputeCFLDust1Fluid<Tscal>> compute_cfl_dust1_fluid;
-            // if(solver_config.dust_config.has_s_j_field()) {
-            //     u32 ndust = solver_config.dust_config.get_dust_nvar();
-            //
-            //    compute_cfl_dust1_fluid = std::make_shared<ComputeCFLDust1Fluid<Tscal>>(ndust);
-            //
-            //    compute_cfl_dust1_fluid->set_edges(
-            //        storage.part_counts, C_cour_edge, hpart_refs, storage.soundspeed, s_j_refs,
-            //        Ts_j_refs, cfl_dt);
-            //}
+            std::shared_ptr<ComputeCFLDust1Fluid<Tscal>> compute_cfl_dust1_fluid;
+            std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> s_j_refs;
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> hfactd_edge;
+
+            if (solver_config.dust_config.has_s_j_field()) {
+                u32 ndust = solver_config.dust_config.get_dust_nvar();
+
+                compute_cfl_dust1_fluid = std::make_shared<ComputeCFLDust1Fluid<Tscal>>(ndust);
+
+                auto t_j_field
+                    = storage.solver_graph
+                          .template get_edge_ptr<shamrock::solvergraph::Field<Tscal>>("Ts_j");
+
+                auto pmass_edge
+                    = storage.solver_graph
+                          .template get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                              "gpart_mass");
+
+                s_j_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
+
+                hfactd_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                    "hfactd", "hfactd");
+                hfactd_edge->value = Kernel::hfactd;
+
+                map_field_refs(scheduler(), is_j, *s_j_refs);
+
+                compute_cfl_dust1_fluid->set_edges(
+                    storage.part_counts,
+                    C_cour_edge,
+                    pmass_edge,
+                    hfactd_edge,
+                    hpart_refs,
+                    storage.soundspeed,
+                    s_j_refs,
+                    t_j_field,
+                    cfl_dt);
+            }
 
             bool show_cfl_detail = solver_config.show_cfl_detail;
             std::vector<std::pair<std::string, Tscal>> cfl_detail;
@@ -2735,6 +2762,11 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             if (has_psi_field) {
                 compute_cfl_divB_cleaning->evaluate();
                 save_cfl_detail("divB_cleaning");
+            }
+
+            if (solver_config.dust_config.has_s_j_field()) {
+                compute_cfl_dust1_fluid->evaluate();
+                save_cfl_detail("dust1_fluid");
             }
 
             if (!show_cfl_detail) {
@@ -2870,6 +2902,25 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     reset_merge_ghosts_fields();
     reset_eos_fields();
+
+    // restore positivity
+    if (solver_config.dust_config.has_s_j_field()) {
+        auto ndust = solver_config.dust_config.get_dust_nvar();
+        auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sham::DeviceBuffer<Tscal> &buf_s_j = pdat.get_field_buf_ref<Tscal>(is_j);
+            sham::kernel_call(
+                q,
+                sham::MultiRef{},
+                sham::MultiRef{buf_s_j},
+                pdat.get_obj_cnt()*ndust,
+                [](u32 tid, Tscal *s_j) {
+                    if (s_j[tid] < 0) {
+                        s_j[tid] = 0;
+                    }
+                });
+        });
+    }
 
     // if delta too big jump to compute force
 

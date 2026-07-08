@@ -59,7 +59,7 @@ gamma = 1.4
 
 epsilon_base = 0.01
 
-tlist = [0.01 * i for i in range(1000)] 
+tlist = [0.01 * i for i in range(1000)]
 tinject = 0
 iinject = 0
 t_end = 5.0
@@ -127,7 +127,7 @@ def uint_g(r):
 
 
 rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
-grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
+grain_size_si_edges = np.logspace(-5, -2, ndust + 1)
 
 mrn_distribution = DustMRNDistribution(
     codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
@@ -216,7 +216,7 @@ def setup_model():
 
         rn = max(abs(zM), abs(zm))
         # print(y, H, H * erfinv(y / rn))
-        z = H * erfinv(z / rn)  * (2**0.5)
+        z = H * erfinv(z / rn) * (2**0.5)
 
         z = min(z, zM)
         z = max(z, zm)

@@ -1645,8 +1645,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
     derivs.update_derivs(dt_hydro);
 
-    logger::raw_ln("llfaofzefiuzehfiuzehfuizehfiuzehfiuzehfiuzhefuizehfz");
-
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
     ext_forces.add_ext_forces();
 }

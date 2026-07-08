@@ -47,7 +47,6 @@
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeCFLCourant.hpp"
 #include "shammodels/sph/modules/ComputeCFLDivBCleaning.hpp"
-#include "shammodels/sph/modules/ComputeCFLDust1Fluid.hpp"
 #include "shammodels/sph/modules/ComputeCFLForce.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"

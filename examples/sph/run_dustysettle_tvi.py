@@ -186,6 +186,7 @@ def setup_model():
     cfg.set_boundary_periodic()
     cfg.set_units(codeu)
     cfg.set_eos_isothermal(cs)
+    cfg.set_show_cfl_detail(True)
     cfg.print_status()
     model.set_solver_config(cfg)
 
@@ -224,8 +225,8 @@ def setup_model():
     model.remap_positions(f_remap)
     model.set_field_value_lambda_f64("uint", uint_g)
 
-    model.set_cfl_cour(0.25)
-    model.set_cfl_force(0.25)
+    model.set_cfl_cour(0.1)
+    model.set_cfl_force(0.1)
 
     model.timestep()
 

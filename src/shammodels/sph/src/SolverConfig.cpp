@@ -117,6 +117,10 @@ namespace shammodels::sph {
             pdl.add_field<Tscal>("s_j", ndust);
             pdl.add_field<Tscal>("ds_j_dt", ndust);
         }
+
+        if (haswall) { // has_field_disable_mask()
+            pdl.add_field<u32>("ghost_mask", 1);
+        }
     }
 
     template<class Tvec, template<class> class SPHKernel>
@@ -161,6 +165,10 @@ namespace shammodels::sph {
         if (dust_config.has_s_j_field()) {
             u32 ndust = dust_config.get_dust_nvar();
             ghost_layout.add_field<Tscal>("s_j", ndust);
+        }
+
+        if (haswall) {
+            ghost_layout.add_field<u32>("ghost_mask", 1);
         }
     }
 

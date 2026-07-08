@@ -125,6 +125,10 @@ namespace shammodels::sph::modules {
             fnum += ndust;
         }
 
+        if (solver_config.haswall) {
+            fnum++;
+        }
+
         writer.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
@@ -165,6 +169,11 @@ namespace shammodels::sph::modules {
         if (solver_config.compute_luminosity) {
             const u32 iluminosity = pdl.get_field_idx<Tscal>("luminosity");
             vtk_dump_add_field<Tscal>(scheduler(), writer, iluminosity, "luminosity");
+        }
+
+        if (solver_config.haswall) {
+            const u32 ighost_mask = pdl.get_field_idx<u32>("ghost_mask");
+            vtk_dump_add_field<u32>(scheduler(), writer, ighost_mask, "ghost_mask");
         }
 
         vtk_dump_add_compute_field(scheduler(), writer, density, "rho");

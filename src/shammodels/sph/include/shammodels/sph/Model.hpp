@@ -105,6 +105,8 @@ namespace shammodels::sph {
 
         inline Tscal get_particle_mass() { return solver.solver_config.gpart_mass; }
 
+        void apply_ghost_particles();
+
         inline void resize_simulation_box(std::pair<Tvec, Tvec> box) {
             ctx.set_coord_domain_bound({box.first, box.second});
         }

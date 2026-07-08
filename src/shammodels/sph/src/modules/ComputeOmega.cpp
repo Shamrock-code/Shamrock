@@ -107,6 +107,7 @@ std::string shammodels::sph::modules::SetWhenMask<T>::_impl_get_tex() const {
 }
 
 template class shammodels::sph::modules::SetWhenMask<f64>;
+template class shammodels::sph::modules::SetWhenMask<f64_3>;
 
 using namespace shammath;
 template class shammodels::sph::modules::NodeComputeOmega<f64_3, M4>;

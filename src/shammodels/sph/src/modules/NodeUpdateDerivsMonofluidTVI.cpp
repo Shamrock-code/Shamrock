@@ -123,7 +123,7 @@ struct KernelUpdateDerivsMonofluidTVI {
         // restore it slowly to 0
         ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
 
-        if(id_a == 2320 && jdust == 4){
+        if(id_a == 2320 && jdust == 4&& false){
             printf("s_j_a: %e\n", s_j_a);
             printf("ds_j_dt_a: %e\n", ds_j_dt_a);
             printf("h_a: %e\n", h_a);
@@ -135,7 +135,7 @@ struct KernelUpdateDerivsMonofluidTVI {
             printf("xyz_a: %f, %f, %f\n", xyz_a[0], xyz_a[1], xyz_a[2]);
         }
 
-        if(ds_j_dt_a > 1e-1){
+        if(ds_j_dt_a > 1e-1&& false){
             printf("id_a: %d, s_j_a: %e, ds_j_dt_a: %e\n", id_a, s_j_a, ds_j_dt_a);
             printf("h_a: %e, rho_a: %e, omega_a: %f, Ttilde_sj_a: %f\n", h_a, rho_a, omega_a, Ttilde_sj_a);
             printf("term1: %e, term2: %e\n", Tscal{-0.5} * term1, (s_j_a / (2 * rho_a * omega_a)) * term2);

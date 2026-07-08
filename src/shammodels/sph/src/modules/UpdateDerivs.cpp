@@ -1151,60 +1151,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
                 }));
     }
 
-    std::shared_ptr<shamrock::solvergraph::Field<Tscal>> t_j_field
-        = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "t_j", "t_j");
-
-    using None                  = typename DustConfig::None;
-    using ConstantStoppingTimes = typename DustConfig::ConstantStoppingTimes;
-    using EpsteinDrag           = typename DustConfig::EpsteinDrag;
-
-    if (std::holds_alternative<None>(cfg.dust_drag_mode)) {
-
-        throw "bro WTF";
-
-    } else if (
-        ConstantStoppingTimes *cfg_drag = std::get_if<ConstantStoppingTimes>(&cfg.dust_drag_mode)) {
-
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_t_j
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-        input_t_j->value = cfg_drag->stopping_times;
-
-        std::shared_ptr<SetDustStoppingTimeConstant<Tvec>> node_set_tj
-            = std::make_shared<SetDustStoppingTimeConstant<Tvec>>(ndust);
-        {
-            node_set_tj->set_edges(input_t_j, part_counts_with_ghost, t_j_field);
-        }
-        node_set_tj->evaluate();
-
-    } else if (EpsteinDrag *cfg_drag = std::get_if<EpsteinDrag>(&cfg.dust_drag_mode)) {
-
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> input_gamma
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-        input_gamma->value = cfg_drag->gamma;
-
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_sgrain_j
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-        input_sgrain_j->value = cfg_drag->grains_sizes;
-
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_rho_grain_j
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-        input_rho_grain_j->value = cfg_drag->grains_densities;
-
-        std::shared_ptr<SetDustStoppingTimeEpstein<Tvec, SPHKernel>> node_set_tj
-            = std::make_shared<SetDustStoppingTimeEpstein<Tvec, SPHKernel>>(ndust);
-        {
-            node_set_tj->set_edges(
-                gpart_mass,
-                input_gamma,
-                input_sgrain_j,
-                input_rho_grain_j,
-                part_counts_with_ghost,
-                hpart_refs,
-                storage.soundspeed,
-                t_j_field);
-        }
-        node_set_tj->evaluate();
-    }
+    auto t_j_field
+        = storage.solver_graph.template get_edge_ptr<shamrock::solvergraph::Field<Tscal>>("Ts_j");
 
     std::shared_ptr<shamrock::solvergraph::Field<Tscal>> Ttilde_sj_field
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(ndust, "Ttilde_sj", "Ttilde_sj");

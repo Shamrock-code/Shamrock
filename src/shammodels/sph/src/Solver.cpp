@@ -1556,7 +1556,7 @@ template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
     // if one fluid is enabled time to compute the stopping times
-    if (solver_config.dust_config.has_s_j_field() ) {
+    if (solver_config.dust_config.has_s_j_field()) {
 
         auto &cfg = solver_config.dust_config;
         u32 ndust = cfg.get_dust_nvar();

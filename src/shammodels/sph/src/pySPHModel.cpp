@@ -1021,8 +1021,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def("set_solver_config", &T::set_solver_config)
         .def("add_sink", &T::add_sink)
-        .def("remove_last_sink", &T::remove_last_sink)
-        .def("modify_sink", &T::modify_sink)
+        .def("set_sink", &T::set_sink)
+        .def("set_sinks", &T::set_sinks)
         .def(
             "get_sinks",
             [](T &self) {

@@ -217,7 +217,7 @@ namespace shammodels::sph {
             }
 
             auto &sinks = solver.storage.sinks.get();
-            if (masses.size() != sinks.size || positions.size() != sinks.size()
+            if (masses.size() != sinks.size() || positions.size() != sinks.size()
                 || velocities.size() != sinks.size() || accretion_radii.size() != sinks.size()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(
                     "set_sinks: invalid size for masses, positions, velocities or accretion_radii");

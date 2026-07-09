@@ -21,7 +21,7 @@ jobs:
     needs: extract_version
     steps:
       - name: 'Download Doc'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: shamrock_documentation
 
@@ -42,19 +42,19 @@ jobs:
           rm -r doc
 
       - name: 'Download coverage report'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: code-coverage-report-acpp_omp_debug
           path: coverage
 
       - name: 'Download tidy report'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: clang-tidy.html
           path: clang-tidy
 
       - name: 'Download Py doc'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: sphinx_doc
           path: sphinx
@@ -67,7 +67,7 @@ jobs:
         run: tar -cf shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar .
 
       - name: Archive generated page
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         id: artifact-upload-step
         with:
           name: shamrock-${{ needs.extract_version.outputs.version }}-documentation.tar
@@ -81,13 +81,13 @@ jobs:
       - name: Show report
         run: cat report__gh_page.md
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: report_gh_page_url
           path: ./report__gh_page.md
 
       - name: Upload page artifact
         if: ${{ inputs.upload-page-artifact }}
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./

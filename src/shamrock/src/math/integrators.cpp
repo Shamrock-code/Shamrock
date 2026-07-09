@@ -18,6 +18,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/math/integrators.hpp"
 #include <algorithm>
+#include "shambackends/math.hpp"
 
 namespace integ = shamrock::integrators;
 namespace util  = shamrock::utilities;
@@ -117,6 +118,40 @@ void integ::leapfrog_corrector(
     buf_eps_sq.complete_event_state(e);
 }
 
+template<class flt, class T>
+void integ::leapfrog_corrector_positive_only(
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<T> &buf_val,
+    sham::DeviceBuffer<T> &buf_der,
+    sham::DeviceBuffer<T> &buf_der_old,
+    sham::DeviceBuffer<flt> &buf_eps_sq,
+    sycl::range<1> elem_range,
+    flt hdt) {
+
+    sham::EventList depends_list;
+
+    auto acc_u          = buf_val.get_write_access(depends_list);
+    auto acc_du         = buf_der.get_read_access(depends_list);
+    auto acc_du_old     = buf_der_old.get_read_access(depends_list);
+    auto acc_epsilon_sq = buf_eps_sq.get_write_access(depends_list);
+
+    auto e = queue.submit(depends_list, [&](sycl::handler &cgh) {
+        cgh.parallel_for(elem_range, [=](sycl::item<1> item) {
+            u32 gid = (u32) item.get_id();
+
+            T incr = (hdt) * (acc_du[item] - acc_du_old[item]);
+
+            acc_u[item]          = sham::max(acc_u[item] + incr, 0.0);
+            acc_epsilon_sq[item] = sycl::dot(incr, incr);
+        });
+    });
+
+    buf_val.complete_event_state(e);
+    buf_der.complete_event_state(e);
+    buf_der_old.complete_event_state(e);
+    buf_eps_sq.complete_event_state(e);
+}
+
 #ifndef DOXYGEN
 template void integ::leapfrog_corrector(
     sham::DeviceQueue &queue,
@@ -153,6 +188,16 @@ template void integ::leapfrog_corrector(
     sham::DeviceBuffer<f64> &buf_eps_sq,
     sycl::range<1> elem_range,
     f64 hdt);
+
+template void integ::leapfrog_corrector_positive_only(
+    sham::DeviceQueue &queue,
+    sham::DeviceBuffer<f64> &buf_val,
+    sham::DeviceBuffer<f64> &buf_der,
+    sham::DeviceBuffer<f64> &buf_der_old,
+    sham::DeviceBuffer<f64> &buf_eps_sq,
+    sycl::range<1> elem_range,
+    f64 hdt);
+
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -35,6 +35,7 @@
 #include "shamcomm/wrapper.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/modules/ForwardEuler.hpp"
+#include "shammodels/common/modules/ForwardEulerPositive.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/sph/BasicSPHGhosts.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
@@ -453,7 +454,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             if (has_s_j_field) {
                 u32 ndust          = solver_config.dust_config.get_dust_nvar();
                 auto half_step_s_j = solver_graph.register_node(
-                    prefix + "_s_j", shammodels::common::modules::ForwardEuler<Tscal>(ndust));
+                    prefix + "_s_j", shammodels::common::modules::ForwardEulerPositive<Tscal>(ndust));
                 shambase::get_check_ref(half_step_s_j)
                     .set_edges(
                         solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
@@ -1835,7 +1836,84 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
     }
 
+
+    // check positivity
+    if (solver_config.dust_config.has_s_j_field()) {
+        logger::raw_ln(SourceLocation{}.format_one_line());
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
+        const u32 is_j        =  pdl.get_field_idx<Tscal>("s_j") ;
+        auto ndust = solver_config.dust_config.get_dust_nvar();
+        auto &q    = shamsys::instance::get_compute_scheduler().get_queue();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sham::DeviceBuffer<Tscal> &buf_s_j     = pdat.get_field_buf_ref<Tscal>(is_j);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{},
+                sham::MultiRef{buf_s_j},
+                pdat.get_obj_cnt() * ndust,
+                [](u32 tid, Tscal *s_j) {
+                    Tscal s_j_tid     = s_j[tid];
+                    if (s_j_tid < 0) {
+                        throw std::runtime_error("s_j is negative");
+                    }
+                });
+        });
+        q.q.wait_and_throw();
+    }
+
     sph_prestep(t_current, dt);
+
+
+
+    // check positivity
+    if (solver_config.dust_config.has_s_j_field()) {
+        logger::raw_ln(SourceLocation{}.format_one_line());
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
+        const u32 is_j        =  pdl.get_field_idx<Tscal>("s_j") ;
+        auto ndust = solver_config.dust_config.get_dust_nvar();
+        auto &q    = shamsys::instance::get_compute_scheduler().get_queue();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sham::DeviceBuffer<Tscal> &buf_s_j     = pdat.get_field_buf_ref<Tscal>(is_j);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{},
+                sham::MultiRef{buf_s_j},
+                pdat.get_obj_cnt() * ndust,
+                [](u32 tid, Tscal *s_j) {
+                    Tscal s_j_tid     = s_j[tid];
+                    if (s_j_tid < 0) {
+                        throw std::runtime_error("s_j is negative");
+                    }
+                });
+        });
+        q.q.wait_and_throw();
+    }
+
+
+    // check positivity
+    if (solver_config.dust_config.has_s_j_field()) {
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
+        const u32 is_j        =  pdl.get_field_idx<Tscal>("s_j") ;
+        auto ndust = solver_config.dust_config.get_dust_nvar();
+        auto &q    = shamsys::instance::get_compute_scheduler().get_queue();
+        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+            sham::DeviceBuffer<Tscal> &buf_s_j     = pdat.get_field_buf_ref<Tscal>(is_j);
+
+            sham::kernel_call(
+                q,
+                sham::MultiRef{},
+                sham::MultiRef{buf_s_j},
+                pdat.get_obj_cnt() * ndust,
+                [](u32 tid, Tscal *s_j) {
+                    Tscal s_j_tid     = s_j[tid];
+                    if (s_j_tid < 0) {
+                        throw std::runtime_error("s_j is negative");
+                    }
+                });
+        });
+    }
 
     using RTree = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
@@ -2325,7 +2403,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         if (solver_config.dust_config.has_s_j_field()) {
             ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>(
                 "s_j s_j^2", solver_config.dust_config.get_dust_nvar());
-            utility.fields_leapfrog_corrector<Tscal>(
+            utility.fields_leapfrog_corrector_positive_only<Tscal>(
                 is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
         }
 
@@ -2903,20 +2981,26 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     reset_merge_ghosts_fields();
     reset_eos_fields();
 
-    // restore positivity
+    
+
+    // check positivity
     if (solver_config.dust_config.has_s_j_field()) {
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
+        const u32 is_j        =  pdl.get_field_idx<Tscal>("s_j") ;
         auto ndust = solver_config.dust_config.get_dust_nvar();
-        auto &q = shamsys::instance::get_compute_scheduler().get_queue();
+        auto &q    = shamsys::instance::get_compute_scheduler().get_queue();
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            sham::DeviceBuffer<Tscal> &buf_s_j = pdat.get_field_buf_ref<Tscal>(is_j);
+            sham::DeviceBuffer<Tscal> &buf_s_j     = pdat.get_field_buf_ref<Tscal>(is_j);
+
             sham::kernel_call(
                 q,
                 sham::MultiRef{},
                 sham::MultiRef{buf_s_j},
-                pdat.get_obj_cnt()*ndust,
+                pdat.get_obj_cnt() * ndust,
                 [](u32 tid, Tscal *s_j) {
-                    if (s_j[tid] < 0) {
-                        s_j[tid] = 0;
+                    Tscal s_j_tid     = s_j[tid];
+                    if (s_j_tid < 0) {
+                        throw std::runtime_error("s_j is negative");
                     }
                 });
         });

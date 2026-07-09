@@ -59,7 +59,7 @@ gamma = 1.4
 
 epsilon_base = 0.01
 
-tlist = [0.01 * i for i in range(1000)]
+tlist = [0.01 * i for i in range(50)]
 tinject = 0
 iinject = 0
 t_end = 5.0

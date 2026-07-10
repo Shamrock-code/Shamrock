@@ -396,18 +396,6 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
 
-
-
-
-
-
-
-
-
-
-
-    
-    
     //In the following part of the code, we calculate the acceleration depending of the solver config( Orbital precession, Spin-Orbit, Spin-Spin, Radiation Reaction)
     //Note that all these terms (except for the Newton) are only true for binary (two sinks)
     bool OP = solver_config.compute_OP;
@@ -526,9 +514,9 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink_spins(Tscal dt) {
 
-//Definition of the constants G and c for the calculations of spin precession
+//Definition of the constants G and c for the calculations of spin precession (the same as in the compute_ext_forces function)
 Tscal G = solver_config.get_constant_G();       //G=4*pi*2
-Tscal c = solver_config.get_constant_c();     //c= 63 241.077 UA/année
+Tscal c = solver_config.get_constant_c();     //c= 63 241.077 AU/year
 
     if (storage.sinks.is_empty()) {
         return;
@@ -561,9 +549,7 @@ Tscal c = solver_config.get_constant_c();     //c= 63 241.077 UA/année
             Tvec S2 = s2.angular_momentum;
             Tscal prefactor = G / (c * c * rij_scal * rij_scal * rij_scal);
             // Simple spin precession structure.
-            // TODO: replace with the desired PN spin evolution equation.
-
-
+            
 
             Tvec Omega_prec = prefactor * ((2 + 3 * m2 / (2 * m1)) * L - S2 + 3*sycl::dot(nij, S2) * nij) ;
             

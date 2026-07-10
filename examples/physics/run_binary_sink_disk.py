@@ -28,22 +28,20 @@ ucte = chama.Constants(codeu)
 G = ucte.G()
 c = ucte.c()
 
-#Paramètres de la binaire à tracer
-M1 = 1000.0 # masse du premier corps en masses solaires
-M2 = 600 # masse du second corps en masses solaires
-A = 1.0  # demi-grand axe en unités astronomiques
-E = 0.2  # excentricité de l'orbite
+# Parameters of the binary to trace
+M1 = 1000.0 # mass of the first body in solar masses
+M2 = 600 # mass of the second body in solar masses
+A = 1.0  # semi-major axis in astronomical units
+E = 0.2  # orbital eccentricity
 
-#Paramètres du disque
-center_mass = M1 + M2
-Rg = G * center_mass / c**2
 
-# Résolution du disque
+# Disk resolution
 Npart = 20000
 
 
 # Disc parameters
-# These values are used by the generator and for the visualization extents.
+center_mass = M1 + M2
+Rg = G * center_mass / c**2
 disc_mass = 0.1  # [sol mass]
 rout = 10.0 *Rg # [au]
 rin = 4*Rg  # [au]
@@ -54,7 +52,7 @@ r0 = rin
 
 
 def sigma_profile(r):
-    sigma_0 = 1.0  # We do not care as it will be renormalized
+    sigma_0 = 1.0  
     return sigma_0 * (r / r0) ** (-p)
 
 
@@ -83,23 +81,23 @@ def H_profile(r):
     return H
 
 
-# Spins (aligned with the orbital angular momentum)
-a1 = 0.99  # entre 0 et 1, spin du premier corps
+# Spins 
+a1 = 0.99  # between 0 and 1, spin of the first body
 a2 = 0.5
-theta =np.pi/4
+theta =np.pi/4   #inclination angle of the spin axis with respect to the orbital angular momentum vector
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
 spin_mag_1 = a1 * G * M1 * M1 / c
 spin_mag_2 = a2 * G * M2 * M2 / c
 spin_vec_1 = spin_mag_1 * spin_axis
 spin_vec_2 = spin_mag_2 * spin_axis
 
-X = np.sqrt(A**3/(G*(M1+M2)))  # période orbitale en années
+X = np.sqrt(A**3/(G*(M1+M2)))  # orbital period in years
 # %%
 # Simulation parameters
 T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
-n_orbits = 1                                                      #nombre d'orbite qu'on veut
-SF=10                                                              #safety factor, permet d'avoir plus de pas de temps par orbite pour une meilleure précision, nécessaire pour les cas extrêmes(excentricité proche de 1, spin très élevé, etc.)          
-                                                                   #augmente également le temps de calcul, à ajuster selon les besoins      
+n_orbits = 1                                                      # number of orbits we want
+SF=10                                                              # safety factor; allows more time steps per orbit for better accuracy, necessary for extreme cases (eccentricity close to 1, very high spin, etc.)
+                                                                   # it also increases the computation time, so adjust it as needed
 N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
 n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
 dt = T/N_per_orbits                                                # time step in years
@@ -134,7 +132,7 @@ def binary_initial_conditions(
 ):
     M = m1 + m2
 
-    # mêmes conditions que ton code Leapfrog
+    
     r = a * (1 - e)
     v = np.sqrt((1 + e) * G * M / r)
 
@@ -510,7 +508,7 @@ if __name__ == "__main__":
     a = A
     e = E
 
-    # racc=0.001 AU is much smaller than binary separation (~0.7 AU at periapsis)
+    # racc is the accretion radius for the sink particles, set to a small value
     ctx, model = build_binary_sph_model(
         m1,
         m2,

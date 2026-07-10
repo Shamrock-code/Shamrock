@@ -559,7 +559,7 @@ def analyse_and_plot(j):
     y = dic["xyz"][:, 1]
     z = dic["xyz"][:, 2]
     s_j = dic["s_j"].reshape(-1, ndust)
-    ds_j_dt = dic["ds_j_dt"].reshape(-1, ndust, 3)
+    ds_j_dt = dic["ds_j_dt"].reshape(-1, ndust)
     cs = dic["soundspeed"]
     delta_v = dic["delta_v"].reshape(-1, ndust, 3)
 

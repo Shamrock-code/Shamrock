@@ -408,55 +408,29 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
     
     
-    // Ajout des booléens qui permettent l'activation des termes Post-Newtoniens
-    //termes valables uniquement si il y a deux sinks, avec strictement plus de 2 sinks, merci de mettre tous les booléns en "false"
-    //Je n'aurai malheureusement pas le temps de faire des développements PN pour N quelconque de sinks mais faites le svv!
-    bool OP = true; // true pour ajouter le terme 1PN (précesssion des orbites), ordre 1PN
-    bool SO = true; // true pour ajouter le terme Spin-Orbit (précession des spins), ordre 1.5PN
-    bool SS = true; // true pour ajouter le terme Spin-Spin (précession des spins), odre 2PN
-    bool RR = true; // true pour ajouter le terme Radiation Reaction (perte d'énergie par rayonnement gravitationnel), ordre 2.5PN
+    //In the following part of the code, we calculate the acceleration depending of the solver config( Orbital precession, Spin-Orbit, Spin-Spin, Radiation Reaction)
+    //Note that all these terms (except for the Newton) are only true for binary (two sinks)
+    bool OP = solver_config.compute_OP;
+    bool SO = solver_config.compute_SO;
+    bool SS = solver_config.compute_SS;
+    bool RR = solver_config.compute_RR;
 
-    static bool config_printed = false;
 
-    if (!config_printed) {
-        config_printed = true;
-
-        std::cout << "===== CONFIG PHYSIQUE =====" << std::endl;
-
-        std::cout << "Newton : ACTIVÉ" << std::endl;
-
-        if (OP)
-            std::cout << "1PN : ACTIVÉ" << std::endl;
-        else
-            std::cout << "1PN : DÉSACTIVÉ" << std::endl;
-
-        if (SO)
-            std::cout << "Spin-Orbit (1.5PN) : ACTIVÉ" << std::endl;
-        else
-            std::cout << "Spin-Orbit (1.5PN) : DÉSACTIVÉ" << std::endl;
-
-        if (SS)
-            std::cout << "Spin-Spin (2PN) : ACTIVÉ" << std::endl;
-        else
-            std::cout << "Spin-Spin (2PN) : DÉSACTIVÉ" << std::endl;
-
-        if (RR)
-            std::cout << "Radiation Reaction (2.5PN) : ACTIVÉ" << std::endl;
-        else
-            std::cout << "Radiation Reaction (2.5PN) : DÉSACTIVÉ" << std::endl;
-
-        std::cout << "===========================" << std::endl;
-    }
+    logger::info_ln("-------- SinkParticleUpdate: Post-Newtonian terms --------");
+    logger::info_ln("1PN", solver_config.compute_OP);
+    logger::info_ln("SO", solver_config.compute_SO);
+    logger::info_ln("SS", solver_config.compute_SS);
+    logger::info_ln("RR", solver_config.compute_RR);
     
     
     
     for (Sink &s : sink_parts) {
         s.ext_acceleration = Tvec{};
     }
-    //Définition des constantes G et c pour les calculs des forces gravitationnelles et des termes Post-Newtoniens
+    //Definition of G and c
     Tscal G  = solver_config.get_constant_G();
     Tscal c  =solver_config.get_constant_c();
-    //Tscal c  = 1000;
+    
     Tscal epsilon_grav_sink = 1e-9;
 
 
@@ -501,7 +475,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                     / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
             sum+= s2.mass/M*term0;
 
-            if(OP==true){
+            if(OP){
                 term1 =
                     -G *  M / (rij_scal * rij_scal + epsilon_grav_sink)
                     * (
@@ -552,10 +526,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink_spins(Tscal dt) {
 
-//Définition des constantes G et c pour les calculs de précession des spins
+//Definition of the constants G and c for the calculations of spin precession
 Tscal G = solver_config.get_constant_G();       //G=4*pi*2
 Tscal c = solver_config.get_constant_c();     //c= 63 241.077 UA/année
-//Tscal c = 1000;
+
     if (storage.sinks.is_empty()) {
         return;
     }

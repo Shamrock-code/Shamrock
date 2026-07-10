@@ -122,6 +122,10 @@ def build_binary_sph_model(
     dt_=dt,
     split_load=10_000_000,
     merge_load=1,
+    compute_op=False,
+    compute_so=False,
+    compute_ss=False,
+    compute_rr=False,
 ):
     ctx = chama.Context()
     ctx.pdata_layout_new()
@@ -141,6 +145,10 @@ def build_binary_sph_model(
     cfg.set_eos_isothermal(1.0)
     # Set code units so warnings about unit system disappear
     cfg.set_units(codeu)
+    cfg.set_compute_OP(compute_op)
+    cfg.set_compute_SO(compute_so)
+    cfg.set_compute_SS(compute_ss)
+    cfg.set_compute_RR(compute_rr)
 
     model.set_solver_config(cfg)
 
@@ -336,7 +344,20 @@ if __name__ == "__main__":
     e = E
 
     # racc=0.001 AU is much smaller than binary separation (~0.7 AU at periapsis)
-    ctx, model = build_binary_sph_model(m1, m2, a, e, roll=0.0, pitch=0.0, yaw=0.0, racc=0.001)
+    ctx, model = build_binary_sph_model(
+        m1,
+        m2,
+        a,
+        e,
+        roll=0.0,
+        pitch=0.0,
+        yaw=0.0,
+        racc=0.001,
+        compute_op=True,
+        compute_so=True,
+        compute_ss=True,
+        compute_rr=True,
+    )
     snapshots = run_binary_orbit_PN(model)
 
     for snapshot in snapshots[:3]:

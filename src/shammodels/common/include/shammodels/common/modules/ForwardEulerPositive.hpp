@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file ForwardEuler.hpp
+ * @file ForwardEulerPositive.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implements a forward Euler integration step as a solver graph node.
  *
@@ -65,7 +65,7 @@ namespace shammodels::common::modules {
                     sham::DDMultiRef{edges.field.get_spans()},
                     edges.sizes.indexes,
                     [dt](u32 gid, const T *time_derivative, T *field) {
-                        auto tmp = field[gid] + dt * time_derivative[gid];
+                        auto tmp   = field[gid] + dt * time_derivative[gid];
                         field[gid] = std::max(tmp, 0.0);
                     });
 
@@ -81,7 +81,7 @@ namespace shammodels::common::modules {
                     sham::DDMultiRef{edges.field.get_spans()},
                     var_count,
                     [dt](u32 gid, const T *time_derivative, T *field) {
-                        auto tmp = field[gid] + dt * time_derivative[gid];
+                        auto tmp   = field[gid] + dt * time_derivative[gid];
                         field[gid] = std::max(tmp, 0.0);
                     });
             }

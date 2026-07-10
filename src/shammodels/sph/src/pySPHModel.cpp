@@ -267,12 +267,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "set_dust_mode_monofluid_tvi",
-            [](TConfig &self, u32 nvar, bool pure_diffusion_mode) {
-                self.dust_config.set_monofluid_tvi(nvar, pure_diffusion_mode);
+            [](TConfig &self,
+               u32 nvar,
+               bool pure_diffusion_mode,
+               Tscal C_1_fluid,
+               Tscal C_delta_v) {
+                self.dust_config.set_monofluid_tvi(nvar, pure_diffusion_mode, C_1_fluid, C_delta_v);
             },
             py::kw_only(),
             py::arg("nvar"),
-            py::arg("pure_diffusion_mode") = false)
+            py::arg("pure_diffusion_mode") = false,
+            py::arg("C_1_fluid")           = 0.1,
+            py::arg("C_delta_v")           = 1.0)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {

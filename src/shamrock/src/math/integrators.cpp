@@ -15,10 +15,10 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambackends/math.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamrock/math/integrators.hpp"
 #include <algorithm>
-#include "shambackends/math.hpp"
 
 namespace integ = shamrock::integrators;
 namespace util  = shamrock::utilities;

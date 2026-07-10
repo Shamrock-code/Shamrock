@@ -59,7 +59,7 @@ gamma = 1.4
 
 epsilon_base = 0.01
 
-tlist = [0.01 * i for i in range(50)]
+tlist = [0.0025 * i for i in range(500)]
 tinject = 0
 iinject = 0
 t_end = 5.0
@@ -179,7 +179,7 @@ def setup_model():
         alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
     )
 
-    cfg.set_dust_mode_monofluid_tvi(nvar=ndust)
+    cfg.set_dust_mode_monofluid_tvi(nvar=ndust, C_delta_v=10.0)
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=5)
@@ -732,7 +732,8 @@ def analyse_and_plot(j):
     axs[0].set_ylabel(r"$s_j$")
     axs[0].set_xlabel(r"$z$")
     axs[0].set_xlim(-box, box)
-    axs[0].set_yscale("symlog", linthresh=1e-10)
+    axs[0].set_yscale("log")
+    axs[0].set_ylim(1e-20, 1e-1)
 
     axs[1].set_ylabel(r"$\dot{s}_j$")
     axs[1].set_xlabel(r"$z$")
@@ -767,6 +768,8 @@ def dust_mass_analysis():
     idust_analysis += 1
 
 
+ivtk = 0
+
 tnext = 0
 for j in range(1000):
     if j == iinject:
@@ -775,8 +778,19 @@ for j in range(1000):
 
     if tlist[j] >= t_start:
         if j > 0:
-            model.evolve_until(tlist[j])
-            # model.timestep()
+            while 1:
+                res = model.evolve_until(tlist[j], niter_max=10000)
+                # model.timestep()
+
+                if model.get_time() >= 0.0:
+                    model.do_vtk_dump(f"{dump_folder}/vtk_{ivtk:04d}.vtk", True)
+                    ivtk += 1
+
+                    # if ivtk > 100:
+                    #    exit()
+
+                if res.reach_target_time:
+                    break
 
             if dust_injected:
                 dust_mass_analysis()

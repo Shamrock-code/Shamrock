@@ -62,7 +62,9 @@
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
+#include "shammodels/sph/modules/MonoFluidTVIDeltav.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
@@ -1551,6 +1553,57 @@ void shammodels::sph::Solver<Tvec, Kern>::prepare_corrector() {
     }
 }
 
+template<class T>
+void map_field_refs(
+    PatchScheduler &sched, u32 field_idx, shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = pdat.get_field<T>(field_idx);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
+template<class T>
+void map_field_refs_ext(
+    PatchScheduler &sched,
+    shambase::DistributedData<shamrock::patch::PatchDataLayer> &mpdats,
+    u32 field_idx,
+    shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        PatchDataLayer &mpdat = mpdats.get(p.id_patch);
+        auto &field           = mpdat.get_field<T>(field_idx);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
+template<class T>
+void map_field_refs_ext(
+    PatchScheduler &sched,
+    shamrock::ComputeField<T> &field_data,
+    shamrock::solvergraph::FieldRefs<T> &refs) {
+
+    using namespace shamrock::solvergraph;
+    using namespace shamrock::patch;
+
+    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
+    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = field_data.get_field(p.id_patch);
+        field_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    refs.set_refs(field_refs);
+}
+
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
@@ -1568,9 +1621,13 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
         shamrock::patch::PatchDataLayerLayout &ghost_layout
             = shambase::get_check_ref(storage.ghost_layout.get());
+        shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
+
         u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
 
         auto &part_counts_with_ghost = storage.part_counts_with_ghost;
+        auto &part_counts            = storage.part_counts;
+
         shambase::DistributedData<shamrock::patch::PatchDataLayer> &mpdats
             = storage.merged_patchdata_ghost.get();
 
@@ -1639,6 +1696,61 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
             }
             node_set_tj->evaluate();
         }
+
+        // delta v computation (for CFL or other uses e.g. COALA)
+        auto &pressure_field = storage.pressure;
+        auto &xyz_refs       = storage.positions_with_ghosts;
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> omega_refs
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("omega", "omega");
+        {
+            u32 iomega_interf = ghost_layout.get_field_idx<Tscal>("omega");
+            shambase::get_check_ref(omega_refs)
+                .set_refs(mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                    [iomega_interf](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tscal>(iomega_interf));
+                    }));
+        }
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> s_j_refs
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
+        {
+            u32 is_j_interf = ghost_layout.get_field_idx<Tscal>("s_j");
+            shambase::get_check_ref(s_j_refs).set_refs(
+                mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                    [is_j_interf](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tscal>(is_j_interf));
+                    }));
+        }
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> grad_P_on_rho
+            = std::make_shared<shamrock::solvergraph::Field<Tvec>>(1, "grad P/rho", "grad P/rho");
+
+        u32 idelta_v = pdl.get_field_idx<Tvec>("delta_v");
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> delta_v
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("Delta v", "Delta v");
+        map_field_refs(scheduler(), idelta_v, *delta_v);
+
+        auto press_grad_node = std::make_shared<modules::NodeComputePressureGrad<Tvec, Kern>>();
+        auto delta_v_node    = std::make_shared<modules::MonoFluidTVIDeltav<Tvec, Kern>>(ndust);
+
+        press_grad_node->set_edges(
+            gpart_mass,
+            part_counts,
+            part_counts_with_ghost,
+            xyz_refs,
+            hpart_refs,
+            omega_refs,
+            pressure_field,
+            storage.neigh_cache,
+            grad_P_on_rho);
+
+        delta_v_node->set_edges(
+            gpart_mass, part_counts, hpart_refs, grad_P_on_rho, s_j_refs, t_j_field, delta_v);
+
+        press_grad_node->evaluate();
+        delta_v_node->evaluate();
     }
 
     modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
@@ -1658,57 +1770,6 @@ void shammodels::sph::Solver<Tvec, Kern>::update_sync_load_values() {
     modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
         .update_load_balancing();
     scheduler().scheduler_step(false, false);
-}
-
-template<class T>
-void map_field_refs(
-    PatchScheduler &sched, u32 field_idx, shamrock::solvergraph::FieldRefs<T> &refs) {
-
-    using namespace shamrock::solvergraph;
-    using namespace shamrock::patch;
-
-    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
-    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = pdat.get_field<T>(field_idx);
-        field_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    refs.set_refs(field_refs);
-}
-
-template<class T>
-void map_field_refs_ext(
-    PatchScheduler &sched,
-    shambase::DistributedData<shamrock::patch::PatchDataLayer> &mpdats,
-    u32 field_idx,
-    shamrock::solvergraph::FieldRefs<T> &refs) {
-
-    using namespace shamrock::solvergraph;
-    using namespace shamrock::patch;
-
-    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
-    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        PatchDataLayer &mpdat = mpdats.get(p.id_patch);
-        auto &field           = mpdat.get_field<T>(field_idx);
-        field_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    refs.set_refs(field_refs);
-}
-
-template<class T>
-void map_field_refs_ext(
-    PatchScheduler &sched,
-    shamrock::ComputeField<T> &field_data,
-    shamrock::solvergraph::FieldRefs<T> &refs) {
-
-    using namespace shamrock::solvergraph;
-    using namespace shamrock::patch;
-
-    shamrock::solvergraph::DDPatchDataFieldRef<T> field_refs = {};
-    sched.for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = field_data.get_field(p.id_patch);
-        field_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    refs.set_refs(field_refs);
 }
 
 template<class Tvec, template<class> class Kern>

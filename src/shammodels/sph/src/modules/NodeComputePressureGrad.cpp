@@ -79,7 +79,7 @@ struct KernelComputePressureGrad {
 
             Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
 
-            force_pressure += sph_pressure_symetric(
+            force_pressure -= sph_pressure_symetric(
                 pmass,
                 rho_a_sq,
                 rho_b * rho_b,

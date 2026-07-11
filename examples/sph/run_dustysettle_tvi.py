@@ -62,17 +62,11 @@ epsilon_base = 0.01
 # resolution
 lx = 12
 ly = 12
-lz = 64
+lz = 512
 
 # time
 tlist = [0.1 * i for i in range(1000)]
 iinject = 20
-
-# is converge slower at low rez
-if lz < 128:
-    iinject += 5
-if lz < 256:
-    iinject += 5
 
 tinject = tlist[iinject]
 t_end = tinject + 3.0
@@ -632,12 +626,14 @@ def analyse_and_plot(j):
     ax_epsilon.scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
     ax_epsilon.scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
 
+    range_plot = 3.0 * H
+
     # ax_rho.scatter(y,estimated_rho)
     ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
     ax_rho.set_xlabel(r"$z$")
     ax_rho.set_yscale("log")
     ax_rho.set_ylim(1e-20, 1e-8)
-    ax_rho.set_xlim(-2.2 * H, 2.2 * H)
+    ax_rho.set_xlim(-range_plot, range_plot)
     # ax_rho.set_ylim(1e-12, 10**2)
 
     ax_epsilon.set_ylabel(r"$\epsilon_j$")
@@ -645,11 +641,11 @@ def analyse_and_plot(j):
     ax_epsilon.set_yscale("log")
     # ax_epsilon.set_ylim(1e-12, 2) # if you want the full range
     ax_epsilon.set_ylim(1e-4, 1e-1)  # if you want to see the dust only
-    ax_epsilon.set_xlim(-2.2 * H, 2.2 * H)
+    ax_epsilon.set_xlim(-range_plot, range_plot)
 
     ax_delta_v.set_ylabel(r"$\Delta v_z$ [m/s]")
     ax_delta_v.set_xlabel(r"$z$")
-    ax_delta_v.set_xlim(-2.2 * H, 2.2 * H)
+    ax_delta_v.set_xlim(-range_plot, range_plot)
     ax_delta_v.set_yscale("symlog", linthresh=1.0)
     ax_delta_v.set_ylim(-4e3, 4e3)
 

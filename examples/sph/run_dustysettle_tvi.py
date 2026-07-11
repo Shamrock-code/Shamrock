@@ -70,7 +70,9 @@ iinject = 20
 
 # is converge slower at low rez
 if lz < 128:
-    iinject += 10
+    iinject += 5
+if lz < 256:
+    iinject += 5
 
 tinject = tlist[iinject]
 t_end = tinject + 3.0

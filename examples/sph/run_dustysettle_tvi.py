@@ -59,11 +59,26 @@ gamma = 1.4
 
 epsilon_base = 0.01
 
-tlist = [0.1 * i for i in range(20)] + [i * 0.1 + 2 for i in range(3000)]
-tinject = 2
-iinject = 20
-t_end = 5.0
+# resolution
+lx = 12
+ly = 12
+lz = 64
 
+# time
+tlist = [0.1 * i for i in range(1000)]
+iinject = 20
+
+# is converge slower at low rez
+if lz < 128:
+    iinject += 10
+
+tinject = tlist[iinject]
+t_end = tinject + 3.0
+
+
+# Dust distrib
+rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
+grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
 
 sim_folder = "_to_trash/dusty_settle/"
 dump_folder = sim_folder + "dump/"
@@ -126,32 +141,23 @@ def uint_g(r):
     return P / ((gamma - 1) * rho_g)
 
 
-rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
-grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
-
 mrn_distribution = DustMRNDistribution(
     codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
 )
 
-bmin = (-box / 8, -box / 8, -box)
-bmax = (box / 8, box / 8, box)
-
-N_target = 1e4
 scheduler_split_val = int(2e7)
 scheduler_merge_val = int(1)
 
-xm, ym, zm = bmin
-xM, yM, zM = bmax
-vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+lmin = (-lx // 2, -ly // 2, -lz // 2)
+lmax = (lx // 2, ly // 2, lz // 2)
 
-part_vol = vol_b / N_target
-
-# lattice volume
-HCP_PACKING_DENSITY = 0.74
-part_vol_lattice = HCP_PACKING_DENSITY * part_vol
-
-dr = (part_vol_lattice / ((4.0 / 3.0) * np.pi)) ** (1.0 / 3.0)
-bmin, bmax = shamrock.math.get_ideal_hcp_box(dr, bmin, bmax)
+# Call with dr = 1 as we will rescale on next call
+(xm, ym, zm), (xM, yM, zM) = shamrock.math.get_periodic_hcp_box(1.0, lmin, lmax)
+print(f"base lattice : xM = {xM}, yM = {yM}, zM = {zM}")
+dr = 2 * box / (zM - zm)
+print(f"dr = {dr}")
+bmin, bmax = shamrock.math.get_periodic_hcp_box(dr, lmin, lmax)
+print(f"new lattice : bmin = {bmin}, bmax = {bmax}")
 xm, ym, zm = bmin
 xM, yM, zM = bmax
 
@@ -266,8 +272,6 @@ def compute_sj_new_j(patchdata, j):
 
     return s
 
-
-# TODO: add function to modify fields e.g. get rho and do stuff according to it
 
 cmap = "plasma"
 dpi = 250
@@ -508,7 +512,7 @@ class ReferenceDustySettle:
 class ReferenceDustySettleAll:
     def __init__(self):
         self.rhomid = get_max_rho()
-        self.tau = 0.025
+        self.tau = 0.05
 
         self.vK = kep_profile(R0) * codeu.to("m") / codeu.to("s")
         self.OmegaK = omega_k(R0) * codeu.to("s") ** -1
@@ -757,6 +761,13 @@ def dust_mass_analysis():
     idust_analysis += 1
 
 
+def get_max_v():
+    dic = ctx.collect_data()
+    v = dic["vxyz"]
+    vnorms = np.linalg.norm(v, axis=1)
+    return vnorms.max()
+
+
 tnext = 0
 for j in range(1000):
     if j == iinject:
@@ -771,6 +782,12 @@ for j in range(1000):
                 dust_mass_analysis()
 
         if j == iinject:
+            max_v = get_max_v()
+            print(f"max_v = {max_v}")
+
+            if max_v > 1e-2:
+                raise ValueError("max_v is too high, please increase the injection time")
+
             for k in range(ndust):
 
                 def compute_sj_new(patchdata):
@@ -866,7 +883,7 @@ plt.plot(
 
 plt.xlabel("t")
 plt.ylabel("$\|delta M_{dust} / M_{dust,0}$")
-plt.yscale("log")
+plt.yscale("symlog", linthresh=1e-8)
 plt.title("Dust mass conservation")
 plt.legend()
 plt.tight_layout()

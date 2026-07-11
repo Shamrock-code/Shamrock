@@ -590,6 +590,7 @@ def analyse_and_plot(j):
     s_j = dic["s_j"].reshape(-1, ndust)
     ds_j_dt = dic["ds_j_dt"].reshape(-1, ndust)
     cs = dic["soundspeed"]
+    delta_v = dic["delta_v"].reshape(-1, ndust, 3)
 
     print(s_j)
 
@@ -601,13 +602,20 @@ def analyse_and_plot(j):
 
     sz = 1
 
-    fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
+    fig = plt.figure(figsize=(12, 7), dpi=dpi)
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.7, 1], wspace=0.2)
+
+    ax_rho = fig.add_subplot(gs[0, 0])  # Top left
+    ax_epsilon = fig.add_subplot(gs[0, 1])  # Top right
+    ax_delta_v = fig.add_subplot(gs[1, :])  # Bottom spans both columns
+
     time = model.get_time() - tinject
     fig.suptitle(f"t = {time:.2f} [yr]")
 
-    fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
+    fig.subplots_adjust(left=0.08, right=1.05, wspace=0.35)
 
     to_dens = codeu.to("kg") * codeu.to("m") ** -3
+    to_speed = codeu.to("m") / codeu.to("s")
 
     dust_cmap = plt.colormaps[cmap]
     dust_norm = mcolors.LogNorm(
@@ -623,14 +631,14 @@ def analyse_and_plot(j):
 
     for i in range(ndust):
         c = dust_colors[i]
-        axs[0].scatter(z, s_j[:, i] ** 2 * to_dens, s=sz, color=c, edgecolors="none")
-        axs[1].scatter(z, s_j[:, i] ** 2 / rho, s=sz, color=c, edgecolors="none")
+        ax_rho.scatter(z, s_j[:, i] ** 2 * to_dens, s=sz, color=c, edgecolors="none")
+        ax_epsilon.scatter(z, s_j[:, i] ** 2 / rho, s=sz, color=c, edgecolors="none")
 
         rho_dust_all += s_j[:, i] ** 2 * to_dens
         epsilon_dust_all += s_j[:, i] ** 2 / rho
 
         if reference_dusty_settle is not None:
-            axs[0].plot(
+            ax_rho.plot(
                 reference_dusty_settle.soluces[i].zbar,
                 reference_dusty_settle.soluces[i].rho * reference_dusty_settle.rhoscale,
                 "--",
@@ -643,33 +651,45 @@ def analyse_and_plot(j):
                 / reference_dusty_settle.soluces[i].rhog
             )
             print(ana_epsilon.max(), ana_epsilon.min())
-            axs[1].plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
+            ax_epsilon.plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
 
-            L2_error = compute_L2_error(
-                z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].zbar, ana_epsilon
+    ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
+    ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
+    ax_epsilon.scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
+    ax_epsilon.scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
+
+    # ax_rho.scatter(y,estimated_rho)
+    ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
+    ax_rho.set_xlabel(r"$z$")
+    ax_rho.set_yscale("log")
+    ax_rho.set_ylim(1e-20, 1e-8)
+    ax_rho.set_xlim(-2.2 * H, 2.2 * H)
+    # ax_rho.set_ylim(1e-12, 10**2)
+
+    ax_epsilon.set_ylabel(r"$\epsilon_j$")
+    ax_epsilon.set_xlabel(r"$z$")
+    ax_epsilon.set_yscale("log")
+    # ax_epsilon.set_ylim(1e-12, 2) # if you want the full range
+    ax_epsilon.set_ylim(1e-4, 1e-1)  # if you want to see the dust only
+    ax_epsilon.set_xlim(-2.2 * H, 2.2 * H)
+
+    ax_delta_v.set_ylabel(r"$\Delta v_z$ [m/s]")
+    ax_delta_v.set_xlabel(r"$z$")
+    ax_delta_v.set_xlim(-2.2 * H, 2.2 * H)
+    ax_delta_v.set_yscale("symlog", linthresh=1.0)
+    ax_delta_v.set_ylim(-4e3, 4e3)
+
+    for i in range(ndust):
+        c = dust_colors[i]
+        ax_delta_v.scatter(z, delta_v[:, i, 2] * to_speed, s=sz, color=c, edgecolors="none")
+
+        if reference_dusty_settle is not None:
+            ax_delta_v.plot(
+                reference_dusty_settle.soluces[i].zbar,
+                reference_dusty_settle.soluces[i].v * reference_dusty_settle.vscale,
+                "--",
+                color="0.0",
             )
-            print(f"L2 error for dust {i} = {L2_error}")
-            l2_errors[i].append(L2_error)
-
-    axs[0].scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
-    axs[0].scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
-    axs[1].scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
-    axs[1].scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
-
-    # axs[0].scatter(y,estimated_rho)
-    axs[0].set_ylabel(r"$\rho$")
-    axs[0].set_xlabel(r"$z$")
-    axs[0].set_yscale("log")
-    axs[0].set_ylim(1e-20, 1e-8)
-    axs[0].set_xlim(-box, box)
-    # axs[0].set_ylim(1e-12, 10**2)
-
-    axs[1].set_ylabel(r"$\epsilon_j$")
-    axs[1].set_xlabel(r"$z$")
-    axs[1].set_yscale("log")
-    # axs[1].set_ylim(1e-12, 2) # if you want the full range
-    axs[1].set_ylim(1e-4, 1e-1)  # if you want to see the dust only
-    axs[1].set_xlim(-box, box)
 
     gas_handle = Line2D(
         [0],
@@ -701,11 +721,13 @@ def analyse_and_plot(j):
         label="analytic",
     )
 
-    axs[0].legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
+    ax_rho.legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
 
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)
     dust_sm.set_array([])
-    cbar = fig.colorbar(dust_sm, ax=axs, pad=0.02, shrink=0.85)
+    cbar = fig.colorbar(
+        dust_sm, ax=[ax_rho, ax_epsilon, ax_delta_v], pad=0.03, shrink=0.95, aspect=40
+    )
     cbar.set_label(r"grain size $s$ [m]")
 
     os.makedirs(f"{dump_folder}/plots", exist_ok=True)

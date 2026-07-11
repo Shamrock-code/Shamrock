@@ -2859,25 +2859,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     reset_merge_ghosts_fields();
     reset_eos_fields();
 
-    // restore positivity
-    if (solver_config.dust_config.has_s_j_field()) {
-        auto ndust = solver_config.dust_config.get_dust_nvar();
-        auto &q    = shamsys::instance::get_compute_scheduler().get_queue();
-        scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
-            sham::DeviceBuffer<Tscal> &buf_s_j = pdat.get_field_buf_ref<Tscal>(is_j);
-            sham::kernel_call(
-                q,
-                sham::MultiRef{},
-                sham::MultiRef{buf_s_j},
-                pdat.get_obj_cnt() * ndust,
-                [](u32 tid, Tscal *s_j) {
-                    if (s_j[tid] < 0) {
-                        s_j[tid] = 0;
-                    }
-                });
-        });
-    }
-
     // if delta too big jump to compute force
 
     tstep.stop();

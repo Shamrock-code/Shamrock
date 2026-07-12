@@ -3,10 +3,22 @@ Dusty settling SPH test
 ========================
 
 Perform a dust settling test in a local stratified box.
+
+If you want to change the resolution, you can set the LZ environment variable.
+
+Example (from build directory):
+```bash
+LZ=96 ./shamrock --sycl-cfg 0:0 --smi --loglevel 1 --rscript ../examples/sph/run_dustysettle_tvi.py
+```
 """
 
 # sphinx_gallery_multi_image = "single"
 
+# %%
+# Imports
+# ------------------------------------------
+
+import json
 import os
 
 import matplotlib as mpl
@@ -14,12 +26,19 @@ import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.animation import PillowWriter
 from matplotlib.lines import Line2D
+from scipy.linalg import solve_banded
 from scipy.special import erfinv
 from shamrock.utils.DustMRNDistribution import DustMRNDistribution
 from shamrock.utils.numba_helper import maybe_njit
+from shamrock.utils.plot import show_image_sequence
 
 import shamrock
+
+# %%
+# Shamrock initialization
+# ------------------------------------------
 
 shamrock.enable_experimental_features()
 
@@ -31,11 +50,14 @@ if not shamrock.sys.is_initialized():
 
 # %%
 # Use shamrock documentation style for matplotlib
+# ------------------------------------------
+
 shamrock.matplotlib.set_shamrock_mpl_style()
 
-
 # %%
-# Sim parameters
+# Define simulation parameters and unit system
+# ------------------------------------------
+
 si = shamrock.UnitSystem()
 sicte = shamrock.Constants(si)
 codeu = shamrock.UnitSystem(
@@ -45,35 +67,72 @@ codeu = shamrock.UnitSystem(
 )
 ucte = shamrock.Constants(codeu)
 
-rho_i = 1e-6
-central_mass = 1
-R0 = 1
-H_r_0 = 0.05
+# Disc / box
+rho_i = 1e-6  # Initial density
+central_mass = 1  # Central mass
+R0 = 1  # Where are we in radius
+H_r_0 = 0.05  # Disc aspect ratio
+gamma = 1.4  # Adiabatic index
+box_H_count = 8  # box size in number of H
+random_vel_pert = True  # add a small vecolity pertubation to fasten the setup
 
-box_H_count = 8
-
+# Dust
 ndust = 5
 mrn_pow = 3.5
 mrn_cutoff_si = np.inf  # would be 250e-9 normally
-gamma = 1.4
-
 epsilon_base = 0.01
+rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
+grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
 
-tlist = [0.0025 * i for i in range(500)]
-tinject = 0
-iinject = 0
-t_end = 5.0
+# Resolution (lattice size)
+lx = 12
+ly = 12
+lz = int(os.environ.get("LZ", 64))
 
+# Time
+tlist = [0.1 * i for i in range(1000)]
+iinject = 20
+tinject = tlist[iinject]
+t_end = tinject + 3.0
 
-sim_folder = "_to_trash/dusty_settle/"
+# Scheduler
+scheduler_split_val = int(2e7)
+scheduler_merge_val = int(1)
+
+# Artificial viscosity
+av_alpha_min = 0.0
+av_alpha_max = 1
+av_sigma_decay = 0.1
+av_alpha_u = 1
+av_beta_AV = 2
+vel_dissipation_eta = 5
+
+# CFL (before dust injection)
+cfl_cour_setup = 0.25
+cfl_force_setup = 0.25
+# CFL (after dust injection)
+cfl_cour_inject = 0.1
+cfl_force_inject = 0.1
+
+# Injection check
+max_v_inject_threshold = 1.0
+
+# Analytical reference
+reference_tau = 0.025
+reference_Nz = 4000
+reference_zrange = 3.5  # in units of H
+
+# Paths
+sim_folder = f"_to_trash/dusty_settle_{lz}/"
 dump_folder = sim_folder + "dump/"
 
-# %%
-# Create the dump directory if it does not exist
-if shamrock.sys.world_rank() == 0:
-    os.makedirs(sim_folder, exist_ok=True)
-    os.makedirs(dump_folder, exist_ok=True)
+# Plotting
+cmap = "plasma"
+dpi = 250
 
+# %%
+# Derived physical scales and lattice geometry
+# ------------------------------------------
 
 print("codeu.get('m') / codeu.get('s') =", codeu.get("m") / codeu.get("s"))
 print("codeu.to('m') / codeu.to('s') =", codeu.to("m") / codeu.to("s"))
@@ -96,6 +155,35 @@ box = box_H_count * H
 print(f"cs = {cs}")
 print(f"H = {H}")
 
+mrn_distribution = DustMRNDistribution(
+    codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
+)
+
+lmin = (-(lx // 2), -(ly // 2), -(lz // 2))
+lmax = (lx // 2, ly // 2, lz // 2)
+
+# Call with dr = 1 as we will rescale on next call
+(xm, ym, zm), (xM, yM, zM) = shamrock.math.get_periodic_hcp_box(1.0, lmin, lmax)
+print(f"base lattice : xM = {xM}, yM = {yM}, zM = {zM}")
+dr = 2 * box / (zM - zm)
+print(f"dr = {dr}")
+bmin, bmax = shamrock.math.get_periodic_hcp_box(dr, lmin, lmax)
+print(f"new lattice : bmin = {bmin}, bmax = {bmax}")
+xm, ym, zm = bmin
+xM, yM, zM = bmax
+
+vol_b = (xM - xm) * (yM - ym) * (zM - zm)
+totmass = rho_i * vol_b
+print("Total mass :", totmass)
+
+pmass = -1
+
+# %%
+# Initial conditions and dust injection functions
+# ------------------------------------------
+
+cs_g = cs
+
 
 def scaling_rho(r):
     x, y, z = r
@@ -117,134 +205,21 @@ def func_rho_g(r):
     return rho_i * scaling_rho(r) - sum([func_rho_d_j(r, i) for i in range(ndust)])
 
 
-cs_g = cs
-
-
 def uint_g(r):
     rho_g = func_rho_g(r)
     P = rho_g * cs_g * cs_g / gamma
     return P / ((gamma - 1) * rho_g)
 
 
-rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
-grain_size_si_edges = np.logspace(-5, -2, ndust + 1)
+def remap_positions_z(r):
+    x, y, z = r
 
-mrn_distribution = DustMRNDistribution(
-    codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
-)
+    rn = max(abs(zM), abs(zm))
+    z = H * erfinv(z / rn)
 
-bmin = (-box / 8, -box / 8, -box)
-bmax = (box / 8, box / 8, box)
-
-scheduler_split_val = int(2e7)
-scheduler_merge_val = int(1)
-
-lx = 12
-ly = 12
-lz = 512
-lmin = (-lx // 2, -ly // 2, -lz // 2)
-lmax = (lx // 2, ly // 2, lz // 2)
-
-# Call with dr = 1 as we will rescale on next call
-(xm, ym, zm), (xM, yM, zM) = shamrock.math.get_periodic_hcp_box(1.0, lmin, lmax)
-print(f"base lattice : xM = {xM}, yM = {yM}, zM = {zM}")
-dr = 2 * box / (zM - zm)
-print(f"dr = {dr}")
-bmin, bmax = shamrock.math.get_periodic_hcp_box(dr, lmin, lmax)
-print(f"new lattice : bmin = {bmin}, bmax = {bmax}")
-xm, ym, zm = bmin
-xM, yM, zM = bmax
-
-vol_b = (xM - xm) * (yM - ym) * (zM - zm)
-totmass = rho_i * vol_b
-print("Total mass :", totmass)
-
-pmass = -1
-
-ctx = shamrock.Context()
-ctx.pdata_layout_new()
-
-model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
-
-dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_folder)
-
-
-def setup_model():
-    global bmin, bmax
-
-    cfg = model.gen_default_config()
-    # cfg.set_artif_viscosity_Constant(alpha_u = 1, alpha_AV = 1, beta_AV = 2)
-    # cfg.set_artif_viscosity_VaryingMM97(alpha_min = 0.1,alpha_max = 1,sigma_decay = 0.1, alpha_u = 1, beta_AV = 2)
-    cfg.set_artif_viscosity_VaryingCD10(
-        alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
-    )
-
-    cfg.set_dust_mode_monofluid_tvi(nvar=ndust, C_delta_v=10.0)
-    cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
-    cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
-    cfg.add_ext_force_velocity_dissipation(eta=5)
-    cfg.set_boundary_periodic()
-    cfg.set_units(codeu)
-    cfg.set_eos_isothermal(cs)
-    cfg.set_show_cfl_detail(True)
-    cfg.print_status()
-    model.set_solver_config(cfg)
-
-    model.init_scheduler(int(1e8), 1)
-
-    model.resize_simulation_box(bmin, bmax)
-
-    setup = model.get_setup()
-    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
-    setup.apply_setup(gen, insert_step=scheduler_split_val)
-
-    pmass = model.total_mass_to_part_mass(totmass)
-    model.set_particle_mass(pmass)
-    print("Current part mass :", pmass)
-
-    # Correct the barycenter
-    analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
-    barycenter, disc_mass = analysis_barycenter.get_barycenter()
-
-    if shamrock.sys.world_rank() == 0:
-        print(f"disc barycenter = {barycenter}")
-
-    model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
-
-    def f_remap(r):
-        x, y, z = r
-
-        rn = max(abs(zM), abs(zm))
-        # print(y, H, H * erfinv(y / rn))
-        z = H * erfinv(z / rn) * (2**0.5)
-
-        z = min(z, zM)
-        z = max(z, zm)
-        return (x, y, z)
-
-    model.remap_positions(f_remap)
-    model.set_field_value_lambda_f64("uint", uint_g)
-
-    model.set_cfl_cour(0.1)
-    model.set_cfl_force(0.1)
-
-    model.timestep()
-
-
-dump_helper.load_last_dump_or(setup_model)
-
-
-def get_max_rho():
-    pmass = model.get_particle_mass()
-    hfact = model.get_hfact()
-    dic = ctx.collect_data()
-    hpart = dic["hpart"]
-    rho = pmass * (hfact / np.array(hpart)) ** 3
-    to_dens = codeu.to("kg") * codeu.to("m") ** -3
-    return rho.max() * to_dens
-
-
-pmass = model.get_particle_mass()
+    z = min(z, zM)
+    z = max(z, zm)
+    return (x, y, z)
 
 
 def compute_sj_new_j(patchdata, j):
@@ -268,46 +243,9 @@ def compute_sj_new_j(patchdata, j):
     return s
 
 
-# TODO: add function to modify fields e.g. get rho and do stuff according to it
-
-cmap = "plasma"
-dpi = 250
-
-
-def save_analysis_data(filename, key, value, ianalysis):
-    """Helper to save analysis data to a JSON file."""
-    import json
-
-    if shamrock.sys.world_rank() == 0:
-        filepath = os.path.join(dump_folder, filename)
-        try:
-            with open(filepath, "r") as fp:
-                data = json.load(fp)
-        except (FileNotFoundError, json.JSONDecodeError):
-            data = {key: []}
-        data[key] = data[key][:ianalysis]
-        data[key].append({"t": model.get_time(), key: value})
-        with open(filepath, "w") as fp:
-            json.dump(data, fp, indent=4)
-
-
-def load_data_from_json(filename, key):
-    """Helper to load analysis data from a JSON file."""
-    import json
-
-    filepath = os.path.join(dump_folder, filename)
-    with open(filepath, "r") as fp:
-        data = json.load(fp)[key]
-    t = [d["t"] for d in data]
-    values = [d[key] for d in data]
-    return t, values
-
-
-"""
-Analytical soluce for dusty settling
-"""
-
-from scipy.linalg import solve
+# %%
+# Analytical reference solution
+# ------------------------------------------
 
 
 def S_rho(rho, v, vp, hz, tau, Nz):
@@ -317,43 +255,47 @@ def S_rho(rho, v, vp, hz, tau, Nz):
 
     npts = Nz + 2
 
-    A = np.zeros((npts, npts))
-    B = np.zeros((npts, npts))
+    ab_A = np.zeros((3, npts))
+    bd_main = np.zeros(npts)
+    bd_lower = np.zeros(npts)
+    bd_upper = np.zeros(npts)
 
     # Interior points
     for j in range(1, Nz + 1):
         C1 = -tau / (8 * hz) * (v[j + 1] + vp[j + 1])
         C2 = -tau / (8 * hz) * (v[j - 1] + vp[j - 1])
 
-        A[j, j - 1] = C2
-        A[j, j] = 1.0
-        A[j, j + 1] = -C1
+        ab_A[2, j - 1] = C2
+        ab_A[1, j] = 1.0
+        ab_A[0, j + 1] = -C1
 
-        B[j, j - 1] = -C2
-        B[j, j] = 1.0
-        B[j, j + 1] = C1
+        bd_lower[j] = -C2
+        bd_main[j] = 1.0
+        bd_upper[j] = C1
 
     # Left boundary
     C = -tau / (8 * hz) * (vp[0] + v[0] - vp[1] - v[1])
 
-    A[0, 0] = 0.5 + C
-    A[0, 1] = 0.5 + C
+    ab_A[1, 0] = 0.5 + C
+    ab_A[0, 1] = 0.5 + C
 
-    B[0, 0] = 0.5 - C
-    B[0, 1] = 0.5 - C
+    bd_main[0] = 0.5 - C
+    bd_upper[0] = 0.5 - C
 
     # Right boundary
     C = -tau / (8 * hz) * (vp[-1] + v[-1] - vp[-2] - v[-2])
 
-    A[-1, -2] = 0.5 - C
-    A[-1, -1] = 0.5 - C
+    ab_A[2, npts - 2] = 0.5 - C
+    ab_A[1, npts - 1] = 0.5 - C
 
-    B[-1, -2] = 0.5 + C
-    B[-1, -1] = 0.5 + C
+    bd_lower[npts - 1] = 0.5 + C
+    bd_main[npts - 1] = 0.5 + C
 
-    r = B @ rho
+    r = bd_main * rho
+    r[1:] += bd_lower[1:] * rho[:-1]
+    r[:-1] += bd_upper[:-1] * rho[1:]
 
-    ret = solve(A, r)
+    ret = solve_banded((1, 1), ab_A, r)
     ret = np.maximum(ret, 0)
 
     ###################
@@ -384,8 +326,10 @@ def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
 
     npts = Nz + 2
 
-    A = np.zeros((npts, npts))
-    B = np.zeros((npts, npts))
+    ab_A = np.zeros((3, npts))
+    bd_main = np.zeros(npts)
+    bd_lower = np.zeros(npts)
+    bd_upper = np.zeros(npts)
     E0 = np.zeros_like(v)
 
     for j in range(1, Nz + 1):
@@ -394,24 +338,27 @@ def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
         E1 = (vbar[j] + vbarp[j]) / (8 * hz)
         E2 = 1.0 / (2.0 * Stj[j])
 
-        A[j, j - 1] = -E1
-        A[j, j] = 1.0 / tau + E2
-        A[j, j + 1] = E1
+        ab_A[2, j - 1] = -E1
+        ab_A[1, j] = 1.0 / tau + E2
+        ab_A[0, j + 1] = E1
 
-        B[j, j - 1] = E1
-        B[j, j] = 1.0 / tau - E2
-        B[j, j + 1] = -E1
+        bd_lower[j] = E1
+        bd_main[j] = 1.0 / tau - E2
+        bd_upper[j] = -E1
 
     # Boundary conditions
-    A[0, 0] = 1
-    A[0, 1] = 1
+    ab_A[1, 0] = 1
+    ab_A[0, 1] = 1
 
-    A[-1, -2] = 1
-    A[-1, -1] = 1
+    ab_A[2, npts - 2] = 1
+    ab_A[1, npts - 1] = 1
 
-    r = B @ v + E0
+    r = bd_main * v
+    r[1:] += bd_lower[1:] * v[:-1]
+    r[:-1] += bd_upper[:-1] * v[1:]
+    r += E0
 
-    return solve(A, r)
+    return solve_banded((1, 1), ab_A, r)
 
 
 S_rho = maybe_njit(S_rho)
@@ -429,7 +376,7 @@ class ReferenceDustySettle:
 
         self.Nz = Nz
 
-        zout = 3 * H / R0
+        zout = reference_zrange * H / R0
         zmin = -zout
         zmax = zout
 
@@ -443,9 +390,7 @@ class ReferenceDustySettle:
 
     def rho_g_func(self, z):
         loc_h = self.H
-        print(loc_h)
         ampl = self.rho_0 / (np.sqrt(2 * np.pi))
-        print(ampl)
         return ampl * np.exp(-(z**2) / (2 * loc_h * loc_h))
 
     def rho_g_bar_func(self, z):
@@ -454,7 +399,6 @@ class ReferenceDustySettle:
     def rho_d_bar_func(self, z):
 
         mask = 1 / (1 + np.exp((np.abs(z) - 1.75 * H) / (H / 16)))
-        # mask = 1
 
         return mask * self.dust_to_gas * self.rho_g_func(z) / self.rho_mid
 
@@ -500,8 +444,6 @@ class ReferenceDustySettle:
             print(self.tbar)
             self.advance(self.dt)
 
-        return
-
     def setup(self):
         return
 
@@ -509,7 +451,7 @@ class ReferenceDustySettle:
 class ReferenceDustySettleAll:
     def __init__(self):
         self.rhomid = get_max_rho()
-        self.tau = 0.05
+        self.tau = reference_tau
 
         self.vK = kep_profile(R0) * codeu.to("m") / codeu.to("s")
         self.OmegaK = omega_k(R0) * codeu.to("s") ** -1
@@ -531,7 +473,9 @@ class ReferenceDustySettleAll:
             mrn_weight_j = mrn_distribution.mrn_weight[j]
             eps_j = mrn_weight_j * epsilon_base
             dtg_j = eps_j / (1 - epsilon_base)
-            self.soluces.append(ReferenceDustySettle(2000, H, self.rhomid, R0, dtg_j, self.tau))
+            self.soluces.append(
+                ReferenceDustySettle(reference_Nz, H, self.rhomid, R0, dtg_j, self.tau)
+            )
 
             rhoeff = mrn_distribution.rho_grains_si_edges[j] * np.sqrt(np.pi * gamma / 8)
 
@@ -547,6 +491,9 @@ reference_dusty_settle = None
 
 
 def compute_L2_error(z, field, z_ref, field_ref):
+    """
+    Compute the L2 error between two fields on a given grid.
+    """
 
     z_field_sort_args = np.argsort(z)
     z_field_sorted = z[z_field_sort_args]
@@ -561,17 +508,68 @@ def compute_L2_error(z, field, z_ref, field_ref):
     # Compute L2 func
     L2_func = delta**2
 
-    # Compute L2 integral    # Use the appropriate trapezoidal integration function
+    trap_func = None
     if hasattr(np, "trapezoid"):
-        L2_integral = np.trapezoid(L2_func, z_ref)  # NumPy >= 2.0
+        trap_func = getattr(np, "trapezoid")
     else:
-        L2_integral = np.trapz(L2_func, z_ref)  # NumPy < 2.0
+        trap_func = getattr(np, "trapz")
+
+    # Compute L2 integral
+    L2_integral = trap_func(L2_func, z_ref)
 
     return np.sqrt(L2_integral)
 
 
-t_l2 = []
-l2_errors = [[] for _ in range(ndust)]
+# %%
+# Analysis helpers
+# ------------------------------------------
+
+
+def save_analysis_data(filename, key, value, ianalysis):
+    """Helper to save analysis data to a JSON file."""
+    if shamrock.sys.world_rank() == 0:
+        filepath = os.path.join(dump_folder, filename)
+        try:
+            with open(filepath, "r") as fp:
+                data = json.load(fp)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {key: []}
+        data[key] = data[key][:ianalysis]
+        data[key].append({"t": model.get_time(), key: value})
+        with open(filepath, "w") as fp:
+            json.dump(data, fp, indent=4)
+
+
+def load_data_from_json(filename, key):
+    """Helper to load analysis data from a JSON file."""
+    filepath = os.path.join(dump_folder, filename)
+    with open(filepath, "r") as fp:
+        data = json.load(fp)[key]
+    t = [d["t"] for d in data]
+    values = [d[key] for d in data]
+    return t, values
+
+
+def get_max_rho():
+    pmass = model.get_particle_mass()
+    hfact = model.get_hfact()
+    dic = ctx.collect_data()
+    hpart = dic["hpart"]
+    rho = pmass * (hfact / np.array(hpart)) ** 3
+    to_dens = codeu.to("kg") * codeu.to("m") ** -3
+    return rho.max() * to_dens
+
+
+def get_max_v():
+    dic = ctx.collect_data()
+    v = dic["vxyz"]
+    vnorms = np.linalg.norm(v, axis=1)
+    return vnorms.max()
+
+
+# %%
+# Plotting
+# ------------------------------------------
 
 
 def analyse_and_plot(j):
@@ -626,8 +624,7 @@ def analyse_and_plot(j):
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
 
-    if reference_dusty_settle is not None:
-        t_l2.append(time)
+    l2_error_all = [0 for _ in range(ndust)]
 
     for i in range(ndust):
         c = dust_colors[i]
@@ -653,29 +650,37 @@ def analyse_and_plot(j):
             print(ana_epsilon.max(), ana_epsilon.min())
             ax_epsilon.plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
 
+            L2_error = compute_L2_error(
+                z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].zbar, ana_epsilon
+            )
+
+            l2_error_all[i] = L2_error
+
+    if reference_dusty_settle is not None:
+        save_analysis_data("l2_error.json", "l2_error", l2_error_all, j - iinject)
+
     ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
     ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
     ax_epsilon.scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
     ax_epsilon.scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
 
-    # ax_rho.scatter(y,estimated_rho)
+    range_plot = 2.5 * H
+
     ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
     ax_rho.set_xlabel(r"$z$")
     ax_rho.set_yscale("log")
     ax_rho.set_ylim(1e-20, 1e-8)
-    ax_rho.set_xlim(-2.2 * H, 2.2 * H)
-    # ax_rho.set_ylim(1e-12, 10**2)
+    ax_rho.set_xlim(-range_plot, range_plot)
 
     ax_epsilon.set_ylabel(r"$\epsilon_j$")
     ax_epsilon.set_xlabel(r"$z$")
     ax_epsilon.set_yscale("log")
-    # ax_epsilon.set_ylim(1e-12, 2) # if you want the full range
     ax_epsilon.set_ylim(1e-4, 1e-1)  # if you want to see the dust only
-    ax_epsilon.set_xlim(-2.2 * H, 2.2 * H)
+    ax_epsilon.set_xlim(-range_plot, range_plot)
 
     ax_delta_v.set_ylabel(r"$\Delta v_z$ [m/s]")
     ax_delta_v.set_xlabel(r"$z$")
-    ax_delta_v.set_xlim(-2.2 * H, 2.2 * H)
+    ax_delta_v.set_xlim(-range_plot, range_plot)
     ax_delta_v.set_yscale("symlog", linthresh=1.0)
     ax_delta_v.set_ylim(-4e3, 4e3)
 
@@ -718,7 +723,7 @@ def analyse_and_plot(j):
         [0],
         linestyle="--",
         color="0.0",
-        label="analytic",
+        label="reference",
     )
 
     ax_rho.legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
@@ -732,7 +737,6 @@ def analyse_and_plot(j):
 
     os.makedirs(f"{dump_folder}/plots", exist_ok=True)
     plt.savefig(f"{dump_folder}/plots/vert_slice_dens_{j:04d}.png")
-    # model.do_vtk_dump(f"dump_stratif_{j}.vtk", True)
     plt.close()
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
@@ -740,11 +744,6 @@ def analyse_and_plot(j):
     fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
-
-    to_dens = codeu.to("kg") * codeu.to("m") ** -3
-
-    rho_dust_all = np.zeros(len(z))
-    epsilon_dust_all = np.zeros(len(z))
 
     for i in range(ndust):
         c = dust_colors[i]
@@ -772,15 +771,89 @@ def analyse_and_plot(j):
 
 
 # %%
-# Timestep loop
+# Simulation setup and restore
+# ------------------------------------------
+
+if shamrock.sys.world_rank() == 0:
+    os.makedirs(sim_folder, exist_ok=True)
+    os.makedirs(dump_folder, exist_ok=True)
+
+ctx = shamrock.Context()
+ctx.pdata_layout_new()
+
+model = shamrock.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M6")
+
+dump_helper = shamrock.utils.dump.ShamrockDumpHandleHelper(model, dump_folder)
+
+
+def setup_model():
+    global bmin, bmax
+
+    cfg = model.gen_default_config()
+    cfg.set_artif_viscosity_VaryingCD10(
+        alpha_min=av_alpha_min,
+        alpha_max=av_alpha_max,
+        sigma_decay=av_sigma_decay,
+        alpha_u=av_alpha_u,
+        beta_AV=av_beta_AV,
+    )
+
+    cfg.set_dust_mode_monofluid_tvi(nvar=ndust)
+    cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
+    cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
+    cfg.add_ext_force_velocity_dissipation(eta=vel_dissipation_eta)
+    cfg.set_two_stage_search(False)
+    cfg.set_boundary_periodic()
+    cfg.set_units(codeu)
+    cfg.set_eos_isothermal(cs)
+    cfg.print_status()
+    model.set_solver_config(cfg)
+
+    model.init_scheduler(scheduler_split_val, scheduler_merge_val)
+
+    model.resize_simulation_box(bmin, bmax)
+
+    setup = model.get_setup()
+    gen = setup.make_generator_lattice_hcp(dr, bmin, bmax)
+    setup.apply_setup(gen, insert_step=scheduler_split_val)
+
+    pmass = model.total_mass_to_part_mass(totmass)
+    model.set_particle_mass(pmass)
+    print("Current part mass :", pmass)
+
+    # Correct the barycenter
+    analysis_barycenter = shamrock.model_sph.analysisBarycenter(model=model)
+    barycenter, disc_mass = analysis_barycenter.get_barycenter()
+
+    if shamrock.sys.world_rank() == 0:
+        print(f"disc barycenter = {barycenter}")
+
+    model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
+
+    model.remap_positions(remap_positions_z)
+    model.set_field_value_lambda_f64("uint", uint_g)
+
+    if random_vel_pert:
+        rng = np.random.default_rng(42)
+
+        ampl = dr / 1.0
+        print(f"random velocity perturbation amplitude = {ampl}")
+
+        def pert_func(r):
+            return tuple(rng.uniform(-ampl, ampl, size=3))
+
+        model.set_field_value_lambda_f64_3("vxyz", pert_func)
+
+    model.set_cfl_cour(cfl_cour_setup)
+    model.set_cfl_force(cfl_force_setup)
+
+    model.timestep()
+
+
+dump_helper.load_last_dump_or(setup_model)
 
 analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
-
-t_start = model.get_time()
-
-dust_injected = False
-
-idust_analysis = 0
+pmass = model.get_particle_mass()
 
 
 def dust_mass_analysis():
@@ -790,9 +863,16 @@ def dust_mass_analysis():
     idust_analysis += 1
 
 
-ivtk = 0
+# %%
+# Run simulation
+# ------------------------------------------
 
-tnext = 0
+t_start = model.get_time()
+
+dust_injected = False
+
+idust_analysis = 0
+
 for j in range(1000):
     if j == iinject:
         reference_dusty_settle = ReferenceDustySettleAll()
@@ -800,24 +880,18 @@ for j in range(1000):
 
     if tlist[j] >= t_start:
         if j > 0:
-            while 1:
-                res = model.evolve_until(tlist[j], niter_max=10000)
-                # model.timestep()
-
-                if model.get_time() >= 0.0:
-                    model.do_vtk_dump(f"{dump_folder}/vtk_{ivtk:04d}.vtk", True)
-                    ivtk += 1
-
-                    # if ivtk > 100:
-                    #    exit()
-
-                if res.reach_target_time:
-                    break
+            model.evolve_until(tlist[j])
 
             if dust_injected:
                 dust_mass_analysis()
 
         if j == iinject:
+            max_v = get_max_v()
+            print(f"max_v = {max_v}")
+
+            if max_v > max_v_inject_threshold:
+                raise ValueError("max_v is too high, please increase the injection time")
+
             for k in range(ndust):
 
                 def compute_sj_new(patchdata):
@@ -825,8 +899,8 @@ for j in range(1000):
 
                 model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
-                model.set_cfl_cour(0.1)
-                model.set_cfl_force(0.1)
+                model.set_cfl_cour(cfl_cour_inject)
+                model.set_cfl_force(cfl_force_inject)
 
             dust_injected = True
             dust_mass_analysis()
@@ -843,49 +917,42 @@ for j in range(1000):
     if tlist[j] >= t_end:
         break
 
-####################################################
-# Convert PNG sequence to Image sequence in mpl
-####################################################
-
-from shamrock.utils.plot import show_image_sequence
-
 # %%
+# Build animations from plot sequences
+# ------------------------------------------
+
 glob_str = f"{dump_folder}/plots/vert_slice_dens_*.png"
 ani = show_image_sequence(glob_str)
-
-from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    # Show the animation
     plt.show()
 
 # %%
+
 glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
 ani = show_image_sequence(glob_str)
-
-from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    # Show the animation
     plt.show()
 
 # %%
-# Plot the mass history
+# Plot dust mass conservation history
+# ------------------------------------------
 
 t, dust_mass = load_data_from_json("dust_mass.json", "dust_mass")
 dust_mass = np.array(dust_mass)
 
-plt.figure()
-for k in range(ndust):
-    mh = dust_mass[:, k]
-    deviation = (mh / mh[0]) - 1
+t = np.array(t) - tinject
 
+St = np.zeros(ndust)
+
+for k in range(ndust):
     t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
         rho_grain=mrn_distribution.rho_grains[k],
@@ -894,12 +961,17 @@ for k in range(ndust):
         cs=cs,
         gamma=gamma,
     )
-    St = ts / t_dyn
+    St[k] = ts / t_dyn
+
+plt.figure()
+for k in range(ndust):
+    mh = dust_mass[:, k]
+    deviation = (mh / mh[0]) - 1
 
     plt.plot(
         t,
         deviation,
-        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St:.1e}",
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St[k]:.1e}",
     )
 
 total_dust_mass = np.sum(dust_mass, axis=1)
@@ -912,7 +984,7 @@ plt.plot(
 )
 
 plt.xlabel("t")
-plt.ylabel("$\|delta M_{dust} / M_{dust,0}$")
+plt.ylabel("$\\delta M_{dust} / M_{dust,0}$")
 plt.yscale("symlog", linthresh=1e-8)
 plt.title("Dust mass conservation")
 plt.legend()
@@ -920,18 +992,44 @@ plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/dust_mass_history.png")
 plt.show()
 
+
 # %%
-# Plot the L2 errors
+# Plot L2 error history
+# ------------------------------------------
+
+t, l2_error = load_data_from_json("l2_error.json", "l2_error")
+l2_error = np.array(l2_error)
+
+t = np.array(t) - tinject
+
+print(t)
+print(l2_error)
 
 plt.figure()
 for k in range(ndust):
-    plt.plot(t_l2, l2_errors[k], label=f"dust {k}")
-    print(f"L2 error for dust {k} = {l2_errors[k]}")
+    plt.plot(
+        t,
+        l2_error[:, k],
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St[k]:.1e}",
+    )
+plt.legend()
 plt.xlabel("t")
 plt.ylabel("L2 error")
 plt.yscale("log")
-plt.title("L2 errors")
-plt.legend()
 plt.tight_layout()
-plt.savefig(f"{dump_folder}/plots/l2_errors.png")
+plt.savefig(f"{dump_folder}/plots/l2_error.png")
 plt.show()
+
+# %%
+
+print("##### Test result #####")
+result = {
+    "t": float(t[-1]),
+    "l2_error": l2_error[-1].tolist(),
+    "dust_mass": (dust_mass[-1] / dust_mass[0] - 1).tolist(),
+    "St": St.tolist(),
+    "lz": lz,
+}
+print(result)
+
+json.dump(result, open(f"{dump_folder}/test_result.json", "w"), indent=4)

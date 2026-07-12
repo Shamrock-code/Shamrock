@@ -87,7 +87,7 @@ class ComputeCFLDustDeltav : public shamrock::solvergraph::INode {
                     Tscal delta_v_j_a_norm = sycl::length(delta_v_j_a);
 
                     Tscal rho_d_j_a = rho_dust(j);
-                    if (rho_d_j_a > cfl_density_threshold) {
+                    if (rho_d_j_a > cfl_density_threshold && delta_v_j_a_norm > 0) {
                         cfl_tmp = sycl::min(cfl_tmp, h_a / delta_v_j_a_norm);
                     }
                 }

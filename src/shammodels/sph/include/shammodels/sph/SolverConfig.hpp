@@ -120,7 +120,7 @@ namespace shammodels::sph {
             bool pure_diffusion_mode = false;
 
             Tscal C_1_fluid             = 0.1;
-            Tscal C_delta_v             = 1;
+            Tscal C_delta_v             = 0.1;
             Tscal cfl_density_threshold = 1e-20;
         };
 

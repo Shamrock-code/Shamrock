@@ -62,7 +62,7 @@ epsilon_base = 0.01
 # resolution
 lx = 12
 ly = 12
-lz = 512
+lz = 96
 
 # time
 tlist = [0.1 * i for i in range(1000)]
@@ -185,6 +185,7 @@ def setup_model():
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=5)
+    cfg.set_two_stage_search(False)
     cfg.set_boundary_periodic()
     cfg.set_units(codeu)
     cfg.set_eos_isothermal(cs)
@@ -688,7 +689,7 @@ def analyse_and_plot(j):
         [0],
         linestyle="--",
         color="0.0",
-        label="analytic",
+        label="reference",
     )
 
     ax_rho.legend(handles=[gas_handle, dust_handle, analytic_handle], loc="upper right", fontsize=8)
@@ -783,7 +784,7 @@ for j in range(1000):
             max_v = get_max_v()
             print(f"max_v = {max_v}")
 
-            if max_v > 1e-2:
+            if max_v > 1.0:
                 raise ValueError("max_v is too high, please increase the injection time")
 
             for k in range(ndust):

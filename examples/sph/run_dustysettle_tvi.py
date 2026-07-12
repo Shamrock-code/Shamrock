@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.animation import PillowWriter
 from matplotlib.lines import Line2D
-from scipy.linalg import solve
+from scipy.linalg import solve_banded
 from scipy.special import erfinv
 from shamrock.utils.DustMRNDistribution import DustMRNDistribution
 from shamrock.utils.numba_helper import maybe_njit
@@ -74,6 +74,7 @@ R0 = 1  # Where are we in radius
 H_r_0 = 0.05  # Disc aspect ratio
 gamma = 1.4  # Adiabatic index
 box_H_count = 8  # box size in number of H
+random_vel_pert = True  # add a small vecolity pertubation to fasten the setup
 
 # Dust
 ndust = 5
@@ -117,11 +118,12 @@ cfl_force_inject = 0.1
 max_v_inject_threshold = 1.0
 
 # Analytical reference
-reference_tau = 0.05
-reference_Nz = 2000
+reference_tau = 0.025
+reference_Nz = 4000
+reference_zrange = 3.5  # in units of H
 
 # Paths
-sim_folder = "_to_trash/dusty_settle/"
+sim_folder = f"_to_trash/dusty_settle_{lz}/"
 dump_folder = sim_folder + "dump/"
 
 # Plotting
@@ -253,43 +255,47 @@ def S_rho(rho, v, vp, hz, tau, Nz):
 
     npts = Nz + 2
 
-    A = np.zeros((npts, npts))
-    B = np.zeros((npts, npts))
+    ab_A = np.zeros((3, npts))
+    bd_main = np.zeros(npts)
+    bd_lower = np.zeros(npts)
+    bd_upper = np.zeros(npts)
 
     # Interior points
     for j in range(1, Nz + 1):
         C1 = -tau / (8 * hz) * (v[j + 1] + vp[j + 1])
         C2 = -tau / (8 * hz) * (v[j - 1] + vp[j - 1])
 
-        A[j, j - 1] = C2
-        A[j, j] = 1.0
-        A[j, j + 1] = -C1
+        ab_A[2, j - 1] = C2
+        ab_A[1, j] = 1.0
+        ab_A[0, j + 1] = -C1
 
-        B[j, j - 1] = -C2
-        B[j, j] = 1.0
-        B[j, j + 1] = C1
+        bd_lower[j] = -C2
+        bd_main[j] = 1.0
+        bd_upper[j] = C1
 
     # Left boundary
     C = -tau / (8 * hz) * (vp[0] + v[0] - vp[1] - v[1])
 
-    A[0, 0] = 0.5 + C
-    A[0, 1] = 0.5 + C
+    ab_A[1, 0] = 0.5 + C
+    ab_A[0, 1] = 0.5 + C
 
-    B[0, 0] = 0.5 - C
-    B[0, 1] = 0.5 - C
+    bd_main[0] = 0.5 - C
+    bd_upper[0] = 0.5 - C
 
     # Right boundary
     C = -tau / (8 * hz) * (vp[-1] + v[-1] - vp[-2] - v[-2])
 
-    A[-1, -2] = 0.5 - C
-    A[-1, -1] = 0.5 - C
+    ab_A[2, npts - 2] = 0.5 - C
+    ab_A[1, npts - 1] = 0.5 - C
 
-    B[-1, -2] = 0.5 + C
-    B[-1, -1] = 0.5 + C
+    bd_lower[npts - 1] = 0.5 + C
+    bd_main[npts - 1] = 0.5 + C
 
-    r = B @ rho
+    r = bd_main * rho
+    r[1:] += bd_lower[1:] * rho[:-1]
+    r[:-1] += bd_upper[:-1] * rho[1:]
 
-    ret = solve(A, r)
+    ret = solve_banded((1, 1), ab_A, r)
     ret = np.maximum(ret, 0)
 
     ###################
@@ -320,8 +326,10 @@ def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
 
     npts = Nz + 2
 
-    A = np.zeros((npts, npts))
-    B = np.zeros((npts, npts))
+    ab_A = np.zeros((3, npts))
+    bd_main = np.zeros(npts)
+    bd_lower = np.zeros(npts)
+    bd_upper = np.zeros(npts)
     E0 = np.zeros_like(v)
 
     for j in range(1, Nz + 1):
@@ -330,24 +338,27 @@ def S_v(v, vbar, vbarp, rho, rhop, hz, zbar, tau, Nz, Stj):
         E1 = (vbar[j] + vbarp[j]) / (8 * hz)
         E2 = 1.0 / (2.0 * Stj[j])
 
-        A[j, j - 1] = -E1
-        A[j, j] = 1.0 / tau + E2
-        A[j, j + 1] = E1
+        ab_A[2, j - 1] = -E1
+        ab_A[1, j] = 1.0 / tau + E2
+        ab_A[0, j + 1] = E1
 
-        B[j, j - 1] = E1
-        B[j, j] = 1.0 / tau - E2
-        B[j, j + 1] = -E1
+        bd_lower[j] = E1
+        bd_main[j] = 1.0 / tau - E2
+        bd_upper[j] = -E1
 
     # Boundary conditions
-    A[0, 0] = 1
-    A[0, 1] = 1
+    ab_A[1, 0] = 1
+    ab_A[0, 1] = 1
 
-    A[-1, -2] = 1
-    A[-1, -1] = 1
+    ab_A[2, npts - 2] = 1
+    ab_A[1, npts - 1] = 1
 
-    r = B @ v + E0
+    r = bd_main * v
+    r[1:] += bd_lower[1:] * v[:-1]
+    r[:-1] += bd_upper[:-1] * v[1:]
+    r += E0
 
-    return solve(A, r)
+    return solve_banded((1, 1), ab_A, r)
 
 
 S_rho = maybe_njit(S_rho)
@@ -365,7 +376,7 @@ class ReferenceDustySettle:
 
         self.Nz = Nz
 
-        zout = 3 * H / R0
+        zout = reference_zrange * H / R0
         zmin = -zout
         zmax = zout
 
@@ -478,6 +489,37 @@ class ReferenceDustySettleAll:
 
 reference_dusty_settle = None
 
+
+def compute_L2_error(z, field, z_ref, field_ref):
+    """
+    Compute the L2 error between two fields on a given grid.
+    """
+
+    z_field_sort_args = np.argsort(z)
+    z_field_sorted = z[z_field_sort_args]
+    field_field_sorted = field[z_field_sort_args]
+
+    # Interpolate field to the same grid as the reference field
+    field_interp = np.interp(z_ref, z_field_sorted, field_field_sorted)
+
+    # Compute delta
+    delta = field_interp - field_ref
+
+    # Compute L2 func
+    L2_func = delta**2
+
+    trap_func = None
+    if hasattr(np, "trapezoid"):
+        trap_func = getattr(np, "trapezoid")
+    else:
+        trap_func = getattr(np, "trapz")
+
+    # Compute L2 integral
+    L2_integral = trap_func(L2_func, z_ref)
+
+    return np.sqrt(L2_integral)
+
+
 # %%
 # Analysis helpers
 # ------------------------------------------
@@ -582,6 +624,8 @@ def analyse_and_plot(j):
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
 
+    l2_error_all = [0 for _ in range(ndust)]
+
     for i in range(ndust):
         c = dust_colors[i]
         ax_rho.scatter(z, s_j[:, i] ** 2 * to_dens, s=sz, color=c, edgecolors="none")
@@ -606,12 +650,21 @@ def analyse_and_plot(j):
             print(ana_epsilon.max(), ana_epsilon.min())
             ax_epsilon.plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
 
+            L2_error = compute_L2_error(
+                z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].zbar, ana_epsilon
+            )
+
+            l2_error_all[i] = L2_error
+
+    if reference_dusty_settle is not None:
+        save_analysis_data("l2_error.json", "l2_error", l2_error_all, j - iinject)
+
     ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
     ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
     ax_epsilon.scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
     ax_epsilon.scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
 
-    range_plot = 3.0 * H
+    range_plot = 2.5 * H
 
     ax_rho.set_ylabel(r"$\rho$ [kg/m$^3$]")
     ax_rho.set_xlabel(r"$z$")
@@ -779,6 +832,17 @@ def setup_model():
     model.remap_positions(remap_positions_z)
     model.set_field_value_lambda_f64("uint", uint_g)
 
+    if random_vel_pert:
+        rng = np.random.default_rng(42)
+
+        ampl = dr / 1.0
+        print(f"random velocity perturbation amplitude = {ampl}")
+
+        def pert_func(r):
+            return tuple(rng.uniform(-ampl, ampl, size=3))
+
+        model.set_field_value_lambda_f64_3("vxyz", pert_func)
+
     model.set_cfl_cour(cfl_cour_setup)
     model.set_cfl_force(cfl_force_setup)
 
@@ -882,11 +946,11 @@ if shamrock.sys.world_rank() == 0:
 t, dust_mass = load_data_from_json("dust_mass.json", "dust_mass")
 dust_mass = np.array(dust_mass)
 
-plt.figure()
-for k in range(ndust):
-    mh = dust_mass[:, k]
-    deviation = (mh / mh[0]) - 1
+t = np.array(t) - tinject
 
+St = np.zeros(ndust)
+
+for k in range(ndust):
     t_dyn = 1
     ts = shamrock.phys.epstein_stopping_time(
         rho_grain=mrn_distribution.rho_grains[k],
@@ -895,12 +959,17 @@ for k in range(ndust):
         cs=cs,
         gamma=gamma,
     )
-    St = ts / t_dyn
+    St[k] = ts / t_dyn
+
+plt.figure()
+for k in range(ndust):
+    mh = dust_mass[:, k]
+    deviation = (mh / mh[0]) - 1
 
     plt.plot(
         t,
         deviation,
-        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St:.1e}",
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St[k]:.1e}",
     )
 
 total_dust_mass = np.sum(dust_mass, axis=1)
@@ -913,10 +982,52 @@ plt.plot(
 )
 
 plt.xlabel("t")
-plt.ylabel("$\|delta M_{dust} / M_{dust,0}$")
+plt.ylabel("$\\delta M_{dust} / M_{dust,0}$")
 plt.yscale("symlog", linthresh=1e-8)
 plt.title("Dust mass conservation")
 plt.legend()
 plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/dust_mass_history.png")
 plt.show()
+
+
+# %%
+# Plot L2 error history
+# ------------------------------------------
+
+t, l2_error = load_data_from_json("l2_error.json", "l2_error")
+l2_error = np.array(l2_error)
+
+t = np.array(t) - tinject
+
+print(t)
+print(l2_error)
+
+plt.figure()
+for k in range(ndust):
+    plt.plot(
+        t,
+        l2_error[:, k],
+        label=f"dust {k}, s = {mrn_distribution.grain_size_si[k]:.1e} [m], St = {St[k]:.1e}",
+    )
+plt.legend()
+plt.xlabel("t")
+plt.ylabel("L2 error")
+plt.yscale("log")
+plt.tight_layout()
+plt.savefig(f"{dump_folder}/plots/l2_error.png")
+plt.show()
+
+# %%
+
+print("##### Test result #####")
+result = {
+    "t": float(t[-1]),
+    "l2_error": l2_error[-1].tolist(),
+    "dust_mass": (dust_mass[-1] / dust_mass[0] - 1).tolist(),
+    "St": St.tolist(),
+    "lz": lz,
+}
+print(result)
+
+json.dump(result, open(f"{dump_folder}/test_result.json", "w"), indent=4)

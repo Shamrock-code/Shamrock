@@ -3,6 +3,13 @@ Dusty settling SPH test
 ========================
 
 Perform a dust settling test in a local stratified box.
+
+If you want to change the resolution, you can set the LZ environment variable.
+
+Example (from build directory):
+```bash
+LZ=96 ./shamrock --sycl-cfg 0:0 --smi --loglevel 1 --rscript ../examples/sph/run_dustysettle_tvi.py
+```
 """
 
 # sphinx_gallery_multi_image = "single"
@@ -62,7 +69,7 @@ epsilon_base = 0.01
 # resolution
 lx = 12
 ly = 12
-lz = 96
+lz = int(os.environ.get("LZ", 64))
 
 # time
 tlist = [0.1 * i for i in range(1000)]

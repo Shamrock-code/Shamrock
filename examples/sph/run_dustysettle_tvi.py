@@ -157,7 +157,7 @@ mrn_distribution = DustMRNDistribution(
     codeu, mrn_pow, mrn_cutoff_si, grain_size_si_edges, rho_grains_si_edges
 )
 
-lmin = (-lx // 2, -ly // 2, -lz // 2)
+lmin = (-(lx // 2), -(ly // 2), -(lz // 2))
 lmax = (lx // 2, ly // 2, lz // 2)
 
 # Call with dr = 1 as we will rescale on next call

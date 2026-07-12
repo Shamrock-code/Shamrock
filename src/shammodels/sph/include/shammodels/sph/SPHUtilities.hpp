@@ -94,7 +94,7 @@ namespace shammodels::sph {
 
             PatchtreeField<flt> interactR_mpi_tree = sptree.make_patch_tree_field(
                 sched,
-                shamsys::instance::get_compute_queue(),
+                shamsys::instance::get_compute_scheduler_ptr(),
                 interactR_patch,
                 [](flt h0, flt h1, flt h2, flt h3, flt h4, flt h5, flt h6, flt h7) {
                     return sham::max_8points(h0, h1, h2, h3, h4, h5, h6, h7);

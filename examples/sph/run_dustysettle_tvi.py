@@ -864,6 +864,8 @@ ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 if shamrock.sys.world_rank() == 0:
     plt.show()
 
+# %%
+
 glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
 ani = show_image_sequence(glob_str)
 

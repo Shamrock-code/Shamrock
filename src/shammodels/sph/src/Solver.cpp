@@ -2793,7 +2793,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_1fluid_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tvi().C_1_fluid;
+                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tvi().C_1_fluid
+                                       * solver_config.time_state.cfl_multiplier;
 
                 compute_cfl_dust1_fluid->set_edges(
                     storage.part_counts,
@@ -2808,6 +2809,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
 
             std::shared_ptr<ComputeCFLDustDeltav<Tvec>> compute_cfl_dust_deltav;
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_delta_v_edge;
+            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> cfl_density_threshold_edge;
             std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> delta_v_refs;
 
             if (solver_config.dust_config.has_s_j_field()) {
@@ -2820,13 +2823,33 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 const u32 idelta_v = pdl.get_field_idx<Tvec>("delta_v");
                 map_field_refs(scheduler(), idelta_v, *delta_v_refs);
 
-                std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_delta_v_edge
+                auto &cfg_monofluid_tvi = solver_config.dust_config.get_monofluid_tvi();
+
+                C_delta_v_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                    "C_delta_v", "C_{delta_v}");
+                C_delta_v_edge->value
+                    = cfg_monofluid_tvi.C_delta_v * solver_config.time_state.cfl_multiplier;
+
+                cfl_density_threshold_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                        "C_delta_v", "C_{delta_v}");
-                C_delta_v_edge->value = solver_config.dust_config.get_monofluid_tvi().C_delta_v;
+                        "cfl_density_threshold", "cfl_density_threshold");
+                cfl_density_threshold_edge->value = cfg_monofluid_tvi.cfl_density_threshold;
+
+                auto pmass_edge
+                    = storage.solver_graph
+                          .template get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                              "gpart_mass");
 
                 compute_cfl_dust_deltav->set_edges(
-                    storage.part_counts, C_delta_v_edge, hpart_refs, delta_v_refs, cfl_dt);
+                    storage.part_counts,
+                    C_delta_v_edge,
+                    cfl_density_threshold_edge,
+                    pmass_edge,
+                    hfactd_edge,
+                    hpart_refs,
+                    s_j_refs,
+                    delta_v_refs,
+                    cfl_dt);
             }
 
             bool show_cfl_detail = solver_config.show_cfl_detail;

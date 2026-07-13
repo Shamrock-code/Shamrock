@@ -879,7 +879,6 @@ idust_analysis = 0
 for j in range(1000):
     if j == iinject:
         reference_dusty_settle = ReferenceDustySettleAll()
-        reference_dusty_settle = None
 
     if tlist[j] >= t_start:
         if j > 0:

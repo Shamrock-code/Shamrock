@@ -12,7 +12,7 @@
 /**
  * @file Solver.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief
  */
 
@@ -183,6 +183,9 @@ namespace shammodels::sph {
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 
+        /// @brief Updates the magnetic current field (for NIMHD)
+        void update_J();
+
         /// @brief Initializes data layout for ghost particle fields
         void init_ghost_layout();
 
@@ -201,6 +204,7 @@ namespace shammodels::sph {
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
         void update_derivs(Tscal dt_hydro);
+
         /**
          * @brief
          *

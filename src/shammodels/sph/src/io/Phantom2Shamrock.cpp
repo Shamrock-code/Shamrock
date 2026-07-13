@@ -143,6 +143,21 @@ namespace shammodels::sph {
     /// explicit instanciation for f64_3
     template AVConfig<f64_3> get_shamrock_avconfig<f64_3>(PhantomDump &phdump);
 
+    template<class Tvec>
+    MHDConfig<Tvec> get_shamrock_mhdconfig(PhantomDump &phdump) {
+        MHDConfig<Tvec> cfg{};
+
+        // Defaut values
+        cfg.set_ideal_mhd_constrained_hyper_para(0.1, 1);
+
+        return cfg;
+    }
+
+    /// explicit instanciation for f32_3
+    template MHDConfig<f32_3> get_shamrock_mhdconfig<f32_3>(PhantomDump &phdump);
+    /// explicit instanciation for f64_3
+    template MHDConfig<f64_3> get_shamrock_mhdconfig<f64_3>(PhantomDump &phdump);
+
     template<class Tscal>
     shamunits::UnitSystem<Tscal> get_shamrock_units(PhantomDump &phdump) {
 

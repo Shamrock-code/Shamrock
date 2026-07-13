@@ -2791,7 +2791,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_1fluid_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tvi().C_1_fluid;
+                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tvi().C_1_fluid
+                                       * solver_config.time_state.cfl_multiplier;
 
                 compute_cfl_dust1_fluid->set_edges(
                     storage.part_counts,
@@ -2824,7 +2825,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 C_delta_v_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                     "C_delta_v", "C_{delta_v}");
-                C_delta_v_edge->value = cfg_monofluid_tvi.C_delta_v;
+                C_delta_v_edge->value
+                    = cfg_monofluid_tvi.C_delta_v * solver_config.time_state.cfl_multiplier;
 
                 cfl_density_threshold_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(

@@ -281,7 +281,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("pure_diffusion_mode")   = false,
             py::arg("C_1_fluid")             = 0.1,
             py::arg("C_delta_v")             = 1.0,
-            py::arg("cfl_density_threshold") = 1e-20)
+            py::arg("cfl_density_threshold") = shambase::get_epsilon<Tscal>())
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {

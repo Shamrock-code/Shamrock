@@ -120,8 +120,8 @@ namespace shammodels::sph {
             bool pure_diffusion_mode = false;
 
             Tscal C_1_fluid             = 0.1;
-            Tscal C_delta_v             = 0.1;
-            Tscal cfl_density_threshold = 1e-20;
+            Tscal C_delta_v             = 1.0;
+            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>();
         };
 
         struct MonofluidComplete {
@@ -138,8 +138,8 @@ namespace shammodels::sph {
             u32 nvar,
             bool pure_diffusion_mode    = false,
             Tscal C_1_fluid             = 0.1,
-            Tscal C_delta_v             = 0.1,
-            Tscal cfl_density_threshold = 1e-20) {
+            Tscal C_delta_v             = 1.0,
+            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>()) {
             current_mode = MonofluidTVI{
                 nvar, pure_diffusion_mode, C_1_fluid, C_delta_v, cfl_density_threshold};
         }

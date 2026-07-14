@@ -914,7 +914,7 @@ for j in range(1000):
 
         analyse_and_plot(j)
 
-        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=5)
+        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
 
     if tlist[j] >= t_end:
         break

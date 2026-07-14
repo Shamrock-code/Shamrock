@@ -758,7 +758,7 @@ def analyse_and_plot(j):
 
     axs[1].set_ylabel(r"$\dot{s}_j$")
     axs[1].set_xlabel(r"$z$")
-    axs[1].set_xlim(-box, box)
+    axs[1].set_xlim(-4 * H, 4 * H)
     axs[1].set_yscale("symlog", linthresh=1e-10)
 
     dust_sm = cm.ScalarMappable(cmap=dust_cmap, norm=dust_norm)

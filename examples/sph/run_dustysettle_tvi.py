@@ -624,7 +624,7 @@ def analyse_and_plot(j):
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
 
-    l2_error_all = [0 for _ in range(ndust)]
+    l2_error_all = [np.nan for _ in range(ndust)]
 
     for i in range(ndust):
         c = dust_colors[i]
@@ -656,8 +656,16 @@ def analyse_and_plot(j):
 
             l2_error_all[i] = L2_error
 
-    if reference_dusty_settle is not None:
-        save_analysis_data("l2_error.json", "l2_error", l2_error_all, j - iinject)
+    save_analysis_data("l2_error.json", "l2_error", l2_error_all, j)
+
+    dust_mass = analysis_dust_mass.get_dust_mass()
+
+    # if all dust mass is zero replace by nans
+    if np.max(dust_mass) == 0:
+        print("all dust mass is zero, replacing by nans")
+        dust_mass = [np.nan for _ in range(ndust)]
+
+    save_analysis_data("dust_mass.json", "dust_mass", dust_mass, j)
 
     ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
     ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
@@ -858,20 +866,11 @@ analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
 pmass = model.get_particle_mass()
 
 
-def dust_mass_analysis():
-    global idust_analysis
-    dust_mass = analysis_dust_mass.get_dust_mass()
-    save_analysis_data("dust_mass.json", "dust_mass", dust_mass, idust_analysis)
-    idust_analysis += 1
-
-
 # %%
 # Run simulation
 # ------------------------------------------
 
 t_start = model.get_time()
-
-dust_injected = False
 
 idust_analysis = 0
 
@@ -882,9 +881,6 @@ for j in range(1000):
     if tlist[j] >= t_start:
         if j > 0:
             model.evolve_until(tlist[j])
-
-            if dust_injected:
-                dust_mass_analysis()
 
         if j == iinject:
             max_v = get_max_v()
@@ -902,9 +898,6 @@ for j in range(1000):
 
                 model.set_cfl_cour(cfl_cour_inject)
                 model.set_cfl_force(cfl_force_inject)
-
-            dust_injected = True
-            dust_mass_analysis()
 
             model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
@@ -929,7 +922,7 @@ writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    plt.show()
+    plt.close()
 
 # %%
 
@@ -940,7 +933,7 @@ writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    plt.show()
+    plt.close()
 
 # %%
 # Plot dust mass conservation history
@@ -948,6 +941,10 @@ if shamrock.sys.world_rank() == 0:
 
 t, dust_mass = load_data_from_json("dust_mass.json", "dust_mass")
 dust_mass = np.array(dust_mass)
+
+# tinject = first non nan
+iinject = np.argmax(~np.isnan(dust_mass)[:, 0])
+tinject = np.array(t)[iinject]
 
 t = np.array(t) - tinject
 
@@ -967,7 +964,7 @@ for k in range(ndust):
 plt.figure()
 for k in range(ndust):
     mh = dust_mass[:, k]
-    deviation = (mh / mh[0]) - 1
+    deviation = (mh / mh[iinject]) - 1
 
     plt.plot(
         t,
@@ -978,7 +975,7 @@ for k in range(ndust):
 total_dust_mass = np.sum(dust_mass, axis=1)
 plt.plot(
     t,
-    (total_dust_mass / total_dust_mass[0]) - 1,
+    (total_dust_mass / total_dust_mass[iinject]) - 1,
     color="grey",
     label="total dust mass",
     linestyle="--",
@@ -991,7 +988,7 @@ plt.title("Dust mass conservation")
 plt.legend()
 plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/dust_mass_history.png")
-plt.show()
+plt.close()
 
 
 # %%
@@ -1019,7 +1016,7 @@ plt.ylabel("L2 error")
 plt.yscale("log")
 plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/l2_error.png")
-plt.show()
+plt.close()
 
 # %%
 
@@ -1027,7 +1024,7 @@ print("##### Test result #####")
 result = {
     "t": float(t[-1]),
     "l2_error": l2_error[-1].tolist(),
-    "dust_mass": (dust_mass[-1] / dust_mass[0] - 1).tolist(),
+    "dust_mass": (dust_mass[-1] / dust_mass[iinject] - 1).tolist(),
     "St": St.tolist(),
     "lz": lz,
 }

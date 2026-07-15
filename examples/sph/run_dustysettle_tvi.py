@@ -223,7 +223,7 @@ def remap_positions_z(r):
 
 
 def compute_sj_new_j(patchdata, j):
-    global pmass
+    pmass = model.get_particle_mass()
 
     hpart = patchdata["hpart"]
     rho = pmass * (model.get_hfact() / np.array(hpart)) ** 3

@@ -182,9 +182,9 @@ class CallbackState:
 
         candidates = []
         if info.tsim_interval is not None:
-            candidates.append(tsim_start + info.tsim_interval)
+            candidates.append(tsim_start)
         if info.at_tsim is not None:
-            future = [t for t in info.at_tsim if t > tsim_start]
+            future = [t for t in info.at_tsim if t >= tsim_start]
             if future:
                 candidates.append(min(future))
         self.next_tsim = min(candidates) if candidates else None

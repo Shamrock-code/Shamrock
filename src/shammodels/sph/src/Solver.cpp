@@ -455,17 +455,32 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             }
 
             if (has_s_j_field) {
-                u32 ndust          = solver_config.dust_config.get_dust_nvar();
-                auto half_step_s_j = solver_graph.register_node(
-                    prefix + "_s_j",
-                    shammodels::common::modules::ForwardEulerPositive<Tscal>(ndust));
-                shambase::get_check_ref(half_step_s_j)
-                    .set_edges(
-                        solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
-                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"),
-                        solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
-                        solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
-                half_step_sequence.push_back(half_step_s_j);
+                u32 ndust = solver_config.dust_config.get_dust_nvar();
+
+                auto &cfg = solver_config.dust_config.get_monofluid_tvi();
+
+                if (cfg.ensure_s_j_positivity) {
+                    auto half_step_s_j = solver_graph.register_node(
+                        prefix + "_s_j",
+                        shammodels::common::modules::ForwardEulerPositive<Tscal>(ndust));
+                    shambase::get_check_ref(half_step_s_j)
+                        .set_edges(
+                            solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"),
+                            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+                    half_step_sequence.push_back(half_step_s_j);
+                } else {
+                    auto half_step_s_j = solver_graph.register_node(
+                        prefix + "_s_j", shammodels::common::modules::ForwardEuler<Tscal>(ndust));
+                    shambase::get_check_ref(half_step_s_j)
+                        .set_edges(
+                            solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"),
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("ds_j_dt"),
+                            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                            solver_graph.get_edge_ptr<FieldRefs<Tscal>>("s_j"));
+                    half_step_sequence.push_back(half_step_s_j);
+                }
             }
 
             return OperationSequence("half step", std::move(half_step_sequence));
@@ -2389,8 +2404,15 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         if (solver_config.dust_config.has_s_j_field()) {
             ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>(
                 "s_j s_j^2", solver_config.dust_config.get_dust_nvar());
-            utility.fields_leapfrog_corrector_positive_only<Tscal>(
-                is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
+            bool ensure_positivity
+                = solver_config.dust_config.get_monofluid_tvi().ensure_s_j_positivity;
+            if (ensure_positivity) {
+                utility.fields_leapfrog_corrector_positive_only<Tscal>(
+                    is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
+            } else {
+                utility.fields_leapfrog_corrector<Tscal>(
+                    is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
+            }
         }
 
         storage.old_axyz.reset();

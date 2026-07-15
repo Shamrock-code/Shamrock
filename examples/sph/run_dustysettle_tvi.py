@@ -860,8 +860,6 @@ def setup_model():
     model.timestep()
 
 
-dump_helper.load_last_dump_or(setup_model)
-
 analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
 pmass = model.get_particle_mass()
 
@@ -870,46 +868,58 @@ pmass = model.get_particle_mass()
 # Run simulation
 # ------------------------------------------
 
-t_start = model.get_time()
+from shamrock.utils.SimulationRunner import SimulationRunner, callback, simulation_setup
 
-idust_analysis = 0
 
-for j in range(1000):
-    if j == iinject:
-        reference_dusty_settle = ReferenceDustySettleAll()
+class Simulation(SimulationRunner):
+    # Use the global vars defined at the top of the file
+    t_end = t_end
+    dump_prefix = dump_folder + "dump_"
 
-    if tlist[j] >= t_start:
-        if j > 0:
-            model.evolve_until(tlist[j])
+    @callback(at_tsim=[tinject])
+    def inject_dust(self, _):
+        max_v = get_max_v()
+        print(f"max_v = {max_v}")
 
-        if j == iinject:
-            max_v = get_max_v()
-            print(f"max_v = {max_v}")
+        if max_v > max_v_inject_threshold:
+            raise ValueError("max_v is too high, please increase the injection time")
 
-            if max_v > max_v_inject_threshold:
-                raise ValueError("max_v is too high, please increase the injection time")
+        for k in range(ndust):
 
-            for k in range(ndust):
+            def compute_sj_new(patchdata):
+                return compute_sj_new_j(patchdata, k)
 
-                def compute_sj_new(patchdata):
-                    return compute_sj_new_j(patchdata, k)
+            self.model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
-                model.overwrite_field_value_f64("s_j", compute_sj_new, k)
+            self.model.set_cfl_cour(cfl_cour_inject)
+            self.model.set_cfl_force(cfl_force_inject)
 
-                model.set_cfl_cour(cfl_cour_inject)
-                model.set_cfl_force(cfl_force_inject)
+        self.model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
-            model.set_dt(0.0)  # to help the corrector on next step after adding dust
+    @callback(tsim_interval=0.1)  # Do the analysis every dt_stop
+    def analysis_plots(self, j):
+        global reference_dusty_settle
+
+        model_time = self.model.get_time()
+
+        if model_time > tinject and reference_dusty_settle is None:
+            reference_dusty_settle = ReferenceDustySettleAll()
 
         if reference_dusty_settle is not None:
-            reference_dusty_settle.evolve_until(tlist[j] - tinject)
+            reference_dusty_settle.evolve_until(model_time - tinject)
 
         analyse_and_plot(j)
 
-        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
+    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
+    def checkpoint(self, icheckpoint):
+        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] >= t_end:
-        break
+    @simulation_setup
+    def setup(self):
+        setup_model()
+
+
+Simulation(model).run()
 
 # %%
 # Build animations from plot sequences
@@ -922,7 +932,7 @@ writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    plt.close()
+    plt.show()
 
 # %%
 
@@ -933,7 +943,7 @@ writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
 ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
-    plt.close()
+    plt.show()
 
 # %%
 # Plot dust mass conservation history
@@ -988,7 +998,7 @@ plt.title("Dust mass conservation")
 plt.legend()
 plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/dust_mass_history.png")
-plt.close()
+plt.show()
 
 
 # %%
@@ -1016,7 +1026,7 @@ plt.ylabel("L2 error")
 plt.yscale("log")
 plt.tight_layout()
 plt.savefig(f"{dump_folder}/plots/l2_error.png")
-plt.close()
+plt.show()
 
 # %%
 

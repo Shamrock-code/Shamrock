@@ -108,7 +108,7 @@ namespace shamrock::solvergraph {
      * @brief Concept for types that can be registered for polymorphic JSON deserialization.
      *
      * Requires that `T` derives from @ref JsonSerializable and provides a static
-     * `T::from_json(const nlohmann::json &)` convertible to `T`.
+     * `T::from_json(const nlohmann::json &)` that returns exactly `T`.
      */
     template<typename T>
     concept JsonDeserializable

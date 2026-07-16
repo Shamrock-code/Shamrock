@@ -18,13 +18,10 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/pre_main_call.hpp"
-#include "shambase/string.hpp"
 #include "shambase/type_name_info.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "shamrock/scheduler/PatchScheduler.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
+#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
-#include <memory>
 #include <stdexcept>
 
 namespace shamrock::solvergraph {

@@ -182,6 +182,8 @@ jobs:
             artifact_name: gallery_sph_run_circular_disc_central_pot
           - testfile: "examples/sph/run_circular_disc_sink.py"
             artifact_name: gallery_sph_run_circular_disc_sink
+          - testfile: "examples/sph/run_pn_disc.py"
+            artifact_name: gallery_sph_run_pn_disc
           - testfile: "examples/sph/run_kelvin_helmholtz.py"
             artifact_name: gallery_sph_run_kelvin_helmholtz
           - testfile: "examples/sph/run_sph_shear_test.py"

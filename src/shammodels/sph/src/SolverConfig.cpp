@@ -116,6 +116,7 @@ namespace shammodels::sph {
             u32 ndust = dust_config.get_dust_nvar();
             pdl.add_field<Tscal>("s_j", ndust);
             pdl.add_field<Tscal>("ds_j_dt", ndust);
+            pdl.add_field<Tvec>("delta_v", ndust);
         }
     }
 

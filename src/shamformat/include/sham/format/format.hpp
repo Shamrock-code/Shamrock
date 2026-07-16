@@ -81,7 +81,7 @@ namespace sham {
     template<typename... T>
     inline __attribute__((always_inline)) auto format(fmt::format_string<T...> fmt, T &&...args)
         -> std::string {
-        return sham::vformat(fmt, fmt::make_format_args(args...));
+        return sham::vformat(fmt.get(), fmt::make_format_args(args...));
     }
 
     /**

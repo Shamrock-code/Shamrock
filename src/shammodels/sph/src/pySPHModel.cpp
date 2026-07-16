@@ -271,12 +271,28 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "set_dust_mode_monofluid_tvi",
-            [](TConfig &self, u32 nvar, bool pure_diffusion_mode) {
-                self.dust_config.set_monofluid_tvi(nvar, pure_diffusion_mode);
+            [](TConfig &self,
+               u32 nvar,
+               bool pure_diffusion_mode,
+               Tscal C_1_fluid,
+               Tscal C_delta_v,
+               Tscal cfl_density_threshold,
+               bool ensure_s_j_positivity) {
+                self.dust_config.set_monofluid_tvi(
+                    nvar,
+                    pure_diffusion_mode,
+                    C_1_fluid,
+                    C_delta_v,
+                    cfl_density_threshold,
+                    ensure_s_j_positivity);
             },
             py::kw_only(),
             py::arg("nvar"),
-            py::arg("pure_diffusion_mode") = false)
+            py::arg("pure_diffusion_mode")   = false,
+            py::arg("C_1_fluid")             = 0.1,
+            py::arg("C_delta_v")             = 1.0,
+            py::arg("cfl_density_threshold") = shambase::get_epsilon<Tscal>(),
+            py::arg("ensure_s_j_positivity") = true)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {

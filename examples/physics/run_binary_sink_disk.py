@@ -29,26 +29,39 @@ G = ucte.G()
 c = ucte.c()
 
 # Parameters of the binary to trace
-M1 = 1000.0 # mass of the first body in solar masses
-M2 = 600 # mass of the second body in solar masses
+M1 = 1.0  # mass of the first body in solar masses (Sun)
+M2 = 1.0 / 332_946.0  # mass of the second body in solar masses (Earth)
 A = 1.0  # semi-major axis in astronomical units
-E = 0.2  # orbital eccentricity
+E = 0.0  # orbital eccentricity
 
 
 # Disk resolution
-Npart = 20000
+Npart = 100000
 
 
 # Disc parameters
 center_mass = M1 + M2
 Rg = G * center_mass / c**2
-disc_mass = 0.1  # [sol mass]
-rout = 10.0 *Rg # [au]
-rin = 4*Rg  # [au]
+disc_mass = 0.01  # [sol mass]
+rout = 10.0  # [au]
+rin = 1.0  # [au]
 H_r_0 = 0.05
 q = 0.5
 p = 3.0 / 2.0
-r0 = rin
+r0 = 1.0
+
+# Viscosity parameter
+alpha_AV = 1.0e-3 / 0.08
+alpha_u = 1.0
+beta_AV = 2.0
+
+# Integrator parameters
+C_cour = 0.3
+C_force = 0.25
+
+# Domain decomposition parameters
+scheduler_split_val = int(1.0e7)
+scheduler_merge_val = scheduler_split_val // 16
 
 
 def sigma_profile(r):
@@ -165,8 +178,8 @@ def build_binary_sph_model(
     yaw=0.0,
     racc=0.1,
     dt_=dt,
-    split_load=10_000_000,
-    merge_load=1,
+    split_load=scheduler_split_val,
+    merge_load=scheduler_merge_val,
     generate_disk=True,
     compute_op=False,
     compute_so=False,
@@ -185,14 +198,14 @@ def build_binary_sph_model(
     # Disable direct self-gravity in this simple example; direct mode requires
     # a single-patch setup which is not prepared here.
     cfg.set_self_gravity_none()
-    cfg.set_artif_viscosity_Constant(alpha_u=1.0, alpha_AV=1.0, beta_AV=2.0)
+    cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
     pmass = disc_mass / Npart
     cfg.set_particle_mass(pmass)
     cfg.set_eta_sink(1)
     cfg.set_eos_locally_isothermalLP07(cs0=cs_profile(r0), q=q, r0=r0)
     cfg.set_units(codeu)
-    cfg.set_cfl_cour(0.3)
-    cfg.set_cfl_force(0.25)
+    cfg.set_cfl_cour(C_cour)
+    cfg.set_cfl_force(C_force)
     cfg.set_smoothing_length_density_based()
     cfg.set_compute_OP(compute_op)
     cfg.set_compute_SO(compute_so)
@@ -252,6 +265,35 @@ def build_binary_sph_model(
             init_h_factor=0.03,
         )
         setup.apply_setup(gen_disc)
+
+    # Mirror the circular-disc example by correcting the disc momentum and barycenter
+    analysis_momentum = chama.model_sph.analysisTotalMomentum(model=model)
+    total_momentum = analysis_momentum.get_total_momentum()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc momentum = {total_momentum}")
+
+    model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
+
+    analysis_barycenter = chama.model_sph.analysisBarycenter(model=model)
+    barycenter, disc_mass_value = analysis_barycenter.get_barycenter()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc barycenter = {barycenter}")
+
+    model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
+
+    total_momentum = chama.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+    barycenter, disc_mass_value = chama.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc momentum after correction = {total_momentum}")
+        print(f"disc barycenter after correction = {barycenter}")
+
+    if not np.allclose(total_momentum, 0.0):
+        raise RuntimeError("disc momentum is not 0")
+    if not np.allclose(barycenter, 0.0):
+        raise RuntimeError("disc barycenter is not 0")
 
     return ctx, model
 
@@ -488,6 +530,15 @@ def render_disk_and_orbit(render_frames, ext=2.5, nx=256, ny=256, interval=100):
         interval=interval,
         blit=False,
     )
+    ani.save("binary_orbit.gif",
+              writer="ffmpeg", 
+              fps=30, 
+              dpi=200
+            )
+    
+    
+    
+    
 
     ax.set_title("Disc + binary orbit")
     ax.set_xlabel("x (AU)")
@@ -517,7 +568,9 @@ if __name__ == "__main__":
         roll=0.0,
         pitch=0.0,
         yaw=0.0,
-        racc=0.001,
+        racc=0.1,
+        split_load=scheduler_split_val,
+        merge_load=scheduler_merge_val,
         compute_op=False,
         compute_so=False,
         compute_ss=False,
@@ -526,9 +579,9 @@ if __name__ == "__main__":
     snapshots, render_frames = run_binary_orbit_PN(
         model,
         render=True,
-        render_ext=2.5,
-        nx=256,
-        ny=256,
+        render_ext=rout * 1.5,
+        nx=1024,
+        ny=1024,
     )
 
     for snapshot in snapshots[:3]:

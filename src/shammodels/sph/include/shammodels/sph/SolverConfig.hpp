@@ -901,6 +901,17 @@ struct shammodels::sph::SolverConfig {
     }
 
     /**
+     * @brief Add a 1PN external force
+     *
+     * @param[in] central_mass The mass of the central object
+     * @param[in] central_pos The position of the central object
+     * @param[in] central_vel The velocity of the central object
+     */
+    inline void add_ext_force_1pn(Tscal central_mass, Tvec central_pos, Tvec central_vel) {
+        ext_force_config.add_1pn(central_mass, central_pos, central_vel);
+    }
+
+    /**
      * @brief Add a Lense-Thirring external force
      *
      * @param[in] central_mass The mass of the central object
@@ -909,8 +920,14 @@ struct shammodels::sph::SolverConfig {
      * @param[in] dir_spin The direction of the spin of the central object
      */
     inline void add_ext_force_lense_thirring(
-        Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-        ext_force_config.add_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+        Tscal central_mass,
+        Tscal Racc,
+        Tscal a_spin,
+        Tvec dir_spin,
+        Tvec central_pos = Tvec{},
+        Tvec central_vel = Tvec{}) {
+        ext_force_config.add_lense_thirring(
+            central_mass, Racc, a_spin, dir_spin, central_pos, central_vel);
     }
 
     /**

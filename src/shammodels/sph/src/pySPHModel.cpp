@@ -302,15 +302,33 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
+            "add_ext_force_1pn",
+            [](TConfig &self, Tscal central_mass, Tvec central_pos, Tvec central_vel) {
+                self.add_ext_force_1pn(central_mass, central_pos, central_vel);
+            },
+            py::kw_only(),
+            py::arg("central_mass"),
+            py::arg("central_pos"),
+            py::arg("central_vel"))
+        .def(
             "add_ext_force_lense_thirring",
-            [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
-                self.add_ext_force_lense_thirring(central_mass, Racc, a_spin, dir_spin);
+            [](TConfig &self,
+               Tscal central_mass,
+               Tscal Racc,
+               Tscal a_spin,
+               Tvec dir_spin,
+               Tvec central_pos = Tvec{},
+               Tvec central_vel = Tvec{}) {
+                self.add_ext_force_lense_thirring(
+                    central_mass, Racc, a_spin, dir_spin, central_pos, central_vel);
             },
             py::kw_only(),
             py::arg("central_mass"),
             py::arg("Racc"),
             py::arg("a_spin"),
-            py::arg("dir_spin"))
+            py::arg("dir_spin"),
+            py::arg("central_pos") = Tvec{},
+            py::arg("central_vel") = Tvec{})
         .def(
             "add_ext_force_shearing_box",
             [](TConfig &self, Tscal Omega_0, Tscal eta, Tscal q) {

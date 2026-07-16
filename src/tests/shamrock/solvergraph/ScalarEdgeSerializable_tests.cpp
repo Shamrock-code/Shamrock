@@ -32,7 +32,7 @@ NEW_TEST(Unittest, "shamrock/solvergraph/ScalarEdgeSerializable", 1) {
     }
 
     {
-        auto ptr     = shamrock::solvergraph::JsonSerializable::from_json(j);
+        auto ptr      = shamrock::solvergraph::JsonSerializable::from_json(j);
         auto *as_edge = dynamic_cast<Edge *>(ptr.get());
 
         REQUIRE(as_edge != nullptr);

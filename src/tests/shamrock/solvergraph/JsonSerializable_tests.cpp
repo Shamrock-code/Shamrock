@@ -65,4 +65,11 @@ NEW_TEST(Unittest, "shamrock/solvergraph/JsonSerializable", 1) {
 
         REQUIRE_EXCEPTION_THROW(JsonSerializable::from_json(j), std::runtime_error);
     }
+
+    { // test that registering a type with the same name throws
+        REQUIRE_EXCEPTION_THROW(
+            JsonSerializable_registry::instance().register_type<TestClassSerialization>(
+                "TestClassSerialization"),
+            std::runtime_error);
+    }
 }

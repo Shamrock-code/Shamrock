@@ -34,20 +34,21 @@ namespace shamrock::solvergraph {
     /**
      * @brief Base interface for types that can be serialized to and from JSON.
      *
-     * Derived types must implement `to_json` and `type_name`, and also provide a
+     * Derived types must implement `_impl_to_json` and `type_name`, and also provide a
      * **static** `from_json` that returns an instance of the derived type (enforced
      * by @ref JsonDeserializable when registering).
      *
      * The JSON object used for polymorphic deserialization must contain a `"type"`
      * field whose value matches the name passed to
      * @ref JsonSerializable_registry::register_type and the string returned by
-     * `type_name()`.
+     * `type_name()`. Public @ref to_json sets this field automatically after
+     * `_impl_to_json`.
      *
      * @code{.cpp}
      * struct MyType : shamrock::solvergraph::JsonSerializable {
      *     int value;
      *
-     *     void to_json(nlohmann::json &j) const override { j["value"] = value; }
+     *     void _impl_to_json(nlohmann::json &j) const override { j["value"] = value; }
      *     std::string type_name() const override { return "MyType"; }
      *
      *     static MyType from_json(const nlohmann::json &j) {
@@ -61,8 +62,7 @@ namespace shamrock::solvergraph {
      * // Serialize
      * MyType obj{42};
      * nlohmann::json j;
-     * obj.to_json(j);
-     * j["type"] = obj.type_name();
+     * obj.to_json(j); // also sets j["type"] = "MyType"
      *
      * // Deserialize polymorphically
      * auto ptr = JsonSerializable::from_json(j);
@@ -73,14 +73,18 @@ namespace shamrock::solvergraph {
         virtual ~JsonSerializable() = default;
 
         /**
-         * @brief Write this object's fields into a JSON object.
+         * @brief Write this object to JSON, including the `"type"` discriminator.
          *
-         * Does not need to set the `"type"` discriminator; the caller typically
-         * adds `j["type"] = type_name()` after this call.
+         * Calls @ref _impl_to_json for derived fields, then sets
+         * `j["type"] = type_name()`. Derived types must not rely on writing `"type"`
+         * themselves; it is always overwritten here after `_impl_to_json`.
          *
          * @param j JSON object to fill
          */
-        virtual void to_json(nlohmann::json &j) const = 0;
+        void to_json(nlohmann::json &j) const {
+            _impl_to_json(j);
+            j["type"] = type_name();
+        }
 
         /**
          * @brief Return the type discriminator string for this class.
@@ -102,6 +106,17 @@ namespace shamrock::solvergraph {
          *         field, or if the type name is not registered
          */
         static std::unique_ptr<JsonSerializable> from_json(const nlohmann::json &j);
+
+        protected:
+        /**
+         * @brief Write derived-class fields into a JSON object.
+         *
+         * Must not be responsible for the `"type"` discriminator; @ref to_json sets
+         * it after this call.
+         *
+         * @param j JSON object to fill
+         */
+        virtual void _impl_to_json(nlohmann::json &j) const = 0;
     };
 
     /**
@@ -149,18 +164,18 @@ namespace shamrock::solvergraph {
         void register_type(
             const std::string &name, std::source_location loc = std::source_location::current()) {
 
-            // check that there is no other type registered with the same name
-            if (factories.find(name) != factories.end()) {
+            const auto [it, inserted] = factories.try_emplace(name, [](const nlohmann::json &j) {
+                return std::make_unique<T>(T::from_json(j));
+            });
+
+            // if the type is already registered, throw an error
+            if (!inserted) {
                 throw std::runtime_error(
                     shambase::format(
                         "Type {} already registered (called from {})",
                         name,
                         shambase::format_one_line_func(loc)));
             }
-
-            factories[name] = [](const nlohmann::json &j) -> std::unique_ptr<JsonSerializable> {
-                return std::make_unique<T>(T::from_json(j));
-            };
         }
 
         /**
@@ -169,9 +184,7 @@ namespace shamrock::solvergraph {
          * @param name Type discriminator string
          * @return True if the type is registered, false otherwise
          */
-        bool is_type_registered(const std::string &name) const {
-            return factories.find(name) != factories.end();
-        }
+        bool is_type_registered(const std::string &name) const { return factories.contains(name); }
 
         /**
          * @brief Create an instance of a registered type from JSON.

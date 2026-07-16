@@ -32,25 +32,14 @@ namespace shamrock::solvergraph {
         using ScalarEdge<T>::ScalarEdge;
         using ScalarEdge<T>::value;
 
-        void to_json(nlohmann::json &j) const override {
+        void _impl_to_json(nlohmann::json &j) const override {
             j = nlohmann::json{
-                {"type", type_name()},
                 {"value", value},
                 {"label", this->get_label()},
                 {"tex_symbol", this->get_raw_tex_symbol()}};
         };
 
         static ScalarEdgeSerializable<T> from_json(const nlohmann::json &j) {
-            std::string type = j.at("type");
-
-            if (type != type_name_static()) {
-                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
-                    "error when deserializing ScalarEdgeSerializable, expected type info "
-                    "\"{}\" but got \"{}\"",
-                    type_name_static(),
-                    type));
-            }
-
             std::string label      = j.at("label").get<std::string>();
             std::string tex_symbol = j.at("tex_symbol").get<std::string>();
 

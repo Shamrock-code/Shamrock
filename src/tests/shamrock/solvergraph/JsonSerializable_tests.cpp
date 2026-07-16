@@ -19,7 +19,7 @@ class TestClassSerialization : public shamrock::solvergraph::JsonSerializable {
 
     TestClassSerialization(int value, std::string name) : value(value), name(std::move(name)) {}
 
-    void to_json(nlohmann::json &j) const override {
+    void _impl_to_json(nlohmann::json &j) const override {
         j["value"] = value;
         j["name"]  = name;
     }
@@ -42,7 +42,6 @@ NEW_TEST(Unittest, "shamrock/solvergraph/JsonSerializable", 1) {
 
         nlohmann::json j;
         original.to_json(j);
-        j["type"] = original.type_name();
 
         auto ptr       = JsonSerializable::from_json(j);
         auto *restored = dynamic_cast<TestClassSerialization *>(ptr.get());

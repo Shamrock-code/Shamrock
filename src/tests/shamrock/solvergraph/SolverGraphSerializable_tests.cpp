@@ -102,4 +102,24 @@ NEW_TEST(Unittest, "shamrock/solvergraph/SolverGraphSerializable", 1) {
         REQUIRE_EQUAL(restored.get_edge_ptr<TestSerializableEdge>("edge_a")->value, 11);
         REQUIRE_EQUAL(restored.get_edge_ptr<TestSerializableEdge>("edge_b")->value, 22);
     }
+
+    { // test that failure during deserialization leaves the graph unchanged
+        SolverGraphSerializable graph{};
+
+        TestSerializableEdge keep{};
+        keep.value = 99;
+        graph.register_edge("keep_me", std::move(keep));
+
+        nlohmann::json j
+            = {{"edges",
+                {{"edge_ok", {{"type", "TestSerializableEdge"}, {"value", 1}}},
+                 {"edge_bad", {{"type", "NonExistentType"}}}}}};
+
+        REQUIRE_EXCEPTION_THROW(from_json(j, graph), std::runtime_error);
+        REQUIRE_EQUAL_NAMED(
+            "graph unchanged after failed from_json",
+            graph.get_edge_names(),
+            (std::vector<std::string>{"keep_me"}));
+        REQUIRE_EQUAL(graph.get_edge_ptr<TestSerializableEdge>("keep_me")->value, 99);
+    }
 }

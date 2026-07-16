@@ -74,6 +74,10 @@ namespace shamrock::solvergraph {
      * Expects an `"edges"` object. Each entry is reconstructed via
      * @ref JsonSerializable::from_json and registered under its key. Edge types must
      * already be registered in @ref JsonSerializable_registry.
+     *
+     * Population is all-or-nothing: edges are first registered into a temporary
+     * graph, and `p` is only replaced after every edge has been deserialized
+     * successfully. On any exception, `p` is left unchanged.
      */
     inline void from_json(const nlohmann::json &j, SolverGraphSerializable &p) {
         if (!j.is_object() || !j.contains("edges") || !j.at("edges").is_object()) {
@@ -82,6 +86,7 @@ namespace shamrock::solvergraph {
                 "object");
         }
 
+        SolverGraphSerializable tmp{};
         const auto &edges = j.at("edges");
 
         for (auto it = edges.begin(); it != edges.end(); ++it) {
@@ -95,7 +100,9 @@ namespace shamrock::solvergraph {
                     "Deserialized type for edge '{}' does not inherit from IEdge", name));
             }
 
-            p.register_edge_ptr_base(name, std::move(edge));
+            tmp.register_edge_ptr_base(name, std::move(edge));
         }
+
+        p = std::move(tmp);
     }
 } // namespace shamrock::solvergraph

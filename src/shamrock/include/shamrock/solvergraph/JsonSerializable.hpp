@@ -18,7 +18,10 @@
  * serialized to JSON and reconstructed polymorphically from a `"type"` field.
  */
 
+#include "shambase/SourceLocation.hpp"
+#include "sham/format/format.hpp"
 #include <nlohmann/json.hpp>
+#include <source_location>
 #include <unordered_map>
 #include <concepts>
 #include <functional>
@@ -110,7 +113,7 @@ namespace shamrock::solvergraph {
     template<typename T>
     concept JsonDeserializable
         = std::derived_from<T, JsonSerializable> && requires(const nlohmann::json &j) {
-              { T::from_json(j) } -> std::convertible_to<T>;
+              { T::from_json(j) } -> std::same_as<T>;
           };
 
     /**
@@ -143,7 +146,18 @@ namespace shamrock::solvergraph {
          * @param name Type discriminator string
          */
         template<JsonDeserializable T>
-        void register_type(const std::string &name) {
+        void register_type(
+            const std::string &name, std::source_location loc = std::source_location::current()) {
+
+            // check that there is no other type registered with the same name
+            if (factories.find(name) != factories.end()) {
+                throw std::runtime_error(
+                    shambase::format(
+                        "Type {} already registered (called from {})",
+                        name,
+                        shambase::format_one_line_func(loc)));
+            }
+
             factories[name] = [](const nlohmann::json &j) -> std::unique_ptr<JsonSerializable> {
                 return std::make_unique<T>(T::from_json(j));
             };

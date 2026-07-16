@@ -1033,24 +1033,6 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
         {"synchronized_data", jsynchro_data}};
 }
 
-nlohmann::json SynchronizedData::to_json() {
+nlohmann::json SynchronizedData::to_json() { return {{"solvergraph", container}}; }
 
-    nlohmann::json edges{};
-
-    using namespace shamrock::solvergraph;
-
-    for (const std::string &edgen : container.get_edge_names()) {
-        container.get_edge_ref<JsonSerializable>(edgen).to_json(edges[edgen]);
-    }
-
-    return {{"edges", edges}};
-}
-
-void SynchronizedData::from_json(const nlohmann::json &j) {
-
-    for (auto &el : j.at("edges").items()) {
-        std::string type   = el.value().at("type");
-        auto &deserializer = deser_map.at(type);
-        container.register_edge_ptr_base(el.key(), deserializer(el.value()));
-    }
-}
+void SynchronizedData::from_json(const nlohmann::json &j) { j.at("solvergraph").get_to(container); }

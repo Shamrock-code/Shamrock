@@ -35,7 +35,7 @@ namespace shamrock::solvergraph {
         using ScalarEdge<T>::ScalarEdge;
         using ScalarEdge<T>::value;
 
-        virtual void to_json(nlohmann::json &j) {
+        void to_json(nlohmann::json &j) const override {
             j = nlohmann::json{
                 {"type", type_name()},
                 {"value", value},
@@ -43,43 +43,36 @@ namespace shamrock::solvergraph {
                 {"tex_symbol", this->get_raw_tex_symbol()}};
         };
 
-        virtual void from_json(const nlohmann::json &j) {
+        static ScalarEdgeSerializable<T> from_json(const nlohmann::json &j) {
             std::string type = j.at("type");
 
-            if (type != type_name()) {
+            if (type != type_name_static()) {
                 throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
                     "error when deserializing ScalarEdgeSerializable, expected type info "
                     "\"{}\" but got \"{}\"",
-                    type_name(),
+                    type_name_static(),
                     type));
             }
 
-            value = j.at("value").get<T>();
+            std::string label      = j.at("label").get<std::string>();
+            std::string tex_symbol = j.at("tex_symbol").get<std::string>();
+
+            auto tmp  = ScalarEdgeSerializable<T>(label, tex_symbol);
+            tmp.value = j.at("value").get<T>();
+            return tmp;
         };
 
         inline static std::string type_name_static() {
             return "ScalarEdgeSerializable<" + shambase::get_type_name<T>() + ">";
         }
 
-        virtual std::string type_name() { return type_name_static(); };
+        std::string type_name() const override { return type_name_static(); };
     };
 
 } // namespace shamrock::solvergraph
 
-template<class T>
-void register_ctor_deser() {
-
-    auto ctor = [](const nlohmann::json &j) -> std::shared_ptr<shamrock::solvergraph::IEdge> {
-        std::string label      = j.at("label").get<std::string>();
-        std::string tex_symbol = j.at("tex_symbol").get<std::string>();
-
-        return std::make_shared<shamrock::solvergraph::ScalarEdgeSerializable<T>>(
-            label, tex_symbol);
-    };
-
-    deser_map.insert({shamrock::solvergraph::ScalarEdgeSerializable<T>::type_name_static(), ctor});
-}
-
 PRE_MAIN_FUNCTION_CALL([&]() {
-    register_ctor_deser<f64>();
+    using T = shamrock::solvergraph::ScalarEdgeSerializable<f64>;
+    shamrock::solvergraph::JsonSerializable_registry::instance().register_type<T>(
+        T::type_name_static());
 })

@@ -53,23 +53,18 @@
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/JsonSerializable.hpp"
+#include "shamrock/solvergraph/SolverGraphSerializable.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-
-inline std::unordered_map<
-    std::string,
-    std::function<std::shared_ptr<shamrock::solvergraph::IEdge>(const nlohmann::json &j)>>
-    deser_map = {};
 
 /// Data stored within the scheduler that are garanteed to be in sink across all ranks
 struct SynchronizedData {
-    shamrock::solvergraph::SolverGraph container
-        = shamrock::solvergraph::SolverGraph::with_constraint(
-            std::nullopt, shamrock::solvergraph::json_serializable_edge_constraint);
+    shamrock::solvergraph::SolverGraphSerializable container = {};
 
     nlohmann::json to_json();
 
     void from_json(const nlohmann::json &j);
 };
+
 struct PatchSchedulerConfig {
     u64 split_load_value = 0_u64;
     u64 merge_load_value = 0_u64;

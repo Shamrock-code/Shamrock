@@ -125,6 +125,11 @@ namespace shammodels::sph::modules {
             fnum += ndust;
         }
 
+        if (solver_config.dust_config.has_s_j_field()) {
+            const u32 ndust = solver_config.dust_config.get_dust_nvar();
+            fnum += ndust * 3; // s_j, ds_j_dt and delta_v
+        }
+
         writer.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
@@ -234,6 +239,109 @@ namespace shammodels::sph::modules {
 
                 vtk_dump_add_compute_field(
                     scheduler(), writer, tmp_deltav, "deltav_" + std::to_string(idust));
+            }
+        }
+
+        if (solver_config.dust_config.has_s_j_field()) {
+            const u32 is_j  = pdl.get_field_idx<Tscal>("s_j");
+            const u32 ndust = solver_config.dust_config.get_dust_nvar();
+
+            for (u32 idust = 0; idust < ndust; idust++) {
+                ComputeField<Tscal> tmp_s_j = utility.make_compute_field<Tscal>("tmp_s_j", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    shamlog_debug_ln(
+                        "sph::vtk", "compute extract s_j field with idust =", idust, p.id_patch);
+
+                    auto &buf_s_j = pdat.get_field<Tscal>(is_j);
+                    PatchDataFieldSpan<Tscal> span_s_j{buf_s_j, 0, pdat.get_obj_cnt()};
+
+                    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+                    auto &q   = sptr->get_queue();
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{span_s_j},
+                        sham::MultiRef{tmp_s_j.get_buf(p.id_patch)},
+                        pdat.get_obj_cnt(),
+                        [&, idust](u32 i, auto s_j_field, Tscal *acc_s_j) {
+                            acc_s_j[i] = s_j_field(i, idust);
+                        });
+                });
+
+                vtk_dump_add_compute_field(
+                    scheduler(), writer, tmp_s_j, "s_j_" + std::to_string(idust));
+            }
+        }
+
+        if (solver_config.dust_config.has_s_j_field()) {
+            const u32 ids_j_dt = pdl.get_field_idx<Tscal>("ds_j_dt");
+            const u32 ndust    = solver_config.dust_config.get_dust_nvar();
+
+            for (u32 idust = 0; idust < ndust; idust++) {
+                ComputeField<Tscal> tmp_ds_j_dt
+                    = utility.make_compute_field<Tscal>("tmp_ds_j_dt", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    shamlog_debug_ln(
+                        "sph::vtk",
+                        "compute extract ds_j_dt field with idust =",
+                        idust,
+                        p.id_patch);
+
+                    auto &buf_ds_j_dt = pdat.get_field<Tscal>(ids_j_dt);
+                    PatchDataFieldSpan<Tscal> span_ds_j_dt{buf_ds_j_dt, 0, pdat.get_obj_cnt()};
+
+                    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+                    auto &q   = sptr->get_queue();
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{span_ds_j_dt},
+                        sham::MultiRef{tmp_ds_j_dt.get_buf(p.id_patch)},
+                        pdat.get_obj_cnt(),
+                        [&, idust](u32 i, auto ds_j_dt_field, Tscal *acc_ds_j_dt) {
+                            acc_ds_j_dt[i] = ds_j_dt_field(i, idust);
+                        });
+                });
+
+                vtk_dump_add_compute_field(
+                    scheduler(), writer, tmp_ds_j_dt, "ds_j_dt_" + std::to_string(idust));
+            }
+        }
+
+        if (solver_config.dust_config.has_s_j_field()) {
+            const u32 idelta_v = pdl.get_field_idx<Tvec>("delta_v");
+            const u32 ndust    = solver_config.dust_config.get_dust_nvar();
+
+            for (u32 idust = 0; idust < ndust; idust++) {
+                ComputeField<Tvec> tmp_delta_v = utility.make_compute_field<Tvec>("tmp_delta_v", 1);
+
+                scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                    shamlog_debug_ln(
+                        "sph::vtk",
+                        "compute extract delta_v field with idust =",
+                        idust,
+                        p.id_patch);
+
+                    auto &buf_delta_v = pdat.get_field<Tvec>(idelta_v);
+                    PatchDataFieldSpan<Tvec> span_delta_v{buf_delta_v, 0, pdat.get_obj_cnt()};
+
+                    auto sptr = shamsys::instance::get_compute_scheduler_ptr();
+                    auto &q   = sptr->get_queue();
+
+                    sham::kernel_call(
+                        q,
+                        sham::MultiRef{span_delta_v},
+                        sham::MultiRef{tmp_delta_v.get_buf(p.id_patch)},
+                        pdat.get_obj_cnt(),
+                        [&, idust](u32 i, auto delta_v_field, Tvec *acc_delta_v) {
+                            acc_delta_v[i] = delta_v_field(i, idust);
+                        });
+                });
+
+                vtk_dump_add_compute_field(
+                    scheduler(), writer, tmp_delta_v, "delta_v_" + std::to_string(idust));
             }
         }
     }

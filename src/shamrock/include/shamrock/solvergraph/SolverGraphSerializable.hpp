@@ -28,12 +28,12 @@ namespace shamrock::solvergraph {
             : SolverGraph(
                   SolverGraphConstraint{
                       .name       = "SolverGraphSerializable",
-                      .node_check = [](const std::shared_ptr<INode> &node) -> bool {
+                      .node_check = [](const std::shared_ptr<INode> &) -> bool {
                           return false; // there is no clean mechanism to serialize a node + its
                                         // connexions
                       },
                       .edge_check = [](const std::shared_ptr<IEdge> &edge) -> bool {
-                          return bool(std::dynamic_pointer_cast<JsonSerializable>(edge));
+                          return dynamic_cast<const JsonSerializable *>(edge.get()) != nullptr;
                       }}) {}
 
         ~SolverGraphSerializable() = default;
@@ -50,9 +50,11 @@ namespace shamrock::solvergraph {
         nlohmann::json edges = nlohmann::json::object();
 
         for (const std::string &name : p.get_edge_names()) {
-            auto serializable
-                = std::dynamic_pointer_cast<JsonSerializable>(p.get_edge_ptr_base(name));
-            if (!bool(serializable)) {
+            const auto &edge_ptr = p.get_edge_ptr_base(name);
+
+            // we use raw pointer to avoir the cost of creating a new shared pointer
+            auto *serializable = dynamic_cast<const JsonSerializable *>(edge_ptr.get());
+            if (serializable == nullptr) {
                 shambase::throw_with_loc<std::invalid_argument>(shambase::format(
                     "Edge '{}' is registered in SolverGraphSerializable but is not "
                     "JsonSerializable",
@@ -89,10 +91,7 @@ namespace shamrock::solvergraph {
         SolverGraphSerializable tmp{};
         const auto &edges = j.at("edges");
 
-        for (auto it = edges.begin(); it != edges.end(); ++it) {
-            const std::string &name         = it.key();
-            const nlohmann::json &edge_json = it.value();
-
+        for (const auto &[name, edge_json] : edges.items()) {
             std::shared_ptr<JsonSerializable> serializable = JsonSerializable::from_json(edge_json);
             auto edge = std::dynamic_pointer_cast<IEdge>(serializable);
             if (!bool(edge)) {

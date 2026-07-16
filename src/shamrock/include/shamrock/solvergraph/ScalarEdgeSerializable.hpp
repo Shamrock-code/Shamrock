@@ -33,10 +33,9 @@ namespace shamrock::solvergraph {
         using ScalarEdge<T>::value;
 
         void _impl_to_json(nlohmann::json &j) const override {
-            j = nlohmann::json{
-                {"value", value},
-                {"label", this->get_label()},
-                {"tex_symbol", this->get_raw_tex_symbol()}};
+            j["value"]      = value;
+            j["label"]      = this->get_label();
+            j["tex_symbol"] = this->get_raw_tex_symbol();
         };
 
         static ScalarEdgeSerializable<T> from_json(const nlohmann::json &j) {

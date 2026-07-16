@@ -761,7 +761,8 @@ def analyse_and_plot(j):
     axs[0].set_ylabel(r"$s_j$")
     axs[0].set_xlabel(r"$z$")
     axs[0].set_xlim(-4 * H, 4 * H)
-    axs[0].set_yscale("symlog", linthresh=1e-10)
+    axs[0].set_yscale("log")
+    axs[0].set_ylim(1e-20, 1e-1)
 
     axs[1].set_ylabel(r"$\dot{s}_j$")
     axs[1].set_xlabel(r"$z$")

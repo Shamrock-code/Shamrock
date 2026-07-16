@@ -122,6 +122,8 @@ namespace shammodels::sph {
             Tscal C_1_fluid             = 0.1;
             Tscal C_delta_v             = 1.0;
             Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>();
+
+            bool ensure_s_j_positivity = true;
         };
 
         struct MonofluidComplete {
@@ -139,9 +141,15 @@ namespace shammodels::sph {
             bool pure_diffusion_mode    = false,
             Tscal C_1_fluid             = 0.1,
             Tscal C_delta_v             = 1.0,
-            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>()) {
+            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>(),
+            bool ensure_s_j_positivity  = true) {
             current_mode = MonofluidTVI{
-                nvar, pure_diffusion_mode, C_1_fluid, C_delta_v, cfl_density_threshold};
+                nvar,
+                pure_diffusion_mode,
+                C_1_fluid,
+                C_delta_v,
+                cfl_density_threshold,
+                ensure_s_j_positivity};
         }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
@@ -165,7 +173,8 @@ namespace shammodels::sph {
                        {"pure_diffusion_mode", cfg->pure_diffusion_mode},
                        {"C_1_fluid", cfg->C_1_fluid},
                        {"C_delta_v", cfg->C_delta_v},
-                       {"cfl_density_threshold", cfg->cfl_density_threshold}};
+                       {"cfl_density_threshold", cfg->cfl_density_threshold},
+                       {"ensure_s_j_positivity", cfg->ensure_s_j_positivity}};
             } else if (
                 const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
                 j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
@@ -184,7 +193,8 @@ namespace shammodels::sph {
                     j.at("pure_diffusion_mode").get<bool>(),
                     j.at("C_1_fluid").get<Tscal>(),
                     j.at("C_delta_v").get<Tscal>(),
-                    j.at("cfl_density_threshold").get<Tscal>());
+                    j.at("cfl_density_threshold").get<Tscal>(),
+                    j.at("ensure_s_j_positivity").get<bool>());
             } else if (type == "monofluid_complete") {
                 set_monofluid_complete(j.at("ndust").get<u32>());
             } else {

@@ -225,7 +225,9 @@ namespace shamphys {
      *
      * Pressure: \f$ P = c_s^2 \rho ( 1 + (\frac{\rho}{\rho_c})^{\gamma - 1} ) \f$
      *
-     * Sound speed: \f$ c_s = \sqrt{\frac{K_b T}{\mu m_H}} \f$
+     * Initial Sound speed: \f$ cs_0 = \sqrt{\frac{K_b T}{\mu m_H}} \f$
+     *
+     * Sound speed: \f$ cs = \frac{\partial P}{\partial \rho} \f$
      */
     template<class T>
     struct EOS_Barotropic {
@@ -246,9 +248,6 @@ namespace shamphys {
             const T x   = rho /rho_crit;
             return sycl::sqrt(cs0_2 * (1 + gamma * sycl::pow(x, gamma - T(1.))));
         }
-
     };
-
-
 
 } // namespace shamphys

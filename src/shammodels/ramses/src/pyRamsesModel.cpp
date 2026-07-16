@@ -329,8 +329,6 @@ namespace shammodels::basegodunov {
                 py::kw_only(),
                 py::arg("niter_max") = -1)
             .def("timestep", &T::timestep)
-            // .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
-            // .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
             .def(
                 "set_field_value_lambda_f64",
                 [](T &self,

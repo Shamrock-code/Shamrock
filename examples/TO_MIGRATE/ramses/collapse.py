@@ -31,7 +31,8 @@ kb = ucte.kb()
 m_H = ucte.proton_mass()  # [kg]
 
 
-T0 = 10.0  # [K]
+# T0 = 10.0  # [K]
+T0 = 10.747
 R0 = 7.07e16 * 1e-2  # [cm -> m]
 
 rho0 = 1.38e-18 * 1e3  # [g/cm^3 -> kg/m^3]
@@ -75,12 +76,10 @@ def run_sim():
     multy = 1
     multz = 1
 
-    max_amr_lev = 2
+    max_amr_lev = 16
     sz = 2 << max_amr_lev
 
-    # sz= 2
-
-    base = 16
+    base = 32
 
     cfg = model.gen_default_config()
     scale_fact = L0 / (sz * base * multx)

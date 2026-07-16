@@ -1377,6 +1377,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             interp_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
         }
 
+
+ 
+
         {
             modules::InterpolateToFaceVel<Tvec, TgridVec> node{AMRBlock::block_size, solver_config.get_constant_gravity_acceleration()};
             node.set_edges(
@@ -1398,6 +1401,32 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
                 storage.vel_face_zm);
             interp_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
         }
+
+
+        // if (solver_config.is_gravity_on()){
+
+        //     modules::InterpolateToFaceVel_self_gravity<Tvec, TgridVec> node{AMRBlock::block_size, solver_config.get_constant_gravity_acceleration()};
+        //     node.set_edges(
+        //         storage.dt_over2,
+        //         storage.cell_graph_edge,
+        //         storage.block_cell_sizes,
+        //         storage.cell0block_aabb_lower,
+        //         storage.refs_rho,
+        //         storage.grad_P,
+        //         storage.vel,
+        //         storage.dx_v,
+        //         storage.dy_v,
+        //         storage.dz_v,
+        //         storage.phi_g_old,
+        //         storage.vel_face_xp,
+        //         storage.vel_face_xm,
+        //         storage.vel_face_yp,
+        //         storage.vel_face_ym,
+        //         storage.vel_face_zp,
+        //         storage.vel_face_zm);
+        //     interp_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+            
+        // }
 
         {
             modules::InterpolateToFacePress<Tvec, TgridVec> node{
@@ -2067,34 +2096,25 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         dt_integ_self_gravity.forward_euler(dt_input);
     }
 
-    {
-
-        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
-        node_copy_rho.set_edges(
-            storage.refs_rho,
-            storage.rho_primitive
-        );
-
-        node_copy_rho.evaluate();
-
-    }
-
-
+    // {
+    //     shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
+    //     node_copy_rho.set_edges(
+    //         storage.refs_rho,
+    //         storage.rho_primitive
+    //     );
+    //     node_copy_rho.evaluate();
+    // }
 
     // {
-    //     modules::NodeConsToPrimGas<Tvec> node_ctp_after_updated{
-    //         AMRBlock::block_size, solver_config.eos_gamma};
+    //     modules::NodeConsToPrimGas<Tvec, TgridVec> node_ctp_after_updated{
+    //         AMRBlock::block_size, solver_config.eos_gamma, solver_config.eos_config};
     //     node_ctp_after_updated.set_edges(
     //         storage.block_counts_with_ghost,
     //         storage.refs_rho,
     //         storage.refs_rhov,
     //         storage.refs_rhoe,
-    //         // /**/
-    //         // storage.rho_primitive,
-    //         // /**/
     //         storage.vel,
     //         storage.press);
-
     //     node_ctp_after_updated.evaluate();
     // }
 

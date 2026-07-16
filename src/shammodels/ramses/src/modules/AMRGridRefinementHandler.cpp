@@ -2018,76 +2018,79 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     if (AMRmode_None *cfg = std::get_if<AMRmode_None>(&solver_config.amr_mode.config)) {
         // no refinment here turn around there is nothing to see
     } 
-    else if (
-        AMRmode_DensityBased *cfg
-        = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {
+    else {
+        if (
+            AMRmode_DensityBased *cfg
+            = std::get_if<AMRmode_DensityBased>(&solver_config.amr_mode.config)) {
 
-        Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-        gen_refine_block_changes<RefineCritBlock>(
-            refine_list, derefine_list, dxfact, cfg->crit_mass);
-    }
-
-    else if (
-        AMRmode_PseudoGradientBased *cfg
-        = std::get_if<AMRmode_PseudoGradientBased>(&solver_config.amr_mode.config)) {
-
-        gen_refine_block_changes<RefineCritPseudoGradientAccessor>(
-            refine_list, derefine_list, cfg->error_min, cfg->error_max);
-    }
-
-    else if (
-        AMRmode_JeansLengthBased *cfg
-        = std::get_if<AMRmode_JeansLengthBased>(&solver_config.amr_mode.config)) {
-        Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-
-        using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
-        using EOSConfig    =  typename  SolverConfig::EOSConfig;
-        using EOS_Barotropic = typename EOSConfig::Barotropic;
-
-        if ( EOS_Barotropic * eos_config = std::get_if<EOS_Barotropic>(&solver_config.eos_config.config))
-        {
-            logger::raw_ln("Barotropic EOS for Jeans Lenght");
+            Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+            gen_refine_block_changes<RefineCritBlock>(
+                refine_list, derefine_list, dxfact, cfg->crit_mass);
         }
-        else {
-             shambase::throw_with_loc<std::runtime_error>("EOS is not Barotropic");
+
+        else if (
+            AMRmode_PseudoGradientBased *cfg
+            = std::get_if<AMRmode_PseudoGradientBased>(&solver_config.amr_mode.config)) {
+
+            gen_refine_block_changes<RefineCritPseudoGradientAccessor>(
+                refine_list, derefine_list, cfg->error_min, cfg->error_max);
         }
-        gen_refine_block_changes<RefineCritJeansLengthAccessor>(
-            refine_list, derefine_list, dxfact, cfg->N_J, solver_config.eos_config);
+
+        else if (
+            AMRmode_JeansLengthBased *cfg
+            = std::get_if<AMRmode_JeansLengthBased>(&solver_config.amr_mode.config)) {
+            Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+
+            using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
+            using EOSConfig    =  typename  SolverConfig::EOSConfig;
+            using EOS_Barotropic = typename EOSConfig::Barotropic;
+
+            if ( EOS_Barotropic * eos_config = std::get_if<EOS_Barotropic>(&solver_config.eos_config.config))
+            {
+                logger::raw_ln("Barotropic EOS for Jeans Lenght");
+            }
+            else {
+                shambase::throw_with_loc<std::runtime_error>("EOS is not Barotropic");
+            }
+            gen_refine_block_changes<RefineCritJeansLengthAccessor>(
+                refine_list, derefine_list, dxfact, cfg->N_J, solver_config.eos_config);
+        }
+
+        else if (
+            AMRmode_ShearBased *cfg
+            = std::get_if<AMRmode_ShearBased>(&solver_config.amr_mode.config)) {
+            Tscal dxfact(solver_config.grid_coord_to_pos_fact);
+            Tscal gamma (solver_config.eos_gamma);
+
+            gen_refine_block_changes<RefineCritShearAccessor>(
+                refine_list, derefine_list, cfg->threshold,  gamma , dxfact);
+
+        }
+
+        ///// enforce 2:1 for refinement ///////
+        enforce_two_to_one_refinement(std::move(refine_list));
+        /////// enforce 2:1 for derefinement //////
+        enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
+        //////// apply refine ////////
+        // Note that this only add new blocks at the end of the patchdata
+        bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
+
+        //////// apply derefine ////////
+        // Note that this will perform the merge then remove the old blocks
+        // This is ok to call straight after the refine without edditing the index list in
+        // derefine_list since no permutations were applied in internal_refine_grid and no cells can
+        // be both refined and derefined in the same pass
+        bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
+
+        has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
+
+        if (has_cell_order_changed) {
+        // Ensure that the blocks are sorted before refinement
+        AMRSortBlocks block_sorter(context, solver_config, storage);
+        block_sorter.reorder_amr_blocks();
+        }
     }
-
-    else if (
-        AMRmode_ShearBased *cfg
-        = std::get_if<AMRmode_ShearBased>(&solver_config.amr_mode.config)) {
-        Tscal dxfact(solver_config.grid_coord_to_pos_fact);
-        Tscal gamma (solver_config.eos_gamma);
-
-        gen_refine_block_changes<RefineCritShearAccessor>(
-            refine_list, derefine_list, cfg->threshold,  gamma , dxfact);
-
-    }
-
-    ///// enforce 2:1 for refinement ///////
-    enforce_two_to_one_refinement(std::move(refine_list));
-    /////// enforce 2:1 for derefinement //////
-    enforce_two_to_one_derefinement(std::move(derefine_list), std::move(refine_list));
-    //////// apply refine ////////
-    // Note that this only add new blocks at the end of the patchdata
-    bool change_refine = internal_refine_grid<RefineCellAccessor>(std::move(refine_list));
-
-    //////// apply derefine ////////
-    // Note that this will perform the merge then remove the old blocks
-    // This is ok to call straight after the refine without edditing the index list in
-    // derefine_list since no permutations were applied in internal_refine_grid and no cells can
-    // be both refined and derefined in the same pass
-    bool change_derefine = internal_derefine_grid<RefineCellAccessor>(std::move(derefine_list));
-
-    has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
-
-    if (has_cell_order_changed) {
-    // Ensure that the blocks are sorted before refinement
-    AMRSortBlocks block_sorter(context, solver_config, storage);
-    block_sorter.reorder_amr_blocks();
-    }
+   
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

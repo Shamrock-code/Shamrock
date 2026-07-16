@@ -18,6 +18,9 @@
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/sycl_utils.hpp"
 #include "shamcomm/logs.hpp"
+#include "shamphys/eos.hpp"
+#include "shamphys/eos_config.hpp"
+#include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/ramses/modules/TimeIntegratorSelfGravity.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 
@@ -88,39 +91,33 @@ void shammodels::basegodunov::modules::TimeIntegratorSelfGravity<Tvec, TgridVec>
 
             auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
                 shambase::parallel_for(cgh, cell_count, "saveback", [=](u32 id_a) {
-                    auto vel  = acc_rhov_next_patch[id_a] / acc_rho_next_patch[id_a];
-                    auto Ekin = 0.5 * acc_rho_next_patch[id_a]
-                                * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
 
-                    shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
-                    auto m_H = ctes.proton_mass(); // [kg]
-                    auto kb  = ctes.kb();          // []
-                    auto mu  = 2.3;                // molecular gas
-              
-                    auto T = 10.;
-                    auto gamma = 5./3.;
-
-                    auto cs0_sqr  = (kb * T) / (mu * m_H);
-                    auto rho_crit = 2.7e-11 * 1e3; // [g/cm^3 -> kg/m^3]
-                    auto P = acc_rho_next_patch[id_a] * cs0_sqr
-                             * (1. + sycl::pow(acc_rho_next_patch[id_a] / rho_crit, 2. / 3.));
-    
-                    auto Eint      = P / (gamma - 1.);
                     rho_old[id_a]  = acc_rho_next_patch[id_a];
-
                     rhov_old[id_a] = acc_rhov_next_patch[id_a];
-      
-                    rhoe_old[id_a]         = Ekin + Eint;
                     acc_phi_old[id_a]      = acc_phi_new[id_a];
                     acc_phi_next_old[id_a] = acc_phi_next_new[id_a];
+                    auto next_rhoe = acc_rhoe_next_patch[id_a];
 
-                    // auto m_H = 1.67262192e-27;  //[kg]
-                    // auto kb = 1.380649e-23;
 
-                    // rhoe_old[id_a] = acc_rhoe_next_patch[id_a];
 
-                    // auto gamma_eff = (acc_rho_next_patch[id_a] < rho_crit) ? 1.0000001 : 5. / 3.;
-                    // auto P         = acc_rho_next_patch[id_a] * cs0_sqr;
+                 
+                    // using EOSConfig = shammodels::EOSConfig<Tvec>;
+                    // using EOS_Barotropic = typename EOSConfig::Barotropic;
+                    // using Tscal = shambase::VecComponent<Tvec>;
+  
+                        
+                    // const auto* eos = std::get_if<EOS_Barotropic>(&solver_config.eos_config.config);
+                    // if (eos != nullptr){
+                         
+                    //         auto P = shamphys::EOS_Barotropic<Tscal>::pressure(eos->rho_critic, acc_rho_next_patch[id_a], eos->gamma, eos->temp, eos->mu );
+                    //         auto Eint      = P / (eos->gamma - 1.);
+                    //         auto vel  = acc_rhov_next_patch[id_a] / acc_rho_next_patch[id_a];
+                    //         auto Ekin = 0.5 * acc_rho_next_patch[id_a]
+                    //             * (vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
+                    //             next_rhoe = Ekin + Eint;
+                    // }
+
+                    rhoe_old[id_a] = next_rhoe;
                 });
             });
 

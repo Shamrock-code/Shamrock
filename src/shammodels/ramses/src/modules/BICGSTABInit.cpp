@@ -100,36 +100,16 @@ namespace {
                             graph_iter_zp,
                             graph_iter_zm,
                             [=](u32 id) {
-                                return sycl::isnan(phi[id]) ? 0.0 : phi[id];
+                                return  phi[id];
                             });
 
                         const u32 block_id = cell_global_id / block_size;
                         Tscal delta_cell   = cell_sizes[block_id];
                         auto dV            = delta_cell * delta_cell * delta_cell;
-                        // TODO : remember to remove the isnan check
                         auto b_rhs
                             = -fourPiG
-                              * (sycl::isnan(rho[cell_global_id]) ? 0.0
-                                                                  : rho[cell_global_id] - mean_rho)
+                              * (rho[cell_global_id] - mean_rho)
                               * dV;
-
-                       /*
-			*
-			if (sycl::isnan(rho[cell_global_id]) || sycl::isnan(phi[cell_global_id])) {
-                            logger::raw_ln(
-                                "nan in INIT @ \t",
-                                cell_global_id,
-                                "\t rho = \t ",
-                                rho[cell_global_id],
-                                "\t phi = \t",
-                                phi[cell_global_id],
-                                "\t \t");
-                        }
-
-
-			*/
-
-
 
                         phi_res[cell_global_id]     = b_rhs - Aphi;
                         phi_res_bis[cell_global_id] = 0.5 * (b_rhs - Aphi);

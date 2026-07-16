@@ -26,7 +26,6 @@ namespace {
     template<class Tvec, class TgridVec>
     struct KernelConsToPrimGas {
         using Tscal = shambase::VecComponent<Tvec>;
-            // using SolverConfig =  shammodels::basegodunov::SolverConfig<Tvec, TgridVec>;
        
 
         inline static void kernel(
@@ -83,7 +82,6 @@ namespace shammodels::basegodunov::modules {
         edges.spans_rhov.check_sizes(edges.sizes.indexes);
         edges.spans_rhoe.check_sizes(edges.sizes.indexes);
 
-        // edges.spans_rho_fields.ensure_sizes(edges.sizes.indexes);
         edges.spans_vel.ensure_sizes(edges.sizes.indexes);
         edges.spans_P.ensure_sizes(edges.sizes.indexes);
 
@@ -91,9 +89,7 @@ namespace shammodels::basegodunov::modules {
             edges.spans_rho.get_spans(),
             edges.spans_rhov.get_spans(),
             edges.spans_rhoe.get_spans(),
-            // /**/
-            // edges.spans_rho_fields.get_spans(),
-            // /**/
+    
             edges.spans_vel.get_spans(),
             edges.spans_P.get_spans(),
             edges.sizes.indexes,

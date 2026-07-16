@@ -28,8 +28,8 @@ def run_isentropic_vortex( rho_a, u_a,v_a,T_a, vortex_strength=5.0, base=32, L =
     scale_fact = L / (sz * base * multx)
     cfg.set_scale_factor(scale_fact)
 
-    thre_s = 0.03
-    cfg.set_amr_mode_shear_based(Threshold=thre_s)
+    # thre_s = 0.03
+    # cfg.set_amr_mode_shear_based(Threshold=thre_s)
 
 
     cfg.set_eos_gamma(gamma)

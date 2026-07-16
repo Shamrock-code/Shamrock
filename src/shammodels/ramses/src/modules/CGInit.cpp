@@ -91,7 +91,8 @@ namespace {
                             const u32 cell_loc_id    = cell_global_id % block_size;
 
                             Tscal delta_cell = cell_sizes[block_id];
-                            auto Aphi        = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec>(
+                            Tscal Aii = (Tscal) 0.0;
+                            auto Aphi        = shammodels::basegodunov::laplacian_7pt_with_Aii<Tscal, Tvec>(
                                 cell_sizes,
                                 block_size,
                                 cell_global_id,
@@ -102,16 +103,10 @@ namespace {
                                 graph_iter_zp,
                                 graph_iter_zm,
                                 [=](u32 id) {
-                                    return sycl::isnan(phi[id]) ? 0.0 : phi[id];
-                                });
+                                    return phi[id];
+                                },
+                                Aii);
 
-                            // if (sycl::isnan(phi[cell_global_id]))
-                            // {
-                            // // logger::raw_ln("rho @ \t ",cell_global_id, "\t = \t ",
-                            // rho[cell_global_id], "\n\n");
-                            //  logger::raw_ln("phi @ \t ",cell_global_id, "\t = \t ",
-                            //  phi[cell_global_id], "\n\n");
-                            // }
 
                             auto dV    = delta_cell * delta_cell * delta_cell;
                             auto b_rhs = -fourPiG * (rho[cell_global_id] - mean_rho) * dV;
@@ -119,9 +114,8 @@ namespace {
                             auto res                = b_rhs - Aphi;
                             phi_res[cell_global_id] = res;
                             rhs[cell_global_id]     = b_rhs;
-                            // z = dV * (6 /dS ) * res
-                            phi_z[cell_global_id] = res / (6. * delta_cell);
-                            // phi_z[cell_global_id] = (res * delta_cell * delta_cell) / (6.);
+                            // z = res / (6. * delta_cell);
+                            phi_z[cell_global_id] = res / (Aii);
                             phi_p[cell_global_id] = res;
                         });
                     });

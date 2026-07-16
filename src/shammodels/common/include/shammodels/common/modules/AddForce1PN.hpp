@@ -62,10 +62,10 @@ namespace shammodels::common::modules {
 
             Tscal G       = edges.constant_G.data;
             Tscal c       = edges.constant_c.data;
+            Tscal eps_gr = 1e-10; // small value to avoid division by zero
             Tscal cmass   = edges.central_mass.data;
             Tvec cpos     = edges.central_pos.data;
             Tvec cvel     = edges.central_vel.data;
-
             Tscal GM = cmass * G;
 
 
@@ -83,17 +83,17 @@ namespace shammodels::common::modules {
 
                 edges.sizes.indexes,
 
-                [cpos, cvel, GM, c](u32 gid,
-                                    const Tvec *xyz,
-                                    const Tvec *vxyz,
-                                    Tvec *axyz_ext) {
+                [cpos, cvel, GM, c, eps_gr](u32 gid,
+                                            const Tvec *xyz,
+                                            const Tvec *vxyz,
+                                            Tvec *axyz_ext) {
 
                     Tvec r_a = xyz[gid] - cpos;
                     Tvec v_a = vxyz[gid] - cvel;
 
                     Tscal r = sycl::length(r_a);
 
-                    Tvec r_hat = r_a / r;
+                    Tvec r_hat = r_a / (r+eps_gr);
 
                     Tscal v2 = sham::dot(v_a, v_a);
 
@@ -101,13 +101,13 @@ namespace shammodels::common::modules {
 
 
                     Tvec acc_1PN =
-                        -GM / (r * r)
+                        -GM / (r * r + eps_gr)
                         *
                         (
                             (
                                 v2 / (c * c)
                                 -
-                                4 * GM / (r * c * c)
+                                4 * GM / ((r + eps_gr) * c * c)
                             )
                             * r_hat
 

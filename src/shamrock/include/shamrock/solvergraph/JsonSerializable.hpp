@@ -164,6 +164,16 @@ namespace shamrock::solvergraph {
         }
 
         /**
+         * @brief Check if a type is registered.
+         *
+         * @param name Type discriminator string
+         * @return True if the type is registered, false otherwise
+         */
+        bool is_type_registered(const std::string &name) const {
+            return factories.find(name) != factories.end();
+        }
+
+        /**
          * @brief Create an instance of a registered type from JSON.
          *
          * @param type Type discriminator (must have been passed to @ref register_type)

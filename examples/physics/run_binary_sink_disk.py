@@ -261,7 +261,7 @@ def build_binary_sph_model(
             H_profile=H_profile,
             rot_profile=rot_profile,
             cs_profile=cs_profile,
-            random_seed=666,
+            random_seed=665,
             init_h_factor=0.03,
         )
         setup.apply_setup(gen_disc)

@@ -19,7 +19,7 @@ class TestClassSerialization : public shamrock::solvergraph::JsonSerializable {
 
     TestClassSerialization(int value, std::string name) : value(value), name(std::move(name)) {}
 
-    void to_json(nlohmann::json &j) override {
+    void to_json(nlohmann::json &j) const override {
         j["value"] = value;
         j["name"]  = name;
     }
@@ -28,13 +28,13 @@ class TestClassSerialization : public shamrock::solvergraph::JsonSerializable {
         return TestClassSerialization(j.at("value").get<int>(), j.at("name").get<std::string>());
     }
 
-    std::string type_name() override { return "TestClassSerialization"; }
+    std::string type_name() const override { return "TestClassSerialization"; }
 };
 
 NEW_TEST(Unittest, "shamrock/solvergraph/JsonSerializable", 1) {
     using namespace shamrock::solvergraph;
 
-    JsonSerializable_registry::instance().registerType<TestClassSerialization>(
+    JsonSerializable_registry::instance().register_type<TestClassSerialization>(
         "TestClassSerialization");
 
     {
@@ -56,6 +56,12 @@ NEW_TEST(Unittest, "shamrock/solvergraph/JsonSerializable", 1) {
     {
         nlohmann::json j;
         j["type"] = "NonExistentType";
+
+        REQUIRE_EXCEPTION_THROW(JsonSerializable::from_json(j), std::runtime_error);
+    }
+
+    {
+        nlohmann::json j = nlohmann::json::array();
 
         REQUIRE_EXCEPTION_THROW(JsonSerializable::from_json(j), std::runtime_error);
     }

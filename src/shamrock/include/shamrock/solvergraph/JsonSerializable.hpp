@@ -37,15 +37,15 @@ namespace shamrock::solvergraph {
      *
      * The JSON object used for polymorphic deserialization must contain a `"type"`
      * field whose value matches the name passed to
-     * @ref JsonSerializable_registry::registerType and the string returned by
+     * @ref JsonSerializable_registry::register_type and the string returned by
      * `type_name()`.
      *
      * @code{.cpp}
      * struct MyType : shamrock::solvergraph::JsonSerializable {
      *     int value;
      *
-     *     void to_json(nlohmann::json &j) override { j["value"] = value; }
-     *     std::string type_name() override { return "MyType"; }
+     *     void to_json(nlohmann::json &j) const override { j["value"] = value; }
+     *     std::string type_name() const override { return "MyType"; }
      *
      *     static MyType from_json(const nlohmann::json &j) {
      *         return MyType{j.at("value").get<int>()};
@@ -53,7 +53,7 @@ namespace shamrock::solvergraph {
      * };
      *
      * // Register once (name must match type_name() / JSON "type")
-     * JsonSerializable_registry::instance().registerType<MyType>("MyType");
+     * JsonSerializable_registry::instance().register_type<MyType>("MyType");
      *
      * // Serialize
      * MyType obj{42};
@@ -67,7 +67,7 @@ namespace shamrock::solvergraph {
      * @endcode
      */
     struct JsonSerializable {
-        virtual ~JsonSerializable() {};
+        virtual ~JsonSerializable() = default;
 
         /**
          * @brief Write this object's fields into a JSON object.
@@ -77,15 +77,15 @@ namespace shamrock::solvergraph {
          *
          * @param j JSON object to fill
          */
-        virtual void to_json(nlohmann::json &j) = 0;
+        virtual void to_json(nlohmann::json &j) const = 0;
 
         /**
          * @brief Return the type discriminator string for this class.
          *
-         * Must match the name used in @ref JsonSerializable_registry::registerType
+         * Must match the name used in @ref JsonSerializable_registry::register_type
          * and the `"type"` field in JSON.
          */
-        virtual std::string type_name() = 0;
+        virtual std::string type_name() const = 0;
 
         /**
          * @brief Reconstruct a registered type from JSON.
@@ -93,10 +93,10 @@ namespace shamrock::solvergraph {
          * Reads `j.at("type")` and dispatches to the matching factory in
          * @ref JsonSerializable_registry.
          *
-         * @param j JSON object containing at least a `"type"` field
+         * @param j JSON object containing at least a string `"type"` field
          * @return Owned instance of the matching registered type
-         * @throws nlohmann::json::exception if `"type"` is missing
-         * @throws std::runtime_error if the type name is not registered
+         * @throws std::runtime_error if `j` is not an object with a string `"type"`
+         *         field, or if the type name is not registered
          */
         static std::unique_ptr<JsonSerializable> from_json(const nlohmann::json &j);
     };
@@ -116,7 +116,7 @@ namespace shamrock::solvergraph {
     /**
      * @brief Singleton registry mapping type names to JSON factory functions.
      *
-     * Types are registered with @ref registerType. Polymorphic reconstruction goes
+     * Types are registered with @ref register_type. Polymorphic reconstruction goes
      * through @ref JsonSerializable::from_json, which calls @ref create.
      */
     class JsonSerializable_registry {
@@ -143,7 +143,7 @@ namespace shamrock::solvergraph {
          * @param name Type discriminator string
          */
         template<JsonDeserializable T>
-        void registerType(const std::string &name) {
+        void register_type(const std::string &name) {
             factories[name] = [](const nlohmann::json &j) -> std::unique_ptr<JsonSerializable> {
                 return std::make_unique<T>(T::from_json(j));
             };
@@ -152,7 +152,7 @@ namespace shamrock::solvergraph {
         /**
          * @brief Create an instance of a registered type from JSON.
          *
-         * @param type Type discriminator (must have been passed to @ref registerType)
+         * @param type Type discriminator (must have been passed to @ref register_type)
          * @param data Full JSON object passed to the type's static `from_json`
          * @return Owned instance of the registered type
          * @throws std::runtime_error if `type` is not registered
@@ -168,7 +168,11 @@ namespace shamrock::solvergraph {
         }
     };
 
-    std::unique_ptr<JsonSerializable> JsonSerializable::from_json(const nlohmann::json &j) {
+    inline std::unique_ptr<JsonSerializable> JsonSerializable::from_json(const nlohmann::json &j) {
+        if (!j.is_object() || !j.contains("type") || !j["type"].is_string()) {
+            throw std::runtime_error(
+                "Invalid JSON for deserialization: expected an object with a string 'type' field.");
+        }
         const std::string type = j.at("type").get<std::string>();
         return JsonSerializable_registry::instance().create(type, j);
     }

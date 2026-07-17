@@ -201,7 +201,7 @@ namespace shamrock {
         sched.patch_tree = jmeta_patch.at("patchtree").get<scheduler::PatchTree>();
         sched.patch_data.sim_box.from_json(jmeta_patch.at("sim_box"));
         if (jmeta_patch.contains("synchronized_data")) {
-            sched.synchronized_data.from_json(jmeta_patch.at("synchronized_data"));
+            jmeta_patch.at("synchronized_data").get_to(sched.synchronized_data);
         }
 
         // edit patch owner to fit in new world size, or spread if more processes now

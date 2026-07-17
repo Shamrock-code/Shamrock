@@ -70,7 +70,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
 
     PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-    auto time_edge = sched.synchronized_data.container.register_edge(
+    auto time_edge = sched.synchronized_data.register_edge(
         "time", shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("time", "t"));
     time_edge->value = 0;
 

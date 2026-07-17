@@ -47,7 +47,7 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
-#include "shamrock/scheduler/SynchronizedData.hpp"
+#include "shamrock/solvergraph/SolverGraphSerializable.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 struct PatchSchedulerConfig {
@@ -93,6 +93,7 @@ class PatchScheduler {
 
     using PatchTree          = shamrock::scheduler::PatchTree;
     using SchedulerPatchData = shamrock::scheduler::SchedulerPatchData;
+    using SynchronizedData   = shamrock::solvergraph::SolverGraphSerializable;
 
     std::shared_ptr<shamrock::patch::PatchDataLayerLayout> pdl_ptr;
 

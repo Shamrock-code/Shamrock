@@ -1021,8 +1021,6 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
     nlohmann::json jsim_box;
     patch_data.sim_box.to_json(jsim_box);
 
-    nlohmann::json jsynchro_data = synchronized_data.to_json();
-
     return {
         {"patchtree", patch_tree},
         {"patchlist", patch_list},
@@ -1030,5 +1028,5 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
         {"sim_box", jsim_box},
         {"crit_patch_split", crit_patch_split},
         {"crit_patch_merge", crit_patch_merge},
-        {"synchronized_data", jsynchro_data}};
+        {"synchronized_data", synchronized_data}};
 }

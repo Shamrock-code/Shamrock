@@ -223,7 +223,7 @@ def remap_positions_z(r):
 
 
 def compute_sj_new_j(patchdata, j):
-    global pmass
+    pmass = model.get_particle_mass()
 
     hpart = patchdata["hpart"]
     rho = pmass * (model.get_hfact() / np.array(hpart)) ** 3
@@ -624,7 +624,7 @@ def analyse_and_plot(j):
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
 
-    l2_error_all = [0 for _ in range(ndust)]
+    l2_error_all = [np.nan for _ in range(ndust)]
 
     for i in range(ndust):
         c = dust_colors[i]
@@ -656,8 +656,16 @@ def analyse_and_plot(j):
 
             l2_error_all[i] = L2_error
 
-    if reference_dusty_settle is not None:
-        save_analysis_data("l2_error.json", "l2_error", l2_error_all, j - iinject)
+    save_analysis_data("l2_error.json", "l2_error", l2_error_all, j)
+
+    dust_mass = analysis_dust_mass.get_dust_mass()
+
+    # if all dust mass is zero replace by nans
+    if np.max(dust_mass) == 0:
+        print("all dust mass is zero, replacing by nans")
+        dust_mass = [np.nan for _ in range(ndust)]
+
+    save_analysis_data("dust_mass.json", "dust_mass", dust_mass, j)
 
     ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
     ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
@@ -853,71 +861,66 @@ def setup_model():
     model.timestep()
 
 
-dump_helper.load_last_dump_or(setup_model)
-
 analysis_dust_mass = shamrock.model_sph.analysisDustMass(model=model)
 pmass = model.get_particle_mass()
-
-
-def dust_mass_analysis():
-    global idust_analysis
-    dust_mass = analysis_dust_mass.get_dust_mass()
-    save_analysis_data("dust_mass.json", "dust_mass", dust_mass, idust_analysis)
-    idust_analysis += 1
 
 
 # %%
 # Run simulation
 # ------------------------------------------
 
-t_start = model.get_time()
+from shamrock.utils.SimulationRunner import SimulationRunner, callback, simulation_setup
 
-dust_injected = False
 
-idust_analysis = 0
+class Simulation(SimulationRunner):
+    # Use the global vars defined at the top of the file
+    t_end = t_end
+    dump_prefix = dump_folder + "dump_"
 
-for j in range(1000):
-    if j == iinject:
-        reference_dusty_settle = ReferenceDustySettleAll()
+    @callback(at_tsim=[tinject])
+    def inject_dust(self, _):
+        max_v = get_max_v()
+        print(f"max_v = {max_v}")
 
-    if tlist[j] >= t_start:
-        if j > 0:
-            model.evolve_until(tlist[j])
+        if max_v > max_v_inject_threshold:
+            raise ValueError("max_v is too high, please increase the injection time")
 
-            if dust_injected:
-                dust_mass_analysis()
+        for k in range(ndust):
 
-        if j == iinject:
-            max_v = get_max_v()
-            print(f"max_v = {max_v}")
+            def compute_sj_new(patchdata):
+                return compute_sj_new_j(patchdata, k)
 
-            if max_v > max_v_inject_threshold:
-                raise ValueError("max_v is too high, please increase the injection time")
+            self.model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
-            for k in range(ndust):
+            self.model.set_cfl_cour(cfl_cour_inject)
+            self.model.set_cfl_force(cfl_force_inject)
 
-                def compute_sj_new(patchdata):
-                    return compute_sj_new_j(patchdata, k)
+        self.model.set_dt(0.0)  # to help the corrector on next step after adding dust
 
-                model.overwrite_field_value_f64("s_j", compute_sj_new, k)
+    @callback(tsim_interval=0.1)  # Do the analysis every dt_stop
+    def analysis_plots(self, j):
+        global reference_dusty_settle
 
-                model.set_cfl_cour(cfl_cour_inject)
-                model.set_cfl_force(cfl_force_inject)
+        model_time = self.model.get_time()
 
-            dust_injected = True
-            dust_mass_analysis()
-
-            model.set_dt(0.0)  # to help the corrector on next step after adding dust
+        if model_time > tinject and reference_dusty_settle is None:
+            reference_dusty_settle = ReferenceDustySettleAll()
 
         if reference_dusty_settle is not None:
-            reference_dusty_settle.evolve_until(tlist[j] - tinject)
+            reference_dusty_settle.evolve_until(model_time - tinject)
 
         analyse_and_plot(j)
 
-        dump_helper.write_dump(j, purge_old_dumps=True, keep_first=1, keep_last=3)
+    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
+    def checkpoint(self, icheckpoint):
+        self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
-    if tlist[j] >= t_end:
-        break
+    @simulation_setup
+    def setup(self):
+        setup_model()
+
+
+Simulation(model).run()
 
 # %%
 # Build animations from plot sequences
@@ -950,6 +953,10 @@ if shamrock.sys.world_rank() == 0:
 t, dust_mass = load_data_from_json("dust_mass.json", "dust_mass")
 dust_mass = np.array(dust_mass)
 
+# tinject = first non nan
+iinject = np.argmax(~np.isnan(dust_mass)[:, 0])
+tinject = np.array(t)[iinject]
+
 t = np.array(t) - tinject
 
 St = np.zeros(ndust)
@@ -968,7 +975,7 @@ for k in range(ndust):
 plt.figure()
 for k in range(ndust):
     mh = dust_mass[:, k]
-    deviation = (mh / mh[0]) - 1
+    deviation = (mh / mh[iinject]) - 1
 
     plt.plot(
         t,
@@ -979,7 +986,7 @@ for k in range(ndust):
 total_dust_mass = np.sum(dust_mass, axis=1)
 plt.plot(
     t,
-    (total_dust_mass / total_dust_mass[0]) - 1,
+    (total_dust_mass / total_dust_mass[iinject]) - 1,
     color="grey",
     label="total dust mass",
     linestyle="--",
@@ -1028,7 +1035,7 @@ print("##### Test result #####")
 result = {
     "t": float(t[-1]),
     "l2_error": l2_error[-1].tolist(),
-    "dust_mass": (dust_mass[-1] / dust_mass[0] - 1).tolist(),
+    "dust_mass": (dust_mass[-1] / dust_mass[iinject] - 1).tolist(),
     "St": St.tolist(),
     "lz": lz,
 }

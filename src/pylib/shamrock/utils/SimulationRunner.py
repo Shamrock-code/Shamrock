@@ -11,7 +11,13 @@ from shamrock.utils.dump import ShamrockDumpHandleHelper
 # ----------------------------
 
 
-def callback(*, tsim_interval=None, iter_count_interval=None, walltime_interval=None):
+def callback(
+    *,
+    tsim_interval=None,
+    iter_count_interval=None,
+    walltime_interval=None,
+    at_tsim=None,
+):
     """
     Decorator to mark a function as a simulation callback.
 
@@ -20,17 +26,32 @@ def callback(*, tsim_interval=None, iter_count_interval=None, walltime_interval=
         def analysis(self, icallback):
             print("analysis", icallback)
 
+        @callback(at_tsim=[1.0, 5.0, 10.0])
+        def snapshot(self, icallback):
+            print("snapshot", icallback)
+
     Args:
         tsim_interval: The time step of the callback.
         iter_count_interval: The iteration count interval of the callback.
         walltime_interval: The walltime interval of the callback.
+        at_tsim: Exact simulation time(s) at which to trigger the callback (float or list of floats).
     Returns:
         The decorated function.
     """
 
-    # at least one of the intervals must be provided
-    if tsim_interval is None and iter_count_interval is None and walltime_interval is None:
+    if (
+        tsim_interval is None
+        and iter_count_interval is None
+        and walltime_interval is None
+        and at_tsim is None
+    ):
         raise ValueError("At least one of the intervals must be provided")
+
+    if at_tsim is not None:
+        if isinstance(at_tsim, (int, float)):
+            at_tsim = [float(at_tsim)]
+        else:
+            at_tsim = sorted(float(t) for t in at_tsim)
 
     def deco(func):
         func.__simulation_callback__ = {
@@ -38,6 +59,7 @@ def callback(*, tsim_interval=None, iter_count_interval=None, walltime_interval=
             "tsim_interval": tsim_interval,
             "iter_count_interval": iter_count_interval,
             "walltime_interval": walltime_interval,
+            "at_tsim": at_tsim,
         }
 
         return func
@@ -150,28 +172,45 @@ class CallbackInfo:
     tsim_interval: float | None = None
     iter_count_interval: int | None = None
     walltime_interval: float | None = None
+    at_tsim: list[float] | None = None
 
 
 class CallbackState:
     def __init__(self, info: CallbackInfo, tsim_start: float):
         self.info = info
         self.counter = 0
-        self.next_tsim = tsim_start if info.tsim_interval is not None else None
+
+        candidates = []
+        if info.tsim_interval is not None:
+            candidates.append(tsim_start)
+        if info.at_tsim is not None:
+            future = [t for t in info.at_tsim if t >= tsim_start]
+            if future:
+                candidates.append(min(future))
+        self.next_tsim = min(candidates) if candidates else None
+
         self.next_iter_count = 0 if info.iter_count_interval is not None else None
         self.next_walltime = 0.0 if info.walltime_interval is not None else None
 
     def advance(self, t_model: float, iter_count: int, walltime: float):
         self.counter += 1
 
+        candidates = []
         if self.info.tsim_interval is not None:
-            self.next_tsim = t_model + self.info.tsim_interval
+            candidates.append(t_model + self.info.tsim_interval)
+        if self.info.at_tsim is not None:
+            future = [t for t in self.info.at_tsim if t > t_model]
+            if future:
+                candidates.append(min(future))
+        self.next_tsim = min(candidates) if candidates else None
+
         if self.info.iter_count_interval is not None:
             self.next_iter_count = iter_count + self.info.iter_count_interval
         if self.info.walltime_interval is not None:
             self.next_walltime = walltime + self.info.walltime_interval
 
         rank_0_print(f'[Simulation] Advancing callback "{self.info.name}"')
-        if self.info.tsim_interval is not None:
+        if self.next_tsim is not None:
             rank_0_print(f"   -> t = {t_model} -> {self.next_tsim}")
         if self.info.iter_count_interval is not None:
             rank_0_print(f"   -> iter = {iter_count} -> {self.next_iter_count}")
@@ -183,7 +222,7 @@ class CallbackState:
 
         log = []
 
-        if self.info.tsim_interval is not None:
+        if self.next_tsim is not None:
             if t_model >= self.next_tsim:  # should i add a tolerance here ?
                 trig = True
                 log.append(f"   -> t = {t_model} >= {self.next_tsim}")
@@ -230,12 +269,17 @@ class SimulationRunner(metaclass=SimulationMeta):
     And can define callbacks (any function decorated with @callback):
 
     < call every tsim = i * time_step >
-    - @callback(time_step=1.0)
+    - @callback(tsim_interval=1.0)
       def analysis(self, icallback):
           rank_0_print("analysis")
 
+    < call at exact simulation times >
+    - @callback(at_tsim=[1.0, 5.0, 10.0])
+      def snapshot(self, icallback):
+          rank_0_print("snapshot")
+
     < call when tsim = dt_stop, niter_max is reached or walltime_step is reached >
-    - @callback(time_step=dt_stop, niter_max=1000, walltime_step=30*60)
+    - @callback(tsim_interval=dt_stop, iter_count_interval=1000, walltime_interval=30*60)
       def do_checkpoint(self, icheckpoint):
           self.dump_helper.dump(icheckpoint)
 
@@ -264,6 +308,7 @@ class SimulationRunner(metaclass=SimulationMeta):
                 tsim_interval=info["tsim_interval"],
                 iter_count_interval=info["iter_count_interval"],
                 walltime_interval=info["walltime_interval"],
+                at_tsim=info["at_tsim"],
             )
 
             self._callbacks.append(copied)

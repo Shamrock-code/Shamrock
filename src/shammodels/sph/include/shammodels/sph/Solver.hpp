@@ -87,6 +87,13 @@ namespace shammodels::sph {
         Config solver_config;
         SolverLog solve_logs;
 
+        inline Tscal get_time() { return solver_config.time_state.time; }
+        inline void set_time(Tscal t) { solver_config.time_state.time = t; }
+        inline Tscal get_dt_sph() { return solver_config.time_state.dt_sph; }
+        inline void set_next_dt(Tscal dt) { solver_config.time_state.dt_sph = dt; }
+        inline Tscal get_cfl_multipler() { return solver_config.time_state.cfl_multiplier; }
+        inline void set_cfl_multipler(Tscal lambda) { solver_config.time_state.cfl_multiplier = lambda; }
+
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;
             std::optional<std::function<void(void)>> step_end_callback;
@@ -236,10 +243,10 @@ namespace shammodels::sph {
 
         /// @brief Evolves system by one explicit timestep with specified time and dt
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
-            solver_config.set_time(t_current);
-            solver_config.set_next_dt(dt_input);
+            set_time(t_current);
+            set_next_dt(dt_input);
             evolve_once();
-            return solver_config.get_dt_sph();
+            return get_dt_sph();
         }
 
         inline EvolveUntilResults evolve_until(
@@ -267,8 +274,8 @@ namespace shammodels::sph {
             };
 
             auto step = [&]() {
-                Tscal dt = solver_config.get_dt_sph();
-                Tscal t  = solver_config.get_time();
+                Tscal dt = get_dt_sph();
+                Tscal t  = get_time();
 
                 if (t > target_time) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -276,7 +283,7 @@ namespace shammodels::sph {
                 }
 
                 if (t + dt > target_time) {
-                    solver_config.set_next_dt(target_time - t);
+                    set_next_dt(target_time - t);
                 }
                 evolve_once();
             };
@@ -288,7 +295,7 @@ namespace shammodels::sph {
 
             i32 iter_count = 0;
 
-            while (solver_config.get_time() < target_time) {
+            while (get_time() < target_time) {
                 step();
                 iter_count++;
 

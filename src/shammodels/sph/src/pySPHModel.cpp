@@ -372,7 +372,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TConfig &self, Tscal eta_sink) {
                 self.cfl_config.eta_sink = eta_sink;
             })
-        .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
         .def(
             "set_show_cfl_detail",
@@ -768,11 +767,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("niter_max")    = -1,
             py::arg("max_walltime") = -1)
-        .def(
-            "set_dt",
-            [](T &self, f64 dt) {
-                self.solver.solver_config.set_next_dt(dt);
-            })
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -1400,27 +1394,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_time",
             [](T &self) {
-                return self.solver.solver_config.get_time();
+                return self.get_time();
             })
         .def(
             "get_dt",
             [](T &self) {
-                return self.solver.solver_config.get_dt_sph();
+                return self.get_dt_sph();
             })
         .def(
             "set_time",
             [](T &self, Tscal t) {
-                return self.solver.solver_config.set_time(t);
+                return self.set_time(t);
             })
         .def(
             "set_next_dt",
             [](T &self, Tscal dt) {
-                return self.solver.solver_config.set_next_dt(dt);
+                return self.set_next_dt(dt);
+            })
+        .def(
+            "set_dt",
+            [](T &self, f64 dt) {
+                self.set_next_dt(dt);
             })
         .def(
             "set_cfl_multipler",
             [](T &self, Tscal lambda) {
-                return self.solver.solver_config.set_cfl_multipler(lambda);
+                return self.set_cfl_multipler(lambda);
             },
             py::arg("lambda"))
         .def(

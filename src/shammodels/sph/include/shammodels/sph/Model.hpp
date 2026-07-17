@@ -99,6 +99,14 @@ namespace shammodels::sph {
         inline void set_eta_sink(Tscal eta_sink) {
             solver.solver_config.cfl_config.eta_sink = eta_sink;
         }
+
+        inline Tscal get_time() { return solver.get_time(); }
+        inline void set_time(Tscal t) { solver.set_time(t); }
+        inline Tscal get_dt_sph() { return solver.get_dt_sph(); }
+        inline void set_next_dt(Tscal dt) { solver.set_next_dt(dt); }
+        inline Tscal get_cfl_multipler() { return solver.get_cfl_multipler(); }
+        inline void set_cfl_multipler(Tscal lambda) { solver.set_cfl_multipler(lambda); }
+        
         inline void set_particle_mass(Tscal gpart_mass) {
             solver.solver_config.gpart_mass = gpart_mass;
         }

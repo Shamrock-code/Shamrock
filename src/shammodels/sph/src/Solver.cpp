@@ -1806,8 +1806,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         }
     }
 
-    Tscal t_current = solver_config.get_time();
-    Tscal dt        = solver_config.get_dt_sph();
+    Tscal t_current = get_time();
+    Tscal dt        = get_dt_sph();
 
     StackEntry stack_loc{};
 
@@ -3119,17 +3119,17 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     shambase::get_check_ref(storage.neigh_cache).free_alloc();
 
-    solver_config.set_next_dt(next_cfl);
-    solver_config.set_time(t_current + dt);
+    set_next_dt(next_cfl);
+    set_time(t_current + dt);
 
     auto get_next_cfl_mult = [&]() {
-        Tscal cfl_m = solver_config.time_state.cfl_multiplier;
+        Tscal cfl_m = get_cfl_multipler();
         Tscal stiff = solver_config.cfl_config.cfl_multiplier_stiffness;
 
         return (cfl_m * stiff + 1.) / (stiff + 1.);
     };
 
-    solver_config.time_state.cfl_multiplier = get_next_cfl_mult();
+    set_cfl_multipler(get_next_cfl_mult());
 
     TimestepLog log;
     log.rank     = shamcomm::world_rank();

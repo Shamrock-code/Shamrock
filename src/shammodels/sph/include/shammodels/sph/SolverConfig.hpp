@@ -521,24 +521,6 @@ struct shammodels::sph::SolverConfig {
     /// The time sate of the simulation
     SolverStatusVar time_state;
 
-    /// Set the current time
-    inline void set_time(Tscal t) { time_state.time = t; }
-
-    /// Set the time step for the next iteration
-    inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
-
-    /// Get the current time
-    inline Tscal get_time() { return time_state.time; }
-
-    /// Get the time step for the next iteration
-    inline Tscal get_dt_sph() { return time_state.dt_sph; }
-
-    /// Set the CFL multiplier for the time step
-    inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }
-
-    /// Get the CFL multiplier for the time step
-    inline Tscal get_cfl_multipler() { return time_state.cfl_multiplier; }
-
     /// Set the CFL multiplier for the stiffness
     inline void set_cfl_mult_stiffness(Tscal cstiff) {
         cfl_config.cfl_multiplier_stiffness = cstiff;

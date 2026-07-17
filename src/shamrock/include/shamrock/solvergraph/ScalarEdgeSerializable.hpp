@@ -57,9 +57,9 @@ namespace shamrock::solvergraph {
 } // namespace shamrock::solvergraph
 
 PRE_MAIN_FUNCTION_CALL([&]() {
-    using T = shamrock::solvergraph::ScalarEdgeSerializable<f64>;
-    auto & instance = shamrock::solvergraph::JsonSerializable_registry::instance();
-    if(!instance.is_type_registered(T::type_name_static())) {
+    using T        = shamrock::solvergraph::ScalarEdgeSerializable<f64>;
+    auto &instance = shamrock::solvergraph::JsonSerializable_registry::instance();
+    if (!instance.is_type_registered(T::type_name_static())) {
         instance.register_type<T>(T::type_name_static());
     }
 })

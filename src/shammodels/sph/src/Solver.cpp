@@ -2467,7 +2467,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         eps_v));
             }
             need_rerun_corrector = true;
-            solver_config.time_state.cfl_multiplier /= 2;
+            set_cfl_multipler(get_cfl_multipler() / 2);
 
             // logger::info_ln("rerun corrector ...");
         } else {
@@ -2751,10 +2751,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 });
             };
 
-            Tscal C_cour
-                = solver_config.cfl_config.cfl_cour * solver_config.time_state.cfl_multiplier;
-            Tscal C_force
-                = solver_config.cfl_config.cfl_force * solver_config.time_state.cfl_multiplier;
+            Tscal C_cour = solver_config.cfl_config.cfl_cour * get_cfl_multipler();
+            Tscal C_force = solver_config.cfl_config.cfl_force * get_cfl_multipler();
             Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_cour_edge
@@ -2816,7 +2814,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "C_1fluid", "C_{1fluid}");
                 C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tva().C_1_fluid
-                                       * solver_config.time_state.cfl_multiplier;
+                                       * get_cfl_multipler();
 
                 compute_cfl_dust1_fluid->set_edges(
                     storage.part_counts,
@@ -2849,8 +2847,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 C_delta_v_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                     "C_delta_v", "C_{delta_v}");
-                C_delta_v_edge->value
-                    = cfg_monofluid_tva.C_delta_v * solver_config.time_state.cfl_multiplier;
+                C_delta_v_edge->value = cfg_monofluid_tva.C_delta_v * get_cfl_multipler();
 
                 cfl_density_threshold_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
@@ -2989,7 +2986,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     "cfl dt =",
                     next_cfl,
                     "cfl multiplier :",
-                    solver_config.time_state.cfl_multiplier);
+                    get_cfl_multipler());
             }
 
             // this should not be needed idealy, but we need the pressure on the ghosts and

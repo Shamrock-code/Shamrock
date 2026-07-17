@@ -919,6 +919,10 @@ namespace shammodels::sph {
                 = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
             solver.ensure_time_state_edges();
             if (!had_time_edge && j.at("solver_config").contains("time_state")) {
+                ON_RANK_0(
+                    logger::warn_ln(
+                        "SPH",
+                        "Migrated time/dt/cfl from solver_config.time_state into scheduler edges"));
                 const auto &ts = j.at("solver_config").at("time_state");
                 solver.set_time(ts.at("time").get<Tscal>());
                 solver.set_next_dt(ts.at("dt_sph").get<Tscal>());

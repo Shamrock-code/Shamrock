@@ -378,10 +378,10 @@ def compute_eccentricity(snapshot, m1, m2, G=G):
 
     mu = G * (m1 + m2)
 
-    # énergie spécifique
+    # Specific energy
     eps = 0.5 * v**2 - mu / r
 
-    # moment cinétique spécifique
+    # Specificcinetic  momentum
     h = np.linalg.norm(np.cross(r_vec, v_vec))
 
     e = np.sqrt(1 + 2 * eps * h**2 / mu**2)      # e =sqrt(1 - h*2/a mu) = sqrt(1 + 2*eps*h^2/mu^2)
@@ -399,9 +399,9 @@ def plot_eccentricity(snapshots, m1, m2):
     plt.figure(figsize=(8, 4))
     plt.plot(times, ecc, lw=2)
 
-    plt.xlabel("Temps (années)")
-    plt.ylabel("Excentricité e")
-    plt.title("Excentricité en fct du temps")
+    plt.xlabel("Time (years)")
+    plt.ylabel("Excentricity e")
+    plt.title("Excentricity")
 
     plt.ylim(0, 1)  
 
@@ -422,8 +422,7 @@ def compute_inclination(snapshot):
     r_vec = r2 - r1
     v_vec = v2 - v1
 
-    h = np.cross(r_vec, v_vec)                 #"specific angular momentum" doc Cart2kep de G.Laibe
-
+    h = np.cross(r_vec, v_vec)                 #"specific angular momentum"
     h_norm = np.linalg.norm(h)
     if h_norm < 1e-15:
         return np.nan
@@ -445,9 +444,9 @@ def plot_inclination(snapshots):
     plt.figure(figsize=(8,4))
     plt.plot(times, inc)
 
-    plt.xlabel("Temps (années)")
-    plt.ylabel("Inclinaison (°)")
-    plt.title("Inclinaison orbitale")
+    plt.xlabel("Time")
+    plt.ylabel("Inclination (°)")
+    plt.title("Orbital inclination")
     plt.ylim(-180, 180) 
     plt.grid(True)
     plt.tight_layout()
@@ -538,9 +537,9 @@ def plot_semimajor_axis(snapshots, m1, m2):
     plt.figure(figsize=(8,4))
     plt.plot(times, a)
 
-    plt.xlabel("Temps (années)")
-    plt.ylabel("Demi-grand axe (AU)")
-    plt.title("Évolution du demi-grand axe")
+    plt.xlabel("Time (years)")
+    plt.ylabel("a (AU)")
+    plt.title("Evolution of a")
     plt.ylim(0, 1.5*A) 
     plt.grid(True)
     plt.tight_layout()
@@ -584,9 +583,9 @@ def plot_eccentricity_vector(snapshots, m1, m2):
     plt.plot(times, e_vec[:,1], label=r"$e_y (OP) $")
     plt.plot(times, e_vec[:,2], label=r"$e_z  (SO) $")
 
-    plt.xlabel("Temps (années)")
-    plt.ylabel("Composantes du vecteur d'excentricité")
-    plt.title("Évolution du vecteur d'excentricité")
+    plt.xlabel("Time (years)")
+    plt.ylabel("Components of the Runge Lenz Laplace vector")
+    plt.title("Evolution of the Runge Lenz Laplace vector")
     plt.grid(True, alpha=0.3)
     plt.legend()
 
@@ -608,9 +607,9 @@ def plot_omega(snapshots, m1, m2):
     plt.figure(figsize=(8,4))
     plt.plot(times, omega, lw=2)
 
-    plt.xlabel("Temps")
+    plt.xlabel("Time")
     plt.ylabel(r"$\omega$ (deg)")
-    plt.title("Évolution de l'argument du périastre")
+    plt.title("Evolution of w")
 
     plt.grid(True)
     plt.tight_layout()
@@ -635,10 +634,10 @@ def plot_spins(snapshots):
     plt.plot(times, a2[:,1], "--", label=r"$a_{2y}$")
     plt.plot(times, a2[:,2], "--", label=r"$a_{2z}$")
 
-    plt.xlabel("Temps")
+    plt.xlabel("Time")
     plt.ylabel("Spin")
 
-    plt.title("Évolution des composantes des spins")
+    plt.title("Evolution of the spins components")
 
     plt.grid(alpha=0.3)
     plt.legend(ncol=2)
@@ -654,7 +653,6 @@ def plot_spins(snapshots):
 # ============================================================
 
 def save_orbital_elements(snapshots, m1, m2, filename="Path")                               
-#"/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv"):
 
     data = []
 
@@ -739,10 +737,9 @@ plot_inclination(snapshots)
 plot_semimajor_axis(snapshots, m1, m2)
 plot_omega(snapshots, m1, m2)
 save_orbital_elements(snapshots, m1, m2, filename="Path")
-#"/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv")
+
 
 sinks = model.get_sinks()
 print(sinks[0])
-
 
 plot_spins(snapshots)

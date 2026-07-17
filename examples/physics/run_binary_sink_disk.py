@@ -6,8 +6,9 @@ This example shows how to use binary orbit functions with the Post-Newtonian dev
 and how to attach sink particles to an SPH model.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 import shamrock as chama
 
 # %%
@@ -65,7 +66,7 @@ scheduler_merge_val = scheduler_split_val // 16
 
 
 def sigma_profile(r):
-    sigma_0 = 1.0  
+    sigma_0 = 1.0
     return sigma_0 * (r / r0) ** (-p)
 
 
@@ -94,26 +95,28 @@ def H_profile(r):
     return H
 
 
-# Spins 
+# Spins
 a1 = 0.99  # between 0 and 1, spin of the first body
 a2 = 0.5
-theta =np.pi/4   #inclination angle of the spin axis with respect to the orbital angular momentum vector
+theta = (
+    np.pi / 4
+)  # inclination angle of the spin axis with respect to the orbital angular momentum vector
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
 spin_mag_1 = a1 * G * M1 * M1 / c
 spin_mag_2 = a2 * G * M2 * M2 / c
 spin_vec_1 = spin_mag_1 * spin_axis
 spin_vec_2 = spin_mag_2 * spin_axis
 
-X = np.sqrt(A**3/(G*(M1+M2)))  # orbital period in years
+X = np.sqrt(A**3 / (G * (M1 + M2)))  # orbital period in years
 # %%
 # Simulation parameters
-T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
-n_orbits = 1                                                      # number of orbits we want
-SF=10                                                              # safety factor; allows more time steps per orbit for better accuracy, necessary for extreme cases (eccentricity close to 1, very high spin, etc.)
-                                                                   # it also increases the computation time, so adjust it as needed
-N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
-n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
-dt = T/N_per_orbits                                                # time step in years
+T = 2 * np.pi * np.sqrt(A * A * A / (G * (M1 + M2)))  # number of years
+n_orbits = 1  # number of orbits we want
+SF = 10  # safety factor; allows more time steps per orbit for better accuracy, necessary for extreme cases (eccentricity close to 1, very high spin, etc.)
+# it also increases the computation time, so adjust it as needed
+N_per_orbits = SF * 20 / (np.sqrt(1 + E) * (1 - E) ** (3 / 2))  # number of time steps per orbit
+n_steps = int(n_orbits * N_per_orbits)  # number of steps to evolve
+dt = T / N_per_orbits  # time step in years
 
 
 # %%
@@ -145,7 +148,6 @@ def binary_initial_conditions(
 ):
     M = m1 + m2
 
-    
     r = a * (1 - e)
     v = np.sqrt((1 + e) * G * M / r)
 
@@ -153,10 +155,10 @@ def binary_initial_conditions(
     v_rel = np.array([0.0, v, 0.0])
 
     x1 = -m2 / M * x_rel
-    x2 =  m1 / M * x_rel
+    x2 = m1 / M * x_rel
 
     v1 = -m2 / M * v_rel
-    v2 =  m1 / M * v_rel
+    v2 = m1 / M * v_rel
 
     if roll != 0.0 or pitch != 0.0 or yaw != 0.0:
         R = rotation_matrix(roll, pitch, yaw)
@@ -492,10 +494,10 @@ def render_disk_and_orbit(render_frames, ext=2.5, nx=256, ny=256, interval=100):
     )
     history1 = []
     history2 = []
-    line1_hist, = ax.plot([], [], color="tab:red", lw=1.0, alpha=0.45)
-    line2_hist, = ax.plot([], [], color="tab:blue", lw=1.0, alpha=0.45)
-    point1, = ax.plot([], [], "o", color="tab:red", markersize=7)
-    point2, = ax.plot([], [], "o", color="tab:blue", markersize=7)
+    (line1_hist,) = ax.plot([], [], color="tab:red", lw=1.0, alpha=0.45)
+    (line2_hist,) = ax.plot([], [], color="tab:blue", lw=1.0, alpha=0.45)
+    (point1,) = ax.plot([], [], "o", color="tab:red", markersize=7)
+    (point2,) = ax.plot([], [], "o", color="tab:blue", markersize=7)
     title = ax.text(0.02, 0.98, "", transform=ax.transAxes, va="top", ha="left")
 
     def update(frame_idx):
@@ -530,15 +532,7 @@ def render_disk_and_orbit(render_frames, ext=2.5, nx=256, ny=256, interval=100):
         interval=interval,
         blit=False,
     )
-    ani.save("binary_orbit.gif",
-              writer="ffmpeg", 
-              fps=30, 
-              dpi=200
-            )
-    
-    
-    
-    
+    ani.save("binary_orbit.gif", writer="ffmpeg", fps=30, dpi=200)
 
     ax.set_title("Disc + binary orbit")
     ax.set_xlabel("x (AU)")
@@ -589,4 +583,3 @@ if __name__ == "__main__":
 
     plot_orbit_trajectory(snapshots)
     render_disk_and_orbit(render_frames)
-

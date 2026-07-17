@@ -395,44 +395,37 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
-
-    //In the following part of the code, we calculate the acceleration depending of the solver config( Orbital precession, Spin-Orbit, Spin-Spin, Radiation Reaction)
-    //Note that all these terms (except for the Newton) are only true for binary (two sinks)
+    // In the following part of the code, we calculate the acceleration depending of the solver
+    // config( Orbital precession, Spin-Orbit, Spin-Spin, Radiation Reaction) Note that all these
+    // terms (except for the Newton) are only true for binary (two sinks)
     bool OP = solver_config.compute_OP;
     bool SO = solver_config.compute_SO;
     bool SS = solver_config.compute_SS;
     bool RR = solver_config.compute_RR;
-
 
     logger::info_ln("-------- SinkParticleUpdate: Post-Newtonian terms --------");
     logger::info_ln("1PN", solver_config.compute_OP);
     logger::info_ln("SO", solver_config.compute_SO);
     logger::info_ln("SS", solver_config.compute_SS);
     logger::info_ln("RR", solver_config.compute_RR);
-    
-    
-    
+
     for (Sink &s : sink_parts) {
         s.ext_acceleration = Tvec{};
     }
-    //Definition of G and c
-    Tscal G  = solver_config.get_constant_G();
-    Tscal c  =solver_config.get_constant_c();
-    
+    // Definition of G and c
+    Tscal G = solver_config.get_constant_G();
+    Tscal c = solver_config.get_constant_c();
+
     Tscal epsilon_grav_sink = 1e-9;
 
-
-
-
-
     for (Sink &s1 : sink_parts) {
-        
+
         Tvec sum{};
 
         for (Sink &s2 : sink_parts) {
 
-            Tscal M = s1.mass + s2.mass;
-            Tscal nu = s1.mass * s2.mass / M;
+            Tscal M   = s1.mass + s2.mass;
+            Tscal nu  = s1.mass * s2.mass / M;
             Tscal eta = nu / M;
 
             if (&s1 == &s2)
@@ -444,68 +437,64 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             Tvec term3{};
             Tvec term4{};
 
-            Tvec rij = s1.pos - s2.pos;
+            Tvec rij       = s1.pos - s2.pos;
             Tscal rij_scal = sycl::length(rij);
 
             Tvec nij = rij / rij_scal;
             Tvec vij = s1.velocity - s2.velocity;
 
             Tscal vij_nij = sycl::dot(vij, nij);
-            Tscal v2 = sycl::dot(vij, vij);
-            Tvec S1= s1.angular_momentum;
-            Tvec S2= s2.angular_momentum;
-            Tvec S = S1+S2;
-            Tvec Delta = M*(s2.angular_momentum/s2.mass - s1.angular_momentum/s1.mass);
-            Tscal dm = s1.mass - s2.mass;
+            Tscal v2      = sycl::dot(vij, vij);
+            Tvec S1       = s1.angular_momentum;
+            Tvec S2       = s2.angular_momentum;
+            Tvec S        = S1 + S2;
+            Tvec Delta    = M * (s2.angular_momentum / s2.mass - s1.angular_momentum / s1.mass);
+            Tscal dm      = s1.mass - s2.mass;
 
+            term0 = -G * M * rij / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
+            sum += s2.mass / M * term0;
 
-            term0 = -G * M * rij
-                    / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
-            sum+= s2.mass/M*term0;
-
-            if(OP){
-                term1 =
-                    -G *  M / (rij_scal * rij_scal + epsilon_grav_sink)
-                    * (
-                        ((1 + 3 * eta) * v2 * nij) 
-                        - 2 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink) ) * nij
-                        - 1.5 * eta * vij_nij * vij_nij* nij
-                        - 2 * (2 - eta) * vij_nij * vij
-                    );
-                sum += 1/(c*c)*s2.mass/M*term1;
-            } 
-
-            if(SO){
-                term2 = G*M/(c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
-                * (
-                        6*nij*(sycl::dot(sycl::cross(nij,vij), 2*S +dm/M*Delta))
-                        -sycl::cross(vij, 7*S + 3*dm/M*Delta)
-                        +3*sycl::cross(vij_nij*nij, 3*S + dm/M*Delta)
-                );
-
-                sum += s2.mass/M*term2;
+            if (OP) {
+                term1 = -G * M / (rij_scal * rij_scal + epsilon_grav_sink)
+                        * (((1 + 3 * eta) * v2 * nij)
+                           - 2 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink)) * nij
+                           - 1.5 * eta * vij_nij * vij_nij * nij - 2 * (2 - eta) * vij_nij * vij);
+                sum += 1 / (c * c) * s2.mass / M * term1;
             }
 
-            if(SS){
-                term3 = -G/(c*c*nu*(rij_scal*rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
-                * (
-                    nij*sycl::dot(S1,S2) + S1*sycl::dot(nij,S2) + S2*sycl::dot(nij,S1) - 5*nij*sycl::dot(nij,S1)*sycl::dot(nij,S2)
-                );
+            if (SO) {
+                term2 = G * M / (c * c * (rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
+                        * (6 * nij * (sycl::dot(sycl::cross(nij, vij), 2 * S + dm / M * Delta))
+                           - sycl::cross(vij, 7 * S + 3 * dm / M * Delta)
+                           + 3 * sycl::cross(vij_nij * nij, 3 * S + dm / M * Delta));
 
-                sum += s2.mass/M*term3;
+                sum += s2.mass / M * term2;
             }
-            if(RR){
-                term4 = 8/5*G*G*eta* M *M/(c*c*c*c*c*(rij_scal*rij_scal*rij_scal+epsilon_grav_sink))
-                * (
-                    vij_nij*nij*(18*v2 + 2/3*G*M/(rij_scal + epsilon_grav_sink)-25*vij_nij*vij_nij) 
-                    - (6*v2 - 2*G*M/(rij_scal + epsilon_grav_sink)-15*vij_nij*vij_nij)*vij
-                );
-                
-                sum += s2.mass/M*term4;
-            } 
-            
+
+            if (SS) {
+                term3
+                    = -G
+                      / (c * c * nu
+                         * (rij_scal * rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
+                      * (nij * sycl::dot(S1, S2) + S1 * sycl::dot(nij, S2) + S2 * sycl::dot(nij, S1)
+                         - 5 * nij * sycl::dot(nij, S1) * sycl::dot(nij, S2));
+
+                sum += s2.mass / M * term3;
+            }
+            if (RR) {
+                term4 = 8 / 5 * G * G * eta * M * M
+                        / (c * c * c * c * c * (rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
+                        * (vij_nij * nij
+                               * (18 * v2 + 2 / 3 * G * M / (rij_scal + epsilon_grav_sink)
+                                  - 25 * vij_nij * vij_nij)
+                           - (6 * v2 - 2 * G * M / (rij_scal + epsilon_grav_sink)
+                              - 15 * vij_nij * vij_nij)
+                                 * vij);
+
+                sum += s2.mass / M * term4;
+            }
         }
-        s1.ext_acceleration +=  sum;
+        s1.ext_acceleration += sum;
     }
 
     update_sink_spins(dt);
@@ -514,9 +503,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink_spins(Tscal dt) {
 
-//Definition of the constants G and c for the calculations of spin precession (the same as in the compute_ext_forces function)
-Tscal G = solver_config.get_constant_G();       //G=4*pi*2
-Tscal c = solver_config.get_constant_c();     //c= 63 241.077 AU/year
+    // Definition of the constants G and c for the calculations of spin precession (the same as in
+    // the compute_ext_forces function)
+    Tscal G = solver_config.get_constant_G(); // G=4*pi*2
+    Tscal c = solver_config.get_constant_c(); // c= 63 241.077 AU/year
 
     if (storage.sinks.is_empty()) {
         return;
@@ -524,7 +514,6 @@ Tscal c = solver_config.get_constant_c();     //c= 63 241.077 AU/year
 
     std::vector<Sink> &sink_parts = storage.sinks.get();
 
-    
     Tscal epsilon_spin = 1e-9;
 
     for (Sink &s1 : sink_parts) {
@@ -536,23 +525,22 @@ Tscal c = solver_config.get_constant_c();     //c= 63 241.077 AU/year
             }
             Tvec rij = s1.pos - s2.pos;
             Tvec vij = s1.velocity - s2.velocity;
-            Tscal m1=s1.mass;
-            Tscal m2=s2.mass;
-            Tscal M = m1 + m2;
+            Tscal m1 = s1.mass;
+            Tscal m2 = s2.mass;
+            Tscal M  = m1 + m2;
             Tscal nu = m1 * m2 / M;
-            Tvec L = nu * sycl::cross(rij, vij);
+            Tvec L   = nu * sycl::cross(rij, vij);
 
-        
-            Tscal rij_scal = sycl::length(rij) + epsilon_spin;
-            Tvec nij = rij / rij_scal;
-            Tvec S1 = s1.angular_momentum;
-            Tvec S2 = s2.angular_momentum;
+            Tscal rij_scal  = sycl::length(rij) + epsilon_spin;
+            Tvec nij        = rij / rij_scal;
+            Tvec S1         = s1.angular_momentum;
+            Tvec S2         = s2.angular_momentum;
             Tscal prefactor = G / (c * c * rij_scal * rij_scal * rij_scal);
             // Simple spin precession structure.
-            
 
-            Tvec Omega_prec = prefactor * ((2 + 3 * m2 / (2 * m1)) * L - S2 + 3*sycl::dot(nij, S2) * nij) ;
-            
+            Tvec Omega_prec
+                = prefactor * ((2 + 3 * m2 / (2 * m1)) * L - S2 + 3 * sycl::dot(nij, S2) * nij);
+
             dS += sycl::cross(Omega_prec, S1);
         }
 

@@ -210,4 +210,3 @@ ctx, model = build_sink_sph_model(
 )
 snapshots = run_sim(model, 100, use_dt=None)
 plot_orbit_trajectory(snapshots, "Circular orbit")
-

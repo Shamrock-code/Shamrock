@@ -6,8 +6,9 @@ This example shows how to use binary orbit functions with the Post-Newtonian dev
 and how to attach sink particles to an SPH model.
 """
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 import shamrock as chama
 
 # %%
@@ -28,18 +29,18 @@ ucte = chama.Constants(codeu)
 G = ucte.G()
 c = ucte.c()
 
-#Binary parameters
-M1 = 100000.0 # Mass of the first body (in solar mass)
-M2 = 10.0 # Mass of the second body
-Rs= 2*G*(M1+M2)/c**2 #Sch radius
+# Binary parameters
+M1 = 100000.0  # Mass of the first body (in solar mass)
+M2 = 10.0  # Mass of the second body
+Rs = 2 * G * (M1 + M2) / c**2  # Sch radius
 A = 100  # Semi major axis
 E = 0.1  # excentricity
 
 
 # Spins (aligned with the orbital angular momentum)
 a1 = 0.9  # between 0 and 1 (first body spin)
-a2 = 0.0 #second body spin
-theta =np.pi/3
+a2 = 0.0  # second body spin
+theta = np.pi / 3
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
 spin_mag_1 = a1 * G * M1 * M1 / c
 spin_mag_2 = a2 * G * M2 * M2 / c
@@ -49,13 +50,13 @@ spin_vec_2 = spin_mag_2 * spin_axis
 
 # %%
 # Simulation parameters
-T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
-n_orbits = 10                                           #Number of orbit to plot
-SF=200                                                              #safety factor (increase it if you're working with high excentricity)     
-                                                                      
-N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
-n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
-dt = T/N_per_orbits                                                # time step in years
+T = 2 * np.pi * np.sqrt(A * A * A / (G * (M1 + M2)))  # number of years
+n_orbits = 10  # Number of orbit to plot
+SF = 200  # safety factor (increase it if you're working with high excentricity)
+
+N_per_orbits = SF * 20 / (np.sqrt(1 + E) * (1 - E) ** (3 / 2))  # number of time steps per orbit
+n_steps = int(n_orbits * N_per_orbits)  # number of steps to evolve
+dt = T / N_per_orbits  # time step in years
 
 
 # %%
@@ -87,7 +88,6 @@ def binary_initial_conditions(
 ):
     M = m1 + m2
 
-    
     r = a * (1 - e)
     v = np.sqrt((1 + e) * G * M / r)
 
@@ -95,10 +95,10 @@ def binary_initial_conditions(
     v_rel = np.array([0.0, v, 0.0])
 
     x1 = -m2 / M * x_rel
-    x2 =  m1 / M * x_rel
+    x2 = m1 / M * x_rel
 
     v1 = -m2 / M * v_rel
-    v2 =  m1 / M * v_rel
+    v2 = m1 / M * v_rel
 
     if roll != 0.0 or pitch != 0.0 or yaw != 0.0:
         R = rotation_matrix(roll, pitch, yaw)
@@ -340,7 +340,7 @@ if __name__ == "__main__":
     a = A
     e = E
 
-    # racc=0.001 AU 
+    # racc=0.001 AU
     ctx, model = build_binary_sph_model(
         m1,
         m2,
@@ -361,6 +361,7 @@ if __name__ == "__main__":
         print("time", snapshot["time"], "positions", snapshot["positions"])
 
     plot_orbit_trajectory(snapshots)
+
 
 def compute_eccentricity(snapshot, m1, m2, G=G):
 
@@ -384,17 +385,15 @@ def compute_eccentricity(snapshot, m1, m2, G=G):
     # Specificcinetic  momentum
     h = np.linalg.norm(np.cross(r_vec, v_vec))
 
-    e = np.sqrt(1 + 2 * eps * h**2 / mu**2)      # e =sqrt(1 - h*2/a mu) = sqrt(1 + 2*eps*h^2/mu^2)
+    e = np.sqrt(1 + 2 * eps * h**2 / mu**2)  # e =sqrt(1 - h*2/a mu) = sqrt(1 + 2*eps*h^2/mu^2)
 
     return e
+
 
 def plot_eccentricity(snapshots, m1, m2):
 
     times = np.array([snap["time"] for snap in snapshots])
-    ecc = np.array([
-        compute_eccentricity(snap, m1, m2)
-        for snap in snapshots
-    ])
+    ecc = np.array([compute_eccentricity(snap, m1, m2) for snap in snapshots])
 
     plt.figure(figsize=(8, 4))
     plt.plot(times, ecc, lw=2)
@@ -403,12 +402,11 @@ def plot_eccentricity(snapshots, m1, m2):
     plt.ylabel("Excentricity e")
     plt.title("Excentricity")
 
-    plt.ylim(0, 1)  
+    plt.ylim(0, 1)
 
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.show()
-
 
 
 def compute_inclination(snapshot):
@@ -422,35 +420,33 @@ def compute_inclination(snapshot):
     r_vec = r2 - r1
     v_vec = v2 - v1
 
-    h = np.cross(r_vec, v_vec)                 #"specific angular momentum"
+    h = np.cross(r_vec, v_vec)  # "specific angular momentum"
     h_norm = np.linalg.norm(h)
     if h_norm < 1e-15:
         return np.nan
 
-    i = np.arccos(np.clip(h[2] / h_norm, -1.0, 1.0))      # cos(i)= h_z/|h|
+    i = np.arccos(np.clip(h[2] / h_norm, -1.0, 1.0))  # cos(i)= h_z/|h|
 
     return np.degrees(i)
 
-def plot_inclination(snapshots):
 
+def plot_inclination(snapshots):
 
     times = np.array([snap["time"] for snap in snapshots])
 
-    inc = np.array([
-        compute_inclination(snap)
-        for snap in snapshots
-    ])
+    inc = np.array([compute_inclination(snap) for snap in snapshots])
 
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(times, inc)
 
     plt.xlabel("Time")
     plt.ylabel("Inclination (deg)")
     plt.title("Orbital inclination")
-    plt.ylim(-180, 180) 
+    plt.ylim(-180, 180)
     plt.grid(True)
     plt.tight_layout()
     plt.show()
+
 
 def compute_omega(snapshot, m1, m2, G=G):
 
@@ -473,7 +469,7 @@ def compute_omega(snapshot, m1, m2, G=G):
     if h_norm < 1e-15:
         return np.nan
 
-    e_vec = np.cross(v_vec, h)/mu - r_vec/r
+    e_vec = np.cross(v_vec, h) / mu - r_vec / r
     e_norm = np.linalg.norm(e_vec)
 
     if e_norm < 1e-15:
@@ -487,19 +483,20 @@ def compute_omega(snapshot, m1, m2, G=G):
     if n_norm < 1e-12:
         ang = np.arctan2(e_vec[1], e_vec[0])
         if ang < 0:
-            ang += 2*np.pi
+            ang += 2 * np.pi
         return np.degrees(ang)
 
     # general case
-    cosw = np.dot(n, e_vec)/(n_norm*e_norm)
+    cosw = np.dot(n, e_vec) / (n_norm * e_norm)
     cosw = np.clip(cosw, -1.0, 1.0)
 
     ang = np.arccos(cosw)
 
     if np.dot(np.cross(n, e_vec), h) < 0:
-        ang = 2*np.pi - ang
+        ang = 2 * np.pi - ang
 
     return np.degrees(ang)
+
 
 def compute_semimajor_axis(snapshot, m1, m2, G=G):
 
@@ -522,25 +519,22 @@ def compute_semimajor_axis(snapshot, m1, m2, G=G):
     if abs(eps) < 1e-15:
         return np.nan
 
-    return -mu / (2 * eps)      # = a
+    return -mu / (2 * eps)  # = a
+
 
 def plot_semimajor_axis(snapshots, m1, m2):
 
-
     times = np.array([snap["time"] for snap in snapshots])
 
-    a = np.array([
-        compute_semimajor_axis(snap, m1, m2)
-        for snap in snapshots
-    ])
+    a = np.array([compute_semimajor_axis(snap, m1, m2) for snap in snapshots])
 
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(times, a)
 
     plt.xlabel("Time (years)")
     plt.ylabel("a (AU)")
     plt.title("Evolution of a")
-    plt.ylim(0, 1.5*A) 
+    plt.ylim(0, 1.5 * A)
     plt.grid(True)
     plt.tight_layout()
     plt.show()
@@ -563,25 +557,23 @@ def compute_eccentricity_vector(snapshot, m1, m2, G=G):
 
     h = np.cross(r_vec, v_vec)
 
-    e_vec = np.cross(v_vec, h)/mu - r_vec/r
-    e=np.linalg.norm(e_vec)
-    e_vec = e_vec / e if e != 0 else np.zeros_like(e_vec)  #Runge Lenz Laplace vector
+    e_vec = np.cross(v_vec, h) / mu - r_vec / r
+    e = np.linalg.norm(e_vec)
+    e_vec = e_vec / e if e != 0 else np.zeros_like(e_vec)  # Runge Lenz Laplace vector
     return e_vec
+
 
 def plot_eccentricity_vector(snapshots, m1, m2):
 
     times = np.array([snap["time"] for snap in snapshots])
 
-    e_vec = np.array([
-        compute_eccentricity_vector(snap, m1, m2)
-        for snap in snapshots
-    ])
+    e_vec = np.array([compute_eccentricity_vector(snap, m1, m2) for snap in snapshots])
 
-    plt.figure(figsize=(9,5))
+    plt.figure(figsize=(9, 5))
 
-    plt.plot(times, e_vec[:,0], label=r"$e_x (OP) $")
-    plt.plot(times, e_vec[:,1], label=r"$e_y (OP) $")
-    plt.plot(times, e_vec[:,2], label=r"$e_z  (SO) $")
+    plt.plot(times, e_vec[:, 0], label=r"$e_x (OP) $")
+    plt.plot(times, e_vec[:, 1], label=r"$e_y (OP) $")
+    plt.plot(times, e_vec[:, 2], label=r"$e_z  (SO) $")
 
     plt.xlabel("Time (years)")
     plt.ylabel("Components of the Runge Lenz Laplace vector")
@@ -592,19 +584,16 @@ def plot_eccentricity_vector(snapshots, m1, m2):
     plt.tight_layout()
     plt.show()
 
+
 def plot_omega(snapshots, m1, m2):
 
     times = np.array([snap["time"] for snap in snapshots])
 
-    omega = np.array([
-        compute_omega(snap, m1, m2)
-        for snap in snapshots
-    ])
+    omega = np.array([compute_omega(snap, m1, m2) for snap in snapshots])
 
-    
     omega = np.degrees((np.radians(omega)))
 
-    plt.figure(figsize=(8,4))
+    plt.figure(figsize=(8, 4))
     plt.plot(times, omega, lw=2)
 
     plt.xlabel("Time")
@@ -615,24 +604,25 @@ def plot_omega(snapshots, m1, m2):
     plt.tight_layout()
     plt.show()
 
+
 def plot_spins(snapshots):
 
     times = np.array([s["time"] for s in snapshots])
 
-    a1 = c/(G*m1*m1)*np.array([s["spins"][0] for s in snapshots])
-    a2 = c/(G*m2*m2)*np.array([s["spins"][1] for s in snapshots])
+    a1 = c / (G * m1 * m1) * np.array([s["spins"][0] for s in snapshots])
+    a2 = c / (G * m2 * m2) * np.array([s["spins"][1] for s in snapshots])
 
-    plt.figure(figsize=(10,6))
+    plt.figure(figsize=(10, 6))
 
     # BH1
-    plt.plot(times, a1[:,0], label=r"$a_{1x}$")
-    plt.plot(times, a1[:,1], label=r"$a_{1y}$")
-    plt.plot(times, a1[:,2], label=r"$a_{1z}$")
+    plt.plot(times, a1[:, 0], label=r"$a_{1x}$")
+    plt.plot(times, a1[:, 1], label=r"$a_{1y}$")
+    plt.plot(times, a1[:, 2], label=r"$a_{1z}$")
 
     # BH2
-    plt.plot(times, a2[:,0], "--", label=r"$a_{2x}$")
-    plt.plot(times, a2[:,1], "--", label=r"$a_{2y}$")
-    plt.plot(times, a2[:,2], "--", label=r"$a_{2z}$")
+    plt.plot(times, a2[:, 0], "--", label=r"$a_{2x}$")
+    plt.plot(times, a2[:, 1], "--", label=r"$a_{2y}$")
+    plt.plot(times, a2[:, 2], "--", label=r"$a_{2z}$")
 
     plt.xlabel("Time")
     plt.ylabel("Spin")
@@ -646,91 +636,63 @@ def plot_spins(snapshots):
     plt.show()
 
 
-
-#Saving file
+# Saving file
 # ============================================================
 # saving orbital elements
 # ============================================================
 
-def save_orbital_elements(snapshots, m1, m2, filename="Path"):                              
+
+def save_orbital_elements(snapshots, m1, m2, filename="Path"):
 
     data = []
 
     for snap in snapshots:
-
         time = snap["time"]
 
-        #orbital elements
+        # orbital elements
         ecc = compute_eccentricity(snap, m1, m2)
         a_orbit = compute_semimajor_axis(snap, m1, m2)
         inc = compute_inclination(snap)
         omega = compute_omega(snap, m1, m2)
         e_vec = compute_eccentricity_vector(snap, m1, m2)
 
-        # spins 
-        spin1 = c/(G*m1*m1) * np.array(snap["spins"][0])
-        spin2 = c/(G*m2*m2) * np.array(snap["spins"][1])
+        # spins
+        spin1 = c / (G * m1 * m1) * np.array(snap["spins"][0])
+        spin2 = c / (G * m2 * m2) * np.array(snap["spins"][1])
 
-
-        data.append([
-            time,
-
-            # orbit
-            a_orbit,
-            ecc,
-            inc,
-            omega,
-
-            # Runge vector
-            e_vec[0],
-            e_vec[1],
-            e_vec[2],
-
-            # First spin
-            spin1[0],
-            spin1[1],
-            spin1[2],
-
-            # Second spin
-            spin2[0],
-            spin2[1],
-            spin2[2],
-        ])
-
+        data.append(
+            [
+                time,
+                # orbit
+                a_orbit,
+                ecc,
+                inc,
+                omega,
+                # Runge vector
+                e_vec[0],
+                e_vec[1],
+                e_vec[2],
+                # First spin
+                spin1[0],
+                spin1[1],
+                spin1[2],
+                # Second spin
+                spin2[0],
+                spin2[1],
+                spin2[2],
+            ]
+        )
 
     data = np.array(data)
 
+    header = "t,a,e,i,omega,e_x,e_y,e_z,S1_x,S1_y,S1_z,S2_x,S2_y,S2_z"
 
-    header = (
-        "t,"
-        "a,"
-        "e,"
-        "i,"
-        "omega,"
-        "e_x,"
-        "e_y,"
-        "e_z,"
-        "S1_x,"
-        "S1_y,"
-        "S1_z,"
-        "S2_x,"
-        "S2_y,"
-        "S2_z"
-    )
-
-
-    np.savetxt(
-        filename,
-        data,
-        delimiter=",",
-        header=header,
-        comments=""
-    )
-
+    np.savetxt(filename, data, delimiter=",", header=header, comments="")
 
     print(f"Orbital values saved in  {filename}")
 
-#Plots 
+
+# Plots
 plot_eccentricity(snapshots, m1, m2)
 plot_eccentricity_vector(snapshots, m1, m2)
 plot_inclination(snapshots)

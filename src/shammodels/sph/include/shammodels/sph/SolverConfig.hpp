@@ -449,10 +449,10 @@ struct shammodels::sph::SolverConfig {
     CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
 
     bool track_particles_id = false;
-    bool compute_OP = false;
-    bool compute_SO = false;
-    bool compute_SS = false;
-    bool compute_RR = false;
+    bool compute_OP         = false;
+    bool compute_SO         = false;
+    bool compute_SS         = false;
+    bool compute_RR         = false;
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
     inline void set_compute_OP(bool state) { compute_OP = state; }

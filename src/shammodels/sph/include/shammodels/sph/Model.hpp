@@ -182,13 +182,7 @@ namespace shammodels::sph {
             }
 
             shamlog_debug_ln(
-                "SPH",
-                "add sink :",
-                mass,
-                pos,
-                velocity,
-                accretion_radius,
-                angular_momentum);
+                "SPH", "add sink :", mass, pos, velocity, accretion_radius, angular_momentum);
 
             solver.storage.sinks.get().push_back(
                 {pos, velocity, {}, {}, mass, angular_momentum, accretion_radius});

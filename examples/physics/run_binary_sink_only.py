@@ -28,17 +28,17 @@ ucte = chama.Constants(codeu)
 G = ucte.G()
 c = ucte.c()
 
-#Paramètres de la binaire à tracer
-M1 = 100000.0 # masse du premier corps en masses solaires
-M2 = 10.0 # masse du second corps en masses solaires
-Rs= 2*G*(M1+M2)/c**2
-A = 100  # demi-grand axe en unités astronomiques
-E = 0.1  # excentricité de l'orbite
+#Binary parameters
+M1 = 100000.0 # Mass of the first body (in solar mass)
+M2 = 10.0 # Mass of the second body
+Rs= 2*G*(M1+M2)/c**2 #Sch radius
+A = 100  # Semi major axis
+E = 0.1  # excentricity
 
 
 # Spins (aligned with the orbital angular momentum)
-a1 = 0.9  # entre 0 et 1, spin du premier corps
-a2 = 0.0
+a1 = 0.9  # between 0 and 1 (first body spin)
+a2 = 0.0 #second body spin
 theta =np.pi/3
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
 spin_mag_1 = a1 * G * M1 * M1 / c
@@ -50,9 +50,9 @@ spin_vec_2 = spin_mag_2 * spin_axis
 # %%
 # Simulation parameters
 T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
-n_orbits = 10                                                     #nombre d'orbite qu'on veut
-SF=200                                                              #safety factor, permet d'avoir plus de pas de temps par orbite pour une meilleure précision, nécessaire pour les cas extrêmes(excentricité proche de 1, spin très élevé, etc.)          
-                                                                   #augmente également le temps de calcul, à ajuster selon les besoins      
+n_orbits = 10                                           #Number of orbit to plot
+SF=200                                                              #safety factor (increase it if you're working with high excentricity)     
+                                                                      
 N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
 n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
 dt = T/N_per_orbits                                                # time step in years
@@ -87,7 +87,7 @@ def binary_initial_conditions(
 ):
     M = m1 + m2
 
-    # mêmes conditions que ton code Leapfrog
+    
     r = a * (1 - e)
     v = np.sqrt((1 + e) * G * M / r)
 
@@ -136,14 +136,11 @@ def build_binary_sph_model(
     chama.enable_experimental_features()
 
     cfg = model.gen_default_config()
-    # Disable direct self-gravity in this simple example; direct mode requires
-    # a single-patch setup which is not prepared here.
     cfg.set_self_gravity_none()
     cfg.set_artif_viscosity_Constant(alpha_u=1.0, alpha_AV=1.0, beta_AV=2.0)
     cfg.set_particle_mass(1e-6)
     cfg.set_eta_sink(1)
     cfg.set_eos_isothermal(1.0)
-    # Set code units so warnings about unit system disappear
     cfg.set_units(codeu)
     cfg.set_compute_OP(compute_op)
     cfg.set_compute_SO(compute_so)
@@ -343,7 +340,7 @@ if __name__ == "__main__":
     a = A
     e = E
 
-    # racc=0.001 AU is much smaller than binary separation (~0.7 AU at periapsis)
+    # racc=0.001 AU 
     ctx, model = build_binary_sph_model(
         m1,
         m2,
@@ -487,14 +484,14 @@ def compute_omega(snapshot, m1, m2, G=G):
     n = np.cross(k, h)
     n_norm = np.linalg.norm(n)
 
-    # Cas d'une orbite dans le plan de référence
+    # For orbit in the initial plan
     if n_norm < 1e-12:
         ang = np.arctan2(e_vec[1], e_vec[0])
         if ang < 0:
             ang += 2*np.pi
         return np.degrees(ang)
 
-    # Cas général
+    # general case
     cosw = np.dot(n, e_vec)/(n_norm*e_norm)
     cosw = np.clip(cosw, -1.0, 1.0)
 
@@ -569,8 +566,7 @@ def compute_eccentricity_vector(snapshot, m1, m2, G=G):
 
     e_vec = np.cross(v_vec, h)/mu - r_vec/r
     e=np.linalg.norm(e_vec)
-    e_vec = e_vec / e if e != 0 else np.zeros_like(e_vec)  #vecteur excentricité normé ou de Laplace-Runge-Lenz
-
+    e_vec = e_vec / e if e != 0 else np.zeros_like(e_vec)  #Runge Lenz Laplace vector
     return e_vec
 
 def plot_eccentricity_vector(snapshots, m1, m2):
@@ -606,7 +602,7 @@ def plot_omega(snapshots, m1, m2):
         for snap in snapshots
     ])
 
-    # retire les sauts de 360°
+    
     omega = np.degrees((np.radians(omega)))
 
     plt.figure(figsize=(8,4))
@@ -652,12 +648,13 @@ def plot_spins(snapshots):
 
 
 
-#On sauvegarde dans un fichier
+#Saving file
 # ============================================================
-# Sauvegarde des éléments orbitaux
+# saving orbital elements
 # ============================================================
 
-def save_orbital_elements(snapshots, m1, m2, filename="/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv"):
+def save_orbital_elements(snapshots, m1, m2, filename="Path")                               
+#"/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv"):
 
     data = []
 
@@ -665,14 +662,14 @@ def save_orbital_elements(snapshots, m1, m2, filename="/home/dartencet/Chamrock/
 
         time = snap["time"]
 
-        # éléments orbitaux
+        #orbital elements
         ecc = compute_eccentricity(snap, m1, m2)
         a_orbit = compute_semimajor_axis(snap, m1, m2)
         inc = compute_inclination(snap)
         omega = compute_omega(snap, m1, m2)
         e_vec = compute_eccentricity_vector(snap, m1, m2)
 
-        # spins adimensionnés
+        # spins 
         spin1 = c/(G*m1*m1) * np.array(snap["spins"][0])
         spin2 = c/(G*m2*m2) * np.array(snap["spins"][1])
 
@@ -680,23 +677,23 @@ def save_orbital_elements(snapshots, m1, m2, filename="/home/dartencet/Chamrock/
         data.append([
             time,
 
-            # orbite
+            # orbit
             a_orbit,
             ecc,
             inc,
             omega,
 
-            # vecteur excentricité
+            # Runge vector
             e_vec[0],
             e_vec[1],
             e_vec[2],
 
-            # spin 1
+            # First spin
             spin1[0],
             spin1[1],
             spin1[2],
 
-            # spin 2
+            # Second spin
             spin2[0],
             spin2[1],
             spin2[2],
@@ -733,15 +730,16 @@ def save_orbital_elements(snapshots, m1, m2, filename="/home/dartencet/Chamrock/
     )
 
 
-    print(f"Valeurs orbitales sauvegardées dans {filename}")
+    print(f"Orbital values saved in  {filename}")
 
-#Différents plots pour visualiser l'évolution de l'orbite binaire
+#Plots 
 plot_eccentricity(snapshots, m1, m2)
 plot_eccentricity_vector(snapshots, m1, m2)
 plot_inclination(snapshots)
 plot_semimajor_axis(snapshots, m1, m2)
 plot_omega(snapshots, m1, m2)
-save_orbital_elements(snapshots, m1, m2, filename="/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv")
+save_orbital_elements(snapshots, m1, m2, filename="Path")
+#"/home/dartencet/Chamrock/CodePythons/tableaux éléments orbitaux/ elements_orbitaux_sham.csv")
 
 sinks = model.get_sinks()
 print(sinks[0])

@@ -28,14 +28,11 @@
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
 #include <nlohmann/json.hpp>
-#include <unordered_map>
 #include <unordered_set>
 #include <fstream>
 #include <functional>
 #include <memory>
-#include <optional>
 #include <stdexcept>
 #include <tuple>
 #include <vector>
@@ -52,7 +49,6 @@
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
 #include "shamrock/scheduler/SynchronizedData.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
 
 struct PatchSchedulerConfig {

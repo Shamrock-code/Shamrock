@@ -28,11 +28,11 @@
 #include "shammodels/sph/math/mhd.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
 #include "shammodels/sph/modules/ComputeDustTtilde.hpp"
-#include "shammodels/sph/modules/MonoFluidTVIDeltav.hpp"
+#include "shammodels/sph/modules/MonoFluidTVADeltav.hpp"
 #include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
 #include "shammodels/sph/modules/NodeEvolveDustCOALASourceTerm.hpp"
-#include "shammodels/sph/modules/NodeMonofluidTVIAddSourceTerm.hpp"
-#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
+#include "shammodels/sph/modules/NodeMonofluidTVAAddSourceTerm.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
@@ -75,7 +75,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs(Tsca
 
     if (cfg_dust.has_s_j_field()) {
         // we can do it separately because the backreaction is done only through the pressure
-        update_derivs_dust_monofluid_tvi_Sj(cfg_dust, dt_hydro);
+        update_derivs_dust_monofluid_tva_Sj(cfg_dust, dt_hydro);
     }
 }
 
@@ -1069,10 +1069,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_MHD(
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tvi_Sj(
+void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust_monofluid_tva_Sj(
     DustConfig cfg, Tscal dt_hydro) {
 
-    using MonofluidTVI = typename DustConfig::MonofluidTVI;
+    using MonofluidTVA = typename DustConfig::MonofluidTVA;
 
     StackEntry stack_loc{};
 
@@ -1168,8 +1168,8 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     }
     node_tj->evaluate();
 
-    std::shared_ptr<NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>> node
-        = std::make_shared<NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>>(ndust);
+    std::shared_ptr<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>> node
+        = std::make_shared<NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>>(ndust);
     {
         node->set_edges(
             gpart_mass,
@@ -1187,10 +1187,10 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
     }
     node->evaluate();
 
-    MonofluidTVI &cfg_monofluid_tvi
-        = shambase::get_check_ref((std::get_if<MonofluidTVI>(&cfg.current_mode)));
+    MonofluidTVA &cfg_monofluid_tva
+        = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
 
-    if (cfg_monofluid_tvi.pure_diffusion_mode) {
+    if (cfg_monofluid_tva.pure_diffusion_mode) {
         // reset accelerations & du/dt to 0
 
         const u32 iaxyz  = pdl.get_field_idx<Tvec>("axyz");

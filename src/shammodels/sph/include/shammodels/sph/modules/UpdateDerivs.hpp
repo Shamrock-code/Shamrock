@@ -62,7 +62,7 @@ namespace shammodels::sph::modules {
 
         using DustConfig = typename Config::DustConfig;
 
-        void update_derivs_dust_monofluid_tvi_Sj(DustConfig cfg, Tscal dt_hydro);
+        void update_derivs_dust_monofluid_tva_Sj(DustConfig cfg, Tscal dt_hydro);
 
         using Cfg_MHD = typename Config::MHDConfig;
 

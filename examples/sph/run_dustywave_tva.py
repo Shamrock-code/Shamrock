@@ -75,7 +75,7 @@ def do_setup(model, cs, delta_v_0):
     cfg.set_artif_viscosity_VaryingCD10(
         alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
     )
-    cfg.set_dust_mode_monofluid_tvi(nvar=1)
+    cfg.set_dust_mode_monofluid_tva(nvar=1)
     cfg.set_dust_drag_constant([ts])
     cfg.set_boundary_periodic()
     cfg.set_eos_isothermal(cs)
@@ -162,7 +162,7 @@ def get_field_results(model):
 # Analytics
 
 
-def dustywave_tvi_matrix(k, cs, ts, eps):
+def dustywave_tva_matrix(k, cs, ts, eps):
     a = k * cs
     b = k * k * ts * cs * cs * eps
 
@@ -176,8 +176,8 @@ def dustywave_tvi_matrix(k, cs, ts, eps):
     )
 
 
-def eigensystem_dustywave_tvi(k, cs, ts, eps):
-    M = dustywave_tvi_matrix(k, cs, ts, eps)
+def eigensystem_dustywave_tva(k, cs, ts, eps):
+    M = dustywave_tva_matrix(k, cs, ts, eps)
     vals, vecs = np.linalg.eig(M)
     return 1j * vals, vecs
 
@@ -295,7 +295,7 @@ for ics, cs in enumerate(cs_g_list):
     print(omega_k)
 
     print(f"k={k} cs={cs} ts={ts} epsilon_0={epsilon_0}")
-    eigval, eigvec = eigensystem_dustywave_tvi(k, cs, ts, epsilon_0)
+    eigval, eigvec = eigensystem_dustywave_tva(k, cs, ts, epsilon_0)
 
     print(f"eigenval = {eigval}")
     print(f"eigenvec = {eigvec}")
@@ -408,7 +408,7 @@ for ics, cs in enumerate(cs_g_list):
         )
         plt.legend(loc="upper right")
         plt.tight_layout()
-        plt.savefig(f"_to_trash/dump_dustywave_tvi_{ics:02d}_{i:02d}.png")
+        plt.savefig(f"_to_trash/dump_dustywave_tva_{ics:02d}_{i:02d}.png")
         plt.close()
 
         # if i == 1:
@@ -434,7 +434,7 @@ for ics, cs in enumerate(cs_g_list):
     plt.ylabel("$\delta$ fields [code unit]")
     plt.title(f"cs={cs:.6g}")
     plt.legend(fontsize=12, loc="upper right")
-    plt.savefig(f"_to_trash/dustywave_tvi_scan_{ics:04}.png")
+    plt.savefig(f"_to_trash/dustywave_tva_scan_{ics:04}.png")
 
 # %%
 # make gifs
@@ -445,19 +445,19 @@ keep_list = []
 
 # %%
 # show them the gifs (i have to unroll the loop otherwise the doc does not capture the gifs ...)
-ani0 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{0:02d}_*.png")
+ani0 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{0:02d}_*.png")
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani0.save(f"_to_trash/dustywave_tvi_scan_{0:04}.gif", writer=writer)
+ani0.save(f"_to_trash/dustywave_tva_scan_{0:04}.gif", writer=writer)
 plt.show()
 # %%
-ani1 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{1:02d}_*.png")
+ani1 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{1:02d}_*.png")
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani1.save(f"_to_trash/dustywave_tvi_scan_{1:04}.gif", writer=writer)
+ani1.save(f"_to_trash/dustywave_tva_scan_{1:04}.gif", writer=writer)
 plt.show()
 # %%
-ani2 = show_image_sequence(f"_to_trash/dump_dustywave_tvi_{2:02d}_*.png")
+ani2 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{2:02d}_*.png")
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani2.save(f"_to_trash/dustywave_tvi_scan_{2:04}.gif", writer=writer)
+ani2.save(f"_to_trash/dustywave_tva_scan_{2:04}.gif", writer=writer)
 plt.show()
 
 plt.show()

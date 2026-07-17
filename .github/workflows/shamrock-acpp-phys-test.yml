@@ -198,12 +198,12 @@ jobs:
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
             artifact_name: gallery_sph_cubic_reorg
-          - testfile: "examples/sph/run_dustydiffuse_tvi.py"
-            artifact_name: gallery_sph_dustydiffuse_tvi
-          - testfile: "examples/sph/run_dustywave_tvi.py"
-            artifact_name: gallery_sph_dustywave_tvi
-          - testfile: "examples/sph/run_dustysettle_tvi.py"
-            artifact_name: gallery_sph_dustysettle_tvi
+          - testfile: "examples/sph/run_dustydiffuse_tva.py"
+            artifact_name: gallery_sph_dustydiffuse_tva
+          - testfile: "examples/sph/run_dustywave_tva.py"
+            artifact_name: gallery_sph_dustywave_tva
+          - testfile: "examples/sph/run_dustysettle_tva.py"
+            artifact_name: gallery_sph_dustysettle_tva
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"

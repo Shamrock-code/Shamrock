@@ -266,7 +266,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 self.dust_config.set_none();
             })
         .def(
-            "set_dust_mode_monofluid_tvi",
+            "set_dust_mode_monofluid_tva",
             [](TConfig &self,
                u32 nvar,
                bool pure_diffusion_mode,
@@ -274,7 +274,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal C_delta_v,
                Tscal cfl_density_threshold,
                bool ensure_s_j_positivity) {
-                self.dust_config.set_monofluid_tvi(
+                self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
                     C_1_fluid,
@@ -767,11 +767,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("niter_max")    = -1,
             py::arg("max_walltime") = -1)
-        .def(
-            "set_dt",
-            [](T &self, f64 dt) {
-                self.set_next_dt(dt);
-            })
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -1415,6 +1410,11 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             "set_next_dt",
             [](T &self, Tscal dt) {
                 return self.set_next_dt(dt);
+            })
+        .def(
+            "set_dt",
+            [](T &self, f64 dt) {
+                self.set_next_dt(dt);
             })
         .def(
             "set_cfl_multipler",

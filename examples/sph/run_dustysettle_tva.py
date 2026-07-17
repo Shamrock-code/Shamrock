@@ -8,7 +8,7 @@ If you want to change the resolution, you can set the LZ environment variable.
 
 Example (from build directory):
 ```bash
-LZ=96 ./shamrock --sycl-cfg 0:0 --smi --loglevel 1 --rscript ../examples/sph/run_dustysettle_tvi.py
+LZ=96 ./shamrock --sycl-cfg 0:0 --smi --loglevel 1 --rscript ../examples/sph/run_dustysettle_tva.py
 ```
 """
 
@@ -806,7 +806,7 @@ def setup_model():
         beta_AV=av_beta_AV,
     )
 
-    cfg.set_dust_mode_monofluid_tvi(
+    cfg.set_dust_mode_monofluid_tva(
         nvar=ndust, C_1_fluid=0.1, C_delta_v=1.0, cfl_density_threshold=1e-50
     )
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
@@ -930,7 +930,7 @@ glob_str = f"{dump_folder}/plots/vert_slice_dens_*.png"
 ani = show_image_sequence(glob_str)
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_tvi.gif", writer=writer)
+ani.save("_to_trash/dustysettle_vert_slice_tva.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     plt.show()
@@ -941,7 +941,7 @@ glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
 ani = show_image_sequence(glob_str)
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_s_tvi.gif", writer=writer)
+ani.save("_to_trash/dustysettle_vert_slice_s_tva.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     plt.show()

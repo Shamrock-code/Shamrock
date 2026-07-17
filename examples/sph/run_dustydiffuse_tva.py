@@ -20,7 +20,7 @@ momentum & energy equation are disabled.
 #
 # with :math:`\rho_0 = 1`, :math:`\epsilon_0 = 0.1`, :math:`r_c = 0.25`.
 #
-# Then we use the dust TVI solver but force :math:`d \mathbf{v} / dt = 0` and :math:`d u / dt = 0`.
+# Then we use the dust TVA solver but force :math:`d \mathbf{v} / dt = 0` and :math:`d u / dt = 0`.
 # In that context the epsilon equation becomes:
 #
 # .. math::
@@ -129,7 +129,7 @@ cfg = model.gen_default_config()
 cfg.set_artif_viscosity_VaryingCD10(
     alpha_min=0.0, alpha_max=1, sigma_decay=0.1, alpha_u=1, beta_AV=2
 )
-cfg.set_dust_mode_monofluid_tvi(nvar=1, pure_diffusion_mode=True)
+cfg.set_dust_mode_monofluid_tva(nvar=1, pure_diffusion_mode=True)
 cfg.set_dust_drag_constant([ts])
 cfg.set_boundary_periodic()
 cfg.set_eos_isothermal(cs_g)
@@ -256,7 +256,7 @@ for t in [0.1 * i for i in range(20)]:
     axs[1].set_xlim(0, 0.5)
     axs[1].set_ylim(-0.16, 0.4)
     plt.tight_layout()
-    plt.savefig(f"_to_trash/dump_dustydiffuse_tvi_{t:.2f}.png")
+    plt.savefig(f"_to_trash/dump_dustydiffuse_tva_{t:.2f}.png")
     plt.close()
 
 ####################################################
@@ -278,13 +278,13 @@ from shamrock.utils.plot import show_image_sequence
 
 # If the animation is not returned only a static image will be shown in the doc
 
-glob_str = os.path.join("_to_trash", "dump_dustydiffuse_tvi_*.png")
+glob_str = os.path.join("_to_trash", "dump_dustydiffuse_tva_*.png")
 ani = show_image_sequence(glob_str)
 
 from matplotlib.animation import PillowWriter
 
 writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dump_dustydiffuse_tvi.gif", writer=writer)
+ani.save("_to_trash/dump_dustydiffuse_tva.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     # Show the animation

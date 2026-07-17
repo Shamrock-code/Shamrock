@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeUpdateDerivsMonofluidTVI.cpp
+ * @file NodeUpdateDerivsMonofluidTVA.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -18,11 +18,11 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
-#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
 
 template<class Tvec, template<class> class SPHKernel>
-struct KernelUpdateDerivsMonofluidTVI {
+struct KernelUpdateDerivsMonofluidTVA {
     using Tscal                   = shambase::VecComponent<Tvec>;
     using Kernel                  = SPHKernel<Tscal>;
     static constexpr Tscal hfactd = Kernel::hfactd;
@@ -116,7 +116,7 @@ struct KernelUpdateDerivsMonofluidTVI {
 };
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
+void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::
     _impl_evaluate_internal() {
 
     __shamrock_stack_entry();
@@ -140,7 +140,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
 
     const Tscal pmass = edges.gpart_mass.value;
 
-    using ComputeKernel = KernelUpdateDerivsMonofluidTVI<Tvec, SPHKernel>;
+    using ComputeKernel = KernelUpdateDerivsMonofluidTVA<Tvec, SPHKernel>;
 
     auto total_specie_count = part_counts.template map<u32>([&](u64 id, u32 count) {
         return count * ndust;
@@ -164,7 +164,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
 }
 
 template<class Tvec, template<class> class SPHKernel>
-std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::_impl_get_tex()
+std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::_impl_get_tex()
     const {
     auto gpart_mass  = get_ro_edge_base(0).get_tex_symbol();
     auto part_counts = get_ro_edge_base(1).get_tex_symbol();
@@ -181,7 +181,7 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKern
     const std::string kernel_radius_str = std::to_string(kernel_radius);
 
     std::string tex = R"tex(
-        NodeUpdateDerivsMonofluidTVI (eq. 51, Hutchison 2018)
+        NodeUpdateDerivsMonofluidTVA (eq. 51, Hutchison 2018)
 
         For gas particle $a$ and dust bin $j$:
 
@@ -233,10 +233,10 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKern
 }
 
 using namespace shammath;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M4>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M6>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M8>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M4>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M6>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M8>;
 
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C2>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C4>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C6>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C2>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C4>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C6>;

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeMonofluidTVIAddSourceTerm.hpp
+ * @file NodeMonofluidTVAAddSourceTerm.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -42,14 +42,14 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec>
-    class NodeMonofluidTVIAddSourceTerm : public shamrock::solvergraph::INode {
+    class NodeMonofluidTVAAddSourceTerm : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
         u32 nbins;
 
         public:
-        NodeMonofluidTVIAddSourceTerm(u32 nbins) : nbins(nbins) {}
+        NodeMonofluidTVAAddSourceTerm(u32 nbins) : nbins(nbins) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -98,7 +98,7 @@ namespace shammodels::sph::modules {
         }
 
         inline virtual std::string _impl_get_label() const {
-            return "NodeMonofluidTVIAddSourceTerm";
+            return "NodeMonofluidTVAAddSourceTerm";
         };
 
         inline virtual std::string _impl_get_tex() const {
@@ -110,7 +110,7 @@ namespace shammodels::sph::modules {
             auto part_counts_edge = get_ro_edge_base(0).get_tex_symbol();
 
             std::string tex = R"tex(
-                Monofluid TVI: dust-density source term $\rightarrow$ ${s_j}$ time derivative
+                Monofluid TVA: dust-density source term $\rightarrow$ ${s_j}$ time derivative
 
                 Per gas particle $a$ and mass bin $j$ (monofluid: $\rho_{{\rm d},j,a} = {s_j}_{j,a}^2$):
 

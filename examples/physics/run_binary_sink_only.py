@@ -445,7 +445,7 @@ def plot_inclination(snapshots):
     plt.plot(times, inc)
 
     plt.xlabel("Time")
-    plt.ylabel("Inclination (°)")
+    plt.ylabel("Inclination (deg)")
     plt.title("Orbital inclination")
     plt.ylim(-180, 180) 
     plt.grid(True)
@@ -652,7 +652,7 @@ def plot_spins(snapshots):
 # saving orbital elements
 # ============================================================
 
-def save_orbital_elements(snapshots, m1, m2, filename="Path")                               
+def save_orbital_elements(snapshots, m1, m2, filename="Path"):                              
 
     data = []
 

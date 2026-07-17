@@ -40,6 +40,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 #include <pybind11/functional.h>
+#include <algorithm>
 #include <stdexcept>
 #include <vector>
 
@@ -99,6 +100,13 @@ namespace shammodels::sph {
         inline void set_eta_sink(Tscal eta_sink) {
             solver.solver_config.cfl_config.eta_sink = eta_sink;
         }
+
+        inline Tscal get_time() { return solver.get_time(); }
+        inline void set_time(Tscal t) { solver.set_time(t); }
+        inline Tscal get_dt_sph() { return solver.get_dt_sph(); }
+        inline void set_next_dt(Tscal dt) { solver.set_next_dt(dt); }
+        inline Tscal get_cfl_multipler() { return solver.get_cfl_multipler(); }
+        inline void set_cfl_multipler(Tscal lambda) { solver.set_cfl_multipler(lambda); }
         inline void set_particle_mass(Tscal gpart_mass) {
             solver.solver_config.gpart_mass = gpart_mass;
         }
@@ -902,11 +910,24 @@ namespace shammodels::sph {
                 solver.storage.sinks.set(std::move(out));
             }
 
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
+            auto sync_names = sched.synchronized_data.get_edge_names();
+            bool had_time_edge
+                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+            solver.ensure_time_state_edges();
+            if (!had_time_edge && j.at("solver_config").contains("time_state")) {
+                const auto &ts = j.at("solver_config").at("time_state");
+                solver.set_time(ts.at("time").get<Tscal>());
+                solver.set_next_dt(ts.at("dt_sph").get<Tscal>());
+                solver.set_cfl_multipler(ts.at("cfl_multiplier").get<Tscal>());
+            }
+
             solver.init_ghost_layout();
 
             solver.init_solver_graph();
 
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();

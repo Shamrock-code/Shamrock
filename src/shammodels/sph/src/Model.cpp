@@ -80,6 +80,8 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
     solver.init_ghost_layout();
 
     solver.init_solver_graph();
+
+    solver.ensure_time_state_edges();
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -1283,7 +1285,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
 
     // Load time infos
     f64 time_phdump = phdump.read_header_float<f64>("time");
-    solver.solver_config.set_time(time_phdump);
+    solver.set_time(time_phdump);
 
     using namespace shamrock::patch;
 
@@ -1536,8 +1538,8 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     write_shamrock_eos_in_phantom_dump(solver.solver_config.eos_config, dump, bypass_error_check);
 
-    dump.table_header_fort_real.add("time", solver.solver_config.get_time());
-    dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
+    dump.table_header_fort_real.add("time", solver.get_time());
+    dump.table_header_fort_real.add("dtmax", solver.get_dt_sph());
 
     dump.table_header_fort_real.add("rhozero", 0);
     dump.table_header_fort_real.add("hfact", Kernel::hfactd);

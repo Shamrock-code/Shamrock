@@ -51,19 +51,9 @@
 #include "shamrock/scheduler/HilbertLoadBalance.hpp"
 #include "shamrock/scheduler/PatchTree.hpp"
 #include "shamrock/scheduler/SchedulerPatchData.hpp"
+#include "shamrock/scheduler/SynchronizedData.hpp"
 #include "shamrock/solvergraph/IEdgeNamed.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
-#include "shamrock/solvergraph/SolverGraphSerializable.hpp"
 #include "shamsys/legacy/sycl_handler.hpp"
-
-/// Data stored within the scheduler that are garanteed to be in sink across all ranks
-struct SynchronizedData {
-    shamrock::solvergraph::SolverGraphSerializable container = {};
-
-    nlohmann::json to_json();
-
-    void from_json(const nlohmann::json &j);
-};
 
 struct PatchSchedulerConfig {
     u64 split_load_value = 0_u64;

@@ -1032,7 +1032,3 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
         {"crit_patch_merge", crit_patch_merge},
         {"synchronized_data", jsynchro_data}};
 }
-
-nlohmann::json SynchronizedData::to_json() { return {{"solvergraph", container}}; }
-
-void SynchronizedData::from_json(const nlohmann::json &j) { j.at("solvergraph").get_to(container); }

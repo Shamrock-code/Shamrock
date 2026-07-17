@@ -7,13 +7,13 @@
 //
 // -------------------------------------------------------//
 
+#include "shambase/type_name_info.hpp"
 #include "nlohmann/json.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamtest/shamtest.hpp"
-#include "shambase/type_name_info.hpp"
 
 struct JsonSerializable {
     virtual ~JsonSerializable() {};

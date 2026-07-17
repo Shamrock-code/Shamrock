@@ -2751,7 +2751,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 });
             };
 
-            Tscal C_cour = solver_config.cfl_config.cfl_cour * get_cfl_multipler();
+            Tscal C_cour  = solver_config.cfl_config.cfl_cour * get_cfl_multipler();
             Tscal C_force = solver_config.cfl_config.cfl_force * get_cfl_multipler();
             Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
@@ -2813,8 +2813,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_1fluid_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tva().C_1_fluid
-                                       * get_cfl_multipler();
+                C_1fluid_edge->value
+                    = solver_config.dust_config.get_monofluid_tva().C_1_fluid * get_cfl_multipler();
 
                 compute_cfl_dust1_fluid->set_edges(
                     storage.part_counts,
@@ -2982,11 +2982,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
-                    "sph::Model",
-                    "cfl dt =",
-                    next_cfl,
-                    "cfl multiplier :",
-                    get_cfl_multipler());
+                    "sph::Model", "cfl dt =", next_cfl, "cfl multiplier :", get_cfl_multipler());
             }
 
             // this should not be needed idealy, but we need the pressure on the ghosts and

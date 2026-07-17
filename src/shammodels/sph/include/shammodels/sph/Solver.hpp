@@ -92,7 +92,9 @@ namespace shammodels::sph {
         inline Tscal get_dt_sph() { return solver_config.time_state.dt_sph; }
         inline void set_next_dt(Tscal dt) { solver_config.time_state.dt_sph = dt; }
         inline Tscal get_cfl_multipler() { return solver_config.time_state.cfl_multiplier; }
-        inline void set_cfl_multipler(Tscal lambda) { solver_config.time_state.cfl_multiplier = lambda; }
+        inline void set_cfl_multipler(Tscal lambda) {
+            solver_config.time_state.cfl_multiplier = lambda;
+        }
 
         struct SolverStepCallback {
             std::optional<std::function<void(void)>> step_begin_callback;

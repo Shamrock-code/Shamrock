@@ -60,13 +60,12 @@ namespace shammodels::common::modules {
             edges.spans_positions.check_sizes(edges.sizes.indexes);
             edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
 
-            Tscal G       = edges.constant_G.data;
-            Tscal c       = edges.constant_c.data;
-            Tscal eps_gr = 1e-10; // small value to avoid division by zero
-            Tscal cmass   = edges.central_mass.data;
-            Tvec cpos     = edges.central_pos.data;
-            Tvec cvel     = edges.central_vel.data;
-            Tscal GM = cmass * G;
+            Tscal G     = edges.constant_G.data;
+            Tscal c     = edges.constant_c.data;
+            Tscal cmass = edges.central_mass.data;
+            Tvec cpos   = edges.central_pos.data;
+            Tvec cvel   = edges.central_vel.data;
+            Tscal GM    = cmass * G;
 
 
             sham::distributed_data_kernel_call(
@@ -83,7 +82,7 @@ namespace shammodels::common::modules {
 
                 edges.sizes.indexes,
 
-                [cpos, cvel, GM, c, eps_gr](u32 gid,
+                [cpos, cvel, GM, c](u32 gid,
                                             const Tvec *xyz,
                                             const Tvec *vxyz,
                                             Tvec *axyz_ext) {
@@ -92,22 +91,22 @@ namespace shammodels::common::modules {
                     Tvec v_a = vxyz[gid] - cvel;
 
                     Tscal r = sycl::length(r_a);
-
-                    Tvec r_hat = r_a / (r+eps_gr);
+                    Tscal inv_r  = sham::inv_sat_zero(r);
+                    Tscal inv_r2 = sham::inv_sat_zero(r * r);
+                    Tvec r_hat   = r_a * inv_r;
 
                     Tscal v2 = sham::dot(v_a, v_a);
 
                     Tscal vr = sham::dot(v_a, r_hat);
 
-
                     Tvec acc_1PN =
-                        -GM / (r * r + eps_gr)
+                        -GM * inv_r2
                         *
                         (
                             (
                                 v2 / (c * c)
                                 -
-                                4 * GM / ((r + eps_gr) * c * c)
+                                4 * GM * inv_r / (c * c)
                             )
                             * r_hat
 

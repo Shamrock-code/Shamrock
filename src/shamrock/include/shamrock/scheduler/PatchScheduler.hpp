@@ -23,7 +23,6 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
-#include "nlohmann/json_fwd.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/legacy/patch/utility/patch_field.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"

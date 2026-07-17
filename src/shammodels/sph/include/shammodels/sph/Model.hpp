@@ -914,10 +914,16 @@ namespace shammodels::sph {
 
             // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
             auto sync_names = sched.synchronized_data.get_edge_names();
+
+            // PR #1928 introduces time/dt/cfl synchronization edges
+            // so checking for time is equivalent to commit >= PR #1928
             bool had_time_edge
                 = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+
+            // create time/dt/cfl synchronization edges if not present
             solver.ensure_time_state_edges();
-            if (!had_time_edge) {
+
+            if (!had_time_edge) { // before PR #1928
                 if (j.at("solver_config").contains("time_state")) {
                     ON_RANK_0(
                         logger::warn_ln(

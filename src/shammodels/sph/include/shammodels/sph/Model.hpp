@@ -917,15 +917,22 @@ namespace shammodels::sph {
             bool had_time_edge
                 = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
             solver.ensure_time_state_edges();
-            if (!had_time_edge && j.at("solver_config").contains("time_state")) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH",
-                        "Migrated time/dt/cfl from solver_config.time_state into scheduler edges"));
-                const auto &ts = j.at("solver_config").at("time_state");
-                solver.set_time(ts.at("time").get<Tscal>());
-                solver.set_next_dt(ts.at("dt_sph").get<Tscal>());
-                solver.set_cfl_multipler(ts.at("cfl_multiplier").get<Tscal>());
+            if (!had_time_edge) {
+                if (j.at("solver_config").contains("time_state")) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH",
+                            "Migrated time/dt/cfl from solver_config.time_state into scheduler "
+                            "edges"));
+                    const auto &ts = j.at("solver_config").at("time_state");
+                    solver.set_time(ts.at("time").get<Tscal>());
+                    solver.set_next_dt(ts.at("dt_sph").get<Tscal>());
+                    solver.set_cfl_multipler(ts.at("cfl_multiplier").get<Tscal>());
+                } else {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "this should never happen: dump has neither time edges nor "
+                        "solver_config.time_state");
+                }
             }
 
             solver.init_ghost_layout();

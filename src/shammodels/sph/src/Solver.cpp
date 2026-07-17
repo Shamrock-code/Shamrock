@@ -65,7 +65,7 @@
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/KillParticles.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
-#include "shammodels/sph/modules/MonoFluidTVIDeltav.hpp"
+#include "shammodels/sph/modules/MonoFluidTVADeltav.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
 #include "shammodels/sph/modules/ParticleReordering.hpp"
@@ -457,7 +457,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
             if (has_s_j_field) {
                 u32 ndust = solver_config.dust_config.get_dust_nvar();
 
-                auto &cfg = solver_config.dust_config.get_monofluid_tvi();
+                auto &cfg = solver_config.dust_config.get_monofluid_tva();
 
                 if (cfg.ensure_s_j_positivity) {
                     auto half_step_s_j = solver_graph.register_node(
@@ -1752,7 +1752,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
         map_field_refs(scheduler(), idelta_v, *delta_v);
 
         auto press_grad_node = std::make_shared<modules::NodeComputePressureGrad<Tvec, Kern>>();
-        auto delta_v_node    = std::make_shared<modules::MonoFluidTVIDeltav<Tvec, Kern>>(ndust);
+        auto delta_v_node    = std::make_shared<modules::MonoFluidTVADeltav<Tvec, Kern>>(ndust);
 
         press_grad_node->set_edges(
             gpart_mass,
@@ -2405,7 +2405,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             ComputeField<Tscal> s_j_s_j_sq = utility.make_compute_field<Tscal>(
                 "s_j s_j^2", solver_config.dust_config.get_dust_nvar());
             bool ensure_positivity
-                = solver_config.dust_config.get_monofluid_tvi().ensure_s_j_positivity;
+                = solver_config.dust_config.get_monofluid_tva().ensure_s_j_positivity;
             if (ensure_positivity) {
                 utility.fields_leapfrog_corrector_positive_only<Tscal>(
                     is_j, ids_j_dt, storage.old_ds_j_dt.get(), s_j_s_j_sq, dt / 2);
@@ -2815,7 +2815,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_1fluid_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tvi().C_1_fluid
+                C_1fluid_edge->value = solver_config.dust_config.get_monofluid_tva().C_1_fluid
                                        * solver_config.time_state.cfl_multiplier;
 
                 compute_cfl_dust1_fluid->set_edges(
@@ -2845,17 +2845,17 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 const u32 idelta_v = pdl.get_field_idx<Tvec>("delta_v");
                 map_field_refs(scheduler(), idelta_v, *delta_v_refs);
 
-                auto &cfg_monofluid_tvi = solver_config.dust_config.get_monofluid_tvi();
+                auto &cfg_monofluid_tva = solver_config.dust_config.get_monofluid_tva();
 
                 C_delta_v_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                     "C_delta_v", "C_{delta_v}");
                 C_delta_v_edge->value
-                    = cfg_monofluid_tvi.C_delta_v * solver_config.time_state.cfl_multiplier;
+                    = cfg_monofluid_tva.C_delta_v * solver_config.time_state.cfl_multiplier;
 
                 cfl_density_threshold_edge
                     = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
                         "cfl_density_threshold", "cfl_density_threshold");
-                cfl_density_threshold_edge->value = cfg_monofluid_tvi.cfl_density_threshold;
+                cfl_density_threshold_edge->value = cfg_monofluid_tva.cfl_density_threshold;
 
                 auto pmass_edge
                     = storage.solver_graph

@@ -266,7 +266,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 self.dust_config.set_none();
             })
         .def(
-            "set_dust_mode_monofluid_tvi",
+            "set_dust_mode_monofluid_tva",
             [](TConfig &self,
                u32 nvar,
                bool pure_diffusion_mode,
@@ -274,7 +274,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal C_delta_v,
                Tscal cfl_density_threshold,
                bool ensure_s_j_positivity) {
-                self.dust_config.set_monofluid_tvi(
+                self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
                     C_1_fluid,

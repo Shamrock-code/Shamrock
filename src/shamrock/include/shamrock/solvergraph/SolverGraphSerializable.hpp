@@ -43,7 +43,7 @@ namespace shamrock::solvergraph {
      * @brief Serialize a SolverGraphSerializable to JSON.
      *
      * Writes an `"edges"` object keyed by edge name. Each edge value includes the
-     * polymorphic `"type"` discriminator and the fields produced by
+     * polymorphic `"type"` discriminator and fields from
      * @ref JsonSerializable::to_json.
      */
     inline void to_json(nlohmann::json &j, const SolverGraphSerializable &p) {
@@ -63,8 +63,7 @@ namespace shamrock::solvergraph {
 
             nlohmann::json edge_j;
             serializable->to_json(edge_j);
-            edge_j["type"] = serializable->type_name();
-            edges[name]    = std::move(edge_j);
+            edges[name] = std::move(edge_j);
         }
 
         j = nlohmann::json{{"edges", std::move(edges)}};

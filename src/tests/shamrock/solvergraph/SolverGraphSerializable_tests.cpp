@@ -38,7 +38,7 @@ class TestSerializableEdge : public shamrock::solvergraph::IEdge,
     std::string _impl_get_tex_symbol() const override { return "serializable_tex"; }
     void free_alloc() override {}
 
-    void to_json(nlohmann::json &j) const override { j["value"] = value; }
+    void _impl_to_json(nlohmann::json &j) const override { j["value"] = value; }
     std::string type_name() const override { return "TestSerializableEdge"; }
 
     static TestSerializableEdge from_json(const nlohmann::json &j) {

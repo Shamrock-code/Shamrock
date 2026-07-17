@@ -408,7 +408,6 @@ namespace shammodels::sph {
 
 } // namespace shammodels::sph
 
-
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::sph::SolverConfig {
 
@@ -426,8 +425,7 @@ struct shammodels::sph::SolverConfig {
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass;            ///< The mass of each gas particle
-    CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
+    Tscal gpart_mass; ///< The mass of each gas particle
 
     bool track_particles_id = false;
 
@@ -493,8 +491,10 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // CFL runtime display / stiffness (config)
+    // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
+
+    CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
 
     /// Set the CFL multiplier for the stiffness
     inline void set_cfl_mult_stiffness(Tscal cstiff) {
@@ -507,7 +507,7 @@ struct shammodels::sph::SolverConfig {
     bool show_cfl_detail = false;
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // CFL runtime display / stiffness (END)
+    // CFL Configuration (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////

@@ -93,8 +93,7 @@ namespace shammodels::sph {
         inline Tscal &time_edge_value() {
             return scheduler()
                 .synchronized_data
-                .template get_edge_ref<shamrock::solvergraph::ScalarEdgeSerializable<Tscal>>(
-                    "time")
+                .template get_edge_ref<shamrock::solvergraph::ScalarEdgeSerializable<Tscal>>("time")
                 .value;
         }
 
@@ -124,16 +123,15 @@ namespace shammodels::sph {
 
         /// Register time/dt/cfl_multiplier synchronized edges if missing (idempotent)
         inline void ensure_time_state_edges() {
-            auto &sync = scheduler().synchronized_data;
-            auto names = sync.get_edge_names();
+            auto &sync    = scheduler().synchronized_data;
+            auto names    = sync.get_edge_names();
             auto has_edge = [&](const std::string &name) {
                 return std::find(names.begin(), names.end(), name) != names.end();
             };
 
             if (!has_edge("time")) {
                 auto edge = sync.register_edge(
-                    "time",
-                    shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("time", "t"));
+                    "time", shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("time", "t"));
                 edge->value = 0;
             }
             if (!has_edge("dt")) {

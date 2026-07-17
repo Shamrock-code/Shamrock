@@ -31,7 +31,6 @@
 #include "shamrock/solvergraph/ScalarEdgeSerializable.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
-#include <algorithm>
 #include <functional>
 #include <limits>
 #include <memory>

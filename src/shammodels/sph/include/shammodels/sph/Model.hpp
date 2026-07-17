@@ -40,7 +40,6 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 #include <pybind11/functional.h>
-#include <algorithm>
 #include <stdexcept>
 #include <vector>
 

@@ -79,9 +79,10 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
     });
     solver.init_ghost_layout();
 
-    solver.init_solver_graph();
-
     solver.ensure_time_state_edges();
+
+    // must be bone after time state edges are ensured (it will connect to it)
+    solver.init_solver_graph();
 }
 
 template<class Tvec, template<class> class SPHKernel>

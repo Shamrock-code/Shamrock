@@ -15,7 +15,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shammath/matrix::mat_inv_33", test_inv_33, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_inv_33", 1) {
 
     shammath::mat<f32, 3, 3> mat{
         // clang-format off
@@ -39,7 +39,7 @@ TestStart(Unittest, "shammath/matrix::mat_inv_33", test_inv_33, 1) {
     REQUIRE_EQUAL(result.data, expected_inverse.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_prod", test_mat_prod, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_prod", 1) {
 
     shammath::mat<f32, 3, 3> mat{
         // clang-format off
@@ -65,7 +65,7 @@ TestStart(Unittest, "shammath/matrix::mat_prod", test_mat_prod, 1) {
     REQUIRE_EQUAL(result.data, id.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_prod_vec", test_mat_prod_vec, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_prod_vec", 1) {
 
     shammath::mat<f32, 3, 3> mat{
         // clang-format off
@@ -97,7 +97,7 @@ TestStart(Unittest, "shammath/matrix::mat_prod_vec", test_mat_prod_vec, 1) {
     REQUIRE_EQUAL(result.data, expected_result.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_plus", test_mat_plus, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_plus", 1) {
 
     shammath::mat<f32, 3, 3> mat1{
         // clang-format off
@@ -129,7 +129,7 @@ TestStart(Unittest, "shammath/matrix::mat_plus", test_mat_plus, 1) {
     REQUIRE_EQUAL(result.data, expected_result.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_plus_equal", test_mat_plus_equal, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_plus_equal", 1) {
 
     shammath::mat<f32, 3, 3> mat1{
         // clang-format off
@@ -160,7 +160,7 @@ TestStart(Unittest, "shammath/matrix::mat_plus_equal", test_mat_plus_equal, 1) {
     REQUIRE(mat1 == expected_result);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_sub", test_mat_sub, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_sub", 1) {
 
     shammath::mat<f32, 3, 3> mat1{
         // clang-format off
@@ -192,7 +192,7 @@ TestStart(Unittest, "shammath/matrix::mat_sub", test_mat_sub, 1) {
     REQUIRE_EQUAL(result.data, expected_result.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_sub_equal", test_mat_sub_equal, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_sub_equal", 1) {
 
     shammath::mat<f32, 3, 3> mat1{
         // clang-format off
@@ -223,7 +223,7 @@ TestStart(Unittest, "shammath/matrix::mat_sub_equal", test_mat_sub_equal, 1) {
     REQUIRE_EQUAL(mat1.data, expected_result.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_set_identity", test_mat_set_identity, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_set_identity", 1) {
 
     shammath::mat<f32, 3, 3> mat{
         // clang-format off
@@ -247,7 +247,7 @@ TestStart(Unittest, "shammath/matrix::mat_set_identity", test_mat_set_identity, 
     REQUIRE_EQUAL(result.data, expected_result.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_L1_norm", test_mat_L1_norm, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_L1_norm", 1) {
     shammath::mat<f32, 3, 3> M{
         // clang-format off
          1, -2,  3,
@@ -261,7 +261,7 @@ TestStart(Unittest, "shammath/matrix::mat_L1_norm", test_mat_L1_norm, 1) {
     REQUIRE_EQUAL(res, ex_res);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_set_nul", test_mat_set_nul, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_set_nul", 1) {
     shammath::mat<f32, 3, 3> mat;
     shammath::mat<f32, 3, 3> ex_res{
         // clang-format off
@@ -274,7 +274,7 @@ TestStart(Unittest, "shammath/matrix::mat_set_nul", test_mat_set_nul, 1) {
     REQUIRE_EQUAL(mat.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::vec_set_nul", test_vec_set_nul, 1) {
+NEW_TEST(Unittest, "shammath/matrix::vec_set_nul", 1) {
     shammath::vec<f32, 3> v;
     shammath::vec<f32, 3> ex_res{
         // clang-format off
@@ -285,7 +285,7 @@ TestStart(Unittest, "shammath/matrix::vec_set_nul", test_vec_set_nul, 1) {
     REQUIRE_EQUAL(v.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::vec_copy", test_vec_copy, 1) {
+NEW_TEST(Unittest, "shammath/matrix::vec_copy", 1) {
     shammath::vec<f32, 3> v{
         // clang-format off
          1,  2,  3,
@@ -304,7 +304,7 @@ TestStart(Unittest, "shammath/matrix::vec_copy", test_vec_copy, 1) {
     REQUIRE_EQUAL(v_res.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::vec_axpy_beta", test_vec_axpy_beta, 1) {
+NEW_TEST(Unittest, "shammath/matrix::vec_axpy_beta", 1) {
     shammath::vec<f32, 3> v1{
         // clang-format off
          1,  0.25,  8,
@@ -326,7 +326,7 @@ TestStart(Unittest, "shammath/matrix::vec_axpy_beta", test_vec_axpy_beta, 1) {
     REQUIRE_EQUAL(v2.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
+NEW_TEST(Unittest, "shammath/matrix::vec_axpy", 1) {
     shammath::vec<f32, 3> v1{
         // clang-format off
          1,  0.25,  8,
@@ -348,7 +348,7 @@ TestStart(Unittest, "shammath/matrix::vec_axpy", test_vec_axpy, 1) {
     REQUIRE_EQUAL(v2.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_axpy_beta", 1) {
     shammath::mat<f64, 3, 3> M{
         // clang-format off
           1,  7,  5,
@@ -377,7 +377,7 @@ TestStart(Unittest, "shammath/matrix::mat_axpy_beta", test_mat_axpy_beta, 1) {
     REQUIRE_EQUAL(M.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_axpy", 1) {
     shammath::mat<f64, 3, 3> M{
         // clang-format off
           1,  7,  5,
@@ -406,7 +406,7 @@ TestStart(Unittest, "shammath/matrix::mat_axpy", test_mat_axpy, 1) {
     REQUIRE_EQUAL(M.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_gemm", test_mat_gemm, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_gemm", 1) {
     shammath::mat<f32, 3, 3> A{
         // clang-format off
          1,  2,  3,
@@ -443,7 +443,7 @@ TestStart(Unittest, "shammath/matrix::mat_gemm", test_mat_gemm, 1) {
     REQUIRE_EQUAL(C.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_plus_equal_scalar_id", test_mat_plus_equal_scalar_id, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_plus_equal_scalar_id", 1) {
     shammath::mat<f32, 3, 3> A{
         // clang-format off
          0,  3,  0,
@@ -465,7 +465,7 @@ TestStart(Unittest, "shammath/matrix::mat_plus_equal_scalar_id", test_mat_plus_e
     REQUIRE_EQUAL(A.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_gemv", test_mat_gemv, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_gemv", 1) {
     shammath::mat<f32, 3, 3> B{
         // clang-format off
          1, 2, 3,

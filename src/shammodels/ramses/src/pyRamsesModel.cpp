@@ -19,6 +19,7 @@
 
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
@@ -41,7 +42,11 @@ namespace shammodels::basegodunov {
         shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
         shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-        py::class_<TConfig>(m, name_config.c_str())
+        py::class_<TConfig> config_cls(m, name_config.c_str());
+
+        shammodels::common::add_json_defs<TConfig>(config_cls);
+
+        config_cls
             .def(
                 "set_scale_factor",
                 [](TConfig &self, Tscal scale_factor) {
@@ -60,17 +65,17 @@ namespace shammodels::basegodunov {
             .def(
                 "set_riemann_solver_hll",
                 [](TConfig &self) {
-                    self.riemman_config = HLL;
+                    self.riemann_config = HLL;
                 })
             .def(
                 "set_riemann_solver_hllc",
                 [](TConfig &self) {
-                    self.riemman_config = HLLC;
+                    self.riemann_config = HLLC;
                 })
             .def(
                 "set_riemann_solver_rusanov",
                 [](TConfig &self) {
-                    self.riemman_config = Rusanov;
+                    self.riemann_config = Rusanov;
                 })
             .def(
                 "set_slope_lim_none",
@@ -97,6 +102,15 @@ namespace shammodels::basegodunov {
                 [](TConfig &self) {
                     self.slope_config = Minmod;
                 })
+            .def(
+                "set_scheduler_config",
+                [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                    self.scheduler_conf.split_load_value = split_crit;
+                    self.scheduler_conf.merge_load_value = merge_crit;
+                },
+                py::kw_only(),
+                py::arg("split_load_value"),
+                py::arg("merge_load_value"))
             .def(
                 "set_face_time_interpolation",
                 [](TConfig &self, bool face_time_interpolate) {
@@ -217,6 +231,7 @@ namespace shammodels::basegodunov {
             });
 
         py::class_<T>(m, name_model.c_str())
+            .def("init", &T::init)
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
@@ -327,11 +342,30 @@ namespace shammodels::basegodunov {
                     }
 
                     throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
-                });
+                })
+            .def(
+                "get_time",
+                [](T &self) {
+                    return self.solver.solver_config.get_time();
+                })
+            .def(
+                "get_dt",
+                [](T &self) {
+                    return self.solver.solver_config.get_dt();
+                })
+            .def(
+                "set_time",
+                [](T &self, Tscal t) {
+                    return self.solver.solver_config.set_time(t);
+                })
+            .def("set_next_dt", [](T &self, Tscal dt) {
+                return self.solver.solver_config.set_next_dt(dt);
+            });
     }
 } // namespace shammodels::basegodunov
 
-Register_pymod(pybasegodunovmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mramses = m.def_submodule("model_ramses", "Shamrock Ramses solver");
 

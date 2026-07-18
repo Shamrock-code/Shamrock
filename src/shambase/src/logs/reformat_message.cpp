@@ -49,14 +49,18 @@ namespace shambase::logs {
      * @return A formatted log message
      */
     std::string reformat_all(
-        std::string color, const char *name, std::string module_name, std::string content) {
+        const std::string &color,
+        const char *name,
+        const std::string &module_name,
+        const std::string &content) {
         if (shambase::logs::_reformat_all == nullptr) {
             // old form
             return "[" + (color) + module_name + shambase::term_colors::reset() + "] " + (color)
                    + (name) + shambase::term_colors::reset() + ": " + content;
         }
 
-        return shambase::logs::_reformat_all({color, name, module_name, content});
+        return shambase::logs::_reformat_all(
+            {.color = color, .level_name = name, .module_name = module_name, .content = content});
     }
 
     /**
@@ -68,7 +72,10 @@ namespace shambase::logs {
      * @return A formatted log message
      */
     std::string reformat_simple(
-        std::string color, const char *name, std::string module_name, std::string content) {
+        const std::string &color,
+        const char *name,
+        const std::string &module_name,
+        const std::string &content) {
 
         if (shambase::logs::_reformat_simple == nullptr) {
             // old form
@@ -76,6 +83,7 @@ namespace shambase::logs {
                    + (name) + shambase::term_colors::reset() + ": " + content;
         }
 
-        return shambase::logs::_reformat_simple({color, name, module_name, content});
+        return shambase::logs::_reformat_simple(
+            {.color = color, .level_name = name, .module_name = module_name, .content = content});
     }
 } // namespace shambase::logs

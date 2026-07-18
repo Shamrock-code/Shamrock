@@ -15,7 +15,7 @@
  */
 
 #include "shammodels/zeus/Solver.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/zeus/modules/AMRTree.hpp"
@@ -556,7 +556,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
         });
     }
 
-    tstep.end();
+    tstep.stop();
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
@@ -568,7 +568,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
                        + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
-    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+    f64 rate       = f64(rank_count) / tstep.elapsed_sec();
 
     u64 npatch = scheduler().patch_list.local.size();
 
@@ -576,7 +576,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
         rate,
         rank_count,
         npatch,
-        tstep.elasped_sec(),
+        tstep.elapsed_sec(),
         delta_mpi_timer,
         t_dev_alloc,
         t_host_alloc,
@@ -586,7 +586,7 @@ auto shammodels::zeus::Solver<Tvec, TgridVec>::evolve_once(Tscal t_current, Tsca
     if (shamcomm::world_rank() == 0) {
         logger::info_ln("amr::Zeus", log_step);
         logger::info_ln(
-            "amr::Zeus", "estimated rate :", dt_input * (3600 / tstep.elasped_sec()), "(tsim/hr)");
+            "amr::Zeus", "estimated rate :", dt_input * (3600 / tstep.elapsed_sec()), "(tsim/hr)");
     }
 
     storage.timings_details.reset();

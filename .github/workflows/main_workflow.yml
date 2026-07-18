@@ -11,6 +11,10 @@ on:
         description: "Whether to run the light CI"
         required: true
         type: boolean
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov upload token"
+        required: false
 env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
@@ -110,6 +114,8 @@ jobs:
     name: Tests
     if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-coverage.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   shamrock_linux_dpcpp:
     name: Tests
@@ -249,7 +255,7 @@ jobs:
 
   make_github_page:
     name: "GithubPage"
-    needs: [make_documentation, shamrock_linux_acpp_pylib, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
+    needs: [make_documentation, shamrock_linux_acpp_phystests, shamrock_linux_acpp_cov,shamrock_linux_acpp_tidy]
     uses: ./.github/workflows/make_website.yml
     with:
       upload-page-artifact: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}

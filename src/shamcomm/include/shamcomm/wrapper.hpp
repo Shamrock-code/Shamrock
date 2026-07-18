@@ -19,7 +19,9 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shamcomm/mpi.hpp"
+#include <unordered_map>
 #include <string>
+#include <vector>
 
 namespace shamcomm::mpi {
 
@@ -28,6 +30,12 @@ namespace shamcomm::mpi {
 
     /// get a timer value
     f64 get_timer(std::string timername);
+
+    /// return all internal timers
+    const std::unordered_map<std::string, f64> &get_timers();
+
+    /// return all possible keys for the internal timers
+    const std::vector<std::string> &get_possible_keys();
 
     /// MPI wrapper for MPI_Allreduce
     void Allreduce(

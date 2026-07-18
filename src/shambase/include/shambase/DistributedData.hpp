@@ -153,7 +153,7 @@ namespace shambase {
                     id_list.push_back(id);
                 });
 
-                throw make_except_with_loc<std::runtime_error>(format(
+                throw make_except_with_loc<std::runtime_error>(shambase::format(
                     "The querried id {} does not exist, current id list is {}", id, id_list));
             }
         }
@@ -170,7 +170,7 @@ namespace shambase {
                     id_list.push_back(id);
                 });
 
-                throw make_except_with_loc<std::runtime_error>(format(
+                throw make_except_with_loc<std::runtime_error>(shambase::format(
                     "The querried id {} does not exist, current id list is {}", id, id_list));
             }
         }

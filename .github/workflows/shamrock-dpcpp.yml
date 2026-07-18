@@ -21,6 +21,9 @@ on:
 
 jobs:
 
+  # on older self-hosted runner we must start the container with --shm-size=512m
+  # otherwise we get bus errors with intel mpi
+
   set_matrix:
     name: Set Intel/LLVM matrix
     runs-on: ubuntu-latest
@@ -37,7 +40,9 @@ jobs:
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true,
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -49,17 +54,21 @@ jobs:
               {
                 "machine": "ci.intel-llvm.cuda",
                 "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
-                "runtest": false
+                "runtest": false,
+                "mpi_args": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
               },
               {
                 "machine": "ci.intel-llvm.rocm",
                 "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
-                "runtest": false
+                "runtest": false,
+                "mpi_args": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
               },
               {
                 "machine": "docker.intel_oneapi",
                 "container": "intel/oneapi",
-                "runtest": false
+                "runtest": true,
+                "mpi_args": "",
+                "docker_options": "--shm-size=512m"
               }
             ]
           }
@@ -79,6 +88,7 @@ jobs:
 
     container:
       image: ${{ matrix.container }}
+      options: ${{ matrix.docker_options }}
 
     strategy:
       matrix: ${{ fromJSON(needs.set_matrix.outputs.matrix) }}
@@ -164,43 +174,13 @@ jobs:
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: run Shamrock help
+      - name: run Shamrock test suite
         if: matrix.runtest
         run: |
           cd build
-          ./shamrock --help
-          ./shamrock --help --color
-
-      - name: run Shamrock Test help
-        if: matrix.runtest
-        run: |
-          cd build
-          ./shamrock_test --help
-          ./shamrock_test --help --color
-
-      - name: run Shamrock Unittests world_size = 1
-        if: matrix.runtest
-        run: |
-          cd build
-          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 2
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 3
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 4
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          export SYCLCFG=0:0
+          export MPIARGS="${{ matrix.mpi_args }}"
+          ../tools/test_sequence.sh
 
       - name: Try starting Shamrock (installed version)
         shell: bash # In docker container github action default to sh

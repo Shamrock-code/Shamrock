@@ -29,7 +29,7 @@ namespace shambase {
      * @brief Format the exception message with the source location information
      *
      * This function formats a string that contains the source location
-     * information. It is usefull to add this information to the exception
+     * information. It is useful to add this information to the exception
      * message, in order to have a better understanding of where the exception
      * was thrown.
      *

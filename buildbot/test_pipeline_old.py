@@ -279,8 +279,8 @@ for cid in range(len(config_names)):
     <td class="column-entry-bold">Test name</td>
     <td class="column-entry-bold">MPI</td>
     <td class="column-entry-bold">Assert count</td>
-    <td class="column-entry-bold">Assert succes</td>
-    <td class="column-entry-bold">Succes ratio</td>
+    <td class="column-entry-bold">Assert success</td>
+    <td class="column-entry-bold">Success ratio</td>
     </tr>
     """
 
@@ -346,7 +346,7 @@ for cid in range(len(config_names)):
                 <tbody><tr>
                 <td class="column-entry-bold">Assert desc</td>
                 <td class="column-entry-bold">node id</td>
-                <td class="column-entry-bold">succes</td>
+                <td class="column-entry-bold">success</td>
                 </tr>
                 """
 

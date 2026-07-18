@@ -42,10 +42,12 @@ def setup(arg: SetupArg, envgen: EnvGen):
         "MAKE_OPT": f"({gen_opt})",
         "CMAKE_OPT": f"({cmake_extra_args})",
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
+        "SPHINX_VENV_DIR": builddir + "/.sphinxvenv",
     }
 
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/sphinx.sh",
     ]
 
     envgen.gen_env_file("env_built_acpp.sh")

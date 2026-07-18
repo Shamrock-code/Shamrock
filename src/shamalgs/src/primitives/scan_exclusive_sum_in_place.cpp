@@ -9,6 +9,7 @@
 
 /**
  * @file scan_exclusive_sum_in_place.cpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief Implementation of the in-place exclusive scan primitive.
  */
@@ -20,6 +21,7 @@
 #include "shamalgs/details/numeric/scanDecoupledLookback.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/EventList.hpp"
+#include <numeric>
 
 #if defined(__has_include)
     #if __has_include(<AdaptiveCpp/algorithms/numeric.hpp>)
@@ -116,7 +118,7 @@ namespace shamalgs::primitives {
     };
 
     EXSCAN_IN_PLACE_IMPL get_default_scan_exclusive_sum_in_place_impl() {
-#ifdef __MACH__     // decoupled lookback perf on mac os is awfull
+#ifdef __MACH__     // decoupled lookback perf on mac os is awful
     #ifdef __ACPP__ // for acpp we gain using enqueue custom operation instead of copying
         return EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP;
     #else
@@ -161,36 +163,36 @@ namespace shamalgs::primitives {
     inline shamalgs::impl_param scan_exclusive_sum_in_place_impl_to_params(
         const EXSCAN_IN_PLACE_IMPL &impl) {
         if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN) {
-            return {"std_scan", ""};
+            return {.impl_name = "std_scan", .params = ""};
 #ifdef __ACPP__
         } else if (impl == EXSCAN_IN_PLACE_IMPL::STD_SCAN_SINGLE_TASK_ACPP) {
-            return {"std_scan_single_task_acpp", ""};
+            return {.impl_name = "std_scan_single_task_acpp", .params = ""};
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == EXSCAN_IN_PLACE_IMPL::DECOUPLED_LOOKBACK_512) {
-            return {"decoupled_lookback_512", ""};
+            return {.impl_name = "decoupled_lookback_512", .params = ""};
 #endif
 #ifdef ACPP_ALG_AVAILABLE
         } else if (impl == EXSCAN_IN_PLACE_IMPL::ADAPTIVECPP_ALG) {
-            return {"acpp_alg", ""};
+            return {.impl_name = "acpp_alg", .params = ""};
 #endif
         }
 
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow scan_exclusive_sum_in_place implementation : {}", u32(impl)));
+            shambase::format("unknown scan_exclusive_sum_in_place implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_scan_exclusive_sum_in_place() {
         return {
-            {"std_scan", ""},
+            {.impl_name = "std_scan", .params = ""},
 #ifdef __ACPP__
-            {"std_scan_single_task_acpp", ""},
+            {.impl_name = "std_scan_single_task_acpp", .params = ""},
 #endif
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {"decoupled_lookback_512", ""},
+            {.impl_name = "decoupled_lookback_512", .params = ""},
 #endif
 #ifdef ACPP_ALG_AVAILABLE
-            {"acpp_alg", ""},
+            {.impl_name = "acpp_alg", .params = ""},
 #endif
         };
     }

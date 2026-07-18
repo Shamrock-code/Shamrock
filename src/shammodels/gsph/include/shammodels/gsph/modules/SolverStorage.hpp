@@ -35,6 +35,7 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -86,7 +87,7 @@ namespace shammodels::gsph {
         std::shared_ptr<shammodels::sph::solvergraph::NeighCache> neigh_cache;
 
         /// Patch rank ownership
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+        std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
         /// Serial patch tree for load balancing
         Component<SerialPatchTree<Tvec>> serial_patch_tree;

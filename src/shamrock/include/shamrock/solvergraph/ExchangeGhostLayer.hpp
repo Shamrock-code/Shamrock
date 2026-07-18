@@ -22,7 +22,14 @@
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* input */                                                                                    \
+    X_RO(shamrock::solvergraph::RankGetter, rank_owner)                                            \
+    /* output */                                                                                   \
+    X_RW(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)
 
 namespace shamrock::solvergraph {
 
@@ -71,14 +78,7 @@ namespace shamrock::solvergraph {
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> ghost_layer_layout)
             : ghost_layer_layout(std::move(ghost_layer_layout)) {}
 
-#define NODE_EXCHANGE_GHOST_LAYER_EDGES(X_RO, X_RW)                                                \
-    /* input */                                                                                    \
-    X_RO(shamrock::solvergraph::ScalarsEdge<u32>, rank_owner)                                      \
-    /* output */                                                                                   \
-    X_RW(shamrock::solvergraph::PatchDataLayerDDShared, ghost_layer)
-
-        EXPAND_NODE_EDGES(NODE_EXCHANGE_GHOST_LAYER_EDGES)
-#undef NODE_EXCHANGE_GHOST_LAYER_EDGES
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         /**
          * @brief Performs the ghost layer data exchange computation
@@ -103,3 +103,5 @@ namespace shamrock::solvergraph {
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shamrock::solvergraph
+
+#undef NODE_EDGES

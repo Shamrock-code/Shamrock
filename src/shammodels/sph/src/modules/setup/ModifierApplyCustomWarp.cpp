@@ -33,7 +33,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyCustomWar
     shamrock::patch::PatchDataLayer tmp = parent->next_n(nmax);
 
     ////////////////////////// load data //////////////////////////
-    auto &pdl                         = sched.pdl();
+    auto &pdl                         = sched.pdl_old();
     sham::DeviceBuffer<Tvec> &buf_xyz = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
         = tmp.get_field_buf_ref<Tvec>(pdl.get_field_idx<Tvec>("vxyz"));
@@ -54,8 +54,8 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierApplyCustomWar
         Tvec w  = sycl::cross(k, xyz_a);
         Tvec wv = sycl::cross(k, vxyz_a);
         // Rodrigues' rotation formula
-        xyz_a = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
-                + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
+        xyz_a  = xyz_a * sycl::cos(effective_inc) + w * sycl::sin(effective_inc)
+                 + k * sycl::dot(k, xyz_a) * (1. - sycl::cos(effective_inc));
         vxyz_a = vxyz_a * sycl::cos(effective_inc) + wv * sycl::sin(effective_inc)
                  + k * sycl::dot(k, vxyz_a) * (1. - sycl::cos(effective_inc));
     };

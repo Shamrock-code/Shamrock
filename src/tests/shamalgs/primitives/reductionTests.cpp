@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 
-TestStart(Unittest, "shamalgs/primitives/reduction/sum", test_reduction_sum, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/reduction/sum", 1) {
 
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -165,7 +165,7 @@ TestStart(Unittest, "shamalgs/primitives/reduction/sum", test_reduction_sum, 1) 
     shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
 }
 
-TestStart(Unittest, "shamalgs/primitives/reduction/min", test_reduction_min, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/reduction/min", 1) {
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -311,7 +311,7 @@ TestStart(Unittest, "shamalgs/primitives/reduction/min", test_reduction_min, 1) 
     shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
 }
 
-TestStart(Unittest, "shamalgs/primitives/reduction/max", test_reduction_max, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/reduction/max", 1) {
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -457,7 +457,7 @@ TestStart(Unittest, "shamalgs/primitives/reduction/max", test_reduction_max, 1) 
     shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
 }
 
-TestStart(Unittest, "shamalgs/primitives/reduction/edge_cases", test_reduction_edge_cases, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/reduction/edge_cases", 1) {
     auto test_run = []() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

@@ -159,36 +159,36 @@ def load_test_report(file):
     return dic_loaded
 
 
-def get_succes_count_data(dt):
+def get_success_count_data(dt):
     out_dic = {}
     for k_cur_test in dt.keys():
         tmp = {}
 
         sum_cnt_assert = 0
-        sum_cnt_succes = 0
+        sum_cnt_success = 0
 
         for k_cur_wrk in dt[k_cur_test].keys():
             cnt_assert = 0
-            cnt_succes = 0
+            cnt_success = 0
 
             for asserts in dt[k_cur_test][k_cur_wrk]:
                 cnt_assert += 1
-                cnt_succes += asserts["result"]
+                cnt_success += asserts["result"]
 
             sum_cnt_assert += cnt_assert
-            sum_cnt_succes += cnt_succes
+            sum_cnt_success += cnt_success
 
-            # print("test ",k_cur_test, "world size =",k_cur_wrk,"| succes rate =",cnt_succes,"/",len(dt[k_cur_test][k_cur_wrk]))
-            tmp[k_cur_wrk] = {"suc_cnt": cnt_succes, "assert_cnt": cnt_assert}
+            # print("test ",k_cur_test, "world size =",k_cur_wrk,"| success rate =",cnt_success,"/",len(dt[k_cur_test][k_cur_wrk]))
+            tmp[k_cur_wrk] = {"suc_cnt": cnt_success, "assert_cnt": cnt_assert}
 
-        tmp["suc_cnt"] = sum_cnt_succes
+        tmp["suc_cnt"] = sum_cnt_success
         tmp["assert_cnt"] = sum_cnt_assert
 
         out_dic[k_cur_test] = tmp
     return out_dic
 
 
-def make_tex_repport(dat):
+def make_tex_report(dat):
     dic_int = {}
 
     for config_k in dat.keys():
@@ -208,22 +208,22 @@ def make_tex_repport(dat):
                 wsz = int(k[len("world_size=") :])
 
                 dic_res = load_test_report(dat[config_k][k])
-                dic_suc_cnt = get_succes_count_data(dic_res)
+                dic_suc_cnt = get_success_count_data(dic_res)
 
                 cnt_test = 0
-                cnt_succes = 0
+                cnt_success = 0
 
                 for ktest in dic_suc_cnt.keys():
                     # cnt_assert += dic_suc_cnt[ktest]["assert_cnt"]
-                    # cnt_succes += dic_suc_cnt[ktest]["suc_cnt"]
+                    # cnt_success+= dic_suc_cnt[ktest]["suc_cnt"]
 
                     cnt_test += 1
-                    cnt_succes += dic_suc_cnt[ktest]["suc_cnt"] == dic_suc_cnt[ktest]["assert_cnt"]
+                    cnt_success += dic_suc_cnt[ktest]["suc_cnt"] == dic_suc_cnt[ktest]["assert_cnt"]
 
                 dic_int["world size = " + str(wsz)][dat[config_k]["description"]] = {
                     "results": dic_res,
-                    "succes_cnt": dic_suc_cnt,
-                    "global_suc_cnt": cnt_succes,
+                    "success_cnt": dic_suc_cnt,
+                    "global_suc_cnt": cnt_success,
                     "global_test_cnt": cnt_test,
                 }
 
@@ -235,17 +235,17 @@ def make_tex_repport(dat):
 
     for kworldsz in dic_int.keys():
         cnt_config = 0
-        cnt_succes = 0
+        cnt_success = 0
 
         for kconfig in dic_int[kworldsz].keys():
             cnt_config += 1
-            cnt_succes += (
+            cnt_success += (
                 dic_int[kworldsz][kconfig]["global_suc_cnt"]
                 == dic_int[kworldsz][kconfig]["global_test_cnt"]
             )
 
         dic_suc_cnt_global[kworldsz] = {
-            "global_suc_cnt": cnt_succes,
+            "global_suc_cnt": cnt_success,
             "global_config_cnt": cnt_config,
         }
 
@@ -254,17 +254,17 @@ def make_tex_repport(dat):
     tabl_world_sz_res += r""" \begin{center}
         \begin{tabular}{|c|c|c|}
         \hline
-        World size & Status & Succesfull config / total number of config \\  \hline \hline
+        World size & Status & Successful config / total number of config \\  \hline \hline
     """
     for kworldsz in dic_int.keys():
         config_suc_cnt = dic_suc_cnt_global[kworldsz]["global_suc_cnt"]
         config_cnt = dic_suc_cnt_global[kworldsz]["global_config_cnt"]
 
-        succes = config_suc_cnt == config_cnt
+        success = config_suc_cnt == config_cnt
 
         tabl_world_sz_res += kworldsz + " & "
 
-        if succes:
+        if success:
             tabl_world_sz_res += "\OK & "
         else:
             tabl_world_sz_res += "\FAIL & "
@@ -293,17 +293,17 @@ def make_tex_repport(dat):
         str_file += r"""
             \begin{tabular}{|c|c|c|}
             \hline
-            Config & Status & Succesfull tests / total number of tests \\  \hline \hline
+            Config & Status & Successful tests / total number of tests \\  \hline \hline
         """
         for kconfig in dic_int[kworldsz].keys():
             test_suc_cnt = dic_int[kworldsz][kconfig]["global_suc_cnt"]
             test_cnt = dic_int[kworldsz][kconfig]["global_test_cnt"]
 
-            succes = test_suc_cnt == test_cnt
+            success = test_suc_cnt == test_cnt
 
             str_file += kconfig + " & "
 
-            if succes:
+            if success:
                 str_file += "\OK & "
             else:
                 str_file += "\FAIL & "
@@ -327,17 +327,17 @@ def make_tex_repport(dat):
             \begin{center}
                 \begin{tabular}{|c|c|c|}
                 \hline
-                Test name & Status & Succesfull asserts / total number of asserts \\  \hline \hline
+                Test name & Status & Successful asserts / total number of asserts \\  \hline \hline
             """
-            for ktest in dic_int[kworldsz][kconfig]["succes_cnt"].keys():
-                assert_suc_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["suc_cnt"]
-                assert_cnt = dic_int[kworldsz][kconfig]["succes_cnt"][ktest]["assert_cnt"]
+            for ktest in dic_int[kworldsz][kconfig]["success_cnt"].keys():
+                assert_suc_cnt = dic_int[kworldsz][kconfig]["success_cnt"][ktest]["suc_cnt"]
+                assert_cnt = dic_int[kworldsz][kconfig]["success_cnt"][ktest]["assert_cnt"]
 
-                succes = assert_suc_cnt == assert_cnt
+                success = assert_suc_cnt == assert_cnt
 
                 str_file += r"\verb|" + ktest + "| & "
 
-                if succes:
+                if success:
                     str_file += "\OK & "
                 else:
                     str_file += "\FAIL & "
@@ -354,7 +354,7 @@ def make_tex_repport(dat):
 
     print(out_tex)
 
-    out_file = open("test_repport.tex", "w")
+    out_file = open("test_report.tex", "w")
     out_file.write(out_tex)
     out_file.close()
 
@@ -367,7 +367,7 @@ def make_report(format, out_res_map_file):
     # print(data)
 
     if format == ReportFormat.Tex:
-        make_tex_repport(data)
+        make_tex_report(data)
 
 
 if __name__ == "__main__":
@@ -375,4 +375,4 @@ if __name__ == "__main__":
 
     # dat_ld = load_test_report("/home/tim/Documents/these/codes/sycl_workspace/shamrock/test_pipeline/build_ss/test_res_2.sutest")
     # print(dat_ld)
-    # print(get_succes_count_dat(dat_ld))
+    # print(get_success_count_data(dat_ld))

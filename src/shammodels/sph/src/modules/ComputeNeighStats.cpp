@@ -80,10 +80,10 @@ namespace shammodels::sph::modules {
             {
                 std::vector<u32> neigh_cnt_vec = neigh_count_true.copy_to_stdvec();
 
-                double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
-                double min  = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
-                double mean = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
-                              / neigh_cnt_vec.size();
+                double max    = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double min    = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double mean   = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
+                                / neigh_cnt_vec.size();
                 double stddev = std::sqrt(
                     std::accumulate(
                         neigh_cnt_vec.begin(),
@@ -99,10 +99,10 @@ namespace shammodels::sph::modules {
             {
                 std::vector<u32> neigh_cnt_vec = neigh_count_all.copy_to_stdvec();
 
-                double max  = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
-                double min  = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
-                double mean = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
-                              / neigh_cnt_vec.size();
+                double max    = *std::max_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double min    = *std::min_element(neigh_cnt_vec.begin(), neigh_cnt_vec.end());
+                double mean   = std::accumulate(neigh_cnt_vec.begin(), neigh_cnt_vec.end(), 0.0)
+                                / neigh_cnt_vec.size();
                 double stddev = std::sqrt(
                     std::accumulate(
                         neigh_cnt_vec.begin(),

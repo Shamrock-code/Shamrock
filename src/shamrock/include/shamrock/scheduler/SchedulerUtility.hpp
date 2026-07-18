@@ -62,6 +62,22 @@ namespace shamrock {
         }
 
         template<class T, class flt>
+        inline void fields_leapfrog_corrector_positive_only(
+            u32 field_idx, u32 derfield_idx, u32 derfield_old_idx, flt hdt) {
+            StackEntry stack_loc{};
+            using namespace shamrock::patch;
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                integrators::leapfrog_corrector_positive_only(
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(derfield_idx).get_buf(),
+                    pdat.get_field<T>(derfield_old_idx).get_buf(),
+                    pdat.get_obj_cnt(),
+                    hdt);
+            });
+        }
+
+        template<class T, class flt>
         inline void fields_leapfrog_corrector(
             u32 field_idx,
             u32 derfield_idx,
@@ -77,7 +93,28 @@ namespace shamrock {
                     pdat.get_field<T>(derfield_idx).get_buf(),
                     derfield_old.get_field(cur_p.id_patch).get_buf(),
                     field_epsilon.get_field(cur_p.id_patch).get_buf(),
-                    pdat.get_obj_cnt(),
+                    pdat.get_obj_cnt() * derfield_old.get_nvar(),
+                    hdt);
+            });
+        }
+
+        template<class T, class flt>
+        inline void fields_leapfrog_corrector_positive_only(
+            u32 field_idx,
+            u32 derfield_idx,
+            ComputeField<T> &derfield_old,
+            ComputeField<flt> &field_epsilon,
+            flt hdt) {
+            StackEntry stack_loc{};
+            using namespace shamrock::patch;
+            sched.for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
+                integrators::leapfrog_corrector_positive_only(
+                    shamsys::instance::get_compute_scheduler().get_queue(),
+                    pdat.get_field<T>(field_idx).get_buf(),
+                    pdat.get_field<T>(derfield_idx).get_buf(),
+                    derfield_old.get_field(cur_p.id_patch).get_buf(),
+                    field_epsilon.get_field(cur_p.id_patch).get_buf(),
+                    pdat.get_obj_cnt() * derfield_old.get_nvar(),
                     hdt);
             });
         }

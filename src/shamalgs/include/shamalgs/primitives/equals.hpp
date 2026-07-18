@@ -26,9 +26,12 @@
 
 #include "shambase/exception.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
+#include "shambackends/DeviceBuffer.hpp"
+#include "shambackends/EventList.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
+#include "shamsys/NodeInstance.hpp"
 
 namespace shamalgs::primitives {
 
@@ -71,9 +74,6 @@ namespace shamalgs::primitives {
      * @endcode
      */
     template<class T>
-    [[deprecated(
-        "Use equals(const sham::DeviceScheduler_ptr &, sham::DeviceBuffer<T> &, "
-        "sham::DeviceBuffer<T> &, u32 ) instead.")]]
     bool equals(sycl::queue &q, sycl::buffer<T> &buf1, sycl::buffer<T> &buf2, u32 cnt) {
 
         if (buf1.size() < cnt) {
@@ -84,17 +84,23 @@ namespace shamalgs::primitives {
             throw shambase::make_except_with_loc<std::invalid_argument>("buf 2 is larger than cnt");
         }
 
-        sycl::buffer<u8> res(cnt);
-        q.submit([&](sycl::handler &cgh) {
+        sham::DeviceBuffer<u8> res(cnt, shamsys::instance::get_compute_scheduler_ptr());
+
+        sham::EventList deps;
+        auto out = res.get_write_access(deps);
+
+        deps.set_consumed(true);
+        auto e = q.submit([&](sycl::handler &cgh) {
+            cgh.depends_on(deps.get_events());
             sycl::accessor acc1{buf1, cgh, sycl::read_only};
             sycl::accessor acc2{buf2, cgh, sycl::read_only};
-
-            sycl::accessor out{res, cgh, sycl::write_only, sycl::no_init};
 
             cgh.parallel_for(sycl::range{cnt}, [=](sycl::item<1> item) {
                 out[item] = sham::equals(acc1[item], acc2[item]);
             });
         });
+
+        res.complete_event_state(e);
 
         return shamalgs::primitives::is_all_true(res, cnt);
     }

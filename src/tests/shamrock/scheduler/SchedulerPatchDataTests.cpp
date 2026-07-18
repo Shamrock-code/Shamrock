@@ -18,11 +18,7 @@
 #include <map>
 #include <vector>
 
-TestStart(
-    Unittest,
-    "shamrock/scheduler/SchedulerPatchData::apply_change_list",
-    tetsschedpatchdataapplychangelist,
-    -1) {
+NEW_TEST(Unittest, "shamrock/scheduler/SchedulerPatchData::apply_change_list", -1) {
 
     using namespace shamsys::instance;
     using namespace shamsys;

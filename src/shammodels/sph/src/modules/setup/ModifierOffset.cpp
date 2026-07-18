@@ -32,9 +32,9 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::ModifierOffset<Tvec>::
     }
 
     sham::DeviceBuffer<Tvec> &buf_xyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+        = tmp.get_field_buf_ref<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
     sham::DeviceBuffer<Tvec> &buf_vxyz
-        = tmp.get_field_buf_ref<Tvec>(sched.pdl().get_field_idx<Tvec>("vxyz"));
+        = tmp.get_field_buf_ref<Tvec>(sched.pdl_old().get_field_idx<Tvec>("vxyz"));
 
     auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 

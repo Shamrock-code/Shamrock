@@ -58,17 +58,17 @@ namespace shamalgs::collective {
         // printf("table_data_count =
         // [%d,%d,%d,%d]\n",table_data_count[0],table_data_count[1],table_data_count[2],table_data_count[3]);
 
-        int *node_displacments_data_table = new int[shamcomm::world_size()];
+        int *node_displacements_data_table = new int[shamcomm::world_size()];
 
-        node_displacments_data_table[0] = 0;
+        node_displacements_data_table[0] = 0;
 
         for (u32 i = 1; i < shamcomm::world_size(); i++) {
-            node_displacments_data_table[i]
-                = node_displacments_data_table[i - 1] + table_data_count[i - 1];
+            node_displacements_data_table[i]
+                = node_displacements_data_table[i - 1] + table_data_count[i - 1];
         }
 
-        // printf("node_displacments_data_table =
-        // [%d,%d,%d,%d]\n",node_displacments_data_table[0],node_displacments_data_table[1],node_displacments_data_table[2],node_displacments_data_table[3]);
+        // printf("node_displacements_data_table =
+        // [%d,%d,%d,%d]\n",node_displacements_data_table[0],node_displacements_data_table[1],node_displacements_data_table[2],node_displacements_data_table[3]);
 
         shamcomm::mpi::Allgatherv(
             &send_vec[0],
@@ -76,23 +76,23 @@ namespace shamalgs::collective {
             send_type,
             &recv_vec[0],
             table_data_count,
-            node_displacments_data_table,
+            node_displacements_data_table,
             recv_type,
             comm);
 
         delete[] table_data_count;
-        delete[] node_displacments_data_table;
+        delete[] node_displacements_data_table;
     }
 
     /**
-     * @brief allgatherv on vector with size query (size querrying variant of vector_allgatherv_ks)
+     * @brief allgatherv on vector with size query (size querying variant of vector_allgatherv_ks)
      * //TODO add fault tolerance
      * @tparam T
      * @param send_vec
      * @param send_type
      * @param recv_vec
      * @param recv_type
-     * @return the node displacments data table
+     * @return the node displacements data table
      */
     template<class T>
     inline std::vector<int> vector_allgatherv(
@@ -121,7 +121,7 @@ namespace shamalgs::collective {
         int global_len = 0;
         // use work duplication or MPI reduction
 #if false
-        // querry global size and resize the receiving vector
+        // query global size and resize the receiving vector
         shamcomm::mpi::Allreduce(
             &local_count, &global_len, 1, MPI_INT, MPI_SUM, comm);
 #else
@@ -129,7 +129,7 @@ namespace shamalgs::collective {
             u64 tmp = std::accumulate(table_data_count.begin(), table_data_count.end(), 0_u64);
 
             // if it exceeds the max size of int, MPI will trip like crazy
-            // god damn it just implement 64bits indicies ... Pleeeeeasssssse !!!
+            // god damn it just implement 64bits indices ... Pleeeeeasssssse !!!
             global_len = shambase::narrow_or_throw<int>(tmp);
         }
 #endif
@@ -141,11 +141,11 @@ namespace shamalgs::collective {
         }
 
         // here we can not overflow since we know that the sum can be narrowed to an int
-        std::vector<int> node_displacments_data_table(static_cast<std::size_t>(comm_size));
+        std::vector<int> node_displacements_data_table(static_cast<std::size_t>(comm_size));
         std::exclusive_scan(
             table_data_count.begin(),
             table_data_count.end(),
-            node_displacments_data_table.begin(),
+            node_displacements_data_table.begin(),
             0);
 
         shamcomm::mpi::Allgatherv(
@@ -154,11 +154,11 @@ namespace shamalgs::collective {
             send_type,
             recv_vec.data(),
             table_data_count.data(),
-            node_displacments_data_table.data(),
+            node_displacements_data_table.data(),
             recv_type,
             comm);
 
-        return node_displacments_data_table;
+        return node_displacements_data_table;
     }
 
     /**

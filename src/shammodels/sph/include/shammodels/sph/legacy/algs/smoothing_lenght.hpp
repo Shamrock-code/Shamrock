@@ -241,7 +241,7 @@ namespace models::sph {
 
             constexpr u32 reduc_level = 5;
 
-            sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
+            sched.for_each_patch([&](u64 id_patch, const Patch & /*cur_p*/) {
                 shamlog_debug_ln("SPHLeapfrog", "patch : n", id_patch, "->", "making Radix Tree");
 
                 if (merge_pdat.at(id_patch).or_element_cnt == 0)

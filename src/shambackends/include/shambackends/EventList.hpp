@@ -40,13 +40,13 @@ namespace sham {
          * <... add events ...>
          * sycl::queue q{};
          * q.submit([&](sycl::handler &h) {
-         *     events.apply_dependancy(h);
+         *     events.apply_dependency(h);
          *     // ...
          * });
          *
          * @endcode
          */
-        inline void apply_dependancy(sycl::handler &h) { h.depends_on(events); }
+        inline void apply_dependency(sycl::handler &h) { h.depends_on(events); }
 
         /**
          * @brief Wait for all events in the list to be finished.

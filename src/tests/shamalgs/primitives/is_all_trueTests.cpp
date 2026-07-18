@@ -14,8 +14,7 @@
 #include "shamtest/shamtest.hpp"
 #include <vector>
 
-TestStart(
-    Unittest, "shamalgs/primitives/is_all_true:sycl_buffer", test_is_all_true_sycl_buffer, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:sycl_buffer", 1) {
 
     {
         // Test with all true values
@@ -68,7 +67,7 @@ TestStart(
     }
 }
 
-TestStart(Unittest, "shamalgs/primitives/is_all_true:USM", test_is_all_true_device_buffer, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:USM", 1) {
 
     auto test_impl = [&]() {
         auto sched = shamsys::instance::get_compute_scheduler_ptr();

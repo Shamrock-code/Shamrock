@@ -11,7 +11,7 @@
 #include "shamsys/legacy/log.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase/stacktrace/print_stack", test_stackprinter, 1) {
+NEW_TEST(Unittest, "shambase/stacktrace/print_stack", 1) {
     StackEntry stack{};
 
     logger::raw_ln(shambase::fmt_callstack());

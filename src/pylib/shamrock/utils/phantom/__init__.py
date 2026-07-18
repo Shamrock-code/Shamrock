@@ -204,7 +204,7 @@ def run_phantom_simulation(simulation_folder, sim_name):
             next_time = tmax
             last_step = True
 
-        last_step = model.evolve_until(next_time)
+        model.evolve_until(next_time)
 
         do_dump(dump_number)
         dump_number += 1

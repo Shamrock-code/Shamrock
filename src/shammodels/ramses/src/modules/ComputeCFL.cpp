@@ -33,7 +33,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
     ComputeField<Tscal> cfl_dt = utility.make_compute_field<Tscal>("cfl_dt", AMRBlock::block_size);
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 icell_min = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max = pdl.get_field_idx<TgridVec>("cell_max");
@@ -140,7 +140,7 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_dust_
         = utility.make_compute_field<Tscal>("dust_cfl_dt", ndust * AMRBlock::block_size);
 
     // load layout info
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 icell_min    = pdl.get_field_idx<TgridVec>("cell_min");
     const u32 icell_max    = pdl.get_field_idx<TgridVec>("cell_max");

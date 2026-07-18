@@ -115,7 +115,7 @@ namespace shamcomm {
     void print_mpi_capabilities() {
         using namespace shambase::term_colors;
 
-        auto print_state = [](std::string log, StateMPI_Aware state) {
+        auto print_state = [](const std::string &log, StateMPI_Aware state) {
             switch (mpi_cuda_aware) {
             case Yes: logs::print_ln(" - " + log + " :", col8b_green() + "Yes" + reset()); break;
             case No : logs::print_ln(" - " + log + " :", col8b_red() + "No" + reset()); break;

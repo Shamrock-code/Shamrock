@@ -20,23 +20,32 @@
 #include "shambase/memory.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/pytypealias.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammath/crystalLattice.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/sph/Model.hpp"
 #include "shammodels/sph/io/PhantomDump.hpp"
+#include "shammodels/sph/modules/AnalysisAngularMomentum.hpp"
 #include "shammodels/sph/modules/AnalysisBarycenter.hpp"
 #include "shammodels/sph/modules/AnalysisDisc.hpp"
+#include "shammodels/sph/modules/AnalysisDustMass.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyKinetic.hpp"
 #include "shammodels/sph/modules/AnalysisEnergyPotential.hpp"
 #include "shammodels/sph/modules/AnalysisSodTube.hpp"
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
+#include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pytypes.h>
 #include <memory>
+#include <optional>
 #include <random>
+#include <utility>
 
 template<class Tvec, template<class> class SPHKernel>
 void add_instance(py::module &m, std::string name_config, std::string name_model) {
@@ -51,18 +60,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     using TSPHSetup        = shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>;
     using TConfig          = typename T::Solver::Config;
 
+    using custom_getter_t = std::function<pybind11::array_t<f64>(size_t, pybind11::dict &)>;
+
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-    py::class_<TConfig>(m, name_config.c_str())
-        .def("print_status", &TConfig::print_status)
+    py::class_<TConfig> config_cls(m, name_config.c_str());
+
+    shammodels::common::add_json_defs<TConfig>(config_cls);
+
+    config_cls.def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
+        .def(
+            "set_scheduler_config",
+            [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                self.scheduler_conf.split_load_value = split_crit;
+                self.scheduler_conf.merge_load_value = merge_crit;
+            },
+            py::kw_only(),
+            py::arg("split_load_value"),
+            py::arg("merge_load_value"))
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         .def("set_show_neigh_stats", &TConfig::set_show_neigh_stats)
         .def(
             "set_max_neigh_cache_size",
-            [](TConfig &self, py::object max_neigh_cache_size) {
+            [](TConfig &self, const py::object &max_neigh_cache_size) {
                 ON_RANK_0(shamlog_warn_ln(
                               "SPH",
                               ".set_max_neigh_cache_size() is deprecated,\n"
@@ -117,11 +140,6 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::kw_only(),
             py::arg("mu_e"))
         .def("set_artif_viscosity_None", &TConfig::set_artif_viscosity_None)
-        .def(
-            "to_json",
-            [](TConfig &self) {
-                return nlohmann::json{self}.dump(4);
-            })
         .def(
             "set_artif_viscosity_Constant",
             [](TConfig &self, Tscal alpha_u, Tscal alpha_AV, Tscal beta_AV) {
@@ -248,10 +266,29 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 self.dust_config.set_none();
             })
         .def(
-            "set_dust_mode_monofluid_tvi",
-            [](TConfig &self, u32 nvar) {
-                self.dust_config.set_monofluid_tvi(nvar);
-            })
+            "set_dust_mode_monofluid_tva",
+            [](TConfig &self,
+               u32 nvar,
+               bool pure_diffusion_mode,
+               Tscal C_1_fluid,
+               Tscal C_delta_v,
+               Tscal cfl_density_threshold,
+               bool ensure_s_j_positivity) {
+                self.dust_config.set_monofluid_tva(
+                    nvar,
+                    pure_diffusion_mode,
+                    C_1_fluid,
+                    C_delta_v,
+                    cfl_density_threshold,
+                    ensure_s_j_positivity);
+            },
+            py::kw_only(),
+            py::arg("nvar"),
+            py::arg("pure_diffusion_mode")   = false,
+            py::arg("C_1_fluid")             = 0.1,
+            py::arg("C_delta_v")             = 1.0,
+            py::arg("cfl_density_threshold") = shambase::get_epsilon<Tscal>(),
+            py::arg("ensure_s_j_positivity") = true)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {
@@ -259,7 +296,27 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::kw_only(),
             py::arg("ndust"))
+        .def(
+            "set_dust_drag_constant",
+            [](TConfig &self, std::vector<Tscal> ts) {
+                self.dust_config.set_drag_constant({.stopping_times = std::move(ts)});
+            })
+        .def(
+            "set_dust_drag_epstein",
+            [](TConfig &self,
+               Tscal gamma,
+               std::vector<Tscal> grain_sizes,
+               std::vector<Tscal> grain_densities) {
+                self.dust_config.set_drag_epstein(
+                    {.gamma            = gamma,
+                     .grains_sizes     = std::move(grain_sizes),
+                     .grains_densities = std::move(grain_densities)});
+            },
+            py::arg("gamma"),
+            py::arg("grain_sizes"),
+            py::arg("grain_densities"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
+        .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(
             "add_ext_force_lense_thirring",
             [](TConfig &self, Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
@@ -279,6 +336,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("Omega_0"),
             py::arg("eta"),
             py::arg("q"))
+        .def(
+            "add_ext_force_velocity_dissipation",
+            [](TConfig &self, Tscal eta) {
+                self.ext_force_config.add_velocity_dissipation(eta);
+            },
+            py::kw_only(),
+            py::arg("eta"))
+        .def(
+            "add_ext_force_vertical_disc_potential",
+            [](TConfig &self, Tscal central_mass, Tscal R0) {
+                self.ext_force_config.add_vertical_disc_potential(central_mass, R0);
+            },
+            py::kw_only(),
+            py::arg("central_mass"),
+            py::arg("R0"))
         .def("set_units", &TConfig::set_units)
         .def(
             "get_units",
@@ -300,8 +372,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](TConfig &self, Tscal eta_sink) {
                 self.cfl_config.eta_sink = eta_sink;
             })
-        .def("set_cfl_multipler", &TConfig::set_cfl_multipler)
         .def("set_cfl_mult_stiffness", &TConfig::set_cfl_mult_stiffness)
+        .def(
+            "set_show_cfl_detail",
+            [](TConfig &self, bool show_cfl_detail) {
+                self.show_cfl_detail = show_cfl_detail;
+            },
+            py::arg("show_cfl_detail"))
         .def(
             "set_particle_mass",
             [](TConfig &self, Tscal gpart_mass) {
@@ -360,9 +437,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
     py::class_<TSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_lattice_hcp",
-            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
-                return self.make_generator_lattice_hcp(dr, {box_min, box_max});
-            })
+            [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max, bool discontinuous) {
+                return self.make_generator_lattice_hcp(dr, {box_min, box_max}, discontinuous);
+            },
+            py::arg("dr"),
+            py::arg("box_min"),
+            py::arg("box_max"),
+            py::arg("discontinuous") = true)
         .def(
             "make_generator_lattice_cubic",
             [](TSPHSetup &self, Tscal dr, Tvec box_min, Tvec box_max) {
@@ -379,17 +460,92 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::function<Tscal(Tscal)> H_profile,
                std::function<Tscal(Tscal)> rot_profile,
                std::function<Tscal(Tscal)> cs_profile,
+               std::function<Tvec(Tvec)> velocity_field,
+               std::function<Tscal(Tvec)> cs_field,
                u64 random_seed,
                Tscal init_h_factor) {
+                auto build_vel_lambda = [&]() -> std::function<Tvec(Tvec)> {
+                    if (!velocity_field && !rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (velocity_field && rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (velocity_field) {
+                        return std::move(velocity_field);
+                    }
+                    return [vth_r = std::move(rot_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+
+                        auto etheta = sycl::vec<Tscal, 3>{-pos.y(), pos.x(), 0};
+                        etheta /= sycl::length(etheta);
+
+                        return vth_r(r) * etheta;
+                    };
+                };
+
+                auto build_cs_lambda = [&]() -> std::function<Tscal(Tvec)> {
+                    bool need_cs = self.solver_config.is_eos_locally_isothermal();
+
+                    if (!need_cs) {
+                        if (cs_field) {
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_field is "
+                                    "ignored");
+                            }
+                        }
+                        if (cs_profile) {
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_profile is "
+                                    "ignored");
+                            }
+                        }
+                        return std::function<Tscal(Tvec)>{};
+                    }
+
+                    if (!cs_field && !cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (cs_field && cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (cs_field) {
+                        return std::move(cs_field);
+                    }
+
+                    return [cs_r = std::move(cs_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+                        return cs_r(r);
+                    };
+                };
+
                 return self.make_generator_disc_mc(
                     part_mass,
                     disc_mass,
                     r_in,
                     r_out,
-                    sigma_profile,
-                    H_profile,
-                    rot_profile,
-                    cs_profile,
+                    std::move(sigma_profile),
+                    std::move(H_profile),
+                    build_vel_lambda(),
+                    build_cs_lambda(),
                     std::mt19937_64(random_seed),
                     init_h_factor);
             },
@@ -400,10 +556,52 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("r_out"),
             py::arg("sigma_profile"),
             py::arg("H_profile"),
-            py::arg("rot_profile"),
-            py::arg("cs_profile"),
+            py::arg("rot_profile")    = std::function<Tscal(Tscal)>{},
+            py::arg("cs_profile")     = std::function<Tscal(Tscal)>{},
+            py::arg("velocity_field") = std::function<Tvec(Tvec)>{},
+            py::arg("cs_field")       = std::function<Tscal(Tvec)>{},
             py::arg("random_seed"),
-            py::arg("init_h_factor") = 0.8)
+            py::arg("init_h_factor") = 0.8,
+            R"pbdoc(
+        Create a Monte Carlo disc particle generator.
+
+        Particles are sampled in cylindrical coordinates: the radius is drawn
+        with rejection sampling from ``sigma_profile``, the azimuth is uniform,
+        and the vertical coordinate follows a Gaussian with scale ``H_profile(r)``.
+        The initial density is extrapolated from the surface density profile, and
+        smoothing lengths are set from that density.
+
+        Args:
+            part_mass: Mass of each SPH particle.
+            disc_mass: Total disc mass. The particle count is ``disc_mass / part_mass``.
+            r_in: Inner disc radius.
+            r_out: Outer disc radius.
+            sigma_profile: Surface density profile ``sigma(r)``.
+            H_profile: Disc scale height profile ``H(r)``.
+            rot_profile: Azimuthal speed profile ``v_theta(r)``. The velocity is
+                projected along the cylindrical azimuthal direction at each
+                particle position. Mutually exclusive with ``velocity_field``.
+            cs_profile: Sound speed profile ``c_s(r)``. Evaluated at the cylindrical
+                radius of each particle. Required when the solver uses a locally
+                isothermal EOS. Mutually exclusive with ``cs_field``.
+            velocity_field: Velocity profile ``v(x, y, z)``. Mutually exclusive
+                with ``rot_profile``.
+            cs_field: Sound speed profile ``c_s(x, y, z)``. Required when the solver
+                uses a locally isothermal EOS. Mutually exclusive with ``cs_profile``.
+            random_seed: Seed for the Monte Carlo sampler.
+            init_h_factor: Multiplier applied to the smoothing length inferred from
+                the generated density. Defaults to ``0.8``.
+
+        Notes:
+            Exactly one of ``velocity_field`` or ``rot_profile`` must be provided.
+
+            If the solver uses a locally isothermal EOS, exactly one of ``cs_field``
+            or ``cs_profile`` must be provided. Otherwise both sound-speed profiles
+            are ignored and a warning is emitted if either is supplied.
+
+        Returns:
+            A setup node to pass to :py:meth:`apply_setup`.
+    )pbdoc")
         .def(
             "make_generator_from_context",
             [](TSPHSetup &self, ShamrockCtx &context_other) {
@@ -493,7 +691,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                std::optional<u64> msg_size_limit,
                std::optional<u64> max_msg_size,
                bool do_setup_log,
-               bool use_new_setup) {
+               bool use_new_setup,
+               bool speculative_balancing) {
                 if (use_new_setup) {
                     return self.apply_setup_new(
                         setup,
@@ -503,7 +702,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         msg_count_limit,
                         msg_size_limit,
                         max_msg_size,
-                        do_setup_log);
+                        do_setup_log,
+                        speculative_balancing);
                 } else {
                     if (bool(gen_step)) {
                         ON_RANK_0(
@@ -535,19 +735,21 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering")      = true,
-            py::arg("gen_step")             = std::nullopt,
-            py::arg("insert_step")          = std::nullopt,
-            py::arg("msg_count_limit")      = std::nullopt,
-            py::arg("rank_comm_size_limit") = std::nullopt,
-            py::arg("max_msg_size")         = std::nullopt,
-            py::arg("do_setup_log")         = false,
-            py::arg("use_new_setup")        = true);
+            py::arg("part_reordering")       = true,
+            py::arg("gen_step")              = std::nullopt,
+            py::arg("insert_step")           = std::nullopt,
+            py::arg("msg_count_limit")       = std::nullopt,
+            py::arg("rank_comm_size_limit")  = std::nullopt,
+            py::arg("max_msg_size")          = std::nullopt,
+            py::arg("do_setup_log")          = false,
+            py::arg("use_new_setup")         = true,
+            py::arg("speculative_balancing") = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def("init", &T::init)
         .def("init_scheduler", &T::init_scheduler)
 
         .def(
@@ -558,15 +760,13 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("evolve_once", &T::evolve_once)
         .def(
             "evolve_until",
-            [](T &self, f64 target_time, i32 niter_max) {
-                return self.evolve_until(target_time, niter_max);
+            [](T &self, f64 target_time, i32 niter_max, f64 max_walltime) {
+                return self.evolve_until(target_time, niter_max, max_walltime);
             },
             py::arg("target_time"),
             py::kw_only(),
-            py::arg("niter_max") = -1)
-        .def("set_dt", [](T &self, f64 dt) {
-            self.solver.solver_config.set_next_dt(dt);
-        })
+            py::arg("niter_max")    = -1,
+            py::arg("max_walltime") = -1)
         .def("timestep", &T::timestep)
         .def("set_cfl_cour", &T::set_cfl_cour, py::arg("cfl_cour"))
         .def("set_cfl_force", &T::set_cfl_force, py::arg("cfl_force"))
@@ -593,12 +793,24 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_ideal_fcc_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_fcc_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_fcc_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "get_ideal_hcp_box",
             [](T &self, f64 dr, f64_3 box_min, f64_3 box_max) {
-                return self.get_ideal_hcp_box(dr, {box_min, box_max});
+                ON_RANK_0(
+                    shamcomm::logs::warn_ln(
+                        "SPH",
+                        "The python function get_ideal_hcp_box is deprecated in the SPH model and "
+                        "will be removed at some point, replace it by "
+                        "shamrock.math.get_ideal_hcp_box"));
+                return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
             })
         .def(
             "resize_simulation_box",
@@ -695,9 +907,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_value_in_a_box",
             [](T &self,
-               std::string field_name,
-               std::string field_type,
-               pybind11::object value,
+               const std::string &field_name,
+               const std::string &field_type,
+               const pybind11::object &value,
                f64_3 box_min,
                f64_3 box_max,
                u32 ivar) {
@@ -722,9 +934,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "set_value_in_sphere",
             [](T &self,
-               std::string field_name,
-               std::string field_type,
-               pybind11::object value,
+               const std::string &field_name,
+               const std::string &field_type,
+               const pybind11::object &value,
                f64_3 center,
                f64 radius) {
                 if (field_type == "f64") {
@@ -738,8 +950,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         "unknown field type");
                 }
             })
-        .def("set_field_value_lambda_f64_3", &T::template set_field_value_lambda<f64_3>)
-        .def("set_field_value_lambda_f64", &T::template set_field_value_lambda<f64>)
+        .def(
+            "set_field_value_lambda_f64",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def(
+            "set_field_value_lambda_f64_3",
+            [](T &self,
+               std::string field_name,
+               const std::function<f64_3(Tvec)> pos_to_val,
+               const u32 offset) {
+                return self.template set_field_value_lambda<f64_3>(
+                    std::move(field_name), pos_to_val, offset);
+            },
+            py::arg("field_name"),
+            py::arg("pos_to_val"),
+            py::arg("offset") = 0)
+        .def("overwrite_field_value_f64", &T::template overwrite_field_value<f64>)
+        .def("overwrite_field_value_f64_3", &T::template overwrite_field_value<f64_3>)
         .def("remap_positions", &T::remap_positions)
         //.def("set_field_value_lambda_f64_3",[](T&self,std::string field_name, const
         // std::function<f64_3 (Tscal, Tscal , Tscal)> pos_to_val){
@@ -750,9 +986,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "add_kernel_value",
             [](T &self,
-               std::string field_name,
-               std::string field_type,
-               pybind11::object value,
+               const std::string &field_name,
+               const std::string &field_type,
+               const pybind11::object &value,
                f64_3 center,
                f64 h_ker) {
                 if (field_type == "f64") {
@@ -768,7 +1004,7 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "get_sum",
-            [](T &self, std::string field_name, std::string field_type) {
+            [](T &self, const std::string &field_name, const std::string &field_type) {
                 if (field_type == "f64") {
                     return py::cast(self.template get_sum<f64>(field_name));
                 } else if (field_type == "f64_3") {
@@ -823,14 +1059,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             })
         .def(
             "render_slice",
-            [](T &self, std::string name, std::string field_type, std::vector<Tvec> positions, std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               const std::vector<Tvec> &positions,
+               const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
-
-                    if(custom_getter.has_value()) {
-                        if(!( name == "custom" && field_type == "f64")) {
-                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
-                        }
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
                     }
+                }
 
                 if (field_type == "f64") {
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
@@ -853,17 +1093,17 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "render_column_integ",
             [](T &self,
-               std::string name,
-               std::string field_type,
-               std::vector<shammath::Ray<Tvec>> rays,
-               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+               const std::string &name,
+               const std::string &field_type,
+               const std::vector<shammath::Ray<Tvec>> &rays,
+               const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
-
-                    if(custom_getter.has_value()) {
-                        if(!( name == "custom" && field_type == "f64")) {
-                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
-                        }
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
                     }
+                }
 
                 if (field_type == "f64") {
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
@@ -884,30 +1124,65 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("rays"),
             py::arg("custom_getter") = std::nullopt)
         .def(
+            "compute_field",
+            [](T &self,
+               const std::string &name,
+               const std::string &field_type,
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<
+                    shamrock::solvergraph::Field<f64>,
+                    shamrock::solvergraph::Field<f64_3>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
+                    }
+                }
+
+                if (field_type == "f64") {
+                    modules::RenderFieldGetter<Tvec, f64, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                if (field_type == "f64_3") {
+                    modules::RenderFieldGetter<Tvec, f64_3, SPHKernel> render_field_getter(
+                        self.ctx, self.solver.solver_config, self.solver.storage);
+                    return render_field_getter.build_field(name, custom_getter);
+                }
+
+                throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
+            },
+            py::arg("name"),
+            py::arg("field_type"),
+            py::arg("custom_getter") = std::nullopt)
+        .def(
             "render_azymuthal_integ",
             [](T &self,
-                std::string name,
-                std::string field_type,
-                std::vector<shammath::RingRay<Tvec>> ring_rays,
-                std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
+               const std::string &name,
+               const std::string &field_type,
+               const std::vector<shammath::RingRay<Tvec>> &ring_rays,
+               const std::optional<custom_getter_t> &custom_getter)
                 -> std::variant<std::vector<f64>, std::vector<f64_3>> {
-
-                    if(custom_getter.has_value()) {
-                        if(!( name == "custom" && field_type == "f64")) {
-                            throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
-                        }
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
                     }
+                }
 
                 if (field_type == "f64") {
                     modules::CartesianRender<Tvec, f64, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_azymuthal_integ(name, ring_rays, custom_getter).copy_to_stdvec();
+                    return render.compute_azymuthal_integ(name, ring_rays, custom_getter)
+                        .copy_to_stdvec();
                 }
 
                 if (field_type == "f64_3") {
                     modules::CartesianRender<Tvec, f64_3, SPHKernel> render(
                         self.ctx, self.solver.solver_config, self.solver.storage);
-                    return render.compute_azymuthal_integ(name, ring_rays, std::nullopt).copy_to_stdvec();
+                    return render.compute_azymuthal_integ(name, ring_rays, std::nullopt)
+                        .copy_to_stdvec();
                 }
 
                 throw shambase::make_except_with_loc<std::runtime_error>("unknown field type");
@@ -919,19 +1194,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "render_cartesian_slice",
             [](T &self,
-               std::string name,
-               std::string field_type,
+               const std::string &name,
+               const std::string &field_type,
                Tvec center,
                Tvec delta_x,
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
-               -> std::variant<py::array_t<Tscal>> {
-
-                if(custom_getter.has_value()) {
-                    if(!( name == "custom" && field_type == "f64")) {
-                        throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<py::array_t<Tscal>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
                     }
                 }
 
@@ -942,7 +1217,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64> slice
-                        = render.compute_slice(name, center, delta_x, delta_y, nx, ny, custom_getter)
+                        = render
+                              .compute_slice(name, center, delta_x, delta_y, nx, ny, custom_getter)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -989,19 +1265,19 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "render_cartesian_column_integ",
             [](T &self,
-               std::string name,
-               std::string field_type,
+               const std::string &name,
+               const std::string &field_type,
                Tvec center,
                Tvec delta_x,
                Tvec delta_y,
                u32 nx,
                u32 ny,
-               std::optional<std::function<pybind11::array_t<f64>(size_t,pybind11::dict&)>> custom_getter )
-               -> std::variant<py::array_t<Tscal>> {
-
-                if(custom_getter.has_value()) {
-                    if(!( name == "custom" && field_type == "f64")) {
-                        throw shambase::make_except_with_loc<std::invalid_argument>("custom_getter only available for name=custom and field_type=f64");
+               const std::optional<custom_getter_t> &custom_getter)
+                -> std::variant<py::array_t<Tscal>> {
+                if (custom_getter.has_value()) {
+                    if (!(name == "custom" && field_type == "f64")) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "custom_getter only available for name=custom and field_type=f64");
                     }
                 }
 
@@ -1012,7 +1288,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64> slice
-                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny, custom_getter)
+                        = render
+                              .compute_column_integ(
+                                  name, center, delta_x, delta_y, nx, ny, custom_getter)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -1031,7 +1309,9 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                         self.ctx, self.solver.solver_config, self.solver.storage);
 
                     std::vector<f64_3> slice
-                        = render.compute_column_integ(name, center, delta_x, delta_y, nx, ny, std::nullopt)
+                        = render
+                              .compute_column_integ(
+                                  name, center, delta_x, delta_y, nx, ny, std::nullopt)
                               .copy_to_stdvec();
 
                     for (u32 iy = 0; iy < ny; iy++) {
@@ -1087,6 +1367,26 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def("set_debug_dump", &T::set_debug_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
+        .def(
+            "solver_logs_last_system_metrics",
+            [&](T &self) {
+                auto system_metrics = self.solver.solve_logs.get_last_system_metrics();
+                py::dict ret;
+                ret["duration"] = system_metrics.wall_time;
+                if (system_metrics.rank_energy_consummed.has_value()) {
+                    ret["rank_energy_consummed"] = system_metrics.rank_energy_consummed.value();
+                }
+                if (system_metrics.gpu_energy_consummed.has_value()) {
+                    ret["gpu_energy_consummed"] = system_metrics.gpu_energy_consummed.value();
+                }
+                if (system_metrics.cpu_energy_consummed.has_value()) {
+                    ret["cpu_energy_consummed"] = system_metrics.cpu_energy_consummed.value();
+                }
+                if (system_metrics.dram_energy_consummed.has_value()) {
+                    ret["dram_energy_consummed"] = system_metrics.dram_energy_consummed.value();
+                }
+                return ret;
+            })
         .def("solver_logs_cumulated_step_time", &T::solver_logs_cumulated_step_time)
         .def("solver_logs_reset_cumulated_step_time", &T::solver_logs_reset_cumulated_step_time)
         .def("solver_logs_step_count", &T::solver_logs_step_count)
@@ -1094,27 +1394,32 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
         .def(
             "get_time",
             [](T &self) {
-                return self.solver.solver_config.get_time();
+                return self.get_time();
             })
         .def(
             "get_dt",
             [](T &self) {
-                return self.solver.solver_config.get_dt_sph();
+                return self.get_dt_sph();
             })
         .def(
             "set_time",
             [](T &self, Tscal t) {
-                return self.solver.solver_config.set_time(t);
+                return self.set_time(t);
             })
         .def(
             "set_next_dt",
             [](T &self, Tscal dt) {
-                return self.solver.solver_config.set_next_dt(dt);
+                return self.set_next_dt(dt);
+            })
+        .def(
+            "set_dt",
+            [](T &self, f64 dt) {
+                self.set_next_dt(dt);
             })
         .def(
             "set_cfl_multipler",
             [](T &self, Tscal lambda) {
-                return self.solver.solver_config.set_cfl_multipler(lambda);
+                return self.set_cfl_multipler(lambda);
             },
             py::arg("lambda"))
         .def(
@@ -1186,11 +1491,22 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                 return sched.get_patch_transform<Tvec>();
             })
         .def("apply_momentum_offset", &T::apply_momentum_offset)
-        .def("apply_position_offset", &T::apply_position_offset);
+        .def("apply_position_offset", &T::apply_position_offset)
+        .def(
+            "add_timestep_callback",
+            [](T &self,
+               std::optional<std::function<void(void)>> step_begin_callback,
+               std::optional<std::function<void(void)>> step_end_callback) {
+                self.solver.timestep_callbacks.push_back(
+                    {std::move(step_begin_callback), std::move(step_end_callback)});
+            },
+            py::kw_only(),
+            py::arg("step_begin") = std::nullopt,
+            py::arg("step_end")   = std::nullopt);
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
+void add_analysisBarycenter_instance(py::module &m, const std::string &name_model) {
     using namespace shammodels::sph;
 
     using Tscal = shambase::VecComponent<Tvec>;
@@ -1208,7 +1524,7 @@ void add_analysisBarycenter_instance(py::module &m, std::string name_model) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void add_analysisEnergyKinetic_instance(py::module &m, std::string name_model) {
+void add_analysisEnergyKinetic_instance(py::module &m, const std::string &name_model) {
     using namespace shammodels::sph;
 
     using Tscal = shambase::VecComponent<Tvec>;
@@ -1224,7 +1540,7 @@ void add_analysisEnergyKinetic_instance(py::module &m, std::string name_model) {
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void add_analysisEnergyPotential_instance(py::module &m, std::string name_model) {
+void add_analysisEnergyPotential_instance(py::module &m, const std::string &name_model) {
     using namespace shammodels::sph;
 
     using Tscal = shambase::VecComponent<Tvec>;
@@ -1240,7 +1556,7 @@ void add_analysisEnergyPotential_instance(py::module &m, std::string name_model)
 }
 
 template<class Tvec, template<class> class SPHKernel>
-void add_analysisTotalMomentum_instance(py::module &m, std::string name_model) {
+void add_analysisTotalMomentum_instance(py::module &m, const std::string &name_model) {
     using namespace shammodels::sph;
 
     using Tscal = shambase::VecComponent<Tvec>;
@@ -1255,6 +1571,38 @@ void add_analysisTotalMomentum_instance(py::module &m, std::string name_model) {
         });
 }
 
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisAngularMomentum_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisAngularMomentum<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_angular_momentum", [](modules::AnalysisAngularMomentum<Tvec, SPHKernel> &self) {
+            return self.get_angular_momentum();
+        });
+}
+
+template<class Tvec, template<class> class SPHKernel>
+void add_analysisDustMass_instance(py::module &m, const std::string &name_model) {
+    using namespace shammodels::sph;
+
+    using Tscal = shambase::VecComponent<Tvec>;
+    using T     = Model<Tvec, SPHKernel>;
+
+    py::class_<modules::AnalysisDustMass<Tvec, SPHKernel>>(m, name_model.c_str())
+        .def(py::init([](T &model) {
+            return std::make_unique<modules::AnalysisDustMass<Tvec, SPHKernel>>(model);
+        }))
+        .def("get_dust_mass", [](modules::AnalysisDustMass<Tvec, SPHKernel> &self) {
+            return self.get_dust_mass();
+        });
+}
+
 using namespace shammodels::sph;
 
 template<class Analysis, typename Tvec, template<class> class SPHKernel>
@@ -1264,7 +1612,6 @@ auto analysis_impl(shammodels::sph::Model<Tvec, SPHKernel> &model) -> Analysis {
 
 template<template<class, template<class> class> class Analysis>
 void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_class) {
-
     using namespace shammodels::sph;
 
     using SPHModel_f64_3_M4 = shammodels::sph::Model<f64_3, shammath::M4>;
@@ -1324,9 +1671,25 @@ void register_analysis_impl_for_each_kernel(py::module &msph, const char *name_c
         py::arg("model"));
 }
 
-Register_pymod(pysphmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module msph = m.def_submodule("model_sph", "Shamrock sph solver");
+
+    py::class_<EvolveUntilResults>(m, "EvolveUntilResults")
+        .def_readwrite("reach_target_time", &EvolveUntilResults::reach_target_time)
+        .def_readwrite("reach_niter_max", &EvolveUntilResults::reach_niter_max)
+        .def_readwrite("reach_max_walltime", &EvolveUntilResults::reach_max_walltime)
+        .def_readwrite("iter_count", &EvolveUntilResults::iter_count)
+        .def("__repr__", [](const EvolveUntilResults &self) {
+            return shambase::format(
+                "EvolveUntilResults(reach_target_time={}, reach_niter_max={}, "
+                "reach_max_walltime={}, iter_count={})",
+                self.reach_target_time,
+                self.reach_niter_max,
+                self.reach_max_walltime,
+                self.iter_count);
+        });
 
     using namespace shammodels::sph;
 
@@ -1348,7 +1711,9 @@ Register_pymod(pysphmodel) {
 
     m.def(
         "get_Model_SPH",
-        [](ShamrockCtx &ctx, std::string vector_type, std::string kernel) -> VariantSPHModelBind {
+        [](ShamrockCtx &ctx,
+           const std::string &vector_type,
+           const std::string &kernel) -> VariantSPHModelBind {
             VariantSPHModelBind ret;
 
             if (vector_type == "f64_3" && kernel == "M4") {
@@ -1429,6 +1794,20 @@ Register_pymod(pysphmodel) {
     add_analysisTotalMomentum_instance<f64_3, shammath::C4>(msph, "AnalysisTotalMomentum_f64_3_C4");
     add_analysisTotalMomentum_instance<f64_3, shammath::C6>(msph, "AnalysisTotalMomentum_f64_3_C6");
 
+    add_analysisAngularMomentum_instance<f64_3, shammath::M4>(
+        msph, "AnalysisAngularMomentum_f64_3_M4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M6>(
+        msph, "AnalysisAngularMomentum_f64_3_M6");
+    add_analysisAngularMomentum_instance<f64_3, shammath::M8>(
+        msph, "AnalysisAngularMomentum_f64_3_M8");
+
+    add_analysisAngularMomentum_instance<f64_3, shammath::C2>(
+        msph, "AnalysisAngularMomentum_f64_3_C2");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C4>(
+        msph, "AnalysisAngularMomentum_f64_3_C4");
+    add_analysisAngularMomentum_instance<f64_3, shammath::C6>(
+        msph, "AnalysisAngularMomentum_f64_3_C6");
+
     register_analysis_impl_for_each_kernel<modules::AnalysisBarycenter>(msph, "analysisBarycenter");
     register_analysis_impl_for_each_kernel<modules::AnalysisEnergyKinetic>(
         msph, "analysisEnergyKinetic");
@@ -1436,4 +1815,16 @@ Register_pymod(pysphmodel) {
         msph, "analysisEnergyPotential");
     register_analysis_impl_for_each_kernel<modules::AnalysisTotalMomentum>(
         msph, "analysisTotalMomentum");
+    register_analysis_impl_for_each_kernel<modules::AnalysisAngularMomentum>(
+        msph, "analysisAngularMomentum");
+
+    add_analysisDustMass_instance<f64_3, shammath::M4>(msph, "AnalysisDustMass_f64_3_M4");
+    add_analysisDustMass_instance<f64_3, shammath::M6>(msph, "AnalysisDustMass_f64_3_M6");
+    add_analysisDustMass_instance<f64_3, shammath::M8>(msph, "AnalysisDustMass_f64_3_M8");
+
+    add_analysisDustMass_instance<f64_3, shammath::C2>(msph, "AnalysisDustMass_f64_3_C2");
+    add_analysisDustMass_instance<f64_3, shammath::C4>(msph, "AnalysisDustMass_f64_3_C4");
+    add_analysisDustMass_instance<f64_3, shammath::C6>(msph, "AnalysisDustMass_f64_3_C6");
+
+    register_analysis_impl_for_each_kernel<modules::AnalysisDustMass>(msph, "analysisDustMass");
 }

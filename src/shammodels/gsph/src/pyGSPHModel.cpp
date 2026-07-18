@@ -29,6 +29,7 @@
 #include "shambindings/pytypealias.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/shamrock_json_to_py_json.hpp"
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -47,8 +48,11 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
 
-    py::class_<TConfig>(m, name_config.c_str())
-        .def("print_status", &TConfig::print_status)
+    py::class_<TConfig> config_cls(m, name_config.c_str());
+
+    shammodels::common::add_json_defs<TConfig>(config_cls);
+
+    config_cls.def("print_status", &TConfig::print_status)
         .def("set_tree_reduction_level", &TConfig::set_tree_reduction_level)
         .def("set_two_stage_search", &TConfig::set_two_stage_search)
         // Riemann solver config
@@ -155,14 +159,21 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             [](TConfig &self, Tscal gpart_mass) {
                 self.gpart_mass = gpart_mass;
             })
-        .def("to_json", [](TConfig &self) {
-            return nlohmann::json{self}.dump(4);
-        });
+        .def(
+            "set_scheduler_config",
+            [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                self.scheduler_conf.split_load_value = split_crit;
+                self.scheduler_conf.merge_load_value = merge_crit;
+            },
+            py::kw_only(),
+            py::arg("split_load_value"),
+            py::arg("merge_load_value"));
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
             return std::make_unique<T>(ctx);
         }))
+        .def("init", &T::init)
         .def("init_scheduler", &T::init_scheduler)
         .def("evolve_once", &T::evolve_once)
         .def(
@@ -404,7 +415,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
 using namespace shammodels::gsph;
 
-Register_pymod(pygsphmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mgsph = m.def_submodule("model_gsph", "Shamrock GSPH (Godunov SPH) solver");
 

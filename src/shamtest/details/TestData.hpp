@@ -30,7 +30,7 @@ namespace shamtest::details {
             for (f64 f : v) {
                 new_vec.push_back(f);
             }
-            dataset.push_back(DataNode{std::move(name), std::move(new_vec)});
+            dataset.push_back(DataNode{.name = std::move(name), .data = std::move(new_vec)});
         }
 
         /// Serialize the assertion in JSON

@@ -54,16 +54,26 @@ namespace shamrock::solvergraph {
             on_distributeddata_diff(
                 field_refs,
                 sizes,
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Missing field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Missing field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 },
                 [](u64 id) {
                     // TODO
                 },
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Extra field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Extra field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 });
         }
 

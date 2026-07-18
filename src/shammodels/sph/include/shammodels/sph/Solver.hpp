@@ -28,11 +28,16 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <functional>
+#include <limits>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <variant>
+#include <vector>
 namespace shammodels::sph {
 
     struct TimestepLog {
@@ -46,6 +51,14 @@ namespace shammodels::sph {
         inline u64 npart_sum() { return shamalgs::collective::allreduce_sum(npart); }
 
         inline f64 tcompute_max() { return shamalgs::collective::allreduce_max(tcompute); }
+    };
+
+    struct EvolveUntilResults {
+        bool reach_target_time;
+        bool reach_niter_max;
+        bool reach_max_walltime;
+
+        i32 iter_count;
     };
 
     /**
@@ -74,6 +87,71 @@ namespace shammodels::sph {
 
         Config solver_config;
         SolverLog solve_logs;
+
+        /// Access synchronized simulation time (scheduler edge "time")
+        inline Tscal &time_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("time")
+                .data;
+        }
+
+        /// Access synchronized next dt (scheduler edge "dt", not solver_graph "dt")
+        inline Tscal &dt_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("dt")
+                .data;
+        }
+
+        /// Access synchronized CFL multiplier (scheduler edge "cfl_multiplier")
+        inline Tscal &cfl_multiplier_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>(
+                    "cfl_multiplier")
+                .data;
+        }
+
+        inline Tscal get_time() { return time_edge_value(); }
+        inline void set_time(Tscal t) { time_edge_value() = t; }
+        inline Tscal get_dt_sph() { return dt_edge_value(); }
+        inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
+        inline Tscal get_cfl_multipler() { return cfl_multiplier_edge_value(); }
+        inline void set_cfl_multipler(Tscal lambda) { cfl_multiplier_edge_value() = lambda; }
+
+        /// Register time/dt/cfl_multiplier synchronized edges if missing (idempotent)
+        inline void ensure_time_state_edges() {
+            auto &sync    = scheduler().synchronized_data;
+            auto names    = sync.get_edge_names();
+            auto has_edge = [&](const std::string &name) {
+                return std::find(names.begin(), names.end(), name) != names.end();
+            };
+
+            if (!has_edge("time")) {
+                auto edge = sync.register_edge(
+                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
+                edge->data = 0;
+            }
+            if (!has_edge("dt")) {
+                auto edge = sync.register_edge(
+                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
+                edge->data = 0;
+            }
+            if (!has_edge("cfl_multiplier")) {
+                auto edge = sync.register_edge(
+                    "cfl_multiplier",
+                    shamrock::solvergraph::IDataEdgeSerializable<Tscal>(
+                        "cfl_multiplier", "C_{\\rm CFL}"));
+                edge->data = 1e-2;
+            }
+        }
+
+        struct SolverStepCallback {
+            std::optional<std::function<void(void)>> step_begin_callback;
+            std::optional<std::function<void(void)>> step_end_callback;
+        };
+        std::vector<SolverStepCallback> timestep_callbacks{};
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
@@ -162,9 +240,6 @@ namespace shammodels::sph {
         /// @brief Applies position-based boundary conditions
         void apply_position_boundary(Tscal time_val);
 
-        /// @brief Performs predictor step for leapfrog integration
-        void do_predictor_leapfrog(Tscal dt);
-
         /// @brief Updates artificial viscosity coefficients for shock capturing
         void update_artificial_viscosity(Tscal dt);
 
@@ -185,7 +260,7 @@ namespace shammodels::sph {
         /// @brief Saves old derivative fields for predictor-corrector integration
         void prepare_corrector();
         /// @brief Updates time derivatives and applies external forces
-        void update_derivs();
+        void update_derivs(Tscal dt_hydro);
         /**
          * @brief
          *
@@ -221,16 +296,39 @@ namespace shammodels::sph {
 
         /// @brief Evolves system by one explicit timestep with specified time and dt
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
-            solver_config.set_time(t_current);
-            solver_config.set_next_dt(dt_input);
+            set_time(t_current);
+            set_next_dt(dt_input);
             evolve_once();
-            return solver_config.get_dt_sph();
+            return get_dt_sph();
         }
 
-        inline bool evolve_until(Tscal target_time, i32 niter_max) {
+        inline EvolveUntilResults evolve_until(
+            Tscal target_time, i32 niter_max, f64 max_walltime = -1) {
+
+            const bool niter_limit_active    = (niter_max >= 0);
+            const bool walltime_limit_active = (max_walltime >= 0);
+
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH",
+                    shambase::format(
+                        "evolve_until (target_time = {:.2f}s, niter_max = {}, max_walltime = "
+                        "{:.2f}s)",
+                        target_time,
+                        niter_max,
+                        max_walltime));
+            }
+
+            auto synced_wtime = [&]() -> f64 {
+                if (walltime_limit_active) {
+                    return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+                }
+                return 0;
+            };
+
             auto step = [&]() {
-                Tscal dt = solver_config.get_dt_sph();
-                Tscal t  = solver_config.get_time();
+                Tscal dt = get_dt_sph();
+                Tscal t  = get_time();
 
                 if (t > target_time) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -238,26 +336,100 @@ namespace shammodels::sph {
                 }
 
                 if (t + dt > target_time) {
-                    solver_config.set_next_dt(target_time - t);
+                    set_next_dt(target_time - t);
                 }
                 evolve_once();
             };
 
+            f64 start_wall_time = (walltime_limit_active) ? synced_wtime() : 0;
+
+            i32 next_walltime_check_iter
+                = walltime_limit_active ? 1 : std::numeric_limits<i32>::max();
+
             i32 iter_count = 0;
 
-            while (solver_config.get_time() < target_time) {
+            while (get_time() < target_time) {
                 step();
                 iter_count++;
 
-                if ((iter_count >= niter_max) && (niter_max != -1)) {
-                    logger::info_ln("SPH", "stopping evolve until because of niter =", iter_count);
-                    return false;
+                // if the iteration count is greater than the maximum iteration count
+                if (niter_limit_active && iter_count >= niter_max) {
+                    if (shamcomm::world_rank() == 0) {
+                        logger::info_ln(
+                            "SPH", "stopping evolve until because of niter =", iter_count);
+                    }
+                    return {
+                        .reach_target_time  = false,
+                        .reach_niter_max    = true,
+                        .reach_max_walltime = false,
+                        .iter_count         = iter_count,
+                    };
+                }
+
+                // if walltime limit is active and the next walltime check is due
+                if (walltime_limit_active && iter_count >= next_walltime_check_iter) {
+                    f64 global_walltime = synced_wtime();
+
+                    // if the global walltime is greater than the max walltime
+                    if (global_walltime >= max_walltime) {
+                        if (shamcomm::world_rank() == 0) {
+                            logger::info_ln(
+                                "SPH",
+                                shambase::format(
+                                    "stopping evolve until because of "
+                                    "max_walltime = {:.2f}s > {:.2f}s",
+                                    global_walltime,
+                                    max_walltime));
+                        }
+                        return {
+                            .reach_target_time  = false,
+                            .reach_niter_max    = false,
+                            .reach_max_walltime = true,
+                            .iter_count         = iter_count,
+                        };
+                    }
+
+                    f64 sec_per_iter
+                        = (global_walltime - start_wall_time) / static_cast<f64>(iter_count);
+
+                    auto get_remaining_iters = [&](f64 delta_walltime, f64 factor) -> i32 {
+                        if (sec_per_iter > 0) {
+                            f64 tmp = factor * delta_walltime / sec_per_iter;
+                            if (tmp > std::numeric_limits<i32>::max()) {
+                                return std::numeric_limits<i32>::max();
+                            }
+                            return static_cast<i32>(tmp);
+                        }
+                        return 1000; // default to 1000 iterations if sec_per_iter is 0
+                    };
+
+                    i32 iters_to_limit = get_remaining_iters(max_walltime - global_walltime, 0.25);
+                    i32 iters_to_next_check = iters_to_limit;
+
+                    next_walltime_check_iter = iter_count + std::max(1, iters_to_next_check);
+
+                    if (shamcomm::world_rank() == 0) {
+                        logger::info_ln(
+                            "SPH",
+                            shambase::format(
+                                "next walltime check in {:.2f}s (niter = {}) global walltime = "
+                                "{:.2f}s (max_walltime = {:.2f}s)",
+                                iters_to_next_check * sec_per_iter,
+                                iters_to_next_check,
+                                global_walltime,
+                                max_walltime));
+                    }
                 }
             }
 
             print_timestep_logs();
 
-            return true;
+            return {
+                .reach_target_time  = true,
+                .reach_niter_max    = false,
+                .reach_max_walltime = false,
+                .iter_count         = iter_count,
+            };
         }
     };
 

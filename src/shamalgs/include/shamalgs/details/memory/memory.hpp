@@ -22,6 +22,7 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
+#include <fmt/base.h>
 
 namespace shamalgs::memory {
 
@@ -176,9 +177,8 @@ namespace shamalgs::memory {
      * @param column_count
      * @param fmt
      */
-    template<class T, typename... Tformat>
-    inline void print_buf(
-        sycl::buffer<T> &buf, u32 len, u32 column_count, fmt::format_string<Tformat...> fmt) {
+    template<class T>
+    inline void print_buf(sycl::buffer<T> &buf, u32 len, u32 column_count, std::string_view fmt) {
 
         sycl::host_accessor acc{buf, sycl::read_only};
 
@@ -194,7 +194,7 @@ namespace shamalgs::memory {
                 }
             }
 
-            accum += shambase::format(fmt, acc[i]);
+            accum += shambase::vformat(fmt, fmt::make_format_args(acc[i]));
         }
 
         logger::raw_ln(accum);

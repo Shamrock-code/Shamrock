@@ -28,10 +28,10 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/math.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammath/sphkernels.hpp"
@@ -75,8 +75,12 @@ void shammodels::gsph::Solver<Tvec, Kern>::init_solver_graph() {
     storage.part_counts_with_ghost = std::make_shared<shamrock::solvergraph::Indexes<u32>>(
         edges::part_counts_with_ghost, "N_{\\rm part, with ghost}");
 
-    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>(
-        edges::patch_rank_owner, "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) -> u32 {
+            return scheduler().get_patch_rank_owner(patch_id);
+        },
+        "patch_rank_owner",
+        "rank");
 
     // Merged ghost spans
     storage.positions_with_ghosts = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(
@@ -492,8 +496,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    time_neigh.stop();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -518,7 +522,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::apply_position_boundary(Tscal time_va
     shamrock::SchedulerUtility integrators(sched);
     shamrock::ReattributeDataUtility reatrib(sched);
 
-    auto &pdl         = sched.pdl();
+    auto &pdl         = sched.pdl_old();
     const u32 ixyz    = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
     const u32 ivxyz   = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
     auto [bmin, bmax] = sched.get_box_volume<Tvec>();
@@ -560,7 +564,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::do_predictor_leapfrog(Tscal dt) {
     StackEntry stack_loc{};
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
     const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
     const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
@@ -645,7 +649,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ixyz            = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
     const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
     const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
@@ -810,8 +814,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
                 pdat.insert_elements(pdat_interf);
             }));
 
-    timer_interf.end();
-    storage.timings_details.interface += timer_interf.elasped_sec();
+    timer_interf.stop();
+    storage.timings_details.interface += timer_interf.elapsed_sec();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -850,7 +854,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     density_field.ensure_sizes(sizes->indexes);
 
     // Get patchdata layout for hpart field
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
 
     // =========================================================================
@@ -1226,7 +1230,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::copy_eos_to_patchdata() {
     // Copy density, pressure, and soundspeed from solvergraph fields to patchdata
     // This ensures the values persist across restarts and can be read by VTKDump
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     u32 idensity              = pdl.get_field_idx<Tscal>(names::newtonian::density);
     u32 ipressure             = pdl.get_field_idx<Tscal>(names::newtonian::pressure);
     u32 isoundspeed           = pdl.get_field_idx<Tscal>(names::newtonian::soundspeed);
@@ -1295,7 +1299,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
     const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
     const bool has_uint       = solver_config.has_field_uint();
@@ -1466,7 +1470,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::prepare_corrector() {
     StackEntry stack_loc{};
 
     shamrock::SchedulerUtility utility(scheduler());
-    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 iaxyz = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
 
@@ -1543,7 +1547,7 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-    PatchDataLayerLayout &pdl = scheduler().pdl();
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
     const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
     const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
 
@@ -1641,7 +1645,7 @@ template<class Tvec, template<class> class Kern>
 bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     StackEntry stack_loc{};
 
-    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl();
+    shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
     const u32 ivxyz = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
     const u32 iaxyz = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
@@ -1732,12 +1736,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     scheduler().scheduler_step(true, true);
     scheduler().scheduler_step(false, false);
 
-    // Give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
+    /// patch_rank_owner is automatically updated since it is just a lambda
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -1849,14 +1848,14 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     solve_logs.step_count++;
 
-    tstep.end();
+    tstep.stop();
 
     // Prepare timing log
     TimestepLog log;
     log.rank     = shamcomm::world_rank();
-    log.rate     = Tscal(Npart_all) / tstep.elasped_sec();
+    log.rate     = Tscal(Npart_all) / tstep.elapsed_sec();
     log.npart    = Npart_all;
-    log.tcompute = tstep.elasped_sec();
+    log.tcompute = tstep.elapsed_sec();
 
     return log;
 }

@@ -21,6 +21,7 @@
 #include "shambackends/sycl.hpp"
 #include "shambackends/vec.hpp"
 #include "shamrock/math/integrators.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -45,6 +46,12 @@ namespace shamrock {
 
         inline sham::DeviceBuffer<T> &get_buf(u64 id_patch) {
             return field_data.get(id_patch).get_buf();
+        }
+
+        inline shambase::DistributedData<u32> get_obj_cnts() const {
+            return field_data.template map<u32>([](u64 id, const PatchDataField<T> &cfield) {
+                return cfield.get_obj_cnt();
+            });
         }
 
         inline PatchDataField<T> &get_field(u64 id_patch) { return field_data.get(id_patch); }
@@ -133,7 +140,7 @@ namespace shamrock {
 
             if (!bool(nvar)) {
                 shambase::throw_with_loc<std::runtime_error>(
-                    "you cannot querry this function when you have no fields");
+                    "you cannot query this function when you have no fields");
             }
 
             return *nvar;

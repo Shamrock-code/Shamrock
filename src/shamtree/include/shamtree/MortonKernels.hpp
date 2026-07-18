@@ -84,7 +84,7 @@ namespace shamrock::sfc {
             std::unique_ptr<sycl::buffer<morton_t>> &out_morton);
 
         static void sycl_xyz_to_morton(
-            sham::DeviceScheduler_ptr dev_sched,
+            const sham::DeviceScheduler_ptr &dev_sched,
             u32 pos_count,
             sham::DeviceBuffer<pos_t> &in_positions,
             pos_t bounding_box_min,

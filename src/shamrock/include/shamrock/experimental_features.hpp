@@ -16,7 +16,9 @@
  *
  */
 
-#include "shamcmdopt/env.hpp"
+#include "shambase/SourceLocation.hpp"
+#include "shambase/exception.hpp"
+#include <stdexcept>
 
 namespace shamrock {
 
@@ -25,5 +27,28 @@ namespace shamrock {
 
     /// Allow the use of experimental features
     void enable_experimental_features();
+
+    /// Check if experimental features are enabled, if not throw with the given message
+    inline void experimental_feature_check(
+        const std::string &message, SourceLocation loc = SourceLocation{}) {
+
+        if (!are_experimental_features_allowed()) {
+            throw shambase::make_except_with_loc<std::runtime_error>(message, loc);
+        }
+    }
+
+    /// Utility that can be used directly through it's constructor or that can be set as a base of a
+    /// class to mark it as experimental
+    class ExperimentalClassMarker {
+        public:
+        ExperimentalClassMarker(
+            const std::string &custom_message, SourceLocation loc = SourceLocation{}) {
+            experimental_feature_check(custom_message, loc);
+        }
+
+        ExperimentalClassMarker(SourceLocation loc = SourceLocation{})
+            : shamrock::ExperimentalClassMarker(
+                  "You are trying to use experimental features without having enabled", loc) {}
+    };
 
 } // namespace shamrock

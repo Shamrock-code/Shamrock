@@ -18,111 +18,74 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/string.hpp"
-#include <plf_nanotimer.h>
 #include <functional>
 #include <iostream>
 
-namespace shambase {
-
-    /**
-     * @brief Convert nanoseconds to a human-readable string representation.
-     *
-     * @param nanosec The duration in nanoseconds.
-     * @return std::string The duration in a human-readable format.
-     */
-    inline std::string nanosec_to_time_str(double nanosec) {
-        double sec_int = nanosec;
-
-        std::string unit = "ns";
-
-        if (sec_int > 2000) {
-            unit = "us";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "s";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "ks";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Ms";
-            sec_int /= 1000;
-        }
-
-        if (sec_int > 2000) {
-            unit = "Gs";
-            sec_int /= 1000;
-        }
-
-        return shambase::format_printf("%4.2f", sec_int) + " " + unit;
-    }
-
-#ifdef __MACH__
-    class Timer {
-        public:
-        std::chrono::steady_clock::time_point t_start, t_end;
-        f64 nanosec;
-
-        Timer() {};
-
-        inline void start() { t_start = std::chrono::steady_clock::now(); }
-
-        inline void end() {
-            t_end   = std::chrono::steady_clock::now();
-            nanosec = f64(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
-        }
-
-        inline std::string get_time_str() { return nanosec_to_time_str(nanosec); }
-
-        inline f64 elasped_sec() { return f64(nanosec) * 1e-9; }
-    };
+#ifndef __MACH__
+    #include <plf_nanotimer.h>
 #else
+    #include <chrono>
+#endif
+
+namespace shambase {
 
     /**
      * @brief Class Timer measures the time elapsed since the timer was started.
      */
     class Timer {
         public:
+#if defined(__MACH__)
+        std::chrono::steady_clock::time_point t_start; ///< Internal timer
+#else
         plf::nanotimer timer; ///< Internal timer
+#endif
+        f64 nanosec; ///< Time in nanoseconds
 
-        f64 nanosec; ///< Time in nanosecond
+        /// Constructor, init nanosec to 0
+        Timer() : nanosec(0.0) {}
 
-        Timer() {};
         /**
          * @brief Starts the timer.
          */
-        inline void start() { timer.start(); }
+        inline void start() {
+#if defined(__MACH__)
+            t_start = std::chrono::steady_clock::now();
+#else
+            timer.start();
+#endif
+        }
 
         /**
          * @brief Stops the timer and stores the elapsed time in nanoseconds.
+         *
+         * If the timer has already been stopped, calling this again updates `nanosec` to
+         * the new delta since `start()`.
          */
-        inline void end() { nanosec = timer.get_elapsed_ns(); }
+        inline void stop() {
+#if defined(__MACH__)
+            auto t_end = std::chrono::steady_clock::now();
+            nanosec    = f64(
+                std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count());
+#else
+            nanosec = f64(timer.get_elapsed_ns());
+#endif
+        }
 
         /**
          * @brief Converts the stored nanosecond time to a string representation.
          * @return std::string A string representation of the elapsed time.
          */
-        inline std::string get_time_str() const { return nanosec_to_time_str(nanosec); }
+        inline std::string get_time_str() const {
+            auto res = sham::to_human_readable(nanosec * 1e-9);
+            return sham::format("{:.2f} {}s", res.value, res.prefix);
+        }
 
         /**
          * @brief Converts the stored nanosecond time to a floating point representation in seconds.
          * @return f64 The elapsed time in seconds.
          */
-        [[nodiscard]] inline f64 elasped_sec() const { return f64(nanosec) * 1e-9; }
+        [[nodiscard]] inline f64 elapsed_sec() const { return nanosec * 1e-9; }
     };
-#endif
 
     /**
      * @brief Class FunctionTimer measures the time it takes to execute a function.
@@ -150,8 +113,8 @@ namespace shambase {
             Timer t;
             t.start();
             f();
-            t.end();
-            acc += t.elasped_sec();
+            t.stop();
+            acc += t.elapsed_sec();
             run_count += 1;
         }
 
@@ -213,8 +176,8 @@ namespace shambase {
             t.time_func([&]() {
                 f();
             });
-            tdur.end();
-        } while (tdur.elasped_sec() < max_duration);
+            tdur.stop();
+        } while (tdur.elapsed_sec() < max_duration);
 
         return t.func_time_sec();
     }

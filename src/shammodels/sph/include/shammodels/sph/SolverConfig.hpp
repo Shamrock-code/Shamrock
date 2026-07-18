@@ -31,14 +31,19 @@
 #include "shammodels/common/ExtForceConfig.hpp"
 #include "shammodels/sph/config/MHDConfig.hpp"
 #include "shamrock/experimental_features.hpp"
+#include "shamrock/io/json_print_diff.hpp"
+#include "shamrock/io/json_std_optional.hpp"
+#include "shamrock/io/json_utils.hpp"
 #include "shamrock/io/units_json.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/CompressedLeafBVH.hpp"
 #include "shamtree/RadixTree.hpp"
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include <stdexcept>
 #include <variant>
 #include <vector>
 
@@ -52,14 +57,6 @@ namespace shammodels::sph {
      */
     template<class Tvec, template<class> class SPHKernel>
     struct SolverConfig;
-
-    /**
-     * @brief Solver status variables
-     *
-     * @tparam Tvec the type of the vector used to represent the particles
-     */
-    template<class Tvec>
-    struct SolverStatusVar;
 
     /**
      * @brief The configuration for the CFL condition
@@ -110,8 +107,15 @@ namespace shammodels::sph {
 
         struct None {};
 
-        struct MonofluidTVI {
+        struct MonofluidTVA {
             u32 ndust;
+            bool pure_diffusion_mode = false;
+
+            Tscal C_1_fluid             = 0.1;
+            Tscal C_delta_v             = 1.0;
+            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>();
+
+            bool ensure_s_j_positivity = true;
         };
 
         struct MonofluidComplete {
@@ -119,17 +123,83 @@ namespace shammodels::sph {
         };
 
         /// Variant type to store the EOS configuration
-        using Variant = std::variant<None, MonofluidTVI, MonofluidComplete>;
+        using Variant = std::variant<None, MonofluidTVA, MonofluidComplete>;
 
         Variant current_mode = None{};
 
         inline void set_none() { current_mode = None{}; }
-        inline void set_monofluid_tvi(u32 nvar) { current_mode = MonofluidTVI{nvar}; }
+        inline void set_monofluid_tva(
+            u32 nvar,
+            bool pure_diffusion_mode    = false,
+            Tscal C_1_fluid             = 0.1,
+            Tscal C_delta_v             = 1.0,
+            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>(),
+            bool ensure_s_j_positivity  = true) {
+            current_mode = MonofluidTVA{
+                nvar,
+                pure_diffusion_mode,
+                C_1_fluid,
+                C_delta_v,
+                cfl_density_threshold,
+                ensure_s_j_positivity};
+        }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
 
+        inline bool is_none() { return std::holds_alternative<None>(current_mode); }
+        inline bool is_monofluid_tva() { return bool(std::get_if<MonofluidTVA>(&current_mode)); }
+        inline bool is_monofluid_complete() {
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
+        }
+
+        inline MonofluidTVA &get_monofluid_tva() {
+            return shambase::get_check_ref(std::get_if<MonofluidTVA>(&current_mode));
+        }
+
+        inline void mode_to_json(nlohmann::json &j) const {
+            if (const None *cfg = std::get_if<None>(&current_mode)) {
+                j = {{"type", "none"}};
+            } else if (const MonofluidTVA *cfg = std::get_if<MonofluidTVA>(&current_mode)) {
+                j
+                    = {{"type", "monofluid_tva"},
+                       {"ndust", cfg->ndust},
+                       {"pure_diffusion_mode", cfg->pure_diffusion_mode},
+                       {"C_1_fluid", cfg->C_1_fluid},
+                       {"C_delta_v", cfg->C_delta_v},
+                       {"cfl_density_threshold", cfg->cfl_density_threshold},
+                       {"ensure_s_j_positivity", cfg->ensure_s_j_positivity}};
+            } else if (
+                const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
+                j = {{"type", "monofluid_complete"}, {"ndust", cfg->ndust}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void mode_from_json(const nlohmann::json &j) {
+            const std::string type = j.at("type").get<std::string>();
+            if (type == "none") {
+                set_none();
+            } else if (type == "monofluid_tva") {
+                set_monofluid_tva(
+                    j.at("ndust").get<u32>(),
+                    j.at("pure_diffusion_mode").get<bool>(),
+                    j.at("C_1_fluid").get<Tscal>(),
+                    j.at("C_delta_v").get<Tscal>(),
+                    j.at("cfl_density_threshold").get<Tscal>(),
+                    j.at("ensure_s_j_positivity").get<bool>());
+            } else if (type == "monofluid_complete") {
+                set_monofluid_complete(j.at("ndust").get<u32>());
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline bool has_s_j_field() {
+            return is_monofluid_tva(); // S_j = sqrt(\rho \epsilon_j)
+        }
+
         inline bool has_epsilon_field() {
-            return bool(std::get_if<MonofluidTVI>(&current_mode))
-                   || bool(std::get_if<MonofluidComplete>(&current_mode));
+            return bool(std::get_if<MonofluidComplete>(&current_mode));
         }
 
         inline bool has_deltav_field() {
@@ -139,9 +209,9 @@ namespace shammodels::sph {
         inline u32 get_dust_nvar() {
             if (None *cfg = std::get_if<None>(&current_mode)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    "Querrying a dust nvar with no dust as config is ... discutable ...");
+                    "Querying a dust nvar with no dust as config is ... discutable ...");
                 return 0;
-            } else if (MonofluidTVI *cfg = std::get_if<MonofluidTVI>(&current_mode)) {
+            } else if (MonofluidTVA *cfg = std::get_if<MonofluidTVA>(&current_mode)) {
                 return cfg->ndust;
             } else if (MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
                 return cfg->ndust;
@@ -151,14 +221,92 @@ namespace shammodels::sph {
             return 0;
         }
 
+        struct ConstantStoppingTimes {
+            std::vector<Tscal> stopping_times;
+        };
+
+        struct EpsteinDrag {
+            static constexpr bool supersonic_correction = false;
+            Tscal gamma;
+            std::vector<Tscal> grains_sizes;
+            std::vector<Tscal> grains_densities;
+        };
+
+        std::variant<None, ConstantStoppingTimes, EpsteinDrag> dust_drag_mode = None{};
+
+        inline void drag_mode_to_json(nlohmann::json &j) const {
+            if (std::holds_alternative<None>(dust_drag_mode)) {
+                j = {{"type", "none"}};
+            } else if (
+                const ConstantStoppingTimes *cfg
+                = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                j = {{"type", "constant_stopping_times"}, {"stopping_times", cfg->stopping_times}};
+            } else if (const EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                j
+                    = {{"type", "epstein_drag"},
+                       {"gamma", cfg->gamma},
+                       {"grains_sizes", cfg->grains_sizes},
+                       {"grains_densities", cfg->grains_densities}};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void drag_mode_from_json(const nlohmann::json &j) {
+            if (j.at("type").get<std::string>() == "none") {
+                dust_drag_mode = None{};
+            } else if (j.at("type").get<std::string>() == "constant_stopping_times") {
+                dust_drag_mode
+                    = ConstantStoppingTimes{j.at("stopping_times").get<std::vector<Tscal>>()};
+            } else if (j.at("type").get<std::string>() == "epstein_drag") {
+                dust_drag_mode = EpsteinDrag{
+                    j.at("gamma").get<Tscal>(),
+                    j.at("grains_sizes").get<std::vector<Tscal>>(),
+                    j.at("grains_densities").get<std::vector<Tscal>>()};
+            } else {
+                shambase::throw_unimplemented();
+            }
+        }
+
+        inline void set_drag_constant(ConstantStoppingTimes in) { dust_drag_mode = std::move(in); }
+
+        inline void set_drag_epstein(EpsteinDrag in) { dust_drag_mode = std::move(in); }
+
         inline void check_config() {
-            bool is_not_none = bool(std::get_if<MonofluidTVI>(&current_mode))
-                               || bool(std::get_if<MonofluidComplete>(&current_mode));
+            bool is_not_none = !is_none();
             if (is_not_none) {
-                ON_RANK_0(
-                    logger::warn_ln(
-                        "SPH::config",
-                        "Dust config != None is work in progress, use it at your own risk"));
+
+                if (!shamrock::are_experimental_features_allowed()) {
+                    shambase::throw_with_loc<std::runtime_error>(
+                        "Dust config != None is experimental");
+                } else {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH::config",
+                            "Dust config != None is work in progress, use it at your own risk"));
+                }
+
+                if (std::holds_alternative<None>(dust_drag_mode)) {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "you must select a drag mode for the dust if the dust is on !");
+                } else if (
+                    ConstantStoppingTimes *cfg
+                    = std::get_if<ConstantStoppingTimes>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->stopping_times.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "stopping_times size does not match the number of dust bins");
+                    }
+                } else if (EpsteinDrag *cfg = std::get_if<EpsteinDrag>(&dust_drag_mode)) {
+                    if (get_dust_nvar() != cfg->grains_densities.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_densities size does not match the number of dust bins");
+                    }
+
+                    if (get_dust_nvar() != cfg->grains_sizes.size()) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "grains_sizes size does not match the number of dust bins");
+                    }
+                }
             }
         }
     };
@@ -217,13 +365,21 @@ namespace shammodels::sph {
         void set_none() { config = None{}; }
         void set_direct(bool reference_mode = false) { config = Direct{reference_mode}; }
         void set_mm(u32 mm_order, f64 opening_angle, u32 reduction_level) {
-            config = MM{mm_order, opening_angle, reduction_level};
+            config = MM{
+                .order           = mm_order,
+                .opening_angle   = opening_angle,
+                .reduction_level = reduction_level};
         }
         void set_fmm(u32 order, f64 opening_angle, u32 reduction_level) {
-            config = FMM{order, opening_angle, reduction_level};
+            config = FMM{
+                .order = order, .opening_angle = opening_angle, .reduction_level = reduction_level};
         }
         void set_sfmm(u32 order, f64 opening_angle, bool leaf_lowering, u32 reduction_level) {
-            config = SFMM{order, opening_angle, leaf_lowering, reduction_level};
+            config = SFMM{
+                .order           = order,
+                .opening_angle   = opening_angle,
+                .leaf_lowering   = leaf_lowering,
+                .reduction_level = reduction_level};
         }
 
         bool is_none() const { return std::holds_alternative<None>(config); }
@@ -252,18 +408,6 @@ namespace shammodels::sph {
 
 } // namespace shammodels::sph
 
-template<class Tvec>
-struct shammodels::sph::SolverStatusVar {
-
-    /// The type of the scalar used to represent the quantities
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    Tscal time   = 0; ///< Current time
-    Tscal dt_sph = 0; ///< Current time step
-
-    Tscal cfl_multiplier = 1e-2; ///< Current cfl multiplier
-};
-
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::sph::SolverConfig {
 
@@ -281,12 +425,13 @@ struct shammodels::sph::SolverConfig {
     /// The radius of the sph kernel
     static constexpr Tscal Rkern = Kernel::Rkern;
 
-    Tscal gpart_mass;            ///< The mass of each gas particle
-    CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
+    Tscal gpart_mass; ///< The mass of each gas particle
 
     bool track_particles_id = false;
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
+
+    PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config
@@ -346,32 +491,10 @@ struct shammodels::sph::SolverConfig {
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
+    // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// Alias to SolverStatusVar type
-    using SolverStatusVar = SolverStatusVar<Tvec>;
-
-    /// The time sate of the simulation
-    SolverStatusVar time_state;
-
-    /// Set the current time
-    inline void set_time(Tscal t) { time_state.time = t; }
-
-    /// Set the time step for the next iteration
-    inline void set_next_dt(Tscal dt) { time_state.dt_sph = dt; }
-
-    /// Get the current time
-    inline Tscal get_time() { return time_state.time; }
-
-    /// Get the time step for the next iteration
-    inline Tscal get_dt_sph() { return time_state.dt_sph; }
-
-    /// Set the CFL multiplier for the time step
-    inline void set_cfl_multipler(Tscal lambda) { time_state.cfl_multiplier = lambda; }
-
-    /// Get the CFL multiplier for the time step
-    inline Tscal get_cfl_multipler() { return time_state.cfl_multiplier; }
+    CFLConfig<Tscal> cfl_config; ///< The configuration for the CFL condition
 
     /// Set the CFL multiplier for the stiffness
     inline void set_cfl_mult_stiffness(Tscal cstiff) {
@@ -381,8 +504,10 @@ struct shammodels::sph::SolverConfig {
     /// Get the CFL multiplier for the stiffness
     inline Tscal get_cfl_mult_stiffness() { return cfl_config.cfl_multiplier_stiffness; }
 
+    bool show_cfl_detail = false;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
+    // CFL Configuration (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -754,6 +879,16 @@ struct shammodels::sph::SolverConfig {
     }
 
     /**
+     * @brief Add a post-newtonian Paczynski-Wiita potential
+     *
+     * @param[in] central_mass The mass of the central object
+     * @param[in] Racc The accretion radius of the central object
+     */
+    inline void add_ext_force_paczynski_wiita(Tscal central_mass, Tvec central_pos, Tscal Racc) {
+        ext_force_config.add_paczynski_wiita(central_mass, central_pos, Racc);
+    }
+
+    /**
      * @brief Add a Lense-Thirring external force
      *
      * @param[in] central_mass The mass of the central object
@@ -871,23 +1006,17 @@ struct shammodels::sph::SolverConfig {
         dust_config.check_config();
 
         if (track_particles_id && false /*particle injection when added*/) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "particle injection is not yet compatible with particle id tracking");
-            }
+            shamrock::experimental_feature_check(
+                "particle injection is not yet compatible with particle id tracking");
         }
 
         if (track_particles_id) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>("Particle tracking is experimental");
-            }
+            shamrock::experimental_feature_check("Particle tracking is experimental");
         }
 
         if (!self_grav_config.is_none()) {
-            if (!shamrock::are_experimental_features_allowed()) {
-                shambase::throw_with_loc<std::runtime_error>(
-                    "Self gravity is experimental, please enable experimental features to use it");
-            }
+            shamrock::experimental_feature_check(
+                "Self gravity is experimental, please enable experimental features to use it");
         }
     }
 
@@ -931,32 +1060,6 @@ namespace shammodels::sph {
             ON_RANK_0(shamlog_warn_ln(
                 "SPHConfig", "eta_sink not found when deserializing, defaulting to", p.eta_sink));
         }
-    }
-
-    /**
-     * @brief Converts a SolverStatusVar object to a JSON object.
-     *
-     * @param j The JSON object to be populated.
-     * @param p The SolverStatusVar object to be converted.
-     */
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-        j = nlohmann::json{
-            {"time", p.time}, {"dt_sph", p.dt_sph}, {"cfl_multiplier", p.cfl_multiplier}};
-    }
-
-    /**
-     * @brief Deserializes a SolverStatusVar object from a JSON object.
-     *
-     * @param j The JSON object to deserialize from.
-     * @param p The SolverStatusVar object to populate.
-     */
-    template<class Tvec>
-    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-        j.at("time").get_to<Tscal>(p.time);
-        j.at("dt_sph").get_to<Tscal>(p.dt_sph);
-        j.at("cfl_multiplier").get_to<Tscal>(p.cfl_multiplier);
     }
 
     // JSON serialization for ParticleKillingConfig
@@ -1070,20 +1173,20 @@ namespace shammodels::sph {
     inline void from_json(const nlohmann::json &j, SelfGravConfig &p) {
         if (j.at("type").get<std::string>() == "sfmm") {
             p.config = SelfGravConfig::SFMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("leaf_lowering").get<bool>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .leaf_lowering   = j.at("leaf_lowering").get<bool>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "fmm") {
             p.config = SelfGravConfig::FMM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "mm") {
             p.config = SelfGravConfig::MM{
-                j.at("order").get<u32>(),
-                j.at("opening_angle").get<f64>(),
-                j.at("reduction_level").get<u32>()};
+                .order           = j.at("order").get<u32>(),
+                .opening_angle   = j.at("opening_angle").get<f64>(),
+                .reduction_level = j.at("reduction_level").get<u32>()};
         } else if (j.at("type").get<std::string>() == "direct") {
             p.config = SelfGravConfig::Direct{j.at("reference_mode").get<bool>()};
         } else if (j.at("type").get<std::string>() == "none") {
@@ -1105,6 +1208,21 @@ namespace shammodels::sph {
         }
     }
 
+    // JSON serialization for DustConfig
+    template<class Tvec>
+    inline void to_json(nlohmann::json &j, const DustConfig<Tvec> &p) {
+        j = {};
+
+        p.mode_to_json(j["mode"]);
+        p.drag_mode_to_json(j["drag_mode"]);
+    }
+
+    template<class Tvec>
+    inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
+        p.mode_from_json(j.at("mode"));
+        p.drag_mode_from_json(j.at("drag_mode"));
+    }
+
     /**
      * @brief Serializes a SolverConfig object to a JSON object.
      *
@@ -1119,20 +1237,21 @@ namespace shammodels::sph {
         std::string kernel_id = shambase::get_type_name<Tkernel>();
         std::string type_id   = shambase::get_type_name<Tvec>();
 
-        nlohmann::json junit;
-        to_json_optional(junit, p.unit_sys);
-
         j = nlohmann::json{
             // used for type checking
             {"kernel_id", kernel_id},
             {"type_id", type_id},
+            // scheduler config
+            {"scheduler_config", p.scheduler_conf},
             // actual data stored in the json
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
-            {"unit_sys", junit},
-            {"time_state", p.time_state},
+            {"unit_sys", p.unit_sys},
+            {"show_cfl_detail", p.show_cfl_detail},
             // mhd config
             {"mhd_config", p.mhd_config},
+            // dust config
+            {"dust_config", p.dust_config},
             // self gravity config
             {"self_grav_config", p.self_grav_config},
             // tree config
@@ -1179,142 +1298,84 @@ namespace shammodels::sph {
         using Tkernel = typename T::Kernel;
 
         // type checking
-        std::string kernel_id = j.at("kernel_id").get<std::string>();
+        if (j.contains("kernel_id")) {
 
-        if (kernel_id != shambase::get_type_name<Tkernel>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tkernel>()
-                + " but got " + kernel_id);
+            std::string kernel_id = j.at("kernel_id").get<std::string>();
+
+            if (kernel_id != shambase::get_type_name<Tkernel>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + kernel_id);
+            }
         }
 
-        std::string type_id = j.at("type_id").get<std::string>();
+        if (j.contains("type_id")) {
 
-        if (type_id != shambase::get_type_name<Tvec>()) {
-            shambase::throw_with_loc<std::runtime_error>(
-                "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
-                + " but got " + type_id);
+            std::string type_id = j.at("type_id").get<std::string>();
+
+            if (type_id != shambase::get_type_name<Tvec>()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "Invalid type to deserialize, wanted " + shambase::get_type_name<Tvec>()
+                    + " but got " + type_id);
+            }
         }
+
+        bool has_used_defaults  = false;
+        bool has_updated_config = false;
+
+        auto _get_to_if_contains = [&](const std::string &key, auto &value) {
+            shamrock::get_to_if_contains(j, key, value, has_used_defaults);
+        };
+
+        auto _get_to_if_contains_fallbacks = [&](const std::string &key,
+                                                 auto &value,
+                                                 std::initializer_list<const char *> fallbacks) {
+            shamrock::get_to_if_contains_fallbacks(
+                j, key, value, fallbacks, has_used_defaults, has_updated_config);
+        };
+
+        _get_to_if_contains("scheduler_config", p.scheduler_conf);
 
         // actual data stored in the json
-        j.at("gpart_mass").get_to(p.gpart_mass);
-        j.at("cfl_config").get_to(p.cfl_config);
-
-        from_json_optional(j.at("unit_sys"), p.unit_sys);
-
-        j.at("time_state").get_to(p.time_state);
-
-        // mhd config
-        try {
-            j.at("mhd_config").get_to(p.mhd_config);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "mhd_config not found when deserializing, defaulting to None");
-            p.mhd_config.set(typename T::MHDConfig::None{});
-        }
-
-        // self gravity config
-        if (j.contains("self_grav_config")) {
-            j.at("self_grav_config").get_to(p.self_grav_config);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "self_grav_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.self_grav_config}.dump(4));
-        }
-
-        j.at("tree_reduction_level").get_to(p.tree_reduction_level);
-        j.at("use_two_stage_search").get_to(p.use_two_stage_search);
-
-        if (j.contains("show_neigh_stats")) {
-            j.at("show_neigh_stats").get_to(p.show_neigh_stats);
-        } else {
-            // Already set to default value
-            ON_RANK_0(shamlog_warn_ln(
-                "SPHConfig",
-                "show_neigh_stats not found when deserializing, defaulting to ",
-                p.show_neigh_stats));
-        }
-
-        j.at("combined_dtdiv_divcurlv_compute").get_to(p.combined_dtdiv_divcurlv_compute);
+        _get_to_if_contains("gpart_mass", p.gpart_mass);
+        _get_to_if_contains("cfl_config", p.cfl_config);
+        _get_to_if_contains("unit_sys", p.unit_sys);
+        _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
+        _get_to_if_contains("mhd_config", p.mhd_config);
+        _get_to_if_contains("dust_config", p.dust_config);
+        _get_to_if_contains("self_grav_config", p.self_grav_config);
+        _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);
+        _get_to_if_contains("use_two_stage_search", p.use_two_stage_search);
+        _get_to_if_contains("show_neigh_stats", p.show_neigh_stats);
+        _get_to_if_contains("combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute);
 
         // Try new names first, fall back to old names for backward compatibility
-        if (j.contains("htol_up_coarse_cycle")) {
-            j.at("htol_up_coarse_cycle").get_to(p.htol_up_coarse_cycle);
-        } else {
-            j.at("htol_up_tol").get_to(p.htol_up_coarse_cycle);
-        }
+        _get_to_if_contains_fallbacks(
+            "htol_up_coarse_cycle", p.htol_up_coarse_cycle, {"htol_up_tol"});
+        _get_to_if_contains_fallbacks("htol_up_fine_cycle", p.htol_up_fine_cycle, {"htol_up_iter"});
 
-        if (j.contains("htol_up_fine_cycle")) {
-            j.at("htol_up_fine_cycle").get_to(p.htol_up_fine_cycle);
-        } else {
-            j.at("htol_up_iter").get_to(p.htol_up_fine_cycle);
-        }
+        _get_to_if_contains("epsilon_h", p.epsilon_h);
+        _get_to_if_contains("smoothing_length_config", p.smoothing_length_config);
+        _get_to_if_contains("h_iter_per_subcycles", p.h_iter_per_subcycles);
+        _get_to_if_contains("h_max_subcycles_count", p.h_max_subcycles_count);
+        _get_to_if_contains("enable_particle_reordering", p.enable_particle_reordering);
+        _get_to_if_contains("particle_reordering_step_freq", p.particle_reordering_step_freq);
+        _get_to_if_contains("save_dt_to_fields", p.save_dt_to_fields);
+        _get_to_if_contains("show_ghost_zone_graph", p.show_ghost_zone_graph);
+        _get_to_if_contains("eos_config", p.eos_config);
+        _get_to_if_contains("artif_viscosity", p.artif_viscosity);
+        _get_to_if_contains("boundary_config", p.boundary_config);
+        _get_to_if_contains("ext_force_config", p.ext_force_config);
+        _get_to_if_contains("do_debug_dump", p.do_debug_dump);
+        _get_to_if_contains("debug_dump_filename", p.debug_dump_filename);
+        _get_to_if_contains("particle_killing", p.particle_killing);
 
-        j.at("epsilon_h").get_to(p.epsilon_h);
-
-        if (j.contains("smoothing_length_config")) {
-            j.at("smoothing_length_config").get_to(p.smoothing_length_config);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "smoothing_length_config not found when deserializing, defaulting to ",
-                nlohmann::json{p.smoothing_length_config}.dump(4));
-        }
-
-        j.at("h_iter_per_subcycles").get_to(p.h_iter_per_subcycles);
-        j.at("h_max_subcycles_count").get_to(p.h_max_subcycles_count);
-
-        if (j.contains("enable_particle_reordering")) {
-            j.at("enable_particle_reordering").get_to(p.enable_particle_reordering);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "enable_particle_reordering not found when deserializing, defaulting to ",
-                p.enable_particle_reordering);
-        }
-
-        if (j.contains("particle_reordering_step_freq")) {
-            j.at("particle_reordering_step_freq").get_to(p.particle_reordering_step_freq);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "particle_reordering_step_freq not found when deserializing, defaulting to ",
-                p.particle_reordering_step_freq);
-        }
-
-        if (j.contains("save_dt_to_fields")) {
-            j.at("save_dt_to_fields").get_to(p.save_dt_to_fields);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "save_dt_to_fields not found when deserializing, defaulting to ",
-                p.save_dt_to_fields);
-        }
-
-        if (j.contains("show_ghost_zone_graph")) {
-            j.at("show_ghost_zone_graph").get_to(p.show_ghost_zone_graph);
-        } else {
-            logger::warn_ln(
-                "SPHConfig",
-                "show_ghost_zone_graph not found when deserializing, defaulting to ",
-                p.show_ghost_zone_graph);
-        }
-
-        j.at("eos_config").get_to(p.eos_config);
-        j.at("artif_viscosity").get_to(p.artif_viscosity);
-        j.at("boundary_config").get_to(p.boundary_config);
-        j.at("ext_force_config").get_to(p.ext_force_config);
-
-        j.at("do_debug_dump").get_to(p.do_debug_dump);
-        j.at("debug_dump_filename").get_to(p.debug_dump_filename);
-
-        // particle killing config
-        try {
-            j.at("particle_killing").get_to(p.particle_killing);
-        } catch (const nlohmann::json::out_of_range &e) {
-            logger::warn_ln(
-                "SPHConfig", "particle_killing not found when deserializing, defaulting to None");
-            p.particle_killing.kill_list = {};
+        if (has_used_defaults || has_updated_config) {
+            if (shamcomm::world_rank() == 0) {
+                logger::info_ln(
+                    "SPH::SolverConfig",
+                    shamrock::log_json_changes(p, j, has_used_defaults, has_updated_config));
+            }
         }
     }
 

@@ -15,6 +15,7 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambase/string.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
@@ -42,6 +43,7 @@ namespace shamrock::scheduler {
     };
 
     void send_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
+        __shamrock_stack_entry();
         for (auto &msg : msgs) {
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
@@ -59,7 +61,7 @@ namespace shamrock::scheduler {
 
             shamcomm::mpi::Isend(
                 msg.buf->get_ptr(),
-                lcount,
+                shambase::narrow_or_throw<i32>(lcount),
                 get_mpi_type<u64>(),
                 msg.rank,
                 msg.tag,
@@ -69,7 +71,7 @@ namespace shamrock::scheduler {
     }
 
     void recv_probe_messages(std::vector<Message> &msgs, std::vector<MPI_Request> &rqs) {
-
+        __shamrock_stack_entry();
         for (auto &msg : msgs) {
             rqs.push_back(MPI_Request{});
             u32 rq_index = rqs.size() - 1;
@@ -81,7 +83,8 @@ namespace shamrock::scheduler {
             shamcomm::mpi::Get_count(&st, get_mpi_type<u64>(), &cnt);
 
             msg.buf = std::make_unique<shamcomm::CommunicationBuffer>(
-                cnt * 8, shamsys::instance::get_compute_scheduler_ptr());
+                shambase::narrow_or_throw<u64>(cnt) * 8_u64,
+                shamsys::instance::get_compute_scheduler_ptr());
 
             shamcomm::mpi::Irecv(
                 msg.buf->get_ptr(),
@@ -127,10 +130,10 @@ namespace shamrock::scheduler {
 
                 send_payloads.push_back(
                     Message{
-                        std::make_unique<shamcomm::CommunicationBuffer>(
+                        .buf = std::make_unique<shamcomm::CommunicationBuffer>(
                             std::move(tmp), shamsys::instance::get_compute_scheduler_ptr()),
-                        op.rank_owner_new,
-                        op.tag_comm});
+                        .rank = op.rank_owner_new,
+                        .tag  = op.tag_comm});
             }
         }
 
@@ -145,9 +148,9 @@ namespace shamrock::scheduler {
             if (op.rank_owner_new == shamcomm::world_rank()) {
                 recv_payloads.push_back(
                     Message{
-                        std::unique_ptr<shamcomm::CommunicationBuffer>{},
-                        op.rank_owner_old,
-                        op.tag_comm});
+                        .buf  = std::unique_ptr<shamcomm::CommunicationBuffer>{},
+                        .rank = op.rank_owner_old,
+                        .tag  = op.tag_comm});
             }
         }
 

@@ -24,7 +24,7 @@
 #include <stdexcept>
 
 /// @brief Macro to add a constant to the \ref shamunits::Constants class
-/// For exemple one can add a new constant by adding the following statment inside
+/// For example one can add a new constant by adding the following statement inside
 /// shamunits::Constants
 /// \code{.cpp}
 ///     addconstant(delta_nu_cs) { return Cget(Si::delta_nu_cs,1) * Uget(Hertz, 1); }

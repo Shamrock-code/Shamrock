@@ -11,7 +11,7 @@
 #include "shamsys/Log.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamsys/Log", test_format, 1) {
+NEW_TEST(Unittest, "shamsys/Log", 1) {
 
     std::cout << shambase::format("{} 1", f64_3{0, 1, 2}) << std::endl;
 }

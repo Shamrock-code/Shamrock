@@ -50,9 +50,20 @@ namespace shammodels::zeus {
                 [](TConfig &self, bool enable) {
                     self.use_consistent_transport = enable;
                 })
-            .def("set_van_leer", [](TConfig &self, bool enable) {
-                self.use_van_leer = enable;
-            });
+            .def(
+                "set_van_leer",
+                [](TConfig &self, bool enable) {
+                    self.use_van_leer = enable;
+                })
+            .def(
+                "set_scheduler_config",
+                [](TConfig &self, u64 split_crit, u64 merge_crit) {
+                    self.scheduler_conf.split_load_value = split_crit;
+                    self.scheduler_conf.merge_load_value = merge_crit;
+                },
+                py::kw_only(),
+                py::arg("split_load_value"),
+                py::arg("merge_load_value"));
 
         std::string sod_tube_analysis_name = name_model + "_AnalysisSodTube";
         py::class_<TAnalysisSodTube>(m, sod_tube_analysis_name.c_str())
@@ -61,6 +72,7 @@ namespace shammodels::zeus {
                 return {ret.rho, ret.v, ret.P};
             });
         py::class_<T>(m, name_model.c_str())
+            .def("init", &T::init)
             .def("init_scheduler", &T::init_scheduler)
             .def("make_base_grid", &T::make_base_grid)
             .def("dump_vtk", &T::dump_vtk)
@@ -110,7 +122,8 @@ namespace shammodels::zeus {
     }
 } // namespace shammodels::zeus
 
-Register_pymod(pyamrzeusmodel) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     py::module mzeus = m.def_submodule("model_zeus", "Shamrock Zeus solver");
 

@@ -141,7 +141,7 @@ namespace sham {
             elist.consumed = true;
 
             auto e = q.submit([&](sycl::handler &h) {
-                elist.apply_dependancy(h);
+                elist.apply_dependency(h);
                 fct(h);
             });
 

@@ -1,6 +1,6 @@
 # Everything before this line will be provided by the new-env script
 
-if which ccache &> /dev/null; then
+if which ccache &>/dev/null; then
     # to debug
     #export CCACHE_DEBUG=1
     #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
@@ -20,7 +20,7 @@ echo " ---------- Activating sham environment ---------- "
 for package in "${required_packages[@]}"; do
     if ! brew list --versions "$package" &>/dev/null; then
         echo "Error: $package is not installed. Please run 'brew install $package'."
-        return 1  # Abort sourcing the script and return to the current shell
+        return 1 # Abort sourcing the script and return to the current shell
     else
         echo "$package is installed."
     fi
@@ -28,7 +28,10 @@ done
 
 echo "All required packages are installed."
 
-ACPP_ROOT=`brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//"`
+export ACPP_DEBUG_LEVEL=0
+
+ACPP_ROOT=$(brew list adaptivecpp | grep acpp-info | sed -E "s/\/bin\/.*//")
+
 echo " ------------- Environment activated ------------- "
 
 function shamconfigure {

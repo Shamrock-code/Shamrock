@@ -23,7 +23,7 @@
 
 namespace shamalgs::collective {
 
-    /// A parralel generator that will spit the same sequence regardless of the number of ranks.
+    /// A parallel generator that will spit the same sequence regardless of the number of ranks.
     template<class Engine = std::mt19937_64>
     class InvariantParallelGenerator {
         Engine eng_global;

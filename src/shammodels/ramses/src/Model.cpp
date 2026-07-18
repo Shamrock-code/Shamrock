@@ -18,18 +18,24 @@
 #include "shambackends/sycl_utils.hpp"
 #include "shammodels/ramses/Model.hpp"
 #include "shammodels/ramses/modules/AMRSetup.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <string>
 
 template<class Tvec, class TgridVec>
-void shammodels::basegodunov::Model<Tvec, TgridVec>::init_scheduler(
-    u32 crit_split, u32 crit_merge) {
+void shammodels::basegodunov::Model<Tvec, TgridVec>::init() {
+
+    if (solver.solver_config.scheduler_conf.split_load_value == 0) {
+        throw shambase::make_except_with_loc<std::invalid_argument>(
+            "Scheduler load value should be greater than 0");
+    }
 
     solver.init_required_fields();
     // solver.init_ghost_layout();
-    ctx.init_sched(crit_split, crit_merge);
+    ctx.init_sched(
+        solver.solver_config.scheduler_conf.split_load_value,
+        solver.solver_config.scheduler_conf.merge_load_value);
 
     using namespace shamrock::patch;
 
@@ -92,7 +98,7 @@ template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     try {
 
@@ -164,7 +170,7 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::dump_vtk(std::string filena
         if (solver.solver_config.is_dust_on()) {
             u32 ndust = solver.solver_config.dust_config.ndust;
 
-            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl();
+            shamrock::patch::PatchDataLayerLayout &pdl = solver.scheduler().pdl_old();
             const u32 irho_dust                        = pdl.get_field_idx<Tscal>("rho_dust");
             const u32 irhovel_dust                     = pdl.get_field_idx<Tvec>("rhovel_dust");
 

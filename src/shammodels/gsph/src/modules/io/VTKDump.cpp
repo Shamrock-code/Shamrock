@@ -19,15 +19,15 @@
 #include "shamalgs/memory.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 namespace {
 
     template<class Tvec>
-    shamrock::LegacyVtkWritter start_dump(PatchScheduler &sched, std::string dump_name) {
+    shamrock::LegacyVtkWriter start_dump(PatchScheduler &sched, std::string dump_name) {
         StackEntry stack_loc{};
-        shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(dump_name, true, shamrock::UnstructuredGrid);
 
         using namespace shamrock::patch;
 
@@ -35,7 +35,7 @@ namespace {
 
         shamlog_debug_mpi_ln("gsph::vtk", "rank count =", num_obj);
 
-        const u32 ixyz = sched.pdl().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
+        const u32 ixyz = sched.pdl_old().get_field_idx<Tvec>(shammodels::gsph::names::common::xyz);
         std::unique_ptr<sycl::buffer<Tvec>> pos = sched.rankgather_field<Tvec>(ixyz);
 
         writer.write_points(pos, num_obj);
@@ -43,7 +43,7 @@ namespace {
         return writer;
     }
 
-    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWriter &writer) {
         StackEntry stack_loc{};
 
         u64 num_obj = sched.get_rank_count();
@@ -68,13 +68,13 @@ namespace {
                 ptr += pdat.get_obj_cnt();
             });
 
-            writter.write_field("patchid", idp, num_obj);
+            writer.write_field("patchid", idp, num_obj);
         } else {
-            writter.write_field_no_buf<u64>("patchid");
+            writer.write_field_no_buf<u64>("patchid");
         }
     }
 
-    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writter) {
+    void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWriter &writer) {
         StackEntry stack_loc{};
 
         using namespace shamrock::patch;
@@ -98,16 +98,16 @@ namespace {
                 ptr += pdat.get_obj_cnt();
             });
 
-            writter.write_field("world_rank", idp, num_obj);
+            writer.write_field("world_rank", idp, num_obj);
         } else {
-            writter.write_field_no_buf<u32>("world_rank");
+            writer.write_field_no_buf<u32>("world_rank");
         }
     }
 
     template<class T>
     void vtk_dump_add_field(
         PatchScheduler &sched,
-        shamrock::LegacyVtkWritter &writter,
+        shamrock::LegacyVtkWriter &writer,
         u32 field_idx,
         std::string field_dump_name) {
         StackEntry stack_loc{};
@@ -118,9 +118,9 @@ namespace {
         if (num_obj > 0) {
             std::unique_ptr<sycl::buffer<T>> field_vals = sched.rankgather_field<T>(field_idx);
 
-            writter.write_field(field_dump_name, field_vals, num_obj);
+            writer.write_field(field_dump_name, field_vals, num_obj);
         } else {
-            writter.write_field_no_buf<T>(field_dump_name);
+            writer.write_field_no_buf<T>(field_dump_name);
         }
     }
 
@@ -138,7 +138,7 @@ namespace shammodels::gsph::modules {
 
         using namespace gsph::names;
 
-        PatchDataLayerLayout &pdl = scheduler().pdl();
+        PatchDataLayerLayout &pdl = scheduler().pdl_old();
         const u32 ivxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::vxyz);
         const u32 iaxyz           = pdl.get_field_idx<Tvec>(gsph::names::newtonian::axyz);
         const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
@@ -153,8 +153,8 @@ namespace shammodels::gsph::modules {
         const bool has_uint = solver_config.has_field_uint();
         const u32 iuint     = has_uint ? pdl.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
-        shamrock::LegacyVtkWritter writter = start_dump<Tvec>(scheduler(), filename);
-        writter.add_point_data_section();
+        shamrock::LegacyVtkWriter writer = start_dump<Tvec>(scheduler(), filename);
+        writer.add_point_data_section();
 
         // Count fields to write
         u32 fnum = 0;
@@ -172,25 +172,25 @@ namespace shammodels::gsph::modules {
             fnum++; // u
         }
 
-        writter.add_field_data_section(fnum);
+        writer.add_field_data_section(fnum);
 
         if (add_patch_world_id) {
-            vtk_dump_add_patch_id(scheduler(), writter);
-            vtk_dump_add_worldrank(scheduler(), writter);
+            vtk_dump_add_patch_id(scheduler(), writer);
+            vtk_dump_add_worldrank(scheduler(), writer);
         }
 
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ihpart, "h");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, ivxyz, "v");
-        vtk_dump_add_field<Tvec>(scheduler(), writter, iaxyz, "a");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, ihpart, "h");
+        vtk_dump_add_field<Tvec>(scheduler(), writer, ivxyz, "v");
+        vtk_dump_add_field<Tvec>(scheduler(), writer, iaxyz, "a");
 
         if (has_uint) {
-            vtk_dump_add_field<Tscal>(scheduler(), writter, iuint, "u");
+            vtk_dump_add_field<Tscal>(scheduler(), writer, iuint, "u");
         }
 
         // Read precomputed thermodynamic fields from patchdata
-        vtk_dump_add_field<Tscal>(scheduler(), writter, idensity, "rho");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, ipressure, "P");
-        vtk_dump_add_field<Tscal>(scheduler(), writter, isoundspeed, "cs");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, idensity, "rho");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, ipressure, "P");
+        vtk_dump_add_field<Tscal>(scheduler(), writer, isoundspeed, "cs");
     }
 
 } // namespace shammodels::gsph::modules

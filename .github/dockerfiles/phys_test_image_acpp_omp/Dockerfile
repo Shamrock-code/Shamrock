@@ -1,27 +1,64 @@
+# syntax=docker/dockerfile:1.7
+
 FROM --platform=amd64 ghcr.io/shamrock-code/shamrock-ci:ubuntu22
 
 ARG CLANGVERSION=18
 
+# ----------------------------
+# Install LLVM toolchain
+# ----------------------------
 RUN wget https://apt.llvm.org/llvm.sh && \
     chmod +x llvm.sh && \
     sudo apt update && \
     sudo ./llvm.sh ${CLANGVERSION} && \
-    sudo apt install -y libclang-${CLANGVERSION}-dev clang-tools-${CLANGVERSION} libomp-${CLANGVERSION}-dev && \
+    sudo apt install -y \
+    libclang-${CLANGVERSION}-dev \
+    clang-tools-${CLANGVERSION} \
+    libomp-${CLANGVERSION}-dev && \
     rm llvm.sh
 
-RUN sudo apt install -y gfortran
-RUN pip install matplotlib numpy scipy h5py
+# ----------------------------
+# Base dependencies
+# ----------------------------
+RUN sudo apt install -y \
+    gfortran \
+    ffmpeg \
+    ccache
 
+RUN pip3 install matplotlib numpy scipy h5py
+
+# ----------------------------
+# ccache configuration
+# ----------------------------
+ENV CCACHE_DIR=/tmp/ccache
+
+# sanity check (uses BuildKit cache)
+RUN --mount=type=cache,target=/tmp/ccache \
+    ccache --show-config && ccache --show-stats && \
+    ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
+
+# ----------------------------
+# Workspace
+# ----------------------------
 WORKDIR /opt/Shamrock_src
 
 ADD repo.tar.gz .
 
 RUN ls -la
 
-RUN ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp && \
+# ----------------------------
+# Build
+# ----------------------------
+RUN --mount=type=cache,target=/tmp/ccache \
+    ccache --show-stats && \
+    ./env/new-env --machine debian-generic.acpp --builddir build -- --backend omp && \
     cd build && \
     sed -i "s/-DBUILD_TEST=Yes /-DBUILD_TEST=Yes -DCXX_FLAG_ARCH_NATIVE=off /" activate && \
     cat activate && \
-    pip3 install -v .
+    pip3 install -v . && \
+    ccache --show-stats
 
+# ----------------------------
+# Final environment
+# ----------------------------
 WORKDIR /work

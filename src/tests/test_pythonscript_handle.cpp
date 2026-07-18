@@ -13,7 +13,7 @@
 #include <memory>
 #include <vector>
 
-TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
+NEW_TEST(Unittest, "shamtest/PyScriptHandle(plot)", 1) {
 
     std::vector<f64> x = {0, 1, 2, 4, 5};
     std::vector<f64> y = {1, 2, 4, 6, 1};
@@ -30,16 +30,16 @@ TestStart(Unittest, "shamtest/PyScriptHandle(plot)", shamtestpyscriptplot, 1) {
     )");
 }
 
-TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrun, 1) {
+NEW_TEST(Unittest, "shamtest/PyScriptHandle(run)", 1) {
 
     PyScriptHandle hdnl{};
 
-    REQUIRE_NAMED("succesfull", hdnl.exec(R"(
+    REQUIRE_NAMED("successful", hdnl.exec(R"(
             a=0
         )"));
 }
 
-TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrunfail, 1) {
+NEW_TEST(Unittest, "shamtest/PyScriptHandle(run)", 1) {
 
     PyScriptHandle hdnl{};
 
@@ -48,7 +48,7 @@ TestStart(Unittest, "shamtest/PyScriptHandle(run)", shamtestpyscriptrunfail, 1) 
         )"));
 }
 
-TestStart(Unittest, "shamtest/PyScriptHandle(shamrock)", shamtestpyscriptrunshamrockmodule, 1) {
+NEW_TEST(Unittest, "shamtest/PyScriptHandle(shamrock)", 1) {
 
     PyScriptHandle hdnl{};
 

@@ -1,11 +1,9 @@
-## -------------------------------------------------------
-##
-## SHAMROCK code for hydrodynamics
-## Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
-## SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
-## Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
-##
-## -------------------------------------------------------
+# ~~~
+# SHAMROCK code for hydrodynamics
+# Copyright (c) 2021-2026 Timothée David--Cléris <tim.shamrock@proton.me>
+# SPDX-License-Identifier: CeCILL Free Software License Agreement v2.1
+# Shamrock is licensed under the CeCILL 2.1 License, see LICENSE for more information
+# ~~~
 
 cmake_minimum_required(VERSION 3.9...3.10)
 
@@ -23,9 +21,7 @@ set(Sources
     src/SolverConfig.cpp
     src/pySPHModel.cpp
     src/pyPhantomDump.cpp
-
     src/modules/AnalysisBarycenter.cpp
-
     src/modules/SolverStorage.cpp
     src/modules/BuildTrees.cpp
     src/modules/UpdateViscosity.cpp
@@ -50,6 +46,10 @@ set(Sources
     src/modules/IterateSmoothingLengthDensityNeighLim.cpp
     src/modules/LoopSmoothingLengthIter.cpp
     src/modules/ComputeNeighStats.cpp
+    src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp
+    src/modules/NodeUpdateDerivsMonofluidTVA.cpp
+    src/modules/NodeComputePressureGrad.cpp
+    src/modules/NodeEvolveDustCOALASourceTerm.cpp
     src/modules/setup/GeneratorMCDisc.cpp
     src/modules/setup/ModifierApplyDiscWarp.cpp
     src/modules/setup/ModifierApplyCustomWarp.cpp
@@ -62,16 +62,15 @@ set(Sources
     src/modules/self_gravity/SGSFMMPlummer.cpp
     src/modules/render/CartesianRender.cpp
     src/modules/render/RenderFieldGetter.cpp
-
     src/modules/io/VTKDump.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)
-message("-- adding shammodels_sph target (Shared lib)")
-add_library(shammodels_sph SHARED ${Sources})
+    message("-- adding shammodels_sph target (Shared lib)")
+    add_library(shammodels_sph SHARED ${Sources})
 else()
-message("-- adding shammodels_sph target (object lib)")
-add_library(shammodels_sph OBJECT ${Sources})
+    message("-- adding shammodels_sph target (object lib)")
+    add_library(shammodels_sph OBJECT ${Sources})
 endif()
 
 add_library(shammodels_sph::shammodels_sph ALIAS shammodels_sph)
@@ -85,6 +84,7 @@ target_link_libraries(shammodels_sph PUBLIC shammodels_common)
 target_link_libraries(shammodels_sph PUBLIC shampylib)
 target_link_libraries(shammodels_sph PUBLIC nlohmann_json::nlohmann_json)
 
-target_include_directories(shammodels_sph PUBLIC
-"$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
-"$<INSTALL_INTERFACE:include>")
+target_include_directories(
+    shammodels_sph PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>"
+                          "$<INSTALL_INTERFACE:include>"
+)

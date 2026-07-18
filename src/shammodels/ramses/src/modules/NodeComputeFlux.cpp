@@ -20,7 +20,7 @@
 #include "shammodels/ramses/modules/ComputeFluxUtilities.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 
-using RiemannSolverMode     = shammodels::basegodunov::RiemmanSolverMode;
+using RiemannSolverMode     = shammodels::basegodunov::RiemannSolverMode;
 using DustRiemannSolverMode = shammodels::basegodunov::DustRiemannSolverMode;
 using Direction             = shammodels::basegodunov::modules::Direction;
 

@@ -50,3 +50,15 @@ u64 shammodels::sph::SolverLog::get_last_obj_count() {
 
     return cnt_tot;
 }
+
+shamsys::SystemMetrics shammodels::sph::SolverLog::get_last_system_metrics() {
+
+    if (step_logs.size() == 0) {
+        throw shambase::make_except_with_loc<std::runtime_error>("");
+    }
+
+    auto &last_log = step_logs.back();
+
+    auto rank_metrics = shamsys::gather_rank_metrics(last_log.system_metrics);
+    return shamsys::aggregate_rank_metrics(rank_metrics);
+}

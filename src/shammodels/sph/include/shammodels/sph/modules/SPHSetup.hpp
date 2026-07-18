@@ -57,10 +57,11 @@ namespace shammodels::sph::modules {
             std::optional<u64> max_msg_count_per_rank_per_step  = std::nullopt,
             std::optional<u64> max_data_count_per_rank_per_step = std::nullopt,
             std::optional<u64> max_msg_size                     = std::nullopt,
-            bool do_setup_log                                   = false);
+            bool do_setup_log                                   = false,
+            bool speculative_balancing                          = false);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_hcp(
-            Tscal dr, std::pair<Tvec, Tvec> box);
+            Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous = true);
 
         std::shared_ptr<ISPHSetupNode> make_generator_lattice_cubic(
             Tscal dr, std::pair<Tvec, Tvec> box);
@@ -72,8 +73,8 @@ namespace shammodels::sph::modules {
             Tscal r_out,
             std::function<Tscal(Tscal)> sigma_profile,
             std::function<Tscal(Tscal)> H_profile,
-            std::function<Tscal(Tscal)> rot_profile,
-            std::function<Tscal(Tscal)> cs_profile,
+            std::function<Tvec(Tvec)> vel_profile,
+            std::function<Tscal(Tvec)> cs_profile,
             std::mt19937_64 eng,
             Tscal init_h_factor);
 

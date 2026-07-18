@@ -1,6 +1,6 @@
 # Design : Policy based
 
-The idea is to replace a specific usage patern of preprocessors.
+The idea is to replace a specific usage pattern of preprocessors.
 
 Imagine you have a black box function `do_smth` , this function may have multiple implementation `do_smth_int1`, `do_smth_int2` where one or the other are more suitable to specific architectures. Usually in `c` it would be implemented like this.
 
@@ -14,7 +14,7 @@ void do_smth( args ...){
 }
 ```
 
-Such patern is not harmfull in itself but may be hard to read/debug for more complex usages.
+Such pattern is not harmful in itself but may be hard to read/debug for more complex usages.
 
 ## moving to policy design
 
@@ -54,7 +54,7 @@ template<u32 arch_code>
 void do_stuff();
 ```
 
-then the original exemple may be rewritten as such :
+then the original example may be rewritten as such :
 
 ```c++
 enum ArchCodes{
@@ -72,9 +72,9 @@ void do_smth( args ...){
 }
 ```
 
-## A better exemple
+## A better example
 
-Imagine you are coding a GPU kernel but some parameters may have to be tweaked to squeeze the best performance out of the card. The policy design might be very revelant.
+Imagine you are coding a GPU kernel but some parameters may have to be tweaked to squeeze the best performance out of the card. The policy design might be very relevant.
 
 The global definition is :
 ```c++
@@ -117,4 +117,4 @@ void do_smth( args ...){
 }
 ```
 
-The advantage of the using the `enum` case is that the type of `WorkerCount` is not specified and therefor can be better optimized
+The advantage of the using the `enum` case is that the type of `WorkerCount` is not specified and therefore can be better optimized

@@ -214,7 +214,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -249,7 +249,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -284,7 +284,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -319,7 +319,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -354,7 +354,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -389,7 +389,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -424,7 +424,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -459,7 +459,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -494,7 +494,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -529,7 +529,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -564,7 +564,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -599,7 +599,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 
@@ -634,7 +634,7 @@ namespace shammath {
 
         } else {
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                "the range comparaison are not the same");
+                "the range comparison are not the same");
         }
     }
 

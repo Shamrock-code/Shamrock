@@ -23,7 +23,7 @@
 #include "shamalgs/memory.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -39,10 +39,10 @@ namespace shammodels::common::io {
      * @return VTK writer ready for additional fields
      */
     template<class Tvec>
-    inline shamrock::LegacyVtkWritter start_dump(
+    inline shamrock::LegacyVtkWriter start_dump(
         PatchScheduler &sched, const std::string &dump_name) {
         StackEntry stack_loc{};
-        shamrock::LegacyVtkWritter writer(dump_name, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(dump_name, true, shamrock::UnstructuredGrid);
 
         using namespace shamrock::patch;
 
@@ -63,7 +63,7 @@ namespace shammodels::common::io {
      * @param sched Patch scheduler
      * @param writer VTK writer
      */
-    inline void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWritter &writer) {
+    inline void vtk_dump_add_patch_id(PatchScheduler &sched, shamrock::LegacyVtkWriter &writer) {
         StackEntry stack_loc{};
 
         u64 num_obj = sched.get_rank_count();
@@ -100,7 +100,7 @@ namespace shammodels::common::io {
      * @param sched Patch scheduler
      * @param writer VTK writer
      */
-    inline void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWritter &writer) {
+    inline void vtk_dump_add_worldrank(PatchScheduler &sched, shamrock::LegacyVtkWriter &writer) {
         StackEntry stack_loc{};
 
         using namespace shamrock::patch;
@@ -142,7 +142,7 @@ namespace shammodels::common::io {
     template<class T>
     inline void vtk_dump_add_compute_field(
         PatchScheduler &sched,
-        shamrock::LegacyVtkWritter &writer,
+        shamrock::LegacyVtkWriter &writer,
         shamrock::ComputeField<T> &field,
         const std::string &field_dump_name) {
         StackEntry stack_loc{};
@@ -171,7 +171,7 @@ namespace shammodels::common::io {
     template<class T>
     inline void vtk_dump_add_field(
         PatchScheduler &sched,
-        shamrock::LegacyVtkWritter &writer,
+        shamrock::LegacyVtkWriter &writer,
         u32 field_idx,
         const std::string &field_dump_name) {
         StackEntry stack_loc{};

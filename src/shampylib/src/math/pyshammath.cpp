@@ -901,7 +901,7 @@ ON_PYTHON_INIT {
         Y:     $y$ Data to fit
         p0:    Initial parameters estimated
     )pbdoc");
-  
+
     math_module.def("get_ideal_hcp_box", [](f64 dr, f64_3 box_min, f64_3 box_max) {
         return shammath::LatticeHCP<f64_3>::get_ideal_hcp_box(dr, {box_min, box_max});
     });

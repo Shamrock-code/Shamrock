@@ -498,7 +498,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 "full_step_xyz", shammodels::common::modules::ForwardEuler<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
                 .set_edges(
-                    sync_data.get_edge_ptr<ScalarEdge<Tscal>>("dt"),
+                    sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
                     solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
                     solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                     solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
@@ -570,34 +570,15 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     }
 
     {
-
-        auto tmp = sync_data.get_edge_ptr_base("dt");
-        std::cout << "dynamic type of dt: " << typeid(*tmp).name() << std::endl;
-        std::cout << "dyncast to IEdge : "
-                  << std::dynamic_pointer_cast<shamrock::solvergraph::IEdge>(tmp) << std::endl;
-        std::cout << "dyncast to ScalarEdge : "
-                  << std::dynamic_pointer_cast<shamrock::solvergraph::ScalarEdge<Tscal>>(tmp)
-                  << std::endl;
-        std::cout
-            << "dyncast to ScalarEdgeSerializable : "
-            << std::dynamic_pointer_cast<shamrock::solvergraph::ScalarEdgeSerializable<Tscal>>(tmp)
-            << std::endl;
-        std::cout << "dyncast to IDataEdge : "
-                  << std::dynamic_pointer_cast<shamrock::solvergraph::IDataEdge<Tscal>>(tmp)
-                  << std::endl;
-        std::cout << "dyncast to FieldRefs : "
-                  << std::dynamic_pointer_cast<shamrock::solvergraph::FieldRefs<Tscal>>(tmp)
-                  << std::endl;
-
         auto dt_to_half_dt = solver_graph.register_node(
             "dt_to_half_dt",
-            NodeMapEdge<ScalarEdge<Tscal>, IDataEdge<Tscal>>{
-                [](const ScalarEdge<Tscal> &dt, IDataEdge<Tscal> &half_dt) {
-                    half_dt.data = dt.value / 2;
+            NodeMapEdge<IDataEdge<Tscal>, IDataEdge<Tscal>>{
+                [](const IDataEdge<Tscal> &dt, IDataEdge<Tscal> &half_dt) {
+                    half_dt.data = dt.data / 2;
                 }});
         shambase::get_check_ref(dt_to_half_dt)
             .set_edges(
-                sync_data.get_edge_ptr<ScalarEdge<Tscal>>("dt"),
+                sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
                 solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"));
     }
 
@@ -1918,15 +1899,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         ////////////////////////////////////////////////////////////////////////////////////////
 
         shambase::get_check_ref(storage.solver_sequence).evaluate();
-
-        // print dt and dt_half
-        std::cout
-            << "dt: "
-            << scheduler().synchronized_data.template get_edge_ref<ScalarEdge<Tscal>>("dt").value
-            << std::endl;
-        std::cout << "dt_half: "
-                  << storage.solver_graph.template get_edge_ref<IDataEdge<Tscal>>("dt_half").data
-                  << std::endl;
     }
 
     sink_update.compute_ext_forces();

@@ -7,8 +7,8 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
+#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <string>

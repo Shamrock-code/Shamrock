@@ -20,8 +20,8 @@
 #include "shambase/pre_main_call.hpp"
 #include "shambase/type_name_info.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/JsonSerializable.hpp"
 #include <stdexcept>
 
 namespace shamrock::solvergraph {
@@ -33,7 +33,7 @@ namespace shamrock::solvergraph {
         using IDataEdge<T>::data;
 
         void _impl_to_json(nlohmann::json &j) const override {
-            j["data"]      = data;
+            j["data"]       = data;
             j["label"]      = this->get_label();
             j["tex_symbol"] = this->get_raw_tex_symbol();
         };
@@ -42,7 +42,7 @@ namespace shamrock::solvergraph {
             std::string label      = j.at("label").get<std::string>();
             std::string tex_symbol = j.at("tex_symbol").get<std::string>();
 
-            auto tmp  = IDataEdgeSerializable<T>(label, tex_symbol);
+            auto tmp = IDataEdgeSerializable<T>(label, tex_symbol);
             tmp.data = j.at("data").get<T>();
             return tmp;
         };

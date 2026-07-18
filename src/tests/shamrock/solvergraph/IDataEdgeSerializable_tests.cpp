@@ -22,6 +22,15 @@ NEW_TEST(Unittest, "shamrock/solvergraph/IDataEdgeSerializable", 1) {
     nlohmann::json j;
     original.to_json(j);
 
+    { // validate the json format
+        nlohmann::json j_expected
+            = {{"data", original.data},
+               {"label", "my_label"},
+               {"tex_symbol", "my_tex"},
+               {"type", "IDataEdgeSerializable<f64>"}};
+        REQUIRE_EQUAL(j.dump(), j_expected.dump());
+    }
+
     {
         Edge restored = Edge::from_json(j);
 

@@ -166,7 +166,7 @@ namespace shammodels::basegodunov {
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
-            // Migrate old dumps that stored time/dt in solver_config.time_state
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1932)
             auto sync_names = sched.synchronized_data.get_edge_names();
 
             // Checking for time is equivalent to dumps written after this migration

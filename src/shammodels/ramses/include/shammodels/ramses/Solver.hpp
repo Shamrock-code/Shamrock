@@ -123,7 +123,7 @@ namespace shammodels::basegodunov {
 
                 if (t > target_time) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
-                        "the target time is higher than the current time");
+                        "the target time is lower than the current time");
                 }
 
                 if (t + dt > target_time) {

@@ -49,9 +49,10 @@ void shammodels::basegodunov::Model<Tvec, TgridVec>::init() {
     // sched.update_local_dtcnt_value();
     // sched.update_local_load_value();
 
-    solver.init_solver_graph();
-
+    // must be done after init_sched to ensure time/dt edges are registered
     solver.ensure_time_state_edges();
+
+    solver.init_solver_graph();
 }
 
 template<class Tvec, class TgridVec>

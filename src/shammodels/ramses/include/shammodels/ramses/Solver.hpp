@@ -26,7 +26,7 @@
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/solvergraph/ScalarEdgeSerializable.hpp"
+#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
 #include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <algorithm>
@@ -55,16 +55,16 @@ namespace shammodels::basegodunov {
         inline Tscal &time_edge_value() {
             return scheduler()
                 .synchronized_data
-                .template get_edge_ref<shamrock::solvergraph::ScalarEdgeSerializable<Tscal>>("time")
-                .value;
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("time")
+                .data;
         }
 
         /// Access synchronized next dt (scheduler edge "dt")
         inline Tscal &dt_edge_value() {
             return scheduler()
                 .synchronized_data
-                .template get_edge_ref<shamrock::solvergraph::ScalarEdgeSerializable<Tscal>>("dt")
-                .value;
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("dt")
+                .data;
         }
 
         inline Tscal get_time() { return time_edge_value(); }
@@ -82,13 +82,13 @@ namespace shammodels::basegodunov {
 
             if (!has_edge("time")) {
                 auto edge = sync.register_edge(
-                    "time", shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("time", "t"));
-                edge->value = 0;
+                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
+                edge->data = 0;
             }
             if (!has_edge("dt")) {
                 auto edge = sync.register_edge(
-                    "dt", shamrock::solvergraph::ScalarEdgeSerializable<Tscal>("dt", "dt"));
-                edge->value = 0;
+                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
+                edge->data = 0;
             }
         }
 

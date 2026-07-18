@@ -7,28 +7,37 @@
 //
 // -------------------------------------------------------//
 
+#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
 #include "shamrock/solvergraph/JsonSerializable.hpp"
-#include "shamrock/solvergraph/ScalarEdgeSerializable.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <string>
 
-NEW_TEST(Unittest, "shamrock/solvergraph/ScalarEdgeSerializable", 1) {
-    using Edge = shamrock::solvergraph::ScalarEdgeSerializable<f64>;
+NEW_TEST(Unittest, "shamrock/solvergraph/IDataEdgeSerializable", 1) {
+    using Edge = shamrock::solvergraph::IDataEdgeSerializable<f64>;
 
     Edge original("my_label", "my_tex");
-    original.value = 3.14159;
+    original.data = 3.14159;
 
     nlohmann::json j;
     original.to_json(j);
 
+    { // validate the json format
+        nlohmann::json j_expected
+            = {{"data", original.data},
+               {"label", "my_label"},
+               {"tex_symbol", "my_tex"},
+               {"type", "IDataEdgeSerializable<f64>"}};
+        REQUIRE_EQUAL(j.dump(), j_expected.dump());
+    }
+
     {
         Edge restored = Edge::from_json(j);
 
-        REQUIRE_EQUAL(restored.value, original.value);
+        REQUIRE_EQUAL(restored.data, original.data);
         REQUIRE_EQUAL(restored.get_label(), "my_label");
         REQUIRE_EQUAL(restored.get_raw_tex_symbol(), "my_tex");
-        REQUIRE_EQUAL(restored.type_name(), "ScalarEdgeSerializable<f64>");
+        REQUIRE_EQUAL(restored.type_name(), "IDataEdgeSerializable<f64>");
     }
 
     {
@@ -36,9 +45,9 @@ NEW_TEST(Unittest, "shamrock/solvergraph/ScalarEdgeSerializable", 1) {
         auto *as_edge = dynamic_cast<Edge *>(ptr.get());
 
         REQUIRE(as_edge != nullptr);
-        REQUIRE_EQUAL(as_edge->value, original.value);
+        REQUIRE_EQUAL(as_edge->data, original.data);
         REQUIRE_EQUAL(as_edge->get_label(), "my_label");
         REQUIRE_EQUAL(as_edge->get_raw_tex_symbol(), "my_tex");
-        REQUIRE_EQUAL(as_edge->type_name(), "ScalarEdgeSerializable<f64>");
+        REQUIRE_EQUAL(as_edge->type_name(), "IDataEdgeSerializable<f64>");
     }
 }

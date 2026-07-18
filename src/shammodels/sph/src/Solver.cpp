@@ -100,6 +100,7 @@
 #include "shamrock/solvergraph/IFieldRefs.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/NodeFreeAlloc.hpp"
+#include "shamrock/solvergraph/NodeMapEdge.hpp"
 #include "shamrock/solvergraph/NodeSetEdge.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
@@ -118,6 +119,10 @@
 template<class Tvec, template<class> class Kern>
 void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
+    PatchScheduler &sched = scheduler();
+
+    auto &sync_data = sched.synchronized_data;
+
     shamrock::patch::PatchDataLayerLayout &pdl = scheduler().pdl_old();
     bool has_B_field                           = solver_config.has_field_B_on_rho();
     bool has_psi_field                         = solver_config.has_field_psi_on_ch();
@@ -133,7 +138,6 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         "scheduler_patchdata", PatchDataLayerRefs("patchdatas", "\\mathbb{U}_{\\rm patch}"));
     solver_graph.register_edge("part_counts", Indexes<u32>("Npart_patch", "N_{\\rm part}_p"));
 
-    solver_graph.register_edge("dt", IDataEdge<Tscal>("dt", "dt"));
     solver_graph.register_edge("dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
     solver_graph.register_edge("gpart_mass", ScalarEdge<Tscal>("m", "m"));
 
@@ -494,7 +498,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 "full_step_xyz", shammodels::common::modules::ForwardEuler<Tvec>{});
             shambase::get_check_ref(full_step_xyz)
                 .set_edges(
-                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                    sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
                     solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
                     solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
                     solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
@@ -566,8 +570,22 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     }
 
     {
+        auto dt_to_half_dt = solver_graph.register_node(
+            "dt_to_half_dt",
+            NodeMapEdge<IDataEdge<Tscal>, IDataEdge<Tscal>>{
+                [](const IDataEdge<Tscal> &dt, IDataEdge<Tscal> &half_dt) {
+                    half_dt.data = dt.data / 2;
+                }});
+        shambase::get_check_ref(dt_to_half_dt)
+            .set_edges(
+                sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+                solver_graph.get_edge_ptr<IDataEdge<Tscal>>("dt_half"));
+    }
+
+    {
         std::vector<std::shared_ptr<shamrock::solvergraph::INode>> seq{};
 
+        seq.push_back(solver_graph.get_node_ptr_base("dt_to_half_dt"));
         seq.push_back(solver_graph.get_node_ptr_base("set_gpart_mass"));
         seq.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
         seq.push_back(solver_graph.get_node_ptr_base("leapfrog predictor"));
@@ -1875,12 +1893,6 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
         using namespace shamrock::solvergraph;
 
         SolverGraph &solver_graph = storage.solver_graph;
-
-        // change the graph inputs
-        {
-            solver_graph.get_edge_ref<IDataEdge<Tscal>>("dt").data      = dt;
-            solver_graph.get_edge_ref<IDataEdge<Tscal>>("dt_half").data = dt / 2.0;
-        }
 
         ////////////////////////////////////////////////////////////////////////////////////////
         // Solver evaluation

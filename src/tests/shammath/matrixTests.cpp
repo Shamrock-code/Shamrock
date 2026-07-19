@@ -493,7 +493,7 @@ NEW_TEST(Unittest, "shammath/matrix::mat_gemv", 1) {
     REQUIRE_EQUAL(y.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::mat_transpose", test_transpose, 1) {
+NEW_TEST(Unittest, "shammath/matrix::mat_transpose", 1) {
     shammath::mat<f32, 2, 3> A{
         // clang-format off
         1,2,3,

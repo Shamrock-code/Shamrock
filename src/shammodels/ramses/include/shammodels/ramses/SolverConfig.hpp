@@ -87,9 +87,6 @@ namespace shammodels::basegodunov {
         inline bool is_gravity_on() { return gravity_mode != NoGravity; }
     };
 
-    template<class Tvec>
-    struct SolverStatusVar;
-
     template<class Tvec, class TgridVec>
     struct AMRMode {
 
@@ -130,16 +127,6 @@ namespace shammodels::basegodunov {
     struct SolverConfig;
 
 }; // namespace shammodels::basegodunov
-
-template<class Tvec>
-struct shammodels::basegodunov::SolverStatusVar {
-
-    /// The type of the scalar used to represent the quantities
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    Tscal time = 0; ///< Current time
-    Tscal dt   = 0; ///< Current time step
-};
 
 template<class Tvec, class TgridVec>
 struct shammodels::basegodunov::SolverConfig {
@@ -238,25 +225,13 @@ struct shammodels::basegodunov::SolverConfig {
     PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
+    // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
-
-    /// Alias to SolverStatusVar type
-    using SolverStatusVar = SolverStatusVar<Tvec>;
-    /// The time sate of the simulation
-    SolverStatusVar time_state;
-    /// Set the current time
-    inline void set_time(Tscal t) { time_state.time = t; }
-    /// Set the time step for the next iteration
-    inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-    /// Get the current time
-    inline Tscal get_time() { return time_state.time; }
-    /// Get the time step for the next iteration
-    inline Tscal get_dt() { return time_state.dt; }
 
     Tscal Csafe = 0.9;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
+    // CFL Configuration (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline void check_config() {
@@ -301,18 +276,6 @@ struct shammodels::basegodunov::SolverConfig {
 };
 
 namespace shammodels::basegodunov {
-
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-        j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
-    }
-
-    template<class Tvec>
-    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-        j.at("time").get_to<Tscal>(p.time);
-        j.at("dt").get_to<Tscal>(p.dt);
-    }
 
     /**
      * @brief Serialize a SolverConfig to a JSON object

@@ -1505,8 +1505,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
-    Tscal t_current = solver_config.get_time();
-    Tscal dt_input  = solver_config.get_dt();
+    Tscal t_current = get_time();
+    Tscal dt_input  = get_dt();
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("amr::Godunov", shambase::format("t = {}, dt = {}", t_current, dt_input));
@@ -1627,8 +1627,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     if (solver_config.is_dust_on())
         new_dt = std::min(new_dt, cfl_compute.compute_dust_cfl());
 
-    solver_config.set_next_dt(new_dt);
-    solver_config.set_time(t_current + dt_input);
+    set_next_dt(new_dt);
+    set_time(t_current + dt_input);
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
         storage.rho_next_no_drag.reset();

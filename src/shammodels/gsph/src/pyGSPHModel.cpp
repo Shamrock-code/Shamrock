@@ -358,22 +358,22 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         .def(
             "get_time",
             [](T &self) {
-                return self.solver.solver_config.get_time();
+                return self.solver.get_time();
             })
         .def(
             "get_dt",
             [](T &self) {
-                return self.solver.solver_config.get_dt();
+                return self.solver.get_dt();
             })
         .def(
             "set_time",
             [](T &self, Tscal t) {
-                return self.solver.solver_config.set_time(t);
+                return self.solver.set_time(t);
             })
         .def(
             "set_next_dt",
             [](T &self, Tscal dt) {
-                return self.solver.solver_config.set_next_dt(dt);
+                return self.solver.set_next_dt(dt);
             })
         .def(
             "load_from_dump",

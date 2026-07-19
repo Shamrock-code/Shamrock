@@ -512,7 +512,7 @@ NEW_TEST(Unittest, "shammath/matrix::mat_transpose", 1) {
     REQUIRE_EQUAL(B.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::Cholesky_decomp", test_Cholesky_decomp, 1) {
+NEW_TEST(Unittest, "shammath/matrix::Cholesky_decomp", 1) {
     shammath::mat<f32, 4, 4> M{
         // clang-format off
          1, 1, 1, 1,
@@ -534,7 +534,7 @@ TestStart(Unittest, "shammath/matrix::Cholesky_decomp", test_Cholesky_decomp, 1)
     REQUIRE_EQUAL(L.data, ex_res.data);
 }
 
-TestStart(Unittest, "shammath/matrix::Cholesky_solve", test_Cholesky_solve, 1) {
+NEW_TEST(Unittest, "shammath/matrix::Cholesky_solve", 1) {
     shammath::mat<f32, 3, 3> M{
         // clang-format off
         6,15,55,
@@ -565,7 +565,7 @@ TestStart(Unittest, "shammath/matrix::Cholesky_solve", test_Cholesky_solve, 1) {
 
 // This test uses Eckerle4 from NIST Standard Reference Database [Eckerle, K., NIST (1979)]
 // https://www.itl.nist.gov/div898/strd/nls/data/eckerle4.shtml
-TestStart(Unittest, "shammath/solve::least_squares", test_least_squares, 1) {
+NEW_TEST(Unittest, "shammath/solve::least_squares", 1) {
     std::vector<f64> p0 = {1, 1e1, 5e2};
     std::vector<f64> X
         = {400.000000e0, 405.000000e0, 410.000000e0, 415.000000e0, 420.000000e0, 425.000000e0,

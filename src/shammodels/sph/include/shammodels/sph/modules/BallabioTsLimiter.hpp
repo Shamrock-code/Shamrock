@@ -63,8 +63,7 @@ namespace shammodels::sph::modules {
             part_counts.for_each([&](u64 id, u32 count) {
                 sham::kernel_call(
                     q,
-                    sham::MultiRef{
-                        edges.hpart.get_spans().get(id), edges.cs.get_spans().get(id)},
+                    sham::MultiRef{edges.hpart.get_spans().get(id), edges.cs.get_spans().get(id)},
                     sham::MultiRef{edges.t_j.get_spans().get(id)},
                     count * ndust,
                     [ndust = ndust](

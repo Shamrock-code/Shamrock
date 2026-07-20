@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file MonoFluidTVIDeltav.hpp
+ * @file MonoFluidTVADeltav.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -44,7 +44,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class MonoFluidTVIDeltav : public shamrock::solvergraph::INode {
+    class MonoFluidTVADeltav : public shamrock::solvergraph::INode {
 
         using Tscal  = shambase::VecComponent<Tvec>;
         using Kernel = SPHKernel<Tscal>;
@@ -52,7 +52,7 @@ namespace shammodels::sph::modules {
         u32 ndust;
 
         public:
-        MonoFluidTVIDeltav(u32 ndust) : ndust(ndust) {}
+        MonoFluidTVADeltav(u32 ndust) : ndust(ndust) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -139,7 +139,7 @@ namespace shammodels::sph::modules {
                 });
         }
 
-        inline virtual std::string _impl_get_label() const { return "MonoFluidTVIDeltav"; };
+        inline virtual std::string _impl_get_label() const { return "MonoFluidTVADeltav"; };
 
         inline virtual std::string _impl_get_tex() const {
 
@@ -152,7 +152,7 @@ namespace shammodels::sph::modules {
             auto delta_v       = get_rw_edge_base(0).get_tex_symbol();
 
             std::string tex = R"tex(
-                MonoFluidTVIDeltav
+                MonoFluidTVADeltav
 
                 \begin{align}
                 \epsilon_{i,j} = \frac{{s_j}_{i,j}^2}{{rho}_i ({hpart}_i)} \\

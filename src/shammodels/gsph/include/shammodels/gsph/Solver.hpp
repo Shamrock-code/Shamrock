@@ -36,8 +36,10 @@
 #include "shamrock/scheduler/InterfacesUtility.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamtree/TreeTraversalCache.hpp"
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
 #include <variant>
@@ -84,6 +86,47 @@ namespace shammodels::gsph {
 
         Config solver_config;
         sph::SolverLog solve_logs;
+
+        /// Access synchronized simulation time (scheduler edge "time")
+        inline Tscal &time_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("time")
+                .data;
+        }
+
+        /// Access synchronized next dt (scheduler edge "dt")
+        inline Tscal &dt_edge_value() {
+            return scheduler()
+                .synchronized_data
+                .template get_edge_ref<shamrock::solvergraph::IDataEdgeSerializable<Tscal>>("dt")
+                .data;
+        }
+
+        inline Tscal get_time() { return time_edge_value(); }
+        inline void set_time(Tscal t) { time_edge_value() = t; }
+        inline Tscal get_dt() { return dt_edge_value(); }
+        inline void set_next_dt(Tscal dt) { dt_edge_value() = dt; }
+
+        /// Register time/dt synchronized edges if missing (idempotent)
+        inline void ensure_time_state_edges() {
+            auto &sync    = scheduler().synchronized_data;
+            auto names    = sync.get_edge_names();
+            auto has_edge = [&](const std::string &name) {
+                return std::find(names.begin(), names.end(), name) != names.end();
+            };
+
+            if (!has_edge("time")) {
+                auto edge = sync.register_edge(
+                    "time", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("time", "t"));
+                edge->data = 0;
+            }
+            if (!has_edge("dt")) {
+                auto edge = sync.register_edge(
+                    "dt", shamrock::solvergraph::IDataEdgeSerializable<Tscal>("dt", "dt"));
+                edge->data = 0;
+            }
+        }
 
         inline void init_required_fields() { solver_config.set_layout(context.get_pdl_write()); }
 
@@ -195,16 +238,16 @@ namespace shammodels::gsph {
         TimestepLog evolve_once();
 
         Tscal evolve_once_time_expl(Tscal t_current, Tscal dt_input) {
-            solver_config.set_time(t_current);
-            solver_config.set_next_dt(dt_input);
+            set_time(t_current);
+            set_next_dt(dt_input);
             evolve_once();
-            return solver_config.get_dt();
+            return get_dt();
         }
 
         inline bool evolve_until(Tscal target_time, i32 niter_max = -1) {
             auto step = [&]() {
-                Tscal dt = solver_config.get_dt();
-                Tscal t  = solver_config.get_time();
+                Tscal dt = get_dt();
+                Tscal t  = get_time();
 
                 if (t > target_time) {
                     throw shambase::make_except_with_loc<std::invalid_argument>(
@@ -212,14 +255,14 @@ namespace shammodels::gsph {
                 }
 
                 if (t + dt > target_time) {
-                    solver_config.set_next_dt(target_time - t);
+                    set_next_dt(target_time - t);
                 }
                 evolve_once();
             };
 
             i32 iter_count = 0;
 
-            while (solver_config.get_time() < target_time) {
+            while (get_time() < target_time) {
                 step();
                 iter_count++;
 

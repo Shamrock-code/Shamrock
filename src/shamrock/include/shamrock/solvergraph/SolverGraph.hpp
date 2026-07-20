@@ -116,6 +116,7 @@ namespace shamrock::solvergraph {
 
         SolverGraphConstraint constraint = SolverGraphConstraint::no_constraint();
 
+        protected:
         explicit SolverGraph(SolverGraphConstraint graph_constraint)
             : constraint(std::move(graph_constraint)) {}
 

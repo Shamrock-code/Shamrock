@@ -1718,8 +1718,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Validate configuration before running
     solver_config.check_config_runtime();
 
-    Tscal t_current = solver_config.get_time();
-    Tscal dt        = solver_config.get_dt();
+    Tscal t_current = get_time();
+    Tscal dt        = get_dt();
 
     StackEntry stack_loc{};
 
@@ -1843,8 +1843,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     storage.ghost_layout.reset();
 
     // Update time
-    solver_config.set_time(t_current + dt);
-    solver_config.set_next_dt(dt_next);
+    set_time(t_current + dt);
+    set_next_dt(dt_next);
 
     solve_logs.step_count++;
 

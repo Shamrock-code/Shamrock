@@ -642,7 +642,7 @@ def plot_spins(snapshots):
 # ============================================================
 
 
-def save_orbital_elements(snapshots, m1, m2, filename="Path"):
+def save_orbital_elements(snapshots, m1, m2, filename="elements_orbitaux_sham.csv"):
 
     data = []
 

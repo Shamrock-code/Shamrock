@@ -457,8 +457,8 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             if (OP) {
                 term1 = -G * M / (rij_scal * rij_scal + epsilon_grav_sink)
                         * (((1 + 3 * eta) * v2 * nij)
-                           - 2 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink)) * nij
-                           - 1.5 * eta * vij_nij * vij_nij * nij - 2 * (2 - eta) * vij_nij * vij);
+                           - 2.0 * (2 + eta) * G * M / ((rij_scal + epsilon_grav_sink)) * nij
+                           - 1.5 * eta * vij_nij * vij_nij * nij - 2.0 * (2 - eta) * vij_nij * vij);
                 sum += 1 / (c * c) * s2.mass / M * term1;
             }
 
@@ -482,10 +482,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
                 sum += s2.mass / M * term3;
             }
             if (RR) {
-                term4 = 8 / 5 * G * G * eta * M * M
+                term4 = 8.0 / 5.0 * G * G * eta * M * M
                         / (c * c * c * c * c * (rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
                         * (vij_nij * nij
-                               * (18 * v2 + 2 / 3 * G * M / (rij_scal + epsilon_grav_sink)
+                               * (18 * v2 + 2.0 / 3.0 * G * M / (rij_scal + epsilon_grav_sink)
                                   - 25 * vij_nij * vij_nij)
                            - (6 * v2 - 2 * G * M / (rij_scal + epsilon_grav_sink)
                               - 15 * vij_nij * vij_nij)
@@ -539,7 +539,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink
             // Simple spin precession structure.
 
             Tvec Omega_prec
-                = prefactor * ((2 + 3 * m2 / (2 * m1)) * L - S2 + 3 * sycl::dot(nij, S2) * nij);
+                = prefactor * ((2 + 3.0 * m2 / (2.0 * m1)) * L - S2 + 3 * sycl::dot(nij, S2) * nij);
 
             dS += sycl::cross(Omega_prec, S1);
         }

@@ -440,7 +440,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             Tvec rij       = s1.pos - s2.pos;
             Tscal rij_scal = sycl::length(rij);
 
-            Tvec nij = rij / rij_scal;
+            Tvec nij = rij / (rij_scal+epsilon_grav_sink);
             Tvec vij = s1.velocity - s2.velocity;
 
             Tscal vij_nij = sycl::dot(vij, nij);
@@ -532,7 +532,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::update_sink
             Tvec L   = nu * sycl::cross(rij, vij);
 
             Tscal rij_scal  = sycl::length(rij) + epsilon_spin;
-            Tvec nij        = rij / rij_scal;
+            Tvec nij        = rij / (rij_scal + epsilon_spin);
             Tvec S1         = s1.angular_momentum;
             Tvec S2         = s2.angular_momentum;
             Tscal prefactor = G / (c * c * rij_scal * rij_scal * rij_scal);

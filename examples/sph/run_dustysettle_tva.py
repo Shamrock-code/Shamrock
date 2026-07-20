@@ -807,7 +807,7 @@ def setup_model():
     )
 
     cfg.set_dust_mode_monofluid_tva(
-        nvar=ndust, C_1_fluid=0.1, C_delta_v=1.0, cfl_density_threshold=1e-50
+        nvar=ndust, C_1_fluid=0.1, C_drift=1.0, cfl_density_threshold=1e-50
     )
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)

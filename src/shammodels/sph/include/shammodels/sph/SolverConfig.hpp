@@ -112,7 +112,7 @@ namespace shammodels::sph {
             bool pure_diffusion_mode = false;
 
             Tscal C_1_fluid             = 0.1;
-            Tscal C_delta_v             = 1.0;
+            Tscal C_drift               = 1.0;
             Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>();
 
             bool ensure_s_j_positivity = true;
@@ -132,14 +132,14 @@ namespace shammodels::sph {
             u32 nvar,
             bool pure_diffusion_mode    = false,
             Tscal C_1_fluid             = 0.1,
-            Tscal C_delta_v             = 1.0,
+            Tscal C_drift               = 1.0,
             Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>(),
             bool ensure_s_j_positivity  = true) {
             current_mode = MonofluidTVA{
                 nvar,
                 pure_diffusion_mode,
                 C_1_fluid,
-                C_delta_v,
+                C_drift,
                 cfl_density_threshold,
                 ensure_s_j_positivity};
         }
@@ -164,7 +164,7 @@ namespace shammodels::sph {
                        {"ndust", cfg->ndust},
                        {"pure_diffusion_mode", cfg->pure_diffusion_mode},
                        {"C_1_fluid", cfg->C_1_fluid},
-                       {"C_delta_v", cfg->C_delta_v},
+                       {"C_drift", cfg->C_drift},
                        {"cfl_density_threshold", cfg->cfl_density_threshold},
                        {"ensure_s_j_positivity", cfg->ensure_s_j_positivity}};
             } else if (
@@ -184,7 +184,7 @@ namespace shammodels::sph {
                     j.at("ndust").get<u32>(),
                     j.at("pure_diffusion_mode").get<bool>(),
                     j.at("C_1_fluid").get<Tscal>(),
-                    j.at("C_delta_v").get<Tscal>(),
+                    j.at("C_drift").get<Tscal>(),
                     j.at("cfl_density_threshold").get<Tscal>(),
                     j.at("ensure_s_j_positivity").get<bool>());
             } else if (type == "monofluid_complete") {

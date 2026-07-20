@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file ComputeCFLDustDeltav.hpp
+ * @file ComputeCFLDustDrift.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -26,7 +26,7 @@
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_delta_v)                                      \
+    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_drift)                                        \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, cfl_density_threshold)                          \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, pmass)                                          \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, hfactd)                                         \
@@ -36,14 +36,14 @@
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
 
 template<class Tvec>
-class ComputeCFLDustDeltav : public shamrock::solvergraph::INode {
+class ComputeCFLDustDrift : public shamrock::solvergraph::INode {
 
     using Tscal = shambase::VecComponent<Tvec>;
 
     u32 nbins;
 
     public:
-    ComputeCFLDustDeltav(u32 nbins) : nbins(nbins) {}
+    ComputeCFLDustDrift(u32 nbins) : nbins(nbins) {}
 
     EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -52,7 +52,7 @@ class ComputeCFLDustDeltav : public shamrock::solvergraph::INode {
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-        Tscal C_delta_v             = edges.C_delta_v.value;
+        Tscal C_drift               = edges.C_drift.value;
         Tscal cfl_density_threshold = edges.cfl_density_threshold.value;
 
         Tscal pmass  = edges.pmass.value;
@@ -64,7 +64,7 @@ class ComputeCFLDustDeltav : public shamrock::solvergraph::INode {
                 edges.hpart.get_spans(), edges.delta_v.get_spans(), edges.s_j.get_spans()},
             sham::DDMultiRef{edges.cfl_dt.get_spans()},
             edges.part_counts.indexes,
-            [C_delta_v, cfl_density_threshold, pmass, hfactd, nbins = this->nbins](
+            [C_drift, cfl_density_threshold, pmass, hfactd, nbins = this->nbins](
                 u32 id_a,
                 const Tscal *hpart,
                 const Tvec *delta_v,
@@ -80,27 +80,38 @@ class ComputeCFLDustDeltav : public shamrock::solvergraph::INode {
                     return tmp * tmp;
                 };
 
+                auto epsilon_j = [&](Tscal rho_d_j) {
+                    return rho_d_j / rho_a;
+                };
+
+                Tvec eps_dv{};
+                for (int j = 0; j < nbins; j++) {
+                    Tscal rho_d_j_a = rho_dust(j);
+                    eps_dv += epsilon_j(rho_d_j_a) * delta_v[id_a_d + j];
+                }
+
                 Tscal cfl_tmp = std::numeric_limits<Tscal>::infinity();
 
                 for (int j = 0; j < nbins; j++) {
-                    Tvec delta_v_j_a       = delta_v[id_a_d + j];
-                    Tscal delta_v_j_a_norm = sycl::length(delta_v_j_a);
-
                     Tscal rho_d_j_a = rho_dust(j);
-                    if (rho_d_j_a > cfl_density_threshold && delta_v_j_a_norm > 0) {
-                        cfl_tmp = sycl::min(cfl_tmp, h_a / delta_v_j_a_norm);
+                    if (rho_d_j_a > cfl_density_threshold) {
+                        Tvec drift_v_j_a       = delta_v[id_a_d + j] - eps_dv;
+                        Tscal drift_v_j_a_norm = sycl::length(drift_v_j_a);
+                        if (drift_v_j_a_norm > 0) {
+                            cfl_tmp = sycl::min(cfl_tmp, h_a / drift_v_j_a_norm);
+                        }
                     }
                 }
 
-                cfl_tmp *= C_delta_v;
+                cfl_tmp *= C_drift;
 
                 cfl_dt[id_a] = sycl::min(cfl_dt[id_a], cfl_tmp);
             });
     }
 
-    inline virtual std::string _impl_get_label() const { return "ComputeCFLDustDeltav"; };
+    inline virtual std::string _impl_get_label() const { return "ComputeCFLDustDrift"; };
 
-    inline virtual std::string _impl_get_tex() const { return "C_{\\Delta_v}"; };
+    inline virtual std::string _impl_get_tex() const { return "C_{\\rm drift}"; };
 };
 
 #undef NODE_EDGES

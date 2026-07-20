@@ -234,6 +234,8 @@ namespace shammodels::sph {
 
         std::variant<None, ConstantStoppingTimes, EpsteinDrag> dust_drag_mode = None{};
 
+        bool ballabio_ts_limiter = false;
+
         inline void drag_mode_to_json(nlohmann::json &j) const {
             if (std::holds_alternative<None>(dust_drag_mode)) {
                 j = {{"type", "none"}};
@@ -1215,12 +1217,14 @@ namespace shammodels::sph {
 
         p.mode_to_json(j["mode"]);
         p.drag_mode_to_json(j["drag_mode"]);
+        j["ballabio_ts_limiter"] = p.ballabio_ts_limiter;
     }
 
     template<class Tvec>
     inline void from_json(const nlohmann::json &j, DustConfig<Tvec> &p) {
         p.mode_from_json(j.at("mode"));
         p.drag_mode_from_json(j.at("drag_mode"));
+        p.ballabio_ts_limiter = j.value("ballabio_ts_limiter", false);
     }
 
     /**

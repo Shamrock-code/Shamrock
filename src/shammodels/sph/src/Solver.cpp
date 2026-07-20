@@ -45,6 +45,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/math/forces.hpp"
 #include "shammodels/sph/math/q_ab.hpp"
+#include "shammodels/sph/modules/BallabioTsLimiter.hpp"
 #include "shammodels/sph/modules/BuildTrees.hpp"
 #include "shammodels/sph/modules/ComputeCFLCourant.hpp"
 #include "shammodels/sph/modules/ComputeCFLDivBCleaning.hpp"
@@ -1732,6 +1733,16 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
                     t_j_field);
             }
             node_set_tj->evaluate();
+        }
+
+        if (cfg.ballabio_ts_limiter) {
+            std::shared_ptr<modules::BallabioTsLimiter<Tvec>> node_ballabio_ts_limiter
+                = std::make_shared<modules::BallabioTsLimiter<Tvec>>(ndust);
+            {
+                node_ballabio_ts_limiter->set_edges(
+                    part_counts_with_ghost, hpart_refs, storage.soundspeed, t_j_field);
+            }
+            node_ballabio_ts_limiter->evaluate();
         }
 
         // delta v computation (for CFL or other uses e.g. COALA)

@@ -315,6 +315,12 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("gamma"),
             py::arg("grain_sizes"),
             py::arg("grain_densities"))
+        .def(
+            "set_dust_ballabio_ts_limiter",
+            [](TConfig &self, bool enabled) {
+                self.dust_config.ballabio_ts_limiter = enabled;
+            },
+            py::arg("enabled"))
         .def("add_ext_force_point_mass", &TConfig::add_ext_force_point_mass)
         .def("add_ext_force_paczynski_wiita", &TConfig::add_ext_force_paczynski_wiita)
         .def(

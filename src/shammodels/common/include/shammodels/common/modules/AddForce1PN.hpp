@@ -10,9 +10,9 @@
 #pragma once
 
 /**
- * @file AddForceLenseThirring.hpp
+ * @file AddForce1PN.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Adds the Lense-Thirring force acceleration.
+ * @brief Adds the 1PN force acceleration.
  *
  */
 
@@ -31,8 +31,6 @@
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, central_mass)                                    \
     X_RO(shamrock::solvergraph::IDataEdge<Tvec>, central_pos)                                      \
     X_RO(shamrock::solvergraph::IDataEdge<Tvec>, central_vel)                                      \
-    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, a_spin)                                          \
-    X_RO(shamrock::solvergraph::IDataEdge<Tvec>, dir_spin)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_positions)                                 \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_velocities)                                \
     X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
@@ -41,13 +39,15 @@
     X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_accel_ext)
 
 namespace shammodels::common::modules {
+
     template<class Tvec>
-    class AddForceLenseThirring : public shamrock::solvergraph::INode {
+    class AddForce1PN : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        public:
-        AddForceLenseThirring() = default;
+    public:
+
+        AddForce1PN() = default;
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -60,41 +60,72 @@ namespace shammodels::common::modules {
             edges.spans_positions.check_sizes(edges.sizes.indexes);
             edges.spans_accel_ext.ensure_sizes(edges.sizes.indexes);
 
-            Tscal G       = edges.constant_G.data;
-            Tscal c       = edges.constant_c.data;
-            Tscal cmass   = edges.central_mass.data;
-            Tvec cpos     = edges.central_pos.data;
-            Tvec cvel = edges.central_vel.data;
-            Tscal a_spin  = edges.a_spin.data;
-            Tvec dir_spin = edges.dir_spin.data;
+            Tscal G     = edges.constant_G.data;
+            Tscal c     = edges.constant_c.data;
+            Tscal cmass = edges.central_mass.data;
+            Tvec cpos   = edges.central_pos.data;
+            Tvec cvel   = edges.central_vel.data;
+            Tscal GM    = cmass * G;
 
-            Tscal GM = cmass * G;
-            Tvec S   = a_spin * GM * GM * dir_spin / (c * c * c);
 
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
-                sham::DDMultiRef{
-                    edges.spans_positions.get_spans(), edges.spans_velocities.get_spans()},
-                sham::DDMultiRef{edges.spans_accel_ext.get_spans()},
-                edges.sizes.indexes,
-                [cpos, cvel, S](u32 gid, const Tvec *xyz, const Tvec *vxyz, Tvec *axyz_ext) {
-                    Tvec r_a       = xyz[gid] - cpos;
-                    Tvec v_a       = vxyz[gid] - cvel;
-                    Tscal abs_ra   = sycl::length(r_a);
-                    Tscal abs_ra_2 = abs_ra * abs_ra;
-                    Tscal abs_ra_3 = abs_ra_2 * abs_ra;
-                    Tscal abs_ra_5 = abs_ra_2 * abs_ra_2 * abs_ra;
 
-                    Tvec omega_a = (S * (2 / abs_ra_3)) - (6 * sham::dot(S, r_a) * r_a) / abs_ra_5;
-                    Tvec acc_lt  = sycl::cross(v_a, omega_a);
-                    axyz_ext[gid] += acc_lt;
+                sham::DDMultiRef{
+                    edges.spans_positions.get_spans(),
+                    edges.spans_velocities.get_spans()
+                },
+
+                sham::DDMultiRef{
+                    edges.spans_accel_ext.get_spans()
+                },
+
+                edges.sizes.indexes,
+
+                [cpos, cvel, GM, c](u32 gid,
+                                            const Tvec *xyz,
+                                            const Tvec *vxyz,
+                                            Tvec *axyz_ext) {
+
+                    Tvec r_a = xyz[gid] - cpos;
+                    Tvec v_a = vxyz[gid] - cvel;
+
+                    Tscal r = sycl::length(r_a);
+                    Tscal inv_r  = sham::inv_sat_zero(r);
+                    Tscal inv_r2 = sham::inv_sat_zero(r * r);
+                    Tvec r_hat   = r_a * inv_r;
+
+                    Tscal v2 = sham::dot(v_a, v_a);
+
+                    Tscal vr = sham::dot(v_a, r_hat);
+
+                    Tvec acc_1PN =
+                        -GM * inv_r2
+                        *
+                        (
+                            (
+                                v2 / (c * c)
+                                -
+                                4 * GM * inv_r / (c * c)
+                            )
+                            * r_hat
+
+                            -
+
+                            (4 * vr / (c * c))
+                            * v_a
+                        );
+
+
+                    axyz_ext[gid] += acc_1PN;
                 });
         }
 
-        inline virtual std::string _impl_get_label() const { return "AddForceLenseThirring"; };
+        inline virtual std::string _impl_get_label() const { return "AddForce1PN"; };
 
         inline virtual std::string _impl_get_tex() const { return "TODO"; };
     };
+
 } // namespace shammodels::common::modules
 
 #undef NODE_EDGES

@@ -204,6 +204,10 @@ jobs:
             artifact_name: gallery_sph_dustywave_tva
           - testfile: "examples/sph/run_dustysettle_tva.py"
             artifact_name: gallery_sph_dustysettle_tva
+          - testfile: "examples/sph/run_sod.py"
+            artifact_name: gallery_sph_sod
+          - testfile: "examples/sph/run_sod_dust_tva.py"
+            artifact_name: gallery_sph_sod_dust_tva
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"

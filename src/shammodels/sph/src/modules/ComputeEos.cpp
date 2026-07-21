@@ -407,7 +407,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
         auto refs
-            = storage.merged_patchdata_ghost.get()
+            = storage.merged_xyzh.get()
                   .template map<shamrock::solvergraph::PatchDataFieldRef<Tvec>>(
                       [&](u64 id,
                           PatchDataLayer &mpdat) -> shamrock::solvergraph::PatchDataFieldRef<Tvec> {
@@ -493,7 +493,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
         auto refs
-            = storage.merged_patchdata_ghost.get()
+            = storage.merged_xyzh.get()
                   .template map<shamrock::solvergraph::PatchDataFieldRef<Tvec>>(
                       [&](u64 id,
                           PatchDataLayer &mpdat) -> shamrock::solvergraph::PatchDataFieldRef<Tvec> {
@@ -644,7 +644,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
         auto refs
-            = storage.merged_patchdata_ghost.get()
+            = storage.merged_xyzh.get()
                   .template map<shamrock::solvergraph::PatchDataFieldRef<Tvec>>(
                       [&](u64 id,
                           PatchDataLayer &mpdat) -> shamrock::solvergraph::PatchDataFieldRef<Tvec> {
@@ -881,7 +881,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         shamrock::solvergraph::Field<Tscal> rho_g
             = shamrock::solvergraph::Field<Tscal>(1, "rho_g", "rho_g");
         shamrock::solvergraph::Field<Tscal> uint_g
-            = shamrock::solvergraph::Field<Tscal>(nvar_dust, "uint_g", "uint_g");
+            = shamrock::solvergraph::Field<Tscal>(1, "uint_g", "uint_g");
 
         rho_g.ensure_sizes(sizes.indexes);
         uint_g.ensure_sizes(sizes.indexes);
@@ -940,7 +940,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         shamrock::solvergraph::Field<Tscal> rho_g
             = shamrock::solvergraph::Field<Tscal>(1, "rho_g", "rho_g");
         shamrock::solvergraph::Field<Tscal> uint_g
-            = shamrock::solvergraph::Field<Tscal>(nvar_dust, "uint_g", "uint_g");
+            = shamrock::solvergraph::Field<Tscal>(1, "uint_g", "uint_g");
 
         rho_g.ensure_sizes(sizes.indexes);
         uint_g.ensure_sizes(sizes.indexes);

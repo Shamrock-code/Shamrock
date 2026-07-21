@@ -26,113 +26,7 @@
 #include "shamphys/eos.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/scheduler/SchedulerUtility.hpp"
 #include "shamrock/solvergraph/IDataEdge.hpp"
-#include "shamsys/legacy/log.hpp"
-
-template<class Tscal>
-struct RhoGetterBase {
-    sham::DeviceBuffer<Tscal> &buf_h;
-    Tscal pmass;
-    Tscal hfact;
-
-    struct accessed {
-        const Tscal *h;
-        Tscal pmass;
-        Tscal hfact;
-
-        Tscal operator()(u32 i) const {
-            using namespace shamrock::sph;
-            return rho_h(pmass, h[i], hfact);
-        }
-    };
-
-    accessed get_read_access(sham::EventList &depends_list) {
-        auto h = buf_h.get_read_access(depends_list);
-        return accessed{h, pmass, hfact};
-    }
-
-    void complete_event_state(sycl::event e) { buf_h.complete_event_state(e); }
-};
-
-template<class Tscal>
-struct RhoGetterMonofluid {
-    sham::DeviceBuffer<Tscal> &buf_h;
-    sham::DeviceBuffer<Tscal> &buf_epsilon;
-    u32 nvar_dust;
-    Tscal pmass;
-    Tscal hfact;
-
-    struct accessed {
-        const Tscal *h;
-        const Tscal *buf_epsilon;
-        u32 nvar_dust;
-        Tscal pmass;
-        Tscal hfact;
-
-        Tscal operator()(u32 i) const {
-
-            Tscal epsilon_sum = 0;
-            for (u32 j = 0; j < nvar_dust; j++) {
-                epsilon_sum += buf_epsilon[i * nvar_dust + j];
-            }
-
-            using namespace shamrock::sph;
-            return (1 - epsilon_sum) * rho_h(pmass, h[i], hfact);
-        }
-    };
-
-    accessed get_read_access(sham::EventList &depends_list) {
-        auto h       = buf_h.get_read_access(depends_list);
-        auto epsilon = buf_epsilon.get_read_access(depends_list);
-
-        return accessed{h, epsilon, nvar_dust, pmass, hfact};
-    }
-
-    void complete_event_state(sycl::event e) { buf_h.complete_event_state(e); }
-};
-
-template<class Tscal>
-struct RhoGetterSJ {
-    sham::DeviceBuffer<Tscal> &buf_h;
-    sham::DeviceBuffer<Tscal> &buf_s_j;
-    u32 nvar_dust;
-    Tscal pmass;
-    Tscal hfact;
-
-    struct accessed {
-        const Tscal *h;
-        const Tscal *buf_s_j;
-        u32 nvar_dust;
-        Tscal pmass;
-        Tscal hfact;
-
-        Tscal operator()(u32 i) const {
-            using namespace shamrock::sph;
-            Tscal rho = rho_h(pmass, h[i], hfact);
-
-            Tscal epsilon_sum = 0;
-            for (u32 j = 0; j < nvar_dust; j++) {
-                Tscal s_j = buf_s_j[i * nvar_dust + j];
-                epsilon_sum += s_j * s_j / rho;
-            }
-
-            return rho * (1 - epsilon_sum);
-        }
-    };
-
-    accessed get_read_access(sham::EventList &depends_list) {
-        auto h   = buf_h.get_read_access(depends_list);
-        auto s_j = buf_s_j.get_read_access(depends_list);
-
-        return accessed{h, s_j, nvar_dust, pmass, hfact};
-    }
-
-    void complete_event_state(sycl::event e) {
-        buf_h.complete_event_state(e);
-        buf_s_j.complete_event_state(e);
-    }
-};
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal(
@@ -150,7 +44,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
-    u32 iuint_interf = ghost_layout.get_field_idx<Tscal>("uint");
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -174,8 +67,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
     bool has_rho = spans_rho.has_value();
     bool has_h   = spans_h.has_value();
-
-    logger::raw_ln("has_rho: ", has_rho, " has_h: ", has_h);
 
     // must have either rho or h
     if ((!has_rho || has_h) && (has_rho || !has_h)) {
@@ -838,8 +729,6 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         = shambase::get_check_ref(storage.ghost_layout.get());
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
-
-    shamrock::SchedulerUtility utility(scheduler());
 
     shamrock::solvergraph::IDataEdge<Tscal> hfactd("hfactd", "hfactd");
     shamrock::solvergraph::IDataEdge<Tscal> pmass("pmass", "pmass");

@@ -2194,7 +2194,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
-
     /**
      *@brief Autogravity accessor
      */

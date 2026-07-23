@@ -17,7 +17,7 @@ multz = 1
 max_amr_lev = 1
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
 # cell_size = 2
-base = 64
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)

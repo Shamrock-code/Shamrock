@@ -2096,14 +2096,14 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         dt_integ_self_gravity.forward_euler(dt_input);
     }
 
-    // {
-    //     shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
-    //     node_copy_rho.set_edges(
-    //         storage.refs_rho,
-    //         storage.rho_primitive
-    //     );
-    //     node_copy_rho.evaluate();
-    // }
+    {
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
+        node_copy_rho.set_edges(
+            storage.refs_rho,
+            storage.rho_primitive
+        );
+        node_copy_rho.evaluate();
+    }
 
     // {
     //     modules::NodeConsToPrimGas<Tvec, TgridVec> node_ctp_after_updated{
@@ -2139,7 +2139,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     {
         logger::raw_ln("For ref \n\n");
         modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
-        refinement.update_refinement();
+        refinement.update_refinement_new();
     }
 
     if (solver_config.should_compute_rho_mean() && shamcomm::world_rank() == 0) {

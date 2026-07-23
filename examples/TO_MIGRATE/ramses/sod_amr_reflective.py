@@ -16,7 +16,7 @@ multy = 1
 multz = 1
 max_amr_lev = 2
 cell_size = 2 << max_amr_lev  # refinement is limited to cell_size = 2
-base = 32
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 1 / (cell_size * base * multx)
@@ -41,6 +41,7 @@ cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
 mass_crit = 1e-6 * 5 * 2 * 2
 # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+cfg.set_eos_adiabatic(gamma=1.4)
 
 
 crit_refin = 0.1

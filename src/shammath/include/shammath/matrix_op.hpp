@@ -335,6 +335,35 @@ namespace shammath {
     }
 
     /**
+     * @brief Compute the determinant of a 3x3 matrix.
+     *
+     * @param input The input matrix to invert.
+     * @return the determinant
+     */
+    template<class T, class SizeType, class Layout, class Accessor>
+    inline T mat_det_33(
+        const std::mdspan<T, std::extents<SizeType, 3, 3>, Layout, Accessor> &input) {
+
+        T &a00 = input(0, 0);
+        T &a10 = input(1, 0);
+        T &a20 = input(2, 0);
+
+        T &a01 = input(0, 1);
+        T &a11 = input(1, 1);
+        T &a21 = input(2, 1);
+
+        T &a02 = input(0, 2);
+        T &a12 = input(1, 2);
+        T &a22 = input(2, 2);
+
+        T det
+            = (-a02 * a11 * a20 + a01 * a12 * a20 + a02 * a10 * a21 - a00 * a12 * a21
+               - a01 * a10 * a22 + a00 * a11 * a22);
+
+        return det;
+    }
+
+    /**
      * @brief Compute the inverse of a 3x3 matrix.
      *
      * @param input The input matrix to invert.

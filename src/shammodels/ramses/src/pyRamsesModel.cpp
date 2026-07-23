@@ -24,6 +24,7 @@
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/modules/AnalysisSodTube.hpp"
 #include "shammodels/ramses/modules/render/GridRender.hpp"
+#include "shampylib/PatchDataSetup.hpp"
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <memory>
@@ -274,6 +275,11 @@ namespace shammodels::basegodunov {
                 py::arg("field_name"),
                 py::arg("pos_to_val"),
                 py::arg("offset") = 0)
+            .def(
+                "update_fields",
+                [](T &self, const std::function<void(shamrock::PatchDataSetup &)> &cb) {
+                    self.update_fields(cb);
+                })
             .def(
                 "gen_default_config",
                 [](T &self) -> TConfig {

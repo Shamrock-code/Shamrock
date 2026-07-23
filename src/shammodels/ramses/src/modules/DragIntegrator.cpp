@@ -481,7 +481,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         get_jacobian(id_a, mdspan_A);
 
                         // pre-processing step
-                        shammath::mat_set_identity<Tscal>(mdspan_Id);
+                        shammath::mat_set_identity(mdspan_Id);
                         shammath::mat_axpy_beta<Tscal, Tscal>(-mu, mdspan_Id, dt, mdspan_A);
 
                         // compute matrix exponential
@@ -670,7 +670,7 @@ void shammodels::basegodunov::modules::DragIntegrator<Tvec, TgridVec>::enable_ex
                         get_jacobian(id_a, mdspan_A);
 
                         // pre-processing step
-                        shammath::mat_set_identity<Tscal>(mdspan_Id);
+                        shammath::mat_set_identity(mdspan_Id);
                         shammath::mat_axpy_beta<Tscal, Tscal>(-mu, mdspan_Id, dt, mdspan_A);
 
                         // compute matrix exponential

@@ -1,6 +1,5 @@
 """
 Sod tube test with pseudogradient based refinment
-=================================================
 
 """
 
@@ -50,6 +49,7 @@ cfg.set_amr_mode_pseudo_gradient_based(error_min=err_min, error_max=err_max)
 
 mass_crit = 1e-6 * 5 * 2 * 2
 # cfg.set_amr_mode_density_based(crit_mass=mass_crit)
+cfg.set_eos_adiabatic(gamma=1.4)
 
 
 crit_refin = 0.1

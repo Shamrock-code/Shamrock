@@ -220,4 +220,34 @@ namespace shamphys {
         }
     };
 
+    /**
+     * @brief Barotropic  equation of state
+     *
+     * Pressure: \f$ P = c_s^2 \rho ( 1 + (\frac{\rho}{\rho_c})^{\gamma - 1} ) \f$
+     *
+     * Initial Sound speed: \f$ cs_0 = \sqrt{\frac{K_b T}{\mu m_H}} \f$
+     *
+     * Sound speed: \f$ cs = \frac{\partial P}{\partial \rho} \f$
+     */
+    template<class T>
+    struct EOS_Barotropic {
+
+        static inline T cs0_sqr(T temp, T mu){
+            shamunits::Constants<T> ctes{shamunits::UnitSystem<T>{}};
+            return (ctes.kb() * temp)/(mu *ctes.proton_mass());
+        }
+
+        static inline T pressure(T rho_crit, T rho, T gamma, T temp, T mu){
+            const T cs0_2 = cs0_sqr(temp, mu);
+            const T x   = rho /rho_crit;
+            return cs0_2*rho * (1 + sycl::pow(x, gamma- T(1.)));
+        }
+
+        static inline T soundspeed(T rho_crit, T rho, T gamma, T temp, T mu){
+            const T cs0_2 = cs0_sqr(temp, mu);
+            const T x   = rho /rho_crit;
+            return sycl::sqrt(cs0_2 * (1 + gamma * sycl::pow(x, gamma - T(1.))));
+        }
+    };
+
 } // namespace shamphys

@@ -37,6 +37,7 @@
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
+#include "shammodels/common/EOSConfig.hpp"
 #include <stdexcept>
 #include <variant>
 
@@ -77,14 +78,21 @@ namespace shammodels::basegodunov {
         inline bool is_gas_passive_scalar_on() { return npscal_gas > 0; }
     };
 
+    enum CouplinGravitygMode { NoCoupling = 0, RAMSES_LIKE = 1 };
+
     template<class Tvec>
     struct GravityConfig {
-        using Tscal              = shambase::VecComponent<Tvec>;
-        GravityMode gravity_mode = NoGravity;
-        bool analytical_gravity  = false; // whether to use an external analytical gravity
-        Tscal tol                = 1e-6;
-        inline Tscal get_tolerance() { return tol; }
-        inline bool is_gravity_on() { return gravity_mode != NoGravity; }
+        using Tscal                               = shambase::VecComponent<Tvec>;
+        GravityMode gravity_mode                  = NoGravity;
+        CouplinGravitygMode coupling_gravity_mode = NoCoupling;
+        bool analytical_gravity = false;    // whether to use an external analytical gravity
+        bool constant_gravity   = false;    // use a constant gravitational acceleration
+        Tscal tol               = 1e-6;     // tolerance for CG convergence
+        Tscal tol_hp_bk         = 1e-6;     // tol to check happy breakdown and restart
+        Tscal G                 = 1.;       // for some tests purpose one can want to fix the value of G
+        bool set_G              = false;    // compute G from unit  systems or set a value at runtime
+        u32 Niter_max           = 100;      //  maximum number of iteration
+        Tvec g_grav = {0.,0.,0.};
     };
 
     template<class Tvec, class TgridVec>
@@ -187,7 +195,6 @@ struct shammodels::basegodunov::SolverConfig {
     // get alpha values from user
     // alphas is the dust collision rate (the inverse of the stopping time)
     inline void set_alphas_static(f32 alpha_values) {
-        StackEntry stack_lock{};
         drag_config.alphas.push_back(alpha_values);
     }
 
@@ -223,12 +230,33 @@ struct shammodels::basegodunov::SolverConfig {
     inline bool is_boundary_periodic() { return true; }
     GravityConfig<Tvec> gravity_config{};
     inline Tscal get_constant_4piG() {
-        auto scal_G = get_constant_G();
-        return 4 * M_PI * scal_G;
+        if (gravity_config.set_G) {
+            logger::raw_ln("G value from code \t", gravity_config.G, "\n\n");
+            return 4. * M_PI * gravity_config.G;
+        } else {
+            auto scal_G = get_constant_G();
+            return 4 * M_PI * scal_G;
+        }
     }
-    inline Tscal get_grav_tol() { return gravity_config.get_tolerance(); }
-    inline bool is_gravity_on() { return gravity_config.is_gravity_on(); }
+    inline Tscal get_grav_tol() { return gravity_config.tol;}
+    inline Tscal get_happy_bk_grav_tol() { return gravity_config.tol_hp_bk; }
+    inline bool is_gravity_on() { return gravity_config.gravity_mode != shammodels::basegodunov::NoGravity;}
+    inline bool is_coupling_gravity_on() { return  gravity_config.coupling_gravity_mode != shammodels::basegodunov::NoCoupling; }
     inline bool is_coordinate_field_required() { return gravity_config.analytical_gravity; }
+    inline bool is_gravity_acceleration_const() {return gravity_config.constant_gravity;}
+
+    inline void set_constant_gravity_acceleration(Tscal gx, Tscal gy, Tscal gz){
+            if (is_gravity_acceleration_const()){
+                gravity_config.g_grav[0] = gx;
+                gravity_config.g_grav[1] = gy;
+                gravity_config.g_grav[2] = gz;
+            }
+           
+    }
+
+    inline Tvec get_constant_gravity_acceleration(){
+        return  gravity_config.g_grav;
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Gravity config (END)
@@ -260,6 +288,62 @@ struct shammodels::basegodunov::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // CFL Configuration (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // EOS Config
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
+    using EOSConfig = shammodels::EOSConfig<Tvec>;
+
+    // EOS configuration
+    EOSConfig eos_config;
+
+    /// Check if the EOS is an isothermal equation of state
+    inline bool is_eos_isothermal(){
+        using T = typename EOSConfig::Isothermal;
+        return bool (std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is an adiabatic equation of state
+    inline bool is_eos_adiabatic(){
+        using T = typename EOSConfig::Adiabatic;
+        return bool (std::get_if<T>(&eos_config.config));
+    }
+
+    /// Check if the EOS is a barotropic equation of state
+    inline bool is_eos_barotropic(){
+        using  T = typename EOSConfig::Barotropic;
+        return bool (std::get_if<T>(&eos_config.config));
+    }
+
+    /**
+     * @brief Set the EOS configuration to an isothermal equation of state
+     *
+     * @param cs The isothermal index
+     */
+    inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
+
+    /**
+     * @brief Set the EOS configuration to an adiabatic equation of state
+     *
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
+
+    /**
+     * @brief Set the EOS configuration to a barotropic equation of state
+     *
+     * @param rho_crit The critical transition density
+     * @param Initial temperature
+     * @param mu mu
+     * @param gamma The adiabatic index
+     */
+    inline void set_eos_barotropic(Tscal rho_crit, Tscal temp, Tscal mu, Tscal gamma ) { eos_config.set_barotropic(rho_crit,temp,mu,gamma); }
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // EOS Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     inline void check_config() {

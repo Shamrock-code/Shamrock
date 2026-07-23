@@ -74,6 +74,9 @@ namespace shammodels {
         /// Fermi equation of state configuration
         using Fermi = shamphys::EOS_Config_Fermi<Tscal>;
 
+        /// Barotropic equation of state configiration
+        using Barotropic = shamphys::EOS_Config_Barotropic<Tscal>;
+
         /// Variant type to store the EOS configuration
         using Variant = std::variant<
             Isothermal,
@@ -83,7 +86,8 @@ namespace shammodels {
             LocallyIsothermalLP07,
             LocallyIsothermalFA2014,
             LocallyIsothermalFA2014Extended,
-            Fermi>;
+            Fermi,
+            Barotropic>;
 
         /// Current EOS configuration
         Variant config = Adiabatic{};
@@ -145,6 +149,20 @@ namespace shammodels {
          */
         inline void set_fermi(Tscal mu_e) { config = Fermi{mu_e}; }
 
+
+        /**
+        * @brief Set the EOS config to a barotropic equation of state
+        *
+        * @param rho_c  critical density for transition from isothermal to adiabatic
+        * @param temp   temperature
+        * @param mu 
+        * @param gamma adiabatic gas index
+        */
+        inline void set_barotropic(Tscal rho_c, Tscal temp, Tscal mu, Tscal gamma){
+            config = Barotropic{rho_c, temp, mu, gamma};
+        }
+
+
         /**
          * @brief Print current status of the EOSConfig
          */
@@ -190,7 +208,14 @@ void shammodels::EOSConfig<Tvec>::print_status() {
     } else if (Fermi *eos_config = std::get_if<Fermi>(&config)) {
         logger::raw_ln("Fermi : ");
         logger::raw_ln("mu_e", eos_config->mu_e);
-    } else {
+    }  else if(Barotropic * eos_config = std::get_if<Barotropic>(&config)) {
+        logger::raw_ln("Barotropic : ");
+        logger::raw_ln("rho_c", eos_config->rho_critic);
+        logger::raw_ln("temperature", eos_config->temp);
+        logger::raw_ln("mu", eos_config->mu);
+        logger::raw_ln("gamma", eos_config->gamma);
+    }
+    else {
         shambase::throw_unimplemented();
     }
 }

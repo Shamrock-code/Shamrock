@@ -316,8 +316,50 @@ namespace sham {
             in_out.complete_event_state(e);
         }
 
+        template<typename Signature>
+        struct expected_kernel_signature;
+
+        template<typename Ret, typename... Ts>
+        struct expected_kernel_signature<Ret(Ts...)> {};
+
+        template<typename Tuple>
+        struct tuple_to_signature;
+
+        template<typename... Ts>
+        struct tuple_to_signature<std::tuple<Ts...>> {
+            using type = void(Ts...);
+        };
+
+        template<class index_t, class RefIn, class RefOut>
+        struct kernel_gen_args {
+
+            using args_types = decltype(std::tuple_cat(
+                std::tuple<index_t>{},
+
+                std::declval<decltype(std::declval<RefIn>().get_read_access(
+                    std::declval<sham::EventList &>()))>(),
+
+                std::declval<decltype(std::declval<RefOut>().get_write_access(
+                    std::declval<sham::EventList &>()))>()));
+        };
+
+        template<class index_t, class RefIn, class RefOut>
+        using kernel_expected_signature = expected_kernel_signature<typename tuple_to_signature<
+            typename kernel_gen_args<index_t, RefIn, RefOut>::args_types>::type>;
+
+        template<typename F, typename Signature>
+        struct is_kernel_invocable;
+
+        template<typename F, typename Ret, typename... Ts>
+        struct is_kernel_invocable<F, expected_kernel_signature<Ret(Ts...)>>
+            : std::bool_constant<std::invocable<F, Ts...>> {};
+
+        template<typename F, typename Signature>
+        concept kernel_invocable = is_kernel_invocable<F, Signature>::value;
+
         /// internal implementation of typed_index_kernel_call
         template<class index_t, class RefIn, class RefOut, class Functor>
+            requires kernel_invocable<Functor, kernel_expected_signature<index_t, RefIn, RefOut>>
         void typed_index_kernel_call(
             sham::DeviceQueue &q,
             RefIn in,

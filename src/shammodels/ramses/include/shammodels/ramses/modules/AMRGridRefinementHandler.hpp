@@ -23,7 +23,7 @@
 #include "shamrock/amr/AMRCell.hpp"
 
 namespace shammodels::basegodunov::modules {
-    using namespace shamrock::patch;
+using namespace shamrock::patch;
     using Direction_           = shammodels::basegodunov::modules::Direction;
     using AMRGraphLinkiterator = shammodels::basegodunov::modules::AMRGraph::ro_access;
 
@@ -55,10 +55,43 @@ namespace shammodels::basegodunov::modules {
         AMRGridRefinementHandler(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
+        void update_refinement_old();
         void update_refinement_new();
 
         private:
         /**
+         * @brief Generate the list of blocks that need to be refined or derefined.
+         *
+         * We then need to apply the refinement, apply the changes to the indexes in the derefine
+         * list, then apply the derefinement.
+         *
+         * @tparam UserAcc
+         * @tparam Fct
+         * @tparam T
+         * @param refine_list
+         * @param derefine_list
+         * @param flag_refine_derefine_functor
+         * @param args
+         */
+        template<class UserAcc, class... T>
+        void gen_refine_block_changes_old(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &refine_list,
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &derefine_list,
+            T &&...args);
+
+        template<class UserAcc>
+        bool internal_refine_grid_old(shambase::DistributedData<sham::DeviceBuffer<u32>> &&refine_list);
+
+        template<class UserAcc>
+        bool internal_derefine_grid_old(
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&derefine_list);
+
+        template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
+        void internal_update_refinement_old();
+
+
+
+  /**
          * @brief Generate the list of blocks that need to be refined or derefined.
          *
          * We then need to apply the refinement, apply the changes to the indexes in the derefine

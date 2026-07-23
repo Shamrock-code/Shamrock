@@ -222,6 +222,9 @@ namespace shammodels::basegodunov {
                 },
                 py::kw_only(),
                 py::arg("Threshold"))
+            .def("set_amr_mode_old",[](TConfig &self, bool use_old_amr) {
+                    self.amr_mode.old_amr = use_old_amr;
+                })
             .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
+shamrock.enable_experimental_features()
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -29,6 +30,7 @@ cfg.set_boundary_condition("x", "reflective")
 cfg.set_boundary_condition("y", "reflective")
 cfg.set_boundary_condition("z", "reflective")
 cfg.set_riemann_solver_hllc()
+cfg.set_amr_mode_old(False)
 
 
 cfg.set_slope_lim_minmod()

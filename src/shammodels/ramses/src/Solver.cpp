@@ -1629,7 +1629,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
-    {
+    if (!solver_config.amr_mode.old_amr) {
         shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
         node_copy_rho.set_edges(storage.refs_rho, storage.rho_primitive);
         node_copy_rho.evaluate();

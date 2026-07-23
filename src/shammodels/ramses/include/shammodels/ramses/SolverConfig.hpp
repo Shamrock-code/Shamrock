@@ -93,18 +93,46 @@ namespace shammodels::basegodunov {
         using Tscal = shambase::VecComponent<Tvec>;
 
         struct None {};
+
         struct DensityBased {
             Tscal crit_mass;
         };
 
-        using mode = std::variant<None, DensityBased>;
+        struct PseudoGradientBased {
+            Tscal error_min;
+            Tscal error_max;
+        };
+
+        struct JeansLengthBased {
+            u32 N_J   = 4;
+            Tscal T_0 = 10.;
+        };
+
+        struct ShearBased {
+            Tscal threshold;
+        };
+
+        using mode
+            = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased, ShearBased>;
 
         mode config = None{};
+
+        bool old_amr = true;
+
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
+        void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
+            config = PseudoGradientBased{error_min, error_max};
+        }
 
-        bool need_level_zero_compute() { return false; }
-        bool need_amr_level_compute() { return false; }
+        void set_refine_jeans_length_based(u32 N_J, Tscal T_0) {
+            config = JeansLengthBased{N_J, T_0};
+        }
+
+        void set_refine_shear_based(Tscal thresh) { config = ShearBased{thresh}; }
+
+        bool need_level_zero_compute() { return !old_amr; }
+        bool need_amr_level_compute() { return !old_amr; }
     };
 
     struct BCConfig {

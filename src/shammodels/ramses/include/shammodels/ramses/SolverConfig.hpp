@@ -298,6 +298,10 @@ struct shammodels::basegodunov::SolverConfig {
                     "> 0",
                     npscal_gas_config.npscal_gas));
         }
+
+        if (!amr_mode.old_amr) {
+            shamrock::experimental_feature_check("new AMR is experimental");
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);

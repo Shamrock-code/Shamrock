@@ -200,9 +200,16 @@ namespace shammodels::basegodunov::modules {
             }
             return "";
         };
+
+	/*
         std::string cur_direction = get_dir_name();
         std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
         const char *_kernel_name  = kernel_name.c_str();
+	*/
+
+	 constexpr const char* _kernel_name = "compute_flux";
+
+
 
         sham::EventList depends_list;
         auto rho   = rho_face_dir.get_read_access(depends_list);
@@ -251,8 +258,13 @@ namespace shammodels::basegodunov::modules {
         u32 nvar) {
 
         using d_Flux = DustFluxCompute<Tvec, mode, dir>;
+
+	
+
         std::string flux_name
             = (mode == DustRiemannSolverMode::DHLL) ? "dust hll flux " : "dust huang-bai flux ";
+
+
         auto get_dir_name = [&]() {
             if constexpr (dir == Direction::xp) {
                 return "xp";
@@ -271,9 +283,15 @@ namespace shammodels::basegodunov::modules {
             }
             return "";
         };
+
+	/*
         std::string cur_direction = get_dir_name();
         std::string kernel_name   = (std::string) "compute " + flux_name + cur_direction;
         const char *_kernel_name  = kernel_name.c_str();
+
+	*/
+
+	constexpr const char* _kernel_name = "dust_compute_flux";
 
         sham::EventList depends_list;
 

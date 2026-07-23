@@ -84,8 +84,9 @@ namespace {
                                 Tscal delta_cell = cell_sizes[block_id];
 
                                 auto result = get_3d_grad<Tscal, Tvec, mode>(
+                                    cell_sizes,
+                                    block_size,
                                     cell_global_id,
-                                    delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
                                     graph_iter_yp,
@@ -95,6 +96,22 @@ namespace {
                                     [=](u32 id) {
                                         return field[var_per_cell * id + var_off_loc];
                                     });
+
+                                /* if (sycl::isnan(result[0]) || sycl::isnan(result[1])
+                                    || sycl::isnan(result[2])) {
+                                    logger::raw_ln(
+                                        "Nan in scalar-grad @ \t ",
+                                        cell_global_id,
+                                        "\t {1st} = \t",
+                                        result[0],
+                                        "\t {2nd} = \t ",
+                                        result[1],
+                                        "\t {3rd} \t",
+                                        result[2],
+                                        "\t\n");
+                                }
+
+				*/
 
                                 field_grad[var_per_cell * cell_global_id + var_off_loc]
                                     = {result[0], result[1], result[2]};
@@ -180,8 +197,9 @@ namespace {
                                 Tscal delta_cell = cell_sizes[block_id];
 
                                 auto result = get_3d_grad<Tvec, Tvec, mode>(
+                                    cell_sizes,
+                                    block_size,
                                     cell_global_id,
-                                    delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
                                     graph_iter_yp,

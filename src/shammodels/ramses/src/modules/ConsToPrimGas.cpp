@@ -31,7 +31,10 @@ namespace {
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rho,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_rhov,
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_rhoe,
-
+            // /**/
+            // shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>>
+            // &spans_rho_fields,
+            // /**/
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tvec>> &spans_vel,
             shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<Tscal>> &spans_P,
             const shambase::DistributedData<u32> &sizes,
@@ -47,13 +50,17 @@ namespace {
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),
                 sham::DDMultiRef{spans_rho, spans_rhov, spans_rhoe},
-                sham::DDMultiRef{spans_vel, spans_P},
+                sham::DDMultiRef{/*spans_rho_fields,*/ spans_vel, spans_P},
                 cell_counts,
                 [gamma](
                     u32 i,
                     const Tscal *__restrict rho,
                     const Tvec *__restrict rhov,
                     const Tscal *__restrict rhoe,
+
+                    // /**/
+                    // Tscal *__restrict rho_field,
+                    // /**/
                     Tvec *__restrict vel,
                     Tscal *__restrict P) {
                     auto conststate = shammath::ConsState<Tvec>{rho[i], rhoe[i], rhov[i]};
@@ -64,6 +71,25 @@ namespace {
 
                     vel[i] = prim_state.vel;
                     P[i]   = prim_state.press;
+                    // P[i]         = (prim_state.press > 0.0) ? prim_state.press : 1e-6;
+                    // rho_field[i] = prim_state.rho;
+
+		    /*
+                    if (sycl::isnan(prim_state.rho) || sycl::isnan(prim_state.vel[0])
+                        || sycl::isnan(P[i]) || (P[i] < 0.0)) {
+                        logger::raw_ln(
+                            "Nan in CtoP @ \t ",
+                            i,
+                            "\t rho = \t",
+                            prim_state.rho,
+                            "\t vel = \t ",
+                            prim_state.vel[0],
+                            "\t P \t",
+                            P[i],
+                            "\t\n");
+                    }
+
+		    */
                 });
         }
     };
@@ -80,6 +106,7 @@ namespace shammodels::basegodunov::modules {
         edges.spans_rhov.check_sizes(edges.sizes.indexes);
         edges.spans_rhoe.check_sizes(edges.sizes.indexes);
 
+        // edges.spans_rho_fields.ensure_sizes(edges.sizes.indexes);
         edges.spans_vel.ensure_sizes(edges.sizes.indexes);
         edges.spans_P.ensure_sizes(edges.sizes.indexes);
 
@@ -87,6 +114,9 @@ namespace shammodels::basegodunov::modules {
             edges.spans_rho.get_spans(),
             edges.spans_rhov.get_spans(),
             edges.spans_rhoe.get_spans(),
+            // /**/
+            // edges.spans_rho_fields.get_spans(),
+            // /**/
             edges.spans_vel.get_spans(),
             edges.spans_P.get_spans(),
             edges.sizes.indexes,

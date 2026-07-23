@@ -48,6 +48,8 @@ namespace {
                     auto &mean_rho        = edges.mean_rho.value;
                     auto &phi_res_span    = edges.spans_phi_res.get_spans().get(id);
                     auto &phi_p_span      = edges.spans_phi_p.get_spans().get(id);
+                    auto &rhs_span        = edges.spans_rhs.get_spans().get(id);
+                    auto &phi_z_span      = edges.spans_phi_z.get_spans().get(id);
 
                     AMRGraph &graph_neigh_xp
                         = shambase::get_check_ref(oriented_cell_graph.graph_links[Direction::xp]);
@@ -69,6 +71,8 @@ namespace {
                     auto rho        = rho_span.get_read_access(depends_list);
                     auto phi_res    = phi_res_span.get_write_access(depends_list);
                     auto phi_p      = phi_p_span.get_write_access(depends_list);
+                    auto rhs        = rhs_span.get_write_access(depends_list);
+                    auto phi_z      = phi_z_span.get_write_access(depends_list);
 
                     auto graph_iter_xp = graph_neigh_xp.get_read_access(depends_list);
                     auto graph_iter_xm = graph_neigh_xm.get_read_access(depends_list);
@@ -88,8 +92,9 @@ namespace {
 
                             Tscal delta_cell = cell_sizes[block_id];
                             auto Aphi        = shammodels::basegodunov::laplacian_7pt<Tscal, Tvec>(
+                                cell_sizes,
+                                block_size,
                                 cell_global_id,
-                                delta_cell,
                                 graph_iter_xp,
                                 graph_iter_xm,
                                 graph_iter_yp,
@@ -97,12 +102,27 @@ namespace {
                                 graph_iter_zp,
                                 graph_iter_zm,
                                 [=](u32 id) {
-                                    return phi[id];
+                                    return sycl::isnan(phi[id]) ? 0.0 : phi[id];
                                 });
 
-                            auto res = fourPiG * (rho[cell_global_id] - mean_rho) - Aphi;
+                            // if (sycl::isnan(phi[cell_global_id]))
+                            // {
+                            // // logger::raw_ln("rho @ \t ",cell_global_id, "\t = \t ",
+                            // rho[cell_global_id], "\n\n");
+                            //  logger::raw_ln("phi @ \t ",cell_global_id, "\t = \t ",
+                            //  phi[cell_global_id], "\n\n");
+                            // }
+
+                            auto dV    = delta_cell * delta_cell * delta_cell;
+                            auto b_rhs = -fourPiG * (rho[cell_global_id] - mean_rho) * dV;
+
+                            auto res                = b_rhs - Aphi;
                             phi_res[cell_global_id] = res;
-                            phi_p[cell_global_id]   = res;
+                            rhs[cell_global_id]     = b_rhs;
+                            // z = dV * (6 /dS ) * res
+                            phi_z[cell_global_id] = res / (6. * delta_cell);
+                            // phi_z[cell_global_id] = (res * delta_cell * delta_cell) / (6.);
+                            phi_p[cell_global_id] = res;
                         });
                     });
 
@@ -111,6 +131,8 @@ namespace {
                     rho_span.complete_event_state(e);
                     phi_res_span.complete_event_state(e);
                     phi_p_span.complete_event_state(e);
+                    rhs_span.complete_event_state(e);
+                    phi_z_span.complete_event_state(e);
 
                     graph_neigh_xp.complete_event_state(e);
                     graph_neigh_xm.complete_event_state(e);
@@ -134,12 +156,14 @@ namespace shammodels::basegodunov::modules {
         edges.spans_rho.check_sizes(edges.sizes.indexes);
         edges.spans_phi_res.check_sizes(edges.sizes.indexes);
         edges.spans_phi_p.check_sizes(edges.sizes.indexes);
+        edges.spans_rhs.check_sizes(edges.sizes.indexes);
+        edges.spans_phi_z.check_sizes(edges.sizes.indexes);
 
         _Kernel<Tvec, TgridVec>::kernel(edges, block_size, fourPiG);
     }
 
     template<class Tvec, class TgridVec>
-    std::string CGInit<Tvec, TgridVec>::_impl_get_tex() {
+    std::string CGInit<Tvec, TgridVec>::_impl_get_tex() const {
         std::string sizes                  = get_ro_edge_base(0).get_tex_symbol();
         std::string cell_neigh_graph       = get_ro_edge_base(1).get_tex_symbol();
         std::string spans_block_cell_sizes = get_ro_edge_base(2).get_tex_symbol();

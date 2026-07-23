@@ -20,6 +20,7 @@
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shamrock/solvergraph/IEdge.hpp"
+#include "shamrock/solvergraph/INullOptEdge.hpp"
 #include <memory>
 #include <vector>
 
@@ -85,6 +86,42 @@ namespace shamrock::solvergraph {
         template<class T>
         inline T &get_rw_edge(int slot) {
             return shambase::get_check_ref(std::dynamic_pointer_cast<T>(rw_edges.at(slot)));
+        }
+
+        /// Get a read only edge and cast it to the type T, return an optional
+        template<class T>
+        inline std::optional<std::reference_wrapper<const T>> get_ro_edge_optional(int slot) {
+            auto &edge = ro_edges.at(slot);
+
+            auto ptr = std::dynamic_pointer_cast<T>(edge);
+            if (ptr) {
+                return std::cref(*ptr);
+            }
+
+            if (is_null_opt_edge(edge)) {
+                return std::nullopt;
+            }
+
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("Edge is not from the requested type: {}", slot));
+        }
+
+        /// Get a read write edge and cast it to the type T, return an optional
+        template<class T>
+        inline std::optional<std::reference_wrapper<T>> get_rw_edge_optional(int slot) {
+            auto &edge = rw_edges.at(slot);
+
+            auto ptr = std::dynamic_pointer_cast<T>(edge);
+            if (ptr) {
+                return std::cref(*ptr);
+            }
+
+            if (is_null_opt_edge(edge)) {
+                return std::nullopt;
+            }
+
+            shambase::throw_with_loc<std::invalid_argument>(
+                shambase::format("Edge is not from the requested type: {}", slot));
         }
 
         /// Get a reference to a read only edge
@@ -249,6 +286,18 @@ namespace shamrock::solvergraph {
 #define INODE_GET_RO(type, name) get_ro_edge<type>(ro++),
 #define INODE_GET_RW(type, name) get_rw_edge<type>(rw++),
 
+#define INODE_DECL_RO_OPTIONAL(type, name)                                                         \
+    const std::optional<std::reference_wrapper<const type>> name;
+#define INODE_DECL_RW_OPTIONAL(type, name) const std::optional<std::reference_wrapper<type>> name;
+#define INODE_PARAM_RO_OPTIONAL(type, name) const std::optional<std::shared_ptr<type>> &name,
+#define INODE_PARAM_RW_OPTIONAL(type, name) const std::optional<std::shared_ptr<type>> &name,
+#define INODE_PUSH_RO1_OPTIONAL(type, name) shamrock::solvergraph::obsfucate_null_opt_edge(name),
+#define INODE_PUSH_RW1_OPTIONAL(type, name)
+#define INODE_PUSH_RO2_OPTIONAL(type, name)
+#define INODE_PUSH_RW2_OPTIONAL(type, name) shamrock::solvergraph::obsfucate_null_opt_edge(name),
+#define INODE_GET_RO_OPTIONAL(type, name) get_ro_edge_optional<type>(ro++),
+#define INODE_GET_RW_OPTIONAL(type, name) get_rw_edge_optional<type>(rw++),
+
 #define EXPAND_NODE_EDGES(EDGES)                                                                   \
                                                                                                    \
     struct Edges {                                                                                 \
@@ -267,4 +316,28 @@ namespace shamrock::solvergraph {
         int ro = 0;                                                                                \
         int rw = 0;                                                                                \
         return Edges{EDGES(INODE_GET_RO, INODE_GET_RW)};                                           \
+    }
+
+#define EXPAND_NODE_EDGES_OPTIONAL(EDGES)                                                          \
+                                                                                                   \
+    struct Edges {                                                                                 \
+        EDGES(INODE_DECL_RO, INODE_DECL_RW, INODE_DECL_RO_OPTIONAL, INODE_DECL_RW_OPTIONAL)        \
+    };                                                                                             \
+                                                                                                   \
+    inline void set_edges(                                                                         \
+        EDGES(INODE_PARAM_RO, INODE_PARAM_RW, INODE_PARAM_RO_OPTIONAL, INODE_PARAM_RW_OPTIONAL)    \
+            SourceLocation loc = SourceLocation{}) {                                               \
+        __shamrock_log_callsite(loc);                                                              \
+                                                                                                   \
+        __internal_set_ro_edges({EDGES(                                                            \
+            INODE_PUSH_RO1, INODE_PUSH_RW1, INODE_PUSH_RO1_OPTIONAL, INODE_PUSH_RW1_OPTIONAL)});   \
+        __internal_set_rw_edges({EDGES(                                                            \
+            INODE_PUSH_RO2, INODE_PUSH_RW2, INODE_PUSH_RO2_OPTIONAL, INODE_PUSH_RW2_OPTIONAL)});   \
+    }                                                                                              \
+                                                                                                   \
+    inline Edges get_edges() {                                                                     \
+        int ro = 0;                                                                                \
+        int rw = 0;                                                                                \
+        return Edges{                                                                              \
+            EDGES(INODE_GET_RO, INODE_GET_RW, INODE_GET_RO_OPTIONAL, INODE_GET_RW_OPTIONAL)};      \
     }

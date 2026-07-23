@@ -1,9 +1,15 @@
+"""
+Sod tube test with pseudogradient based refinment
+
+"""
+
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import shamrock
+
 shamrock.enable_experimental_features()
 
 ctx = shamrock.Context()
@@ -144,13 +150,13 @@ for i in range(100000):
     t += dt
     dt = next_dt
 
-    if i % freq == 0:
-        model.dump_vtk(f"test{i:04d}.vtk")
+    # if i % freq == 0:
+    #    model.dump_vtk(f"test{i:04d}.vtk")
 
     if t_target < t + next_dt:
         dt = t_target - t
     if t == t_target:
-        model.dump_vtk(f"test{i:04d}.vtk")
+        # model.dump_vtk(f"test{i:04d}.vtk")
         break
 
 xref = 0.5

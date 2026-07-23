@@ -9,6 +9,7 @@
 
 /**
  * @file AMRGridRefinementHandler.cpp
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -255,7 +256,8 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_derefine_grid_old(shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_list) {
+    internal_derefine_grid_old(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_list) {
 
     using namespace shamrock::patch;
 
@@ -653,7 +655,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // This is ok to call straight after the refine without edditing the index list in
         // derefine_list since no permutations were applied in internal_refine_grid and no cells can
         // be both refined and derefined in the same pass
-        bool change_derefine = internal_derefine_grid_old<RefineCellAccessor>(std::move(derefine_list));
+        bool change_derefine
+            = internal_derefine_grid_old<RefineCellAccessor>(std::move(derefine_list));
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
     }
@@ -699,7 +702,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                     bool flag_refine   = false;
                     bool flag_derefine = false;
-                    uacc.refine_criterion_new(gid.get_linear_id(), uacc, flag_refine, flag_derefine);
+                    uacc.refine_criterion_new(
+                        gid.get_linear_id(), uacc, flag_refine, flag_derefine);
 
                     // This is just a safe guard to avoid this nonsensicall case
                     if (flag_refine && flag_derefine) {
@@ -790,15 +794,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             auto acc_amr_levels = buf_amr_block_levels.get_read_access(depend_list);
             auto acc_changed    = changed_buf.get_write_access(depend_list);
-    
 
             auto acc_ref_flags = patch_refine_flags.get_write_access(depend_list);
 
             auto e = q.submit(depend_list, [&](sycl::handler &cgh) {
                 cgh.parallel_for(sycl::range<1>(obj_cnt), [=](sycl::item<1> gid) {
                     u32 block_id = gid.get_linear_id();
-       
-                    u32 cur_ref_flag     = acc_ref_flags[block_id];
+
+                    u32 cur_ref_flag = acc_ref_flags[block_id];
 
                     if (!cur_ref_flag)
                         return;
@@ -817,7 +820,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                         auto neigh_future = neigh_block_level + (neigh_ref_flag ? 1 : 0);
 
-                        if (cur_ref_flag && (cur_future > neigh_future + 1) )  {
+                        if (cur_ref_flag && (cur_future > neigh_future + 1)) {
 
                             if (!neigh_ref_flag) {
                                 sycl::atomic_ref<
@@ -1091,8 +1094,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     auto check_2To1_der = [&](u32 nid) {
                         if (nid < obj_cnt)
-                        
-                         {
+
+                        {
 
                             auto neigh_future = acc_amr_levels[nid] + (acc_ref_flag[nid] ? 1 : 0)
                                                 - (acc_deref_old[nid] ? 1 : 0);
@@ -1245,7 +1248,8 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         }
 
                         // user lambda to fill the fields
-                        uacc.apply_refine_new(idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
+                        uacc.apply_refine_new(
+                            idx_to_refine, cur_block, blocks_ids, block_coords, uacc);
                     });
             });
 
@@ -1270,7 +1274,8 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_derefine_grid_new(shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags) {
+    internal_derefine_grid_new(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags) {
 
     using namespace shamrock::patch;
 
@@ -1402,8 +1407,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     //////// apply derefine ////////
     // Note that this will perform the merge then remove the old blocks
     // This is ok to call straight after the refine without edditing the index list in derefine_list
-    // since no permutations were applied in internal_refine_grid_new and no cells can be both refined
-    // and derefined in the same pass
+    // since no permutations were applied in internal_refine_grid_new and no cells can be both
+    // refined and derefined in the same pass
     internal_derefine_grid_new<UserAccMerge>(std::move(dd_derefine_list));
 }
 
@@ -1770,8 +1775,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
     };
 
     /**
-    *   @brief Pseudo-Gradient refinement  accessor 
-    */
+     *   @brief Pseudo-Gradient refinement  accessor
+     */
     class RefineCritPseudoGradientAccessor {
         public:
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
@@ -1999,10 +2004,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         }
     };
 
-
-    /** 
-    * @brief Shear Refinement accessor
-    */
+    /**
+     * @brief Shear Refinement accessor
+     */
     class RefineCritShearAccessor {
         public:
         Tscal one_over_Nside = 1. / AMRBlock::Nside;
@@ -2011,11 +2015,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const Tscal *block_rho;
         const f64 *block_pressure;
         const f64_3 *block_velocity;
-        
-        Tscal threshold;
-        Tscal gamma ;
-        Tscal dxfact;
 
+        Tscal threshold;
+        Tscal gamma;
+        Tscal dxfact;
 
         AMRGraphLinkiterator cell_graph_xp;
         AMRGraphLinkiterator cell_graph_xm;
@@ -2074,7 +2077,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         {
             block_low_bound  = pdat.get_field<TgridVec>(0).get_buf().get_read_access(depends_list);
             block_high_bound = pdat.get_field<TgridVec>(1).get_buf().get_read_access(depends_list);
-      
 
             block_rho      = shambase::get_check_ref(storage.rho_primitive)
                                  .get_buf(id_patch)
@@ -2099,7 +2101,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             pdat.get_field<i64_3>(0).get_buf().complete_event_state(resulting_events);
             pdat.get_field<i64_3>(1).get_buf().complete_event_state(resulting_events);
-         
 
             shambase::get_check_ref(storage.cell_graph_edge)
                 .get_refs_dir(Direction_::xp)
@@ -2160,14 +2161,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
 
-     
-
             Tscal block_normalized_shear = shambase::VectorProperties<Tscal>::get_zero();
-            for (u32 i = 0; i < AMRBlock::block_size; i++){
-                auto cell_id =  i + block_id * AMRBlock::block_size;
+            for (u32 i = 0; i < AMRBlock::block_size; i++) {
+                auto cell_id = i + block_id * AMRBlock::block_size;
                 auto cs = sycl::sqrt(gamma * acc.block_pressure[cell_id] / acc.block_rho[cell_id]);
-                 block_normalized_shear = sham::details::g_sycl_max(
-                     block_normalized_shear,
+                block_normalized_shear = sham::details::g_sycl_max(
+                    block_normalized_shear,
                     normalized_shear<Tvec>(
                         cell_id,
                         cs,
@@ -2180,7 +2179,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         cell_graph_zp,
                         cell_graph_zm,
                         [=](u32 id) {
-                            return  acc.block_velocity[id];
+                            return acc.block_velocity[id];
                         }));
             }
             should_refine   = false;

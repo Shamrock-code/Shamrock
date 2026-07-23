@@ -293,10 +293,9 @@ namespace {
         return {lim_slope_W_x, lim_slope_W_y, lim_slope_W_z};
     }
 
-
     /**
-    * @brief Pseudo-gradient
-    */
+     * @brief Pseudo-gradient
+     */
     template<class T, class Tvec, class ACCField>
     inline T get_pseudo_grad(
         const u32 cell_global_id,
@@ -391,15 +390,14 @@ namespace {
         T norm_slope_y = g_sycl_abs((u_ym - u_yp) / (2 * u_cur + epsilon));
         T norm_slope_z = g_sycl_abs((u_zm - u_zp) / (2 * u_cur + epsilon));
 
-
         T res = g_sycl_max(norm_slope_x, g_sycl_max(norm_slope_y, norm_slope_z));
 
         return res;
     }
 
     /***
-    *  Lohner second order criterion
-    */
+     *  Lohner second order criterion
+     */
     template<class T, class Tvec, class ACCField>
     inline T modif_second_derivative(
         const u32 cell_global_id,
@@ -455,12 +453,8 @@ namespace {
         return (res_x + res_y + res_z);
     }
 
-
-
-
-
     /**
-    * @brief Normalized Shear criterion
+     * @brief Normalized Shear criterion
      */
     template<class Tvec, class ACCField>
     inline shambase::VecComponent<Tvec> normalized_shear(
@@ -481,21 +475,20 @@ namespace {
         using namespace sham::details;
 
         auto get_avg_neigh = [&](auto &graph_links, u32 dir) -> Tvec {
-            Tvec acc   = shambase::VectorProperties<Tvec>::get_zero();
-            u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+            Tvec acc = shambase::VectorProperties<Tvec>::get_zero();
+            u32 cnt  = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
                 acc += field_access(id_b);
             });
 
             return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tvec>::get_zero();
         };
 
- 
-        Tvec u_xp       = get_avg_neigh(graph_iter_xp, 0);
-        Tvec u_xm       = get_avg_neigh(graph_iter_xm, 1);
-        Tvec u_yp       = get_avg_neigh(graph_iter_yp, 2);
-        Tvec u_ym       = get_avg_neigh(graph_iter_ym, 3);
-        Tvec u_zp       = get_avg_neigh(graph_iter_zp, 4);
-        Tvec u_zm       = get_avg_neigh(graph_iter_zm, 5);
+        Tvec u_xp = get_avg_neigh(graph_iter_xp, 0);
+        Tvec u_xm = get_avg_neigh(graph_iter_xm, 1);
+        Tvec u_yp = get_avg_neigh(graph_iter_yp, 2);
+        Tvec u_ym = get_avg_neigh(graph_iter_ym, 3);
+        Tvec u_zp = get_avg_neigh(graph_iter_zp, 4);
+        Tvec u_zm = get_avg_neigh(graph_iter_zm, 5);
 
         auto vgy = 0.25 * (u_xp[1] - u_xm[1]) * (u_xp[1] - u_xm[1]);
         auto vgx = 0.25 * (u_yp[0] - u_ym[0]) * (u_yp[0] - u_ym[0]);
@@ -511,8 +504,8 @@ namespace {
         // auto shear_1 =  (dv_ydir[0] + dv_xdir[1])*(dv_ydir[0] + dv_xdir[1]);
         // auto shear_2 = (dv_ydir[2] + dv_zdir[1]) * (dv_ydir[2] + dv_zdir[1]);
         // auto shear_3 = (dv_zdir[0] + dv_xdir[2]) * (dv_zdir[0] + dv_xdir[2]);
-        // return  (shear_1 + shear_2 + shear_3) * (delta_cells.x() * delta_cells.x())/(sound_speed * sound_speed);
-
+        // return  (shear_1 + shear_2 + shear_3) * (delta_cells.x() * delta_cells.x())/(sound_speed
+        // * sound_speed);
     }
 
 } // namespace

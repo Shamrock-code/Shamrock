@@ -406,11 +406,10 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.press
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "P", "P");
 
-    storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-        AMRBlock::block_size, "rho-prim", "rho-prim");
-
-    // storage.rho_primitive_2 = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
-    //     AMRBlock::block_size, "rho-prim_2", "rho-prim_2");
+    if (!solver_config.amr_mode.old_amr) { // TODO disable also if amr is none
+        storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho-prim", "rho-prim");
+    }
 
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
@@ -2096,12 +2095,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         dt_integ_self_gravity.forward_euler(dt_input);
     }
 
-    {
+    if (!solver_config.amr_mode.old_amr) {
         shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
-        node_copy_rho.set_edges(
-            storage.refs_rho,
-            storage.rho_primitive
-        );
+        node_copy_rho.set_edges(storage.refs_rho, storage.rho_primitive);
         node_copy_rho.evaluate();
     }
 
@@ -2304,8 +2300,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     */
 
     /*
-    std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
-    writer.write_field("dtrho", dtrho, num_obj * block_size);
+    std::unique_ptr<sycl::buffer<Tscal>> dtrho =
+    storage.dtrho.get().rankgather_computefield(sched); writer.write_field("dtrho", dtrho,
+    num_obj * block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dtrhov
         = storage.dtrhov.get().rankgather_computefield(sched);

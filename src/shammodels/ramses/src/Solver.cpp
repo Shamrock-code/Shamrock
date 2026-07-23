@@ -1618,7 +1618,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     }
 
     modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
-    refinement.update_refinement();
+    if (solver_config.amr_mode.old_amr) {
+        refinement.update_refinement_old();
+    } else {
+        refinement.update_refinement_new();
+    }
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();

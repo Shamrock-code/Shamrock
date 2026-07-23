@@ -387,7 +387,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    update_refinement() {
+    update_refinement_old() {
 
     class RefineCritBlock {
         public:
@@ -658,6 +658,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         AMRSortBlocks block_sorter(context, solver_config, storage);
         block_sorter.reorder_amr_blocks();
     }
+}
+
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    update_refinement_new() {
+    shambase::throw_unimplemented("TODO");
 }
 
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

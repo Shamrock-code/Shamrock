@@ -190,6 +190,64 @@ namespace shammodels::sph {
                 {pos, velocity, {}, {}, mass, {}, accretion_radius});
         }
 
+        // Modify the sinks to the provided values of mass, position, velocity, and accretion
+        // radius.
+        inline void set_sink(u32 idx, Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
+            if (solver.storage.sinks.is_empty()) {
+                solver.storage.sinks.set({});
+            }
+
+            shamlog_debug_ln("SPH", "set sink :", mass, pos, velocity, accretion_radius);
+
+            auto &sinks = solver.storage.sinks.get();
+            if (idx >= sinks.size()) {
+                throw shambase::make_except_with_loc<std::out_of_range>(shambase::format(
+                    "Sink index out of range (idx={}, size={})", idx, sinks.size()));
+            }
+
+            auto &sink            = sinks[idx];
+            sink.mass             = mass;
+            sink.pos              = pos;
+            sink.velocity         = velocity;
+            sink.accretion_radius = accretion_radius;
+
+            sinks[idx] = {pos, velocity, {}, {}, mass, {}, accretion_radius};
+        }
+
+        inline void set_sinks(
+            const std::vector<Tscal> &masses,
+            const std::vector<Tvec> &positions,
+            const std::vector<Tvec> &velocities,
+            const std::vector<Tscal> &accretion_radii) {
+            if (solver.storage.sinks.is_empty()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "set_sinks: sinks storage is empty");
+            }
+
+            auto &sinks = solver.storage.sinks.get();
+            if (masses.size() != sinks.size() || positions.size() != sinks.size()
+                || velocities.size() != sinks.size() || accretion_radii.size() != sinks.size()) {
+                throw shambase::make_except_with_loc<std::runtime_error>(
+                    "set_sinks: invalid size for masses, positions, velocities or accretion_radii");
+            }
+            shamlog_debug_ln(
+                "SPH",
+                "set sinks :",
+                masses.size(),
+                positions.size(),
+                velocities.size(),
+                accretion_radii.size(),
+                sinks.size());
+
+            for (u32 i = 0; i < sinks.size(); i++) {
+                auto &sink            = sinks[i];
+                sink.pos              = positions[i];
+                sink.velocity         = velocities[i];
+                sink.mass             = masses[i];
+                sink.accretion_radius = accretion_radii[i];
+            }
+        }
+
         template<class T>
         inline void set_field_value_lambda(
             std::string field_name, const std::function<T(Tvec)> pos_to_val, const u32 offset) {

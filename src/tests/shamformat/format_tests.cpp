@@ -13,22 +13,41 @@
 #include <string_view>
 
 namespace {
-    void throwing_format() {
+    void throwing_format_std() {
         std::string fmt = "{"; // runtime format string
         int value       = 42;
 
-        auto s = shambase::vformat(std::string_view{fmt}, fmt::make_format_args(value));
+        auto s = sham::vformat(std::string_view{fmt}, fmt::make_format_args(value));
+
+        // just to trap the result and avoid optimizations
+        std::cout << s << '\n';
+    }
+
+    void throwing_format_fmt() {
+        std::string fmt = "{"; // runtime format string
+        int value       = 42;
+
+        auto s = sham::vformat(fmt::string_view{fmt}, fmt::make_format_args(value));
 
         // just to trap the result and avoid optimizations
         std::cout << s << '\n';
     }
 } // namespace
 
-TestStart(Unittest, "shamformat/format", test_exception_throw, 1) {
-    REQUIRE_EXCEPTION_THROW(throwing_format(), fmt::format_error);
+NEW_TEST(Unittest, "shamformat/format(throwing)", 1) {
+    REQUIRE_EXCEPTION_THROW(throwing_format_std(), fmt::format_error);
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
 }
 
-TestStart(Unittest, "shamformat/human_readable", test_to_human_readable, 1) {
+NEW_TEST(Unittest, "shamformat/format(throwing_builder_reset)", 1) {
+    auto current_handle = sham::get_format_exception_builder();
+    sham::set_format_exception_builder(nullptr); // reset to default
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
+    sham::set_format_exception_builder(current_handle);
+    REQUIRE_EXCEPTION_THROW(throwing_format_fmt(), fmt::format_error);
+}
+
+NEW_TEST(Unittest, "shamformat/human_readable", 1) {
     using sham::human_readable_t;
     using sham::to_human_readable;
 
@@ -131,9 +150,17 @@ TestStart(Unittest, "shamformat/human_readable", test_to_human_readable, 1) {
         REQUIRE_FLOAT_EQUAL(hr.value, 5.0, 1e-6);
         REQUIRE_EQUAL(hr.prefix, "P");
     }
+
+    // Too large (above yotta): clamped to yotta
+    {
+        auto hr = to_human_readable(5e26);
+        REQUIRE_FLOAT_EQUAL(hr.value, 500.0, 1e-6);
+        REQUIRE_EQUAL(hr.prefix, "Y");
+        REQUIRE_FLOAT_EQUAL(hr.ratio, 1e24, 1e20);
+    }
 }
 
-TestStart(Unittest, "shamformat/human_readable", test_to_human_readable_no_below_1, 1) {
+NEW_TEST(Unittest, "shamformat/human_readable", 1) {
     using sham::to_human_readable;
 
     // Zero: no prefix (always)
@@ -207,5 +234,12 @@ TestStart(Unittest, "shamformat/human_readable", test_to_human_readable_no_below
         auto hr = to_human_readable<false>(2500.0);
         REQUIRE_FLOAT_EQUAL(hr.value, 2.5, 1e-3);
         REQUIRE_EQUAL(hr.prefix, "k");
+    }
+
+    // Too large (above yotta): clamped to yotta
+    {
+        auto hr = to_human_readable<false>(5e26);
+        REQUIRE_FLOAT_EQUAL(hr.value, 500.0, 1e-6);
+        REQUIRE_EQUAL(hr.prefix, "Y");
     }
 }

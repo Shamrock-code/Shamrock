@@ -25,7 +25,7 @@
 using namespace shamrock::solvergraph;
 using namespace shamrock::patch;
 
-TestStart(Unittest, "shamrock/solvergraph/ExchangeGhostLayer", testExchangeGhostLayer, -1) {
+NEW_TEST(Unittest, "shamrock/solvergraph/ExchangeGhostLayer", -1) {
 
     std::string test_name = "shamrock/solvergraph/ExchangeGhostLayer";
 

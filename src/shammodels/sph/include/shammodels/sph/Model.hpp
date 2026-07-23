@@ -99,6 +99,14 @@ namespace shammodels::sph {
         inline void set_eta_sink(Tscal eta_sink) {
             solver.solver_config.cfl_config.eta_sink = eta_sink;
         }
+
+        inline Tscal get_time() { return solver.get_time(); }
+        inline void set_time(Tscal t) { solver.set_time(t); }
+        inline Tscal get_dt_sph() { return solver.get_dt_sph(); }
+        inline void set_next_dt(Tscal dt) { solver.set_next_dt(dt); }
+        inline Tscal get_cfl_multipler() { return solver.get_cfl_multipler(); }
+        inline void set_cfl_multipler(Tscal lambda) { solver.set_cfl_multipler(lambda); }
+
         inline void set_particle_mass(Tscal gpart_mass) {
             solver.solver_config.gpart_mass = gpart_mass;
         }
@@ -124,9 +132,6 @@ namespace shammodels::sph {
         u64 get_total_part_count();
 
         f64 total_mass_to_part_mass(f64 totmass);
-
-        std::pair<Tvec, Tvec> get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box);
-        std::pair<Tvec, Tvec> get_ideal_hcp_box(Tscal dr, std::pair<Tvec, Tvec> box);
 
         Tscal get_hfact() { return Kernel::hfactd; }
 
@@ -905,11 +910,41 @@ namespace shammodels::sph {
                 solver.storage.sinks.set(std::move(out));
             }
 
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
+            auto sync_names = sched.synchronized_data.get_edge_names();
+
+            // PR #1928 introduces time/dt/cfl synchronization edges
+            // so checking for time is equivalent to commit >= PR #1928
+            bool had_time_edge
+                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+
+            // create time/dt/cfl synchronization edges if not present
+            solver.ensure_time_state_edges();
+
+            if (!had_time_edge) { // before PR #1928
+                if (j.at("solver_config").contains("time_state")) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPH",
+                            "Migrated time/dt/cfl from solver_config.time_state into scheduler "
+                            "edges"));
+                    const auto &ts = j.at("solver_config").at("time_state");
+                    solver.set_time(ts.at("time").get<Tscal>());
+                    solver.set_next_dt(ts.at("dt_sph").get<Tscal>());
+                    solver.set_cfl_multipler(ts.at("cfl_multiplier").get<Tscal>());
+                } else {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "this should never happen: dump has neither time edges nor "
+                        "solver_config.time_state");
+                }
+            }
+
             solver.init_ghost_layout();
 
             solver.init_solver_graph();
 
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
             shamlog_debug_ln("Sys", "build local scheduler tables");
             sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
@@ -959,8 +994,9 @@ namespace shammodels::sph {
             solver.print_timestep_logs();
         }
 
-        inline bool evolve_until(Tscal target_time, i32 niter_max) {
-            return solver.evolve_until(target_time, niter_max);
+        inline EvolveUntilResults evolve_until(
+            Tscal target_time, i32 niter_max, f64 max_walltime = -1) {
+            return solver.evolve_until(target_time, niter_max, max_walltime);
         }
 
         private:

@@ -13,6 +13,11 @@ import numpy as np  # sqrt & arctan2
 import shamrock
 
 # %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
 # Pseudo random number generator seed
 
 eng = shamrock.algs.gen_seed(111)

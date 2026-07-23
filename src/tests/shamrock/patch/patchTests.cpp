@@ -12,7 +12,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2) {
+NEW_TEST(Unittest, "shamrock/patch/Patch.cpp:MpiType", 2) {
 
     using namespace shamrock::patch;
 
@@ -42,7 +42,7 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:MpiType", patch_mpi_type, 2) {
     }
 }
 
-TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", splitmergepatch, 1) {
+NEW_TEST(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", 1) {
 
     using namespace shamrock::patch;
 
@@ -74,7 +74,7 @@ TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitMerge", splitmergepatch, 1) {
     REQUIRE_NAMED("patch are equal", p == check_patch);
 }
 
-TestStart(Unittest, "shamrock/patch/Patch.cpp:SplitCoord", splitcoord, 1) {
+NEW_TEST(Unittest, "shamrock/patch/Patch.cpp:SplitCoord", 1) {
 
     using namespace shamrock::patch;
 

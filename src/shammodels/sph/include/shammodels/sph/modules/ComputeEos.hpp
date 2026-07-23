@@ -22,6 +22,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/IDataEdge.hpp"
 
 namespace shammodels::sph::modules {
 
@@ -51,8 +52,18 @@ namespace shammodels::sph::modules {
         void compute_eos();
 
         private:
-        template<class RhoGetGen>
-        void compute_eos_internal(RhoGetGen &&rho_getter_gen);
+        void compute_eos_internal(
+            const shamrock::solvergraph::IDataEdge<Tscal> &hfactd,
+            const shamrock::solvergraph::IDataEdge<Tscal> &pmass,
+            const std::optional<
+                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_rho,
+            const std::optional<
+                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_h,
+            const std::optional<
+                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_uint,
+            const shamrock::solvergraph::Indexes<u32> &sizes,
+            shamrock::solvergraph::IFieldSpan<Tscal> &spans_pressure,
+            shamrock::solvergraph::IFieldSpan<Tscal> &spans_soundspeed);
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

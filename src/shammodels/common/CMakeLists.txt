@@ -9,8 +9,14 @@ cmake_minimum_required(VERSION 3.9...3.10)
 
 project(Shammodels_common CXX C)
 
-set(Sources src/EOSConfig.cpp src/pyAMRTestModel.cpp src/pyAMRGrid.cpp src/pyCommonUtils.cpp
-            src/modules/AddForceCentralGravPotential.cpp src/timestep_report.cpp
+set(Sources
+    src/EOSConfig.cpp
+    src/pyAMRTestModel.cpp
+    src/pyAMRGrid.cpp
+    src/pyCommonUtils.cpp
+    src/modules/AddForcePaczynskiWiita.cpp
+    src/modules/AddForceCentralGravPotential.cpp
+    src/timestep_report.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

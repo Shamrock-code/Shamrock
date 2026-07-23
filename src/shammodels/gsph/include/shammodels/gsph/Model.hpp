@@ -362,11 +362,39 @@ namespace shammodels::gsph {
             nlohmann::json j = nlohmann::json::parse(metadata_user);
             j.at("solver_config").get_to(solver.solver_config);
 
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1933)
+            auto sync_names = sched.synchronized_data.get_edge_names();
+
+            // Checking for time is equivalent to dumps written after this migration
+            bool had_time_edge
+                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+
+            // create time/dt synchronization edges if not present
+            solver.ensure_time_state_edges();
+
+            if (!had_time_edge) {
+                if (j.at("solver_config").contains("time_state")) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "GSPH",
+                            "Migrated time/dt from solver_config.time_state into scheduler "
+                            "edges"));
+                    const auto &ts = j.at("solver_config").at("time_state");
+                    solver.set_time(ts.at("time").get<Tscal>());
+                    solver.set_next_dt(ts.at("dt").get<Tscal>());
+                } else {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "this should never happen: dump has neither time edges nor "
+                        "solver_config.time_state");
+                }
+            }
+
             solver.init_ghost_layout();
             solver.init_solver_graph();
 
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            sched.owned_patch_id  = sched.patch_list.build_local();
+            sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();
             sched.update_local_load_value([&](shamrock::patch::Patch p) {

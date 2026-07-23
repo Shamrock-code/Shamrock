@@ -79,6 +79,9 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init() {
     });
     solver.init_ghost_layout();
 
+    solver.ensure_time_state_edges();
+
+    // must be bone after time state edges are ensured (it will connect to it)
     solver.init_solver_graph();
 }
 
@@ -140,14 +143,6 @@ auto shammodels::sph::Model<Tvec, SPHKernel>::get_closest_part_to(Tvec pos) -> T
     }
 
     return pos + best_dr;
-}
-
-template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_fcc_box(Tscal dr, std::pair<Tvec, Tvec> box)
-    -> std::pair<Tvec, Tvec> {
-    StackEntry stack_loc{};
-    auto [a, b] = generic::setup::generators::get_ideal_fcc_box<Tscal>(dr, box);
-    return {a, b};
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -471,24 +466,6 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
 
         post_insert_data<Tvec>(sched);
     });
-}
-
-template<class Tvec, template<class> class SPHKernel>
-auto shammodels::sph::Model<Tvec, SPHKernel>::get_ideal_hcp_box(
-    Tscal dr, std::pair<Tvec, Tvec> _box) -> std::pair<Tvec, Tvec> {
-    StackEntry stack_loc{};
-
-    using Lattice     = shammath::LatticeHCP<Tvec>;
-    using LatticeIter = typename shammath::LatticeHCP<Tvec>::Iterator;
-
-    shammath::CoordRange<Tvec> box = _box;
-    auto [idxs_min, idxs_max]      = Lattice::get_box_index_bounds(dr, box.lower, box.upper);
-
-    auto [idxs_min_per, idxs_max_per] = Lattice::nearest_periodic_box_indices(idxs_min, idxs_max);
-
-    shammath::CoordRange<Tvec> ret = Lattice::get_periodic_box(dr, idxs_min_per, idxs_max_per);
-
-    return {ret.lower, ret.upper};
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -1309,7 +1286,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
 
     // Load time infos
     f64 time_phdump = phdump.read_header_float<f64>("time");
-    solver.solver_config.set_time(time_phdump);
+    solver.set_time(time_phdump);
 
     using namespace shamrock::patch;
 
@@ -1562,8 +1539,8 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     write_shamrock_eos_in_phantom_dump(solver.solver_config.eos_config, dump, bypass_error_check);
 
-    dump.table_header_fort_real.add("time", solver.solver_config.get_time());
-    dump.table_header_fort_real.add("dtmax", solver.solver_config.get_dt_sph());
+    dump.table_header_fort_real.add("time", solver.get_time());
+    dump.table_header_fort_real.add("dtmax", solver.get_dt_sph());
 
     dump.table_header_fort_real.add("rhozero", 0);
     dump.table_header_fort_real.add("hfact", Kernel::hfactd);

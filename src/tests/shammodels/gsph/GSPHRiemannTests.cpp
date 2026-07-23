@@ -447,50 +447,30 @@ namespace {
 // Test registrations
 //==============================================================================
 
-TestStart(Unittest, "shammodels/gsph/riemann/hllc_standard", test_gsph_hllc_std, 1) {
-    test_hllc_standard_problems();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/hllc_standard", 1) { test_hllc_standard_problems(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/iterative_standard", test_gsph_iter_std, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/riemann/iterative_standard", 1) {
     test_iterative_standard_problems();
 }
 
-TestStart(Unittest, "shammodels/gsph/riemann/uniform_state", test_gsph_uniform, 1) {
-    test_uniform_state();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/uniform_state", 1) { test_uniform_state(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/symmetric_collision", test_gsph_collision, 1) {
-    test_symmetric_collision();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) { test_symmetric_collision(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/symmetric_expansion", test_gsph_expansion, 1) {
-    test_symmetric_expansion();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_expansion", 1) { test_symmetric_expansion(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/near_vacuum", test_gsph_vacuum, 1) {
-    test_near_vacuum_robustness();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/near_vacuum", 1) { test_near_vacuum_robustness(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/strong_shocks", test_gsph_strong, 1) {
-    test_strong_shocks();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/strong_shocks", 1) { test_strong_shocks(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/supersonic", test_gsph_supersonic, 1) {
-    test_supersonic_flows();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/supersonic", 1) { test_supersonic_flows(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/gamma_values", test_gsph_gamma, 1) {
-    test_different_gamma();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/gamma_values", 1) { test_different_gamma(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/formula_verification", test_gsph_formula, 1) {
+NEW_TEST(Unittest, "shammodels/gsph/riemann/formula_verification", 1) {
     test_hllc_formula_verification();
 }
 
-TestStart(Unittest, "shammodels/gsph/riemann/convergence", test_gsph_convergence, 1) {
-    test_iterative_convergence();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/convergence", 1) { test_iterative_convergence(); }
 
-TestStart(Unittest, "shammodels/gsph/riemann/consistency", test_gsph_consistency, 1) {
-    test_solver_consistency();
-}
+NEW_TEST(Unittest, "shammodels/gsph/riemann/consistency", 1) { test_solver_consistency(); }

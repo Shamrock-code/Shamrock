@@ -206,9 +206,9 @@ inline void for_each_patch_shift(
 
     // a bit of dirty fix doesn't hurt
     // this should be done in a better way a some point
-    i32 repetition_x = 1 + abs(shearinfo.shear_dir.x());
-    i32 repetition_y = 1 + abs(shearinfo.shear_dir.y());
-    i32 repetition_z = 1 + abs(shearinfo.shear_dir.z());
+    i32 repetition_x = 1 + sham::abs(shearinfo.shear_dir.x());
+    i32 repetition_y = 1 + sham::abs(shearinfo.shear_dir.y());
+    i32 repetition_z = 1 + sham::abs(shearinfo.shear_dir.z());
 
     T sz = bsize.x() * shearinfo.shear_dir.x() + bsize.y() * shearinfo.shear_dir.y()
            + bsize.z() * shearinfo.shear_dir.z();

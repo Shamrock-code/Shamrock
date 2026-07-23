@@ -62,9 +62,9 @@ inline void for_each_patch_shift(
 
     std::vector<i32_3> list_possible;
 
-    i32 repetition_x = 1 + abs(shearinfo.shear_dir.x());
-    i32 repetition_y = 1 + abs(shearinfo.shear_dir.y());
-    i32 repetition_z = 1 + abs(shearinfo.shear_dir.z());
+    i32 repetition_x = 1 + sham::abs(shearinfo.shear_dir.x());
+    i32 repetition_y = 1 + sham::abs(shearinfo.shear_dir.y());
+    i32 repetition_z = 1 + sham::abs(shearinfo.shear_dir.z());
 
     T sz = bsize.x() * shearinfo.shear_dir.x() + bsize.y() * shearinfo.shear_dir.y()
            + bsize.z() * shearinfo.shear_dir.z();

@@ -251,7 +251,7 @@ inline void basic_histogram_size_non_unif(const std::vector<std::string> &impl_l
     }
 }
 
-TestStart(Unittest, "shamalgs::primitives::compute_histogram", shamalgsprimitivecomputehisto, 1) {
+NEW_TEST(Unittest, "shamalgs::primitives::compute_histogram", 1) {
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 

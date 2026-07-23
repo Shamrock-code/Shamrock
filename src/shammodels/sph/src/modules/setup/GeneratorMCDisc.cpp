@@ -42,27 +42,21 @@ auto shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator::n
     auto theta = shamalgs::primitives::mock_value<Tscal>(eng_local, 0, _2pi);
     auto Gauss = shamalgs::random::mock_gaussian<Tscal>(eng_local);
 
-    Tscal r = find_r();
+    // depends on sigma profile
+    Tscal r     = find_r();
+    Tscal sigma = sigma_profile(r);
 
-    Tscal rot_speed = rot_profile(r);
-    Tscal cs        = cs_profile(r);
-    Tscal sigma     = sigma_profile(r);
-    Tscal H         = H_profile(r);
-
+    // depends on H profile & sigma profile (through r)
+    Tscal H = H_profile(r);
     Tscal z = H * Gauss;
 
     auto pos = sycl::vec<Tscal, 3>{r * sycl::cos(theta), r * sycl::sin(theta), z};
 
-    auto etheta = sycl::vec<Tscal, 3>{-pos.y(), pos.x(), 0};
-    etheta /= sycl::length(etheta);
-
-    auto vel = rot_speed * etheta;
-
-    // Tscal fs  = 1. - sycl::sqrt(r_in / r);
+    // extrapolate the density from sigma profile
     Tscal fs  = 1;
     Tscal rho = (sigma * fs) * sycl::exp(-z * z / (2 * H * H));
 
-    DiscOutput out{.pos = pos, .velocity = vel, .cs = cs, .rho = rho};
+    DiscOutput out{.pos = pos, .rho = rho};
 
     // increase counter + check if finished
     current_index++;
@@ -93,20 +87,47 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
         pos_data          = generator.next_n(loc_gen_count);
     }
 
-    // extract the pos from part_list
+    // extract data from disc output
     std::vector<Tvec> vec_pos;
-    std::vector<Tvec> vec_vel;
-    std::vector<Tscal> vec_u;
-    std::vector<Tscal> vec_h;
-    std::vector<Tscal> vec_cs;
+    std::vector<Tscal> vec_rho;
+
+    vec_pos.reserve(pos_data.size());
+    vec_rho.reserve(pos_data.size());
 
     for (DiscOutput o : pos_data) {
         vec_pos.push_back(o.pos);
-        vec_vel.push_back(o.velocity);
-        // vec_u.push_back(o.cs * o.cs / (/*solver.eos_gamma * */ (eos_gamma - 1)));
-        Tscal h = shamrock::sph::h_rho(pmass, o.rho, Kernel::hfactd) * init_h_factor;
-        vec_h.push_back(h);
-        vec_cs.push_back(o.cs);
+        vec_rho.push_back(o.rho);
+    }
+
+    // compute the hpart from the rho
+    std::vector<Tscal> vec_h;
+    vec_h.reserve(pos_data.size());
+    for (Tscal rho : vec_rho) {
+        vec_h.push_back(shamrock::sph::h_rho(pmass, rho, Kernel::hfactd) * init_h_factor);
+    }
+
+    // compute velocities
+    std::vector<Tvec> vec_vel;
+    vec_vel.reserve(pos_data.size());
+    for (size_t i = 0; i < vec_pos.size(); i++) {
+        Tvec vel = vel_profile(vec_pos[i]);
+        vec_vel.push_back(vel);
+    }
+
+    // compute the cs
+    bool need_cs = solver_config.is_eos_locally_isothermal();
+
+    std::vector<Tscal> vec_cs;
+    if (need_cs) {
+        if (!cs_profile) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "With this EOS you need to provide a cs_profile");
+        }
+        vec_cs.reserve(pos_data.size());
+        for (size_t i = 0; i < vec_pos.size(); i++) {
+            Tscal cs = cs_profile(vec_pos[i]);
+            vec_cs.push_back(cs);
+        }
     }
 
     // Make a patchdata from pos_data
@@ -138,7 +159,7 @@ shamrock::patch::PatchDataLayer shammodels::sph::modules::GeneratorMCDisc<Tvec, 
             f.override(buf, len);
         }
 
-        if (solver_config.is_eos_locally_isothermal()) {
+        if (need_cs) {
             u32 len = vec_pos.size();
             PatchDataField<Tscal> &f
                 = tmp.get_field<Tscal>(sched.pdl_old().get_field_idx<Tscal>("soundspeed"));

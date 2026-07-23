@@ -348,6 +348,7 @@ class StandardPlotHelper:
         sink_linewidth=1,
         sink_fill=False,
         save_plot=True,
+        extra_title=None,
         **kwargs,
     ):
         if shamrock.sys.world_rank() == 0:
@@ -403,6 +404,8 @@ class StandardPlotHelper:
             plt.ylabel(f"{y_label} {dist_label_y}")
 
             text = f"t = {metadata['time']:0.3f} {time_label}"
+            if extra_title is not None:
+                text += f" {extra_title}"
             self.figure_add_time_info(text, holywood_mode)
 
             cmap_label = f"{field_label} {field_unit_label}"

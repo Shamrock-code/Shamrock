@@ -64,14 +64,6 @@ namespace shammodels::gsph {
     struct SolverConfig;
 
     /**
-     * @brief Solver status variables for GSPH
-     *
-     * @tparam Tvec the type of the vector used to represent the particles
-     */
-    template<class Tvec>
-    struct SolverStatusVar;
-
-    /**
      * @brief The configuration for the CFL condition in GSPH
      *
      * @tparam Tscal the type of the scalar used to represent the quantities
@@ -83,14 +75,6 @@ namespace shammodels::gsph {
     };
 
 } // namespace shammodels::gsph
-
-template<class Tvec>
-struct shammodels::gsph::SolverStatusVar {
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    Tscal time = 0; ///< Current time
-    Tscal dt   = 0; ///< Current time step
-};
 
 template<class Tvec, template<class> class SPHKernel>
 struct shammodels::gsph::SolverConfig {
@@ -130,22 +114,6 @@ struct shammodels::gsph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
-    //////////////////////////////////////////////////////////////////////////////////////////////
-
-    using SolverStatusVar = SolverStatusVar<Tvec>;
-    SolverStatusVar time_state;
-
-    inline void set_time(Tscal t) { time_state.time = t; }
-    inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-    inline Tscal get_time() const { return time_state.time; }
-    inline Tscal get_dt() const { return time_state.dt; }
-
-    //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -350,21 +318,6 @@ namespace shammodels::gsph {
         j.at("cfl_force").get_to(p.cfl_force);
     }
 
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-        j = nlohmann::json{
-            {"time", p.time},
-            {"dt", p.dt},
-        };
-    }
-
-    template<class Tvec>
-    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-        j.at("time").get_to<Tscal>(p.time);
-        j.at("dt").get_to<Tscal>(p.dt);
-    }
-
     template<class Tvec, template<class> class SPHKernel>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, SPHKernel> &p) {
         using T       = SolverConfig<Tvec, SPHKernel>;
@@ -381,7 +334,6 @@ namespace shammodels::gsph {
             {"gpart_mass", p.gpart_mass},
             {"cfl_config", p.cfl_config},
             {"unit_sys", p.unit_sys},
-            {"time_state", p.time_state},
             {"riemann_config", p.riemann_config},
             {"reconstruct_config", p.reconstruct_config},
             {"eos_config", p.eos_config},
@@ -426,7 +378,6 @@ namespace shammodels::gsph {
         _get_to_if_contains("gpart_mass", p.gpart_mass);
         _get_to_if_contains("cfl_config", p.cfl_config);
         _get_to_if_contains("unit_sys", p.unit_sys);
-        _get_to_if_contains("time_state", p.time_state);
         _get_to_if_contains("riemann_config", p.riemann_config);
         _get_to_if_contains("reconstruct_config", p.reconstruct_config);
         _get_to_if_contains("eos_config", p.eos_config);

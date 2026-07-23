@@ -72,7 +72,6 @@ namespace shammodels::basegodunov {
             {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
             {"slope_limiter", p.slope_config},
-            {"time_state", p.time_state},
             {"unit_sys", p.unit_sys}};
     }
 
@@ -110,7 +109,6 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         _get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
         _get_to_if_contains("slope_limiter", p.slope_config);
-        _get_to_if_contains("time_state", p.time_state);
         _get_to_if_contains("unit_sys", p.unit_sys);
 
         if (has_used_defaults || has_updated_config) {

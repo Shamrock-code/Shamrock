@@ -22,6 +22,4 @@ PRE_MAIN_FUNCTION_CALL([&]() {
     pre_main_call_counter++;
 });
 
-TestStart(Unittest, "shambase/pre_main_call", testpremaincall, 1) {
-    REQUIRE_EQUAL(pre_main_call_counter, 2);
-}
+NEW_TEST(Unittest, "shambase/pre_main_call", 1) { REQUIRE_EQUAL(pre_main_call_counter, 2); }

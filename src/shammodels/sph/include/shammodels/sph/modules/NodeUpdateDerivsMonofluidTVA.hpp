@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file NodeUpdateDerivsMonofluidTVI.hpp
+ * @file NodeUpdateDerivsMonofluidTVA.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -50,7 +50,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class NodeUpdateDerivsMonofluidTVI : public shamrock::solvergraph::INode {
+    class NodeUpdateDerivsMonofluidTVA : public shamrock::solvergraph::INode {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
@@ -59,14 +59,14 @@ namespace shammodels::sph::modules {
         u32 ndust;
 
         public:
-        NodeUpdateDerivsMonofluidTVI(u32 ndust) : ndust(ndust) {}
+        NodeUpdateDerivsMonofluidTVA(u32 ndust) : ndust(ndust) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const {
-            return "NodeUpdateDerivsMonofluidTVI";
+            return "NodeUpdateDerivsMonofluidTVA";
         };
 
         virtual std::string _impl_get_tex() const;

@@ -18,6 +18,12 @@ if not shamrock.sys.is_initialized():
     shamrock.change_loglevel(1)
     shamrock.sys.init("0:0")
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+# %%
+# Setup parameters
 tmax = 1.0
 timestamps = 40
 
@@ -31,6 +37,8 @@ base = 16
 positions = [(x, 0, 0) for x in np.linspace(0, 1, 256).tolist()[:-1]]
 
 
+# %%
+# Simulation
 def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = True):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()

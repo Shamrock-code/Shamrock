@@ -23,7 +23,7 @@ using Tvec  = f64_3;
 using Tscal = f64;
 using Block = shammodels::amr::AMRBlock<f64_3, i64_3, 1>;
 
-TestStart(Unittest, "shammodels/ramses/modules/ResidualDot", ResidualDot_testing, 2) {
+NEW_TEST(Unittest, "shammodels/ramses/modules/ResidualDot", 2) {
 
     std::vector<Tvec> ref_vals0 = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}};
     std::vector<Tvec> ref_vals1 = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}};

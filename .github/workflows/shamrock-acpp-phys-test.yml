@@ -22,8 +22,35 @@ jobs:
           cp repo/.github/dockerfiles/phys_test_image_acpp_omp/Dockerfile .
 
       - name: Set up Docker Buildx
+        id: setup-buildx
         uses: docker/setup-buildx-action@v3
 
+      # How to restore docker cache mount in github actions
+      # https://docs.docker.com/build/ci/github-actions/cache/#cache-mounts
+
+      - name: ccache mount cache for Docker
+        uses: actions/cache@v4
+        id: cache-ccache
+        with:
+          path: ccache-cache
+          # Note: github.run_id is unique for each run, so it will be different for each build.
+          key: ${{ runner.os }}-ccache-cache-${{ github.ref_name }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-cache-${{ github.ref_name }}-
+            ${{ runner.os }}-ccache-cache-main-
+            ${{ runner.os }}-ccache-cache
+
+      - name: Inject ccache mount cache
+        uses: reproducible-containers/buildkit-cache-dance@v3.4.0
+        with:
+          builder: ${{ steps.setup-buildx.outputs.name }}
+          cache-map: |
+            {
+              "ccache-cache": "/tmp/ccache"
+            }
+          # skip-extraction: ${{ steps.cache-ccache.outputs.cache-hit }}
+
+          # Note: here we are caching docker build cache which include ccache one.
       - name: Build Container
         uses: docker/build-push-action@v6
         with:
@@ -155,6 +182,8 @@ jobs:
             artifact_name: gallery_sph_run_circular_disc_central_pot
           - testfile: "examples/sph/run_circular_disc_sink.py"
             artifact_name: gallery_sph_run_circular_disc_sink
+          - testfile: "examples/sph/run_pn_disc.py"
+            artifact_name: gallery_sph_run_pn_disc
           - testfile: "examples/sph/run_kelvin_helmholtz.py"
             artifact_name: gallery_sph_run_kelvin_helmholtz
           - testfile: "examples/sph/run_sph_shear_test.py"
@@ -169,6 +198,16 @@ jobs:
             artifact_name: gallery_sph_pairing_instab
           - testfile: "examples/sph/run_cubic_reorganisation.py"
             artifact_name: gallery_sph_cubic_reorg
+          - testfile: "examples/sph/run_dustydiffuse_tva.py"
+            artifact_name: gallery_sph_dustydiffuse_tva
+          - testfile: "examples/sph/run_dustywave_tva.py"
+            artifact_name: gallery_sph_dustywave_tva
+          - testfile: "examples/sph/run_dustysettle_tva.py"
+            artifact_name: gallery_sph_dustysettle_tva
+          - testfile: "examples/sph/run_sod.py"
+            artifact_name: gallery_sph_sod
+          - testfile: "examples/sph/run_sod_dust_tva.py"
+            artifact_name: gallery_sph_sod_dust_tva
 
           # Tests CI
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"

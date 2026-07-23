@@ -95,9 +95,6 @@ namespace shammodels::basegodunov {
         Tvec g_grav = {0.,0.,0.};
     };
 
-    template<class Tvec>
-    struct SolverStatusVar;
-
     template<class Tvec, class TgridVec>
     struct AMRMode {
 
@@ -119,13 +116,17 @@ namespace shammodels::basegodunov {
             Tscal T_0 = 10.;
         };
 
-        struct ShearBased{
+        struct ShearBased {
             Tscal threshold;
         };
 
-        using mode = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased, ShearBased >;
+        using mode
+            = std::variant<None, DensityBased, PseudoGradientBased, JeansLengthBased, ShearBased>;
 
         mode config = None{};
+
+        bool old_amr = true;
+
         void set_refine_none() { config = None{}; }
         void set_refine_density_based(Tscal crit_mass) { config = DensityBased{crit_mass}; }
         void set_refine_pseudo_gradient_based(Tscal error_min, Tscal error_max) {
@@ -136,12 +137,10 @@ namespace shammodels::basegodunov {
             config = JeansLengthBased{N_J, T_0};
         }
 
-        void set_refine_shear_based(Tscal thresh){
-            config = ShearBased{thresh};
-        }
+        void set_refine_shear_based(Tscal thresh) { config = ShearBased{thresh}; }
 
-        bool need_level_zero_compute() { return true; }
-        bool need_amr_level_compute() { return true; }
+        bool need_level_zero_compute() { return !old_amr; }
+        bool need_amr_level_compute() { return !old_amr; }
     };
 
     struct BCConfig {
@@ -164,16 +163,6 @@ namespace shammodels::basegodunov {
     struct SolverConfig;
 
 }; // namespace shammodels::basegodunov
-
-template<class Tvec>
-struct shammodels::basegodunov::SolverStatusVar {
-
-    /// The type of the scalar used to represent the quantities
-    using Tscal = shambase::VecComponent<Tvec>;
-
-    Tscal time = 0; ///< Current time
-    Tscal dt   = 0; ///< Current time step
-};
 
 template<class Tvec, class TgridVec>
 struct shammodels::basegodunov::SolverConfig {
@@ -292,25 +281,13 @@ struct shammodels::basegodunov::SolverConfig {
     PatchSchedulerConfig scheduler_conf = {};
 
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables
+    // CFL Configuration (config)
     //////////////////////////////////////////////////////////////////////////////////////////////
-
-    /// Alias to SolverStatusVar type
-    using SolverStatusVar = SolverStatusVar<Tvec>;
-    /// The time sate of the simulation
-    SolverStatusVar time_state;
-    /// Set the current time
-    inline void set_time(Tscal t) { time_state.time = t; }
-    /// Set the time step for the next iteration
-    inline void set_next_dt(Tscal dt) { time_state.dt = dt; }
-    /// Get the current time
-    inline Tscal get_time() { return time_state.time; }
-    /// Get the time step for the next iteration
-    inline Tscal get_dt() { return time_state.dt; }
 
     Tscal Csafe = 0.9;
+
     //////////////////////////////////////////////////////////////////////////////////////////////
-    // Solver status variables (END)
+    // CFL Configuration (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -405,24 +382,16 @@ struct shammodels::basegodunov::SolverConfig {
                     "> 0",
                     npscal_gas_config.npscal_gas));
         }
+
+        if (!amr_mode.old_amr) {
+            shamrock::experimental_feature_check("new AMR is experimental");
+        }
     }
 
     void set_layout(shamrock::patch::PatchDataLayerLayout &pdl);
 };
 
 namespace shammodels::basegodunov {
-
-    template<class Tvec>
-    inline void to_json(nlohmann::json &j, const SolverStatusVar<Tvec> &p) {
-        j = nlohmann::json{{"time", p.time}, {"dt", p.dt}};
-    }
-
-    template<class Tvec>
-    inline void from_json(const nlohmann::json &j, SolverStatusVar<Tvec> &p) {
-        using Tscal = typename SolverStatusVar<Tvec>::Tscal;
-        j.at("time").get_to<Tscal>(p.time);
-        j.at("dt").get_to<Tscal>(p.dt);
-    }
 
     /**
      * @brief Serialize a SolverConfig to a JSON object

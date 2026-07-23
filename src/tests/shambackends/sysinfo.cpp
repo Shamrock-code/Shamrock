@@ -13,7 +13,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambackends/sysinfo:getPhysicalMemory", test_sysinfo_getPhysicalMemory, 1) {
+NEW_TEST(Unittest, "shambackends/sysinfo:getPhysicalMemory", 1) {
     auto phys_mem = sham::getPhysicalMemory();
 
     logger::raw_ln("Physical memory: bool(result)", bool(phys_mem));

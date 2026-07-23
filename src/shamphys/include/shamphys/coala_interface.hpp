@@ -117,19 +117,23 @@ namespace shamphys {
         SHAM_ASSERT(tensor_tabflux_coag.extent(1) == nbins);
         SHAM_ASSERT(tensor_tabflux_coag.extent(2) == nbins);
 
+        // initialize flux to 0
+        for (int j = 0; j < nbins; ++j) {
+            flux[j] = 0;
+        }
+
         /*
          * Python version:
          * flux = np.einsum("jlm,lm,l,m->j", tensor_tabflux_coag, dv, gij, gij)
          */
 
-        for (int j = 0; j < nbins; ++j) {
-            double sum = 0.0;
-            for (int l = 0; l < nbins; ++l) {
-                for (int m = 0; m < nbins; ++m) {
-                    sum += tensor_tabflux_coag(j, l, m) * dv(l, m) * gij[l] * gij[m];
+        for (int l = 0; l < nbins; ++l) {
+            for (int m = 0; m < nbins; ++m) {
+                auto term = dv(l, m) * gij[l] * gij[m];
+                for (int j = 0; j < nbins; ++j) {
+                    flux[j] += tensor_tabflux_coag(j, l, m) * term;
                 }
             }
-            flux[j] = sum;
         }
     }
 
@@ -168,6 +172,7 @@ namespace shamphys {
         FuncRhoDust &&rho_dust,
         T rho_eps,
         shambase::is_mdspan_rank<1> auto massgrid,
+        /* COALA inputs */
         shambase::is_mdspan_rank<3> auto tabflux_coag,
         /* internal */
         shambase::is_mdspan_rank<1> auto gij,

@@ -2093,4 +2093,10 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
    
 }
 
+template<class Tvec, class TgridVec>
+void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
+    update_refinement_new() {
+    shambase::throw_unimplemented("TODO");
+}
+
 template class shammodels::basegodunov::modules::AMRGridRefinementHandler<f64_3, i64_3>;

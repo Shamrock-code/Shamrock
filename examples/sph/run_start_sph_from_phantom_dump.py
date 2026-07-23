@@ -34,6 +34,7 @@ ctx, model, in_params = shamrock.utils.phantom.load_simulation(
     dump_folder, dump_file_name="blast_00010", in_file_name=None
 )
 
+
 # %%
 # Run a simple timestep just for wasting some computing time :)
 #
@@ -45,6 +46,11 @@ model.timestep()
 #    Note that shamrock has to update some smoothing lengths that were in the phantom dump
 #    I think that since smoothing length is single precision in phantom they are slightly off
 #    from the shamrock point of view hence the update
+
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
 
 # %%
 # Plot the result

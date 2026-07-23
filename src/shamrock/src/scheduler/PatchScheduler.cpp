@@ -18,6 +18,7 @@
 #include "shambase/stacktrace.hpp"
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
+#include "nlohmann/json.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
 #include "shamrock/legacy/patch/base/patchdata.hpp"
@@ -211,8 +212,8 @@ PatchScheduler::PatchScheduler(
     u64 crit_merge)
     : pdl_ptr(pdl_ptr),
       patch_data(
-          pdl_ptr,
-          {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}) {
+          pdl_ptr, {{0, 0, 0}, {max_axis_patch_coord, max_axis_patch_coord, max_axis_patch_coord}}),
+      synchronized_data() {
 
     crit_patch_split = crit_split;
     crit_patch_merge = crit_merge;
@@ -1026,5 +1027,6 @@ nlohmann::json PatchScheduler::serialize_patch_metadata() {
         {"patchdata_layout", pdl_old()},
         {"sim_box", jsim_box},
         {"crit_patch_split", crit_patch_split},
-        {"crit_patch_merge", crit_patch_merge}};
+        {"crit_patch_merge", crit_patch_merge},
+        {"synchronized_data", synchronized_data}};
 }

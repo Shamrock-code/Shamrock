@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file MonoFluidTVIDeltav.hpp
+ * @file MonoFluidTVADeltav.hpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -44,7 +44,7 @@
 namespace shammodels::sph::modules {
 
     template<class Tvec, template<class> class SPHKernel>
-    class MonoFluidTVIDeltav : public shamrock::solvergraph::INode {
+    class MonoFluidTVADeltav : public shamrock::solvergraph::INode {
 
         using Tscal  = shambase::VecComponent<Tvec>;
         using Kernel = SPHKernel<Tscal>;
@@ -52,7 +52,7 @@ namespace shammodels::sph::modules {
         u32 ndust;
 
         public:
-        MonoFluidTVIDeltav(u32 ndust) : ndust(ndust) {}
+        MonoFluidTVADeltav(u32 ndust) : ndust(ndust) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 
@@ -119,13 +119,27 @@ namespace shammodels::sph::modules {
                      * Hutchison 2018 eq 15
                      * T_{sj} = \epsilon_j (1 - \epsilon_j) t_j
                      * delta_v = \epsilon_j t_j \nabla P / rho = T_{sj} \nabla P / rho_g
+                     * but now if i assume that Tsj in Hutchison 2018 meant tsj, then
+                     * delta_v = t_j \nabla P / rho_g
                      */
 
-                    delta_v[thread_id] = (eps_j_a * tj_a) * grad_P_on_rho_a;
+                    // old with ts_a
+                    // delta_v[thread_id] = (eps_j_a * tj_a) * grad_P_on_rho_a;
+
+                    Tscal sum_eps = 0;
+                    for (u32 k = 0; k < ndust; k++) {
+                        Tscal sk_a    = s_j[id_a * ndust + k];
+                        Tscal eps_k_a = epsilon(sk_a);
+                        sum_eps += eps_k_a;
+                    }
+
+                    Tvec grad_P_on_rho_g_a = grad_P_on_rho_a / (1 - sum_eps);
+
+                    delta_v[thread_id] = tj_a * grad_P_on_rho_g_a;
                 });
         }
 
-        inline virtual std::string _impl_get_label() const { return "MonoFluidTVIDeltav"; };
+        inline virtual std::string _impl_get_label() const { return "MonoFluidTVADeltav"; };
 
         inline virtual std::string _impl_get_tex() const {
 
@@ -138,7 +152,7 @@ namespace shammodels::sph::modules {
             auto delta_v       = get_rw_edge_base(0).get_tex_symbol();
 
             std::string tex = R"tex(
-                MonoFluidTVIDeltav
+                MonoFluidTVADeltav
 
                 \begin{align}
                 \epsilon_{i,j} = \frac{{s_j}_{i,j}^2}{{rho}_i ({hpart}_i)} \\

@@ -8,7 +8,7 @@
 // -------------------------------------------------------//
 
 /**
- * @file NodeUpdateDerivsMonofluidTVI.cpp
+ * @file NodeUpdateDerivsMonofluidTVA.cpp
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -18,11 +18,11 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
-#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVI.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shamrock/patch/PatchDataField.hpp" // IWYU pragma: keep
 
 template<class Tvec, template<class> class SPHKernel>
-struct KernelUpdateDerivsMonofluidTVI {
+struct KernelUpdateDerivsMonofluidTVA {
     using Tscal                   = shambase::VecComponent<Tvec>;
     using Kernel                  = SPHKernel<Tscal>;
     static constexpr Tscal hfactd = Kernel::hfactd;
@@ -82,7 +82,8 @@ struct KernelUpdateDerivsMonofluidTVI {
             Tscal s_j_b       = s_j[id_b * ndust + jdust];
             Tscal Ttilde_sj_b = Ttilde_sj[id_b * ndust + jdust];
 
-            Tscal rab = sycl::sqrt(rab2);
+            Tscal rab         = sycl::sqrt(rab2);
+            Tscal rab_inv_sat = sham::inv_sat_positive(rab);
 
             Tscal rho_b = rho_h(pmass, h_b, Kernel::hfactd);
 
@@ -91,23 +92,31 @@ struct KernelUpdateDerivsMonofluidTVI {
 
             Tvec v_ab = vxyz_a - vxyz_b;
 
-            Tvec r_ab_unit = dr * sham::inv_sat_positive(rab);
+            Tvec r_ab_unit = dr * rab_inv_sat;
 
             Tscal F_ab_bar    = (Fab_a + Fab_b) / 2;
             Tscal delta_P     = P_a - P_b;
             Tscal Ts_weighted = (Ttilde_sj_a / rho_a + Ttilde_sj_b / rho_b);
 
-            term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar;
+            term1 += (pmass * s_j_b / rho_b) * Ts_weighted * delta_P * F_ab_bar * rab_inv_sat;
             term2 += pmass * sham::dot(v_ab, r_ab_unit * Fab_a);
         });
 
         // eq 51, Hutchison 2018
-        ds_j_dt[thread_id] = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
+        Tscal ds_j_dt_a = Tscal{-0.5} * term1 + (s_j_a / (2 * rho_a * omega_a)) * term2;
+
+        // if we dip in the negative range do not dip further
+        ds_j_dt_a *= (s_j_a < 0 && ds_j_dt_a < 0) ? 0 : 1;
+
+        // restore it slowly to 0
+        ds_j_dt_a += (s_j_a < 0) ? -s_j_a / (10 * Ttilde_sj_a) : 0;
+
+        ds_j_dt[thread_id] = ds_j_dt_a;
     }
 };
 
 template<class Tvec, template<class> class SPHKernel>
-void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
+void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::
     _impl_evaluate_internal() {
 
     __shamrock_stack_entry();
@@ -131,7 +140,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
 
     const Tscal pmass = edges.gpart_mass.value;
 
-    using ComputeKernel = KernelUpdateDerivsMonofluidTVI<Tvec, SPHKernel>;
+    using ComputeKernel = KernelUpdateDerivsMonofluidTVA<Tvec, SPHKernel>;
 
     auto total_specie_count = part_counts.template map<u32>([&](u64 id, u32 count) {
         return count * ndust;
@@ -155,7 +164,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::
 }
 
 template<class Tvec, template<class> class SPHKernel>
-std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKernel>::_impl_get_tex()
+std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::_impl_get_tex()
     const {
     auto gpart_mass  = get_ro_edge_base(0).get_tex_symbol();
     auto part_counts = get_ro_edge_base(1).get_tex_symbol();
@@ -172,7 +181,7 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKern
     const std::string kernel_radius_str = std::to_string(kernel_radius);
 
     std::string tex = R"tex(
-        NodeUpdateDerivsMonofluidTVI (eq. 51, Hutchison 2018)
+        NodeUpdateDerivsMonofluidTVA (eq. 51, Hutchison 2018)
 
         For gas particle $a$ and dust bin $j$:
 
@@ -224,10 +233,10 @@ std::string shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<Tvec, SPHKern
 }
 
 using namespace shammath;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M4>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M6>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, M8>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M4>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M6>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, M8>;
 
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C2>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C4>;
-template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVI<f64_3, C6>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C2>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C4>;
+template class shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<f64_3, C6>;

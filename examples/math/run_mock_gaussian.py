@@ -9,6 +9,13 @@ This example shows how to use the mock gaussian function
 
 import shamrock
 
+# %%
+# Use shamrock documentation style for matplotlib
+shamrock.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
+
 eng = shamrock.algs.gen_seed(111)
 
 import matplotlib.pyplot as plt

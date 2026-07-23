@@ -16,7 +16,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/atomic/DynamicIdGenerator", test_dynamicidgen, 1) {
+NEW_TEST(Unittest, "shamalgs/atomic/DynamicIdGenerator", 1) {
 
     constexpr u32 gsize = 64;
 
@@ -86,7 +86,7 @@ f64 bench_one_idgen(u32 wanted_len) {
         cnt);
 }
 
-TestStart(Benchmark, "shamalgs/atomic/DynamicIdGenerator:benchmark", bench_dynamicidgen, 1) {
+NEW_TEST(Benchmark, "shamalgs/atomic/DynamicIdGenerator:benchmark", 1) {
 
     {
         auto res = shambase::benchmark_pow_len(

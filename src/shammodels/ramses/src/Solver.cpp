@@ -48,6 +48,7 @@
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/io/LegacyVtkWriter.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -393,6 +394,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.press
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "P", "P");
 
+    if (!solver_config.amr_mode.old_amr) { // TODO disable also if amr is none
+        storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho-prim", "rho-prim");
+    }
+
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
@@ -428,6 +434,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         // get blocks at level0 sizes for all patches
         storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
             "level0_amr", "level0_amr");
+    }
+
+    if (solver_config.amr_mode.need_amr_level_compute()) {
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+        storage.amr_block_levels
+            = std::make_shared<shamrock::solvergraph::Field<TgridUint>>(1, "", "");
     }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -1617,11 +1629,20 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
-    modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
-    if (solver_config.amr_mode.old_amr) {
-        refinement.update_refinement_old();
-    } else {
-        refinement.update_refinement_new();
+    {
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
+        node_copy_rho.set_edges(storage.refs_rho, storage.rho_primitive);
+        node_copy_rho.evaluate();
+    }
+
+    // TODO: check if we can drop that
+    if (dt_input > 0) {
+        modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+        if (solver_config.amr_mode.old_amr) {
+            refinement.update_refinement_old();
+        } else {
+            refinement.update_refinement_new();
+        }
     }
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
@@ -1777,8 +1798,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     */
 
     /*
-    std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
-    writer.write_field("dtrho", dtrho, num_obj * block_size);
+    std::unique_ptr<sycl::buffer<Tscal>> dtrho =
+    storage.dtrho.get().rankgather_computefield(sched); writer.write_field("dtrho", dtrho,
+    num_obj * block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dtrhov
         = storage.dtrhov.get().rankgather_computefield(sched);

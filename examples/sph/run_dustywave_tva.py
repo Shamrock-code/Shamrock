@@ -29,12 +29,15 @@ rho = 1
 epsilon_0 = 0.5
 cs_g_list = np.logspace(-4, -1, 3).tolist()
 ts = 1
-delta_v_0_list = [cs * 0.001 for cs in cs_g_list]
+ampl_perturbation = 0.0001
+plot_scaling = 1e4
+label_scaling = "10^4 \\cdot"
+delta_v_0_list = [cs * ampl_perturbation for cs in cs_g_list]
 
 bmin = (-0.5, -0.5 / 4, -0.5 / 4)
 bmax = (0.5, 0.5 / 4, 0.5 / 4)
 
-N_target = 1e3
+N_target = 1e5
 
 # %%
 # Use shamrock documentation style for matplotlib
@@ -281,6 +284,9 @@ def fit_sine_wave(x, y, prev_phi=None):
 
 # %%
 # Perform the simulation
+
+all_case_plot = []
+
 for ics, cs in enumerate(cs_g_list):
     ctx = shamrock.Context()
     ctx.pdata_layout_new()
@@ -304,7 +310,7 @@ for ics, cs in enumerate(cs_g_list):
     print(Twave)
 
     Twave_cnt = 40
-    nwave = 2
+    nwave = 2.5
 
     t_list = []
     rho_t_list = []
@@ -396,7 +402,7 @@ for ics, cs in enumerate(cs_g_list):
         axs.set_ylabel(r"$\delta$ fields [code unit]")
         axs.set_xlim(xm, xM)
         # axs.set_ylim(rho / 2 - 1e-3, rho / 2 + 1e-3)
-        axs.set_ylim(-1e-3, +1e-3)
+        axs.set_ylim(-ampl_perturbation * 1.1, +ampl_perturbation * 1.1)
         axs.text(
             0.02,
             0.98,
@@ -423,18 +429,44 @@ for ics, cs in enumerate(cs_g_list):
     eps_t_list_analytic = np.array(eps_t_list_analytic)
     vx_t_list_analytic = np.array(vx_t_list_analytic)
 
+    curves = []
+
+    factor = plot_scaling
+
+    def add_curve(x, y, symbol, label):
+        curves.append({
+            "x" : x,
+            "y" : factor * y,
+            "symbol" : symbol,
+            "label" : label,
+        })
+
+    add_curve(t_arr, rho_t_list, ".", r"$\delta \rho (t)$")
+    add_curve(t_arr, eps_t_list, ".", r"$\delta \epsilon (t)$")
+    add_curve(t_arr, vx_t_list / cs, ".", r"$\delta v_x / c_s (t)$")
+    add_curve(t_arr, rho_t_list_analytic, "--", r"$\delta \rho (t)$ analytic")
+    add_curve(t_arr, eps_t_list_analytic, "--", r"$\delta \epsilon (t)$ analytic")
+    add_curve(t_arr, vx_t_list_analytic / cs, "--", r"$\delta v_x / c_s(t)$ analytic")
+
+    return_dict = {
+        "curves" : curves,
+        "cs" : cs,
+        "ics" : ics,
+        "xlabel" : "$t$ [code unit]",
+        "ylabel" : f"${label_scaling} \\delta$ fields [code unit]",
+        "title" : f"cs={cs:.2e} [code unit]",
+    }
+
     plt.figure(dpi=150)
-    plt.plot(t_arr, rho_t_list, ".", label=r"$\delta \rho (t)$")
-    plt.plot(t_arr, eps_t_list, ".", label=r"$\delta \epsilon (t)$")
-    plt.plot(t_arr, vx_t_list / cs, ".", label=r"$\delta v_x / c_s (t)$")
-    plt.plot(t_arr, rho_t_list_analytic, "-", label=r"$\delta \rho (t)$ analytic")
-    plt.plot(t_arr, eps_t_list_analytic, "-", label=r"$\delta \epsilon (t)$ analytic")
-    plt.plot(t_arr, vx_t_list_analytic / cs, "-", label=r"$\delta v_x / c_s(t)$ analytic")
-    plt.xlabel("$t$ [code unit]")
-    plt.ylabel("$\delta$ fields [code unit]")
-    plt.title(f"cs={cs:.6g}")
+    for curve in curves:
+        plt.plot(curve["x"], curve["y"], curve["symbol"], label=curve["label"])
+    plt.xlabel(return_dict["xlabel"])
+    plt.ylabel(return_dict["ylabel"])
+    plt.title(return_dict["title"])
     plt.legend(fontsize=12, loc="upper right")
-    plt.savefig(f"_to_trash/dustywave_tva_scan_{ics:04}.png")
+    plt.savefig(f"_to_trash/dustywave_tva_scan_{return_dict["ics"]:04}.png")
+
+    all_case_plot.append(return_dict)
 
 # %%
 # make gifs
@@ -443,21 +475,20 @@ from shamrock.utils.plot import show_image_sequence
 
 keep_list = []
 
-# %%
-# show them the gifs (i have to unroll the loop otherwise the doc does not capture the gifs ...)
-ani0 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{0:02d}_*.png")
-writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani0.save(f"_to_trash/dustywave_tva_scan_{0:04}.gif", writer=writer)
-plt.show()
-# %%
-ani1 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{1:02d}_*.png")
-writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani1.save(f"_to_trash/dustywave_tva_scan_{1:04}.gif", writer=writer)
-plt.show()
-# %%
-ani2 = show_image_sequence(f"_to_trash/dump_dustywave_tva_{2:02d}_*.png")
-writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani2.save(f"_to_trash/dustywave_tva_scan_{2:04}.gif", writer=writer)
-plt.show()
 
-plt.show()
+
+#%%
+fig, axs = plt.subplots(1, len(all_case_plot), figsize=(12, 5), sharey=True)
+for i, case in enumerate(all_case_plot):
+    for curve in case["curves"]:
+        axs[i].plot(curve["x"], curve["y"], curve["symbol"], label=curve["label"])
+    axs[i].set_xlabel(case["xlabel"])
+    if i == 0:
+        axs[i].set_ylabel(case["ylabel"])
+    axs[i].set_title(case["title"])
+
+axs[0].legend(fontsize=11, loc="upper left")
+plt.tight_layout()
+plt.savefig(f"_to_trash/dustywave_tva_scan_all.png")
+plt.savefig(f"_to_trash/dustywave_tva_scan_all.pdf")
+plt.close()

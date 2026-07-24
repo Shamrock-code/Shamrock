@@ -150,7 +150,7 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     )
 
     # Create figure
-    fig, axs = plt.subplots(2, 2, figsize=(8, 8), sharex=True)
+    fig, axs = plt.subplots(2, 2, figsize=(6, 6), sharex=True)
 
     # Real parts
     axs[0, 0].plot(k_plot, r1_vals_re, color="0", linewidth=2, label="Re($\omega_+$)")
@@ -230,8 +230,8 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     r_max_LP14 = np.maximum(r1_vals_abs_LP14, r2_vals_abs_LP14)
     r_max_DCL26_simple = np.maximum(r1_vals_abs_DCL26_simple, r2_vals_abs_DCL26_simple)
     r_max_DCL26 = np.maximum(r1_vals_abs_DCL26, r2_vals_abs_DCL26)
-    axs[1, 1].plot(k_plot, (r_max_LP14 - r_max) / r_max, label="Ana - LP14")
-    axs[1, 1].plot(k_plot, (r_max_DCL26_simple - r_max) / r_max, label="Ana - DCL26 simple")
+    axs[1, 1].plot(k_plot, (r_max_LP14 - r_max) / r_max, label="Analytic - LP14")
+    axs[1, 1].plot(k_plot, (r_max_DCL26_simple - r_max) / r_max, label="Analytic - approx")
     # axs[1,1].plot(k_plot, (r_max_DCL26 - r_max) / r_max, label="Ana - DCL26")
     axs[1, 1].set_xlabel("$k$")
     axs[1, 1].set_ylabel("Abs(Ana) - Abs(Max model) / Abs(Ana)")
@@ -241,6 +241,78 @@ def plot_case(k_plot, eps_value, cs_value, ts_value):
     plt.suptitle(f"eps = {eps_value}, cs = {cs_value}, ts = {ts_value}")
 
     plt.tight_layout()
+
+    # Create figure
+    fig, axs = plt.subplots(2, 1, figsize=(4, 6), sharex=True)
+
+    # Abs
+    r1_vals_abs = np.sqrt(r1_vals_re**2 + r1_vals_im**2)
+    r2_vals_abs = np.sqrt(r2_vals_re**2 + r2_vals_im**2)
+    r1_vals_abs_LP14 = np.sqrt(r1_vals_re_LP14**2 + r1_vals_im_LP14**2)
+    r2_vals_abs_LP14 = np.sqrt(r2_vals_re_LP14**2 + r2_vals_im_LP14**2)
+    r1_vals_abs_DCL26_simple = np.sqrt(r1_vals_re_DCL26_simple**2 + r1_vals_im_DCL26_simple**2)
+    r2_vals_abs_DCL26_simple = np.sqrt(r2_vals_re_DCL26_simple**2 + r2_vals_im_DCL26_simple**2)
+    r1_vals_abs_DCL26 = np.sqrt(r1_vals_re_DCL26**2 + r1_vals_im_DCL26**2)
+    r2_vals_abs_DCL26 = np.sqrt(r2_vals_re_DCL26**2 + r2_vals_im_DCL26**2)
+    (line_ana,) = axs[0].plot(
+        k_plot, r1_vals_abs, color="0", linewidth=2, label=r"Abs($\omega_\pm$)"
+    )
+    axs[0].plot(k_plot, r2_vals_abs, color=line_ana.get_color(), linewidth=2)
+    (line_lp14,) = axs[0].plot(k_plot, r1_vals_abs_LP14, "--", label=r"Abs($\omega_{\pm,LP14}$)")
+    axs[0].plot(k_plot, r2_vals_abs_LP14, "--", color=line_lp14.get_color())
+    (line_approx,) = axs[0].plot(
+        k_plot,
+        r1_vals_abs_DCL26_simple,
+        label=r"Abs($\omega_{\pm,approx}$)",
+        alpha=0.7,
+    )
+    axs[0].plot(
+        k_plot,
+        r2_vals_abs_DCL26_simple,
+        color=line_approx.get_color(),
+        alpha=0.7,
+    )
+
+    # axs[1,0].plot(k_plot, r1_vals_abs_DCL26,"--", label="Abs($r_1$) DCL26")
+    # axs[1,0].plot(k_plot, r2_vals_abs_DCL26,"--", label="Abs($r_2$) DCL26")
+    axs[0].set_xlabel("$k$")
+    axs[0].set_ylabel("Abs part")
+    axs[0].grid(True)
+    axs[0].legend()
+
+    # delta with max
+    r_max = np.maximum(r1_vals_abs, r2_vals_abs)
+    r_max_LP14 = np.maximum(r1_vals_abs_LP14, r2_vals_abs_LP14)
+    r_max_DCL26_simple = np.maximum(r1_vals_abs_DCL26_simple, r2_vals_abs_DCL26_simple)
+    r_max_DCL26 = np.maximum(r1_vals_abs_DCL26, r2_vals_abs_DCL26)
+    delta_LP14 = (r_max_LP14 - r_max) / r_max
+    delta_DCL26_simple = (r_max_DCL26_simple - r_max) / r_max
+    axs[1].plot(k_plot, delta_LP14, label="LP14")
+    axs[1].plot(k_plot, delta_DCL26_simple, label="approx")
+    # axs[1,1].plot(k_plot, (r_max_DCL26 - r_max) / r_max, label="Ana - DCL26")
+    axs[1].set_xlabel("$k$")
+    axs[1].set_ylabel(
+        r"$(\vert \omega_{ana} \vert_{\rm max} - \vert \omega_{model} \vert_{\rm max} )/ \vert \omega_{ana} \vert_{\rm max}$"
+    )
+    axs[1].grid(True)
+    axs[1].legend()
+    ymin, ymax = axs[1].get_ylim()
+    axs[1].axhspan(ymin=min(ymin, 0) * 10, ymax=0, facecolor="red", alpha=0.15, zorder=0)
+    axs[1].text(
+        0.05,
+        0.05,
+        "CFL underestimated",
+        transform=axs[1].transAxes,
+        ha="left",
+        va="bottom",
+        color="red",
+        fontsize=9,
+    )
+    plt.ylim(ymin, ymax)
+    plt.suptitle(f"$\epsilon = {eps_value}, c_s = {cs_value}, t_s = {ts_value}$")
+
+    plt.tight_layout()
+    plt.savefig(f"_to_trash/dustywave_sympy_eps_{eps_value}_cs_{cs_value}_ts_{ts_value}.pdf")
 
 
 # %%

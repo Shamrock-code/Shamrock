@@ -33,7 +33,7 @@ c = ucte.c()
 M1 = 1000000.0  # Mass of the first body (in solar mass)
 M2 = 1000000.0  # Mass of the second body
 Rs = 2 * G * (M1 + M2) / c**2  # Sch radius
-A = 1000*Rs  # Semi major axis
+A = 54.5*Rs  # Semi major axis
 E = 0.02  # excentricity
 
 
@@ -52,7 +52,7 @@ spin_vec_2 = spin_mag_2 * spin_axis
 # Simulation parameters
 T = 2 * np.pi * np.sqrt(A * A * A / (G * (M1 + M2)))  # number of years
 n_orbits = 10  # Number of orbit to plot
-SF = 1000  # safety factor (increase it if you're working with high excentricity)
+SF = 500  # safety factor (increase it if you're working with high excentricity)
 
 N_per_orbits = SF * 20 / (np.sqrt(1 + E) * (1 - E) ** (3 / 2))  # number of time steps per orbit
 n_steps = int(n_orbits * N_per_orbits)  # number of steps to evolve
@@ -123,7 +123,7 @@ def build_binary_sph_model(
     split_load=10_000_000,
     merge_load=1,
     compute_op=True,
-    compute_so=True,
+    compute_so=False,
     compute_ss=True,
     compute_rr=True,
 ):
@@ -351,7 +351,7 @@ if __name__ == "__main__":
         yaw=0.0,
         racc=0.001,
         compute_op=True,
-        compute_so=True,
+        compute_so=False,
         compute_ss=True,
         compute_rr=True,
     )

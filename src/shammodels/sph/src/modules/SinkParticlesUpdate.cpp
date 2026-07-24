@@ -463,7 +463,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
             }
 
             if (SO) {
-                term2 = G * M / (c * c * (rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
+                term2 = G / (c * c * (rij_scal * rij_scal * rij_scal + epsilon_grav_sink))
                         * (6 * nij * (sycl::dot(sycl::cross(nij, vij), 2 * S + dm / M * Delta))
                            - sycl::cross(vij, 7 * S + 3 * dm / M * Delta)
                            + + 3*vij_nij*sycl::cross(nij, 3*S + dm/M*Delta));

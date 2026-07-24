@@ -1981,7 +1981,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                         cell_graph_ym,
                         cell_graph_zp,
                         cell_graph_zm,
-                        [=](u32 id) {
+                        [=, this](u32 id) {
                             return block_pressure[id];
                         }));
             }

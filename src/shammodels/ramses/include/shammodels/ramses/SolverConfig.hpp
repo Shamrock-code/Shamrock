@@ -34,6 +34,7 @@
 #include "shamrock/experimental_features.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
+#include <nlohmann/json.hpp>
 #include <shamrock/io/json_std_optional.hpp>
 #include <shamunits/Constants.hpp>
 #include <shamunits/UnitSystem.hpp>
@@ -308,6 +309,113 @@ struct shammodels::basegodunov::SolverConfig {
 };
 
 namespace shammodels::basegodunov {
+
+    inline void to_json(nlohmann::json &j, const BCConfig::GhostType &e) {
+        switch (e) {
+        case BCConfig::GhostType::Periodic  : j = "periodic"; break;
+        case BCConfig::GhostType::Reflective: j = "reflective"; break;
+        case BCConfig::GhostType::Outflow   : j = "outflow"; break;
+        default:
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid BCConfig::GhostType value: " + std::to_string(static_cast<int>(e)));
+        }
+    }
+
+    inline void from_json(const nlohmann::json &j, BCConfig::GhostType &e) {
+        const std::string type = j.get<std::string>();
+        if (type == "periodic") {
+            e = BCConfig::GhostType::Periodic;
+        } else if (type == "reflective") {
+            e = BCConfig::GhostType::Reflective;
+        } else if (type == "outflow") {
+            e = BCConfig::GhostType::Outflow;
+        } else {
+            shambase::throw_with_loc<std::runtime_error>(
+                "Invalid BCConfig::GhostType value: " + type);
+        }
+    }
+
+    inline void to_json(nlohmann::json &j, const BCConfig &p) {
+        j = nlohmann::json{
+            {"ghost_type_x", p.ghost_type_x},
+            {"ghost_type_y", p.ghost_type_y},
+            {"ghost_type_z", p.ghost_type_z}};
+    }
+
+    inline void from_json(const nlohmann::json &j, BCConfig &p) {
+        j.at("ghost_type_x").get_to(p.ghost_type_x);
+        j.at("ghost_type_y").get_to(p.ghost_type_y);
+        j.at("ghost_type_z").get_to(p.ghost_type_z);
+    }
+
+    inline void to_json(nlohmann::json &j, const DragConfig &p) {
+        j = nlohmann::json{
+            {"drag_solver", p.drag_solver_config},
+            {"alphas", p.alphas},
+            {"enable_frictional_heating", p.enable_frictional_heating}};
+    }
+
+    inline void from_json(const nlohmann::json &j, DragConfig &p) {
+        j.at("drag_solver").get_to(p.drag_solver_config);
+        j.at("alphas").get_to(p.alphas);
+        j.at("enable_frictional_heating").get_to(p.enable_frictional_heating);
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void amr_config_to_json(nlohmann::json &j, const AMRMode<Tvec, TgridVec> &p) {
+        using AMR = AMRMode<Tvec, TgridVec>;
+
+        if (std::holds_alternative<typename AMR::None>(p.config)) {
+            j = {{"type", "none"}};
+        } else if (const auto *cfg = std::get_if<typename AMR::DensityBased>(&p.config)) {
+            j = {{"type", "density_based"}, {"crit_mass", cfg->crit_mass}};
+        } else if (const auto *cfg = std::get_if<typename AMR::PseudoGradientBased>(&p.config)) {
+            j
+                = {{"type", "pseudo_gradient_based"},
+                   {"error_min", cfg->error_min},
+                   {"error_max", cfg->error_max}};
+        } else if (const auto *cfg = std::get_if<typename AMR::JeansLengthBased>(&p.config)) {
+            j = {{"type", "jeans_length_based"}, {"N_J", cfg->N_J}, {"T_0", cfg->T_0}};
+        } else if (const auto *cfg = std::get_if<typename AMR::ShearBased>(&p.config)) {
+            j = {{"type", "shear_based"}, {"threshold", cfg->threshold}};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void amr_config_from_json(const nlohmann::json &j, AMRMode<Tvec, TgridVec> &p) {
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        const std::string type = j.at("type").get<std::string>();
+        if (type == "none") {
+            p.set_refine_none();
+        } else if (type == "density_based") {
+            p.set_refine_density_based(j.at("crit_mass").get<Tscal>());
+        } else if (type == "pseudo_gradient_based") {
+            p.set_refine_pseudo_gradient_based(
+                j.at("error_min").get<Tscal>(), j.at("error_max").get<Tscal>());
+        } else if (type == "jeans_length_based") {
+            p.set_refine_jeans_length_based(j.at("N_J").get<u32>(), j.at("T_0").get<Tscal>());
+        } else if (type == "shear_based") {
+            p.set_refine_shear_based(j.at("threshold").get<Tscal>());
+        } else {
+            shambase::throw_with_loc<std::runtime_error>("Invalid AMR mode type: " + type);
+        }
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void to_json(nlohmann::json &j, const AMRMode<Tvec, TgridVec> &p) {
+        nlohmann::json config_j;
+        amr_config_to_json(config_j, p);
+        j = nlohmann::json{{"old_amr", p.old_amr}, {"config", config_j}};
+    }
+
+    template<class Tvec, class TgridVec>
+    inline void from_json(const nlohmann::json &j, AMRMode<Tvec, TgridVec> &p) {
+        j.at("old_amr").get_to(p.old_amr);
+        amr_config_from_json(j.at("config"), p);
+    }
 
     /**
      * @brief Serialize a SolverConfig to a JSON object

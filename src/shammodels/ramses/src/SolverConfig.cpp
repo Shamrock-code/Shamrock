@@ -60,14 +60,20 @@ namespace shammodels::basegodunov {
             {"scheduler_config", p.scheduler_conf},
             {"courant_safety_factor", p.Csafe},
             {"dust_riemann_solver", p.dust_config.dust_riemann_config},
+            {"ndust", p.dust_config.ndust},
             {"eos_gamma", p.eos_gamma},
             {"face_half_time_interpolation", p.face_half_time_interpolation},
             {"gravity_solver", p.gravity_config.gravity_mode},
+            {"analytical_gravity", p.gravity_config.analytical_gravity},
+            {"gravity_tol", p.gravity_config.tol},
             {"grid_coord_to_pos_fact", p.grid_coord_to_pos_fact},
             {"hydro_riemann_solver", p.riemann_config},
             {"passive_scalar_mode", p.npscal_gas_config.npscal_gas},
             {"slope_limiter", p.slope_config},
-            {"unit_sys", p.unit_sys}};
+            {"unit_sys", p.unit_sys},
+            {"drag_config", p.drag_config},
+            {"bc_config", p.bc_config},
+            {"amr_mode", p.amr_mode}};
     }
 
     template<class Tvec, class TgridVec>
@@ -97,14 +103,20 @@ namespace shammodels::basegodunov {
         // actual data stored in the json
         _get_to_if_contains("courant_safety_factor", p.Csafe);
         _get_to_if_contains("dust_riemann_solver", p.dust_config.dust_riemann_config);
+        _get_to_if_contains("ndust", p.dust_config.ndust);
         _get_to_if_contains("eos_gamma", p.eos_gamma);
         _get_to_if_contains("face_half_time_interpolation", p.face_half_time_interpolation);
         _get_to_if_contains("gravity_solver", p.gravity_config.gravity_mode);
+        _get_to_if_contains("analytical_gravity", p.gravity_config.analytical_gravity);
+        _get_to_if_contains("gravity_tol", p.gravity_config.tol);
         _get_to_if_contains("grid_coord_to_pos_fact", p.grid_coord_to_pos_fact);
         _get_to_if_contains("hydro_riemann_solver", p.riemann_config);
         _get_to_if_contains("passive_scalar_mode", p.npscal_gas_config.npscal_gas);
         _get_to_if_contains("slope_limiter", p.slope_config);
         _get_to_if_contains("unit_sys", p.unit_sys);
+        _get_to_if_contains("drag_config", p.drag_config);
+        _get_to_if_contains("bc_config", p.bc_config);
+        _get_to_if_contains("amr_mode", p.amr_mode);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

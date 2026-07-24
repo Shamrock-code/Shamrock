@@ -30,15 +30,15 @@ G = ucte.G()
 c = ucte.c()
 
 # Binary parameters
-M1 = 100000.0  # Mass of the first body (in solar mass)
-M2 = 10.0  # Mass of the second body
+M1 = 1000000.0  # Mass of the first body (in solar mass)
+M2 = 1000000.0  # Mass of the second body
 Rs = 2 * G * (M1 + M2) / c**2  # Sch radius
-A = 100  # Semi major axis
-E = 0.1  # excentricity
+A = 1000*Rs  # Semi major axis
+E = 0.02  # excentricity
 
 
 # Spins (aligned with the orbital angular momentum)
-a1 = 0.9  # between 0 and 1 (first body spin)
+a1 = 0.9 # between 0 and 1 (first body spin)
 a2 = 0.0  # second body spin
 theta = np.pi / 3
 spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
@@ -52,7 +52,7 @@ spin_vec_2 = spin_mag_2 * spin_axis
 # Simulation parameters
 T = 2 * np.pi * np.sqrt(A * A * A / (G * (M1 + M2)))  # number of years
 n_orbits = 10  # Number of orbit to plot
-SF = 200  # safety factor (increase it if you're working with high excentricity)
+SF = 1000  # safety factor (increase it if you're working with high excentricity)
 
 N_per_orbits = SF * 20 / (np.sqrt(1 + E) * (1 - E) ** (3 / 2))  # number of time steps per orbit
 n_steps = int(n_orbits * N_per_orbits)  # number of steps to evolve
@@ -122,10 +122,10 @@ def build_binary_sph_model(
     dt_=dt,
     split_load=10_000_000,
     merge_load=1,
-    compute_op=False,
-    compute_so=False,
-    compute_ss=False,
-    compute_rr=False,
+    compute_op=True,
+    compute_so=True,
+    compute_ss=True,
+    compute_rr=True,
 ):
     ctx = chama.Context()
     ctx.pdata_layout_new()

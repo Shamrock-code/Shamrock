@@ -62,6 +62,7 @@ target_link_libraries(shammodels_ramses PUBLIC shammath)
 target_link_libraries(shammodels_ramses PUBLIC shamphys)
 target_link_libraries(shammodels_ramses PUBLIC shamsys)
 target_link_libraries(shammodels_ramses PUBLIC shammodels_common)
+target_link_libraries(shammodels_ramses PUBLIC shampylib)
 target_link_libraries(shammodels_ramses PUBLIC nlohmann_json::nlohmann_json)
 
 target_include_directories(

@@ -77,26 +77,40 @@ def run_advect(slope_limiter: str, riemann_solver: str, only_last_step: bool = T
     model.init_scheduler(int(1e7), 1)
     model.make_base_grid((0, 0, 0), (sz, sz, sz), (base * multx, base * multy, base * multz))
 
-    def rho_map(rmin, rmax):
-        x, y, z = rmin
-
+    def rho_x(x):
         if x < 0.6 and x > 0.4:
             return 2
-
         return 1.0
 
-    def rhoe_map(rmin, rmax):
-        rho = rho_map(rmin, rmax)
-        return 1.0 * rho
+    def v_x(x):
+        return 1.0
 
-    def rhovel_map(rmin, rmax):
-        x, y, z = rmin
-        rho = rho_map(rmin, rmax)
-        return (1 * rho, 0 * rho, 0 * rho)
+    def e_x():
+        return 1.0
 
-    model.set_field_value_lambda_f64("rho", rho_map)
-    model.set_field_value_lambda_f64("rhoetot", rhoe_map)
-    model.set_field_value_lambda_f64_3("rhovel", rhovel_map)
+    def setter(patchdata):
+        # will return (ncell, 3) as shape
+        # (cell_center does not exist so it will be computed on the fly)
+        cell_center = patchdata.get("cell_center")
+
+        x = cell_center[:, 0]
+        rho = np.where((x < 0.6) & (x > 0.4), 2.0, 1.0)
+
+        ncell = cell_center.shape[0]
+        v = np.zeros((ncell, 3))
+        v[:, 0] = 1.0
+        e = np.ones(ncell)
+
+        rho_v = rho[:, None] * v
+        rho_e = rho * e
+
+        patchdata.set("rho", rho)  # will set rho (f64)
+        patchdata.set("rhovel", rho_v)  # will set rhovel (f64_3)
+        patchdata.set("rhoetot", rho_e)  # will set rhoetot (f64)
+
+    # Will call the function passed as argument for each patchdata
+    # patchdata are instances of a custom PatchDataSetup class used to have getters and setters
+    model.update_fields(setter)
 
     results = []
 

@@ -16,14 +16,46 @@
 
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
+#include "shammodels/common/amr/AMRBlock.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
+
+namespace shammodels::basegodunov::modules {
+
+    template<class Tvec, class TgridVec>
+    struct BlockAMRCartesianGridUtils {
+
+        using Tscal     = shambase::VecComponent<Tvec>;
+        using Tgridscal = shambase::VecComponent<TgridVec>;
+
+        static constexpr u32 dim = shambase::VectorProperties<TgridVec>::dimension;
+
+        //// grid space function
+
+        inline static Tgridscal get_cell_size(TgridVec block_min, TgridVec block_max, u32 Nside) {
+            return ((block_max - block_min)).x() / Nside;
+        }
+
+        //// real space functions
+
+        inline static Tvec to_float_space(TgridVec grid_pos, Tscal dxfact) {
+            return grid_pos.template convert<Tscal>() * dxfact;
+        }
+
+        inline static Tscal to_float_space(Tgridscal grid_pos, Tscal dxfact) {
+            return Tscal(grid_pos) * dxfact;
+        }
+    };
+
+} // namespace shammodels::basegodunov::modules
 
 namespace {
 
     template<class Tvec, class TgridVec>
     struct KernelComputeCellAABB {
         using Tscal = shambase::VecComponent<Tvec>;
+
+        using Grid = shammodels::basegodunov::modules::BlockAMRCartesianGridUtils<Tvec, TgridVec>;
 
         inline static void kernel(
             const shambase::DistributedData<shamrock::PatchDataFieldSpanPointer<TgridVec>>
@@ -40,8 +72,6 @@ namespace {
 
             const shambase::DistributedData<u32> &block_counts = sizes;
 
-            Tscal one_over_Nside = 1. / block_nside;
-
             Tscal dxfact = grid_coord_to_pos_fact;
 
             sham::distributed_data_kernel_call(
@@ -49,24 +79,19 @@ namespace {
                 sham::DDMultiRef{spans_block_min, spans_block_max},
                 sham::DDMultiRef{spans_block_cell_sizes, spans_cell0block_aabb_lower},
                 block_counts,
-                [one_over_Nside, dxfact](
+                [dxfact, block_nside](
                     u32 i,
                     const TgridVec *__restrict acc_block_min,
                     const TgridVec *__restrict acc_block_max,
-                    Tscal *__restrict bsize,
+                    Tscal *__restrict csize,
                     Tvec *__restrict aabb_lower) {
                     TgridVec lower = acc_block_min[i];
                     TgridVec upper = acc_block_max[i];
 
-                    Tvec lower_flt = lower.template convert<Tscal>() * dxfact;
-                    Tvec upper_flt = upper.template convert<Tscal>() * dxfact;
+                    auto cell_size = Grid::get_cell_size(lower, upper, block_nside);
 
-                    Tvec block_cell_size = (upper_flt - lower_flt) * one_over_Nside;
-
-                    Tscal res = block_cell_size.x();
-
-                    bsize[i]      = res;
-                    aabb_lower[i] = lower_flt;
+                    csize[i]      = Grid::to_float_space(cell_size, dxfact);
+                    aabb_lower[i] = Grid::to_float_space(lower, dxfact);
                 });
         }
     };

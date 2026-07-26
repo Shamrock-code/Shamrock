@@ -430,8 +430,16 @@ struct shammodels::sph::SolverConfig {
     Tscal gpart_mass; ///< The mass of each gas particle
 
     bool track_particles_id = false;
+    bool compute_OP         = false;
+    bool compute_SO         = false;
+    bool compute_SS         = false;
+    bool compute_RR         = false;
 
     inline void set_particle_tracking(bool state) { track_particles_id = state; }
+    inline void set_compute_OP(bool state) { compute_OP = state; }
+    inline void set_compute_SO(bool state) { compute_SO = state; }
+    inline void set_compute_SS(bool state) { compute_SS = state; }
+    inline void set_compute_RR(bool state) { compute_RR = state; }
 
     PatchSchedulerConfig scheduler_conf = {};
 
@@ -1252,6 +1260,10 @@ namespace shammodels::sph {
             {"cfl_config", p.cfl_config},
             {"unit_sys", p.unit_sys},
             {"show_cfl_detail", p.show_cfl_detail},
+            {"compute_OP", p.compute_OP},
+            {"compute_SO", p.compute_SO},
+            {"compute_SS", p.compute_SS},
+            {"compute_RR", p.compute_RR},
             // mhd config
             {"mhd_config", p.mhd_config},
             // dust config
@@ -1345,6 +1357,10 @@ namespace shammodels::sph {
         _get_to_if_contains("cfl_config", p.cfl_config);
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("show_cfl_detail", p.show_cfl_detail);
+        _get_to_if_contains("compute_OP", p.compute_OP);
+        _get_to_if_contains("compute_SO", p.compute_SO);
+        _get_to_if_contains("compute_SS", p.compute_SS);
+        _get_to_if_contains("compute_RR", p.compute_RR);
         _get_to_if_contains("mhd_config", p.mhd_config);
         _get_to_if_contains("dust_config", p.dust_config);
         _get_to_if_contains("self_grav_config", p.self_grav_config);

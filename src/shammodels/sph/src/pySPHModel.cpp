@@ -71,6 +71,10 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
 
     config_cls.def("print_status", &TConfig::print_status)
         .def("set_particle_tracking", &TConfig::set_particle_tracking)
+        .def("set_compute_OP", &TConfig::set_compute_OP, py::arg("value"))
+        .def("set_compute_SO", &TConfig::set_compute_SO, py::arg("value"))
+        .def("set_compute_SS", &TConfig::set_compute_SS, py::arg("value"))
+        .def("set_compute_RR", &TConfig::set_compute_RR, py::arg("value"))
         .def(
             "set_scheduler_config",
             [](TConfig &self, u64 split_crit, u64 merge_crit) {

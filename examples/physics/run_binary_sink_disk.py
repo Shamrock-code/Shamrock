@@ -1,0 +1,592 @@
+"""
+Binary orbit functions
+=======================================
+
+This example shows how to use binary orbit functions with the Post-Newtonian developments
+and how to attach sink particles to an SPH model.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import shamrock as chama
+
+# %%
+# Use shamrock documentation style for matplotlib
+chama.matplotlib.set_shamrock_mpl_style()
+
+
+# %%
+# Define the unit system
+si = chama.UnitSystem()
+sicte = chama.Constants(si)
+codeu = chama.UnitSystem(
+    unit_time=sicte.year(),
+    unit_length=sicte.au(),
+    unit_mass=sicte.sol_mass(),
+)
+ucte = chama.Constants(codeu)
+G = ucte.G()
+c = ucte.c()
+
+# Parameters of the binary to trace
+M1 = 1.0  # mass of the first body in solar masses (Sun)
+M2 = 1.0 #/ 332_946.0  # mass of the second body in solar masses (Earth)
+A = 1  # semi-major axis in astronomical units
+E = 0.3  # orbital eccentricity
+
+
+# Disk resolution
+Npart = 2000000
+
+
+# Disc parameters
+center_mass = M1 + M2
+Rg = G * center_mass / c**2
+disc_mass = 0.05  # [sol mass]
+rout = 8 # [au]
+rin = 2  # [au]
+H_r_0 = 0.05
+q = 0.5
+p = 3.0 / 2.0
+r0 = 1.0
+
+# Viscosity parameter
+alpha_AV = 0.1
+alpha_u = 0.01
+beta_AV = 0.2
+
+# Integrator parameters
+C_cour = 0.3
+C_force = 0.25
+
+# Domain decomposition parameters
+scheduler_split_val = int(1.0e7)
+scheduler_merge_val = scheduler_split_val // 16
+
+
+def sigma_profile(r):
+    sigma_0 = 1.0  
+    return sigma_0 * (r / r0) ** (-p)
+
+
+def kep_profile(r):
+    return (G * center_mass / r) ** 0.5
+
+
+def omega_k(r):
+    return kep_profile(r) / r
+
+
+def cs_profile(r):
+    cs_in = (H_r_0 * r0) * omega_k(r0)
+    return ((r / r0) ** (-q)) * cs_in
+
+
+cs0 = cs_profile(r0)
+
+
+def rot_profile(r):
+    return ((kep_profile(r) ** 2) - (2 * p + q) * cs_profile(r) ** 2) ** 0.5
+
+
+def H_profile(r):
+    H = cs_profile(r) / omega_k(r)
+    return H
+
+
+# Spins 
+a1 = 0  # between 0 and 1, spin of the first body
+a2 = 0
+theta =np.pi/4   #inclination angle of the spin axis with respect to the orbital angular momentum vector
+spin_axis = np.array([0.0, np.sin(theta), np.cos(theta)])  # axis of spin (unit vector)
+spin_mag_1 = a1 * G * M1 * M1 / c
+spin_mag_2 = a2 * G * M2 * M2 / c
+spin_vec_1 = spin_mag_1 * spin_axis
+spin_vec_2 = spin_mag_2 * spin_axis
+
+X = np.sqrt(A**3/(G*(M1+M2)))  # orbital period in years
+# %%
+# Simulation parameters
+T = 2*np.pi*np.sqrt(A*A*A/(G*(M1+M2)))                             # number of years
+n_orbits = 5                                                  # number of orbits we want
+SF=15                                                              # safety factor; allows more time steps per orbit for better accuracy, necessary for extreme cases (eccentricity close to 1, very high spin, etc.)
+                                                                   # it also increases the computation time, so adjust it as needed
+N_per_orbits = SF*20/(np.sqrt(1+E)*(1-E)**(3/2))                   # number of time steps per orbit
+n_steps = int(n_orbits*N_per_orbits)                               # number of steps to evolve
+dt = T/N_per_orbits                                                # time step in years
+
+
+# %%
+# Orbital initialization without get_binary_rotated
+
+
+def rotation_matrix(roll, pitch, yaw):
+    cr, sr = np.cos(roll), np.sin(roll)
+    cp, sp = np.cos(pitch), np.sin(pitch)
+    cy, sy = np.cos(yaw), np.sin(yaw)
+
+    Rx = np.array([[1.0, 0.0, 0.0], [0.0, cr, -sr], [0.0, sr, cr]])
+    Ry = np.array([[cp, 0.0, sp], [0.0, 1.0, 0.0], [-sp, 0.0, cp]])
+    Rz = np.array([[cy, -sy, 0.0], [sy, cy, 0.0], [0.0, 0.0, 1.0]])
+
+    return Rz @ Ry @ Rx
+
+
+def binary_initial_conditions(
+    m1,
+    m2,
+    a,
+    e,
+    nu=0.0,
+    G=G,
+    roll=0.0,
+    pitch=0.0,
+    yaw=0.0,
+):
+    M = m1 + m2
+
+    
+    r = a * (1 - e)
+    v = np.sqrt((1 + e) * G * M / r)
+
+    x_rel = np.array([r, 0.0, 0.0])
+    v_rel = np.array([0.0, v, 0.0])
+
+    x1 = -m2 / M * x_rel
+    x2 =  m1 / M * x_rel
+
+    v1 = -m2 / M * v_rel
+    v2 =  m1 / M * v_rel
+
+    if roll != 0.0 or pitch != 0.0 or yaw != 0.0:
+        R = rotation_matrix(roll, pitch, yaw)
+        x1 = R @ x1
+        x2 = R @ x2
+        v1 = R @ v1
+        v2 = R @ v2
+
+    return x1, x2, v1, v2
+
+
+def build_binary_sph_model(
+    m1,
+    m2,
+    a,
+    e,
+    roll=0.0,
+    pitch=0.0,
+    yaw=0.0,
+    racc=0.01,
+    dt_=dt,
+    split_load=scheduler_split_val,
+    merge_load=scheduler_merge_val,
+    generate_disk=True,
+    compute_op=False,
+    compute_so=False,
+    compute_ss=False,
+    compute_rr=False,
+):
+    ctx = chama.Context()
+    ctx.pdata_layout_new()
+
+    model = chama.get_Model_SPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
+
+    # Allow experimental features (required for self-gravity)
+    chama.enable_experimental_features()
+
+    cfg = model.gen_default_config()
+    # Disable direct self-gravity in this simple example; direct mode requires
+    # a single-patch setup which is not prepared here.
+    cfg.set_self_gravity_none()
+    cfg.set_artif_viscosity_ConstantDisc(alpha_u=alpha_u, alpha_AV=alpha_AV, beta_AV=beta_AV)
+    pmass = disc_mass / Npart
+    cfg.set_particle_mass(pmass)
+    cfg.set_eta_sink(1)
+    cfg.set_eos_locally_isothermalLP07(cs0=cs_profile(r0), q=q, r0=r0)
+    cfg.set_units(codeu)
+    cfg.set_cfl_cour(C_cour)
+    cfg.set_cfl_force(C_force)
+    cfg.set_smoothing_length_density_based()
+    cfg.set_compute_OP(compute_op)
+    cfg.set_compute_SO(compute_so)
+    cfg.set_compute_SS(compute_ss)
+    cfg.set_compute_RR(compute_rr)
+
+    model.set_solver_config(cfg)
+
+    x1, x2, v1, v2 = binary_initial_conditions(
+        m1=m1,
+        m2=m2,
+        a=a,
+        e=e,
+        nu=0.0,
+        G=G,
+        roll=roll,
+        pitch=pitch,
+        yaw=yaw,
+    )
+
+    model.add_sink(
+        m1,
+        tuple(x1.tolist()),
+        tuple(v1.tolist()),
+        racc,
+        tuple(spin_vec_1.tolist()),
+    )
+    model.add_sink(
+        m2,
+        tuple(x2.tolist()),
+        tuple(v2.tolist()),
+        racc,
+        tuple(spin_vec_2.tolist()),
+    )
+
+    # Initialise the scheduler first, then set a simulation box large enough
+    model.init_scheduler(split_load, merge_load)
+
+    ext = max(1.0, float(a) * 5.0, float(rout) * 2.0)
+    bmin = (-ext, -ext, -ext)
+    bmax = (ext, ext, ext)
+    model.resize_simulation_box(bmin, bmax)
+    model.set_dt(dt_)
+
+    if generate_disk:
+        setup = model.get_setup()
+        gen_disc = setup.make_generator_disc_mc(
+            part_mass=pmass,
+            disc_mass=disc_mass,
+            r_in=rin,
+            r_out=rout,
+            sigma_profile=sigma_profile,
+            H_profile=H_profile,
+            rot_profile=rot_profile,
+            cs_profile=cs_profile,
+            random_seed=666,
+            init_h_factor=0.03,
+        )
+        setup.apply_setup(gen_disc)
+
+    # Mirror the circular-disc example by correcting the disc momentum and barycenter
+    analysis_momentum = chama.model_sph.analysisTotalMomentum(model=model)
+    total_momentum = analysis_momentum.get_total_momentum()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc momentum = {total_momentum}")
+
+    model.apply_momentum_offset((-total_momentum[0], -total_momentum[1], -total_momentum[2]))
+
+    analysis_barycenter = chama.model_sph.analysisBarycenter(model=model)
+    barycenter, disc_mass_value = analysis_barycenter.get_barycenter()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc barycenter = {barycenter}")
+
+    model.apply_position_offset((-barycenter[0], -barycenter[1], -barycenter[2]))
+
+    total_momentum = chama.model_sph.analysisTotalMomentum(model=model).get_total_momentum()
+    barycenter, disc_mass_value = chama.model_sph.analysisBarycenter(model=model).get_barycenter()
+
+    if chama.sys.world_rank() == 0:
+        print(f"disc momentum after correction = {total_momentum}")
+        print(f"disc barycenter after correction = {barycenter}")
+
+    if not np.allclose(total_momentum, 0.0):
+        raise RuntimeError("disc momentum is not 0")
+    if not np.allclose(barycenter, 0.0):
+        raise RuntimeError("disc barycenter is not 0")
+
+    return ctx, model
+
+
+# %%
+# Extract sink positions from the model
+def get_sink_positions(model):
+    sinks = model.get_sinks()
+    positions = [tuple(sink["pos"]) for sink in sinks]
+    velocities = [tuple(sink["velocity"]) for sink in sinks]
+    return positions, velocities
+
+
+# %%
+# Run a simple orbit evolution and collect sink snapshots
+def run_binary_orbit_PN(
+    model,
+    n_steps=n_steps,
+    dt=dt,
+    render=False,
+    render_ext=2.5,
+    nx=256,
+    ny=256,
+    render_stride=1,
+):
+    """Evolve the binary orbit and optionally store disk density frames for animation."""
+    snapshots = []
+    render_frames = []
+    current_time = 0.0
+
+    # Print initial conditions
+    initial_sinks = model.get_sinks()
+    print("\n=== INITIAL CONDITIONS ===")
+    for i, sink in enumerate(initial_sinks):
+        print(f"Sink {i + 1}: pos={sink['pos']}, vel={sink['velocity']}, mass={sink['mass']}")
+    print()
+
+    for istep in range(n_steps):
+        # Use evolve_once_override_time for sink-only dynamics
+        # (no SPH particles, so CFL would be zero with evolve_until)
+        next_dt = model.evolve_once_override_time(current_time, dt)
+        current_time += dt
+
+        positions, velocities = get_sink_positions(model)
+
+        sinks = model.get_sinks()
+
+        spins = [
+            np.array(sinks[0]["angular_momentum"]),
+            np.array(sinks[1]["angular_momentum"]),
+        ]
+
+        # Compute distance between sinks
+        pos1 = np.array(positions[0])
+        pos2 = np.array(positions[1])
+        distance = np.linalg.norm(pos2 - pos1)
+
+        # DEBUG: verify dt was used and distance between sinks
+        print(f"t = {current_time:.4f}, dt = {next_dt:.6f}, distance = {distance:.6f}")
+
+        snapshots.append(
+            {
+                "time": current_time,
+                "positions": positions,
+                "velocities": velocities,
+                "spins": spins,
+            }
+        )
+
+        if render and istep % render_stride == 0:
+            center = (0.0, 0.0, 0.0)
+            delta_x = (render_ext * 2.0, 0.0, 0.0)
+            delta_y = (0.0, render_ext * 2.0, 0.0)
+            arr_rho = model.render_cartesian_column_integ(
+                "rho",
+                "f64",
+                center=center,
+                delta_x=delta_x,
+                delta_y=delta_y,
+                nx=nx,
+                ny=ny,
+            )
+            render_frames.append(
+                {
+                    "time": current_time,
+                    "positions": positions,
+                    "rho": arr_rho,
+                }
+            )
+
+    return snapshots, render_frames
+
+
+# %%
+# Plot sink particle positions for a single snapshot
+def plot_sink_snapshot(snapshot):
+    import matplotlib.pyplot as plt
+
+    positions = np.array(snapshot["positions"])
+    xs, ys, zs = positions[:, 0], positions[:, 1], positions[:, 2]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.plot(xs, ys, zs, "o-", color="tab:blue")
+    ax.set_xlabel("x")
+    ax.set_ylabel("y")
+    ax.set_zlabel("z")
+    ax.set_title(f"Binary sinks at t = {snapshot['time']:.3f}")
+    ax.set_aspect("equal")
+    plt.show()
+
+
+# %%
+# Plot complete orbital trajectories
+def plot_orbit_trajectory(snapshots):
+    import matplotlib.pyplot as plt
+
+    # Extract trajectories for both sinks
+    sink1_positions = np.array([snap["positions"][0] for snap in snapshots])
+    sink2_positions = np.array([snap["positions"][1] for snap in snapshots])
+
+    fig = plt.figure(figsize=(12, 5))
+
+    # 3D plot
+    ax3d = fig.add_subplot(121, projection="3d")
+    ax3d.plot(
+        sink1_positions[:, 0],
+        sink1_positions[:, 1],
+        sink1_positions[:, 2],
+        "o-",
+        label="Sink 1",
+        markersize=0.050,
+        linewidth=0.025,
+    )
+    ax3d.plot(
+        sink2_positions[:, 0],
+        sink2_positions[:, 1],
+        sink2_positions[:, 2],
+        "s-",
+        label="Sink 2",
+        markersize=0.050,
+        linewidth=0.025,
+    )
+    ax3d.set_xlabel("x (AU)")
+    ax3d.set_ylabel("y (AU)")
+    ax3d.set_zlabel("z (AU)")
+    ax3d.set_title("3D Binary Orbit")
+    ax3d.legend()
+    ax3d.set_aspect("equal")
+
+    # 2D plot (xy plane)
+    ax2d = fig.add_subplot(122)
+    ax2d.plot(
+        sink1_positions[:, 0],
+        sink1_positions[:, 1],
+        "o-",
+        label="Sink 1",
+        markersize=0.025,
+        linewidth=0.025,
+    )
+    ax2d.plot(
+        sink2_positions[:, 0],
+        sink2_positions[:, 1],
+        "s-",
+        label="Sink 2",
+        markersize=0.025,
+        linewidth=0.025,
+    )
+    ax2d.set_xlabel("x (AU)")
+    ax2d.set_ylabel("y (AU)")
+    ax2d.set_title("Binary Orbit (xy plane)")
+    ax2d.legend()
+    ax2d.set_aspect("equal")
+    ax2d.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def render_disk_and_orbit(render_frames, ext=2.5, nx=256, ny=256, interval=100):
+    if len(render_frames) == 0:
+        return
+
+    x = np.linspace(-ext, ext, nx)
+    y = np.linspace(-ext, ext, ny)
+    X, Y = np.meshgrid(x, y)
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    rho_plot = np.log10(np.clip(render_frames[0]["rho"], 1e-30, None))
+    img = ax.imshow(
+        rho_plot.T,
+        origin="lower",
+        extent=(-ext, ext, -ext, ext),
+        cmap="twilight_shifted",
+        aspect="equal",
+    )
+    history1 = []
+    history2 = []
+    line1_hist, = ax.plot([], [], color="tab:red", lw=1.0, alpha=0.45)
+    line2_hist, = ax.plot([], [], color="tab:blue", lw=1.0, alpha=0.45)
+    point1, = ax.plot([], [], "o", color="tab:red", markersize=7)
+    point2, = ax.plot([], [], "o", color="tab:blue", markersize=7)
+    title = ax.text(0.02, 0.98, "", transform=ax.transAxes, va="top", ha="left")
+
+    def update(frame_idx):
+        frame = render_frames[frame_idx]
+        rho = np.log10(np.clip(frame["rho"], 1e-30, None))
+        img.set_data(rho.T)
+
+        pos = np.array(frame["positions"])
+        history1.append(pos[0])
+        history2.append(pos[1])
+
+        if len(history1) > 1:
+            hist1 = np.array(history1)
+            hist2 = np.array(history2)
+            line1_hist.set_data(hist1[:, 0], hist1[:, 1])
+            line2_hist.set_data(hist2[:, 0], hist2[:, 1])
+        else:
+            line1_hist.set_data([], [])
+            line2_hist.set_data([], [])
+
+        point1.set_data([pos[0, 0]], [pos[0, 1]])
+        point2.set_data([pos[1, 0]], [pos[1, 1]])
+        title.set_text(f"t = {frame['time']:.3f} yr")
+        return img, line1_hist, line2_hist, point1, point2, title
+
+    from matplotlib.animation import FuncAnimation
+
+    ani = FuncAnimation(
+        fig,
+        update,
+        frames=len(render_frames),
+        interval=interval,
+        blit=False,
+    )
+    ani.save("binary_orbit.gif",
+              writer="ffmpeg", 
+              fps=30, 
+              dpi=200
+            )
+    
+    
+    
+    
+
+    ax.set_title("Disc + binary orbit")
+    ax.set_xlabel("x (AU)")
+    ax.set_ylabel("y (AU)")
+    ax.set_xlim(-ext, ext)
+    ax.set_ylim(-ext, ext)
+    ax.set_aspect("equal")
+    fig.colorbar(img, ax=ax, label="log10(rho)")
+    plt.tight_layout()
+    plt.show()
+
+
+# %%
+# Example usage
+if __name__ == "__main__":
+    m1 = M1
+    m2 = M2
+    a = A
+    e = E
+
+    # racc is the accretion radius for the sink particles, set to a small value
+    ctx, model = build_binary_sph_model(
+        m1,
+        m2,
+        a,
+        e,
+        roll=0.0,
+        pitch=0.0,
+        yaw=0.0,
+        racc=0.1,
+        split_load=scheduler_split_val,
+        merge_load=scheduler_merge_val,
+        compute_op=False,
+        compute_so=False,
+        compute_ss=False,
+        compute_rr=False,
+    )
+    snapshots, render_frames = run_binary_orbit_PN(
+        model,
+        render=True,
+        render_ext=rout * 1.5,
+        nx=1024,
+        ny=1024,
+    )
+
+    for snapshot in snapshots[:3]:
+        print("time", snapshot["time"], "positions", snapshot["positions"])
+
+    plot_orbit_trajectory(snapshots)
+    render_disk_and_orbit(render_frames)
+

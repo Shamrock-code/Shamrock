@@ -16,6 +16,7 @@
  *
  */
 
+#include "nlohmann/json.hpp"
 #include "shamalgs/collective/io.hpp"
 #include "shamcomm/io.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
@@ -34,7 +35,8 @@ namespace shamrock {
      * @param metadata_user The user-provided metadata to add to the dump
      * @param sched The patch scheduler to dump
      */
-    void write_shamrock_dump(std::string fname, std::string metadata_user, PatchScheduler &sched);
+    void write_shamrock_dump(
+        std::string fname, const nlohmann::json &metadata_user, PatchScheduler &sched);
 
     /**
      * @brief Load a Shamrock dump file and restore the state of the patches and retreive user
@@ -43,6 +45,6 @@ namespace shamrock {
      * @param metadata_user The user-provided metadata to store
      * @param ctx The Shamrock context to restore
      */
-    void load_shamrock_dump(std::string fname, std::string &metadata_user, ShamrockCtx &ctx);
+    void load_shamrock_dump(std::string fname, nlohmann::json &metadata_user, ShamrockCtx &ctx);
 
 } // namespace shamrock

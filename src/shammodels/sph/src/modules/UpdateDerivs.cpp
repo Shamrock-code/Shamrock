@@ -34,6 +34,7 @@
 #include "shammodels/sph/modules/NodeMonofluidTVAAddSourceTerm.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
+#include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
@@ -510,28 +511,67 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
         shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
     }
 
-    std::shared_ptr<NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>> node
-        = std::make_shared<NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>>();
-    {
-        node->set_edges(
-            gpart_mass,
-            alpha_u,
-            beta_AV,
-            part_counts,
-            part_counts_with_ghost,
-            xyz_refs,
-            hpart_refs,
-            vxyz_refs,
-            uint_refs,
-            omega_refs,
-            pressure_field,
-            soundspeed_field,
-            alpha_av_refs,
-            storage.neigh_cache,
-            axyz_refs,
-            duint_refs);
+    if (solver_config.dust_config.should_use_dust_av()) {
+        u32 ndust       = solver_config.dust_config.get_dust_nvar();
+        u32 is_j_interf = ghost_layout.get_field_idx<Tscal>("s_j");
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> s_j_refs
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
+        {
+            shambase::get_check_ref(s_j_refs).set_refs(
+                mpdats.map<std::reference_wrapper<PatchDataField<Tscal>>>(
+                    [&](u64 id, shamrock::patch::PatchDataLayer &mpdat) {
+                        return std::ref(mpdat.get_field<Tscal>(is_j_interf));
+                    }));
+        }
+
+        std::shared_ptr<NodeUpdateDerivsVaryingAlphaAVDustTVA<Tvec, SPHKernel>> node
+            = std::make_shared<NodeUpdateDerivsVaryingAlphaAVDustTVA<Tvec, SPHKernel>>(ndust);
+        {
+            node->set_edges(
+                gpart_mass,
+                alpha_u,
+                beta_AV,
+                part_counts,
+                part_counts_with_ghost,
+                xyz_refs,
+                hpart_refs,
+                vxyz_refs,
+                uint_refs,
+                omega_refs,
+                pressure_field,
+                soundspeed_field,
+                alpha_av_refs,
+                s_j_refs,
+                storage.neigh_cache,
+                axyz_refs,
+                duint_refs);
+        }
+        node->evaluate();
+    } else {
+        std::shared_ptr<NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>> node
+            = std::make_shared<NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>>();
+        {
+            node->set_edges(
+                gpart_mass,
+                alpha_u,
+                beta_AV,
+                part_counts,
+                part_counts_with_ghost,
+                xyz_refs,
+                hpart_refs,
+                vxyz_refs,
+                uint_refs,
+                omega_refs,
+                pressure_field,
+                soundspeed_field,
+                alpha_av_refs,
+                storage.neigh_cache,
+                axyz_refs,
+                duint_refs);
+        }
+        node->evaluate();
     }
-    node->evaluate();
 }
 
 template<class Tvec, template<class> class SPHKernel>

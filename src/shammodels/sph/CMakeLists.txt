@@ -47,6 +47,7 @@ set(Sources
     src/modules/LoopSmoothingLengthIter.cpp
     src/modules/ComputeNeighStats.cpp
     src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp
+    src/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.cpp
     src/modules/NodeUpdateDerivsMonofluidTVA.cpp
     src/modules/NodeComputePressureGrad.cpp
     src/modules/NodeEvolveDustCOALASourceTerm.cpp

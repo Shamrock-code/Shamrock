@@ -35,7 +35,7 @@ rho_g = 1
 rho_d = 0.125
 
 epsilons = [0.5]
-ts = [0.001]
+ts = [1e-4]  # PL15 use K=1000 this correspond to ts=1e-4 in the rarefaction region
 ndust = len(epsilons)
 
 eps_all = np.sum(epsilons)
@@ -117,13 +117,17 @@ class Simulation(SimulationRunner):
             ianalysis, {"dust_mass": dmass, "time": self.model.get_time()}
         )
 
-        plt.plot(x, rho, ".", label="rho_g")
-        plt.plot(x, vx, ".", label="v")
-        plt.plot(x, P, ".", label="P")
-        plt.plot(x, alpha, ".", label="alpha")
+        plt.figure(dpi=250)
+
+        plt.plot(x, rho, ".", label=r"$\rho_g + \rho_{\mathrm{d}}$", rasterized=True)
+        plt.plot(x, vx, ".", label=r"$v_x$", rasterized=True)
+        plt.plot(x, P, ".", label=r"$P$", rasterized=True)
+        plt.plot(x, alpha, ".", label=r"$\alpha$", rasterized=True)
 
         for i in range(ndust):
-            plt.plot(x, rho_d[:, i], ".", label=f"rho_d_{i}")
+            plt.plot(
+                x, rho_d[:, i], ".", label=r"$\rho_{\mathrm{d},{" + str(i) + r"}}$", rasterized=True
+            )
 
         x = np.linspace(-0.5, 0.5, 1000)
 
@@ -144,13 +148,14 @@ class Simulation(SimulationRunner):
         plt.plot(x, vx, color="black")
         plt.plot(x, P, color="black")
 
-        plt.legend()
+        plt.legend(loc="center left")
         plt.grid()
         plt.ylim(0, 1.1)
         plt.xlim(0, 1)
-        plt.xlabel("x")
+        plt.xlabel(r"$x$")
         plt.title(f"t={self.model.get_time():.3f}")
         plt.savefig(dump_folder + f"sod_{ianalysis:04d}.png")
+        plt.savefig(dump_folder + f"sod_{ianalysis:04d}.pdf")
         plt.close()
 
     @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
@@ -198,15 +203,6 @@ class Simulation(SimulationRunner):
         model.set_value_in_a_box("uint", "f64", u_g, V_g_min, V_g_max)
         model.set_value_in_a_box("uint", "f64", u_d, V_d_min, V_d_max)
 
-        for i in range(ndust):
-            epsilon = epsilons[i]
-
-            s_g = np.sqrt(rho_g * epsilon)
-            s_d = np.sqrt(rho_d * epsilon)
-
-            model.set_value_in_a_box("s_j", "f64", s_g, V_g_min, V_g_max, ivar=i)
-            model.set_value_in_a_box("s_j", "f64", s_d, V_d_min, V_d_max, ivar=i)
-
         vol_b = xs * ys * zs
 
         totmass = (rho_d * vol_b) + (rho_g * vol_b)
@@ -221,6 +217,20 @@ class Simulation(SimulationRunner):
         model.set_cfl_force(0.1)
 
         model.timestep()
+
+        def compute_sj_new_j(patchdata, j):
+            pmass = model.get_particle_mass()
+            hpart = patchdata["hpart"]
+            rho = pmass * (model.get_hfact() / np.array(hpart)) ** 3
+            s = np.sqrt(rho * epsilons[j])
+            return s
+
+        for k in range(ndust):
+
+            def compute_sj_new(patchdata):
+                return compute_sj_new_j(patchdata, k)
+
+            self.model.overwrite_field_value_f64("s_j", compute_sj_new, k)
 
 
 Simulation(model).run()

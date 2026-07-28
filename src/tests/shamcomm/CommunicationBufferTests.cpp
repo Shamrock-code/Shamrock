@@ -16,8 +16,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(
-    Unittest, "shamsys/comm/CommunicationBuffer/constructor", test_basic_serialized_constr, 1) {
+NEW_TEST(Unittest, "shamsys/comm/CommunicationBuffer/constructor", 1) {
 
     u32 nbytes                      = 1e5;
     sham::DeviceBuffer<u8> buf_comp = shamalgs::random::mock_buffer_usm<u8>(
@@ -31,8 +30,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shamsys/comm/CommunicationBuffer/send_recv", test_basic_serialized_send_recv, 2) {
+NEW_TEST(Unittest, "shamsys/comm/CommunicationBuffer/send_recv", 2) {
 
     u32 nbytes                      = 1e5;
     sham::DeviceBuffer<u8> buf_comp = shamalgs::random::mock_buffer_usm<u8>(

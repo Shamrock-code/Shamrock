@@ -29,7 +29,7 @@ class BufferedPField {
 namespace legacy {
 
     /**
-     * @brief Define a field attached to a patch (exemple: FMM multipoles, hmax in SPH)
+     * @brief Define a field attached to a patch (example: FMM multipoles, hmax in SPH)
      *
      * @tparam type type of object to store
      */

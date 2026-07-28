@@ -22,6 +22,17 @@
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, constant_G)                                      \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, central_mass)                                    \
+    X_RO(shamrock::solvergraph::IDataEdge<Tvec>, central_pos)                                      \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_positions)                                 \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_accel_ext)
+
 namespace shammodels::common::modules {
 
     template<class Tvec>
@@ -32,44 +43,17 @@ namespace shammodels::common::modules {
         public:
         AddForceCentralGravPotential() = default;
 
-        struct Edges {
-            const shamrock::solvergraph::IDataEdge<Tscal> &constant_G;
-            const shamrock::solvergraph::IDataEdge<Tscal> &central_mass;
-            const shamrock::solvergraph::IDataEdge<Tvec> &central_pos;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_positions;
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_accel_ext;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> constant_G,
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> central_mass,
-            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tvec>> central_pos,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_positions,
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_accel_ext) {
-            __internal_set_ro_edges(
-                {constant_G, central_mass, central_pos, spans_positions, sizes});
-            __internal_set_rw_edges({spans_accel_ext});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(0),
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IDataEdge<Tvec>>(2),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(3),
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(4),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0)};
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
         inline virtual std::string _impl_get_label() const {
             return "AddForceCentralGravPotential";
-        };
+        }
 
         virtual std::string _impl_get_tex() const;
     };
 
 } // namespace shammodels::common::modules
+
+#undef NODE_EDGES

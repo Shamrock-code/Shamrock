@@ -51,11 +51,13 @@ def setup(arg: SetupArg, envgen: EnvGen):
         "CMAKE_OPT": f"({cmake_extra_args})",
         "SHAMROCK_BUILD_TYPE": f"'{cmake_build_type}'",
         "SHAMROCK_CXX_FLAGS": "\" --acpp-targets='" + acpp_target + "'\"",
+        "SPHINX_VENV_DIR": builddir + "/.sphinxvenv",
     }
 
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/clone-acpp.sh",
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/sphinx.sh",
     ]
 
     envgen.gen_env_file("env_built_acpp.sh")

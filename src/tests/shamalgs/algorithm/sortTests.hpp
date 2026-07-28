@@ -72,7 +72,7 @@ struct TestSortByKey {
         t.start();
         fct(q, buf_key, buf_vals, len);
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -235,7 +235,7 @@ struct TestIndexRemap {
             match = match && (sorted_keys[i] == remaped_keys[i]);
         }
 
-        REQUIRE_NAMED("permutation is corect", match);
+        REQUIRE_NAMED("permutation is correct", match);
     }
 };
 
@@ -284,6 +284,6 @@ struct TestIndexRemapUSM {
             match = match && (sorted_keys[i] == remaped_keys[i]);
         }
 
-        REQUIRE_NAMED("permutation is corect", match);
+        REQUIRE_NAMED("permutation is correct", match);
     }
 };

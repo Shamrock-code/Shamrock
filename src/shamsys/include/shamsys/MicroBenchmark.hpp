@@ -15,6 +15,8 @@
  * @brief
  */
 
+#include <unordered_map>
+#include <string>
 namespace shamsys {
 
     /**
@@ -24,5 +26,11 @@ namespace shamsys {
      * -     osu-micro-benchmarks/mpi/pt2pt/osu_latency.c
      */
     void run_micro_benchmark();
+
+    /**
+     * @brief Get the microbench results
+     * @return const std::unordered_map<std::string, double> &
+     */
+    const std::unordered_map<std::string, double> &get_microbench_results();
 
 } // namespace shamsys

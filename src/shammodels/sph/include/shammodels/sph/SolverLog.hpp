@@ -18,6 +18,7 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/aliases_int.hpp"
+#include "shamsys/system_metrics.hpp"
 #include <optional>
 #include <vector>
 
@@ -39,6 +40,7 @@ struct shammodels::sph::SolverLog {
         f64 rate;
         f64 elasped_sec;
         f64 wtime;
+        shamsys::SystemMetrics system_metrics;
     };
 
     std::vector<StepInfo> step_logs = {};
@@ -54,6 +56,7 @@ struct shammodels::sph::SolverLog {
 
     f64 get_last_rate();
     u64 get_last_obj_count();
+    shamsys::SystemMetrics get_last_system_metrics();
 
     u64 get_iteration_count() { return step_logs.size(); }
 

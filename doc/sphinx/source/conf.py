@@ -22,7 +22,7 @@ import shamrock
 # -- Project information -----------------------------------------------------
 
 # start allow utf-8
-project = "python bindings"
+project = "Documentation"
 copyright = f"2020 -- {datetime.datetime.now().year} Timothee David--Cléris"
 author = "Timothee David--Cléris"
 # end allow utf-8
@@ -43,6 +43,7 @@ extensions = [
     "sphinx_gallery.gen_gallery",  # generate thumbnail and example lib
     "sphinx_copybutton",  # add a copy button to code blocks
     "sphinx_design",  # Add grid tabs and fancy html stuff
+    "myst_parser",  # Allow markdown files
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -85,6 +86,20 @@ sphinx_gallery_conf = {
     "parallel": False,
 }
 
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "fieldlist",
+    "html_admonition",
+    "html_image",
+    "replacements",
+    "smartquotes",
+    "substitution",
+    "tasklist",
+]
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -119,6 +134,8 @@ html_theme_options = {
             "type": "local",
         },
     ],
+    "pygments_light_style": "gruvbox-light",
+    "pygments_dark_style": "gruvbox-dark",
 }
 
 html_context = {

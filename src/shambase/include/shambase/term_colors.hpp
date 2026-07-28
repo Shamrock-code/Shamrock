@@ -16,124 +16,49 @@
  *
  */
 
+#include "sham/term/color.hpp"
 #include <string>
-
-/**
- * @brief Escape character for terminal control sequences.
- *
- * This is a control character that is used to initiate a terminal control
- * sequence. It is typically represented by the escape character `\x1b[`.
- */
-#define TERM_ESCAPTE_CHAR "\x1b["
-
 namespace shambase {
-
-    namespace details {
-
-        /**
-         * @brief Struct representing the terminal colors to be used for printing.
-         *
-         * This struct contains the escape sequences for the different terminal
-         * colors and can be used to print colored text.
-         */
-        struct TermColors {
-            bool colors_on = true; ///< are colors on in this config
-
-            /// Escape character for terminal control sequences.
-            std::string esc_char = TERM_ESCAPTE_CHAR;
-            /// Escape sequence to reset the terminal text formatting.
-            std::string reset = TERM_ESCAPTE_CHAR "0m";
-            /// Escape sequence to set bold text formatting.
-            std::string bold = TERM_ESCAPTE_CHAR "1m";
-            /// Escape sequence to set faint (dim) text formatting.
-            std::string faint = TERM_ESCAPTE_CHAR "2m";
-            /// Escape sequence to set underlined text formatting.
-            std::string underline = TERM_ESCAPTE_CHAR "4m";
-            /// Escape sequence to set blinking text formatting.
-            std::string blink = TERM_ESCAPTE_CHAR "5m";
-            /// Escape sequence to set black text color.
-            std::string col8b_black = TERM_ESCAPTE_CHAR "30m";
-            /// Escape sequence to set red text color.
-            std::string col8b_red = TERM_ESCAPTE_CHAR "31m";
-            /// Escape sequence to set green text color.
-            std::string col8b_green = TERM_ESCAPTE_CHAR "32m";
-            /// Escape sequence to set yellow text color.
-            std::string col8b_yellow = TERM_ESCAPTE_CHAR "33m";
-            /// Escape sequence to set blue text color.
-            std::string col8b_blue = TERM_ESCAPTE_CHAR "34m";
-            /// Escape sequence to set magenta (pink) text color.
-            std::string col8b_magenta = TERM_ESCAPTE_CHAR "35m";
-            /// Escape sequence to set cyan text color.
-            std::string col8b_cyan = TERM_ESCAPTE_CHAR "36m";
-            /// Escape sequence to set white text color.
-            std::string col8b_white = TERM_ESCAPTE_CHAR "37m";
-
-            /**
-             * @brief Returns a `TermColors` struct with all colors disabled.
-             */
-            static TermColors get_config_nocolors() {
-                return {false, "", "", "", "", "", "", "", "", "", "", "", "", "", ""};
-            }
-
-            /**
-             * @brief Returns a `TermColors` struct with all colors enabled.
-             */
-            static TermColors get_config_colors() { return {}; }
-        };
-
-        /**
-         * @brief Global instance of `TermColors`.
-         *
-         * This instance is used to store the escape sequences for the terminal colors.
-         * The escape sequences are stored in the `TermColors` structure.
-         *
-         * @note This global variable is initialized in the implementation file.
-         */
-        extern TermColors _int_term_colors;
-
-    } // namespace details
 
     namespace term_colors {
 
         /// Enable colors in logs
-        void enable_colors();
+        inline void enable_colors() { sham::term::enable_colors(); }
 
         /// Disable all colors
-        void disable_colors();
+        inline void disable_colors() { sham::term::disable_colors(); }
 
         /// Are colors enabled
-        inline bool colors_enabled() { return details::_int_term_colors.colors_on; }
+        inline bool colors_enabled() { return sham::term::are_colors_enabled(); }
 
         /// Get the empty terminal escape
         inline const std::string empty() { return ""; };
         /// Get the reset terminal escape char
-        inline const std::string reset() { return details::_int_term_colors.reset; };
+        inline const std::string reset() { return sham::term::style::reset(); };
         /// Get the bold terminal escape char
-        inline const std::string bold() { return details::_int_term_colors.bold; };
+        inline const std::string bold() { return sham::term::style::bold(); };
         /// Get the faint terminal escape char
-        inline const std::string faint() { return details::_int_term_colors.faint; };
+        inline const std::string faint() { return sham::term::style::faint(); };
         /// Get the underline terminal escape char
-        inline const std::string underline() { return details::_int_term_colors.underline; };
+        inline const std::string underline() { return sham::term::style::underline(); };
         /// Get the blink terminal escape char
-        inline const std::string blink() { return details::_int_term_colors.blink; };
+        inline const std::string blink() { return sham::term::style::blink(); };
         /// Get the black terminal escape char
-        inline const std::string col8b_black() { return details::_int_term_colors.col8b_black; };
+        inline const std::string col8b_black() { return sham::term::colors_8b::black(); };
         /// Get the red terminal escape char
-        inline const std::string col8b_red() { return details::_int_term_colors.col8b_red; };
+        inline const std::string col8b_red() { return sham::term::colors_8b::red(); };
         /// Get the green terminal escape char
-        inline const std::string col8b_green() { return details::_int_term_colors.col8b_green; };
+        inline const std::string col8b_green() { return sham::term::colors_8b::green(); };
         /// Get the yellow terminal escape char
-        inline const std::string col8b_yellow() { return details::_int_term_colors.col8b_yellow; };
+        inline const std::string col8b_yellow() { return sham::term::colors_8b::yellow(); };
         /// Get the blue terminal escape char
-        inline const std::string col8b_blue() { return details::_int_term_colors.col8b_blue; };
+        inline const std::string col8b_blue() { return sham::term::colors_8b::blue(); };
         /// Get the magenta (pink) terminal escape char
-        inline const std::string col8b_magenta() {
-            return details::_int_term_colors.col8b_magenta;
-        };
+        inline const std::string col8b_magenta() { return sham::term::colors_8b::magenta(); };
         /// Get the cyan terminal escape char
-        inline const std::string col8b_cyan() { return details::_int_term_colors.col8b_cyan; };
+        inline const std::string col8b_cyan() { return sham::term::colors_8b::cyan(); };
         /// Get the white terminal escape char
-        inline const std::string col8b_white() { return details::_int_term_colors.col8b_white; };
+        inline const std::string col8b_white() { return sham::term::colors_8b::white(); };
 
     } // namespace term_colors
 

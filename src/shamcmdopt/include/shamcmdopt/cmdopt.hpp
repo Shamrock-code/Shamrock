@@ -80,6 +80,9 @@ namespace shamcmdopt {
      */
     void print_help();
 
+    /// print zsh completion script to be sourced
+    void print_completion_zsh();
+
     /**
      * @brief Check if the help mode is enabled.
      *

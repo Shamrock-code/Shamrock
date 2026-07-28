@@ -69,7 +69,7 @@ class ShamrockCtx {
         if (sched) {
             throw ShamAPIException("cannot modify patch data layout while the scheduler is on");
         }
-        return *pdl;
+        return shambase::get_check_ref(pdl);
     }
 
     template<class T>

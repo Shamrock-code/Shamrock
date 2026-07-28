@@ -397,7 +397,7 @@ void dtt_test(
             theta_crit,
             ordered_result,
             allow_leaf_lowering);
-        timer.end();
+        timer.stop();
         logger::raw_ln("DTTCpuReference :", timer.get_time_str());
 
         m2l_ref = result.node_interactions_m2l.copy_to_stdvec();
@@ -420,7 +420,7 @@ void dtt_test(
             theta_crit,
             ordered_result,
             allow_leaf_lowering);
-        timer.end();
+        timer.stop();
         logger::raw_ln(impl.impl_name, " :", timer.get_time_str());
 
         validate_dtt_results(
@@ -474,26 +474,14 @@ inline void dtt_tests(bool ordered_result, bool allow_leaf_lowering) {
     dtt_test_empty(ordered_result, allow_leaf_lowering);
 }
 
-TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", dtt_testing1, 1) {
-    dtt_tests(false, false);
-}
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered)", 1) { dtt_tests(false, false); }
 
-TestStart(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", dtt_testing2, 1) {
-    dtt_tests(true, false);
-}
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered)", 1) { dtt_tests(true, false); }
 
-TestStart(
-    Unittest,
-    "shamtree::clbvh_dual_tree_traversal(unordered, allow_leaf_lowering)",
-    dtt_testing3,
-    1) {
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(unordered, allow_leaf_lowering)", 1) {
     dtt_tests(false, true);
 }
 
-TestStart(
-    Unittest,
-    "shamtree::clbvh_dual_tree_traversal(ordered, allow_leaf_lowering)",
-    dtt_testing4,
-    1) {
+NEW_TEST(Unittest, "shamtree::clbvh_dual_tree_traversal(ordered, allow_leaf_lowering)", 1) {
     dtt_tests(true, true);
 }

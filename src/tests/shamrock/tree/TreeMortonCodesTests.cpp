@@ -14,8 +14,7 @@
 #include "shamtest/shamtest.hpp"
 #include "shamtree/TreeMortonCodes.hpp"
 
-TestStart(
-    Unittest, "shamrock/tree/TreeMortonCodes::serialize", test_tree_morton_code_serialize, 1) {
+NEW_TEST(Unittest, "shamrock/tree/TreeMortonCodes::serialize", 1) {
 
     u32 cnt = 1000;
     shammath::CoordRange<f32_3> range_coord{f32_3{0, 0, 0}, f32_3{1, 1, 1}};

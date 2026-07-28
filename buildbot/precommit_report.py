@@ -40,7 +40,7 @@ print()
 print(
     "Some failures were detected in base source checks checks.\n "
     "Check the `On PR / Linting / Base source checks (pull_request)` "
-    "job in the tests for more detailled output"
+    "job in the tests for more detailed output"
 )
 print()
 for f in file_list:

@@ -29,7 +29,9 @@
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayerDebugDotGraph.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamsys/NodeInstance.hpp"
+#include <utility>
 #include <variant>
 
 namespace shammodels::sph {
@@ -83,15 +85,15 @@ namespace shammodels::sph {
 
         std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout;
 
-        std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner;
+        std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner;
 
         BasicSPHGhostHandler(
             PatchScheduler &sched,
             Config ghost_config,
-            std::shared_ptr<shamrock::solvergraph::ScalarsEdge<u32>> patch_rank_owner,
+            std::shared_ptr<shamrock::solvergraph::RankGetter> patch_rank_owner,
             std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &xyzh_ghost_layout)
-            : sched(sched), ghost_config(ghost_config), patch_rank_owner(patch_rank_owner),
-              xyzh_ghost_layout(xyzh_ghost_layout) {}
+            : sched(sched), ghost_config(ghost_config),
+              patch_rank_owner(std::move(patch_rank_owner)), xyzh_ghost_layout(xyzh_ghost_layout) {}
 
         /**
          * @brief Find interfaces and their metadata
@@ -200,7 +202,7 @@ namespace shammodels::sph {
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                vecarg.push_back({sender,receiver,build_table});
+                vecarg.push_back({.sender = sender, .receiver = receiver, .build_table = build_table});
             });
             // clang-format on
 
@@ -255,7 +257,8 @@ namespace shammodels::sph {
                         "their is an empty id table in the interface, it should have been removed");
                 }
 
-                vecarg.push_back({sender, receiver, build_table});
+                vecarg.push_back(
+                    {.sender = sender, .receiver = receiver, .build_table = build_table});
 
                 return gen_1(
                     sender,
@@ -291,7 +294,7 @@ namespace shammodels::sph {
         build_position_interf_field(shambase::DistributedDataShared<InterfaceIdTable> &builder) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             return build_interface_native<shamrock::patch::PatchDataLayer>(
                 builder,
@@ -476,12 +479,12 @@ namespace shammodels::sph {
             shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> &&positioninterfs) {
             StackEntry stack_loc{};
 
-            const u32 ihpart = sched.pdl().template get_field_idx<flt>("hpart");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<flt>("hpart");
 
             return merge_native<shamrock::patch::PatchDataLayer, shamrock::patch::PatchDataLayer>(
                 std::forward<shambase::DistributedDataShared<shamrock::patch::PatchDataLayer>>(
                     positioninterfs),
-                [=](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
+                [=, this](const shamrock::patch::Patch p, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<vec> &pos   = pdat.get_field<vec>(0);
                     PatchDataField<flt> &hpart = pdat.get_field<flt>(ihpart);
 

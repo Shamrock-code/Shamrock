@@ -79,5 +79,5 @@ auto shamphys::SedovTaylor::get_value(f64 x) -> field_val {
     f64 vx  = linear_interpolate(r_theo, vr_theo, ntheoval, x);
     f64 P   = linear_interpolate(r_theo, p_theo, ntheoval, x);
 
-    return {rho, vx, P};
+    return {.rho = rho, .vx = vx, .P = P};
 }

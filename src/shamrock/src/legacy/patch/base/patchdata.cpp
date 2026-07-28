@@ -19,7 +19,6 @@
  */
 
 #include "shamrock/legacy/patch/base/patchdata.hpp"
-#include "shamrock/legacy/patch/base/patchdata_field.hpp"
 #include "shamsys/legacy/sycl_mpi_interop.hpp"
 #include "shamtree/kernels/geometry_utils.hpp"
 #include <algorithm>
@@ -28,48 +27,6 @@
 #include <exception>
 #include <stdexcept>
 #include <vector>
-
-u64 patchdata_isend(
-    shamrock::patch::PatchDataLayer &p,
-    std::vector<PatchDataMpiRequest> &rq_lst,
-    i32 rank_dest,
-    i32 tag,
-    MPI_Comm comm) {
-
-    rq_lst.resize(rq_lst.size() + 1);
-    PatchDataMpiRequest &ref = rq_lst[rq_lst.size() - 1];
-
-    u64 total_data_transf = 0;
-
-    p.for_each_field_any([&](auto &field) {
-        using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
-        total_data_transf
-            += patchdata_field::isend(field, ref.get_field_list<base_t>(), rank_dest, tag, comm);
-    });
-
-    return total_data_transf;
-}
-
-u64 patchdata_irecv_probe(
-    shamrock::patch::PatchDataLayer &pdat,
-    std::vector<PatchDataMpiRequest> &rq_lst,
-    i32 rank_source,
-    i32 tag,
-    MPI_Comm comm) {
-
-    rq_lst.resize(rq_lst.size() + 1);
-    auto &ref = rq_lst[rq_lst.size() - 1];
-
-    u64 total_data_transf = 0;
-
-    pdat.for_each_field_any([&](auto &field) {
-        using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
-        total_data_transf += patchdata_field::irecv_probe(
-            field, ref.get_field_list<base_t>(), rank_source, tag, comm);
-    });
-
-    return total_data_transf;
-}
 
 shamrock::patch::PatchDataLayer patchdata_gen_dummy_data(
     const std::shared_ptr<shamrock::patch::PatchDataLayerLayout> &pdl_ptr, std::mt19937 &eng) {

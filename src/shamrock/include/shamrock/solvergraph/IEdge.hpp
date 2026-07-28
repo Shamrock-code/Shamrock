@@ -33,7 +33,7 @@ namespace shamrock::solvergraph {
         virtual std::string _impl_get_dot_label() const  = 0;
         virtual std::string _impl_get_tex_symbol() const = 0;
 
-        virtual ~IEdge() {}
+        inline virtual ~IEdge() {}
     };
 
 } // namespace shamrock::solvergraph

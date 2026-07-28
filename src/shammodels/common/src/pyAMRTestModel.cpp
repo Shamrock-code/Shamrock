@@ -19,7 +19,8 @@
 #include <pybind11/numpy.h>
 #include <memory>
 
-Register_pymod(pyamrtestmode) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     shamcomm::logs::debug_ln("[Py]", "registering shamrock.AMRTestModel");
     py::class_<AMRTestModel>(m, "AMRTestModel")

@@ -86,8 +86,8 @@ namespace shammodels::gsph {
         Tscal sub_fact_a = rho_a_sq * omega_a;
         Tscal sub_fact_b = rho_b_sq * omega_b;
         Tvec f           = m_b * p_star
-                 * (nabla_W_a * sham::inv_sat_zero(sub_fact_a)
-                    + nabla_W_b * sham::inv_sat_zero(sub_fact_b));
+                           * (nabla_W_a * sham::inv_sat_zero(sub_fact_a)
+                              + nabla_W_b * sham::inv_sat_zero(sub_fact_b));
 
         // Energy rate: -f dot (v* - v_a)
         return -sycl::dot(f, v_star_vec - v_a);

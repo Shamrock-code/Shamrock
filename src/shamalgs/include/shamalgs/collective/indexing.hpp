@@ -46,7 +46,7 @@ namespace shamalgs::collective {
 
         shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", sum_val);
 
-        return {sum_val, scan_val};
+        return {.total_byte_count = sum_val, .head_offset = scan_val};
     }
 
     inline ViewInfo fetch_view_known_total(u64 byte_count, u64 total_byte) {
@@ -61,7 +61,7 @@ namespace shamalgs::collective {
 
         shamlog_debug_mpi_ln("fetch view", byte_count, "->", scan_val, "sum:", total_byte);
 
-        return {total_byte, scan_val};
+        return {.total_byte_count = total_byte, .head_offset = scan_val};
     }
 
 } // namespace shamalgs::collective

@@ -341,7 +341,7 @@ namespace shammodels::sph {
      * The class provides methods to read and write Phantom dump files, as well as to
      * retrieve data from the file.
      *
-     * @todo add exemple of usage
+     * @todo add example of usage
      *
      */
     struct PhantomDump {

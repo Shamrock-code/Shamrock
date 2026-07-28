@@ -383,6 +383,22 @@ namespace shammath {
                 shamlog_debug_ln("Discontinuous iterator", "skip final idx", current_idx);
             }
         };
+
+        inline static std::tuple<Tvec, Tvec> get_ideal_hcp_box(
+            Tscal dr, std::tuple<Tvec, Tvec> box) {
+
+            auto [bmin, bmax] = box;
+
+            auto [idxs_min, idxs_max] = LatticeHCP::get_box_index_bounds(dr, bmin, bmax);
+
+            auto [idxs_min_per, idxs_max_per]
+                = LatticeHCP::nearest_periodic_box_indices(idxs_min, idxs_max);
+
+            shammath::CoordRange<Tvec> ret
+                = LatticeHCP::get_periodic_box(dr, idxs_min_per, idxs_max_per);
+
+            return {ret.lower, ret.upper};
+        }
     };
 
     /**

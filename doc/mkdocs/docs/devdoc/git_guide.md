@@ -100,4 +100,4 @@ git push
 ```
 
 For the commit message please name them accordingly :
-`[<Modified component>] <the commit message>`, for exemple `[SPH] fix ....`
+`[<Modified component>] <the commit message>`, for example `[SPH] fix ....`

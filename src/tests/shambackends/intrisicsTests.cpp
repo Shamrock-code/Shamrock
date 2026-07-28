@@ -15,7 +15,7 @@
 #include "shamtest/shamtest.hpp"
 #include <set>
 
-TestStart(Unittest, "shambackends/intrisics::get_sm_id", test_get_sm_id, 1) {
+NEW_TEST(Unittest, "shambackends/intrisics::get_sm_id", 1) {
 
     const size_t sz = 256 * 256;
     using T         = i32;
@@ -52,7 +52,7 @@ TestStart(Unittest, "shambackends/intrisics::get_sm_id", test_get_sm_id, 1) {
     }
 }
 
-TestStart(Unittest, "shambackends/intrisics::get_device_clock", test_get_device_clock, 1) {
+NEW_TEST(Unittest, "shambackends/intrisics::get_device_clock", 1) {
 
     const size_t sz = 256 * 256;
     using T         = i64;

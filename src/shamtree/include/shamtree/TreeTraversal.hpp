@@ -289,9 +289,9 @@ namespace shamrock::tree {
 
         ptrs get_read_access(sham::EventList &depends_list) {
             return ptrs{
-                cnt_neigh.get_read_access(depends_list),
-                scanned_cnt.get_read_access(depends_list),
-                index_neigh_map.get_read_access(depends_list)};
+                .cnt_neigh       = cnt_neigh.get_read_access(depends_list),
+                .scanned_cnt     = scanned_cnt.get_read_access(depends_list),
+                .index_neigh_map = index_neigh_map.get_read_access(depends_list)};
         }
 
         void complete_event_state(sham::EventList &resulting_events) {
@@ -385,10 +385,10 @@ namespace shamrock::tree {
 
         inline HostObjectCache copy_to_host() {
             return HostObjectCache{
-                cnt_neigh.copy_to_stdvec(),
-                scanned_cnt.copy_to_stdvec(),
-                sum_neigh_cnt,
-                index_neigh_map.copy_to_stdvec(),
+                .cnt_neigh       = cnt_neigh.copy_to_stdvec(),
+                .scanned_cnt     = scanned_cnt.copy_to_stdvec(),
+                .sum_neigh_cnt   = sum_neigh_cnt,
+                .index_neigh_map = index_neigh_map.copy_to_stdvec(),
             };
         }
 
@@ -406,10 +406,10 @@ namespace shamrock::tree {
             index_neigh_map.copy_from_stdvec(cache.index_neigh_map);
 
             return ObjectCache{
-                std::move(cnt_neigh),
-                std::move(scanned_cnt),
-                sum_neigh_cnt,
-                std::move(index_neigh_map),
+                .cnt_neigh       = std::move(cnt_neigh),
+                .scanned_cnt     = std::move(scanned_cnt),
+                .sum_neigh_cnt   = sum_neigh_cnt,
+                .index_neigh_map = std::move(index_neigh_map),
             };
         }
 
@@ -427,17 +427,17 @@ namespace shamrock::tree {
 
         ptrs_read get_read_access(sham::EventList &depends_list) const {
             return ptrs_read{
-                cnt_neigh.get_read_access(depends_list),
-                scanned_cnt.get_read_access(depends_list),
-                index_neigh_map.get_read_access(depends_list),
+                .cnt_neigh       = cnt_neigh.get_read_access(depends_list),
+                .scanned_cnt     = scanned_cnt.get_read_access(depends_list),
+                .index_neigh_map = index_neigh_map.get_read_access(depends_list),
             };
         }
 
         ptrs get_write_access(sham::EventList &depends_list) {
             return ptrs{
-                cnt_neigh.get_write_access(depends_list),
-                scanned_cnt.get_write_access(depends_list),
-                index_neigh_map.get_write_access(depends_list),
+                .cnt_neigh       = cnt_neigh.get_write_access(depends_list),
+                .scanned_cnt     = scanned_cnt.get_write_access(depends_list),
+                .index_neigh_map = index_neigh_map.get_write_access(depends_list),
             };
         }
         void complete_event_state(sycl::event &e) const {
@@ -476,10 +476,10 @@ namespace shamrock::tree {
             neigh_sum, shamsys::instance::get_compute_scheduler_ptr());
 
         tree::ObjectCache pcache{
-            std::move(counts),
-            std::move(neigh_scanned_vals),
-            neigh_sum,
-            std::move(particle_neigh_map)};
+            .cnt_neigh       = std::move(counts),
+            .scanned_cnt     = std::move(neigh_scanned_vals),
+            .sum_neigh_cnt   = neigh_sum,
+            .index_neigh_map = std::move(particle_neigh_map)};
 
         return pcache;
     }

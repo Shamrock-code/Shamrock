@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-TestStart(Unittest, "distributed_data_kernel_call_test", testing_func_ddref, 1) {
+NEW_TEST(Unittest, "distributed_data_kernel_call_test", 1) {
 
     using T = f64;
 
@@ -110,7 +110,7 @@ TestStart(Unittest, "distributed_data_kernel_call_test", testing_func_ddref, 1) 
     REQUIRE_EQUAL(cs_field.get(3).copy_to_stdvec(), cs_ref3);
 }
 
-TestStart(Unittest, "distributed_data_kernel_call_hndl_test", testing_func_ddref_hndl, 1) {
+NEW_TEST(Unittest, "distributed_data_kernel_call_hndl_test", 1) {
 
     using T = f64;
 

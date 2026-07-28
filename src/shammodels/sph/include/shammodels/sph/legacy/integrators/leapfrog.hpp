@@ -291,7 +291,7 @@ namespace integrators {
                 std::unordered_map<u64, std::unique_ptr<RadixTree<u_morton, vec3>>> radix_trees;
                 std::unordered_map<u64, std::unique_ptr<RadixTreeField<flt>>> cell_int_rads;
 
-                sched.for_each_patch([&](u64 id_patch, Patch /*cur_p*/) {
+                sched.for_each_patch([&](u64 id_patch, const Patch & /*cur_p*/) {
                     shamlog_debug_ln(
                         "SPHLeapfrog", "patch : n", id_patch, "->", "making Radix Tree");
 

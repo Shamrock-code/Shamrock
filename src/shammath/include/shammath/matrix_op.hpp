@@ -396,7 +396,7 @@ namespace shammath {
         for (auto i = 0; i < input.extent(0); i++) {
             T sum = 0;
             for (auto j = 0; j < input.extent(1); j++) {
-                sum += abs(input(i, j));
+                sum += sham::abs(input(i, j));
             }
             res = sham::max(res, sum);
         }

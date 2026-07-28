@@ -106,7 +106,7 @@ void distribdata_sparse_comm_test(
     });
 }
 
-TestStart(Unittest, "shamalgs/collective/distributedDataComm", testdistributeddatacomm, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/distributedDataComm", -1) {
 
     const i32 wsize = shamcomm::world_size();
     const i32 wrank = shamcomm::world_rank();

@@ -197,12 +197,20 @@ namespace {
 void shambase::profiling::chrome::register_event_start(
     const std::string &name, const std::string &category_name, f64 t_start, u64 pid, u64 tid) {
 
-    event_storage.register_event(ChromeEvent::EventStart{name, category_name, t_start, pid, tid});
+    event_storage.register_event(
+        ChromeEvent::EventStart{
+            .name          = name,
+            .category_name = category_name,
+            .t_start       = t_start,
+            .pid           = pid,
+            .tid           = tid});
 }
 
 void shambase::profiling::chrome::register_event_end(
     const std::string &name, const std::string &category_name, f64 tend, u64 pid, u64 tid) {
-    event_storage.register_event(ChromeEvent::EventEnd{name, category_name, tend, pid, tid});
+    event_storage.register_event(
+        ChromeEvent::EventEnd{
+            .name = name, .category_name = category_name, .tend = tend, .pid = pid, .tid = tid});
 }
 
 void shambase::profiling::chrome::register_event_complete(
@@ -214,7 +222,13 @@ void shambase::profiling::chrome::register_event_complete(
     u64 tid) {
 
     event_storage.register_event(
-        ChromeEvent::EventComplete{name, category_name, t_start, tend, pid, tid});
+        ChromeEvent::EventComplete{
+            .name          = name,
+            .category_name = category_name,
+            .t_start       = t_start,
+            .tend          = tend,
+            .pid           = pid,
+            .tid           = tid});
 }
 
 void shambase::profiling::chrome::register_metadata_thread_name(
@@ -225,5 +239,6 @@ void shambase::profiling::chrome::register_metadata_thread_name(
 void shambase::profiling::chrome::register_counter_val(
     u64 pid, f64 t, const std::string &name, f64 val) {
 
-    event_storage.register_event(ChromeEvent::CounterEvent{name, t, val, pid});
+    event_storage.register_event(
+        ChromeEvent::CounterEvent{.name = name, .t = t, .val = val, .pid = pid});
 }

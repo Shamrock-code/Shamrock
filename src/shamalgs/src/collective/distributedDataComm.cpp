@@ -147,7 +147,11 @@ namespace shamalgs::collective {
                 auto [sender_rank, receiver_rank] = key;
 
                 if (sources.size() > 0) {
-                    PrepareCommUtil next{sender_rank, receiver_rank, byte_sz, sources};
+                    PrepareCommUtil next{
+                        .sender_rank   = sender_rank,
+                        .receiver_rank = receiver_rank,
+                        .sz            = byte_sz,
+                        .sources       = sources};
                     ret.push_back(std::move(next));
                 }
 
@@ -215,7 +219,9 @@ namespace shamalgs::collective {
         send_distrib_data.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
             std::pair<i32, i32> key = {rank_getter(sender), rank_getter(receiver)};
 
-            send_data[key].push_back(DataTmp{sender, receiver, buf.get_size(), buf});
+            send_data[key].push_back(
+                DataTmp{
+                    .sender = sender, .receiver = receiver, .length = buf.get_size(), .data = buf});
         });
 
         // serialize together similar communications
@@ -237,8 +243,8 @@ namespace shamalgs::collective {
             NamedStackEntry stack_loc2{"prepare payload"};
             for (auto &[key, buf] : send_bufs) {
                 send_payoad.push_back(
-                    {key.second,
-                     std::make_unique<shamcomm::CommunicationBuffer>(
+                    {.receiver_rank = key.second,
+                     .payload       = std::make_unique<shamcomm::CommunicationBuffer>(
                          shambase::extract_pointer(buf), dev_sched)});
             }
         }
@@ -271,7 +277,8 @@ namespace shamalgs::collective {
 
                 recv_payload_bufs.push_back(
                     RecvPayloadSer{
-                        payload.sender_ranks, SerializeHelper(dev_sched, std::move(buf))});
+                        .sender_ranks = payload.sender_ranks,
+                        .ser          = SerializeHelper(dev_sched, std::move(buf))});
             }
         }
 
@@ -346,7 +353,9 @@ namespace shamalgs::collective {
         send_distrib_data.for_each([&](u64 sender, u64 receiver, sham::DeviceBuffer<u8> &buf) {
             std::pair<i32, i32> key = {rank_getter(sender), rank_getter(receiver)};
 
-            send_data[key].push_back(DataTmp{sender, receiver, buf.get_size(), buf});
+            send_data[key].push_back(
+                DataTmp{
+                    .sender = sender, .receiver = receiver, .length = buf.get_size(), .data = buf});
         });
 
         std::vector<details::PrepareCommUtil> prepared_comms
@@ -363,12 +372,12 @@ namespace shamalgs::collective {
 
             messages_send.push_back(
                 shamalgs::collective::CommMessageInfo{
-                    size,
-                    sender,
-                    receiver,
-                    std::nullopt,
-                    std::nullopt,
-                    std::nullopt,
+                    .message_size                = size,
+                    .rank_sender                 = sender,
+                    .rank_receiver               = receiver,
+                    .message_tag                 = std::nullopt,
+                    .message_bytebuf_offset_send = std::nullopt,
+                    .message_bytebuf_offset_recv = std::nullopt,
                 });
 
             data_send.push_back(std::move(cms.send_buf));
@@ -458,7 +467,8 @@ namespace shamalgs::collective {
             cache.recv_cache_read_buf_at(offset_info.buf_id, offset_info.data_offset, size, recov);
 
             recv_payload_bufs.push_back(
-                RecvPayloadSer{sender, SerializeHelper(dev_sched, std::move(recov))});
+                RecvPayloadSer{
+                    .sender_ranks = sender, .ser = SerializeHelper(dev_sched, std::move(recov))});
         }
 
         {

@@ -41,8 +41,8 @@ namespace shammodels::sph::modules {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::DistributedBuffers<u32>>(0),
-                get_rw_edge<shamrock::solvergraph::PatchDataLayerRefs>(0)};
+                .part_to_remove = get_ro_edge<shamrock::solvergraph::DistributedBuffers<u32>>(0),
+                .patchdatas     = get_rw_edge<shamrock::solvergraph::PatchDataLayerRefs>(0)};
         }
 
         void _impl_evaluate_internal();

@@ -19,11 +19,154 @@
 
 #include "shambackends/type_traits.hpp"
 #include "shambackends/vec.hpp"
+#include "shamrock/io/json_variant.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 #include <variant>
 
 namespace shammodels::sph {
+
+    /**
+     * @brief No artificial viscosity: \f$ q^a_ab = 0\f$
+     */
+    template<class Tscal>
+    struct AVConfig_None {
+        static constexpr std::string_view variant_type_name = "none";
+    };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_None<Tscal> &p) {}
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_None<Tscal> &p) {
+        p = {};
+    }
+
+    /**
+     * @brief Constant artificial viscosity: \f$ \alpha = cte\f$
+     */
+    template<class Tscal>
+    struct AVConfig_Constant {
+        static constexpr std::string_view variant_type_name = "constant";
+
+        Tscal alpha_u  = 1.0;
+        Tscal alpha_AV = 1.0;
+        Tscal beta_AV  = 2.0;
+    };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_Constant<Tscal> &p) {
+        j = {
+            {"alpha_u", p.alpha_u},
+            {"alpha_AV", p.alpha_AV},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_Constant<Tscal> &p) {
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("alpha_AV").get_to(p.alpha_AV);
+        j.at("beta_AV").get_to(p.beta_AV);
+    }
+
+    /**
+     * @brief Morris & Monaghan 1997
+     *
+     */
+    template<class Tscal>
+    struct AVConfig_VaryingMM97 {
+        static constexpr std::string_view variant_type_name = "varying_mm97";
+
+        Tscal alpha_min   = 0.1;
+        Tscal alpha_max   = 1.0;
+        Tscal sigma_decay = 0.1;
+        Tscal alpha_u     = 1.0;
+        Tscal beta_AV     = 2.0;
+    };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_VaryingMM97<Tscal> &p) {
+        j = {
+            {"alpha_min", p.alpha_min},
+            {"alpha_max", p.alpha_max},
+            {"sigma_decay", p.sigma_decay},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_VaryingMM97<Tscal> &p) {
+        j.at("alpha_min").get_to(p.alpha_min);
+        j.at("alpha_max").get_to(p.alpha_max);
+        j.at("sigma_decay").get_to(p.sigma_decay);
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("beta_AV").get_to(p.beta_AV);
+    }
+
+    /**
+     * @brief Cullen & Dehnen 2010
+     *
+     */
+    template<class Tscal>
+    struct AVConfig_VaryingCD10 {
+        static constexpr std::string_view variant_type_name = "varying_cd10";
+
+        Tscal alpha_min   = 0.1;
+        Tscal alpha_max   = 1.0;
+        Tscal sigma_decay = 0.1;
+        Tscal alpha_u     = 1.0;
+        Tscal beta_AV     = 2.0;
+    };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_VaryingCD10<Tscal> &p) {
+        j = {
+            {"alpha_min", p.alpha_min},
+            {"alpha_max", p.alpha_max},
+            {"sigma_decay", p.sigma_decay},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_VaryingCD10<Tscal> &p) {
+        j.at("alpha_min").get_to(p.alpha_min);
+        j.at("alpha_max").get_to(p.alpha_max);
+        j.at("sigma_decay").get_to(p.sigma_decay);
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("beta_AV").get_to(p.beta_AV);
+    }
+
+    /**
+     * @brief Constant artificial viscosity for alpha disc viscosity
+     */
+    template<class Tscal>
+    struct AVConfig_ConstantDisc {
+        static constexpr std::string_view variant_type_name = "constant_disc";
+
+        Tscal alpha_AV = 1.0;
+        Tscal alpha_u  = 1.0;
+        Tscal beta_AV  = 2.0;
+    };
+
+    template<class Tscal>
+    inline void to_json(nlohmann::json &j, const AVConfig_ConstantDisc<Tscal> &p) {
+        j = {
+            {"alpha_AV", p.alpha_AV},
+            {"alpha_u", p.alpha_u},
+            {"beta_AV", p.beta_AV},
+        };
+    }
+
+    template<class Tscal>
+    inline void from_json(const nlohmann::json &j, AVConfig_ConstantDisc<Tscal> &p) {
+        j.at("alpha_AV").get_to(p.alpha_AV);
+        j.at("alpha_u").get_to(p.alpha_u);
+        j.at("beta_AV").get_to(p.beta_AV);
+    }
 
     /**
      * @brief Configuration for the Artificial Viscosity (AV)
@@ -50,52 +193,11 @@ struct shammodels::sph::AVConfig {
     /// Number of dimensions of the problem
     static constexpr u32 dim = shambase::VectorProperties<Tvec>::dimension;
 
-    /**
-     * @brief No artificial viscosity: \f$ q^a_ab = 0\f$
-     */
-    struct None {};
-
-    /**
-     * @brief Constant artificial viscosity: \f$ \alpha = cte\f$
-     */
-    struct Constant {
-        Tscal alpha_u  = 1.0;
-        Tscal alpha_AV = 1.0;
-        Tscal beta_AV  = 2.0;
-    };
-
-    /**
-     * @brief Morris & Monaghan 1997
-     *
-     */
-    struct VaryingMM97 {
-        Tscal alpha_min   = 0.1;
-        Tscal alpha_max   = 1.0;
-        Tscal sigma_decay = 0.1;
-        Tscal alpha_u     = 1.0;
-        Tscal beta_AV     = 2.0;
-    };
-
-    /**
-     * @brief Cullen & Dehnen 2010
-     *
-     */
-    struct VaryingCD10 {
-        Tscal alpha_min   = 0.1;
-        Tscal alpha_max   = 1.0;
-        Tscal sigma_decay = 0.1;
-        Tscal alpha_u     = 1.0;
-        Tscal beta_AV     = 2.0;
-    };
-
-    /**
-     * @brief Constant artificial viscosity for alpha disc viscosity
-     */
-    struct ConstantDisc {
-        Tscal alpha_AV = 1.0;
-        Tscal alpha_u  = 1.0;
-        Tscal beta_AV  = 2.0;
-    };
+    using None         = AVConfig_None<Tscal>;
+    using Constant     = AVConfig_Constant<Tscal>;
+    using VaryingMM97  = AVConfig_VaryingMM97<Tscal>;
+    using VaryingCD10  = AVConfig_VaryingCD10<Tscal>;
+    using ConstantDisc = AVConfig_ConstantDisc<Tscal>;
 
     /// Variant of all types of artificial viscosity possible
     using Variant = std::variant<None, Constant, VaryingMM97, VaryingCD10, ConstantDisc>;
@@ -251,55 +353,13 @@ namespace shammodels::sph {
      */
     template<class Tvec>
     inline void to_json(nlohmann::json &j, const AVConfig<Tvec> &p) {
-        using T = AVConfig<Tvec>;
-
-        using None         = typename T::None;
-        using Constant     = typename T::Constant;
-        using VaryingMM97  = typename T::VaryingMM97;
-        using VaryingCD10  = typename T::VaryingCD10;
-        using ConstantDisc = typename T::ConstantDisc;
-
-        if (const None *v = std::get_if<None>(&p.config)) {
-            j = {
-                {"av_type", "none"},
-            };
-        } else if (const Constant *v = std::get_if<Constant>(&p.config)) {
-            j = {
-                {"av_type", "constant"},
-                {"alpha_u", v->alpha_u},
-                {"alpha_AV", v->alpha_AV},
-                {"beta_AV", v->beta_AV},
-            };
-        } else if (const VaryingMM97 *v = std::get_if<VaryingMM97>(&p.config)) {
-            j = {
-                {"av_type", "varying_mm97"},
-                {"alpha_min", v->alpha_min},
-                {"alpha_max", v->alpha_max},
-                {"sigma_decay", v->sigma_decay},
-                {"alpha_u", v->alpha_u},
-                {"beta_AV", v->beta_AV},
-            };
-        } else if (const VaryingCD10 *v = std::get_if<VaryingCD10>(&p.config)) {
-            j = {
-                {"av_type", "varying_cd10"},
-                {"alpha_min", v->alpha_min},
-                {"alpha_max", v->alpha_max},
-                {"sigma_decay", v->sigma_decay},
-                {"alpha_u", v->alpha_u},
-                {"beta_AV", v->beta_AV},
-            };
-        } else if (const ConstantDisc *v = std::get_if<ConstantDisc>(&p.config)) {
-            j = {
-                {"av_type", "constant_disc"},
-                {"alpha_u", v->alpha_u},
-                {"alpha_AV", v->alpha_AV},
-                {"beta_AV", v->beta_AV},
-            };
-        } else {
-            shambase::throw_unimplemented();
-        }
+        std::visit(
+            [&](const auto &value) {
+                j         = value;
+                j["type"] = value.variant_type_name;
+            },
+            p.config);
     }
-
     /**
      * @brief Convert a json object to an AVConfig.
      *
@@ -312,52 +372,20 @@ namespace shammodels::sph {
 
         using Tscal = shambase::VecComponent<Tvec>;
 
-        if (!j.contains("av_type")) {
-            shambase::throw_with_loc<std::runtime_error>("no field eos_type is found in this json");
+        if (!j.contains("type") && !j.contains("av_type")) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "neither \"type\" nor \"av_type\" in this json, can not infer type json=\n"
+                + j.dump(4));
         }
 
         std::string av_type;
-        j.at("av_type").get_to(av_type);
-
-        using None         = typename T::None;
-        using Constant     = typename T::Constant;
-        using VaryingMM97  = typename T::VaryingMM97;
-        using VaryingCD10  = typename T::VaryingCD10;
-        using ConstantDisc = typename T::ConstantDisc;
-
-        if (av_type == "none") {
-            p.set(None{});
-        } else if (av_type == "constant") {
-            p.set(
-                Constant{
-                    j.at("alpha_u").get<Tscal>(),
-                    j.at("alpha_AV").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>()});
-        } else if (av_type == "varying_mm97") {
-            p.set(
-                VaryingMM97{
-                    j.at("alpha_min").get<Tscal>(),
-                    j.at("alpha_max").get<Tscal>(),
-                    j.at("sigma_decay").get<Tscal>(),
-                    j.at("alpha_u").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>()});
-        } else if (av_type == "varying_cd10") {
-            p.set(
-                VaryingCD10{
-                    j.at("alpha_min").get<Tscal>(),
-                    j.at("alpha_max").get<Tscal>(),
-                    j.at("sigma_decay").get<Tscal>(),
-                    j.at("alpha_u").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>()});
-        } else if (av_type == "constant_disc") {
-            p.set(
-                ConstantDisc{
-                    j.at("alpha_AV").get<Tscal>(),
-                    j.at("alpha_u").get<Tscal>(),
-                    j.at("beta_AV").get<Tscal>()});
+        if (j.contains("type")) {
+            j.at("type").get_to(av_type);
         } else {
-            shambase::throw_unimplemented("wtf !");
+            j.at("av_type").get_to(av_type);
         }
+
+        shamrock::json_deserialize_variant(j, av_type, p.config);
     }
 
 } // namespace shammodels::sph

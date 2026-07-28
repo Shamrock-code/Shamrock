@@ -81,7 +81,7 @@ struct TestExclScan {
         sycl::buffer<u32> res = fct(q, buf, len);
 
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -208,7 +208,7 @@ struct TestExclScanUSM {
             depends_list.wait_and_throw();
             res.complete_event_state(sycl::event{});
         }
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -315,7 +315,7 @@ struct TestExclScanInplace {
         fct(q, buf, len);
 
         q.wait();
-        t.end();
+        t.stop();
 
         return (t.nanosec * 1e-9);
     }
@@ -363,11 +363,7 @@ struct TestExclScanInplace {
     }
 };
 
-TestStart(
-    Unittest,
-    "shamalgs/numeric/details/exclusive_sum_in_place_fallback",
-    exclsumtest_fallback_inplace,
-    1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_in_place_fallback", 1) {
 
     TestExclScanInplace<u32> test((TestExclScanInplace<u32>::vFunctionCall)
                                       shamalgs::numeric::details::exclusive_sum_in_place_fallback);
@@ -375,8 +371,7 @@ TestStart(
 }
 
 /*
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_in_place_atomic_decoupled_v5",
-test_exclusive_sum_in_place_atomic_decoupled_v5, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_in_place_atomic_decoupled_v5", 1) {
 
     TestExclScanInplace<u32> test
 ((TestExclScanInplace<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_in_place_atomic_decoupled_v5<u32,
@@ -384,26 +379,21 @@ test_exclusive_sum_in_place_atomic_decoupled_v5, 1){
 }
 */
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", exclsumtest_fallback, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_fallback", 1) {
 
     TestExclScan<u32> test(
         (TestExclScan<u32>::vFunctionCall) shamalgs::numeric::details::exclusive_sum_fallback);
     test.check();
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/numeric/details/exclusive_sum_gpugems39",
-    test_exclusive_sum_gpugems39_1,
-    1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_gpugems39", 1) {
 
     TestExclScan<u32> test(
         (TestExclScan<u32>::vFunctionCall) shamalgs::numeric::details::exclusive_sum_gpugems39_1);
     test.check();
 }
 /*
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass",
-test_exclusive_sum_atomic2pass, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass<u32,16>);
@@ -411,8 +401,7 @@ test_exclusive_sum_atomic2pass, 1){
 
 }
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass_v2",
-test_exclusive_sum_atomic2pass_v2, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic2pass_v2", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic2pass_v2<u32,16>);
@@ -420,8 +409,7 @@ test_exclusive_sum_atomic2pass_v2, 1){
 
 }
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled",
-test_exclusive_sum_atomic_decoupled, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled<u32,512>);
@@ -430,8 +418,7 @@ test_exclusive_sum_atomic_decoupled, 1){
 }
 
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v2",
-test_exclusive_sum_atomic_decoupled_v2, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v2", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v2<u32,16>);
@@ -439,8 +426,7 @@ test_exclusive_sum_atomic_decoupled_v2, 1){
 
 }
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v3",
-test_exclusive_sum_atomic_decoupled_v3, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v3", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v3<u32,512>);
@@ -449,8 +435,7 @@ test_exclusive_sum_atomic_decoupled_v3, 1){
 }
 
 
-TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4",
-test_exclusive_sum_atomic_decoupled_v4, 1){
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v4", 1) {
 
     TestExclScan<u32> test
 ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v4<u32,512>);
@@ -459,11 +444,7 @@ test_exclusive_sum_atomic_decoupled_v4, 1){
 }
 */
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-TestStart(
-    Unittest,
-    "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5",
-    test_exclusive_sum_atomic_decoupled_v5,
-    1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5", 1) {
 
     TestExclScan<u32> test(
         (TestExclScan<u32>::vFunctionCall)
@@ -473,11 +454,7 @@ TestStart(
 #endif
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-TestStart(
-    Unittest,
-    "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5_usm",
-    test_exclusive_sum_atomic_decoupled_v5_usm,
-    1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v5_usm", 1) {
 
     TestExclScanUSM<u32> test(
         (TestExclScanUSM<u32>::vFunctionCall)
@@ -486,8 +463,7 @@ TestStart(
 }
 #endif
 
-// TestStart(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6",
-// test_exclusive_sum_atomic_decoupled_v6, 1){
+// NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_atomic_decoupled_v6", 1) {
 //
 //     TestExclScan<u32> test
 //     ((TestExclScan<u32>::vFunctionCall)shamalgs::numeric::details::exclusive_sum_atomic_decoupled_v6<u32,64,8>);
@@ -496,11 +472,7 @@ TestStart(
 // }
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-TestStart(
-    Unittest,
-    "shamalgs/numeric/details/exclusive_sum_sycl_jointalg",
-    test_exclusive_sum_sycl_jointalg,
-    1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/exclusive_sum_sycl_jointalg", 1) {
 
     TestExclScan<u32> test((TestExclScan<u32>::vFunctionCall)
                                shamalgs::numeric::details::exclusive_sum_sycl_jointalg<u32, 32>);
@@ -508,7 +480,7 @@ TestStart(
 }
 #endif
 
-TestStart(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", bench_exclusive_sum, 1) {
+NEW_TEST(Benchmark, "shamalgs/numeric/details/exclusive_sum:benchmark", 1) {
     py::dict results;
     /*
         {

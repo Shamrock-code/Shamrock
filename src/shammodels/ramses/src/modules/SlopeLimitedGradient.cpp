@@ -17,8 +17,8 @@
 
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
-#include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradientUtilities.hpp"
+#include "shamrock/patch/PatchDataField.hpp"
 #include <type_traits>
 
 namespace {
@@ -84,8 +84,9 @@ namespace {
                                 Tscal delta_cell = cell_sizes[block_id];
 
                                 auto result = get_3d_grad<Tscal, Tvec, mode>(
+                                    cell_sizes,
+                                    block_size,
                                     cell_global_id,
-                                    delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
                                     graph_iter_yp,
@@ -180,8 +181,9 @@ namespace {
                                 Tscal delta_cell = cell_sizes[block_id];
 
                                 auto result = get_3d_grad<Tvec, Tvec, mode>(
+                                    cell_sizes,
+                                    block_size,
                                     cell_global_id,
-                                    delta_cell,
                                     graph_iter_xp,
                                     graph_iter_xm,
                                     graph_iter_yp,

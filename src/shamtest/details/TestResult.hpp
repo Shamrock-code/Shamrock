@@ -35,7 +35,7 @@ namespace shamtest::details {
         TestType type;          /*!< The type of the test */
         std::string name;       /*!< The name of the test */
         u32 world_rank;         /*!< MPI rank that performed the test */
-        TestAssertList asserts; /*!< List of the asserts performed withing the test */
+        TestAssertList asserts; /*!< List of the asserts performed within the test */
         TestDataList test_data; /*!< Data returned by the test */
         std::string tex_output; /*!< Tex output of the test */
 

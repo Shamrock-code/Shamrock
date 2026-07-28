@@ -64,7 +64,6 @@ namespace shamalgs::primitives {
      * @endcode
      */
     template<class T>
-    [[deprecated("Use is_all_true(sham::DeviceBuffer<T>&, u32) instead.")]]
     bool is_all_true(sycl::buffer<T> &buf, u32 cnt);
 
     /**

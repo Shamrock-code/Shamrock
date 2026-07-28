@@ -20,9 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - clang: 17
-            cuda: 11.0.2
-            rocm: 5.4.3
+          - clang: 20
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
 
     #if: false
@@ -60,14 +58,7 @@ jobs:
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
           sudo apt update && \
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
+          ./tools/apt_install_llvm.sh ${{matrix.clang}}
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -108,22 +99,11 @@ jobs:
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: run Shamrock Unittests world_size = 1
+      - name: run Shamrock test suite
         run: |
           cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 2
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 2 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 3
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 3 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 4
-        run: |
-          cd build
-          ACPP_VISIBILITY_MASK=omp ASAN_OPTIONS=detect_leaks=0 mpirun --bind-to socket:overload-allowed --oversubscribe --allow-run-as-root -n 4 ./shamrock_test --smi-full  --sycl-cfg 0:0 --loglevel 0
+          export SYCLCFG=0:0
+          export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
+          export ACPP_VISIBILITY_MASK=omp
+          export ASAN_OPTIONS=detect_leaks=0
+          ../tools/test_sequence.sh

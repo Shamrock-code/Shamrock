@@ -201,7 +201,12 @@ namespace sham {
 
                     if (acc._valid[0]) {
 #ifdef SHAMROCK_INTRISICS_GET_SMID_AVAILABLE
-                        events[acc._index[0]] = {u64_max, u64_max, 0, sham::get_sm_id(), 0};
+                        events[acc._index[0]]
+                            = {.start     = u64_max,
+                               .first_end = u64_max,
+                               .last_end  = 0,
+                               .lane      = sham::get_sm_id(),
+                               .color     = 0};
 #else
                         events[acc._index[0]] = {u64_max, u64_max, 0, 0, 0};
 #endif
@@ -287,9 +292,9 @@ namespace sham {
          */
         inline acc get_write_access(sham::EventList &deps) {
             return {
-                events.get_write_access(deps),
-                event_count.get_write_access(deps),
-                events.get_size()};
+                .events          = events.get_write_access(deps),
+                .event_count     = event_count.get_write_access(deps),
+                .max_event_count = events.get_size()};
         }
 
         /**

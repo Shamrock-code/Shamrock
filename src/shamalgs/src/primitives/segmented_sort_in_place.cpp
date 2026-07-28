@@ -134,19 +134,19 @@ namespace shamalgs::primitives {
         inline shamalgs::impl_param segmented_sort_in_place_impl_to_params(
             const SEGMENTED_SORT_IN_PLACE_IMPL &impl) {
             if (impl == SEGMENTED_SORT_IN_PLACE_IMPL::LOCAL_INSERTION_SORT) {
-                return {"local_insertion_sort", ""};
+                return {.impl_name = "local_insertion_sort", .params = ""};
             } else if (impl == SEGMENTED_SORT_IN_PLACE_IMPL::MULTI_STD_SORT) {
-                return {"multi_std_sort", ""};
+                return {.impl_name = "multi_std_sort", .params = ""};
             }
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                shambase::format("unknow segmented sort in place implementation : {}", u32(impl)));
+                shambase::format("unknown segmented sort in place implementation : {}", u32(impl)));
         }
 
         /// Get list of available segmented sort in place implementations
         std::vector<shamalgs::impl_param> get_default_impl_list_segmented_sort_in_place() {
             return {
-                {"local_insertion_sort", ""},
-                {"multi_std_sort", ""},
+                {.impl_name = "local_insertion_sort", .params = ""},
+                {.impl_name = "multi_std_sort", .params = ""},
             };
         }
 

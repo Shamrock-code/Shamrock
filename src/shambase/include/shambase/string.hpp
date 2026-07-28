@@ -17,56 +17,20 @@
  */
 
 #include "shambase/aliases_int.hpp"
-#include "exception.hpp"
+#include "shambase/exception.hpp"
+#include "sham/format/format.hpp"
+#include "sham/format/human_readable.hpp"
+#include <fmt/base.h>
 #include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <fmt/ranges.h>
+#include <string_view>
 #include <array>
 #include <fstream>
 #include <vector>
 
 namespace shambase {
-
-    /**
-     * @brief format a string using fmtlib style
-     * Cheat sheet : https://hackingcpp.com/cpp/libs/fmt.html
-     *
-     * @tparam T
-     * @param fmt the format string
-     * @param args the arguments to format agains
-     * @return std::string the formatted string
-     */
-    template<typename... T>
-    inline std::string format(fmt::format_string<T...> fmt, T &&...args) {
-        try {
-            return fmt::format(fmt, args...);
-        } catch (const std::exception &e) {
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what()));
-        }
-    }
-
-    /**
-     * @brief format a string using C printf style
-     * https://cplusplus.com/reference/cstdio/printf/
-     *
-     * @tparam T
-     * @param fmt the format string
-     * @param args the arguments to format agains
-     * @return std::string the formatted string
-     */
-    template<typename... T>
-    inline std::string format_printf(std::string format, const T &...args) {
-        try {
-            return fmt::sprintf(format, args...);
-        } catch (const std::exception &e) {
-
-            throw make_except_with_loc<std::invalid_argument>(
-                "format failed : " + std::string(e.what())
-                + "\n fmt string : " + std::string(format));
-        }
-    }
 
     /**
      * @brief Format an array of elements into a string
@@ -110,32 +74,16 @@ namespace shambase {
 
     /**
      * @brief given a sizeof value return a readble string
-     * Exemple : readable_sizeof(1024*1024*1024) -> "1.00 GB"
+     * Example : readable_sizeof(1e9) -> "1.00 GB"
+     *
+     * Use to be in base 1024 but was error prone
      *
      * @param size the size
      * @return std::string the formated string
      */
     inline std::string readable_sizeof(double size) {
-
-        i32 i = 0;
-
-        using namespace std::string_literals;
-        const std::array units{"B"s, "kB"s, "MB"s, "GB"s, "TB"s, "PB"s, "EB"s, "ZB"s, "YB"s};
-
-        if (size >= 0) {
-            while (size > 1024) {
-                size /= 1024;
-                i++;
-            }
-        } else {
-            i = 9;
-        }
-
-        if (i > 8) {
-            return format_printf("%s", "err val");
-        } else {
-            return format_printf("%.2f %s", size, units[i]);
-        }
+        auto res = sham::to_human_readable<false>(size);
+        return sham::format("{:.2f} {}B", res.value, res.prefix);
     }
 
     /**
@@ -252,9 +200,9 @@ namespace shambase {
     inline std::string shorten_string(std::string str, u32 len) {
         if (len > str.size()) {
             throw make_except_with_loc<std::invalid_argument>(
-                "the string is too short to be shorten"
+                "the string is too short to be shortened"
                 "\n args : "
-                + format("{} : {} \n {} : {}", "str", str, "len", len));
+                + shambase::format("{} : {} \n {} : {}", "str", str, "len", len));
         }
         return str.substr(0, str.size() - len);
     }

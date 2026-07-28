@@ -215,8 +215,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::start_n
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    time_neigh.stop();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 template<class Tvec, class Tmorton, template<class> class SPHKernel>
@@ -599,8 +599,8 @@ void shammodels::sph::modules::NeighbourCache<Tvec, Tmorton, SPHKernel>::
         ncache.neigh_cache.add_obj(cur_p.id_patch, build_neigh_cache(cur_p.id_patch));
     });
 
-    time_neigh.end();
-    storage.timings_details.neighbors += time_neigh.elasped_sec();
+    time_neigh.stop();
+    storage.timings_details.neighbors += time_neigh.elapsed_sec();
 }
 
 using namespace shammath;

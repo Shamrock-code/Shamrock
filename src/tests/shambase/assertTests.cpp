@@ -12,7 +12,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase/assert", assert_testing, 1) {
+NEW_TEST(Unittest, "shambase/assert", 1) {
 
     SHAM_ASSERT_NAMED("does it compile ?", true);
 

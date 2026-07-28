@@ -44,11 +44,7 @@ std::vector<u64> benchmark(u64 nval_max, u64 step_size) {
     return data;
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/collective/InvariantParallelGenerator",
-    test_invariant_parrallel_generator,
-    -1) {
+NEW_TEST(Unittest, "shamalgs/collective/InvariantParallelGenerator", -1) {
 
     u64 count_test_per_rank_all = 100_u64;
     u64 count_test              = u64(shamcomm::world_size()) * count_test_per_rank_all;
@@ -74,11 +70,7 @@ TestStart(
     REQUIRE_EQUAL(res.size(), count_test);
 }
 
-TestStart(
-    Benchmark,
-    "shamalgs/collective/InvariantParallelGenerator_benchmark",
-    benchmark_invariant_parrallel_generator,
-    -1) {
+NEW_TEST(Benchmark, "shamalgs/collective/InvariantParallelGenerator_benchmark", -1) {
 
     std::vector<u64> data;
     f64 time = shambase::timeitfor([&]() {

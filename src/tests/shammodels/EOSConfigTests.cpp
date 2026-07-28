@@ -94,7 +94,7 @@ void test_serialize_locally_isothermallp07() {
     }
 }
 
-TestStart(Unittest, "shammodels/EOSConfig::json", eosconfigserializejson, 1) {
+NEW_TEST(Unittest, "shammodels/EOSConfig::json", 1) {
 
     test_serialize_adiabatic();
     test_serialize_locally_isothermal();

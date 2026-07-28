@@ -15,8 +15,10 @@
  */
 
 #include "shambase/SourceLocation.hpp"
+#include "shambase/call_lambda.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
+#include "sham/format/format.hpp"
 #include <string>
 
 namespace shambase {
@@ -40,4 +42,21 @@ namespace shambase {
 
     exception_gen_callback_t get_exception_gen_callback() { return exception_print_callback; }
 
+    fmt::format_error format_exception_builder(
+        std::string_view function_call,
+        std::string_view what,
+        const std::string &fmt_string,
+        std::source_location loc) {
+        return make_except_with_loc<fmt::format_error>(
+            fmt::format(
+                "format failed:\n  function={}\n  what={}\n  fmt_string={}",
+                function_call,
+                what,
+                fmt_string),
+            SourceLocation(loc));
+    }
+
+    static shambase::call_lambda register_format_exception_builder([]() {
+        sham::set_format_exception_builder(format_exception_builder);
+    });
 } // namespace shambase

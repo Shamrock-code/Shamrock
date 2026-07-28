@@ -43,8 +43,8 @@ namespace shamrock::solvergraph {
 
         Edges get_edges() {
             return Edges{
-                get_ro_edge<IPatchDataLayerRefs>(0),
-                get_rw_edge<shamrock::solvergraph::Indexes<u32>>(0)};
+                .source  = get_ro_edge<IPatchDataLayerRefs>(0),
+                .out_ref = get_rw_edge<shamrock::solvergraph::Indexes<u32>>(0)};
         }
 
         void _impl_evaluate_internal() {

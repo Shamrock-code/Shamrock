@@ -10,6 +10,7 @@
 /**
  * @file Solver.cpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Noé Brucy (noe.brucy@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -17,19 +18,20 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
-#include "shamcomm/collectives.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/timestep_report.hpp"
 #include "shammodels/ramses/Solver.hpp"
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/modules/AMRGridRefinementHandler.hpp"
 #include "shammodels/ramses/modules/BlockNeighToCellNeigh.hpp"
+#include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "shammodels/ramses/modules/ComputeCellAABB.hpp"
+#include "shammodels/ramses/modules/ComputeCoordinates.hpp"
 #include "shammodels/ramses/modules/ComputeLevel0CellSize.hpp"
 #include "shammodels/ramses/modules/ComputeMass.hpp"
 #include "shammodels/ramses/modules/ComputeSumOverV.hpp"
-#include "shammodels/ramses/modules/ComputeTimeDerivative.hpp"
 #include "shammodels/ramses/modules/ConsToPrimDust.hpp"
 #include "shammodels/ramses/modules/ConsToPrimGas.hpp"
 #include "shammodels/ramses/modules/DragIntegrator.hpp"
@@ -40,10 +42,13 @@
 #include "shammodels/ramses/modules/InterpolateToFace.hpp"
 #include "shammodels/ramses/modules/NodeComputeFlux.hpp"
 #include "shammodels/ramses/modules/SlopeLimitedGradient.hpp"
+#include "shammodels/ramses/modules/SumFluxDust.hpp"
+#include "shammodels/ramses/modules/SumFluxHydro.hpp"
 #include "shammodels/ramses/modules/TimeIntegrator.hpp"
 #include "shammodels/ramses/modules/TransformGhostLayer.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
-#include "shamrock/io/LegacyVtkWritter.hpp"
+#include "shamrock/io/LegacyVtkWriter.hpp"
+#include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/CopyPatchDataLayerFields.hpp"
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamrock/solvergraph/ExtractCounts.hpp"
@@ -55,6 +60,7 @@
 #include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamrock/solvergraph/SolverGraph.hpp"
@@ -129,7 +135,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             return pdat.pdl();
         };
 
-        shamrock::LegacyVtkWritter writer(filename.data, true, shamrock::UnstructuredGrid);
+        shamrock::LegacyVtkWriter writer(filename.data, true, shamrock::UnstructuredGrid);
 
         u32 field_count = get_field_count();
 
@@ -344,8 +350,12 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         shamrock::solvergraph::DDSharedScalar<modules::GhostLayerCandidateInfos>>(
         "ghost_layers_candidates", "ghost_layers_candidates");
 
-    storage.patch_rank_owner
-        = std::make_shared<shamrock::solvergraph::ScalarsEdge<u32>>("patch_rank_owner", "rank");
+    storage.patch_rank_owner = std::make_shared<shamrock::solvergraph::RankGetter>(
+        [&](u64 patch_id) -> u32 {
+            return scheduler().get_patch_rank_owner(patch_id);
+        },
+        "patch_rank_owner",
+        "rank");
 
     storage.source_patches = std::make_shared<shamrock::solvergraph::PatchDataLayerRefs>(
         "source_patches", "P_{\\rm source}");
@@ -384,6 +394,11 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.press
         = std::make_shared<shamrock::solvergraph::Field<Tscal>>(AMRBlock::block_size, "P", "P");
 
+    if (!solver_config.amr_mode.old_amr) { // TODO disable also if amr is none
+        storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho-prim", "rho-prim");
+    }
+
     if (solver_config.is_dust_on()) {
         u32 ndust = solver_config.dust_config.ndust;
 
@@ -409,10 +424,22 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     storage.cell0block_aabb_lower = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
         1, "cell0block_aabb_lower", "\\mathbf{s}_{\\rm inf,block}");
 
+    if (solver_config.is_coordinate_field_required()) {
+        // will be filled by NodeComputeCoordinates
+        storage.coordinates = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "coordinates", "\\mathbf{xyz}");
+    }
+
     if (solver_config.amr_mode.need_level_zero_compute()) {
         // get blocks at level0 sizes for all patches
         storage.level0_size = std::make_shared<shamrock::solvergraph::ScalarsEdge<TgridVec>>(
             "level0_amr", "level0_amr");
+    }
+
+    if (solver_config.amr_mode.need_amr_level_compute()) {
+        using TgridUint = typename std::make_unsigned<shambase::VecComponent<TgridVec>>::type;
+        storage.amr_block_levels
+            = std::make_shared<shamrock::solvergraph::Field<TgridUint>>(1, "", "");
     }
 
     storage.grad_rho = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
@@ -736,7 +763,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         auto &ghost_layout_ptr = storage.ghost_layout;
         {
             auto copy_fields = std::make_shared<shamrock::solvergraph::CopyPatchDataLayerFields>(
-                scheduler().get_layout_ptr(), ghost_layout_ptr);
+                scheduler().get_layout_ptr_old(), ghost_layout_ptr);
 
             copy_fields->set_edges(storage.source_patches, storage.merged_patchdata_ghost);
             gz_xchg_sequence.push_back(std::move(copy_fields));
@@ -928,6 +955,24 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
     }
 
+    if (solver_config.is_coordinate_field_required()) { // Compute coordinates
+
+        modules::NodeComputeCoordinates<Tvec, TgridVec> node_coordinates{
+            AMRBlock::block_size,
+            AMRBlock::Nside,
+            solver_config.grid_coord_to_pos_fact,
+        };
+
+        node_coordinates.set_edges(
+            storage.block_counts,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.coordinates);
+
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_coordinates)>(std::move(node_coordinates)));
+    }
+
     if (solver_config.amr_mode.need_level_zero_compute()) { // compute level0 sizes in patch (to be
                                                             // enabled later when needed)
         modules::ComputeLevel0CellSize<TgridVec> node_level0_sizes{};
@@ -937,6 +982,18 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             storage.level0_size);
         solver_sequence.push_back(
             std::make_shared<decltype(node_level0_sizes)>(std::move(node_level0_sizes)));
+    }
+
+    if (solver_config.amr_mode.need_amr_level_compute()) { // compute block amr level in patch
+        modules::ComputeAMRLevel<TgridVec> node_amr_level{};
+        node_amr_level.set_edges(
+            storage.block_counts,
+            storage.level0_size,
+            storage.refs_block_min,
+            storage.refs_block_max,
+            storage.amr_block_levels);
+        solver_sequence.push_back(
+            std::make_shared<decltype(node_amr_level)>(std::move(node_amr_level)));
     }
 
     if (solver_config.should_compute_rho_mean()) {
@@ -1383,6 +1440,65 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
     }
 
+    {
+        modules::NodeSumFluxHydro<Tvec, TgridVec> node{
+            AMRBlock::block_size, solver_config.grid_coord_to_pos_fact};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_face_xp,
+            storage.flux_rho_face_xm,
+            storage.flux_rho_face_yp,
+            storage.flux_rho_face_ym,
+            storage.flux_rho_face_zp,
+            storage.flux_rho_face_zm,
+            storage.flux_rhov_face_xp,
+            storage.flux_rhov_face_xm,
+            storage.flux_rhov_face_yp,
+            storage.flux_rhov_face_ym,
+            storage.flux_rhov_face_zp,
+            storage.flux_rhov_face_zm,
+            storage.flux_rhoe_face_xp,
+            storage.flux_rhoe_face_xm,
+            storage.flux_rhoe_face_yp,
+            storage.flux_rhoe_face_ym,
+            storage.flux_rhoe_face_zp,
+            storage.flux_rhoe_face_zm,
+            storage.dtrho,
+            storage.dtrhov,
+            storage.dtrhoe);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
+    if (solver_config.is_dust_on()) {
+        modules::NodeSumFluxDust<Tvec, TgridVec> node{
+            AMRBlock::block_size,
+            solver_config.grid_coord_to_pos_fact,
+            solver_config.dust_config.ndust};
+        node.set_edges(
+            storage.block_counts,
+            storage.cell_graph_edge,
+            storage.block_cell_sizes,
+            storage.cell0block_aabb_lower,
+            storage.flux_rho_dust_face_xp,
+            storage.flux_rho_dust_face_xm,
+            storage.flux_rho_dust_face_yp,
+            storage.flux_rho_dust_face_ym,
+            storage.flux_rho_dust_face_zp,
+            storage.flux_rho_dust_face_zm,
+            storage.flux_rhov_dust_face_xp,
+            storage.flux_rhov_dust_face_xm,
+            storage.flux_rhov_dust_face_yp,
+            storage.flux_rhov_dust_face_ym,
+            storage.flux_rhov_dust_face_zp,
+            storage.flux_rhov_dust_face_zm,
+            storage.dtrho_dust,
+            storage.dtrhov_dust);
+        solver_sequence.push_back(std::make_shared<decltype(node)>(std::move(node)));
+    }
+
     shamrock::solvergraph::OperationSequence seq("Solver", std::move(solver_sequence));
     storage.solver_sequence = std::make_shared<decltype(seq)>(std::move(seq));
 
@@ -1401,8 +1517,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
     f64 mpi_timer_start                     = shamcomm::mpi::get_timer("total");
 
-    Tscal t_current = solver_config.get_time();
-    Tscal dt_input  = solver_config.get_dt();
+    Tscal t_current = get_time();
+    Tscal dt_input  = get_dt();
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("amr::Godunov", shambase::format("t = {}, dt = {}", t_current, dt_input));
@@ -1435,12 +1551,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::get_check_ref(storage.simulation_volume).value = Vsim;
     }
 
-    // give to the solvergraph the patch rank owners
-    storage.patch_rank_owner->values = {};
-    scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
-        storage.patch_rank_owner->values.add_obj(
-            p.id_patch, scheduler().get_patch_rank_owner(p.id_patch));
-    });
+    /// patch_rank_owner is automatically updated since it is just a lambda
 
     scheduler().for_each_patchdata_nonempty(
         [&](const shamrock::patch::Patch &p, shamrock::patch::PatchDataLayer &pdat) {
@@ -1473,7 +1584,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         global_patch_boxes_edge.values = {};
 
-        scheduler().for_each_global_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_global_patch([&](const shamrock::patch::Patch &p) {
             auto pbounds = transf.to_obj_coord(p);
             global_patch_boxes_edge.values.add_obj(
                 p.id_patch, shammath::AABB<TgridVec>{pbounds.lower, pbounds.upper});
@@ -1488,7 +1599,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
         local_patch_ids.data = {};
 
-        scheduler().for_each_local_patch([&](const shamrock::patch::Patch p) {
+        scheduler().for_each_local_patch([&](const shamrock::patch::Patch &p) {
             local_patch_ids.data.push_back(p.id_patch);
         });
     }
@@ -1500,13 +1611,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     // Solvergraph evaluation
     {
         shambase::get_check_ref(storage.solver_sequence).evaluate();
-    }
-
-    // compute dt fields
-    modules::ComputeTimeDerivative dt_compute(context, solver_config, storage);
-    dt_compute.compute_dt_fields();
-    if (solver_config.is_dust_on()) {
-        dt_compute.compute_dt_dust_fields();
     }
 
     // RK2 + flux lim
@@ -1525,8 +1629,21 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         shambase::throw_unimplemented();
     }
 
-    modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
-    refinement.update_refinement();
+    if (!solver_config.amr_mode.old_amr) {
+        shamrock::solvergraph::CopyPatchDataField<Tscal> node_copy_rho{};
+        node_copy_rho.set_edges(storage.refs_rho, storage.rho_primitive);
+        node_copy_rho.evaluate();
+    }
+
+    // TODO: check if we can drop that
+    if (dt_input > 0) {
+        modules::AMRGridRefinementHandler refinement(context, solver_config, storage);
+        if (solver_config.amr_mode.old_amr) {
+            refinement.update_refinement_old();
+        } else {
+            refinement.update_refinement_new();
+        }
+    }
 
     modules::ComputeCFL cfl_compute(context, solver_config, storage);
     f64 new_dt = cfl_compute.compute_cfl();
@@ -1535,8 +1652,8 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     if (solver_config.is_dust_on())
         new_dt = std::min(new_dt, cfl_compute.compute_dust_cfl());
 
-    solver_config.set_next_dt(new_dt);
-    solver_config.set_time(t_current + dt_input);
+    set_next_dt(new_dt);
+    set_time(t_current + dt_input);
 
     if (solver_config.drag_config.drag_solver_config != DragSolverMode::NoDrag) {
         storage.rho_next_no_drag.reset();
@@ -1559,7 +1676,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
 
     shambase::get_check_ref(storage.ghost_layers_candidates_edge).free_alloc();
 
-    tstep.end();
+    tstep.stop();
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
@@ -1571,7 +1688,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
                        + (mem_perf_infos_end.time_free_host - mem_perf_infos_start.time_free_host);
 
     u64 rank_count = scheduler().get_rank_count() * AMRBlock::block_size;
-    f64 rate       = f64(rank_count) / tstep.elasped_sec();
+    f64 rate       = f64(rank_count) / tstep.elapsed_sec();
 
     u64 npatch = scheduler().patch_list.local.size();
 
@@ -1579,7 +1696,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         rate,
         rank_count,
         npatch,
-        tstep.elasped_sec(),
+        tstep.elapsed_sec(),
         delta_mpi_timer,
         t_dev_alloc,
         t_host_alloc,
@@ -1591,7 +1708,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         logger::info_ln(
             "amr::RAMSES",
             "estimated rate :",
-            dt_input * (3600 / tstep.elasped_sec()),
+            dt_input * (3600 / tstep.elapsed_sec()),
             "(tsim/hr)");
     }
 
@@ -1602,7 +1719,7 @@ template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::string filename) {
 
     StackEntry stack_loc{};
-    shamrock::LegacyVtkWritter writer(filename, true, shamrock::UnstructuredGrid);
+    shamrock::LegacyVtkWriter writer(filename, true, shamrock::UnstructuredGrid);
 
     PatchScheduler &sched = shambase::get_check_ref(context.sched);
 
@@ -1681,8 +1798,9 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::do_debug_vtk_dump(std::str
     */
 
     /*
-    std::unique_ptr<sycl::buffer<Tscal>> dtrho = storage.dtrho.get().rankgather_computefield(sched);
-    writer.write_field("dtrho", dtrho, num_obj * block_size);
+    std::unique_ptr<sycl::buffer<Tscal>> dtrho =
+    storage.dtrho.get().rankgather_computefield(sched); writer.write_field("dtrho", dtrho,
+    num_obj * block_size);
 
     std::unique_ptr<sycl::buffer<Tvec>> dtrhov
         = storage.dtrhov.get().rankgather_computefield(sched);

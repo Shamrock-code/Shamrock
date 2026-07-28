@@ -118,7 +118,7 @@ jobs:
       - name : Install archlinux dependencies
         if: matrix.container == 'archlinux/archlinux:base-devel'
         run: |
-          sudo pacman -Syu --noconfirm base-devel git python python-pip cmake boost ninja openmp openmpi doxygen llvm19 clang19 lld
+          sudo pacman -Syu --noconfirm base-devel git python python-pip cmake boost ninja openmp openmpi doxygen llvm20 clang20 lld
 
       # if macos container
       - name : Install macos dependencies
@@ -226,43 +226,13 @@ jobs:
           cd build
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: run Shamrock help
+      - name: run Shamrock test suite
         if: matrix.runtest
         run: |
           cd build
-          ./shamrock --help
-          ./shamrock --help --color
-
-      - name: run Shamrock Test help
-        if: matrix.runtest
-        run: |
-          cd build
-          ./shamrock_test --help
-          ./shamrock_test --help --color
-
-      - name: run Shamrock Unittests world_size = 1
-        if: matrix.runtest
-        run: |
-          cd build
-          ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 2
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun ${{ matrix.mpiargs }} -n 2 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 3
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun ${{ matrix.mpiargs }} -n 3 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
-
-      - name: run Shamrock Unittests world_size = 4
-        if: matrix.runtest
-        run: |
-          cd build
-          mpirun ${{ matrix.mpiargs }} -n 4 ./shamrock_test --color --smi-full  --sycl-cfg 0:0 --loglevel 0 --benchmark-mpi
+          export SYCLCFG=0:0
+          export MPIARGS="${{ matrix.mpiargs }}"
+          ../tools/test_sequence.sh
 
       - name: Create Python test script for next tests
         shell: bash # In docker container github action default to sh

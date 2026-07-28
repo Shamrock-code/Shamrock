@@ -38,8 +38,6 @@ namespace shammodels::sph::modules {
 
         struct DiscOutput {
             sycl::vec<Tscal, 3> pos;
-            sycl::vec<Tscal, 3> velocity;
-            Tscal cs;
             Tscal rho;
         };
 
@@ -49,6 +47,9 @@ namespace shammodels::sph::modules {
         DiscIterator generator;
         Tscal init_h_factor;
 
+        std::function<Tvec(Tvec)> vel_profile;
+        std::function<Tscal(Tvec)> cs_profile;
+
         static DiscIterator make_generator(
             Tscal part_mass,
             Tscal disc_mass,
@@ -56,19 +57,8 @@ namespace shammodels::sph::modules {
             Tscal r_out,
             std::function<Tscal(Tscal)> sigma_profile,
             std::function<Tscal(Tscal)> H_profile,
-            std::function<Tscal(Tscal)> rot_profile,
-            std::function<Tscal(Tscal)> cs_profile,
             std::mt19937_64 eng) {
-            return DiscIterator(
-                part_mass,
-                disc_mass,
-                r_in,
-                r_out,
-                sigma_profile,
-                H_profile,
-                rot_profile,
-                cs_profile,
-                eng);
+            return DiscIterator(part_mass, disc_mass, r_in, r_out, sigma_profile, H_profile, eng);
         }
 
         public:
@@ -81,21 +71,15 @@ namespace shammodels::sph::modules {
             Tscal r_out,
             std::function<Tscal(Tscal)> sigma_profile,
             std::function<Tscal(Tscal)> H_profile,
-            std::function<Tscal(Tscal)> rot_profile,
-            std::function<Tscal(Tscal)> cs_profile,
+            std::function<Tvec(Tvec)> vel_profile,
+            std::function<Tscal(Tvec)> cs_profile,
             std::mt19937_64 eng,
             Tscal init_h_factor)
-            : context(context), solver_config(solver_config), generator(make_generator(
-                                                                  part_mass,
-                                                                  disc_mass,
-                                                                  r_in,
-                                                                  r_out,
-                                                                  sigma_profile,
-                                                                  H_profile,
-                                                                  rot_profile,
-                                                                  cs_profile,
-                                                                  eng)),
-              init_h_factor(init_h_factor), pmass(part_mass) {}
+            : context(context), solver_config(solver_config),
+              generator(
+                  make_generator(part_mass, disc_mass, r_in, r_out, sigma_profile, H_profile, eng)),
+              init_h_factor(init_h_factor), pmass(part_mass), vel_profile(vel_profile),
+              cs_profile(cs_profile) {}
 
         bool is_done();
 
@@ -121,8 +105,6 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
     Tscal r_out;
     std::function<Tscal(Tscal)> sigma_profile;
     std::function<Tscal(Tscal)> H_profile;
-    std::function<Tscal(Tscal)> rot_profile;
-    std::function<Tscal(Tscal)> cs_profile;
 
     shamalgs::collective::InvariantParallelGenerator<std::mt19937_64> generator;
 
@@ -140,8 +122,6 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
         Tscal r_out,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> H_profile,
-        std::function<Tscal(Tscal)> rot_profile,
-        std::function<Tscal(Tscal)> cs_profile,
         std::mt19937_64 eng)
         : DiscIterator(
               part_mass,
@@ -150,8 +130,6 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
               r_out,
               sigma_profile,
               H_profile,
-              rot_profile,
-              cs_profile,
               eng,
               disc_mass / part_mass) {}
 
@@ -162,13 +140,11 @@ class shammodels::sph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator {
         Tscal r_out,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> H_profile,
-        std::function<Tscal(Tscal)> rot_profile,
-        std::function<Tscal(Tscal)> cs_profile,
         std::mt19937_64 eng,
         u64 Npart)
         : part_mass(part_mass), disc_mass(disc_mass), Npart(Npart), r_in(r_in), r_out(r_out),
-          sigma_profile(sigma_profile), H_profile(H_profile), rot_profile(rot_profile),
-          cs_profile(cs_profile), generator(eng, Npart), current_index(0) {
+          sigma_profile(sigma_profile), H_profile(H_profile), generator(eng, Npart),
+          current_index(0) {
 
         shamlog_debug_ln(
             "GeneratorMCDisc",

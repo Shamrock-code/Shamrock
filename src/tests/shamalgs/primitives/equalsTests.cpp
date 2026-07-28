@@ -12,7 +12,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/primitives/equals", test_equals_primitive, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/equals", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

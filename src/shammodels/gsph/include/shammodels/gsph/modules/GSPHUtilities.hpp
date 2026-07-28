@@ -64,7 +64,7 @@ namespace shammodels::gsph {
 
             using namespace shamrock::patch;
 
-            const u32 ihpart = sched.pdl().template get_field_idx<Tscal>("hpart");
+            const u32 ihpart = sched.pdl_old().template get_field_idx<Tscal>("hpart");
 
             PatchField<Tscal> interactR_patch = sched.map_owned_to_patch_field_simple<Tscal>(
                 [&](const Patch p, PatchDataLayer &pdat) -> Tscal {

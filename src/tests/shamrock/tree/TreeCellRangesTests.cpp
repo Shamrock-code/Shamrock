@@ -16,7 +16,7 @@
 #include "shamtree/TreeReducedMortonCodes.hpp"
 #include "shamtree/TreeStructure.hpp"
 
-TestStart(Unittest, "shamrock/tree/TreeCellRanges::serialize", testcellrangesserialize, 1) {
+NEW_TEST(Unittest, "shamrock/tree/TreeCellRanges::serialize", 1) {
 
     using pos_t    = f32_3;
     using u_morton = u32;

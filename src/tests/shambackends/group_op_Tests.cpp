@@ -19,7 +19,7 @@
 
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
 
-TestStart(Unittest, "sham::sum_over_group", sum_over_group_test, 1) {
+NEW_TEST(Unittest, "sham::sum_over_group", 1) {
 
     // Initialize data
     std::vector<f64_3> input_data
@@ -67,7 +67,7 @@ TestStart(Unittest, "sham::sum_over_group", sum_over_group_test, 1) {
     }
 }
 
-TestStart(Unittest, "sham::min_over_group", min_over_group_test, 1) {
+NEW_TEST(Unittest, "sham::min_over_group", 1) {
 
     // Initialize data
     std::vector<f64_3> input_data
@@ -115,7 +115,7 @@ TestStart(Unittest, "sham::min_over_group", min_over_group_test, 1) {
     }
 }
 
-TestStart(Unittest, "sham::max_over_group", max_over_group_test, 1) {
+NEW_TEST(Unittest, "sham::max_over_group", 1) {
 
     // Initialize data
     std::vector<f64_3> input_data

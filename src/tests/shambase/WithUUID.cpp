@@ -70,6 +70,6 @@ void test() {
     }
 }
 
-TestStart(Unittest, "shambase/WithUUID(t-unsafe)", with_uuid_tunsafe, 1) { test<false>(); }
+NEW_TEST(Unittest, "shambase/WithUUID(t-unsafe)", 1) { test<false>(); }
 
-TestStart(Unittest, "shambase/WithUUID(safe)", with_uuid_tsafe, 1) { test<true>(); }
+NEW_TEST(Unittest, "shambase/WithUUID(safe)", 1) { test<true>(); }

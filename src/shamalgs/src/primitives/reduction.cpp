@@ -67,27 +67,27 @@ namespace shamalgs::primitives {
 
     inline shamalgs::impl_param reduction_impl_to_params(const REDUCTION_IMPL &impl) {
         if (impl == REDUCTION_IMPL::FALLBACK) {
-            return {"fallback", ""};
+            return {.impl_name = "fallback", .params = ""};
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
         } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION16) {
-            return {"group_reduction16", ""};
+            return {.impl_name = "group_reduction16", .params = ""};
         } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION128) {
-            return {"group_reduction128", ""};
+            return {.impl_name = "group_reduction128", .params = ""};
         } else if (impl == REDUCTION_IMPL::GROUP_REDUCTION256) {
-            return {"group_reduction256", ""};
+            return {.impl_name = "group_reduction256", .params = ""};
 #endif
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow reduction implementation : {}", u32(impl)));
+            shambase::format("unknown reduction implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_reduction() {
         return {
-            {"fallback", ""},
+            {.impl_name = "fallback", .params = ""},
 #ifdef SYCL2020_FEATURE_GROUP_REDUCTION
-            {"group_reduction16", ""},
-            {"group_reduction128", ""},
-            {"group_reduction256", ""}
+            {.impl_name = "group_reduction16", .params = ""},
+            {.impl_name = "group_reduction128", .params = ""},
+            {.impl_name = "group_reduction256", .params = ""}
 #endif
         };
     }

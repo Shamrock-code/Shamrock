@@ -19,11 +19,11 @@
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
 #include "shambase/time.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shambindings/start_python.hpp"
 #include "shamcmdopt/ci_env.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamrock/version.hpp"
@@ -64,11 +64,11 @@ namespace shamtest {
             output += shambase::format("- [{}/{}] :", test_num + 1, test_count);
         }
 
-        bool any_node_cnt = test.node_count == -1;
+        bool any_node_cnt = test.world_size == -1;
         if (any_node_cnt) {
             output += (" [any] ");
         } else {
-            output += shambase::format(" [{:03}] ", test.node_count);
+            output += shambase::format(" [{:03}] ", test.world_size);
         }
 
         output += "\033[;34m" + test.name + "\033[0m\n";
@@ -93,7 +93,7 @@ namespace shamtest {
                     printf("%-20s", res.asserts.asserts[j].name.c_str());
 
                     if (res.asserts.asserts[j].value) {
-                        std::cout << "  (\033[;32mSucces\033[0m)\n";
+                        std::cout << "  (\033[;32mSuccess\033[0m)\n";
                     } else {
                         std::cout << "  (\033[1;31m Fail \033[0m)\n";
                         if (!res.asserts.asserts[j].comment.empty()) {
@@ -106,29 +106,29 @@ namespace shamtest {
         }
 
         u32 assert_count = 0;
-        u32 succes_cnt   = 0;
+        u32 success_cnt  = 0;
         for (int rank = 0; rank < rank_results.size(); rank++) {
             auto &res = rank_results[rank];
             for (unsigned int j = 0; j < res.asserts.asserts.size(); j++) {
                 if (res.asserts.asserts[j].value) {
-                    succes_cnt++;
+                    success_cnt++;
                 }
                 assert_count++;
             }
         }
 
-        if (succes_cnt == assert_count) {
-            std::cout << "   -> Result : \033[;32mSucces\033[0m";
+        if (success_cnt == assert_count) {
+            std::cout << "   -> Result : \033[;32mSuccess\033[0m";
         } else {
             std::cout << "   -> Result : \033[1;31m Fail \033[0m";
         }
 
-        std::string s_assert = shambase::format(" [{}/{}] ", succes_cnt, assert_count);
+        std::string s_assert = shambase::format(" [{}/{}] ", success_cnt, assert_count);
         printf("%-15s", s_assert.c_str());
         std::cout << " (" << timer.get_time_str() << ")" << std::endl;
 
         if (shamcmdopt::is_ci_github_actions()) {
-            if (succes_cnt != assert_count) {
+            if (success_cnt != assert_count) {
                 logger::raw_ln(shambase::format("##[error]Test {} failed", rank_results[0].name));
             }
         }
@@ -175,7 +175,7 @@ namespace shamtest {
             out += shambase::format_printf("%-20s", res.asserts.asserts[j].name.c_str());
 
             if (res.asserts.asserts[j].value) {
-                out += "  (\033[;32mSucces\033[0m)\n";
+                out += "  (\033[;32mSuccess\033[0m)\n";
             } else {
                 out += "  (\033[1;31m Fail \033[0m)\n";
             }
@@ -222,7 +222,7 @@ namespace shamtest {
 
         std::cout << "Test suite status : ";
         if (fail_count == 0) {
-            std::cout << "  (\033[;32mSucces\033[0m)";
+            std::cout << "  (\033[;32mSuccess\033[0m)";
             printf(" [%d/%d] \n", succ_count, test_count);
         } else {
             std::cout << "  (\033[1;31m Fail \033[0m)";
@@ -248,7 +248,7 @@ namespace shamtest {
         shambase::stream_write_vector(outrank, rank_result);
 
         std::basic_string<byte> gathered;
-        shamcomm::gather_basic_str(outrank.str(), gathered);
+        shamalgs::collective::gather_basic_str(outrank.str(), gathered);
 
         if (shamcomm::world_rank() != 0) {
             return {};
@@ -282,10 +282,10 @@ namespace shamtest {
         auto print_list = [&](TestType t) {
             for (auto test : static_init_vec_tests) {
                 if (test.type == t) {
-                    if (test.node_count == -1) {
+                    if (test.world_size == -1) {
                         printf("- [any] %-15s\n", test.name.c_str());
                     } else {
-                        printf("- [%03d] %-15s\n", test.node_count, test.name.c_str());
+                        printf("- [%03d] %-15s\n", test.world_size, test.name.c_str());
                     }
                 }
             }
@@ -384,8 +384,8 @@ namespace shamtest {
         bool run_longbenchmark_test  = cfg.run_benchmark && cfg.run_long_tests;
 
         auto can_run = [&](shamtest::details::Test &t) -> bool {
-            bool any_node_cnt  = (t.node_count == -1);
-            bool world_size_ok = t.node_count == shamcomm::world_size();
+            bool any_node_cnt  = (t.world_size == -1);
+            bool world_size_ok = t.world_size == shamcomm::world_size();
 
             bool can_run_type = false;
 
@@ -400,7 +400,7 @@ namespace shamtest {
         };
 
         auto print_test = [&](shamtest::details::Test &t, bool enabled) {
-            bool any_node_cnt = (t.node_count == -1);
+            bool any_node_cnt = (t.world_size == -1);
 
             std::string output = "";
 
@@ -409,7 +409,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;32many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;32m{:03}\033[0m] ", t.node_count);
+                    output += shambase::format(" - [\033[;32m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;32m" + t.name + "\033[0m\n";
 
@@ -417,7 +417,7 @@ namespace shamtest {
                 if (any_node_cnt) {
                     output += (" - [\033[;31many\033[0m] ");
                 } else {
-                    output += shambase::format(" - [\033[;31m{:03}\033[0m] ", t.node_count);
+                    output += shambase::format(" - [\033[;31m{:03}\033[0m] ", t.world_size);
                 }
                 output += "\033[;31m" + t.name + "\033[0m\n";
             }
@@ -529,7 +529,7 @@ namespace shamtest {
             shambase::Timer timer;
             timer.start();
             TestResult res = test.run();
-            timer.end();
+            timer.stop();
             mpi::barrier(MPI_COMM_WORLD);
 
             usize gather_bytecount           = 0;
@@ -649,12 +649,12 @@ namespace shamtest {
         for (const Test &t : static_init_vec_tests) {
             if (t.type == Benchmark || t.type == LongBenchmark)
                 continue;
-            if (t.node_count == -1) {
+            if (t.world_size == -1) {
                 for (int ncount : rank_list) {
                     add_test(t, ncount);
                 }
             } else {
-                add_test(t, t.node_count);
+                add_test(t, t.world_size);
             }
         }
 

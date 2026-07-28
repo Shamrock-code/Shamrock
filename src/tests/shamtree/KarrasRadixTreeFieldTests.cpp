@@ -21,7 +21,7 @@ using Tval    = double;
 using Tmorton = u64;
 using Tvec    = f64_3;
 
-TestStart(Unittest, "shamtree/KarrasRadixTreeField", test_karras_radix_tree_field_max_field, 1) {
+NEW_TEST(Unittest, "shamtree/KarrasRadixTreeField", 1) {
     // Use the same 11-particle partpos as in KarrasRadixTreeAABBTests.cpp
     std::vector<Tval> field_values{1.0, 5.0, 3.0, 2.0, 8.0, 7.0, 4.0, 6.0, 9.0, 10.0, 11.0};
     std::vector<Tvec> partpos{

@@ -109,6 +109,8 @@ if __name__ == "__main__":
     print("Using machine folder :  " + machine_folder)
     print("------------------------------------------")
 
+    envgen = EnvGen(machinefolder=machine_folder, builddir=builddir, env_setup_cmd=sys.argv)
+
     mod.setup(
         SetupArg(
             argv=underlying_tool_args,
@@ -117,5 +119,10 @@ if __name__ == "__main__":
             buildtype=args.type,
             lib_mode=args.lib,
         ),
-        EnvGen(machinefolder=machine_folder, builddir=builddir, env_setup_cmd=sys.argv),
+        envgen,
     )
+
+    # Copy shamenv_do into the build folder
+    helpers_dir = os.path.abspath(os.path.join(abs_proj_dir, "env", "helpers"))
+    envgen.copy_file(os.path.join(helpers_dir, "shamenv_do"), "shamenv_do")
+    utils.envscript.make_executable(os.path.join(builddir, "shamenv_do"))

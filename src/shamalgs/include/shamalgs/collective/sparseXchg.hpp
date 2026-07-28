@@ -23,12 +23,12 @@
 #include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/serialize.hpp"
 #include "shambackends/comm/CommunicationBuffer.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/typeAliasVec.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
@@ -133,7 +133,7 @@ namespace shamalgs::collective {
 
             if (i > 0) {
                 ON_RANK_0(
-                    logger::warn_ln("SparseComm", "Splitted sparse comm", i, "/", send_max_count));
+                    logger::warn_ln("SparseComm", "Split sparse comm", i, "/", send_max_count));
             }
 
             std::vector<SendPayload> message_send_tmp;

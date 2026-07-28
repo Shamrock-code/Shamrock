@@ -34,18 +34,14 @@ inline void test() {
     REQUIRE_EQUAL_CUSTOM_COMP(sum, ref_sum, sham::equals);
 }
 
-TestStart(Unittest, "shamalgs/collective/reduction/allreduce_sum", testsallreducesum, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/reduction/allreduce_sum", -1) {
     test<f32>();
     test<u32>();
     test<f64_2>();
     test<f64_3>();
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/collective/reduction/reduce_buffer_in_place_sum",
-    testsallreducesum_buf,
-    -1) {
+NEW_TEST(Unittest, "shamalgs/collective/reduction/reduce_buffer_in_place_sum", -1) {
 
     u32 size = 50;
     using T  = u32;

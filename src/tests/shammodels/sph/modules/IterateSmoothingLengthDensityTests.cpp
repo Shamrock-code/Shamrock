@@ -247,11 +247,7 @@ void test_smoothing_length_density_module(
     }
 }
 
-TestStart(
-    Unittest,
-    "shammodels/sph/modules/IterateSmoothingLengthDensity",
-    IterateSmoothingLengthDensity_base,
-    1) {
+NEW_TEST(Unittest, "shammodels/sph/modules/IterateSmoothingLengthDensity", 1) {
     using Tvec      = f64_3;
     using Tscal     = f64;
     using SPHKernel = shammath::M4<f64>;

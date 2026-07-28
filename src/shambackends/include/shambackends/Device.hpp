@@ -91,6 +91,12 @@ namespace sham {
         /// The type of the device
         DeviceType type;
 
+        /// The name of the device
+        std::string name;
+
+        /// The name of the platform of the device
+        std::string platform;
+
         /// The amount of global memory on the device in bytes
         usize global_mem_size;
 
@@ -112,7 +118,7 @@ namespace sham {
         /// The maximum size of memory that can be allocated on the host in bytes
         uint64_t max_mem_alloc_size_host;
 
-        /// The maximum alignment of memory that can be allocated on the device in bytes
+        /// The base address alignment for memory allocations on the device in bytes
         uint32_t mem_base_addr_align;
 
         /// SYCL sub group sizes property
@@ -123,6 +129,9 @@ namespace sham {
 
         /// PCI address of the device
         std::optional<std::string> pci_address;
+
+        /// Warnings emitted during property fetching
+        std::vector<std::string> warnings;
     };
 
     struct DeviceMPIProperties {

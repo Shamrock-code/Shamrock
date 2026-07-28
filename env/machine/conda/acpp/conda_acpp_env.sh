@@ -13,7 +13,7 @@ echo " --------- Activating conda environment --------- "
 conda activate shamrock_dev_environment
 echo " ------------- Environment activated ------------ "
 
-if which ccache &> /dev/null; then
+if which ccache &>/dev/null; then
     # to debug
     #export CCACHE_DEBUG=1
     #export CCACHE_DEBUGDIR=$BUILD_DIR/ccache-debug
@@ -28,9 +28,9 @@ fi
 export CMAKE_GENERATOR="Ninja"
 export ACPP_APPDB_DIR=/tmp/acpp-appdb # otherwise it would we in the $HOME/.acpp
 
-
 #enfore the use of the correct clang++ as the installation of acpp register a buggy compiler
 export ACPP_CPU_CXX=$(which clang++)
+export ACPP_DEBUG_LEVEL=0
 
 function shamconfigure {
     cmake \

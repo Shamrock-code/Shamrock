@@ -19,7 +19,8 @@
 #include "shamrock/scheduler/ShamrockCtx.hpp"
 #include <pybind11/numpy.h>
 
-Register_pymod(pyamrgridinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     using Grid = shamrock::amr::AMRGrid<u64_3, 3>;
 

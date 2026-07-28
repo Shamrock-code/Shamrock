@@ -16,6 +16,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/numeric_limits.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamalgs/collective/reduction.hpp"
 #include "shambindings/pybindaliases.hpp"
 #include "shampylib/pyNodeInstance.hpp"
 #include "shamrock/experimental_features.hpp"
@@ -23,7 +24,8 @@
 #include "shamsys/SignalCatch.hpp"
 #include "shamsys/legacy/log.hpp"
 
-Register_pymod(pysyslibinit) {
+ON_PYTHON_INIT {
+    auto &m = root_module;
 
     m.def(
         "change_loglevel",
@@ -75,6 +77,15 @@ Register_pymod(pysyslibinit) {
         },
         R"pbdoc(
         Return compile_arg
+    )pbdoc");
+
+    m.def(
+        "get_compiler_id_string",
+        []() {
+            return shamrock_compiler_id_string;
+        },
+        R"pbdoc(
+        Return compiler_id_string
     )pbdoc");
 
     m.def(
@@ -144,6 +155,28 @@ Register_pymod(pysyslibinit) {
         },
         R"pbdoc(
         dump profiling data
+    )pbdoc");
+
+    m.def(
+        "get_wtime",
+        []() {
+            return shambase::details::get_wtime();
+        },
+        R"pbdoc(
+        Get the wall time.
+    )pbdoc");
+
+    m.def(
+        "get_wtime_sync",
+        []() {
+            return shamalgs::collective::allreduce_max(shambase::details::get_wtime());
+        },
+        R"pbdoc(
+        Get the synchronized wall time across all MPI ranks.
+
+        .. warning::
+            This is an MPI collective operation and MUST be called by all ranks
+            simultaneously to avoid deadlocks.
     )pbdoc");
 
     py::module sys_module = m.def_submodule("sys", "system handling part of shamrock");

@@ -11,6 +11,7 @@
 
 /**
  * @file AABB.hpp
+ * @author Anass Serhani (anass.serhani@cnrs.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
@@ -45,7 +46,7 @@ namespace shammath {
          * @param direction Direction vector (will be normalized)
          */
         inline Ray(T origin, T direction)
-            : origin(origin), direction(direction), inv_direction(1 / direction) {
+            : origin(origin), direction(direction), inv_direction(Tscal{1.} / direction) {
 
             Tscal f = sycl::length(direction);
             SHAM_ASSERT(f > 0);
@@ -90,7 +91,7 @@ namespace shammath {
      * This class describe a bounding box aligned on the axis.
      *
      * This class describe a domain of coordinates defined by a cartesian product of 1d ranges.
-     * For exemple : [ax,bx] x [ay,by] x [az,bz]
+     * For example : [ax,bx] x [ay,by] x [az,bz]
      *
      * @tparam T Type of the coordinates
      */

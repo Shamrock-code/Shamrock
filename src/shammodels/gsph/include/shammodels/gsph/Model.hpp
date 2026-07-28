@@ -29,9 +29,9 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamalgs/collective/gather_str.hpp"
 #include "shambackends/BufferMirror.hpp"
 #include "shambackends/vec.hpp"
-#include "shamcomm/collectives.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Solver.hpp"
@@ -78,7 +78,16 @@ namespace shammodels::gsph {
         // Setup functions
         ////////////////////////////////////////////////////////////////////////////////////////////
 
-        void init_scheduler(u32 crit_split, u32 crit_merge);
+        /// Initialise the model and all the related data structures (patch scheduler in particular)
+        void init();
+
+        /// Old way of doing it, for backward compatibility it just overrides the values in the
+        /// config before calling init()
+        inline void init_scheduler(u32 crit_split, u32 crit_merge) {
+            solver.solver_config.scheduler_conf.split_load_value = crit_split;
+            solver.solver_config.scheduler_conf.merge_load_value = crit_merge;
+            init();
+        }
 
         template<std::enable_if_t<dim == 3, int> = 0>
         inline Tvec get_box_dim_fcc_3d(Tscal dr, u32 xcnt, u32 ycnt, u32 zcnt) {
@@ -154,10 +163,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (f.get_nvar() != 1) {
                         shambase::throw_unimplemented();
@@ -210,10 +219,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     u32 nvar = f.get_nvar();
 
@@ -268,10 +277,10 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<Tvec> &xyz
-                        = pdat.template get_field<Tvec>(sched.pdl().get_field_idx<Tvec>("xyz"));
+                        = pdat.template get_field<Tvec>(sched.pdl_old().get_field_idx<Tvec>("xyz"));
 
                     PatchDataField<T> &f
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(field_name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (f.get_nvar() != 1) {
                         shambase::throw_unimplemented();
@@ -302,7 +311,7 @@ namespace shammodels::gsph {
             sched.patch_data.for_each_patchdata(
                 [&](u64 patch_id, shamrock::patch::PatchDataLayer &pdat) {
                     PatchDataField<T> &xyz
-                        = pdat.template get_field<T>(sched.pdl().get_field_idx<T>(name));
+                        = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(name));
 
                     sum += xyz.compute_sum();
                 });
@@ -334,6 +343,9 @@ namespace shammodels::gsph {
 
         inline f64 solver_logs_last_rate() { return solver.solve_logs.get_last_rate(); }
         inline u64 solver_logs_last_obj_count() { return solver.solve_logs.get_last_obj_count(); }
+        inline shamsys::SystemMetrics solver_logs_last_system_metrics() {
+            return solver.solve_logs.get_last_system_metrics();
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // I/O (uses shared ShamrockDump mechanism like SPH)
@@ -350,11 +362,39 @@ namespace shammodels::gsph {
             nlohmann::json j = nlohmann::json::parse(metadata_user);
             j.at("solver_config").get_to(solver.solver_config);
 
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1933)
+            auto sync_names = sched.synchronized_data.get_edge_names();
+
+            // Checking for time is equivalent to dumps written after this migration
+            bool had_time_edge
+                = std::find(sync_names.begin(), sync_names.end(), "time") != sync_names.end();
+
+            // create time/dt synchronization edges if not present
+            solver.ensure_time_state_edges();
+
+            if (!had_time_edge) {
+                if (j.at("solver_config").contains("time_state")) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "GSPH",
+                            "Migrated time/dt from solver_config.time_state into scheduler "
+                            "edges"));
+                    const auto &ts = j.at("solver_config").at("time_state");
+                    solver.set_time(ts.at("time").get<Tscal>());
+                    solver.set_next_dt(ts.at("dt").get<Tscal>());
+                } else {
+                    throw shambase::make_except_with_loc<std::runtime_error>(
+                        "this should never happen: dump has neither time edges nor "
+                        "solver_config.time_state");
+                }
+            }
+
             solver.init_ghost_layout();
             solver.init_solver_graph();
 
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
-            sched.owned_patch_id  = sched.patch_list.build_local();
+            sched.owned_patch_id = sched.patch_list.build_local();
             sched.patch_list.build_local_idx_map();
             sched.patch_list.build_global_idx_map();
             sched.update_local_load_value([&](shamrock::patch::Patch p) {

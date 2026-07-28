@@ -17,7 +17,7 @@
 #include <memory>
 #include <vector>
 
-TestStart(Unittest, "shambackends/KillParticles:basic", KillParticles_basic, 1) {
+NEW_TEST(Unittest, "shambackends/KillParticles:basic", 1) {
     using T = f64;
     using namespace shamrock;
     using namespace shammodels::sph::modules;

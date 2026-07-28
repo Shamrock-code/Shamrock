@@ -92,7 +92,8 @@ namespace shambase::details {
         };
         // Add the entry to the storage
         profile_data_chrome.push_back(
-            ChromeProfileEntry{loc.function_name(), to_prof_time(time), is_start});
+            ChromeProfileEntry{
+                .name = loc.function_name(), .time_val = to_prof_time(time), .is_start = is_start});
     }
 
     /**
@@ -100,7 +101,7 @@ namespace shambase::details {
      */
     inline void clear_chrome_entry() { profile_data_chrome.clear(); }
 
-    void dump_profilings_chrome(std::string process_prefix, u32 world_rank) {
+    void dump_profilings_chrome(const std::string &process_prefix, u32 world_rank) {
 
         // Open the file for writing
         std::ofstream outfile(process_prefix + std::to_string(world_rank));
@@ -151,8 +152,8 @@ namespace shambase::details {
      * and the name of the entry.
      */
     struct ProfileEntry {
-        f64 time_start;         ///< Start time of the profiling entry (in sec since programm start)
-        f64 time_end;           ///< End time of the profiling entry (in sec since programm start)
+        f64 time_start;         ///< Start time of the profiling entry (in sec since program start)
+        f64 time_end;           ///< End time of the profiling entry (in sec since program start)
         std::string entry_name; ///< Name of the profiling entry
 
         /**
@@ -177,8 +178,8 @@ namespace shambase::details {
      * @return f64 Wall time in seconds since program start
      */
     f64 get_wtime() {
-        global_timer.end();
-        return global_timer.elasped_sec();
+        global_timer.stop();
+        return global_timer.elapsed_sec();
     }
 
     void register_profile_entry_start(std::source_location loc, f64 start_time) {
@@ -187,7 +188,8 @@ namespace shambase::details {
 
     void register_profile_entry(std::source_location loc, f64 start_time, f64 end_time) {
         // Add the profile entry to the storage
-        profile_data.push_back({start_time, end_time, loc.function_name()});
+        profile_data.push_back(
+            {.time_start = start_time, .time_end = end_time, .entry_name = loc.function_name()});
         // Add a Chrome profiling entry to the storage
         add_entry_chrome(loc, end_time, false);
     };
@@ -197,7 +199,7 @@ namespace shambase::details {
         clear_chrome_entry();
     }
 
-    void dump_profilings(std::string process_prefix, u32 world_rank) {
+    void dump_profilings(const std::string &process_prefix, u32 world_rank) {
         std::ofstream outfile(process_prefix + std::to_string(world_rank));
         outfile << "[";
 

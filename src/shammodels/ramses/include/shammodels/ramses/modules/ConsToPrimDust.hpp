@@ -21,6 +21,15 @@
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho_dust)                                 \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, spans_rhov_dust)                                 \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tvec>, spans_vel_dust)
+
 namespace shammodels::basegodunov::modules {
     template<class Tvec>
     class NodeConsToPrimDust : public shamrock::solvergraph::INode {
@@ -31,35 +40,14 @@ namespace shammodels::basegodunov::modules {
         public:
         NodeConsToPrimDust(u32 block_size, u32 ndust) : block_size(block_size), ndust(ndust) {}
 
-        struct Edges {
-            const shamrock::solvergraph::Indexes<u32> &sizes;
-            const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho_dust;
-            const shamrock::solvergraph::IFieldSpan<Tvec> &spans_rhov_dust;
-            shamrock::solvergraph::IFieldSpan<Tvec> &spans_vel_dust;
-        };
-
-        inline void set_edges(
-            std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho_dust,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_rhov_dust,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tvec>> spans_vel_dust) {
-            __internal_set_ro_edges({sizes, spans_rho_dust, spans_rhov_dust});
-            __internal_set_rw_edges({spans_vel_dust});
-        }
-
-        inline Edges get_edges() {
-            return Edges{
-                get_ro_edge<shamrock::solvergraph::Indexes<u32>>(0),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
-                get_ro_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(2),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tvec>>(0),
-            };
-        }
+        EXPAND_NODE_EDGES(NODE_EDGES)
 
         void _impl_evaluate_internal();
 
-        inline virtual std::string _impl_get_label() const { return "ConsToPrimDust"; };
+        inline virtual std::string _impl_get_label() const { return "ConsToPrimDust"; }
 
         virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules
+
+#undef NODE_EDGES

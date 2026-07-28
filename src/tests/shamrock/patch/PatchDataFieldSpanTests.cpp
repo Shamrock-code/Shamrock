@@ -18,7 +18,7 @@
 #include <memory>
 #include <vector>
 
-TestStart(Unittest, "shamrock/patch/PatchDataFieldSpan", testpatchdatafieldspan, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataFieldSpan", 1) {
 
     StackEntry stack_loc{};
 

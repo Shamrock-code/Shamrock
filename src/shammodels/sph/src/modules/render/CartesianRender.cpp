@@ -122,7 +122,7 @@ namespace shammodels::sph::modules {
                            },
                            custom_getter);
 
-        t.end();
+        t.stop();
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
@@ -159,7 +159,7 @@ namespace shammodels::sph::modules {
                            },
                            custom_getter);
 
-        t.end();
+        t.stop();
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
@@ -196,7 +196,7 @@ namespace shammodels::sph::modules {
                            },
                            custom_getter);
 
-        t.end();
+        t.stop();
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",

@@ -15,15 +15,13 @@
 #include "shamtest/shamtest.hpp"
 #include <numeric>
 
-TestStart(
-    Unittest, "shamalgs/numeric/details/stream_compact_fallback", streamcompactalg_fallback, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/details/stream_compact_fallback", 1) {
     TestStreamCompact test(
         (TestStreamCompact::vFunctionCall) shamalgs::numeric::details::stream_compact_fallback);
     test.check();
 }
 
-TestStart(
-    Unittest, "shamalgs/numeric/stream_compact_fallback(usm)", streamcompactalgusm_fallback, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/stream_compact_fallback(usm)", 1) {
     TestStreamCompactUSM test(
         (TestStreamCompactUSM::vFunctionCall) shamalgs::numeric::details::stream_compact_fallback);
     test.check();

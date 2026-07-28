@@ -14,76 +14,44 @@
  *
  */
 
+#include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "shambase/term_colors.hpp"
+#include "sham/term/env.hpp"
+#include "sham/term/tty.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/details/generic_opts.hpp"
 #include "shamcmdopt/env.hpp"
-#include "shamcmdopt/tty.hpp"
 #include <string_view>
+#include <optional>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
-/**
- * @brief List of known terminal ident that support colors
- */
-static const std::vector<std::string_view> color_suport_term{
-    "xterm",
-    "xterm-256",
-    "xterm-256color",
-    "xterm-truecolor",
-    "vt100",
-    "color",
-    "ansi",
-    "cygwin",
-    "linux",
-    "xterm-kitty",
-    "alacritty"};
+namespace {
 
-/**
- * @brief detect if terminal emulator support colored outputs
- *
- * @return true
- * @return false
- */
-bool term_support_color() {
+    auto term_parse_error_callback(const char *what, std::source_location where)
+        -> std::invalid_argument {
+        return shambase::make_except_with_loc<std::invalid_argument>(what, SourceLocation{where});
+    };
 
-    auto term_var = shamcmdopt::getenv_str("TERM");
-    if (term_var) {
-        for (auto term : color_suport_term) {
-            if (*term_var == term) {
-                return true;
-            }
-        }
-    }
-
-    auto colorterm_var = shamcmdopt::getenv_str("COLORTERM");
-    if (colorterm_var) {
-        if (*colorterm_var == "truecolor") {
-            return true;
-        }
-        if (*colorterm_var == "24bit") {
-            return true;
-        }
-    }
-
-    return false;
-}
+} // namespace
 
 namespace shamcmdopt {
 
     void register_cmdopt_generic_opts() {
 
-        register_opt("--nocolor", {}, "disable colored ouput");
-        register_opt("--color", {}, "force colored ouput");
+        register_opt("--nocolor", {}, "disable colored output");
+        register_opt("--color", {}, "force colored output");
         register_opt("--help", {}, "show this message");
 
         register_env_var_doc("NO_COLOR", "Disable colors (if no color cli args are passed)");
         register_env_var_doc("CLICOLOR_FORCE", "Enable colors (if no color cli args are passed)");
         register_env_var_doc("TERM", "Terminal emulator identifier");
         register_env_var_doc("COLORTERM", "Terminal color support identifier");
-        register_env_var_doc("SHAMTTYCOL", "Set tty assumed column count");
+        register_env_var_doc("COLUMN", "Set tty assumed column count");
     }
 
     /**
@@ -100,76 +68,50 @@ namespace shamcmdopt {
      *     returns true
      *
      */
-    void process_colors() {
+    void process_env_vars() {
 
         bool has_opt_nocolor = has_option("--nocolor");
         bool has_opt_color   = has_option("--color");
-
-        bool has_envvar_nocolor = bool(getenv_str("NO_COLOR"));
-        bool has_envvar_color   = bool(getenv_str("CLICOLOR_FORCE"));
 
         if (has_opt_color && has_opt_nocolor) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "You can not pass --nocolor and --color simultaneously");
         }
 
+        auto TERM           = getenv_str_view("TERM");
+        auto COLORTERM      = getenv_str_view("COLORTERM");
+        auto NO_COLOR       = getenv_str_view("NO_COLOR");
+        auto CLICOLOR_FORCE = getenv_str_view("CLICOLOR_FORCE");
+
+        auto COLUMN = getenv_str_view("COLUMN");
+
+        sham::term::parse_terminal_support(
+            {
+                .TERM           = TERM,
+                .COLORTERM      = COLORTERM,
+                .NO_COLOR       = NO_COLOR,
+                .CLICOLOR_FORCE = CLICOLOR_FORCE,
+                .COLUMN         = COLUMN,
+            },
+            term_parse_error_callback);
+
         if (has_opt_nocolor) {
             shambase::term_colors::disable_colors();
         } else if (has_opt_color) {
             shambase::term_colors::enable_colors();
-        } else if (has_envvar_nocolor) {
-            shambase::term_colors::disable_colors();
-        } else if (has_envvar_color) {
-            shambase::term_colors::enable_colors();
-        } else {
-            if (term_support_color() && is_a_tty()) {
-                shambase::term_colors::enable_colors();
-            } else {
-                shambase::term_colors::disable_colors();
-            }
-        }
-    }
-
-    /**
-     * @brief Process the SHAMTTYCOL environment variable to set the number of columns for the
-     * terminal.
-     *
-     * If the variable is set, its value is parsed as an integer and used to set the terminal
-     * columns. If the value is less than the minimum size (10), it is set to the minimum size. If
-     * the value is not an integer or is out of range, an error message is printed.
-     */
-    void process_tty() {
-        auto res = getenv_str("SHAMTTYCOL");
-
-        int min_sz = 10;
-        if (res) {
-            try {
-                try {
-                    int val = std::stoi(*res);
-                    if (val < min_sz) {
-                        val = min_sz;
-                    }
-                    set_tty_columns(val);
-                } catch (const std::invalid_argument &a) {
-                    shambase::println("Error : SHAMTTYCOL is not an integer");
-                }
-            } catch (const std::out_of_range &a) {
-                shambase::println("Error : SHAMTTYCOL is out of range");
-            }
         }
     }
 
     void process_cmdopt_generic_opts() {
 
-        process_colors();
-        process_tty();
+        process_env_vars();
 
         if (has_option("--help")) {
             print_help();
 
             shambase::println("\nEnv deduced vars :");
 
-            if (is_a_tty()) {
+            if (sham::term::is_a_tty()) {
                 shambase::println("  isatty = Yes");
             } else {
                 shambase::println("  isatty = No");
@@ -182,7 +124,10 @@ namespace shamcmdopt {
             }
 
             shambase::println(
-                shambase::format("  tty size = {}x{}", get_tty_lines(), get_tty_columns()));
+                shambase::format(
+                    "  tty size = {}x{}",
+                    sham::term::get_tty_lines(),
+                    sham::term::get_tty_columns()));
         }
     }
 

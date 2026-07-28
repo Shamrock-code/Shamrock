@@ -17,7 +17,7 @@
 #include <random>
 #include <vector>
 
-TestStart(Unittest, "shamalgs/collective/exchange/vector_allgatherv", test_vector_allgatherv, -1) {
+NEW_TEST(Unittest, "shamalgs/collective/exchange/vector_allgatherv", -1) {
 
     {
         // Test case 1: Random sized vectors
@@ -91,11 +91,7 @@ TestStart(Unittest, "shamalgs/collective/exchange/vector_allgatherv", test_vecto
     }
 }
 
-TestStart(
-    Unittest,
-    "shamalgs/collective/exchange/vector_allgatherv_large",
-    test_vector_allgatherv_large,
-    -1) {
+NEW_TEST(Unittest, "shamalgs/collective/exchange/vector_allgatherv_large", -1) {
 
     {
         // Test case 1: Random sized vectors

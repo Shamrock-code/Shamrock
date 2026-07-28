@@ -146,11 +146,11 @@ struct shamtree::KarrasTreeTraverser {
     /// get read only accessor
     inline KarrasTreeTraverserAccessed get_read_access(sham::EventList &deps) const {
         return KarrasTreeTraverserAccessed{
-            buf_lchild_id.get_read_access(deps),
-            buf_rchild_id.get_read_access(deps),
-            buf_lchild_flag.get_read_access(deps),
-            buf_rchild_flag.get_read_access(deps),
-            offset_leaf};
+            .lchild_id   = buf_lchild_id.get_read_access(deps),
+            .rchild_id   = buf_rchild_id.get_read_access(deps),
+            .lchild_flag = buf_lchild_flag.get_read_access(deps),
+            .rchild_flag = buf_rchild_flag.get_read_access(deps),
+            .offset_leaf = offset_leaf};
     }
 
     /// complete the buffer states with the resulting event
@@ -176,10 +176,10 @@ struct shamtree::KarrasTreeTraverserHost {
     /// get read only accessor
     inline KarrasTreeTraverserAccessed get_read_access() const {
         return KarrasTreeTraverserAccessed{
-            buf_lchild_id.data(),
-            buf_rchild_id.data(),
-            buf_lchild_flag.data(),
-            buf_rchild_flag.data(),
-            offset_leaf};
+            .lchild_id   = buf_lchild_id.data(),
+            .rchild_id   = buf_rchild_id.data(),
+            .lchild_flag = buf_lchild_flag.data(),
+            .rchild_flag = buf_rchild_flag.data(),
+            .offset_leaf = offset_leaf};
     }
 };

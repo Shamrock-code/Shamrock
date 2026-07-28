@@ -1,15 +1,17 @@
 name: Acpp/clang (Coverage)
 
-
 on:
   workflow_call:
-
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov upload token"
+        required: false
 
 jobs:
 
   shamrock_acpp_omp_debug_coverage:
     name: AdaptiveCpp coverage omp clang-${{ matrix.clang }}
-    runs-on: [self-hosted,  docker-runner]
+    runs-on: [self-hosted, docker-runner]
 
     container:
       image: ${{ matrix.container }}
@@ -17,17 +19,26 @@ jobs:
     strategy:
       matrix:
         include:
-          - clang: 18
-            cuda: 11.0.2
-            rocm: 5.4.3
+          - clang: 20
             container: ghcr.io/shamrock-code/shamrock-ci:ubuntu22
 
     timeout-minutes: 120
     steps:
+
+      - name: Debug Codecov token
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          if [ -z "${{ secrets.CODECOV_TOKEN }}" ]; then
+            echo "TOKEN IS EMPTY"
+            exit 1
+          else
+            echo "TOKEN EXISTS"
+          fi
+
       #### Checkout part ####
       # Checkout merge commit if PR otherwise default
-      - name : Reconfigure git
-        run:  |
+      - name: Reconfigure git
+        run: |
           git config --global --add safe.directory '*'
           git config --global --list
       - uses: actions/checkout@v4
@@ -49,20 +60,13 @@ jobs:
       #### End Checkout part ####
 
       - name: ls local
-        run : ls -la
+        run: ls -la
 
       - name: install LLVM
         run: |
           echo "APT::Acquire::Retries \"10\";" | sudo tee -a /etc/apt/apt.conf.d/80-retries
           sudo apt update && \
-          wget https://apt.llvm.org/llvm.sh
-          chmod +x llvm.sh
-          sudo ./llvm.sh ${{matrix.clang}}
-          sudo apt install -y libclang-${{matrix.clang}}-dev clang-tools-${{matrix.clang}} libomp-${{matrix.clang}}-dev
-          if [[ "${{matrix.clang}}" == "16" ]]; then
-            sudo rm -r /usr/lib/clang/16*
-            sudo ln -s /usr/lib/llvm-16/lib/clang/16 /usr/lib/clang/16
-          fi
+          ./tools/apt_install_llvm.sh ${{matrix.clang}}
 
       - uses: hendrikmuhs/ccache-action@v1.2
         with:
@@ -102,34 +106,12 @@ jobs:
           cd acpp_omp_debug
           git clone https://github.com/Shamrock-code/reference-files.git
 
-      - name: run Shamrock Unittests world_size = 1
+      - name: run Shamrock test suite
         run: |
           cd acpp_omp_debug
-          LLVM_PROFILE_FILE="utests_0_0.profraw" ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 2
-        run: |
-          cd acpp_omp_debug
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_2_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 3
-        run: |
-          cd acpp_omp_debug
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_3_2.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
-
-      - name: run Shamrock Unittests world_size = 4
-        run: |
-          cd acpp_omp_debug
-          mpirun --allow-run-as-root --bind-to socket:overload-allowed --oversubscribe \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_0.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_1.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_2.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0 : \
-            -n 1 -x LLVM_PROFILE_FILE=utests_4_3.profraw ./shamrock_test --smi-full --sycl-cfg 0:0 --unittest --loglevel 0
+          export SYCLCFG=0:0
+          export MPIARGS="--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe"
+          ../tools/test_sequence.sh
 
       - name: merge coverage reports
         run: |
@@ -140,12 +122,28 @@ jobs:
       - name: make coverage reports
         run: |
           cd acpp_omp_debug
-          llvm-cov-${{matrix.clang}} report shamrock_test -instr-profile=utests.profdata \
-              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"\
-               > coverage_list.txt
-          llvm-cov-${{matrix.clang}} show shamrock_test -instr-profile=utests.profdata -format=html -output-dir=out_cov\
-              -Xdemangler c++filt -Xdemangler -n \
+
+          # Txt output
+          llvm-cov-${{matrix.clang}} report shamrock_test \
+              -instr-profile=utests.profdata \
+              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp" \
+              > coverage_list.txt
+
+          # HTML website for doc
+          llvm-cov-${{matrix.clang}} show shamrock_test \
+              -instr-profile=utests.profdata \
+              -format=html \
+              -output-dir=out_cov \
+              -Xdemangler c++filt \
+              -Xdemangler -n \
               -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp"
+
+          # export LCOV for Codecov
+          llvm-cov-${{matrix.clang}} export shamrock_test \
+              -instr-profile=utests.profdata \
+              -format=lcov \
+              -ignore-filename-regex=".*external/|.*src/tests/|.*src/shamtest/|.*\main_test.cpp|.*\main.cpp|.*\aliases.hpp" \
+              > coverage.info
 
       - name: print coverage
         run: |
@@ -164,3 +162,20 @@ jobs:
         with:
           name: code-coverage-report-acpp_omp_debug
           path: acpp_omp_debug/out_cov/
+
+      - name: Upload coverage reports to Codecov (push)
+        if: github.event_name == 'push'
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: acpp_omp_debug/coverage.info
+          fail_ci_if_error: false
+          verbose: true
+
+      - name: Upload coverage reports to Codecov (not push)
+        if: github.event_name != 'push'
+        uses: codecov/codecov-action@v5
+        with:
+          files: acpp_omp_debug/coverage.info
+          fail_ci_if_error: false
+          verbose: true

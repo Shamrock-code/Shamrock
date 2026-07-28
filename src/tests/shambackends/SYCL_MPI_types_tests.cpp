@@ -88,7 +88,7 @@ size_t get_mpi_size(MPI_Datatype md) {
     return shambase::narrow_or_throw<size_t>(exts);
 }
 
-TestStart(Unittest, "shambackends/test_sycl_mpi_types_sizes", test_sycl_mpi_types_sizes, -1) {
+NEW_TEST(Unittest, "shambackends/test_sycl_mpi_types_sizes", -1) {
 
 #define X(args)                                                                                    \
     REQUIRE_EQUAL_NAMED("mpi type " #args " correct", get_mpi_size(mpi_type_##args), sizeof(args));
@@ -157,7 +157,7 @@ void test_comm() {
     }
 }
 
-TestStart(Unittest, "shambackends/test_sycl_mpi_types_comm", test_sycl_mpi_types_comm, 2) {
+NEW_TEST(Unittest, "shambackends/test_sycl_mpi_types_comm", 2) {
 
 #define X(args) test_comm<args>();
     XMAC_SYCLMPI_TYPE_TO_TEST

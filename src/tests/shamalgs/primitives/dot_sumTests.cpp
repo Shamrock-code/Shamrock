@@ -17,7 +17,7 @@
 #include <random>
 #include <vector>
 
-TestStart(Unittest, "shamalgs/primitives/dot_sum/scalar_types", test_dot_sum_scalar_types, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/dot_sum/scalar_types", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -139,7 +139,7 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/scalar_types", test_dot_sum_sca
     }
 }
 
-TestStart(Unittest, "shamalgs/primitives/dot_sum/vector_types", test_dot_sum_vector_types, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/dot_sum/vector_types", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -226,7 +226,7 @@ TestStart(Unittest, "shamalgs/primitives/dot_sum/vector_types", test_dot_sum_vec
     }
 }
 
-TestStart(Unittest, "shamalgs/primitives/dot_sum/edge_cases", test_dot_sum_edge_cases, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/dot_sum/edge_cases", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

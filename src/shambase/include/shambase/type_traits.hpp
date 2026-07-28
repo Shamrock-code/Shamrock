@@ -220,7 +220,7 @@ namespace shambase {
 
     /**
      * @brief Helper variable template that is always false.
-     * Especially usefull to perform static asserts based on templates
+     * Especially useful to perform static asserts based on templates
      * @code{.cpp}
      * if constexpr(constexpr_condition(var)){
      *     ......
@@ -293,7 +293,7 @@ namespace shambase {
      * return type and argument types, then checks if the callable matches this signature
      * using `check_functor` and also checks if the return type matches the deduced return type.
      *
-     * Exemple :
+     * Example :
      * @code {.cpp}
      * int x = 0;
      * auto func = [x](int a, int b) -> int { return a + b; };

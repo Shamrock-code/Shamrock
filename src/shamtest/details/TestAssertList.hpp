@@ -19,6 +19,7 @@
 #include "shambase/string.hpp"
 #include "TestAssert.hpp"
 #include "shambackends/sycl.hpp"
+#include <utility>
 
 namespace shamtest::details {
 
@@ -32,7 +33,8 @@ namespace shamtest::details {
         // to register asserts
 
         inline void assert_bool_with_log(std::string assert_name, bool v, std::string log) {
-            asserts.push_back(TestAssert{v, std::move(assert_name), std::move(log)});
+            asserts.push_back(
+                TestAssert{.value = v, .name = std::move(assert_name), .comment = std::move(log)});
         }
 
         /// Append the source location to the the supplied string to generate a comment
@@ -47,9 +49,9 @@ namespace shamtest::details {
 
             asserts.push_back(
                 TestAssert{
-                    v,
-                    std::move(assert_name),
-                    "failed assert location : " + loc.format_one_line()});
+                    .value   = v,
+                    .name    = std::move(assert_name),
+                    .comment = "failed assert location : " + loc.format_one_line()});
         }
 
         /// Test for an equality
@@ -65,7 +67,11 @@ namespace shamtest::details {
                 comment = "left=" + std::to_string(a) + " right=" + std::to_string(b);
             }
 
-            asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
+            asserts.push_back(
+                TestAssert{
+                    .value   = t,
+                    .name    = std::move(assert_name),
+                    .comment = gen_comment(comment, loc)});
         }
 
         /// Assert equal on an array of values
@@ -92,7 +98,11 @@ namespace shamtest::details {
                 comment += shambase::format_array(acc_b, len, 16, "{} ");
             }
 
-            asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
+            asserts.push_back(
+                TestAssert{
+                    .value   = t,
+                    .name    = std::move(assert_name),
+                    .comment = gen_comment(comment, loc)});
         }
 
         /**
@@ -117,7 +127,11 @@ namespace shamtest::details {
                           + " diff=" + std::to_string(diff);
             }
 
-            asserts.push_back(TestAssert{t, std::move(assert_name), gen_comment(comment, loc)});
+            asserts.push_back(
+                TestAssert{
+                    .value   = t,
+                    .name    = std::move(assert_name),
+                    .comment = gen_comment(comment, loc)});
         }
 
         /// add an assertion with a comment
@@ -126,7 +140,11 @@ namespace shamtest::details {
             bool v,
             std::string comment,
             SourceLocation loc = SourceLocation{}) {
-            asserts.push_back(TestAssert{v, std::move(assert_name), gen_comment(comment, loc)});
+            asserts.push_back(
+                TestAssert{
+                    .value   = v,
+                    .name    = std::move(assert_name),
+                    .comment = gen_comment(std::move(comment), loc)});
         }
 
         /// Serialize the assertion in JSON
@@ -139,7 +157,7 @@ namespace shamtest::details {
         /// Get number of assertion in the list
         inline u32 get_assert_count() { return asserts.size(); }
 
-        /// Get the number of successfull assertions
+        /// Get the number of successful assertions
         inline u32 get_assert_success_count() {
             u32 cnt = 0;
             for (TestAssert &a : asserts) {

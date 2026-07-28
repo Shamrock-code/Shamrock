@@ -15,14 +15,17 @@
  *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/string.hpp"
 #include "shambase/tabulate.hpp"
 #include "shamalgs/collective/are_all_rank_true.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/SyclMpiTypes.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
@@ -46,8 +49,15 @@
 
 template<class Tvec, template<class> class SPHKernel>
 inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph::modules::
-    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(Tscal dr, std::pair<Tvec, Tvec> box) {
-    return std::shared_ptr<ISPHSetupNode>(new GeneratorLatticeHCP<Tvec>(context, dr, box));
+    SPHSetup<Tvec, SPHKernel>::make_generator_lattice_hcp(
+        Tscal dr, std::pair<Tvec, Tvec> box, bool discontinuous) {
+    if (discontinuous) {
+        return std::shared_ptr<ISPHSetupNode>(
+            new GeneratorLatticeHCP<Tvec, true>(context, dr, box));
+    } else {
+        return std::shared_ptr<ISPHSetupNode>(
+            new GeneratorLatticeHCP<Tvec, false>(context, dr, box));
+    }
 }
 
 template<class Tvec, template<class> class SPHKernel>
@@ -65,8 +75,8 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         Tscal r_out,
         std::function<Tscal(Tscal)> sigma_profile,
         std::function<Tscal(Tscal)> H_profile,
-        std::function<Tscal(Tscal)> rot_profile,
-        std::function<Tscal(Tscal)> cs_profile,
+        std::function<Tvec(Tvec)> vel_profile,
+        std::function<Tscal(Tvec)> cs_profile,
         std::mt19937_64 eng,
         Tscal init_h_factor) {
     return std::shared_ptr<ISPHSetupNode>(new GeneratorMCDisc<Tvec, SPHKernel>(
@@ -78,7 +88,7 @@ inline std::shared_ptr<shammodels::sph::modules::ISPHSetupNode> shammodels::sph:
         r_out,
         sigma_profile,
         H_profile,
-        rot_profile,
+        vel_profile,
         cs_profile,
         eng,
         init_h_factor));
@@ -119,7 +129,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
     auto has_pdat = [&]() {
         bool ret = false;
         using namespace shamrock::patch;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -194,9 +204,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::info_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");
+        logger::info_ln("SPH setup", "the setup took :", time_setup.elapsed_sec(), "s");
     }
 }
 
@@ -260,7 +270,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     std::optional<u64> max_msg_count_per_rank_per_step,
     std::optional<u64> max_data_count_per_rank_per_step,
     std::optional<u64> max_msg_size,
-    bool do_setup_log) {
+    bool do_setup_log,
+    bool speculative_balancing) {
 
     __shamrock_stack_entry();
 
@@ -299,15 +310,145 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         max_message_size = max_msg_size.value();
     }
 
+    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr_old());
+
+    u64 speculative_last_npatch                            = 0;
+    shambase::DistributedData<u64> speculative_load_values = {};
+
     auto compute_load = [&]() {
-        modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
-            .update_load_balancing();
+        if (speculative_balancing) {
+
+            StackEntry stack_loc{};
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            u64 npatch = scheduler().patch_list.global.size();
+
+            // check if the number of patches has changed, rebuild otherwise
+            if (npatch != speculative_last_npatch) {
+
+                shambase::details::NamedBasicStackEntry stack_loc2{"compute_load"};
+
+                if (shamcomm::world_rank() == 0) {
+                    logger::normal_ln(
+                        "SPH setup",
+                        "number of patches has changed, rebuilding speculative load values");
+                }
+
+                // reset the load values
+                speculative_last_npatch = npatch;
+                speculative_load_values.reset();
+
+                // Compute the AABB of all the patches
+
+                std::vector<Tvec> patch_aabb_min(npatch);
+                std::vector<Tvec> patch_aabb_max(npatch);
+
+                auto &global_patch_list = scheduler().patch_list.global;
+                shamrock::patch::PatchCoordTransform<Tvec> ptransf
+                    = sched.get_sim_box().get_patch_transform<Tvec>();
+
+                for (size_t i = 0; i < global_patch_list.size(); i++) {
+                    const shamrock::patch::Patch &p = global_patch_list[i];
+                    if (!p.is_err_mode()) {
+                        shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
+                        patch_aabb_min[i]                      = patch_coord.lower;
+                        patch_aabb_max[i]                      = patch_coord.upper;
+                    }
+                }
+
+                sham::DeviceBuffer<Tvec> buf_patch_aabb_min(npatch, dev_sched);
+                sham::DeviceBuffer<Tvec> buf_patch_aabb_max(npatch, dev_sched);
+
+                buf_patch_aabb_min.copy_from_stdvec(patch_aabb_min);
+                buf_patch_aabb_max.copy_from_stdvec(patch_aabb_max);
+
+                // count the number of particles in each patch
+
+                sham::DeviceBuffer<u64> local_load_values(npatch, dev_sched);
+                local_load_values.fill(0);
+
+                PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
+
+                if (xyz.get_obj_cnt() > 0) {
+                    sham::kernel_call(
+                        shamsys::instance::get_compute_scheduler().get_queue(),
+                        sham::MultiRef{xyz.get_buf(), buf_patch_aabb_min, buf_patch_aabb_max},
+                        sham::MultiRef{local_load_values},
+                        xyz.get_obj_cnt(),
+                        [npatch](
+                            u32 i,
+                            const Tvec *__restrict xyz,
+                            const Tvec *__restrict patch_aabb_min,
+                            const Tvec *__restrict patch_aabb_max,
+                            u64 *__restrict local_load_values) {
+                            Tvec pos = xyz[i];
+                            for (size_t j = 0; j < npatch; j++) {
+                                shammath::CoordRange<Tvec> patch_coord
+                                    = {patch_aabb_min[j], patch_aabb_max[j]};
+                                if (patch_coord.contain_pos(pos)) {
+                                    sycl::atomic_ref<
+                                        u64,
+                                        sycl::memory_order::relaxed,
+                                        sycl::memory_scope::device>
+                                        atomic_local_load_values(local_load_values[j]);
+                                    atomic_local_load_values++;
+                                }
+                            }
+                        });
+                }
+
+                // recover data
+
+                auto local_load_values_host = local_load_values.copy_to_stdvec();
+
+                std::vector<u64> reduced_load_values(npatch);
+
+                // reduce the load values
+
+                shamcomm::mpi::Allreduce(
+                    local_load_values_host.data(),
+                    reduced_load_values.data(),
+                    npatch,
+                    get_mpi_type<u64>(),
+                    MPI_SUM,
+                    MPI_COMM_WORLD);
+
+                // convert to DistributedData
+
+                for (size_t i = 0; i < npatch; i++) {
+                    speculative_load_values.add_obj(
+                        global_patch_list[i].id_patch, u64(reduced_load_values[i]));
+                }
+
+                // Add the already injected parts to the load values
+
+                auto &patch_list = scheduler().patch_list;
+
+                for (u64 id : scheduler().owned_patch_id) {
+                    shamrock::patch::Patch &p
+                        = patch_list.local[patch_list.id_patch_to_local_idx[id]];
+                    speculative_load_values.get(id)
+                        += scheduler().patch_data.owned_data.get(id).get_obj_cnt();
+                }
+            }
+
+            // update load values
+
+            scheduler().update_local_load_value([&](shamrock::patch::Patch p) {
+                return speculative_load_values.get(p.id_patch);
+            });
+
+        } else {
+            modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(context, solver_config, storage)
+                .update_load_balancing();
+        }
     };
 
     auto has_pdat = [&]() {
         bool ret = false;
         using namespace shamrock::patch;
-        sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+        sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
             ret = true;
         });
         return ret;
@@ -315,8 +456,6 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
     shambase::Timer time_part_gen;
     time_part_gen.start();
-
-    shamrock::patch::PatchDataLayer to_insert(sched.get_layout_ptr());
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln("SPH setup", "generating particles ...");
@@ -373,20 +512,25 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 sum_push = shamalgs::collective::allreduce_sum<u64>(tmp.get_obj_cnt());
         u64 sum_all  = shamalgs::collective::allreduce_sum<u64>(to_insert.get_obj_cnt());
 
-        timer_gen.end();
+        u64 min_rank = shamalgs::collective::allreduce_min<u64>(to_insert.get_obj_cnt());
+        u64 max_rank = shamalgs::collective::allreduce_max<u64>(to_insert.get_obj_cnt());
+
+        timer_gen.stop();
 
         if (shamcomm::world_rank() == 0) {
-            f64 part_per_sec = f64(sum_push) / f64(timer_gen.elasped_sec());
+            f64 part_per_sec = f64(sum_push) / f64(timer_gen.elapsed_sec());
             logger::normal_ln(
                 "SPH setup",
                 shambase::format(
-                    "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} ) rate = {:e} "
-                    "N.s^-1",
+                    "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} rank min = {:.1e} max = {:.1e}) "
+                    "rate = {:e} N.s^-1",
                     sum_push,
                     f64(sum_push),
                     sum_all,
                     f64(sum_all),
-                    part_per_sec));
+                    part_per_sec,
+                    f64(min_rank),
+                    f64(max_rank)));
         }
 
         if (setup_log) {
@@ -396,15 +540,15 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         injected_parts += sum_push;
     }
 
-    time_part_gen.end();
+    time_part_gen.stop();
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "the generation step took :", time_part_gen.elasped_sec(), "s");
+            "SPH setup", "the generation step took :", time_part_gen.elapsed_sec(), "s");
     }
 
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "final particle count =", injected_parts, "begining injection ...");
+            "SPH setup", "final particle count =", injected_parts, "beginning injection ...");
     }
 
     sham::MemPerfInfos mem_perf_infos_start = sham::details::get_mem_perf_info();
@@ -455,7 +599,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
                 // inject in local domains first
                 PatchCoordTransform<Tvec> ptransf = sched.get_sim_box().get_patch_transform<Tvec>();
-                sched.for_each_local_patchdata([&](const Patch p, PatchDataLayer &pdat) {
+                sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
                     shammath::CoordRange<Tvec> patch_coord = ptransf.to_obj_coord(p);
 
                     PatchDataField<Tvec> &xyz = to_insert.get_field<Tvec>(0);
@@ -478,7 +622,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     }
                 });
 
-                sched.check_patchdata_locality_corectness();
+                sched.check_patchdata_locality_correctness();
 
                 inserter.balance_load(compute_load);
 
@@ -532,8 +676,8 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 "a new id could not be computed");
         }
 
-        time_get_index_per_ranks.end();
-        timer_result = time_get_index_per_ranks.elasped_sec();
+        time_get_index_per_ranks.stop();
+        timer_result = time_get_index_per_ranks.elapsed_sec();
 
         return index_per_ranks;
     };
@@ -571,10 +715,38 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         u64 max_send      = (1 << 24) / shamcomm::world_size();
         bool sync_limited = false;
         if (send_msg.size() > max_send) {
-            std::mt19937 eng_local_msg(
-                u64(golden_number * 1000 * step_count + shamcomm::world_rank()));
-            std::shuffle(send_msg.begin(), send_msg.end(), eng_local_msg);
-            send_msg.resize(max_send);
+
+            // here we must pack the send_msg infos in structs in order to keep
+            // them together during shuffle
+
+            struct tmp {
+                u64 ranks, size;
+            };
+
+            // build the vector of structs
+            std::vector<tmp> tmp_vec;
+            tmp_vec.reserve(send_msg.size() / 2);
+            for (u64 i = 0; i < send_msg.size(); i += 2) {
+                tmp_vec.push_back({send_msg[i], send_msg[i + 1]});
+            }
+
+            // shuffle the messages infos
+            u64 local_seed = u64(golden_number * 1000 * step_count + shamcomm::world_rank());
+            std::mt19937_64 eng_local_msg(local_seed);
+            std::shuffle(tmp_vec.begin(), tmp_vec.end(), eng_local_msg);
+
+            // build the new send_msg
+            std::vector<u64> send_msg_new;
+            send_msg_new.reserve(max_send);
+            for (auto &t : tmp_vec) {
+                if (send_msg_new.size() >= max_send) {
+                    break;
+                }
+                send_msg_new.push_back(t.ranks);
+                send_msg_new.push_back(t.size);
+            }
+
+            send_msg     = send_msg_new;
             sync_limited = true;
         }
 
@@ -617,11 +789,11 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
         for (auto &[sender_rank, receiver_rank, indices_size] : msg_list) {
 
-            bool msg_count_limit_not_reached = msg_count_rank[receiver_rank] < msg_limit
-                                               && msg_count_rank[sender_rank] < msg_limit;
+            bool msg_count_limit_not_reached = msg_count_rank.at(receiver_rank) < msg_limit
+                                               && msg_count_rank.at(sender_rank) < msg_limit;
 
-            bool recv_size_limit_not_reached = comm_size_rank[receiver_rank] < data_count_limit
-                                               && comm_size_rank[sender_rank] < data_count_limit;
+            bool recv_size_limit_not_reached = comm_size_rank.at(receiver_rank) < data_count_limit
+                                               && comm_size_rank.at(sender_rank) < data_count_limit;
 
             was_count_limited = was_count_limited || !msg_count_limit_not_reached;
             was_size_limited  = was_size_limited || !recv_size_limit_not_reached;
@@ -642,10 +814,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 }
             }
 
-            msg_count_rank[receiver_rank] += 1;
-            msg_count_rank[sender_rank] += 1;
-            comm_size_rank[receiver_rank] += msg_size;
-            comm_size_rank[sender_rank] += msg_size;
+            msg_count_rank.at(receiver_rank) += 1;
+            msg_count_rank.at(sender_rank) += 1;
+            comm_size_rank.at(receiver_rank) += msg_size;
+            comm_size_rank.at(sender_rank) += msg_size;
         }
 
         // logger::raw_ln(
@@ -671,7 +843,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                     _tmp.resize(indices_size);
                 }
 
-                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr());
+                PatchDataLayer _tmp_pdat = PatchDataLayer(sched.get_layout_ptr_old());
                 to_insert.append_subset_to(_tmp, _tmp.get_size(), _tmp_pdat);
 
                 idx_to_rem.append(_tmp);
@@ -702,7 +874,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
                 // exchange the buffer held by the distrib data and give it to the
                 // serializer
                 shamalgs::SerializeHelper ser(dev_sched, std::forward<sham::DeviceBuffer<u8>>(buf));
-                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr());
+                return PatchDataLayer::deserialize_buf(ser, sched.get_layout_ptr_old());
             },
             comm_cache);
 
@@ -733,6 +905,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         if (was_sync_limited) {
             log_suffix += " (sync limited)";
         }
+        log_suffix += shambase::format(" (msg count : {})", recv_msg.size());
         log_inject_status(" <- global loop ->" + log_suffix);
 
         f64 worst_time_get_index_per_ranks
@@ -746,10 +919,10 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
     }
 
     shamcomm::mpi::Barrier(MPI_COMM_WORLD);
-    time_part_inject.end();
+    time_part_inject.stop();
     if (shamcomm::world_rank() == 0) {
         logger::normal_ln(
-            "SPH setup", "the injection step took :", time_part_inject.elasped_sec(), "s");
+            "SPH setup", "the injection step took :", time_part_inject.elapsed_sec(), "s");
     }
 
     sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
@@ -775,7 +948,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             = shamalgs::collective::gather(mem_perf_infos_end.max_allocated_byte_host);
 
         if (shamcomm::world_rank() == 0) {
-            f64 time_part_inject_sec = time_part_inject.elasped_sec();
+            f64 time_part_inject_sec = time_part_inject.elapsed_sec();
             f64 sum_t                = time_part_inject_sec * shamcomm::world_size();
 
             f64 sum_time_rank_getter = std::accumulate(
@@ -795,9 +968,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
 
             static constexpr u32 cols_count = 6;
 
-            using Table = shambase::table<cols_count>;
+            using Table = shambase::table;
 
-            Table table;
+            Table table(6);
 
             table.add_double_rule();
             table.add_data(
@@ -847,9 +1020,9 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             .reorder_particles();
     }
 
-    time_setup.end();
+    time_setup.stop();
     if (shamcomm::world_rank() == 0) {
-        logger::normal_ln("SPH setup", "the setup took :", time_setup.elasped_sec(), "s");
+        logger::normal_ln("SPH setup", "the setup took :", time_setup.elapsed_sec(), "s");
     }
 }
 

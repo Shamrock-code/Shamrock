@@ -20,14 +20,15 @@
 #include "shamrock/solvergraph/ExchangeGhostLayer.hpp"
 #include "shamalgs/collective/distributedDataComm.hpp"
 #include "shamalgs/collective/exchanges.hpp"
+#include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 
 void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
     auto edges = get_edges();
 
     // outputs
-    auto &ghost_layer                                         = edges.ghost_layer;
-    const shamrock::solvergraph::ScalarsEdge<u32> &rank_owner = edges.rank_owner;
+    auto &ghost_layer                                   = edges.ghost_layer;
+    const shamrock::solvergraph::RankGetter &rank_owner = edges.rank_owner;
 
     shambase::DistributedDataShared<shamrock::patch::PatchDataLayer> recv_dat;
 
@@ -36,7 +37,7 @@ void shamrock::solvergraph::ExchangeGhostLayer::_impl_evaluate_internal() {
         std::move(ghost_layer.patchdatas),
         recv_dat,
         [&](u64 id) {
-            return rank_owner.values.get(id);
+            return rank_owner.get_rank_owner(id);
         },
         [](shamrock::patch::PatchDataLayer &pdat) {
             shamalgs::SerializeHelper ser(shamsys::instance::get_compute_scheduler_ptr());

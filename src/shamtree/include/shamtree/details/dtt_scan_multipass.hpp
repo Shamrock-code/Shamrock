@@ -52,7 +52,8 @@ namespace shamtree::details {
             sham::DeviceBuffer<u32_2> node_interactions_p2p(0, dev_sched);
 
             shamtree::DTTResult result{
-                std::move(node_interactions_m2l), std::move(node_interactions_p2p)};
+                .node_interactions_m2l = std::move(node_interactions_m2l),
+                .node_interactions_p2p = std::move(node_interactions_p2p)};
 
             auto add_ordering = [&]() {
                 if (ordered_result) {
@@ -69,7 +70,8 @@ namespace shamtree::details {
                         result.node_interactions_p2p,
                         offset_p2p);
 
-                    DTTResult::OrderedResult ordering{std::move(offset_m2l), std::move(offset_p2p)};
+                    DTTResult::OrderedResult ordering{
+                        .offset_m2l = std::move(offset_m2l), .offset_p2p = std::move(offset_p2p)};
 
                     result.ordered_result = std::move(ordering);
                 }

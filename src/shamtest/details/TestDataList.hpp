@@ -31,7 +31,7 @@ namespace shamtest::details {
 
         /// Create a new TestData in this TestDataList and return a reference to it
         [[nodiscard]] inline TestData &new_dataset(std::string name) {
-            test_data.push_back(TestData{std::move(name), {}});
+            test_data.push_back(TestData{.dataset_name = std::move(name), .dataset = {}});
             return test_data.back();
         }
 

@@ -69,7 +69,7 @@ void test_binary_range_search(const std::vector<Tkey> &data, Tkey value_min, Tke
     REQUIRE_EQUAL(expected_sup, sup);
 }
 
-TestStart(Unittest, "shamalgs/primitives/binary_range_search", test_binary_range_search, 1) {
+NEW_TEST(Unittest, "shamalgs/primitives/binary_range_search", 1) {
 
     {
         // Test with empty array

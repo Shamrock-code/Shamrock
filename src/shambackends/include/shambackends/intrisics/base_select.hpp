@@ -50,11 +50,6 @@
     #define _IS_ONEAPI_SMCP_CUDA
 #elif defined(SYCL_IMPLEMENTATION_ONEAPI) && defined(__SYCL_DEVICE_ONLY__) && defined(__AMDGCN__)
     #define _IS_ONEAPI_SMCP_HIP
-    #if __AMDGCN_WAVEFRONT_SIZE == 64
-        #define _IS_ONEAPI_SMCP_HIP_WAVEFRONT64
-    #elif __AMDGCN_WAVEFRONT_SIZE == 32
-        #define _IS_ONEAPI_SMCP_HIP_WAVEFRONT32
-    #endif
 #elif defined(SYCL_IMPLEMENTATION_ONEAPI) && defined(__SYCL_DEVICE_ONLY__)                         \
     && (defined(__SPIR__) || defined(__SPIRV__))
     #define _IS_ONEAPI_SMCP_INTEL_SPIRV

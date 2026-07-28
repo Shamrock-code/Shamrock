@@ -4,7 +4,7 @@ This is the units library in use in the Shamrock code, this repository will be u
 
 Almost everything is marked `constexpr` in the library, so most of the conversion if possible will be opmitized away by the compiler, allowing for zero cost abstraction here :)
 
-Here is an exemple of the usage of the units library :
+Here is an example of the usage of the units library :
 ```c++
 #include <iostream>
 #include <shamunits/Constants.hpp>

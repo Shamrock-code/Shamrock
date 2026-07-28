@@ -62,8 +62,10 @@ template<class Tmorton, class Tvec, u32 dim>
 inline void register_dtt_alg(py::module &m) {
     py::class_<shamtree::DTTResult>(m, "DTTResult").def(py::init([]() {
         return std::make_unique<shamtree::DTTResult>(shamtree::DTTResult{
-            sham::DeviceBuffer<u32_2>(0, shamsys::instance::get_compute_scheduler_ptr()),
-            sham::DeviceBuffer<u32_2>(0, shamsys::instance::get_compute_scheduler_ptr())});
+            .node_interactions_m2l
+            = sham::DeviceBuffer<u32_2>(0, shamsys::instance::get_compute_scheduler_ptr()),
+            .node_interactions_p2p
+            = sham::DeviceBuffer<u32_2>(0, shamsys::instance::get_compute_scheduler_ptr())});
     }));
 
     m.def(
@@ -84,8 +86,8 @@ inline void register_dtt_alg(py::module &m) {
             t.start();
             shamtree::clbvh_dual_tree_traversal(
                 shamsys::instance::get_compute_scheduler_ptr(), bvh, theta_crit, ordered_result);
-            t.end();
-            return t.elasped_sec();
+            t.stop();
+            return t.elapsed_sec();
         });
 
     m.def("get_default_impl_list_clbvh_dual_tree_traversal", []() {
@@ -103,9 +105,9 @@ inline void register_dtt_alg(py::module &m) {
     });
 }
 
-Register_pymod(shamtreelibinit) {
+ON_PYTHON_INIT {
 
-    py::module shamtree_module = m.def_submodule("tree", "backend library");
+    py::module shamtree_module = root_module.def_submodule("tree", "backend library");
 
     register_CLBVH<u64, f64_3, 3>(shamtree_module, "CLBVH_u64_f64_3");
     register_dtt_alg<u64, f64_3, 3>(shamtree_module);

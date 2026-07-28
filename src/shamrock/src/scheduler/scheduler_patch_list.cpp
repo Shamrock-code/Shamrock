@@ -262,16 +262,15 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt, u64 di
 
     plist.push_back(
         Patch{
-            0,
-            u64_max,
-            total_dtcnt,
-            0,
-            0,
-            0,
-            HilbertLoadBalance<u64>::max_box_sz,
-            HilbertLoadBalance<u64>::max_box_sz,
-            HilbertLoadBalance<u64>::max_box_sz,
-            0,
+            .id_patch        = 0,
+            .pack_node_index = u64_max,
+            .load_value      = total_dtcnt,
+            .coord_min       = {0, 0, 0},
+            .coord_max
+            = {HilbertLoadBalance<u64>::max_box_sz,
+               HilbertLoadBalance<u64>::max_box_sz,
+               HilbertLoadBalance<u64>::max_box_sz},
+            .node_owner_id = 0,
         });
 
     bool listchanged = true;
@@ -327,114 +326,82 @@ std::vector<shamrock::patch::Patch> make_fake_patch_list(u32 total_dtcnt, u64 di
                 u32 qte_ppp = qte_pp - qte_ppm;
 
                 Patch child_mmm = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_mmm,
-                    min_x,
-                    min_y,
-                    min_z,
-                    split_x,
-                    split_y,
-                    split_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_mmm,
+                    .coord_min       = {min_x, min_y, min_z},
+                    .coord_max       = {split_x, split_y, split_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_mmp = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_mmp,
-                    min_x,
-                    min_y,
-                    split_z + 1,
-                    split_x,
-                    split_y,
-                    max_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_mmp,
+                    .coord_min       = {min_x, min_y, split_z + 1},
+                    .coord_max       = {split_x, split_y, max_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_mpm = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_mpm,
-                    min_x,
-                    split_y + 1,
-                    min_z,
-                    split_x,
-                    max_y,
-                    split_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_mpm,
+                    .coord_min       = {min_x, split_y + 1, min_z},
+                    .coord_max       = {split_x, max_y, split_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_mpp = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_mpp,
-                    min_x,
-                    split_y + 1,
-                    split_z + 1,
-                    split_x,
-                    max_y,
-                    max_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_mpp,
+                    .coord_min       = {min_x, split_y + 1, split_z + 1},
+                    .coord_max       = {split_x, max_y, max_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_pmm = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_pmm,
-                    split_x + 1,
-                    min_y,
-                    min_z,
-                    max_x,
-                    split_y,
-                    split_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_pmm,
+                    .coord_min       = {split_x + 1, min_y, min_z},
+                    .coord_max       = {max_x, split_y, split_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_pmp = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_pmp,
-                    split_x + 1,
-                    min_y,
-                    split_z + 1,
-                    max_x,
-                    split_y,
-                    max_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_pmp,
+                    .coord_min       = {split_x + 1, min_y, split_z + 1},
+                    .coord_max       = {max_x, split_y, max_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_ppm = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_ppm,
-                    split_x + 1,
-                    split_y + 1,
-                    min_z,
-                    max_x,
-                    max_y,
-                    split_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_ppm,
+                    .coord_min       = {split_x + 1, split_y + 1, min_z},
+                    .coord_max       = {max_x, max_y, split_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 
                 Patch child_ppp = Patch{
-                    id_cnt,
-                    u64_max,
-                    qte_ppp,
-                    split_x + 1,
-                    split_y + 1,
-                    split_z + 1,
-                    max_x,
-                    max_y,
-                    max_z,
-                    0,
+                    .id_patch        = id_cnt,
+                    .pack_node_index = u64_max,
+                    .load_value      = qte_ppp,
+                    .coord_min       = {split_x + 1, split_y + 1, split_z + 1},
+                    .coord_max       = {max_x, max_y, max_z},
+                    .node_owner_id   = 0,
                 };
                 id_cnt++;
 

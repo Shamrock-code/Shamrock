@@ -13,7 +13,7 @@
 #include "shamtest/shamtest.hpp"
 #include <array>
 
-TestStart(Unittest, "shamalgs/collective/indexing/fetch_view", test_collective_fetch_view, 2) {
+NEW_TEST(Unittest, "shamalgs/collective/indexing/fetch_view", 2) {
 
     std::array cnts = {10_u64, 14_u64};
 

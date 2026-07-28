@@ -32,6 +32,9 @@ extern const std::string compile_arg;
 extern const std::string version_string;
 extern const bool is_git;
 
+// will be in compiler_id.cpp
+extern const char *shamrock_compiler_id_string;
+
 const u32 term_width = 64;
 
 // start allow utf-8

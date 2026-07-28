@@ -16,8 +16,7 @@
 #include <set>
 #include <vector>
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataField::serialize_buf", testpatchdatafieldserialize, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::serialize_buf", 1) {
 
     u32 len                     = 1000;
     u32 nvar                    = 2;
@@ -41,8 +40,7 @@ TestStart(
     }
 }
 
-TestStart(
-    Unittest, "shamrock/patch/PatchDataField::serialize_full", testpatchdatafieldserializefull, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::serialize_full", 1) {
 
     u32 len                     = 1000;
     u32 nvar                    = 2;
@@ -123,7 +121,7 @@ inline void check_pdat_get_ids_where(u32 len, u32 nvar, std::string name, f64 vm
     }
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgetelemwithrange, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", 1) {
 
     {
         u32 len          = 10000;
@@ -145,7 +143,7 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::get_ids_..._where", testgete
     }
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremoveids, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::remove_ids", 1) {
 
     std::vector<f64> values = {
         1,  2,  // obj 0
@@ -203,7 +201,41 @@ TestStart(Unittest, "shamrock/patch/PatchDataField::remove_ids", testpdatremovei
     REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), remaining_values);
 }
 
-TestStart(Unittest, "shamrock/patch/PatchDataField::append_subset_to", testappendsubsetto, 1) {
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::remove_ids duplicates", 1) {
+
+    std::vector<f64> values = {
+        1,
+        2, // obj 0
+        3,
+        4, // obj 1
+        5,
+        6, // obj 2
+        7,
+        8, // obj 3
+        9,
+        10, // obj 4
+    };
+
+    PatchDataField<f64> field = PatchDataField<f64>("test", 2, values.size() / 2);
+    field.override(values, values.size());
+
+    // ids 0 and 1 appear twice -- duplicates should trigger an error
+    std::vector<u32> to_be_removed = {0, 1, 0, 1};
+
+    sham::DeviceBuffer<u32> to_be_removed_buf(
+        to_be_removed.size(), shamsys::instance::get_compute_scheduler_ptr());
+    to_be_removed_buf.copy_from_stdvec(to_be_removed);
+
+    std::vector<f64> values_before = field.get_buf().copy_to_stdvec();
+
+    REQUIRE_EXCEPTION_THROW(
+        field.remove_ids(to_be_removed_buf, to_be_removed_buf.get_size()), std::invalid_argument);
+
+    // Verify the field content was not modified by the failed operation
+    REQUIRE_EQUAL(field.get_buf().copy_to_stdvec(), values_before);
+}
+
+NEW_TEST(Unittest, "shamrock/patch/PatchDataField::append_subset_to", 1) {
 
     using T = f64;
 

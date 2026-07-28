@@ -13,7 +13,7 @@
 #include "shamtest/details/TestResult.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shambase::parallel_for", test_par_for_1d, 1) {
+NEW_TEST(Unittest, "shambase::parallel_for", 1) {
     u32 len = 10000;
     sycl::buffer<u64> buf(len);
 
@@ -36,7 +36,7 @@ TestStart(Unittest, "shambase::parallel_for", test_par_for_1d, 1) {
     REQUIRE(correct);
 }
 
-TestStart(Unittest, "shambase::parallel_for", test_par_for_2d, 1) {
+NEW_TEST(Unittest, "shambase::parallel_for", 1) {
     u64 len_x = 1000;
     u64 len_y = 1000;
     sycl::buffer<u64, 2> buf(sycl::range<2>{len_x, len_y});
@@ -64,7 +64,7 @@ TestStart(Unittest, "shambase::parallel_for", test_par_for_2d, 1) {
     REQUIRE(correct);
 }
 
-TestStart(Unittest, "shambase::parallel_for", test_par_for_3d, 1) {
+NEW_TEST(Unittest, "shambase::parallel_for", 1) {
     u64 len_x = 100;
     u64 len_y = 100;
     u64 len_z = 100;

@@ -44,10 +44,6 @@ jobs:
 
     - uses: pre-commit/action@v3.0.1
 
-    - name: rerun precommit for logs
-      if: success()
-      run: pre-commit run --all-files > out
-
     - name: make file comment
       if: always()
       run: |

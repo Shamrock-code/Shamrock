@@ -91,8 +91,8 @@ namespace shamalgs {
             return lhs; // return the result by value (uses move constructor)
         }
 
-        static SerializeSize Header(u64 sz) { return {sz, 0}; }
-        static SerializeSize Content(u64 sz) { return {0, sz}; }
+        static SerializeSize Header(u64 sz) { return {.head_size = sz, .content_size = 0}; }
+        static SerializeSize Content(u64 sz) { return {.head_size = 0, .content_size = sz}; }
 
         inline u64 get_total_size() { return head_size + content_size; }
     };
@@ -198,9 +198,11 @@ namespace shamalgs {
         SerializeHelper(std::shared_ptr<sham::DeviceScheduler> dev_sched);
 
         SerializeHelper(
-            std::shared_ptr<sham::DeviceScheduler> dev_sched, sham::DeviceBuffer<u8> &&storage);
+            std::shared_ptr<sham::DeviceScheduler> dev_sched,
+            sham::DeviceBuffer<u8> &&storage,
+            bool allow_large_int_size = false);
 
-        void allocate(SerializeSize szinfo);
+        void allocate(SerializeSize szinfo, bool allow_large_int_size = false);
 
         sham::DeviceBuffer<u8> finalize();
 

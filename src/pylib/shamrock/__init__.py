@@ -24,7 +24,7 @@ for name in __all__:
         # Some C-extension objects or builtins don't allow rebinding __module__
         pass
 
-from . import utils
+from . import matplotlib, utils
 
 # print(f"shamrock.__all__: {__all__}")
 # print(f"shamrock imported from {__file__}")

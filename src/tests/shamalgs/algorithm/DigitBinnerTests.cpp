@@ -50,8 +50,7 @@ inline void add_dset(std::string sname) {
     dat_test.add_data("time", res.times);
 }
 
-TestStart(
-    Benchmark, "shamalgs/algorithm/details/DigitBinner:benchmark", benchmark_digit_binner, 1) {
+NEW_TEST(Benchmark, "shamalgs/algorithm/details/DigitBinner:benchmark", 1) {
 
     // add_dset<128, 1, u32>("group size = 128, bits = 1");
     // add_dset<256, 1, u32>("group size = 256, bits = 1");

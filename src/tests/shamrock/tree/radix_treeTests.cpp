@@ -685,8 +685,7 @@ void test_inclusion(u32 Npart, u32 reduc_level) {
     }
 }
 
-TestStart(
-    Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", bounding_volume_inclusion, 1) {
+NEW_TEST(Unittest, "shamrock/tree/RadixTree:bounding_volume_inclusion", 1) {
     test_inclusion<u32, f32>(1000, 0);
     test_inclusion<u64, f32>(1000, 0);
     test_inclusion<u32, f64>(1000, 0);
@@ -742,7 +741,7 @@ inline void test_tree(std::string dset_name) {
         rtree.convert_bounding_box(shamsys::instance::get_compute_queue());
 
         shamsys::instance::get_compute_queue().wait();
-        timer.end();
+        timer.stop();
 
         times.push_back(timer.nanosec / 1.e9);
         Npart.push_back(u32(cnt));
@@ -754,7 +753,7 @@ inline void test_tree(std::string dset_name) {
     dset.add_data("times", times);
 }
 
-TestStart(Benchmark, "shamrock/tree/RadixTree:build:benchmark", morton_tree_build, 1) {
+NEW_TEST(Benchmark, "shamrock/tree/RadixTree:build:benchmark", 1) {
     test_tree<u32, f32, 0>("u32, f32, 0");
     test_tree<u64, f32, 0>("u64, f32, 0");
     test_tree<u32, f64, 0>("u32, f64, 0");
@@ -769,11 +768,7 @@ TestStart(Benchmark, "shamrock/tree/RadixTree:build:benchmark", morton_tree_buil
     test_tree<u64, f64, 2>("u64, f64, 2");
 }
 
-TestStart(
-    Benchmark,
-    "article_shamrock1:shamrock/tree/RadixTree:build:benchmark",
-    morton_tree_build_article1,
-    1) {
+NEW_TEST(Benchmark, "article_shamrock1:shamrock/tree/RadixTree:build:benchmark", 1) {
     test_tree<u32, f32, 0>("morton = u32, field type = f32");
     test_tree<u64, f32, 0>("morton = u64, field type = f32");
     test_tree<u32, f64, 0>("morton = u32, field type = f64");

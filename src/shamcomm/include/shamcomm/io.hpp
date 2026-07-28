@@ -30,11 +30,11 @@ namespace shamcomm {
      * @param[out] fh The MPI file handle to open
      * @param fname The name of the file to open
      */
-    void open_reset_file(MPI_File &fh, std::string fname);
+    void open_reset_file(MPI_File &fh, const std::string &fname);
 
     /**
      * @brief Open a mpi file in read only mode
      */
-    void open_read_only_file(MPI_File &fh, std::string fname);
+    void open_read_only_file(MPI_File &fh, const std::string &fname);
 
 } // namespace shamcomm

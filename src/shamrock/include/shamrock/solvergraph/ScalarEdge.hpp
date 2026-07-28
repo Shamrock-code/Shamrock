@@ -25,7 +25,7 @@ namespace shamrock::solvergraph {
         public:
         using IEdgeNamed::IEdgeNamed;
 
-        T value;
+        T value = {};
 
         inline void free_alloc() {};
     };

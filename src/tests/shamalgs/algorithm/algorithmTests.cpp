@@ -10,20 +10,19 @@
 #include "shamalgs/algorithm.hpp"
 #include "sortTests.hpp"
 
-TestStart(Unittest, "shamalgs/algorithm/sort_by_key", test_sort_by_key_func, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key", 1) {
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key);
     test.check();
 }
 
-TestStart(Unittest, "shamalgs/algorithm/sort_by_key(usm)", test_sort_by_key_func_usm, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/sort_by_key(usm)", 1) {
     TestSortByKeyUSM<u32, u32> test(
         (TestSortByKeyUSM<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key<u32, u32>);
     test.check();
 }
 
-TestStart(
-    Benchmark, "shamalgs/algorithm/sort_by_key:benchmark", test_sort_by_key_func_benchmark, 1) {
+NEW_TEST(Benchmark, "shamalgs/algorithm/sort_by_key:benchmark", 1) {
 
     TestSortByKey<u32, u32> test(
         (TestSortByKey<u32, u32>::vFunctionCall) shamalgs::algorithm::sort_by_key);
@@ -32,10 +31,10 @@ TestStart(
     logger::raw_ln("rate =", rate);
 }
 
-TestStart(Unittest, "shamalgs/algorithm/index_remap", test_index_remap_func, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/index_remap", 1) {
     TestIndexRemap<u32>(shamalgs::algorithm::index_remap<u32>).check();
 }
 
-TestStart(Unittest, "shamalgs/algorithm/index_remap(usm)", test_index_remap_func_usm, 1) {
+NEW_TEST(Unittest, "shamalgs/algorithm/index_remap(usm)", 1) {
     TestIndexRemapUSM<u32>(shamalgs::algorithm::index_remap<u32>).check();
 }

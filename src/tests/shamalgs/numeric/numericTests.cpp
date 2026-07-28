@@ -13,18 +13,18 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/numeric/stream_compact", streamcompactalg, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/stream_compact", 1) {
     TestStreamCompact test((TestStreamCompact::vFunctionCall) shamalgs::numeric::stream_compact);
     test.check();
 }
 
-TestStart(Unittest, "shamalgs/numeric/stream_compact(usm)", streamcompactalgusm, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/stream_compact(usm)", 1) {
     TestStreamCompactUSM test(
         (TestStreamCompactUSM::vFunctionCall) shamalgs::numeric::stream_compact);
     test.check();
 }
 
-TestStart(Unittest, "shamalgs/numeric/device_histogram", devicehistogram, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/device_histogram", 1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
 
@@ -77,7 +77,7 @@ TestStart(Unittest, "shamalgs/numeric/device_histogram", devicehistogram, 1) {
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/binned_sum", binnedsum, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/binned_sum", 1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
 
@@ -153,7 +153,7 @@ TestStart(Unittest, "shamalgs/numeric/binned_sum", binnedsum, 1) {
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/binned_average", binnedaverage, 1) {
+NEW_TEST(Unittest, "shamalgs/numeric/binned_average", 1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
 
@@ -229,7 +229,7 @@ TestStart(Unittest, "shamalgs/numeric/binned_average", binnedaverage, 1) {
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/device_histogram_mpi", devicehistogrammpi, -1) {
+NEW_TEST(Unittest, "shamalgs/numeric/device_histogram_mpi", -1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
     u32 world_size                = static_cast<u32>(shamcomm::world_size());
@@ -281,7 +281,7 @@ TestStart(Unittest, "shamalgs/numeric/device_histogram_mpi", devicehistogrammpi,
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/device_histogram_u64_mpi", devicehistogramu64mpi, -1) {
+NEW_TEST(Unittest, "shamalgs/numeric/device_histogram_u64_mpi", -1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
     u32 world_size                = static_cast<u32>(shamcomm::world_size());
@@ -333,7 +333,7 @@ TestStart(Unittest, "shamalgs/numeric/device_histogram_u64_mpi", devicehistogram
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/device_histogram_u32_mpi", devicehistogramu32mpi, -1) {
+NEW_TEST(Unittest, "shamalgs/numeric/device_histogram_u32_mpi", -1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
     u32 world_size                = static_cast<u32>(shamcomm::world_size());
@@ -385,7 +385,7 @@ TestStart(Unittest, "shamalgs/numeric/device_histogram_u32_mpi", devicehistogram
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/binned_sum_mpi", binnedsummpi, -1) {
+NEW_TEST(Unittest, "shamalgs/numeric/binned_sum_mpi", -1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
     u32 world_size                = static_cast<u32>(shamcomm::world_size());
@@ -458,7 +458,7 @@ TestStart(Unittest, "shamalgs/numeric/binned_sum_mpi", binnedsummpi, -1) {
     }
 }
 
-TestStart(Unittest, "shamalgs/numeric/binned_average_mpi", binnedaveragempi, -1) {
+NEW_TEST(Unittest, "shamalgs/numeric/binned_average_mpi", -1) {
     std::vector<double> bin_edges = {0.0, 1.0, 2.0, 3.0, 4.0}; // 4 bins: [0,1), [1,2), [2,3), [3,4)
     u64 nbins                     = bin_edges.size() - 1;
     u32 world_size                = static_cast<u32>(shamcomm::world_size());

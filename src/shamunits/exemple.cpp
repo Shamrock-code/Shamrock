@@ -11,7 +11,7 @@
 #include <shamunits/UnitSystem.hpp>
 #include <iostream>
 
-// g++ -std=c++17 -Iinclude exemple.cpp
+// g++ -std=c++20 -Iinclude exemple.cpp
 
 int main(void) {
 

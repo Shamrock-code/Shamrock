@@ -7,7 +7,7 @@ EXAMPLE_FILE="$1"
 echo "Moving the example file to .tmp :"
 mv ${EXAMPLE_FILE} .tmp
 
-bash gen_sphinx_doc_single_example.sh do_not_run_annything_dammit
+bash gen_sphinx_doc_single_example.sh do_not_run_annything_dammit || exit 1
 
 snapshot() {
   find . -type f -print0 \
@@ -23,7 +23,7 @@ echo "Moving the example file back to the original location :"
 mv .tmp ${EXAMPLE_FILE}
 
 echo "Generating the sphinx doc for the example :"
-bash gen_sphinx_doc_single_example.sh "${EXAMPLE_FILE}"
+bash gen_sphinx_doc_single_example.sh "${EXAMPLE_FILE}" || exit 1
 
 echo "Snapshotting the current directory :"
 snapshot > /tmp/after.sha

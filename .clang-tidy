@@ -12,6 +12,7 @@ Checks: >
   performance-unnecessary-copy-initialization,
   performance-for-range-copy,
   performance-no-automatic-move,
+  modernize-use-designated-initializers,
 
 # Future options that are likely to be added:
 #

@@ -20,7 +20,7 @@
 
 namespace shambase {}
 
-TestStart(Benchmark, "sycl/loop_perfs", syclloopperfs, 1) {
+NEW_TEST(Benchmark, "sycl/loop_perfs", 1) {
 
     std::vector<f64> speed_parfor;
 

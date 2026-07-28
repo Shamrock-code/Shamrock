@@ -47,8 +47,8 @@ namespace shamrock::solvergraph {
 
         inline Edges get_edges() {
             return Edges{
-                get_ro_edge<shamrock::solvergraph::ScalarsEdge<u64>>(0),
-                get_rw_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
+                .object_counts = get_ro_edge<shamrock::solvergraph::ScalarsEdge<u64>>(0),
+                .ghost_layer   = get_rw_edge<shamrock::solvergraph::PatchDataLayerDDShared>(0),
             };
         }
 

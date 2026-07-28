@@ -13,7 +13,7 @@
 #include "shamtest/shamtest.hpp"
 #include <random>
 
-TestStart(Unittest, "patchdata.cpp/patch_data_check_match", patch_data_check_match, 1) {
+NEW_TEST(Unittest, "patchdata.cpp/patch_data_check_match", 1) {
     std::mt19937 eng(0x1111);
 
     using namespace shamrock::patch;
@@ -48,7 +48,7 @@ TestStart(Unittest, "patchdata.cpp/patch_data_check_match", patch_data_check_mat
 
 /*
 
-TestStart(Unittest, "patchdata.cpp/isend_irecv",patch_data_isend_irecv, 2){
+NEW_TEST(Unittest, "patchdata.cpp/isend_irecv", 2){
     std::mt19937 eng(0x1111);
 
     using namespace shamrock::patch;

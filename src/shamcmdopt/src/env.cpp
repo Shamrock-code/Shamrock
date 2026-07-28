@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/print.hpp"
 #include "shambase/string.hpp"
 #include "fmt/core.h"
 #include "shamcmdopt/env.hpp"
@@ -24,6 +25,14 @@ std::optional<std::string> shamcmdopt::getenv_str(const char *env_var) {
     const char *val = std::getenv(env_var);
     if (val != nullptr) {
         return std::string(val);
+    }
+    return {};
+}
+
+std::optional<std::string_view> shamcmdopt::getenv_str_view(const char *env_var) {
+    const char *val = std::getenv(env_var);
+    if (val != nullptr) {
+        return std::string_view(val);
     }
     return {};
 }
@@ -60,10 +69,10 @@ void shamcmdopt::print_help_env_var() {
     for (const auto &[var, desc] : env_var_reg) {
         auto val = getenv_str(var.c_str());
 
-        fmt::println(shambase::format("  {:<29} : {}", var, desc));
+        shambase::println(shambase::format("  {:<29} : {}", var, desc));
 
         if (val) {
-            fmt::println(shambase::format("    = {}", *val));
+            shambase::println(shambase::format("    = {}", *val));
         }
     }
 }

@@ -49,7 +49,7 @@ namespace shamtest::details {
         shambase::stream_read_string(stream, name);
         shambase::stream_read_string(stream, comment);
 
-        return {bool(bl), name, comment};
+        return {.value = bool(bl), .name = name, .comment = comment};
     }
 
 } // namespace shamtest::details

@@ -24,7 +24,7 @@ namespace shamrock::patch {
 
     /**
      * @brief Field variant class
-     * \todo provide exemple
+     * \todo provide example
      * @tparam Container
      */
     template<template<class> class Container>

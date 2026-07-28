@@ -83,16 +83,17 @@ namespace shamalgs::primitives {
 
     inline shamalgs::impl_param is_all_true_impl_to_params(const IS_ALL_TRUE_IMPL &impl) {
         if (impl == IS_ALL_TRUE_IMPL::HOST) {
-            return {"host", ""};
+            return {.impl_name = "host", .params = ""};
         } else if (impl == IS_ALL_TRUE_IMPL::SUM_REDUCTION) {
-            return {"sum_reduction", ""};
+            return {.impl_name = "sum_reduction", .params = ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknow is_all_true implementation : {}", u32(impl)));
+            shambase::format("unknown is_all_true implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_is_all_true() {
-        std::vector<shamalgs::impl_param> impl_list{{"host", ""}, {"sum_reduction", ""}};
+        std::vector<shamalgs::impl_param> impl_list{
+            {.impl_name = "host", .params = ""}, {.impl_name = "sum_reduction", .params = ""}};
         return impl_list;
     }
 

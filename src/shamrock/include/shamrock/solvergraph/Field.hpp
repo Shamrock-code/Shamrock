@@ -16,6 +16,7 @@
  *
  */
 
+#include "shambase/DistributedData.hpp"
 #include "shamrock/scheduler/ComputeField.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
@@ -58,20 +59,32 @@ namespace shamrock::solvergraph {
 
         virtual const DDPatchDataFieldSpanPointer<T> &get_spans() const { return spans; }
 
+        shambase::DistributedData<u32> get_obj_cnts() const { return field.get_obj_cnts(); }
+
         inline virtual void check_sizes(const shambase::DistributedData<u32> &sizes) const {
             on_distributeddata_diff(
                 field.field_data,
                 sizes,
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Missing field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Missing field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 },
                 [](u64 id) {
                     // TODO
                 },
-                [](u64 id) {
-                    shambase::throw_with_loc<std::runtime_error>(
-                        "Extra field ref in distributed data at id " + std::to_string(id));
+                [&](u64 id) {
+                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                        "Extra field ref in distributed data at id {}\n"
+                        "Field name: {}\n"
+                        "Field texsymbol: {}",
+                        id,
+                        this->get_label(),
+                        this->get_tex_symbol()));
                 });
         }
 
@@ -115,8 +128,14 @@ namespace shamrock::solvergraph {
         }
 
         inline PatchDataField<T> &get(u64 id_patch) { return field.field_data.get(id_patch); }
+
         inline const PatchDataField<T> &get(u64 id_patch) const {
             return field.field_data.get(id_patch);
         }
+
+        inline u32 get_nvar() const { return nvar; }
+
+        inline ComputeField<T> &get_native() { return field; }
+        inline const ComputeField<T> &get_native() const { return field; }
     };
 } // namespace shamrock::solvergraph

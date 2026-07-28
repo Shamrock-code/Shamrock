@@ -26,6 +26,8 @@ namespace shamcmdopt {
 
     /**
      * @brief Process generic cli and env variables options
+     *
+     * In order the priority to enable a feature is CLI arg > ENV > detection
      */
     void process_cmdopt_generic_opts();
 

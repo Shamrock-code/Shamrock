@@ -12,7 +12,7 @@
 #include "shamsys/NodeInstance.hpp"
 #include "shamtest/shamtest.hpp"
 
-TestStart(Unittest, "shamalgs/atomic/ErrorCheckerFlags", test_ErrorCheckerFlags, 1) {
+NEW_TEST(Unittest, "shamalgs/atomic/ErrorCheckerFlags", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 
@@ -50,7 +50,7 @@ TestStart(Unittest, "shamalgs/atomic/ErrorCheckerFlags", test_ErrorCheckerFlags,
     REQUIRE(precondition_error == 3);
 }
 
-TestStart(Unittest, "shamalgs/atomic/ErrorCheckCounter", test_ErrorCheckCounter, 1) {
+NEW_TEST(Unittest, "shamalgs/atomic/ErrorCheckCounter", 1) {
 
     auto sched = shamsys::instance::get_compute_scheduler_ptr();
 

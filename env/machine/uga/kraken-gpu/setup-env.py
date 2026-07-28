@@ -24,7 +24,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     args = parser.parse_args(argv)
 
-    args.gen = "make"
+    args.gen = "ninja"
 
     gen, gen_opt, cmake_gen, cmake_build_type = utils.sysinfo.select_generator(args, buildtype)
 
@@ -42,6 +42,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
 
     envgen.ext_script_list = [
         shamrockdir + "/env/helpers/pull_reffiles.sh",
+        shamrockdir + "/env/helpers/use_py_venv.sh",
     ]
 
     envgen.gen_env_file("env_oneapi.sh")

@@ -100,6 +100,30 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Sets all gradients to zero. Most diffusive but most stable.
     Good for very strong shocks or initial testing.
 )==")
+        // Force formulation config
+        .def(
+            "set_force_cha_whitworth",
+            [](TConfig &self) {
+                self.set_force_cha_whitworth();
+            },
+            R"==(
+    Set the Cha & Whitworth (2003) symmetric SPH force formulation (default).
+
+    Uses the standard SPH momentum equation (nabla_W/rho^2/Omega) with the
+    Riemann-solved interface pressure p* substituted for pressure.
+)==")
+        .def(
+            "set_force_inutsuka_v2",
+            [](TConfig &self) {
+                self.set_force_inutsuka_v2();
+            },
+            R"==(
+    Set the Inutsuka (2002) effective volume/face force formulation.
+
+    Uses linear (1st order) interpolation of the volume element between each
+    particle pair to build an effective face (V2_ij, s*), following the
+    original GSPH momentum equation: acc -= m * p* * V2_ij * grad_W_ij.
+)==")
         // EOS config
         .def(
             "set_eos_adiabatic",

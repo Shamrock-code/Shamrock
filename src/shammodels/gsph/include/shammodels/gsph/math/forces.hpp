@@ -161,4 +161,42 @@ namespace shammodels::gsph {
     // Note: For velocity projection onto pair axis, use sycl::dot(v, r_ab_unit) directly.
     // For density from smoothing length, use shamrock::sph::rho_h() from density.hpp.
 
+    /**
+     * @brief Add Inutsuka (2002) GSPH force contribution from a single neighbor pair
+     *
+     * Uses the effective volume/face formulation instead of the Cha & Whitworth
+     * symmetric SPH form: acc -= m_b * p* * V2_ij * grad_W_ij, where V2_ij is the
+     * effective squared volume element between the pair (see math/reconstruction.hpp)
+     * and grad_W_ij is the pair-symmetrized kernel gradient.
+     *
+     * @tparam Tvec Vector type
+     * @tparam Tscal Scalar type
+     * @param m_b Mass of neighbor particle
+     * @param p_star Interface pressure from Riemann solver
+     * @param v_star Interface velocity from Riemann solver
+     * @param V2_ij Effective squared volume element for the pair
+     * @param grad_W_ij Pair-symmetrized kernel gradient vector
+     * @param r_ab_unit Unit vector from a to b (points toward b)
+     * @param v_a Velocity of particle a
+     * @param[out] dv_dt Accumulated acceleration
+     * @param[out] du_dt Accumulated energy rate
+     */
+    template<class Tvec, class Tscal>
+    inline void add_gsph_force_contribution_inutsuka(
+        Tscal m_b,
+        Tscal p_star,
+        Tscal v_star,
+        Tscal V2_ij,
+        Tvec grad_W_ij,
+        Tvec r_ab_unit,
+        Tvec v_a,
+        Tvec &dv_dt,
+        Tscal &du_dt) {
+
+        dv_dt -= m_b * p_star * V2_ij * grad_W_ij;
+
+        Tvec v_star_vec = v_star * r_ab_unit;
+        du_dt -= m_b * p_star * V2_ij * sycl::dot(grad_W_ij, v_star_vec - v_a);
+    }
+
 } // namespace shammodels::gsph

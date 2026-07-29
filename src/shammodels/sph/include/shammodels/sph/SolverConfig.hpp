@@ -198,7 +198,7 @@ namespace shammodels::sph {
                     j.at("C_drift").get<Tscal>(),
                     j.at("cfl_density_threshold").get<Tscal>(),
                     j.at("ensure_s_j_positivity").get<bool>(),
-                    j.value("smooth_s_positivity_limiter", true),
+                    j.value("smooth_s_positivity_limiter", false),
                     j.value("dust_corrected_av", false));
             } else if (type == "monofluid_complete") {
                 set_monofluid_complete(j.at("ndust").get<u32>());

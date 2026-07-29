@@ -154,7 +154,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-            constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
 
             // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
             // kernel-support filter below must match the widened cache radius
@@ -234,50 +233,23 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     const Tscal p_star = riemann_result.p_star;
                     const Tscal v_star = riemann_result.v_star;
 
-                    if (use_inutsuka_v2) {
-                        // Effective volume/face interpolation (Inutsuka 2002), linear
-                        // (1st order): specific volume is 1/rho for equal-mass particles.
-                        const Tscal vol_a = Tscal{1} / rho_a;
-                        const Tscal vol_b = Tscal{1} / rho_b;
-
-                        auto face = lin_v2_sast_ij<Tscal>(vol_a, vol_b, h_a, h_b, rab_inv);
-
-                        // Pair-symmetrized kernel gradient at sqrt(2)*h (Inutsuka 2002)
-                        const Tscal Fab2_a   = Kernel::dW_3d(rab, sqrt2 * h_a);
-                        const Tscal Fab2_b   = Kernel::dW_3d(rab, sqrt2 * h_b);
-                        const Tvec grad_W_ij = (Fab2_a + Fab2_b) * r_ab_unit;
-
-                        shammodels::gsph::add_gsph_force_contribution_inutsuka<Tvec, Tscal>(
-                            pmass,
-                            p_star,
-                            v_star,
-                            face.V2,
-                            grad_W_ij,
-                            r_ab_unit,
-                            vxyz_a,
-                            sum_axyz,
-                            sum_du_a);
-                    } else {
-                        // Kernel gradients
-                        const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-                        const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-                        // GSPH force contribution
-                        shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
-                            pmass,
-                            p_star,
-                            v_star,
-                            rho_a,
-                            rho_b,
-                            omega_a,
-                            omega_b,
-                            Fab_a,
-                            Fab_b,
-                            r_ab_unit,
-                            vxyz_a,
-                            sum_axyz,
-                            sum_du_a);
-                    }
+                    shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                        use_inutsuka_v2,
+                        pmass,
+                        p_star,
+                        v_star,
+                        rho_a,
+                        rho_b,
+                        omega_a,
+                        omega_b,
+                        rab,
+                        rab_inv,
+                        h_a,
+                        h_b,
+                        r_ab_unit,
+                        vxyz_a,
+                        sum_axyz,
+                        sum_du_a);
                 });
 
                 // Write accumulated derivatives
@@ -406,7 +378,6 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_exa
             tree::ObjectCacheIterator particle_looper(ploop_ptrs);
 
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-            constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
 
             // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
             // kernel-support filter below must match the widened cache radius
@@ -486,50 +457,23 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_exa
                     const Tscal p_star = riemann_result.p_star;
                     const Tscal v_star = riemann_result.v_star;
 
-                    if (use_inutsuka_v2) {
-                        // Effective volume/face interpolation (Inutsuka 2002), linear
-                        // (1st order): specific volume is 1/rho for equal-mass particles.
-                        const Tscal vol_a = Tscal{1} / rho_a;
-                        const Tscal vol_b = Tscal{1} / rho_b;
-
-                        auto face = lin_v2_sast_ij<Tscal>(vol_a, vol_b, h_a, h_b, rab_inv);
-
-                        // Pair-symmetrized kernel gradient at sqrt(2)*h (Inutsuka 2002)
-                        const Tscal Fab2_a   = Kernel::dW_3d(rab, sqrt2 * h_a);
-                        const Tscal Fab2_b   = Kernel::dW_3d(rab, sqrt2 * h_b);
-                        const Tvec grad_W_ij = (Fab2_a + Fab2_b) * r_ab_unit;
-
-                        shammodels::gsph::add_gsph_force_contribution_inutsuka<Tvec, Tscal>(
-                            pmass,
-                            p_star,
-                            v_star,
-                            face.V2,
-                            grad_W_ij,
-                            r_ab_unit,
-                            vxyz_a,
-                            sum_axyz,
-                            sum_du_a);
-                    } else {
-                        // Kernel gradients
-                        const Tscal Fab_a = Kernel::dW_3d(rab, h_a);
-                        const Tscal Fab_b = Kernel::dW_3d(rab, h_b);
-
-                        // GSPH force contribution
-                        shammodels::gsph::add_gsph_force_contribution<Tvec, Tscal>(
-                            pmass,
-                            p_star,
-                            v_star,
-                            rho_a,
-                            rho_b,
-                            omega_a,
-                            omega_b,
-                            Fab_a,
-                            Fab_b,
-                            r_ab_unit,
-                            vxyz_a,
-                            sum_axyz,
-                            sum_du_a);
-                    }
+                    shammodels::gsph::accumulate_gsph_pair_force<Kernel, Tvec, Tscal>(
+                        use_inutsuka_v2,
+                        pmass,
+                        p_star,
+                        v_star,
+                        rho_a,
+                        rho_b,
+                        omega_a,
+                        omega_b,
+                        rab,
+                        rab_inv,
+                        h_a,
+                        h_b,
+                        r_ab_unit,
+                        vxyz_a,
+                        sum_axyz,
+                        sum_du_a);
                 });
 
                 // Write accumulated derivatives

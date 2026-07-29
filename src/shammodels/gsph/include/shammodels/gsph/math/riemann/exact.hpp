@@ -138,35 +138,26 @@ namespace shammodels::gsph::riemann {
     }
 
     /**
-     * @brief Bisection solve for the shock/shock (11) wave pattern
+     * @brief Shared bisection loop for a single wave-pattern's residual function
+     *
+     * @param posi Initial bracket endpoint with positive residual
+     * @param nega Initial bracket endpoint with non-positive residual
+     * @param v_lr_0 Target value (left.v - right.v) the residual must reach
+     * @param residual Wave-pattern-specific v_lr_XX(p, left, right, gamma) function
      */
-    template<class Tscal>
-    inline Tscal exact_bisection_ss(
-        ExactState<Tscal> left, ExactState<Tscal> right, Tscal gamma, Tscal tol, u32 max_iter) {
-        constexpr Tscal EPS        = Tscal{1e-16};
-        constexpr Tscal SCALE_UP   = Tscal{1.00001};
-        constexpr Tscal SCALE_DOWN = Tscal{0.99999};
+    template<class Tscal, class ResidualFn>
+    inline Tscal exact_bisection_generic(
+        Tscal posi, Tscal nega, Tscal v_lr_0, Tscal tol, u32 max_iter, ResidualFn residual) {
+        constexpr Tscal eps = Tscal{1e-16};
 
-        const Tscal v_lr_0 = left.v - right.v;
-
-        // Search for an upper bound where v_lr_ss(posi) - v_lr_0 > 0
-        Tscal posi = (left.p + right.p) * SCALE_UP;
-        for (u32 i = 0; i < 300; ++i) {
-            if (exact_v_lr_ss(posi, left, right, gamma) - v_lr_0 > Tscal{0}) {
-                break;
-            }
-            posi *= Tscal{10};
-        }
-
-        Tscal nega = sycl::fmin(left.p, right.p) * SCALE_DOWN;
         Tscal half = Tscal{0};
-        Tscal bis2 = exact_v_lr_ss(posi, left, right, gamma) - v_lr_0;
+        Tscal bis2 = residual(posi) - v_lr_0;
         for (u32 i = 0; i < max_iter; ++i) {
             const Tscal bis1 = bis2;
             half             = Tscal{0.5} * (posi + nega);
-            bis2             = exact_v_lr_ss(half, left, right, gamma) - v_lr_0;
+            bis2             = residual(half) - v_lr_0;
 
-            if (sycl::fmax(sycl::fabs(bis2), sycl::fabs(bis2 - bis1) / (sycl::fabs(bis1) + EPS))
+            if (sycl::fmax(sycl::fabs(bis2), sycl::fabs(bis2 - bis1) / (sycl::fabs(bis1) + eps))
                     < tol
                 || bis2 == Tscal{0}) {
                 break;
@@ -179,6 +170,32 @@ namespace shammodels::gsph::riemann {
             }
         }
         return half;
+    }
+
+    /**
+     * @brief Bisection solve for the shock/shock (11) wave pattern
+     */
+    template<class Tscal>
+    inline Tscal exact_bisection_ss(
+        ExactState<Tscal> left, ExactState<Tscal> right, Tscal gamma, Tscal tol, u32 max_iter) {
+        constexpr Tscal scale_up   = Tscal{1.00001};
+        constexpr Tscal scale_down = Tscal{0.99999};
+
+        const Tscal v_lr_0 = left.v - right.v;
+
+        // Search for an upper bound where v_lr_ss(posi) - v_lr_0 > 0
+        Tscal posi = (left.p + right.p) * scale_up;
+        for (u32 i = 0; i < 300; ++i) {
+            if (exact_v_lr_ss(posi, left, right, gamma) - v_lr_0 > Tscal{0}) {
+                break;
+            }
+            posi *= Tscal{10};
+        }
+        const Tscal nega = sycl::fmin(left.p, right.p) * scale_down;
+
+        return exact_bisection_generic(posi, nega, v_lr_0, tol, max_iter, [&](Tscal p) {
+            return exact_v_lr_ss(p, left, right, gamma);
+        });
     }
 
     /**
@@ -187,34 +204,16 @@ namespace shammodels::gsph::riemann {
     template<class Tscal>
     inline Tscal exact_bisection_rs(
         ExactState<Tscal> left, ExactState<Tscal> right, Tscal gamma, Tscal tol, u32 max_iter) {
-        constexpr Tscal EPS        = Tscal{1e-16};
-        constexpr Tscal SCALE_UP   = Tscal{1.00001};
-        constexpr Tscal SCALE_DOWN = Tscal{0.99999};
+        constexpr Tscal scale_up   = Tscal{1.00001};
+        constexpr Tscal scale_down = Tscal{0.99999};
 
         const Tscal v_lr_0 = left.v - right.v;
-        Tscal posi         = left.p * SCALE_UP;
-        Tscal nega         = right.p * SCALE_DOWN;
-        Tscal half         = Tscal{0};
-        Tscal bis2         = exact_v_lr_rs(posi, left, right, gamma) - v_lr_0;
+        const Tscal posi   = left.p * scale_up;
+        const Tscal nega   = right.p * scale_down;
 
-        for (u32 i = 0; i < max_iter; ++i) {
-            const Tscal bis1 = bis2;
-            half             = Tscal{0.5} * (posi + nega);
-            bis2             = exact_v_lr_rs(half, left, right, gamma) - v_lr_0;
-
-            if (sycl::fmax(sycl::fabs(bis2), sycl::fabs(bis2 - bis1) / (sycl::fabs(bis1) + EPS))
-                    < tol
-                || bis2 == Tscal{0}) {
-                break;
-            }
-
-            if (bis2 > Tscal{0}) {
-                posi = half;
-            } else {
-                nega = half;
-            }
-        }
-        return half;
+        return exact_bisection_generic(posi, nega, v_lr_0, tol, max_iter, [&](Tscal p) {
+            return exact_v_lr_rs(p, left, right, gamma);
+        });
     }
 
     /**
@@ -223,34 +222,16 @@ namespace shammodels::gsph::riemann {
     template<class Tscal>
     inline Tscal exact_bisection_sr(
         ExactState<Tscal> left, ExactState<Tscal> right, Tscal gamma, Tscal tol, u32 max_iter) {
-        constexpr Tscal EPS        = Tscal{1e-16};
-        constexpr Tscal SCALE_UP   = Tscal{1.00001};
-        constexpr Tscal SCALE_DOWN = Tscal{0.99999};
+        constexpr Tscal scale_up   = Tscal{1.00001};
+        constexpr Tscal scale_down = Tscal{0.99999};
 
         const Tscal v_lr_0 = left.v - right.v;
-        Tscal posi         = right.p * SCALE_UP;
-        Tscal nega         = left.p * SCALE_DOWN;
-        Tscal half         = Tscal{0};
-        Tscal bis2         = exact_v_lr_sr(posi, left, right, gamma) - v_lr_0;
+        const Tscal posi   = right.p * scale_up;
+        const Tscal nega   = left.p * scale_down;
 
-        for (u32 i = 0; i < max_iter; ++i) {
-            const Tscal bis1 = bis2;
-            half             = Tscal{0.5} * (posi + nega);
-            bis2             = exact_v_lr_sr(half, left, right, gamma) - v_lr_0;
-
-            if (sycl::fmax(sycl::fabs(bis2), sycl::fabs(bis2 - bis1) / (sycl::fabs(bis1) + EPS))
-                    < tol
-                || bis2 == Tscal{0}) {
-                break;
-            }
-
-            if (bis2 > Tscal{0}) {
-                posi = half;
-            } else {
-                nega = half;
-            }
-        }
-        return half;
+        return exact_bisection_generic(posi, nega, v_lr_0, tol, max_iter, [&](Tscal p) {
+            return exact_v_lr_sr(p, left, right, gamma);
+        });
     }
 
     /**
@@ -259,33 +240,15 @@ namespace shammodels::gsph::riemann {
     template<class Tscal>
     inline Tscal exact_bisection_rr(
         ExactState<Tscal> left, ExactState<Tscal> right, Tscal gamma, Tscal tol, u32 max_iter) {
-        constexpr Tscal EPS      = Tscal{1e-16};
-        constexpr Tscal SCALE_UP = Tscal{1.00001};
+        constexpr Tscal scale_up = Tscal{1.00001};
 
         const Tscal v_lr_0 = left.v - right.v;
-        Tscal posi         = sycl::fmin(left.p, right.p) * SCALE_UP;
-        Tscal nega         = Tscal{0};
-        Tscal half         = Tscal{0};
-        Tscal bis2         = exact_v_lr_rr(posi, left, right, gamma) - v_lr_0;
+        const Tscal posi   = sycl::fmin(left.p, right.p) * scale_up;
+        const Tscal nega   = Tscal{0};
 
-        for (u32 i = 0; i < max_iter; ++i) {
-            const Tscal bis1 = bis2;
-            half             = Tscal{0.5} * (posi + nega);
-            bis2             = exact_v_lr_rr(half, left, right, gamma) - v_lr_0;
-
-            if (sycl::fmax(sycl::fabs(bis2), sycl::fabs(bis2 - bis1) / (sycl::fabs(bis1) + EPS))
-                    < tol
-                || bis2 == Tscal{0}) {
-                break;
-            }
-
-            if (bis2 > Tscal{0}) {
-                posi = half;
-            } else {
-                nega = half;
-            }
-        }
-        return half;
+        return exact_bisection_generic(posi, nega, v_lr_0, tol, max_iter, [&](Tscal p) {
+            return exact_v_lr_rr(p, left, right, gamma);
+        });
     }
 
     /**

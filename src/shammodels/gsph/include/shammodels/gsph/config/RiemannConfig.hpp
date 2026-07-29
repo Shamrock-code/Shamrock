@@ -201,7 +201,9 @@ namespace shammodels::gsph {
         if (riemann_type == "iterative") {
             p.set(Iterative{j.at("tol").get<Tscal>(), j.at("max_iter").get<u32>()});
         } else if (riemann_type == "exact") {
-            p.set(Exact{j.at("tol").get<Tscal>(), j.at("max_iter").get<u32>()});
+            // max_iter is read with a fallback default so configs saved before
+            // this field existed (tol-only) still load instead of throwing.
+            p.set(Exact{j.at("tol").get<Tscal>(), j.value("max_iter", Exact{}.max_iter)});
         } else if (riemann_type == "hllc") {
             p.set(HLLC{});
         } else if (riemann_type == "roe") {

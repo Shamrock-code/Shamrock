@@ -338,6 +338,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
 
     Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
 
+    // The Inutsuka V2 force formulation evaluates the kernel gradient at an
+    // effective smoothing length sqrt(2)*h (Inutsuka 2002), so its support radius
+    // is sqrt(2) times larger than the standard h*Rkern cutoff used below. Widen
+    // the cached search radius accordingly, or pairs in (h*Rkern, sqrt(2)*h*Rkern)
+    // would silently be missing from the cache for that formulation.
+    if (solver_config.is_force_inutsuka_v2()) {
+        h_tolerance *= Tscal{1.4142135623730951};
+    }
+
     // Build neighbor cache using tree traversal - same approach as SPH module
     auto build_neigh_cache = [&](u64 patch_id) -> shamrock::tree::ObjectCache {
         auto &mfield = storage.merged_xyzh.get().get(patch_id);

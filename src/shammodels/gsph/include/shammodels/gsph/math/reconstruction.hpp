@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "shambackends/math.hpp"
+
 /**
  * @file reconstruction.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
@@ -64,7 +66,7 @@ namespace shammodels::gsph {
         const Tscal h2 = Tscal{0.5} * (h_a * h_a + h_b * h_b);
 
         const Tscal V2    = Tscal{0.25} * h2 * C * C + D * D;
-        const Tscal s_ast = Tscal{0.5} * h2 * C * D / V2;
+        const Tscal s_ast = Tscal{0.5} * h2 * C * D * sham::inv_sat_zero(V2);
 
         return EffectiveFace<Tscal>{V2, s_ast};
     }

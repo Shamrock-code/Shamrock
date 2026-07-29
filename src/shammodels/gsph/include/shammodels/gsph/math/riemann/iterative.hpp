@@ -16,9 +16,14 @@
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Iterative Riemann solver for GSPH (van Leer 1997)
  *
- * Implements the van Leer (1997) iterative Riemann solver for ideal gas.
- * Uses Newton-Raphson iteration to find the exact solution (p*, v*) at
- * particle interfaces.
+ * Implements an approximate ("two-shock") iterative Riemann solver for ideal
+ * gas: the same shock-relation impedance formula is used on both sides
+ * regardless of whether that side is physically a shock or a rarefaction,
+ * solved via Newton-Raphson to find (p*, v*). This is close to exact for
+ * shock-dominated pairs, but can be significantly inaccurate for strong
+ * rarefactions / near-vacuum conditions -- see math/riemann/exact.hpp for
+ * the true exact solver (Toro-style, case-classified shock/rarefaction
+ * relations solved via bisection).
  *
  * References:
  * - van Leer, B. (1997) "Towards the ultimate conservative difference scheme"
@@ -43,10 +48,11 @@ namespace shammodels::gsph::riemann {
     };
 
     /**
-     * @brief Iterative Riemann solver (van Leer 1997)
+     * @brief Approximate ("two-shock") iterative Riemann solver (van Leer 1997)
      *
-     * Solves the Riemann problem exactly for an ideal gas using Newton-Raphson
-     * iteration. Returns the interface pressure and velocity (p*, v*).
+     * Solves for an ideal gas using Newton-Raphson iteration on the shock
+     * relation applied to both sides. Returns the interface pressure and
+     * velocity (p*, v*). See math/riemann/exact.hpp for the true exact solver.
      *
      * The left/right convention is:
      * - Left state (L): particle on the "minus" side of the interface

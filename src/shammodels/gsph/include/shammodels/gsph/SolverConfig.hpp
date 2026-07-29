@@ -130,6 +130,10 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_riemann_hllc() { riemann_config.set_hllc(); }
 
+    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}, u32 max_iter = 100) {
+        riemann_config.set_exact(tol, max_iter);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Riemann Solver Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

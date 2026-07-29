@@ -88,6 +88,30 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Fast approximate Riemann solver that captures contact discontinuities.
     Recommended for general use - good balance of accuracy and speed.
 )==")
+        .def(
+            "set_riemann_exact",
+            [](TConfig &self, Tscal tol, u32 max_iter) {
+                self.set_riemann_exact(tol, max_iter);
+            },
+            py::kw_only(),
+            py::arg("tolerance") = Tscal{1e-8},
+            py::arg("max_iter")  = 100,
+            R"==(
+    Set exact Riemann solver (Toro 2009).
+
+    Classifies the wave pattern (shock/rarefaction on each side) from the
+    initial states, then solves the matching closed-form relation via
+    bisection. Most accurate but computationally expensive; unlike the
+    iterative (van Leer) solver, it also remains accurate for strong
+    rarefactions / near-vacuum conditions.
+
+    Parameters
+    ----------
+    tolerance : float
+        Bisection convergence tolerance (default: 1e-8)
+    max_iter : int
+        Maximum number of bisection iterations (default: 100)
+)==")
         // Reconstruction config
         .def(
             "set_reconstruct_piecewise_constant",

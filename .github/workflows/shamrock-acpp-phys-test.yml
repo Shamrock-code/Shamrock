@@ -83,6 +83,8 @@ jobs:
           - worldsize: 2
             testfile: gsph_sod_tube_gsph.py
           - worldsize: 1
+            testfile: gsph_sod_tube_exact_inutsuka.py
+          - worldsize: 1
             testfile: comp_phantom_sedov_1patch.py
           - worldsize: 2
             testfile: comp_phantom_sedov_1patch.py

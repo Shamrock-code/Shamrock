@@ -183,13 +183,21 @@ namespace shammodels::gsph::riemann {
 
         const Tscal v_lr_0 = left.v - right.v;
 
-        // Search for an upper bound where v_lr_ss(posi) - v_lr_0 > 0
-        Tscal posi = (left.p + right.p) * scale_up;
+        // Search for an upper bound where v_lr_ss(posi) - v_lr_0 > 0. v_lr_ss(p) is
+        // monotonically increasing and unbounded in p, so this always succeeds
+        // within a handful of iterations for any physical input; the loop bound
+        // and fallback below only guard against a degenerate/non-physical state.
+        Tscal posi     = (left.p + right.p) * scale_up;
+        bool bracketed = false;
         for (u32 i = 0; i < 300; ++i) {
             if (exact_v_lr_ss(posi, left, right, gamma) - v_lr_0 > Tscal{0}) {
+                bracketed = true;
                 break;
             }
             posi *= Tscal{10};
+        }
+        if (!bracketed) {
+            posi = sycl::fmax(left.p, right.p);
         }
         const Tscal nega = sycl::fmin(left.p, right.p) * scale_down;
 

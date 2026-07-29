@@ -117,7 +117,7 @@ namespace shammodels::sph {
 
             bool ensure_s_j_positivity = true;
 
-            bool smooth_s_positivity_limiter = true;
+            bool smooth_s_positivity_limiter = false;
 
             // use the corrected q_AV from Hutchison 2018 & Price Laibe 15
             bool dust_corrected_av = false;

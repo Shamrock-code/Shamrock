@@ -23,6 +23,7 @@
  *   Godunov-type particle hydrodynamics"
  */
 
+#include "shambase/constants.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
@@ -194,7 +195,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     // could be missing valid neighbors from the adjacent patch.
     Tscal h_evol_max = solver_config.htol_up_coarse_cycle;
     if (solver_config.is_force_inutsuka_v2()) {
-        h_evol_max *= Tscal{1.4142135623730951};
+        h_evol_max *= shambase::constants::sqrt_2<Tscal>;
     }
 
     storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
@@ -314,7 +315,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
     // before the leaf-level search even runs.
     Tscal htol = solver_config.htol_up_coarse_cycle;
     if (solver_config.is_force_inutsuka_v2()) {
-        htol *= Tscal{1.4142135623730951};
+        htol *= shambase::constants::sqrt_2<Tscal>;
     }
 
     storage.rtree_rint_field.set(
@@ -364,7 +365,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
     // the cached search radius accordingly, or pairs in (h*Rkern, sqrt(2)*h*Rkern)
     // would silently be missing from the cache for that formulation.
     if (solver_config.is_force_inutsuka_v2()) {
-        h_tolerance *= Tscal{1.4142135623730951};
+        h_tolerance *= shambase::constants::sqrt_2<Tscal>;
     }
 
     // Build neighbor cache using tree traversal - same approach as SPH module

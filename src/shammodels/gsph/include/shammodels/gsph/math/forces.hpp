@@ -27,6 +27,7 @@
  *   Riemann Solver"
  */
 
+#include "shambase/constants.hpp"
 #include "shambackends/math.hpp"
 #include "shambackends/sycl.hpp"
 #include "shammodels/gsph/math/reconstruction.hpp"
@@ -255,7 +256,7 @@ namespace shammodels::gsph {
             auto face = lin_v2_sast_ij<Tscal>(vol_a, vol_b, h_a, h_b, rab_inv);
 
             // Pair-symmetrized kernel gradient at sqrt(2)*h (Inutsuka 2002)
-            constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
+            constexpr Tscal sqrt2 = shambase::constants::sqrt_2<Tscal>;
             const Tscal Fab2_a    = Kernel::dW_3d(rab, sqrt2 * h_a);
             const Tscal Fab2_b    = Kernel::dW_3d(rab, sqrt2 * h_b);
             const Tvec grad_W_ij  = (Fab2_a + Fab2_b) * r_ab_unit;

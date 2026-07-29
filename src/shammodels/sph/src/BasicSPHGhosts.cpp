@@ -290,8 +290,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
     base_timer.start();
 
     if (BCPeriodic *cfg = std::get_if<BCPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
 
         for (i32 xoff = -repetition_x; xoff <= repetition_x; xoff++) {
             for (i32 yoff = -repetition_y; yoff <= repetition_y; yoff++) {
@@ -300,10 +299,8 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
                     // sender translation
                     vec periodic_offset = vec{xoff * bsize.x(), yoff * bsize.y(), zoff * bsize.z()};
 
-                    sycl::host_accessor tree{
-                        shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-                    sycl::host_accessor lpid{
-                        shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
+                    auto tree = sptree.serial_tree_buf->template mirror_to<sham::host>();
+                    auto lpid = sptree.linked_patch_ids_buf->template mirror_to<sham::host>();
 
 #pragma omp parallel for
                     for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
@@ -359,8 +356,7 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
             }
         }
     } else if (BCShearingPeriodic *cfg = std::get_if<BCShearingPeriodic>(&ghost_config)) {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
 
         for_each_patch_shift<flt>(*cfg, bsize, [&](i32_3 ioff, ShiftInfo<flt> shift) {
             i32 xoff = ioff.x();
@@ -369,10 +365,8 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
 
             vec offset = shift.shift;
 
-            sycl::host_accessor tree{
-                shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-            sycl::host_accessor lpid{
-                shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
+            auto tree = sptree.serial_tree_buf->template mirror_to<sham::host>();
+            auto lpid = sptree.linked_patch_ids_buf->template mirror_to<sham::host>();
 
 #pragma omp parallel for
             for (u32 i = 0; i < sched.patch_list.local.size(); i++) {
@@ -429,14 +423,12 @@ auto BasicSPHGhostHandler<vec>::find_interfaces(
         });
 
     } else {
-        sycl::host_accessor acc_tf{
-            shambase::get_check_ref(int_range_max_tree.internal_buf), sycl::read_only};
+        auto acc_tf = int_range_max_tree.internal_buf->template mirror_to<sham::host>();
         // sender translation
         vec periodic_offset = vec{0, 0, 0};
 
-        sycl::host_accessor tree{shambase::get_check_ref(sptree.serial_tree_buf), sycl::read_only};
-        sycl::host_accessor lpid{
-            shambase::get_check_ref(sptree.linked_patch_ids_buf), sycl::read_only};
+        auto tree = sptree.serial_tree_buf->template mirror_to<sham::host>();
+        auto lpid = sptree.linked_patch_ids_buf->template mirror_to<sham::host>();
 
 #pragma omp parallel for
         for (u32 i = 0; i < sched.patch_list.local.size(); i++) {

@@ -34,6 +34,7 @@ set(Sources
     src/modules/UpdateDerivs.cpp
     src/modules/ComputeLoadBalanceValue.cpp
     src/modules/ComputeOmega.cpp
+    src/modules/ComputeJ.cpp
     src/modules/ComputeLuminosity.cpp
     src/modules/NeighbourCache.cpp
     src/modules/ParticleReordering.cpp

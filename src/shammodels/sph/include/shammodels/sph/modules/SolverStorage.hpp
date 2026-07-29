@@ -105,6 +105,10 @@ namespace shammodels::sph {
         Component<shamrock::ComputeField<Tvec>> old_dB_on_rho;
         Component<shamrock::ComputeField<Tscal>> old_dpsi_on_ch;
 
+        Component<shambase::DistributedData<PatchDataField<Tvec>>> MagCurrentJ_ghost;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> MagCurrentJ;
+        std::shared_ptr<shamrock::solvergraph::ExchangeGhostField<Tvec>> exchange_gz_J;
+
         Component<shamrock::ComputeField<Tscal>> old_dtepsilon;
         Component<shamrock::ComputeField<Tvec>> old_dtdeltav;
         Component<shamrock::ComputeField<Tscal>> old_ds_j_dt;

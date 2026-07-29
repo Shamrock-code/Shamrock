@@ -310,6 +310,14 @@ struct shammodels::gsph::SolverConfig {
         if (is_eos_adiabatic() && get_eos_gamma() <= 1) {
             shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for adiabatic gas");
         }
+
+        // InutsukaV2 is only wired into update_derivs_iterative()/update_derivs_exact();
+        // update_derivs_hllc() would silently fall back to ChaWhitworth otherwise.
+        if (force_formulation_config.is_inutsuka_v2() && riemann_config.is_hllc()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "InutsukaV2 force formulation is not yet supported with the HLLC Riemann "
+                "solver. Use set_riemann_iterative() or set_riemann_exact() instead.");
+        }
     }
 
     inline void check_config_runtime() const {

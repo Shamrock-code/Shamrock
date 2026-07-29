@@ -188,10 +188,19 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     using GSPHUtils = GSPHUtilities<Tvec, Kernel>;
     GSPHUtils gsph_utils(scheduler());
 
+    // Same widening as compute_presteps_rint()/start_neighbors_cache(): with
+    // InutsukaV2 the kernel support is sqrt(2)*h, so the patch/rank ghost
+    // interface radius must widen too, or particles near a patch boundary
+    // could be missing valid neighbors from the adjacent patch.
+    Tscal h_evol_max = solver_config.htol_up_coarse_cycle;
+    if (solver_config.is_force_inutsuka_v2()) {
+        h_evol_max *= Tscal{1.4142135623730951};
+    }
+
     storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
         shambase::get_check_ref(storage.ghost_handler).get(),
         storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+        h_evol_max));
 }
 
 template<class Tvec, template<class> class Kern>

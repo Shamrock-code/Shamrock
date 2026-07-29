@@ -153,6 +153,12 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
             constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
             constexpr Tscal sqrt2 = Tscal{1.4142135623730951};
 
+            // InutsukaV2 evaluates the kernel gradient at sqrt(2)*h, so the local
+            // kernel-support filter below must match the widened cache radius
+            // (see start_neighbors_cache()/compute_presteps_rint() in Solver.cpp),
+            // or valid cached pairs beyond h*Rkern get dropped here regardless.
+            const Tscal Rker2_factor = use_inutsuka_v2 ? Tscal{2} : Tscal{1};
+
             shambase::parallel_for(cgh, pdat.get_obj_cnt(), "GSPH derivs iterative", [=](u64 gid) {
                 u32 id_a = (u32) gid;
 
@@ -186,7 +192,8 @@ void shammodels::gsph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_ite
                     const Tscal h_b  = hpart[id_b];
 
                     // Skip if outside kernel support
-                    if (rab2 > h_a * h_a * Rker2 && rab2 > h_b * h_b * Rker2) {
+                    if (rab2 > h_a * h_a * Rker2 * Rker2_factor
+                        && rab2 > h_b * h_b * Rker2 * Rker2_factor) {
                         return;
                     }
 

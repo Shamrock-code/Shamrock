@@ -297,6 +297,17 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
     auto &xyzh_merged = storage.merged_xyzh.get();
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
+    // The Inutsuka V2 force formulation evaluates the kernel gradient at an
+    // effective smoothing length sqrt(2)*h (Inutsuka 2002). This tree-node
+    // interaction-range field is used to prune tree traversal in
+    // start_neighbors_cache(), so it must be widened by the same factor, or
+    // whole subtrees containing valid sqrt(2)*h-range neighbors get pruned
+    // before the leaf-level search even runs.
+    Tscal htol = solver_config.htol_up_coarse_cycle;
+    if (solver_config.is_force_inutsuka_v2()) {
+        htol *= Tscal{1.4142135623730951};
+    }
+
     storage.rtree_rint_field.set(
         storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
             [&](u64 id, RTree &rtree) -> shamtree::KarrasRadixTreeField<Tscal> {
@@ -316,7 +327,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
                     sham::MultiRef{},
                     sham::MultiRef{ret.buf_field},
                     ret.buf_field.get_size(),
-                    [htol = solver_config.htol_up_coarse_cycle](u32 i, Tscal *h_tree) {
+                    [htol](u32 i, Tscal *h_tree) {
                         h_tree[i] *= htol;
                     });
 

@@ -39,7 +39,11 @@ def _phi_raref(p, rho_K, p_K, gamma):
 
 
 def _phi(p, wave_type, rho_K, p_K, gamma):
-    return _phi_shock(p, rho_K, p_K, gamma) if wave_type == "shock" else _phi_raref(p, rho_K, p_K, gamma)
+    return (
+        _phi_shock(p, rho_K, p_K, gamma)
+        if wave_type == "shock"
+        else _phi_raref(p, rho_K, p_K, gamma)
+    )
 
 
 def exact_riemann_profile(x, t, rho_L, u_L, p_L, rho_R, u_R, p_R, gamma):
@@ -109,11 +113,14 @@ def exact_riemann_profile(x, t, rho_L, u_L, p_L, rho_R, u_R, p_R, gamma):
 
     if left_type == "shock":
         rho_star_L = rho_L * (
-            (p_star / p_L + (gamma - 1) / (gamma + 1)) / ((gamma - 1) / (gamma + 1) * (p_star / p_L) + 1)
+            (p_star / p_L + (gamma - 1) / (gamma + 1))
+            / ((gamma - 1) / (gamma + 1) * (p_star / p_L) + 1)
         )
-        left = {"type": "shock", "S": u_L - c_L * np.sqrt(
-            (gamma + 1) / (2 * gamma) * (p_star / p_L) + (gamma - 1) / (2 * gamma)
-        )}
+        left = {
+            "type": "shock",
+            "S": u_L
+            - c_L * np.sqrt((gamma + 1) / (2 * gamma) * (p_star / p_L) + (gamma - 1) / (2 * gamma)),
+        }
     else:
         rho_star_L = rho_L * (p_star / p_L) ** (1.0 / gamma)
         left = {
@@ -124,11 +131,14 @@ def exact_riemann_profile(x, t, rho_L, u_L, p_L, rho_R, u_R, p_R, gamma):
 
     if right_type == "shock":
         rho_star_R = rho_R * (
-            (p_star / p_R + (gamma - 1) / (gamma + 1)) / ((gamma - 1) / (gamma + 1) * (p_star / p_R) + 1)
+            (p_star / p_R + (gamma - 1) / (gamma + 1))
+            / ((gamma - 1) / (gamma + 1) * (p_star / p_R) + 1)
         )
-        right = {"type": "shock", "S": u_R + c_R * np.sqrt(
-            (gamma + 1) / (2 * gamma) * (p_star / p_R) + (gamma - 1) / (2 * gamma)
-        )}
+        right = {
+            "type": "shock",
+            "S": u_R
+            + c_R * np.sqrt((gamma + 1) / (2 * gamma) * (p_star / p_R) + (gamma - 1) / (2 * gamma)),
+        }
     else:
         rho_star_R = rho_R * (p_star / p_R) ** (1.0 / gamma)
         right = {
@@ -212,8 +222,12 @@ model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.add_cube_hcp_3d(dr, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 model.set_field_in_box("uint", "f64", uint0, (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
-model.set_field_in_box("vxyz", "f64_3", (u_L, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
-model.set_field_in_box("vxyz", "f64_3", (u_R, 0.0, 0.0), (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
+model.set_field_in_box(
+    "vxyz", "f64_3", (u_L, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2)
+)
+model.set_field_in_box(
+    "vxyz", "f64_3", (u_R, 0.0, 0.0), (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2)
+)
 
 vol_b = xs * ys * zs
 totmass = 2 * rho_L * vol_b
@@ -269,7 +283,7 @@ ax.plot(arr_x, arr_P, ls="--", lw=2.0, color="black")
 
 ax.set_xlim(-0.45, 0.45)
 ax.set_xlabel("x")
-ax.set_title(f"GSPH \"123 problem\" (exact Riemann solver + Inutsuka V2), t={t_target}")
+ax.set_title(f'GSPH "123 problem" (exact Riemann solver + Inutsuka V2), t={t_target}')
 ax.legend(loc=0)
 ax.grid(alpha=0.3)
 

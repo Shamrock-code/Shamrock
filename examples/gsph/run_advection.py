@@ -63,7 +63,9 @@ model.add_cube_hcp_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
 model.add_cube_hcp_3d(dr * fact, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 model.set_field_in_box("uint", "f64", uint_L, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
 model.set_field_in_box("uint", "f64", uint_R, (0, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
-model.set_field_in_box("vxyz", "f64_3", (u0, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
+model.set_field_in_box(
+    "vxyz", "f64_3", (u0, 0.0, 0.0), (-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2)
+)
 
 vol_b = xs * ys * zs
 totmass = (rho_R * vol_b) + (rho_L * vol_b)

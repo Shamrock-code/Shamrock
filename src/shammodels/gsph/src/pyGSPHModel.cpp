@@ -42,8 +42,9 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     using Tscal = shambase::VecComponent<Tvec>;
 
-    using T       = Model<Tvec, SPHKernel>;
-    using TConfig = typename T::SolverConfig;
+    using T         = Model<Tvec, SPHKernel>;
+    using TSPHSetup = modules::GSPHSetup<Tvec, SPHKernel>;
+    using TConfig   = typename T::SolverConfig;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -129,6 +130,23 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     cs : float
         Sound speed
 )==")
+        .def(
+            "set_eos_locally_isothermalFA2014",
+            [](TConfig &self, Tscal h_over_r) {
+                self.set_eos_locally_isothermalFA2014(h_over_r);
+            },
+            py::kw_only(),
+            py::arg("h_over_r"))
+        .def(
+            "set_eos_locally_isothermalFA2014_extended",
+            [](TConfig &self, Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+                self.set_eos_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+            },
+            py::kw_only(),
+            py::arg("cs0"),
+            py::arg("q"),
+            py::arg("r0"),
+            py::arg("n_sinks"))
         // Boundary config
         .def("set_boundary_free", &TConfig::set_boundary_free)
         .def("set_boundary_periodic", &TConfig::set_boundary_periodic)
@@ -168,6 +186,212 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::kw_only(),
             py::arg("split_load_value"),
             py::arg("merge_load_value"));
+
+    std::string setup_name = name_model + "_SPHSetup";
+    py::class_<TSPHSetup>(m, setup_name.c_str())
+        .def(
+            "make_generator_disc_mc",
+            [](TSPHSetup &self,
+               Tscal part_mass,
+               Tscal disc_mass,
+               Tscal r_in,
+               Tscal r_out,
+               std::function<Tscal(Tscal)> sigma_profile,
+               std::function<Tscal(Tscal)> H_profile,
+               std::function<Tscal(Tscal)> rot_profile,
+               std::function<Tscal(Tscal)> cs_profile,
+               std::function<Tvec(Tvec)> velocity_field,
+               std::function<Tscal(Tvec)> cs_field,
+               u64 random_seed,
+               Tscal init_h_factor) {
+                auto build_vel_lambda = [&]() -> std::function<Tvec(Tvec)> {
+                    if (!velocity_field && !rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (velocity_field && rot_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either velocity_field or rot_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (velocity_field) {
+                        return std::move(velocity_field);
+                    }
+                    return [vth_r = std::move(rot_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+
+                        auto etheta = sycl::vec<Tscal, 3>{-pos.y(), pos.x(), 0};
+                        etheta /= sycl::length(etheta);
+
+                        return vth_r(r) * etheta;
+                    };
+                };
+
+                auto build_cs_lambda = [&]() -> std::function<Tscal(Tvec)> {
+                    bool need_cs = false; // self.solver_config.is_eos_locally_isothermal();
+
+                    if (!need_cs) {
+                        if (cs_field) {
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_field is "
+                                    "ignored");
+                            }
+                        }
+                        if (cs_profile) {
+                            if (shamcomm::world_rank() == 0) {
+                                logger::warn_ln(
+                                    "SPHSetup",
+                                    "make_generator_disc_mc: with the current EOS, cs_profile is "
+                                    "ignored");
+                            }
+                        }
+                        return std::function<Tscal(Tvec)>{};
+                    }
+
+                    if (!cs_field && !cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you must provide one of them");
+                    }
+
+                    if (cs_field && cs_profile) {
+                        throw shambase::make_except_with_loc<std::invalid_argument>(
+                            "make_generator_disc_mc: either cs_field or cs_profile must be "
+                            "provided, you cannot provide both");
+                    }
+
+                    if (cs_field) {
+                        return std::move(cs_field);
+                    }
+
+                    return [cs_r = std::move(cs_profile)](Tvec pos) {
+                        pos[2]  = 0; // to get the cylindrical radius
+                        Tscal r = sycl::length(pos);
+                        return cs_r(r);
+                    };
+                };
+
+                return self.make_generator_disc_mc(
+                    part_mass,
+                    disc_mass,
+                    r_in,
+                    r_out,
+                    std::move(sigma_profile),
+                    std::move(H_profile),
+                    build_vel_lambda(),
+                    build_cs_lambda(),
+                    std::mt19937_64(random_seed),
+                    init_h_factor);
+            },
+            py::kw_only(),
+            py::arg("part_mass"),
+            py::arg("disc_mass"),
+            py::arg("r_in"),
+            py::arg("r_out"),
+            py::arg("sigma_profile"),
+            py::arg("H_profile"),
+            py::arg("rot_profile")    = std::function<Tscal(Tscal)>{},
+            py::arg("cs_profile")     = std::function<Tscal(Tscal)>{},
+            py::arg("velocity_field") = std::function<Tvec(Tvec)>{},
+            py::arg("cs_field")       = std::function<Tscal(Tvec)>{},
+            py::arg("random_seed"),
+            py::arg("init_h_factor") = 0.8,
+            R"pbdoc(
+        Create a Monte Carlo disc particle generator.
+
+        Particles are sampled in cylindrical coordinates: the radius is drawn
+        with rejection sampling from ``sigma_profile``, the azimuth is uniform,
+        and the vertical coordinate follows a Gaussian with scale ``H_profile(r)``.
+        The initial density is extrapolated from the surface density profile, and
+        smoothing lengths are set from that density.
+
+        Args:
+            part_mass: Mass of each SPH particle.
+            disc_mass: Total disc mass. The particle count is ``disc_mass / part_mass``.
+            r_in: Inner disc radius.
+            r_out: Outer disc radius.
+            sigma_profile: Surface density profile ``sigma(r)``.
+            H_profile: Disc scale height profile ``H(r)``.
+            rot_profile: Azimuthal speed profile ``v_theta(r)``. The velocity is
+                projected along the cylindrical azimuthal direction at each
+                particle position. Mutually exclusive with ``velocity_field``.
+            cs_profile: Sound speed profile ``c_s(r)``. Evaluated at the cylindrical
+                radius of each particle. Required when the solver uses a locally
+                isothermal EOS. Mutually exclusive with ``cs_field``.
+            velocity_field: Velocity profile ``v(x, y, z)``. Mutually exclusive
+                with ``rot_profile``.
+            cs_field: Sound speed profile ``c_s(x, y, z)``. Required when the solver
+                uses a locally isothermal EOS. Mutually exclusive with ``cs_profile``.
+            random_seed: Seed for the Monte Carlo sampler.
+            init_h_factor: Multiplier applied to the smoothing length inferred from
+                the generated density. Defaults to ``0.8``.
+
+        Notes:
+            Exactly one of ``velocity_field`` or ``rot_profile`` must be provided.
+
+            If the solver uses a locally isothermal EOS, exactly one of ``cs_field``
+            or ``cs_profile`` must be provided. Otherwise both sound-speed profiles
+            are ignored and a warning is emitted if either is supplied.
+
+        Returns:
+            A setup node to pass to :py:meth:`apply_setup`.
+    )pbdoc")
+        .def(
+            "apply_setup",
+            [](TSPHSetup &self,
+               modules::SetupNodePtr setup,
+               bool part_reordering,
+               std::optional<u32> gen_step,
+               std::optional<u32> insert_step,
+               std::optional<u64> msg_count_limit,
+               std::optional<u64> msg_size_limit,
+               std::optional<u64> max_msg_size,
+               bool do_setup_log,
+               bool use_new_setup,
+               bool speculative_balancing) {
+                if (bool(gen_step)) {
+                    ON_RANK_0(
+                        logger::warn_ln("SPHSetup", "gen_step is ignored when using old setup"));
+                }
+                if (bool(msg_count_limit)) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPHSetup", "msg_count_limit is ignored when using old setup"));
+                }
+                if (bool(msg_size_limit)) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPHSetup", "msg_size_limit is ignored when using old setup"));
+                }
+                if (bool(max_msg_size)) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPHSetup", "max_msg_size is ignored when using old setup"));
+                }
+                if (bool(do_setup_log)) {
+                    ON_RANK_0(
+                        logger::warn_ln(
+                            "SPHSetup", "do_setup_log is ignored when using old setup"));
+                }
+                return self.apply_setup(setup, part_reordering, insert_step);
+            },
+            py::arg("setup"),
+            py::kw_only(),
+            py::arg("part_reordering")       = true,
+            py::arg("gen_step")              = std::nullopt,
+            py::arg("insert_step")           = std::nullopt,
+            py::arg("msg_count_limit")       = std::nullopt,
+            py::arg("rank_comm_size_limit")  = std::nullopt,
+            py::arg("max_msg_size")          = std::nullopt,
+            py::arg("do_setup_log")          = false,
+            py::arg("use_new_setup")         = true,
+            py::arg("speculative_balancing") = false);
 
     py::class_<T>(m, name_model.c_str())
         .def(py::init([](ShamrockCtx &ctx) {
@@ -352,6 +576,28 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                 return self.solver.solver_config;
             })
         .def("set_solver_config", &T::set_solver_config)
+        .def("add_sink", &T::add_sink)
+        .def(
+            "get_sinks",
+            [](T &self) {
+                py::list list_out;
+
+                if (!self.solver.storage.sinks.is_empty()) {
+                    for (auto &sink : self.solver.storage.sinks.get()) {
+                        py::dict sink_dic;
+                        sink_dic["pos"]              = sink.pos;
+                        sink_dic["velocity"]         = sink.velocity;
+                        sink_dic["sph_acceleration"] = sink.sph_acceleration;
+                        sink_dic["ext_acceleration"] = sink.ext_acceleration;
+                        sink_dic["mass"]             = sink.mass;
+                        sink_dic["angular_momentum"] = sink.angular_momentum;
+                        sink_dic["accretion_radius"] = sink.accretion_radius;
+                        list_out.append(sink_dic);
+                    }
+                }
+
+                return list_out;
+            })
         .def("do_vtk_dump", &T::do_vtk_dump)
         .def("solver_logs_last_rate", &T::solver_logs_last_rate)
         .def("solver_logs_last_obj_count", &T::solver_logs_last_obj_count)
@@ -410,7 +656,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     Example
     -------
     >>> model.dump("checkpoint.shamrock")
-)==");
+)==")
+        .def("get_setup", &T::get_setup);
 }
 
 using namespace shammodels::gsph;
@@ -421,6 +668,13 @@ ON_PYTHON_INIT {
     py::module mgsph = m.def_submodule("model_gsph", "Shamrock GSPH (Godunov SPH) solver");
 
     using namespace shammodels::gsph;
+
+    py::class_<
+        shammodels::gsph::modules::IGSPHSetupNode,
+        std::shared_ptr<shammodels::gsph::modules::IGSPHSetupNode>>(mgsph, "IGSPHSetupNode")
+        .def("get_dot", [](std::shared_ptr<shammodels::gsph::modules::IGSPHSetupNode> &self) {
+            return self->get_dot();
+        });
 
     // Register GSPH models for different kernels
     add_gsph_instance<f64_3, shammath::M4>(

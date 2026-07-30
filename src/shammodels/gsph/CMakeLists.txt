@@ -18,6 +18,9 @@ set(Sources
     src/modules/UpdateDerivs.cpp
     src/modules/GSPHGhostHandler.cpp
     src/modules/io/VTKDump.cpp
+    src/modules/GSPHSetup.cpp
+    src/modules/GeneratorMCDisc.cpp
+    src/modules/ComputeLoadBalanceValue.cpp
 )
 
 if(SHAMROCK_USE_SHARED_LIB)

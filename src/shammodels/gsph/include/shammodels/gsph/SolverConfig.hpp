@@ -192,6 +192,31 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state fromFarris 2014
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     */
+    inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
+        eos_config.set_locally_isothermalFA2014(h_over_r);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     * extended to q != 1/2
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     * @param n_sinks Number of sinks to consider for the equation of state
+     */
+    inline void set_eos_locally_isothermalFA2014_extended(
+        Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+        eos_config.set_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

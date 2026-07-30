@@ -182,6 +182,14 @@ jobs:
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"
             artifact_name: gallery_gsph_run_sod
+          - testfile: "examples/gsph/run_advection.py"
+            artifact_name: gallery_gsph_run_advection
+          - testfile: "examples/gsph/run_123_problem.py"
+            artifact_name: gallery_gsph_run_123_problem
+          - testfile: "examples/gsph/run_symmetric_collision.py"
+            artifact_name: gallery_gsph_run_symmetric_collision
+          - testfile: "examples/gsph/run_blast_wave.py"
+            artifact_name: gallery_gsph_run_blast_wave
 
           # SPH examples
           - testfile: "examples/sph/run_circular_disc_lense_thirring.py"

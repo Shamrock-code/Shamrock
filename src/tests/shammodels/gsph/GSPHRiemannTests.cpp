@@ -102,11 +102,8 @@ namespace {
          .tolerance    = 1.0},
 
         // Test 5: Lax shock tube (left rarefaction + right shock)
-        // p_star_exact/u_star_exact verified independently by solving Toro's
-        // f_L(p) + f_R(p) + (u_R - u_L) = 0 directly via bisection: the
-        // previous values here (1.12838, 0.92840) did not satisfy that
-        // equation and were simply wrong -- shamrock's own (approximate)
-        // iterative_solver already agrees with the corrected value to ~0.02%.
+        // p_star_exact/u_star_exact verified by solving Toro's
+        // f_L(p) + f_R(p) + (u_R - u_L) = 0 directly via bisection.
         {.name         = "Lax",
          .rho_L        = 0.445,
          .u_L          = 0.698,

@@ -55,13 +55,6 @@ namespace shammodels::gsph::riemann {
         const Tscal inv_gp1 = Tscal{1} / (gamma + Tscal{1});
         const Tscal A       = Tscal{2} * inv_gp1 / r1;
         // Toro (2009) eq. 4.7: B_K = p_K*(gamma-1)/(gamma+1) -- pressure-dimensioned.
-        // The reference this was ported from used r1 (density) here instead of p1,
-        // which is dimensionally inconsistent and was verified (against Toro's
-        // published exact solutions, e.g. the Lax test) to introduce errors up to
-        // ~100% for states where density and pressure differ substantially; for
-        // states where rho_K happens to be numerically close to p_K (e.g. Sod's
-        // left state) the bug is masked by a <1% error, which is why it wasn't
-        // caught by simpler test cases.
         const Tscal B = p1 * (gamma - Tscal{1}) * inv_gp1;
         return Tscal{-1} * LR * (p2 - p1) * sycl::sqrt(A / (p2 + B));
     }

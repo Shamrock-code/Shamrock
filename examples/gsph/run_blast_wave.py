@@ -29,7 +29,7 @@ rho_L, rho_R = 1.0, 1.0
 P_L, P_R = 3000.0, 1e-7
 u_L = P_L / ((gamma - 1) * rho_L)
 u_R = P_R / ((gamma - 1) * rho_R)
-resol = 100
+resol = 24
 
 # %%
 # Setup the solver: GSPH with the exact Riemann solver and the Inutsuka V2

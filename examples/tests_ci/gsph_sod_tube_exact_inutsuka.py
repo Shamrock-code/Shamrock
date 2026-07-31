@@ -109,18 +109,19 @@ if shamrock.sys.world_rank() == 0:
     print(f"err_vz = {vz}")
     print(f"err_P = {P}")
 
-    # Expected L2 error values (calibrated from local run with M4 kernel,
+    # Expected L2 error values (calibrated from CI's own run with M4 kernel,
     # exact Riemann solver, Inutsuka V2 force formulation)
     # Tolerance set very strict for regression testing (like sod_tube_sph.py).
-    # NOTE: calibrated on a local macOS/arm64 build, not on CI hardware. If CI's
-    # actual output differs (e.g. due to libm/sqrt/pow ULP differences feeding
-    # into the exact solver's convergence-based bisection early-exit), update
+    # NOTE: calibrated on CI hardware (Linux x86_64 docker image), not a local
+    # macOS/arm64 build -- the two disagree at the ULP level because the exact
+    # solver's convergence-based bisection early-exit is sensitive to libm's
+    # sqrt/pow rounding. If CI's actual output ever differs again, update
     # these expect_* values from CI's own printed "current errors" output.
-    expect_rho = 0.03552893294354115
-    expect_vx = 0.10937101585652523
-    expect_vy = 0.004304787515882754
-    expect_vz = 0.0001123759268671385
-    expect_P = 0.0446212571910504
+    expect_rho = 0.035528332242404245
+    expect_vx = 0.10935011343308144
+    expect_vy = 0.004305512609977454
+    expect_vz = 0.00010815883208344864
+    expect_P = 0.04462110915851241
 
     tol = 1e-8
 

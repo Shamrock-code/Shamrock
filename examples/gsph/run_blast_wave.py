@@ -29,7 +29,12 @@ rho_L, rho_R = 1.0, 1.0
 P_L, P_R = 3000.0, 1e-7
 u_L = P_L / ((gamma - 1) * rho_L)
 u_R = P_R / ((gamma - 1) * rho_R)
-resol = 24
+resol = 32
+# The disturbance from such an extreme pressure ratio moves fast enough that a
+# unit-half-width box (as used by the other gsph examples) is under-resolved
+# and lets the periodic boundary interact with the shock well before
+# t_target; stretching the box in x (same particle spacing dr) fixes both.
+domain_scale = 2.0
 
 # %%
 # Setup the solver: GSPH with the exact Riemann solver and the Inutsuka V2
@@ -56,6 +61,7 @@ model.init_scheduler(int(1e8), 1)
 (xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, 24, 24)
 dr = 1 / xs
 (xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 24, 24)
+xs *= domain_scale
 model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.add_cube_hcp_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
@@ -99,7 +105,7 @@ P = (gamma - 1) * rho * uint
 
 sod = shamrock.phys.SodTube(gamma=gamma, rho_1=rho_L, P_1=P_L, rho_5=rho_R, P_5=P_R)
 
-arr_x = np.linspace(-0.5, 0.5, 1000)
+arr_x = np.linspace(-xs, xs, 2000)
 arr_rho = np.zeros_like(arr_x)
 arr_vx = np.zeros_like(arr_x)
 arr_P = np.zeros_like(arr_x)
@@ -116,7 +122,7 @@ ax[0].scatter(x, rho, rasterized=True, s=6 * np.ones(x.shape), label="density")
 ax[0].scatter(x, vx / 1e3, rasterized=True, s=6 * np.ones(x.shape), label="velocity / 1e3")
 ax[0].plot(arr_x, arr_rho, ls="--", lw=2.0, color="black", label="analytic")
 ax[0].plot(arr_x, arr_vx / 1e3, ls="--", lw=2.0, color="black")
-ax[0].set_xlim(-0.5, 0.5)
+ax[0].set_xlim(-xs, xs)
 ax[0].set_xlabel("x")
 ax[0].set_title("density, velocity")
 ax[0].legend(loc=0)
@@ -124,7 +130,7 @@ ax[0].grid(alpha=0.3)
 
 ax[1].scatter(x, P, rasterized=True, s=6 * np.ones(x.shape), label="pressure")
 ax[1].plot(arr_x, arr_P, ls="--", lw=2.0, color="black", label="analytic")
-ax[1].set_xlim(-0.5, 0.5)
+ax[1].set_xlim(-xs, xs)
 ax[1].set_yscale("log")
 ax[1].set_xlabel("x")
 ax[1].set_title("pressure (log scale)")

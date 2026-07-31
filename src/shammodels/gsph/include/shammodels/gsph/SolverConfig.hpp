@@ -72,6 +72,7 @@ namespace shammodels::gsph {
     struct CFLConfig {
         Tscal cfl_cour  = 0.3;  ///< CFL condition for the courant factor
         Tscal cfl_force = 0.25; ///< CFL condition for the force
+        Tscal eta_sink  = 0.05;
     };
 
 } // namespace shammodels::gsph

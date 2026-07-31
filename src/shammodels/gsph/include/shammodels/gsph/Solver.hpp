@@ -216,6 +216,13 @@ namespace shammodels::gsph {
          */
         Tscal compute_dt_cfl();
 
+        /**
+         * @brief Compute sink timestep constraint
+         *
+         * @return Minimum CFL timestep across all particles
+         */
+        Tscal compute_sink_cfl();
+
         bool apply_corrector(Tscal dt, u64 Npart_all);
 
         void update_sync_load_values();

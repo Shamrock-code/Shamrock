@@ -1648,6 +1648,52 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
 }
 
 template<class Tvec, template<class> class Kern>
+typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tvec, Kern>::
+    compute_sink_cfl() {
+    StackEntry stack_loc{};
+
+    Tscal C_cour  = solver_config.cfl_config.cfl_cour;
+    Tscal C_force = solver_config.cfl_config.cfl_force;
+    Tscal eta_phi = solver_config.cfl_config.eta_sink;
+
+    Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+
+    Tscal G = solver_config.get_constant_G();
+
+    std::vector<sph::SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+    for (u32 i = 0; i < sink_parts.size(); i++) {
+        sph::SinkParticle<Tvec> &s_i = sink_parts[i];
+        Tscal sink_sink_cfl_i        = shambase::get_infty<Tscal>();
+
+        Tvec f_i = s_i.ext_acceleration;
+
+        Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+
+        if (grad_phi_i_sq == 0) {
+            continue;
+        }
+
+        for (u32 j = 0; j < sink_parts.size(); j++) {
+            sph::SinkParticle<Tvec> &s_j = sink_parts[j];
+            if (i == j) {
+                continue;
+            }
+            Tvec rij        = s_i.pos - s_j.pos;
+            Tscal rij_scal  = sycl::length(rij);
+            Tscal phi_ij    = G * s_j.mass / rij_scal;                 // J / kg = m^2.s^-2
+            Tscal term_ij   = sham::abs(phi_ij) / grad_phi_i_sq;       // s^2
+            Tscal dt_ij     = C_force * eta_phi * sycl::sqrt(term_ij); // s
+            sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+        }
+
+        sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+    }
+
+    return sink_sink_cfl;
+}
+
+template<class Tvec, template<class> class Kern>
 bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_all) {
     StackEntry stack_loc{};
 

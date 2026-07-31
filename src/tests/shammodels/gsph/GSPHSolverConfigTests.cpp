@@ -66,6 +66,41 @@ namespace {
         REQUIRE(true);
     }
 
+    //==========================================================================
+    // SCENARIO: set_force_cha_whitworth() and is_force_inutsuka_v2() wrappers
+    //==========================================================================
+
+    void test_set_force_cha_whitworth_explicit() {
+        Config cfg;
+        cfg.set_force_inutsuka_v2();
+        REQUIRE(cfg.is_force_inutsuka_v2());
+
+        // Explicitly switch back, exercising the setter directly rather than
+        // relying on the default-constructed value.
+        cfg.set_force_cha_whitworth();
+        REQUIRE(!cfg.is_force_inutsuka_v2());
+    }
+
+    //==========================================================================
+    // SCENARIO: SolverConfig::print_status() runs without throwing, for either
+    // force formulation
+    //==========================================================================
+
+    void test_print_status_smoke() {
+        Config cfg_cha;
+        cfg_cha.set_force_cha_whitworth();
+        cfg_cha.set_eos_adiabatic(1.4);
+        cfg_cha.print_status();
+
+        Config cfg_v2;
+        cfg_v2.set_force_inutsuka_v2();
+        cfg_v2.set_riemann_exact();
+        cfg_v2.set_eos_adiabatic(1.4);
+        cfg_v2.print_status();
+
+        REQUIRE(true);
+    }
+
 } // namespace
 
 NEW_TEST(Unittest, "shammodels/gsph/solverconfig/inutsuka_v2_hllc_rejected", 1) {
@@ -78,4 +113,12 @@ NEW_TEST(Unittest, "shammodels/gsph/solverconfig/inutsuka_v2_iterative_exact_acc
 
 NEW_TEST(Unittest, "shammodels/gsph/solverconfig/cha_whitworth_hllc_accepted", 1) {
     test_cha_whitworth_hllc_accepted();
+}
+
+NEW_TEST(Unittest, "shammodels/gsph/solverconfig/set_force_cha_whitworth", 1) {
+    test_set_force_cha_whitworth_explicit();
+}
+
+NEW_TEST(Unittest, "shammodels/gsph/solverconfig/print_status_smoke", 1) {
+    test_print_status_smoke();
 }

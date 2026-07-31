@@ -13,6 +13,7 @@
  * @brief Unit tests for ForceFormulationConfig and RiemannConfig JSON (de)serialization
  */
 
+#include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/ForceFormulationConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
 #include "shamtest/shamtest.hpp"
@@ -126,6 +127,30 @@ namespace {
         REQUIRE(hllc_out.is_hllc());
     }
 
+    //==========================================================================
+    // SCENARIO: full SolverConfig JSON roundtrip, including force_formulation_config
+    //==========================================================================
+
+    void test_solver_config_json_roundtrip_with_force_formulation() {
+        using Config = shammodels::gsph::SolverConfig<f64_3, shammath::M4>;
+
+        Config in_cfg;
+        in_cfg.set_force_inutsuka_v2();
+        in_cfg.set_riemann_exact(1e-9, 42);
+        in_cfg.set_eos_adiabatic(1.4);
+        in_cfg.gpart_mass = 2.5;
+        in_cfg.print_status();
+
+        nlohmann::json j    = in_cfg;
+        nlohmann::json jout = nlohmann::json::parse(j.dump(4));
+        Config out_cfg      = jout.template get<Config>();
+
+        REQUIRE(out_cfg.is_force_inutsuka_v2());
+        REQUIRE(out_cfg.riemann_config.is_exact());
+        REQUIRE_FLOAT_EQUAL_NAMED("gpart_mass roundtrips", out_cfg.gpart_mass, f64(2.5), 1e-15);
+        out_cfg.check_config(); // InutsukaV2 + Exact must still be a valid combination
+    }
+
 } // namespace
 
 NEW_TEST(Unittest, "shammodels/gsph/config/force_formulation_json_cha_whitworth", 1) {
@@ -150,4 +175,8 @@ NEW_TEST(Unittest, "shammodels/gsph/config/riemann_exact_json_backward_compat", 
 
 NEW_TEST(Unittest, "shammodels/gsph/config/riemann_iterative_hllc_json_roundtrip", 1) {
     test_riemann_config_iterative_and_hllc_json_roundtrip();
+}
+
+NEW_TEST(Unittest, "shammodels/gsph/config/solver_config_json_roundtrip", 1) {
+    test_solver_config_json_roundtrip_with_force_formulation();
 }

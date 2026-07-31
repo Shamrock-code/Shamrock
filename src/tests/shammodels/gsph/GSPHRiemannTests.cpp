@@ -347,6 +347,35 @@ namespace {
     }
 
     //==========================================================================
+    // SCENARIO: exact_solver's degenerate-input guard (rho or p below 1e-25)
+    //==========================================================================
+
+    void test_exact_solver_degenerate_input_guard() {
+        const f64 gamma = 1.4;
+        // Strictly below exact_solver's smallp/smallrho threshold (1e-25), so the
+        // early-return fallback (result.p_star = max(smallp, avg(p)), result.v_star
+        // = avg(u)) is guaranteed to trigger rather than the normal bisection path.
+        const f64 tiny = 1e-30;
+
+        auto check_fallback = [&](f64 u_L, f64 rho_L, f64 p_L, f64 u_R, f64 rho_R, f64 p_R) {
+            auto result = exact_solver<f64>(u_L, rho_L, p_L, u_R, rho_R, p_R, gamma);
+            REQUIRE_NAMED("finite p_star (degenerate)", std::isfinite(result.p_star));
+            REQUIRE_NAMED("finite v_star (degenerate)", std::isfinite(result.v_star));
+            const f64 expect_p = std::max(f64{1.0e-25}, 0.5 * (p_L + p_R));
+            const f64 expect_v = 0.5 * (u_L + u_R);
+            REQUIRE_FLOAT_EQUAL_NAMED(
+                "p_star matches fallback formula", result.p_star, expect_p, 1e-30);
+            REQUIRE_FLOAT_EQUAL_NAMED(
+                "v_star matches fallback formula", result.v_star, expect_v, 1e-12);
+        };
+
+        check_fallback(0.0, 1.0, 1.0, 0.0, tiny, tiny);   // low density+pressure right
+        check_fallback(0.0, tiny, tiny, 0.0, 1.0, 1.0);   // low density+pressure left
+        check_fallback(0.0, tiny, tiny, 0.0, tiny, tiny); // both low
+        check_fallback(1.5, 1.0, 1.0, -2.0, tiny, tiny);  // nonzero velocities too
+    }
+
+    //==========================================================================
     // SCENARIO: Strong shocks handled correctly
     //==========================================================================
 
@@ -532,6 +561,10 @@ NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_collision", 1) { test_symm
 NEW_TEST(Unittest, "shammodels/gsph/riemann/symmetric_expansion", 1) { test_symmetric_expansion(); }
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/near_vacuum", 1) { test_near_vacuum_robustness(); }
+
+NEW_TEST(Unittest, "shammodels/gsph/riemann/exact_degenerate_guard", 1) {
+    test_exact_solver_degenerate_input_guard();
+}
 
 NEW_TEST(Unittest, "shammodels/gsph/riemann/strong_shocks", 1) { test_strong_shocks(); }
 

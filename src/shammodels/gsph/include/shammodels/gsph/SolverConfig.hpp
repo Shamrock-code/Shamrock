@@ -112,6 +112,16 @@ struct shammodels::gsph::SolverConfig {
         }
     }
 
+    inline Tscal get_constant_c() const {
+        if (!unit_sys) {
+            ON_RANK_0(logger::warn_ln("gsph::Config", "the unit system is not set"));
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
+        }
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Units Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////

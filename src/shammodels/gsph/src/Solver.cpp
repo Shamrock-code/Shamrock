@@ -11,7 +11,7 @@
  * @file Solver.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no gi´t blame--
  * @brief GSPH Solver implementation
  *
  * The GSPH method originated from:
@@ -38,7 +38,9 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
+#include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
+#include "shammodels/gsph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
@@ -1534,7 +1536,11 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::update_derivs() {
     StackEntry stack_loc{};
     // GSPH derivative update using Riemann solver
-    gsph::modules::UpdateDerivs<Tvec, Kern>(context, solver_config, storage).update_derivs();
+    gsph::modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+    derivs.update_derivs();
+
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1760,9 +1766,21 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // 7. CFL: compute next timestep
     // =========================================================================
 
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+
+    // STEP 0: SINK PARTICLES
+    sink_update.accrete_particles(dt);
+    ext_forces.point_mass_accrete_particles();
+
+    sink_update.predictor_step(dt);
+
     // STEP 1: PREDICTOR - move particles using OLD accelerations
     // (On first iteration, accelerations are zero, so this is just position drift)
     do_predictor_leapfrog(dt);
+
+    sink_update.compute_ext_forces();
+    ext_forces.compute_ext_forces_indep_v();
 
     // STEP 2: BOUNDARY - apply boundary conditions to NEW positions
     // Build serial patch tree first (needed for boundary application)
@@ -1819,6 +1837,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // STEP 6: CORRECTOR - refine velocities
     apply_corrector(dt, Npart_all);
+    sink_update.corrector_step(dt);
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();

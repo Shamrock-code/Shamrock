@@ -117,6 +117,8 @@ namespace shammodels::sph {
 
             bool ensure_s_j_positivity = true;
 
+            bool smooth_s_positivity_limiter = false;
+
             // use the corrected q_AV from Hutchison 2018 & Price Laibe 15
             bool dust_corrected_av = false;
         };
@@ -133,12 +135,13 @@ namespace shammodels::sph {
         inline void set_none() { current_mode = None{}; }
         inline void set_monofluid_tva(
             u32 nvar,
-            bool pure_diffusion_mode    = false,
-            Tscal C_1_fluid             = 0.1,
-            Tscal C_drift               = 1.0,
-            Tscal cfl_density_threshold = shambase::get_epsilon<Tscal>(),
-            bool ensure_s_j_positivity  = true,
-            bool dust_corrected_av      = false) {
+            bool pure_diffusion_mode         = false,
+            Tscal C_1_fluid                  = 0.1,
+            Tscal C_drift                    = 1.0,
+            Tscal cfl_density_threshold      = shambase::get_epsilon<Tscal>(),
+            bool ensure_s_j_positivity       = true,
+            bool smooth_s_positivity_limiter = false,
+            bool dust_corrected_av           = false) {
             current_mode = MonofluidTVA{
                 nvar,
                 pure_diffusion_mode,
@@ -146,6 +149,7 @@ namespace shammodels::sph {
                 C_drift,
                 cfl_density_threshold,
                 ensure_s_j_positivity,
+                smooth_s_positivity_limiter,
                 dust_corrected_av};
         }
         inline void set_monofluid_complete(u32 nvar) { current_mode = MonofluidComplete{nvar}; }
@@ -172,6 +176,7 @@ namespace shammodels::sph {
                        {"C_drift", cfg->C_drift},
                        {"cfl_density_threshold", cfg->cfl_density_threshold},
                        {"ensure_s_j_positivity", cfg->ensure_s_j_positivity},
+                       {"smooth_s_positivity_limiter", cfg->smooth_s_positivity_limiter},
                        {"dust_corrected_av", cfg->dust_corrected_av}};
             } else if (
                 const MonofluidComplete *cfg = std::get_if<MonofluidComplete>(&current_mode)) {
@@ -193,6 +198,7 @@ namespace shammodels::sph {
                     j.at("C_drift").get<Tscal>(),
                     j.at("cfl_density_threshold").get<Tscal>(),
                     j.at("ensure_s_j_positivity").get<bool>(),
+                    j.value("smooth_s_positivity_limiter", false),
                     j.value("dust_corrected_av", false));
             } else if (type == "monofluid_complete") {
                 set_monofluid_complete(j.at("ndust").get<u32>());

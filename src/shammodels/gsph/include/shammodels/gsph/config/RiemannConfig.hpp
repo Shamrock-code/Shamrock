@@ -75,7 +75,8 @@ struct shammodels::gsph::RiemannConfig {
      * Reference: Toro, E.F. (2009) "Riemann Solvers and Numerical Methods for Fluid Dynamics"
      */
     struct Exact {
-        Tscal tol = Tscal{1.0e-8}; ///< Convergence tolerance
+        Tscal tol    = Tscal{1.0e-8}; ///< Convergence tolerance
+        u32 max_iter = 100;           ///< Maximum bisection iterations
     };
 
     /**
@@ -108,7 +109,7 @@ struct shammodels::gsph::RiemannConfig {
         set(Iterative{tol, max_iter});
     }
 
-    void set_exact(Tscal tol = Tscal{1.0e-8}) { set(Exact{tol}); }
+    void set_exact(Tscal tol = Tscal{1.0e-8}, u32 max_iter = 100) { set(Exact{tol, max_iter}); }
 
     void set_hllc() { set(HLLC{}); }
 
@@ -127,8 +128,9 @@ struct shammodels::gsph::RiemannConfig {
             logger::raw_ln("  tol      =", v->tol);
             logger::raw_ln("  max_iter =", v->max_iter);
         } else if (const Exact *v = std::get_if<Exact>(&config)) {
-            logger::raw_ln("  Type : Exact (Toro)");
-            logger::raw_ln("  tol  =", v->tol);
+            logger::raw_ln("  Type     : Exact (Toro)");
+            logger::raw_ln("  tol      =", v->tol);
+            logger::raw_ln("  max_iter =", v->max_iter);
         } else if (std::get_if<HLLC>(&config)) {
             logger::raw_ln("  Type : HLLC");
         } else if (const Roe *v = std::get_if<Roe>(&config)) {
@@ -162,6 +164,7 @@ namespace shammodels::gsph {
             j = {
                 {"riemann_type", "exact"},
                 {"tol", v->tol},
+                {"max_iter", v->max_iter},
             };
         } else if (std::get_if<HLLC>(&p.config)) {
             j = {
@@ -198,7 +201,9 @@ namespace shammodels::gsph {
         if (riemann_type == "iterative") {
             p.set(Iterative{j.at("tol").get<Tscal>(), j.at("max_iter").get<u32>()});
         } else if (riemann_type == "exact") {
-            p.set(Exact{j.at("tol").get<Tscal>()});
+            // max_iter is read with a fallback default so configs saved before
+            // this field existed (tol-only) still load instead of throwing.
+            p.set(Exact{j.at("tol").get<Tscal>(), j.value("max_iter", Exact{}.max_iter)});
         } else if (riemann_type == "hllc") {
             p.set(HLLC{});
         } else if (riemann_type == "roe") {

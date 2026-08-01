@@ -78,6 +78,7 @@ namespace shammodels::gsph::modules {
         using Cfg_Riemann = typename Config::RiemannConfig;
         using Iterative   = typename Cfg_Riemann::Iterative;
         using HLLC        = typename Cfg_Riemann::HLLC;
+        using Exact       = typename Cfg_Riemann::Exact;
 
         /**
          * @brief Update derivatives using iterative Riemann solver (van Leer 1997)
@@ -88,6 +89,11 @@ namespace shammodels::gsph::modules {
          * @brief Update derivatives using HLLC approximate Riemann solver
          */
         void update_derivs_hllc(HLLC cfg);
+
+        /**
+         * @brief Update derivatives using the exact Riemann solver (Toro)
+         */
+        void update_derivs_exact(Exact cfg);
     };
 
 } // namespace shammodels::gsph::modules

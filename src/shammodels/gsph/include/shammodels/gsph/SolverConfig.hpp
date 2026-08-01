@@ -35,6 +35,7 @@
 #include "shammath/sphkernels.hpp"
 #include "shammodels/common/EOSConfig.hpp"
 #include "shammodels/common/ExtForceConfig.hpp"
+#include "shammodels/gsph/config/ForceFormulationConfig.hpp"
 #include "shammodels/gsph/config/ReconstructConfig.hpp"
 #include "shammodels/gsph/config/RiemannConfig.hpp"
 #include "shammodels/sph/config/BCConfig.hpp" // Reuse boundary conditions from SPH
@@ -140,6 +141,10 @@ struct shammodels::gsph::SolverConfig {
 
     inline void set_riemann_hllc() { riemann_config.set_hllc(); }
 
+    inline void set_riemann_exact(Tscal tol = Tscal{1e-8}, u32 max_iter = 100) {
+        riemann_config.set_exact(tol, max_iter);
+    }
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Riemann Solver Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,6 +169,23 @@ struct shammodels::gsph::SolverConfig {
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Reconstruction Config (END)
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Force Formulation Config
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    using ForceFormulationConfig = ForceFormulationConfig<Tvec>;
+    ForceFormulationConfig force_formulation_config;
+
+    inline void set_force_cha_whitworth() { force_formulation_config.set_cha_whitworth(); }
+
+    inline void set_force_inutsuka_v2() { force_formulation_config.set_inutsuka_v2(); }
+
+    inline bool is_force_inutsuka_v2() const { return force_formulation_config.is_inutsuka_v2(); }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+    // Force Formulation Config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
     //////////////////////////////////////////////////////////////////////////////////////////////
@@ -313,6 +335,7 @@ struct shammodels::gsph::SolverConfig {
         logger::raw_ln("gpart_mass  =", gpart_mass);
         riemann_config.print_status();
         reconstruct_config.print_status();
+        force_formulation_config.print_status();
         eos_config.print_status();
         logger::raw_ln("--------------------------------------");
     }
@@ -322,6 +345,14 @@ struct shammodels::gsph::SolverConfig {
         // Only check gamma for adiabatic EOS types
         if (is_eos_adiabatic() && get_eos_gamma() <= 1) {
             shambase::throw_with_loc<std::runtime_error>("gamma must be > 1 for adiabatic gas");
+        }
+
+        // InutsukaV2 is only wired into update_derivs_iterative()/update_derivs_exact();
+        // update_derivs_hllc() would silently fall back to ChaWhitworth otherwise.
+        if (force_formulation_config.is_inutsuka_v2() && riemann_config.is_hllc()) {
+            shambase::throw_with_loc<std::runtime_error>(
+                "InutsukaV2 force formulation is not yet supported with the HLLC Riemann "
+                "solver. Use set_riemann_iterative() or set_riemann_exact() instead.");
         }
     }
 
@@ -372,6 +403,7 @@ namespace shammodels::gsph {
             {"unit_sys", p.unit_sys},
             {"riemann_config", p.riemann_config},
             {"reconstruct_config", p.reconstruct_config},
+            {"force_formulation_config", p.force_formulation_config},
             {"eos_config", p.eos_config},
             {"boundary_config", p.boundary_config},
             {"tree_reduction_level", p.tree_reduction_level},
@@ -416,6 +448,7 @@ namespace shammodels::gsph {
         _get_to_if_contains("unit_sys", p.unit_sys);
         _get_to_if_contains("riemann_config", p.riemann_config);
         _get_to_if_contains("reconstruct_config", p.reconstruct_config);
+        _get_to_if_contains("force_formulation_config", p.force_formulation_config);
         _get_to_if_contains("eos_config", p.eos_config);
         _get_to_if_contains("boundary_config", p.boundary_config);
         _get_to_if_contains("tree_reduction_level", p.tree_reduction_level);

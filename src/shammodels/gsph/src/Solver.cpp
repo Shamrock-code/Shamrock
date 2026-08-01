@@ -11,7 +11,7 @@
  * @file Solver.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no gi´t blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Solver implementation
  *
  * The GSPH method originated from:
@@ -23,6 +23,7 @@
  *   Godunov-type particle hydrodynamics"
  */
 
+#include "shambase/constants.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/string.hpp"
@@ -190,10 +191,19 @@ void shammodels::gsph::Solver<Tvec, Kern>::build_ghost_cache() {
     using GSPHUtils = GSPHUtilities<Tvec, Kernel>;
     GSPHUtils gsph_utils(scheduler());
 
+    // Same widening as compute_presteps_rint()/start_neighbors_cache(): with
+    // InutsukaV2 the kernel support is sqrt(2)*h, so the patch/rank ghost
+    // interface radius must widen too, or particles near a patch boundary
+    // could be missing valid neighbors from the adjacent patch.
+    Tscal h_evol_max = solver_config.htol_up_coarse_cycle;
+    if (solver_config.is_force_inutsuka_v2()) {
+        h_evol_max *= shambase::constants::sqrt_2<Tscal>;
+    }
+
     storage.ghost_patch_cache.set(gsph_utils.build_interf_cache(
         shambase::get_check_ref(storage.ghost_handler).get(),
         storage.serial_patch_tree.get(),
-        solver_config.htol_up_coarse_cycle));
+        h_evol_max));
 }
 
 template<class Tvec, template<class> class Kern>
@@ -299,6 +309,17 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
     auto &xyzh_merged = storage.merged_xyzh.get();
     auto dev_sched    = shamsys::instance::get_compute_scheduler_ptr();
 
+    // The Inutsuka V2 force formulation evaluates the kernel gradient at an
+    // effective smoothing length sqrt(2)*h (Inutsuka 2002). This tree-node
+    // interaction-range field is used to prune tree traversal in
+    // start_neighbors_cache(), so it must be widened by the same factor, or
+    // whole subtrees containing valid sqrt(2)*h-range neighbors get pruned
+    // before the leaf-level search even runs.
+    Tscal htol = solver_config.htol_up_coarse_cycle;
+    if (solver_config.is_force_inutsuka_v2()) {
+        htol *= shambase::constants::sqrt_2<Tscal>;
+    }
+
     storage.rtree_rint_field.set(
         storage.merged_pos_trees.get().template map<shamtree::KarrasRadixTreeField<Tscal>>(
             [&](u64 id, RTree &rtree) -> shamtree::KarrasRadixTreeField<Tscal> {
@@ -318,7 +339,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_presteps_rint() {
                     sham::MultiRef{},
                     sham::MultiRef{ret.buf_field},
                     ret.buf_field.get_size(),
-                    [htol = solver_config.htol_up_coarse_cycle](u32 i, Tscal *h_tree) {
+                    [htol](u32 i, Tscal *h_tree) {
                         h_tree[i] *= htol;
                     });
 
@@ -339,6 +360,15 @@ void shammodels::gsph::Solver<Tvec, Kern>::start_neighbors_cache() {
     time_neigh.start();
 
     Tscal h_tolerance = solver_config.htol_up_coarse_cycle;
+
+    // The Inutsuka V2 force formulation evaluates the kernel gradient at an
+    // effective smoothing length sqrt(2)*h (Inutsuka 2002), so its support radius
+    // is sqrt(2) times larger than the standard h*Rkern cutoff used below. Widen
+    // the cached search radius accordingly, or pairs in (h*Rkern, sqrt(2)*h*Rkern)
+    // would silently be missing from the cache for that formulation.
+    if (solver_config.is_force_inutsuka_v2()) {
+        h_tolerance *= shambase::constants::sqrt_2<Tscal>;
+    }
 
     // Build neighbor cache using tree traversal - same approach as SPH module
     auto build_neigh_cache = [&](u64 patch_id) -> shamrock::tree::ObjectCache {

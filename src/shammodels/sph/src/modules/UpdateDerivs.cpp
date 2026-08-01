@@ -32,6 +32,7 @@
 #include "shammodels/sph/modules/NodeComputePressureGrad.hpp"
 #include "shammodels/sph/modules/NodeEvolveDustCOALASourceTerm.hpp"
 #include "shammodels/sph/modules/NodeMonofluidTVAAddSourceTerm.hpp"
+#include "shammodels/sph/modules/NodeMonofluidTVASmoothSPositivityLimiter.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsMonofluidTVA.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAV.hpp"
 #include "shammodels/sph/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.hpp"
@@ -1229,6 +1230,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
 
     MonofluidTVA &cfg_monofluid_tva
         = shambase::get_check_ref((std::get_if<MonofluidTVA>(&cfg.current_mode)));
+
+    if (cfg_monofluid_tva.smooth_s_positivity_limiter) {
+        std::shared_ptr<NodeMonofluidTVASmoothSPositivityLimiter<Tvec>> node_limiter
+            = std::make_shared<NodeMonofluidTVASmoothSPositivityLimiter<Tvec>>(ndust);
+        {
+            node_limiter->set_edges(part_counts, s_j_refs, Ttilde_sj_field, ds_j_dt_refs);
+        }
+        node_limiter->evaluate();
+    }
 
     if (cfg_monofluid_tva.pure_diffusion_mode) {
         // reset accelerations & du/dt to 0

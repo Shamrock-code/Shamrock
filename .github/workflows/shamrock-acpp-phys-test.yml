@@ -83,6 +83,8 @@ jobs:
           - worldsize: 2
             testfile: gsph_sod_tube_gsph.py
           - worldsize: 1
+            testfile: gsph_sod_tube_exact_inutsuka.py
+          - worldsize: 1
             testfile: comp_phantom_sedov_1patch.py
           - worldsize: 2
             testfile: comp_phantom_sedov_1patch.py
@@ -176,6 +178,18 @@ jobs:
             artifact_name: gallery_ramses_run_toro_shocks
           - testfile: "examples/ramses/run_sod_amr_reflective.py"
             artifact_name: gallery_ramses_run_sod_amr_reflective
+
+          # GSPH examples
+          - testfile: "examples/gsph/run_sod.py"
+            artifact_name: gallery_gsph_run_sod
+          - testfile: "examples/gsph/run_advection.py"
+            artifact_name: gallery_gsph_run_advection
+          - testfile: "examples/gsph/run_123_problem.py"
+            artifact_name: gallery_gsph_run_123_problem
+          - testfile: "examples/gsph/run_symmetric_collision.py"
+            artifact_name: gallery_gsph_run_symmetric_collision
+          - testfile: "examples/gsph/run_blast_wave.py"
+            artifact_name: gallery_gsph_run_blast_wave
 
           # SPH examples
           - testfile: "examples/sph/run_circular_disc_lense_thirring.py"

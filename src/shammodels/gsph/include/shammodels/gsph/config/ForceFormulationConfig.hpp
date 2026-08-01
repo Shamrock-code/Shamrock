@@ -12,6 +12,7 @@
 /**
  * @file ForceFormulationConfig.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Configuration for the GSPH momentum equation formulation
  *
  * GSPH implementations in the literature discretize the momentum equation in more

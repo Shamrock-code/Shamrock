@@ -14,6 +14,7 @@
 /**
  * @file reconstruction.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Effective face (volume element) interpolation for the Inutsuka (2002) GSPH formulation
  *
  * Inutsuka's GSPH momentum equation replaces the standard SPH kernel-gradient/rho^2

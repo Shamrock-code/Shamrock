@@ -12,6 +12,7 @@
 /**
  * @file exact.hpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief Exact Riemann solver for GSPH (Toro 2009)
  *
  * Implements the exact solution of the 1D Riemann problem for an ideal gas:

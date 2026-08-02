@@ -11,6 +11,7 @@
 
 /**
  * @file GeneratorMCDisc.hpp
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief
  *
  */

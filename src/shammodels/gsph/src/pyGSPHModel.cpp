@@ -42,9 +42,9 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
 
     using Tscal = shambase::VecComponent<Tvec>;
 
-    using T         = Model<Tvec, SPHKernel>;
-    using TSPHSetup = modules::GSPHSetup<Tvec, SPHKernel>;
-    using TConfig   = typename T::SolverConfig;
+    using T          = Model<Tvec, SPHKernel>;
+    using TGSPHSetup = modules::GSPHSetup<Tvec, SPHKernel>;
+    using TConfig    = typename T::SolverConfig;
 
     shamlog_debug_ln("[Py]", "registering class :", name_config, typeid(T).name());
     shamlog_debug_ln("[Py]", "registering class :", name_model, typeid(T).name());
@@ -235,11 +235,11 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
             py::arg("split_load_value"),
             py::arg("merge_load_value"));
 
-    std::string setup_name = name_model + "_SPHSetup";
-    py::class_<TSPHSetup>(m, setup_name.c_str())
+    std::string setup_name = name_model + "_GSPHSetup";
+    py::class_<TGSPHSetup>(m, setup_name.c_str())
         .def(
             "make_generator_disc_mc",
-            [](TSPHSetup &self,
+            [](TGSPHSetup &self,
                Tscal part_mass,
                Tscal disc_mass,
                Tscal r_in,
@@ -286,7 +286,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                         if (cs_field) {
                             if (shamcomm::world_rank() == 0) {
                                 logger::warn_ln(
-                                    "SPHSetup",
+                                    "GSPHSetup",
                                     "make_generator_disc_mc: with the current EOS, cs_field is "
                                     "ignored");
                             }
@@ -294,7 +294,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                         if (cs_profile) {
                             if (shamcomm::world_rank() == 0) {
                                 logger::warn_ln(
-                                    "SPHSetup",
+                                    "GSPHSetup",
                                     "make_generator_disc_mc: with the current EOS, cs_profile is "
                                     "ignored");
                             }
@@ -360,7 +360,7 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
         smoothing lengths are set from that density.
 
         Args:
-            part_mass: Mass of each SPH particle.
+            part_mass: Mass of each GSPH particle.
             disc_mass: Total disc mass. The particle count is ``disc_mass / part_mass``.
             r_in: Inner disc radius.
             r_out: Outer disc radius.
@@ -392,9 +392,8 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
     )pbdoc")
         .def(
             "apply_setup",
-            [](TSPHSetup &self,
+            [](TGSPHSetup &self,
                modules::SetupNodePtr setup,
-               bool part_reordering,
                std::optional<u32> gen_step,
                std::optional<u32> insert_step,
                std::optional<u64> msg_count_limit,
@@ -405,33 +404,32 @@ void add_gsph_instance(py::module &m, std::string name_config, std::string name_
                bool speculative_balancing) {
                 if (bool(gen_step)) {
                     ON_RANK_0(
-                        logger::warn_ln("SPHSetup", "gen_step is ignored when using old setup"));
+                        logger::warn_ln("GSPHSetup", "gen_step is ignored when using old setup"));
                 }
                 if (bool(msg_count_limit)) {
                     ON_RANK_0(
                         logger::warn_ln(
-                            "SPHSetup", "msg_count_limit is ignored when using old setup"));
+                            "GSPHSetup", "msg_count_limit is ignored when using old setup"));
                 }
                 if (bool(msg_size_limit)) {
                     ON_RANK_0(
                         logger::warn_ln(
-                            "SPHSetup", "msg_size_limit is ignored when using old setup"));
+                            "GSPHSetup", "msg_size_limit is ignored when using old setup"));
                 }
                 if (bool(max_msg_size)) {
                     ON_RANK_0(
                         logger::warn_ln(
-                            "SPHSetup", "max_msg_size is ignored when using old setup"));
+                            "GSPHSetup", "max_msg_size is ignored when using old setup"));
                 }
                 if (bool(do_setup_log)) {
                     ON_RANK_0(
                         logger::warn_ln(
-                            "SPHSetup", "do_setup_log is ignored when using old setup"));
+                            "GSPHSetup", "do_setup_log is ignored when using old setup"));
                 }
-                return self.apply_setup(setup, part_reordering, insert_step);
+                return self.apply_setup(setup, insert_step);
             },
             py::arg("setup"),
             py::kw_only(),
-            py::arg("part_reordering")       = true,
             py::arg("gen_step")              = std::nullopt,
             py::arg("insert_step")           = std::nullopt,
             py::arg("msg_count_limit")       = std::nullopt,

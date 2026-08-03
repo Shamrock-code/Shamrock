@@ -212,7 +212,7 @@ namespace shammodels::gsph {
          * - Courant condition: dt_cour = C_cour * h / vsig
          * - Force condition: dt_force = C_force * sqrt(h / |a|)
          *
-         * @return Minimum CFL timestep across all particles
+         * @return Minimum CFL timestep across all sinks
          */
         Tscal compute_dt_cfl();
 

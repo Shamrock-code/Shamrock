@@ -115,7 +115,7 @@ shamrock::patch::PatchDataLayer shammodels::gsph::modules::GeneratorMCDisc<Tvec,
     }
 
     // compute the cs
-    bool need_cs = false; // solver_config.is_eos_locally_isothermal();
+    bool need_cs = false; // locally isothermal EOS for now is not implemented!
 
     std::vector<Tscal> vec_cs;
     if (need_cs) {

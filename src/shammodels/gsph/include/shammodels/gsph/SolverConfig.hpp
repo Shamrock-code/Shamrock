@@ -226,11 +226,9 @@ struct shammodels::gsph::SolverConfig {
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
 
     /**
-     * @brief Set the EOS configuration to a locally isothermal equation of state fromFarris 2014
+     * `@brief` Set the EOS configuration to a locally isothermal equation of state from Farris 2014
      *
-     * @param cs0 Soundspeed at the reference radius
-     * @param q Power exponent of the soundspeed profile
-     * @param r0 Reference radius
+     * `@param` h_over_r Disc aspect ratio
      */
     inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
         eos_config.set_locally_isothermalFA2014(h_over_r);

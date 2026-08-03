@@ -35,7 +35,7 @@ void shammodels::gsph::SolverConfig<Tvec, SPHKernel>::set_layout(
     // Smoothing length
     pdl.add_field<Tscal>(names::common::hpart, 1);
 
-    pdl.add_field<Tvec>("axyz_ext", 1);
+    pdl.add_field<Tvec>(names::newtonian::axyz_ext, 1);
 
     // Internal energy (for adiabatic EOS)
     if (has_field_uint()) {

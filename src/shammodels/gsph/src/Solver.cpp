@@ -1682,7 +1682,6 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
     compute_sink_cfl() {
     StackEntry stack_loc{};
 
-    Tscal C_cour  = solver_config.cfl_config.cfl_cour;
     Tscal C_force = solver_config.cfl_config.cfl_force;
     Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
@@ -1691,6 +1690,10 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
     Tscal G = solver_config.get_constant_G();
 
     std::vector<sph::SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+    if (storage.sinks.is_empty()) {
+        return sink_sink_cfl;
+    }
 
     for (u32 i = 0; i < sink_parts.size(); i++) {
         sph::SinkParticle<Tvec> &s_i = sink_parts[i];
@@ -1917,9 +1920,11 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();
+    Tscal dt_cfl  = compute_dt_cfl();
 
     // Ensure dt doesn't grow too fast (max 2x per step), but allow any value if dt was 0
     if (dt > Tscal(0)) {
+        dt_next = sham::min(dt_next, dt_cfl);
         dt_next = sham::min(dt_next, Tscal(2) * dt);
     }
 

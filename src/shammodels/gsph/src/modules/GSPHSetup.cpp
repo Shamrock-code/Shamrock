@@ -30,7 +30,6 @@
 #include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/gsph/modules/GSPHSetup.hpp"
 #include "shammodels/gsph/modules/setup/GeneratorMCDisc.hpp"
-#include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -67,7 +66,7 @@ inline std::shared_ptr<shammodels::gsph::modules::IGSPHSetupNode> shammodels::gs
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::gsph::modules::GSPHSetup<Tvec, SPHKernel>::apply_setup(
-    SetupNodePtr setup, bool part_reordering, std::optional<u32> insert_step) {
+    SetupNodePtr setup, std::optional<u32> insert_step) {
 
     if (!bool(setup)) {
         shambase::throw_with_loc<std::invalid_argument>("The setup shared pointer is empty");

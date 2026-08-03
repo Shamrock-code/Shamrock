@@ -43,10 +43,7 @@ namespace shammodels::gsph::modules {
         GSPHSetup(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}
 
-        void apply_setup(
-            SetupNodePtr setup,
-            bool part_reordering,
-            std::optional<u32> insert_step = std::nullopt);
+        void apply_setup(SetupNodePtr setup, std::optional<u32> insert_step = std::nullopt);
 
         std::shared_ptr<IGSPHSetupNode> make_generator_disc_mc(
             Tscal part_mass,

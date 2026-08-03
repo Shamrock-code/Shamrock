@@ -238,31 +238,7 @@ void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces(
     using namespace shamrock::solvergraph;
     SolverGraph solver_graph{};
 
-    auto set_constant_G = register_constant_set<Tscal>(solver_graph, "constant_G", [&]() {
-        return solver_config.get_constant_G();
-    });
-    auto set_constant_c = register_constant_set<Tscal>(solver_graph, "constant_c", [&]() {
-        return solver_config.get_constant_c();
-    });
-
-    bool is_G_needed = false;
-    bool is_c_needed = false;
-
-    for (auto var_force : solver_config.ext_force_config.ext_forces) {
-        if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
-        } else {
-            shambase::throw_unimplemented("this force is not handled, yet ...");
-        }
-    }
-
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
-
-    if (is_G_needed) {
-        add_ext_forces_seq.push_back(set_constant_G);
-    }
-    if (is_c_needed) {
-        add_ext_forces_seq.push_back(set_constant_c);
-    }
 
     auto field_xyz   = solver_graph.register_edge("field_xyz", FieldRefs<Tvec>("", ""));
     auto field_vxyz  = solver_graph.register_edge("field_vxyz", FieldRefs<Tvec>("", ""));

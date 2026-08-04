@@ -11,5 +11,6 @@ dev_doc/building-doc.md
 dev_doc/testing.md
 dev_doc/types.md
 dev_doc/profiling.md
+dev_doc/build-profiling.md
 dev_doc/release_process.md
 ```

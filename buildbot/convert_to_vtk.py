@@ -269,11 +269,11 @@ for idx in range(170, 1000):
     dic = {}
 
     for fname in file_list:
-        print("converting : {} t = {}".format(fname, tval))
+        print(f"converting : {fname} t = {tval}")
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-            if not k in dic.keys():
+            if not k in dic:
                 dic[k] = []
 
             dic[k] += dic_tmp[k]
@@ -300,7 +300,7 @@ for idx in range(1, 1000):
     dic = {}
 
     for fname in file_list:
-        print("converting : {} t = {}".format(fname, tval))
+        print(f"converting : {fname} t = {tval}")
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
@@ -329,7 +329,7 @@ for idx in range(1, 1000):
     dic = {}
 
     for fname in file_list:
-        print("converting : {} t = {}".format(fname, tval))
+        print(f"converting : {fname} t = {tval}")
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
@@ -357,7 +357,7 @@ for idx in range(1, 1000):
     dic = {}
 
     for fname in file_list:
-        print("converting : {} t = {}".format(fname, tval))
+        print(f"converting : {fname} t = {tval}")
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():

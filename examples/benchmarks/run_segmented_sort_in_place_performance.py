@@ -10,9 +10,9 @@ This example benchmarks the segmented sort in place performance for the differen
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 import shamrock
 
@@ -58,7 +58,7 @@ def run_performance_sweep_balanced():
     # Define parameter ranges
     # logspace as array
 
-    slice_sizes = [2**i for i in range(0, 14)]
+    slice_sizes = [2**i for i in range(14)]
 
     # Initialize results matrix
     results_u32_balanced = []

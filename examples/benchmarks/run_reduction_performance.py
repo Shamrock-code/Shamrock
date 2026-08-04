@@ -10,9 +10,9 @@ This example benchmarks the reduction performance for the different algorithms a
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 import shamrock
 

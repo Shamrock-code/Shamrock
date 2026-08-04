@@ -62,8 +62,7 @@ def should_limit_comp_cores():
         print("   ->  free memory /cores :", avail / os.cpu_count())
         cnt = int(avail / MAX_COMP_SZ)
         limit = True
-        if cnt < 1:
-            cnt = 1
+        cnt = max(cnt, 1)
         print("   ->  limiting to", cnt, "cores")
 
     return limit, cnt
@@ -113,6 +112,6 @@ def select_generator(args, buildtype):
     elif buildtype == "coverage":
         cmake_buildt = "COVERAGE"
     else:
-        raise "Unknown build type"
+        raise ValueError("Unknown build type")
 
     return gen, gen_opt, cmake_gen, cmake_buildt

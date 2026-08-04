@@ -163,7 +163,7 @@ def plot():
     cbar = plt.colorbar(res, extend="both")
     cbar.set_label(r"$\sqrt{vx^2 + vy^2 + vz^2}$ [code unit]")
 
-    plt.title("t = {:0.3f} [code unit]".format(model.get_time()))
+    plt.title(f"t = {model.get_time():0.3f} [code unit]")
     plt.xlabel("x")
     plt.ylabel("y")
     global cnt_plot
@@ -185,5 +185,5 @@ for i in range(1):
     model.evolve_until(i * dt_stop)
 
     # Dump name is "dump_xxxx.sham" where xxxx is the timestep
-    model.do_vtk_dump(dump_folder + "/dump_{:04}.vtk".format(i), True)
+    model.do_vtk_dump(dump_folder + f"/dump_{i:04}.vtk", True)
     plot()

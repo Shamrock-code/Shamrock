@@ -141,7 +141,7 @@ for s in sink_list:
     vx, vy, vz = s["vel"]
     racc = s["racc"]
 
-    print("add sink : mass {} pos {} vel {} racc {}".format(mass, (x, y, z), (vx, vy, vz), racc))
+    print(f"add sink : mass {mass} pos {(x, y, z)} vel {(vx, vy, vz)} racc {racc}")
 
     model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
 

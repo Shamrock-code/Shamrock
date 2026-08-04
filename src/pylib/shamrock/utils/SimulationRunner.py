@@ -1,7 +1,7 @@
 import types
+from collections.abc import Callable
 from dataclasses import dataclass
 from math import inf
-from typing import Callable
 
 import shamrock
 from shamrock.utils.dump import ShamrockDumpHandleHelper

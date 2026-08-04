@@ -300,9 +300,7 @@ def get_profiles(model):
         x, _, _ = positions[i]
         sigma = sigma_profile(x) * sigma_norm
 
-        if x < R_in:
-            sigma = 0.0
-        elif x > R_out:
+        if x < R_in or x > R_out:
             sigma = 0.0
         arr_sigma[i] = sigma
 

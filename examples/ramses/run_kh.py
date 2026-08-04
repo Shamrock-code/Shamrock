@@ -9,9 +9,9 @@ Kelvin-Helmholtz instability in RAMSES solver
 import os
 
 import matplotlib
-import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import animation
 
 import shamrock
 

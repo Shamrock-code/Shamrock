@@ -186,11 +186,11 @@ def plot_soundwave(idx: int, toff: float):
     dic = {}
 
     for fname in file_list:
-        print("converting : {} t = {}".format(fname, tval))
+        print(f"converting : {fname} t = {tval}")
         dic_tmp = get_plot_patchdata(fname)
 
         for k in dic_tmp.keys():
-            if not k in dic.keys():
+            if not k in dic:
                 dic[k] = []
 
             dic[k] += dic_tmp[k]
@@ -245,7 +245,7 @@ def plot_soundwave(idx: int, toff: float):
     ax1.scatter(z, anal_vz, label="analytique")
     ax1.set_xlabel("$z$")
     ax1.set_ylabel("$v_z$")
-    ax1.set_title("$t={}$".format(tval))
+    ax1.set_title(f"$t={tval}$")
 
     ax2.scatter(z, rho, label="SPH")
     ax2.scatter(z, anal_rho, label="analytique")

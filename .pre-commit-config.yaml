@@ -85,7 +85,10 @@ repos:
     - id: ruff-check
       args:
         - --extend-select=BLE,I,NPY,PLE
-        - --ignore=E402,E711,E712,E713,E722,E741,F401,F403,F405,F841
+        - --ignore=B023,C408,DTZ005,E402,E711,E712,E713,E722,E741
+        - --ignore=F401,F403,F405,F841,N999,PERF102,PIE810,PLC0206
+        - --ignore=PLR1704,PLR1722,PLW0602,PLW1510,RUF012,RUF059,S110
+        - --ignore=SIM102,SIM103,SIM113,SIM115,SIM118,SIM201,SIM223,UP031
         - --fix
       exclude: ^\.cmake-format\.py$
       log_file: log_precommit_ruff_check

@@ -429,6 +429,12 @@ namespace shammodels::gsph {
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;
 
+            if (solver.storage.sinks.is_empty()) {
+                metadata["sinks"] = nlohmann::json{};
+            } else {
+                metadata["sinks"] = solver.storage.sinks.get();
+            }
+
             shamrock::write_shamrock_dump(
                 fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));
         }

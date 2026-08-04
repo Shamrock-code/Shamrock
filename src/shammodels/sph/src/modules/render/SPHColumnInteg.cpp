@@ -16,13 +16,14 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shamalgs/collective/reduction.hpp"
+#include "shambackends/kernel_call.hpp"
 #include "shammath/AABB.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/render/SPHColumnInteg.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
-#include "shamtree/RadixTree.hpp"
-#include "shamtree/TreeTraversal.hpp"
+#include "shamtree/CompressedLeafBVH.hpp"
+#include "shamtree/KarrasRadixTreeField.hpp"
 #include <cmath>
 #include <limits>
 
@@ -49,7 +50,7 @@ void shammodels::sph::modules::SPHColumnInteg<Tvec, T, SPHKernel>::_impl_evaluat
     output_buf.fill(sham::VectorProperties<T>::get_zero());
 
     using u_morton = u32;
-    using RTree    = RadixTree<u_morton, Tvec>;
+    using Tree     = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
 
     Tscal partmass           = edges.gpart_mass.data;
     u32 tree_reduction_level = edges.tree_reduction_level.data;
@@ -82,50 +83,47 @@ void shammodels::sph::modules::SPHColumnInteg<Tvec, T, SPHKernel>::_impl_evaluat
 
         u32 obj_cnt = pos.get_obj_cnt();
 
-        RTree tree(
-            dev_sched, {aabb.lower, aabb.upper}, pos.get_buf(), obj_cnt, tree_reduction_level);
-
-        tree.compute_cell_ibounding_box(shamsys::instance::get_compute_queue());
-        tree.convert_bounding_box(shamsys::instance::get_compute_queue());
+        Tree tree = Tree::make_empty(dev_sched);
+        tree.rebuild_from_positions(pos.get_buf(), obj_cnt, aabb, tree_reduction_level);
 
         auto &hpart_span = edges.h_part.get_spans().get(id);
         auto &field_span = edges.field_data.get_spans().get(id);
         auto &buf_hpart  = hpart_span.field_ref.get_buf();
         auto &buf_field  = field_span.field_ref.get_buf();
 
-        RadixTreeField<Tscal> hmax_tree
-            = tree.compute_int_boxes(shamsys::instance::get_compute_queue(), buf_hpart, 1);
+        auto hmax_tree = shamtree::compute_tree_field_max_field<Tscal>(
+            tree.structure,
+            tree.reduced_morton_set.get_leaf_cell_iterator(),
+            shamtree::new_empty_karras_radix_tree_field<Tscal>(),
+            buf_hpart);
 
-        sham::EventList depends_list;
-        T *render_field = output_buf.get_write_access(depends_list);
+        auto obj_it = tree.get_object_iterator();
 
-        const shammath::Ray<Tvec> *image_rays = rays_buf.get_read_access(depends_list);
-
-        auto xyz      = pos.get_buf().get_read_access(depends_list);
-        auto hpart    = buf_hpart.get_read_access(depends_list);
-        auto torender = buf_field.get_read_access(depends_list);
-
-        sycl::event e2 = queue.submit(depends_list, [&, render_field](sycl::handler &cgh) {
-            shamrock::tree::ObjectIterator particle_looper(tree, cgh);
-
-            sycl::accessor hmax{
-                shambase::get_check_ref(hmax_tree.radix_tree_field_buf), cgh, sycl::read_only};
-
-            constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
-
-            shambase::parallel_for(cgh, nrays, "compute column render", [=](u32 gid) {
+        sham::kernel_call(
+            queue,
+            sham::MultiRef{
+                rays_buf, pos.get_buf(), buf_hpart, buf_field, obj_it, hmax_tree.buf_field},
+            sham::MultiRef{output_buf},
+            nrays,
+            [=](u32 gid,
+                const shammath::Ray<Tvec> *__restrict image_rays,
+                const Tvec *__restrict xyz,
+                const Tscal *__restrict hpart,
+                const T *__restrict torender,
+                auto particle_looper,
+                const Tscal *__restrict hmax,
+                T *__restrict render_field) {
                 T acc = sham::VectorProperties<T>::get_zero();
 
                 shammath::Ray<Tvec> ray = image_rays[gid];
 
+                constexpr Tscal Rker2 = Kernel::Rkern * Kernel::Rkern;
+
                 particle_looper.rtree_for(
-                    [&](u32 node_id, Tvec bmin_cell, Tvec bmax_cell) -> bool {
+                    [&](u32 node_id, shammath::AABB<Tvec> node_aabb) -> bool {
                         Tscal rint_cell = hmax[node_id] * Kernel::Rkern;
 
-                        auto interbox
-                            = shammath::AABB<Tvec>{bmin_cell, bmax_cell}.expand_all(rint_cell);
-
-                        return interbox.intersect_ray(ray);
+                        return node_aabb.expand_all(rint_cell).intersect_ray(ray);
                     },
                     [&](u32 id_b) {
                         Tvec dr = ray.origin - xyz[id_b];
@@ -150,13 +148,6 @@ void shammodels::sph::modules::SPHColumnInteg<Tvec, T, SPHKernel>::_impl_evaluat
 
                 render_field[gid] += acc;
             });
-        });
-
-        pos.get_buf().complete_event_state(e2);
-        buf_hpart.complete_event_state(e2);
-        buf_field.complete_event_state(e2);
-        output_buf.complete_event_state(e2);
-        rays_buf.complete_event_state(e2);
     });
 
     shamalgs::collective::reduce_buffer_in_place_sum(output_buf, MPI_COMM_WORLD);

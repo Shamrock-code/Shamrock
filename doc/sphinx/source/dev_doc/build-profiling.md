@@ -207,413 +207,413 @@ Compilation (418 times):
 
 **** Expensive headers:
 393716 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/sycl.hpp (included 369 times, avg 1066 ms), included via:
-  31x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp 
-  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  11x: math.hpp 
-  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  8x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  7x: AABB.hpp math.hpp 
-  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  6x: sphkernels.hpp math.hpp 
-  5x: Patch.hpp PatchCoord.hpp 
+  31x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp
+  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  11x: math.hpp
+  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  8x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  7x: AABB.hpp math.hpp
+  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  6x: sphkernels.hpp math.hpp
+  5x: Patch.hpp PatchCoord.hpp
   5x: <direct include>
-  5x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  4x: bitonicSort.hpp 
-  4x: hilbert.hpp 
-  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp 
-  3x: patchdata.hpp sycl_vector_utils.hpp 
-  3x: SolverConfig.hpp math.hpp 
+  5x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  4x: bitonicSort.hpp
+  4x: hilbert.hpp
+  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp
+  3x: patchdata.hpp sycl_vector_utils.hpp
+  3x: SolverConfig.hpp math.hpp
   ...
 
 215990 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/DeviceBuffer.hpp (included 266 times, avg 811 ms), included via:
   29x: <direct include>
-  17x: reduction.hpp flatten.hpp 
-  10x: random.hpp 
-  8x: random.hpp random.hpp 
-  7x: kernel_call.hpp 
-  7x: kernel_call_distrib.hpp kernel_call.hpp 
-  7x: memory.hpp memory.hpp 
-  4x: CommunicationBuffer.hpp 
-  4x: numeric.hpp reduction.hpp flatten.hpp 
-  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp 
-  4x: mock_vector.hpp random.hpp 
-  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp 
-  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp 
-  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp 
-  3x: reduction.hpp 
-  3x: is_all_true.hpp 
-  3x: numericTests.hpp random.hpp 
-  3x: serialize.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp 
-  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp 
-  2x: sparse_exchange.hpp 
+  17x: reduction.hpp flatten.hpp
+  10x: random.hpp
+  8x: random.hpp random.hpp
+  7x: kernel_call.hpp
+  7x: kernel_call_distrib.hpp kernel_call.hpp
+  7x: memory.hpp memory.hpp
+  4x: CommunicationBuffer.hpp
+  4x: numeric.hpp reduction.hpp flatten.hpp
+  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp
+  4x: mock_vector.hpp random.hpp
+  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp
+  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp
+  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp
+  3x: reduction.hpp
+  3x: is_all_true.hpp
+  3x: numericTests.hpp random.hpp
+  3x: serialize.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp
+  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp
+  2x: sparse_exchange.hpp
   ...
 
 202414 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/Device.hpp (included 210 times, avg 963 ms), included via:
-  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  9x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  5x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  3x: is_all_true.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  3x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  3x: numericTests.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
+  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  9x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  5x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  3x: is_all_true.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  3x: reduction.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  3x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  3x: numericTests.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
   2x: <direct include>
-  2x: sparse_exchange.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  2x: USMPtrHolder.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  2x: algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  2x: EventList.hpp DeviceContext.hpp 
+  2x: sparse_exchange.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  2x: USMPtrHolder.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  2x: algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  2x: EventList.hpp DeviceContext.hpp
   ...
 
 202391 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/DeviceQueue.hpp (included 288 times, avg 702 ms), included via:
-  28x: DeviceBuffer.hpp DeviceScheduler.hpp 
-  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  16x: NodeInstance.hpp DeviceScheduler.hpp 
-  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  7x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: is_all_true.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: numericTests.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: serialize.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
-  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp DeviceBuffer.hpp DeviceScheduler.hpp 
+  28x: DeviceBuffer.hpp DeviceScheduler.hpp
+  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  16x: NodeInstance.hpp DeviceScheduler.hpp
+  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  8x: random.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  7x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  7x: memory.hpp memory.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: CommunicationBuffer.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: is_all_true.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: reduction.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: numericTests.hpp random.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: serialize.hpp DeviceBuffer.hpp DeviceScheduler.hpp
+  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp DeviceBuffer.hpp DeviceScheduler.hpp
   ...
 
 201278 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/DeviceScheduler.hpp (included 287 times, avg 701 ms), included via:
-  28x: DeviceBuffer.hpp 
-  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  16x: NodeInstance.hpp 
-  9x: random.hpp DeviceBuffer.hpp 
-  8x: random.hpp random.hpp DeviceBuffer.hpp 
-  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp 
-  7x: kernel_call.hpp DeviceBuffer.hpp 
-  7x: memory.hpp memory.hpp DeviceBuffer.hpp 
-  4x: CommunicationBuffer.hpp DeviceBuffer.hpp 
-  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp 
-  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp 
-  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  3x: is_all_true.hpp DeviceBuffer.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp 
-  3x: numericTests.hpp random.hpp DeviceBuffer.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  3x: serialize.hpp DeviceBuffer.hpp 
-  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp DeviceBuffer.hpp 
+  28x: DeviceBuffer.hpp
+  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp
+  16x: NodeInstance.hpp
+  9x: random.hpp DeviceBuffer.hpp
+  8x: random.hpp random.hpp DeviceBuffer.hpp
+  7x: kernel_call_distrib.hpp kernel_call.hpp DeviceBuffer.hpp
+  7x: kernel_call.hpp DeviceBuffer.hpp
+  7x: memory.hpp memory.hpp DeviceBuffer.hpp
+  4x: CommunicationBuffer.hpp DeviceBuffer.hpp
+  4x: numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp
+  4x: mock_vector.hpp random.hpp DeviceBuffer.hpp
+  4x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp
+  4x: PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp
+  4x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp
+  4x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp
+  3x: is_all_true.hpp DeviceBuffer.hpp
+  3x: reduction.hpp DeviceBuffer.hpp
+  3x: numericTests.hpp random.hpp DeviceBuffer.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp reduction.hpp flatten.hpp DeviceBuffer.hpp
+  3x: serialize.hpp DeviceBuffer.hpp
+  3x: CompressedLeafBVH.hpp CLBVHObjectIterator.hpp DeviceBuffer.hpp
   ...
 
 97424 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambase/include/shambase/string.hpp (included 385 times, avg 253 ms), included via:
-  43x: stacktrace.hpp 
-  28x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp 
+  43x: stacktrace.hpp
+  28x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp
   26x: <direct include>
-  24x: memory.hpp 
-  18x: DeviceBuffer.hpp memory.hpp 
-  17x: time.hpp 
-  17x: logs.hpp logs.hpp msgformat.hpp 
-  16x: DistributedData.hpp 
-  7x: random.hpp random.hpp DeviceBuffer.hpp memory.hpp 
-  5x: TestResult.hpp TestAssertList.hpp 
-  5x: indexing.hpp logs.hpp logs.hpp msgformat.hpp 
-  4x: narrowing.hpp stacktrace.hpp 
-  3x: PatchDataLayer.hpp memory.hpp 
-  3x: memory.hpp memory.hpp 
-  3x: numeric.hpp memory.hpp 
-  3x: reduction.hpp flatten.hpp DeviceBuffer.hpp memory.hpp 
-  3x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp 
-  3x: serialize.hpp memory.hpp 
-  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp memory.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp memory.hpp 
-  3x: sycl_utils.hpp stacktrace.hpp 
+  24x: memory.hpp
+  18x: DeviceBuffer.hpp memory.hpp
+  17x: time.hpp
+  17x: logs.hpp logs.hpp msgformat.hpp
+  16x: DistributedData.hpp
+  7x: random.hpp random.hpp DeviceBuffer.hpp memory.hpp
+  5x: TestResult.hpp TestAssertList.hpp
+  5x: indexing.hpp logs.hpp logs.hpp msgformat.hpp
+  4x: narrowing.hpp stacktrace.hpp
+  3x: PatchDataLayer.hpp memory.hpp
+  3x: memory.hpp memory.hpp
+  3x: numeric.hpp memory.hpp
+  3x: reduction.hpp flatten.hpp DeviceBuffer.hpp memory.hpp
+  3x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp
+  3x: serialize.hpp memory.hpp
+  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp memory.hpp
+  3x: reduction.hpp DeviceBuffer.hpp memory.hpp
+  3x: sycl_utils.hpp stacktrace.hpp
   ...
 
 87619 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamrock/include/shamrock/scheduler/PatchScheduler.hpp (included 101 times, avg 867 ms), included via:
-  5x: Field.hpp ComputeField.hpp 
-  3x: AMRGrid.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
-  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
-  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
+  5x: Field.hpp ComputeField.hpp
+  3x: AMRGrid.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
+  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
+  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
   3x: <direct include>
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp ComputeField.hpp 
-  3x: FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp SerialPatchTree.hpp 
-  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp 
-  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp 
-  2x: ResidualDot.hpp SolverConfig.hpp 
-  2x: BasicSPHGhosts.hpp ComputeField.hpp 
-  1x: ShamrockDump.hpp 
-  1x: SerialPatchTree.hpp 
-  1x: ExtractGhostField.hpp CopyPatchDataField.hpp Field.hpp ComputeField.hpp 
-  1x: AMROverheadtest.hpp AMRGrid.hpp 
-  1x: GhostZones.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp 
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp ComputeField.hpp
+  3x: FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp SerialPatchTree.hpp
+  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp
+  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp
+  2x: ResidualDot.hpp SolverConfig.hpp
+  2x: BasicSPHGhosts.hpp ComputeField.hpp
+  1x: ShamrockDump.hpp
+  1x: SerialPatchTree.hpp
+  1x: ExtractGhostField.hpp CopyPatchDataField.hpp Field.hpp ComputeField.hpp
+  1x: AMROverheadtest.hpp AMRGrid.hpp
+  1x: GhostZones.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp
   ...
 
 72758 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamrock/include/shamrock/patch/PatchDataLayer.hpp (included 118 times, avg 616 ms), included via:
   7x: <direct include>
-  5x: patchdata.hpp 
-  3x: FindGhostLayerCandidates.hpp PatchDataLayerDDShared.hpp 
-  3x: Field.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  3x: AMRGrid.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: KillParticles.hpp PatchDataLayerRefs.hpp 
-  2x: PatchDataToPy.hpp 
-  2x: BasicSPHGhosts.hpp 
-  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  2x: ResidualDot.hpp SolverConfig.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp 
-  1x: CopyPatchDataLayerFields.hpp 
-  1x: FuseGhostLayer.hpp IPatchDataLayerRefs.hpp 
+  5x: patchdata.hpp
+  3x: FindGhostLayerCandidates.hpp PatchDataLayerDDShared.hpp
+  3x: Field.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  3x: AMRGrid.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: KillParticles.hpp PatchDataLayerRefs.hpp
+  2x: PatchDataToPy.hpp
+  2x: BasicSPHGhosts.hpp
+  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  2x: ResidualDot.hpp SolverConfig.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp
+  1x: CopyPatchDataLayerFields.hpp
+  1x: FuseGhostLayer.hpp IPatchDataLayerRefs.hpp
   ...
 
 62254 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambackends/include/shambackends/math.hpp (included 238 times, avg 261 ms), included via:
   30x: <direct include>
-  21x: AABB.hpp 
-  17x: sphkernels.hpp 
-  6x: CoordRange.hpp intervals.hpp 
-  6x: Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp 
-  5x: morton.hpp 
-  5x: PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp 
-  4x: equals.hpp 
-  3x: SolverConfig.hpp 
-  3x: riemann.hpp 
-  3x: Solver.hpp SolverConfig.hpp 
-  3x: patchdata.hpp PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp 
-  3x: crystalLattice.hpp CoordRange.hpp intervals.hpp 
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp 
-  3x: Field.hpp ComputeField.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  2x: AMRGrid.hpp AMRCell.hpp 
-  2x: CompressedLeafBVH.hpp morton.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp 
-  2x: TreeMortonCodes.hpp CoordRange.hpp intervals.hpp 
-  2x: distributedDataComm.hpp sparseXchg.hpp 
-  2x: Model.hpp Solver.hpp AMRBlock.hpp AABB.hpp 
+  21x: AABB.hpp
+  17x: sphkernels.hpp
+  6x: CoordRange.hpp intervals.hpp
+  6x: Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp
+  5x: morton.hpp
+  5x: PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp
+  4x: equals.hpp
+  3x: SolverConfig.hpp
+  3x: riemann.hpp
+  3x: Solver.hpp SolverConfig.hpp
+  3x: patchdata.hpp PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp
+  3x: crystalLattice.hpp CoordRange.hpp intervals.hpp
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp PatchDataLayer.hpp Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp
+  3x: Field.hpp ComputeField.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  2x: AMRGrid.hpp AMRCell.hpp
+  2x: CompressedLeafBVH.hpp morton.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp
+  2x: TreeMortonCodes.hpp CoordRange.hpp intervals.hpp
+  2x: distributedDataComm.hpp sparseXchg.hpp
+  2x: Model.hpp Solver.hpp AMRBlock.hpp AABB.hpp
   ...
 
 56953 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambase/include/shambase/SourceLocation.hpp (included 332 times, avg 171 ms), included via:
-  52x: exception.hpp 
-  27x: stacktrace.hpp 
-  18x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp 
-  16x: DistributedData.hpp exception.hpp 
-  16x: time.hpp string.hpp exception.hpp 
-  15x: DeviceBuffer.hpp memory.hpp exception.hpp 
-  13x: memory.hpp exception.hpp 
-  12x: string.hpp exception.hpp 
-  10x: logs.hpp logs.hpp msgformat.hpp string.hpp exception.hpp 
+  52x: exception.hpp
+  27x: stacktrace.hpp
+  18x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp
+  16x: DistributedData.hpp exception.hpp
+  16x: time.hpp string.hpp exception.hpp
+  15x: DeviceBuffer.hpp memory.hpp exception.hpp
+  13x: memory.hpp exception.hpp
+  12x: string.hpp exception.hpp
+  10x: logs.hpp logs.hpp msgformat.hpp string.hpp exception.hpp
   4x: <direct include>
-  4x: TestResult.hpp TestAssertList.hpp 
-  4x: AABB.hpp 
-  4x: indexing.hpp logs.hpp logs.hpp msgformat.hpp string.hpp exception.hpp 
-  3x: PatchDataLayer.hpp exception.hpp 
-  3x: narrowing.hpp 
-  3x: SolverConfig.hpp exception.hpp 
-  3x: profiling.hpp 
-  3x: patchdata.hpp PatchDataLayer.hpp exception.hpp 
-  3x: morton.hpp CoordRangeTransform.hpp CoordRange.hpp 
-  2x: PatchDataLayerLayout.hpp 
-  2x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp exception.hpp 
+  4x: TestResult.hpp TestAssertList.hpp
+  4x: AABB.hpp
+  4x: indexing.hpp logs.hpp logs.hpp msgformat.hpp string.hpp exception.hpp
+  3x: PatchDataLayer.hpp exception.hpp
+  3x: narrowing.hpp
+  3x: SolverConfig.hpp exception.hpp
+  3x: profiling.hpp
+  3x: patchdata.hpp PatchDataLayer.hpp exception.hpp
+  3x: morton.hpp CoordRangeTransform.hpp CoordRange.hpp
+  2x: PatchDataLayerLayout.hpp
+  2x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp exception.hpp
   ...
 
 52950 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamalgs/include/shamalgs/collective/reduction.hpp (included 181 times, avg 292 ms), included via:
   17x: <direct include>
-  15x: PatchDataField.hpp numeric.hpp 
-  7x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp 
-  6x: numeric.hpp 
-  5x: numeric.hpp numeric.hpp 
-  5x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp 
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp PatchDataField.hpp numeric.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  3x: AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp 
-  3x: AMRGrid.hpp AMRCell.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp 
-  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  2x: sparseXchg.hpp 
-  2x: distributedDataComm.hpp sparseXchg.hpp 
-  2x: Model.hpp Solver.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp 
-  2x: Model.hpp Solver.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp 
-  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp 
-  2x: PatchDataToPy.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp 
-  2x: ResidualDot.hpp SolverConfig.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp 
-  2x: Field.hpp ComputeField.hpp PatchDataField.hpp numeric.hpp 
+  15x: PatchDataField.hpp numeric.hpp
+  7x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp
+  6x: numeric.hpp
+  5x: numeric.hpp numeric.hpp
+  5x: patchdata.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp PatchDataField.hpp numeric.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  3x: AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp
+  3x: AMRGrid.hpp AMRCell.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp
+  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  2x: sparseXchg.hpp
+  2x: distributedDataComm.hpp sparseXchg.hpp
+  2x: Model.hpp Solver.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp
+  2x: Model.hpp Solver.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp
+  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp distributedDataComm.hpp sparseXchg.hpp
+  2x: PatchDataToPy.hpp PatchDataLayer.hpp PatchDataField.hpp numeric.hpp
+  2x: ResidualDot.hpp SolverConfig.hpp AMRBlock.hpp TreeTraversal.hpp numeric.hpp numeric.hpp
+  2x: Field.hpp ComputeField.hpp PatchDataField.hpp numeric.hpp
   ...
 
 51267 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shammodels/sph/include/shammodels/sph/SolverConfig.hpp (included 34 times, avg 1507 ms), included via:
-  4x: Solver.hpp 
-  3x: Model.hpp Solver.hpp 
+  4x: Solver.hpp
+  3x: Model.hpp Solver.hpp
   2x: <direct include>
-  2x: ComputeLoadBalanceValue.hpp 
-  2x: NeighbourCache.hpp 
-  1x: VTKDump.hpp 
-  1x: ConservativeCheck.hpp 
-  1x: ParticleReordering.hpp 
-  1x: ModifierOffset.hpp 
-  1x: BuildTrees.hpp 
-  1x: AnalysisSodTube.hpp 
-  1x: UpdateViscosity.hpp 
-  1x: DiffOperator.hpp 
-  1x: DiffOperatorDtDivv.hpp 
-  1x: CartesianRender.hpp 
-  1x: ModifierSplitPart.hpp 
-  1x: AnalysisBarycenter.hpp Model.hpp Solver.hpp 
-  1x: AnalysisDisc.hpp 
-  1x: GeneratorMCDisc.hpp 
-  1x: ExternalForces.hpp 
-  1x: RenderFieldGetter.hpp 
+  2x: ComputeLoadBalanceValue.hpp
+  2x: NeighbourCache.hpp
+  1x: VTKDump.hpp
+  1x: ConservativeCheck.hpp
+  1x: ParticleReordering.hpp
+  1x: ModifierOffset.hpp
+  1x: BuildTrees.hpp
+  1x: AnalysisSodTube.hpp
+  1x: UpdateViscosity.hpp
+  1x: DiffOperator.hpp
+  1x: DiffOperatorDtDivv.hpp
+  1x: CartesianRender.hpp
+  1x: ModifierSplitPart.hpp
+  1x: AnalysisBarycenter.hpp Model.hpp Solver.hpp
+  1x: AnalysisDisc.hpp
+  1x: GeneratorMCDisc.hpp
+  1x: ExternalForces.hpp
+  1x: RenderFieldGetter.hpp
   ...
 
 51065 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamtest/details/TestResult.hpp (included 143 times, avg 357 ms), included via:
-  104x: shamtest.hpp Test.hpp 
+  104x: shamtest.hpp Test.hpp
   33x: <direct include>
-  3x: numericTests.hpp shamtest.hpp Test.hpp 
-  2x: sortTests.hpp shamtest.hpp Test.hpp 
-  1x: Test.hpp 
+  3x: numericTests.hpp shamtest.hpp Test.hpp
+  2x: sortTests.hpp shamtest.hpp Test.hpp
+  1x: Test.hpp
 
 49506 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamtest/details/TestAssertList.hpp (included 144 times, avg 343 ms), included via:
-  104x: shamtest.hpp Test.hpp TestResult.hpp 
-  33x: TestResult.hpp 
-  3x: numericTests.hpp shamtest.hpp Test.hpp TestResult.hpp 
-  2x: sortTests.hpp shamtest.hpp Test.hpp TestResult.hpp 
-  1x: Test.hpp TestResult.hpp 
+  104x: shamtest.hpp Test.hpp TestResult.hpp
+  33x: TestResult.hpp
+  3x: numericTests.hpp shamtest.hpp Test.hpp TestResult.hpp
+  2x: sortTests.hpp shamtest.hpp Test.hpp TestResult.hpp
+  1x: Test.hpp TestResult.hpp
   1x: <direct include>
 
 46339 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamrock/include/shamrock/solvergraph/PatchDataLayerRefs.hpp (included 108 times, avg 429 ms), included via:
-  4x: Field.hpp ComputeField.hpp PatchScheduler.hpp 
-  3x: AMRGrid.hpp PatchScheduler.hpp 
-  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  3x: PatchScheduler.hpp 
-  3x: FindGhostLayerCandidates.hpp 
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp ComputeField.hpp PatchScheduler.hpp 
-  2x: KillParticles.hpp 
-  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp PatchScheduler.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp PatchScheduler.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp PatchScheduler.hpp 
-  2x: ResidualDot.hpp SolverConfig.hpp PatchScheduler.hpp 
-  2x: BasicSPHGhosts.hpp ComputeField.hpp PatchScheduler.hpp 
-  2x: CopyPatchDataLayerFields.hpp PatchDataLayerEdge.hpp 
-  1x: SerialPatchTree.hpp PatchScheduler.hpp 
-  1x: ShamrockDump.hpp PatchScheduler.hpp 
-  1x: AMROverheadtest.hpp AMRGrid.hpp PatchScheduler.hpp 
+  4x: Field.hpp ComputeField.hpp PatchScheduler.hpp
+  3x: AMRGrid.hpp PatchScheduler.hpp
+  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  3x: PatchScheduler.hpp
+  3x: FindGhostLayerCandidates.hpp
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp ComputeField.hpp PatchScheduler.hpp
+  2x: KillParticles.hpp
+  2x: CopyPatchDataField.hpp Field.hpp ComputeField.hpp PatchScheduler.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp ComputeField.hpp PatchScheduler.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  2x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp PatchScheduler.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp PatchScheduler.hpp
+  2x: ResidualDot.hpp SolverConfig.hpp PatchScheduler.hpp
+  2x: BasicSPHGhosts.hpp ComputeField.hpp PatchScheduler.hpp
+  2x: CopyPatchDataLayerFields.hpp PatchDataLayerEdge.hpp
+  1x: SerialPatchTree.hpp PatchScheduler.hpp
+  1x: ShamrockDump.hpp PatchScheduler.hpp
+  1x: AMROverheadtest.hpp AMRGrid.hpp PatchScheduler.hpp
   ...
 
 45451 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamtest/details/Test.hpp (included 110 times, avg 413 ms), included via:
-  104x: shamtest.hpp 
-  3x: numericTests.hpp shamtest.hpp 
-  2x: sortTests.hpp shamtest.hpp 
+  104x: shamtest.hpp
+  3x: numericTests.hpp shamtest.hpp
+  2x: sortTests.hpp shamtest.hpp
   1x: <direct include>
 
 45183 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamtest/shamtest.hpp (included 140 times, avg 322 ms), included via:
   135x: <direct include>
-  3x: numericTests.hpp 
-  2x: sortTests.hpp 
+  3x: numericTests.hpp
+  2x: sortTests.hpp
 
 43349 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambase/include/shambase/exception.hpp (included 377 times, avg 114 ms), included via:
   56x: <direct include>
-  31x: stacktrace.hpp string.hpp 
-  18x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp string.hpp 
-  17x: string.hpp 
-  16x: DistributedData.hpp 
-  16x: time.hpp string.hpp 
-  15x: DeviceBuffer.hpp memory.hpp 
-  14x: logs.hpp logs.hpp msgformat.hpp string.hpp 
-  13x: memory.hpp 
-  7x: random.hpp random.hpp DeviceBuffer.hpp memory.hpp 
-  5x: indexing.hpp logs.hpp logs.hpp msgformat.hpp string.hpp 
-  3x: PatchDataLayer.hpp 
-  3x: SolverConfig.hpp 
-  3x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp 
-  3x: serialize.hpp 
-  3x: narrowing.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp memory.hpp 
-  3x: TestResult.hpp TestAssertList.hpp string.hpp 
-  3x: patchdata.hpp PatchDataLayer.hpp 
-  2x: numeric.hpp memory.hpp 
-  2x: sparse_exchange.hpp DeviceBuffer.hpp memory.hpp 
+  31x: stacktrace.hpp string.hpp
+  18x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp string.hpp
+  17x: string.hpp
+  16x: DistributedData.hpp
+  16x: time.hpp string.hpp
+  15x: DeviceBuffer.hpp memory.hpp
+  14x: logs.hpp logs.hpp msgformat.hpp string.hpp
+  13x: memory.hpp
+  7x: random.hpp random.hpp DeviceBuffer.hpp memory.hpp
+  5x: indexing.hpp logs.hpp logs.hpp msgformat.hpp string.hpp
+  3x: PatchDataLayer.hpp
+  3x: SolverConfig.hpp
+  3x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp memory.hpp
+  3x: serialize.hpp
+  3x: narrowing.hpp
+  3x: reduction.hpp DeviceBuffer.hpp memory.hpp
+  3x: TestResult.hpp TestAssertList.hpp string.hpp
+  3x: patchdata.hpp PatchDataLayer.hpp
+  2x: numeric.hpp memory.hpp
+  2x: sparse_exchange.hpp DeviceBuffer.hpp memory.hpp
   ...
 
 42839 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shambase/include/shambase/memory.hpp (included 151 times, avg 283 ms), included via:
   24x: <direct include>
-  19x: DeviceBuffer.hpp 
-  8x: random.hpp random.hpp DeviceBuffer.hpp 
-  7x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp 
-  5x: random.hpp DeviceBuffer.hpp 
-  4x: patchdata.hpp PatchDataLayer.hpp 
-  3x: numeric.hpp 
-  3x: PatchDataLayer.hpp 
-  3x: reduction.hpp flatten.hpp DeviceBuffer.hpp 
-  3x: serialize.hpp 
-  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp 
-  3x: CommunicationBuffer.hpp DeviceBuffer.hpp 
-  3x: reduction.hpp DeviceBuffer.hpp 
-  2x: sparse_exchange.hpp DeviceBuffer.hpp 
-  2x: reduction.hpp 
-  2x: bitonicSort_updated_usm.hpp DeviceBuffer.hpp 
-  2x: kernel_call.hpp DeviceBuffer.hpp 
-  2x: is_all_true.hpp DeviceBuffer.hpp 
-  2x: numericTests.hpp random.hpp DeviceBuffer.hpp 
-  1x: ErrorChecker.hpp DeviceBuffer.hpp 
-  1x: numericFallback.hpp DeviceBuffer.hpp 
+  19x: DeviceBuffer.hpp
+  8x: random.hpp random.hpp DeviceBuffer.hpp
+  7x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp
+  5x: random.hpp DeviceBuffer.hpp
+  4x: patchdata.hpp PatchDataLayer.hpp
+  3x: numeric.hpp
+  3x: PatchDataLayer.hpp
+  3x: reduction.hpp flatten.hpp DeviceBuffer.hpp
+  3x: serialize.hpp
+  3x: algorithm.hpp algorithm.hpp sort_by_keys.hpp DeviceBuffer.hpp
+  3x: CommunicationBuffer.hpp DeviceBuffer.hpp
+  3x: reduction.hpp DeviceBuffer.hpp
+  2x: sparse_exchange.hpp DeviceBuffer.hpp
+  2x: reduction.hpp
+  2x: bitonicSort_updated_usm.hpp DeviceBuffer.hpp
+  2x: kernel_call.hpp DeviceBuffer.hpp
+  2x: is_all_true.hpp DeviceBuffer.hpp
+  2x: numericTests.hpp random.hpp DeviceBuffer.hpp
+  1x: ErrorChecker.hpp DeviceBuffer.hpp
+  1x: numericFallback.hpp DeviceBuffer.hpp
   ...
 
 40761 ms: /Users/davidclt/Documents/shamrock-dev/Shamrock_cursor/src/shamrock/include/shamrock/scheduler/SerialPatchTree.hpp (included 74 times, avg 550 ms), included via:
-  3x: SolverConfig.hpp units_json.hpp 
-  3x: Solver.hpp SolverConfig.hpp units_json.hpp 
-  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp 
-  3x: FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp 
-  3x: SPHUtilities.hpp BasicSPHGhosts.hpp InterfacesUtility.hpp 
-  2x: SolverConfig.hpp units_json.hpp 
-  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp 
-  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp InterfacesUtility.hpp 
-  2x: Model.hpp Solver.hpp SolverStorage.hpp FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp 
-  2x: BasicSPHGhosts.hpp InterfacesUtility.hpp 
+  3x: SolverConfig.hpp units_json.hpp
+  3x: Solver.hpp SolverConfig.hpp units_json.hpp
+  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp
+  3x: FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp
+  3x: SPHUtilities.hpp BasicSPHGhosts.hpp InterfacesUtility.hpp
+  2x: SolverConfig.hpp units_json.hpp
+  2x: ComputeLoadBalanceValue.hpp SolverConfig.hpp units_json.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp
+  2x: Model.hpp Solver.hpp SolverConfig.hpp SolverStorage.hpp InterfacesUtility.hpp
+  2x: Model.hpp Solver.hpp SolverStorage.hpp FindGhostLayerCandidates.hpp SerialPatchTreeEdge.hpp
+  2x: BasicSPHGhosts.hpp InterfacesUtility.hpp
   1x: <direct include>
-  1x: UpdateViscosity.hpp SolverConfig.hpp units_json.hpp 
-  1x: BuildTrees.hpp SolverConfig.hpp units_json.hpp 
-  1x: UpdateDerivs.hpp SolverConfig.hpp units_json.hpp 
-  1x: DiffOperatorDtDivv.hpp SolverConfig.hpp units_json.hpp 
-  1x: ConservativeCheck.hpp SolverConfig.hpp units_json.hpp 
-  1x: AnalysisSodTube.hpp SolverConfig.hpp units_json.hpp 
-  1x: DiffOperator.hpp SolverConfig.hpp units_json.hpp 
-  1x: ModifierOffset.hpp SolverConfig.hpp units_json.hpp 
-  1x: VTKDump.hpp SolverConfig.hpp units_json.hpp 
+  1x: UpdateViscosity.hpp SolverConfig.hpp units_json.hpp
+  1x: BuildTrees.hpp SolverConfig.hpp units_json.hpp
+  1x: UpdateDerivs.hpp SolverConfig.hpp units_json.hpp
+  1x: DiffOperatorDtDivv.hpp SolverConfig.hpp units_json.hpp
+  1x: ConservativeCheck.hpp SolverConfig.hpp units_json.hpp
+  1x: AnalysisSodTube.hpp SolverConfig.hpp units_json.hpp
+  1x: DiffOperator.hpp SolverConfig.hpp units_json.hpp
+  1x: ModifierOffset.hpp SolverConfig.hpp units_json.hpp
+  1x: VTKDump.hpp SolverConfig.hpp units_json.hpp
   ...
 
   done in 0.5s.

@@ -35,6 +35,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/setup/generators.hpp"
 #include "shammodels/gsph/Solver.hpp"
+#include "shammodels/gsph/modules/GSPHSetup.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -131,6 +132,22 @@ namespace shammodels::gsph {
 
         void add_cube_fcc_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
         void add_cube_hcp_3d(Tscal dr, std::pair<Tvec, Tvec> _box);
+
+        inline std::unique_ptr<modules::GSPHSetup<Tvec, SPHKernel>> get_setup() {
+            return std::make_unique<modules::GSPHSetup<Tvec, SPHKernel>>(
+                ctx, solver.solver_config, solver.storage);
+        }
+
+        inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
+            if (solver.storage.sinks.is_empty()) {
+                solver.storage.sinks.set({});
+            }
+
+            shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
+
+            solver.storage.sinks.get().push_back(
+                {pos, velocity, {}, {}, mass, {}, accretion_radius});
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Field manipulation
@@ -411,6 +428,12 @@ namespace shammodels::gsph {
 
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;
+
+            if (solver.storage.sinks.is_empty()) {
+                metadata["sinks"] = nlohmann::json{};
+            } else {
+                metadata["sinks"] = solver.storage.sinks.get();
+            }
 
             shamrock::write_shamrock_dump(
                 fname, metadata.dump(4), shambase::get_check_ref(ctx.sched));

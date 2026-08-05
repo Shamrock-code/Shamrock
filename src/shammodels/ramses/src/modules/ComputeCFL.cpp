@@ -16,6 +16,7 @@
 
 #include "shammodels/ramses/modules/ComputeCFL.hpp"
 #include "fmt/core.h"
+#include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
 #include "shammath/riemann_dust.hpp"
 #include "shamrock/scheduler/SchedulerUtility.hpp"
@@ -92,11 +93,11 @@ auto shammodels::basegodunov::modules::ComputeCFL<Tvec, TgridVec>::compute_cfl()
 
                 auto conststate = shammath::ConsState<Tvec>{rho[gid], rhoe[gid], rhov[gid]};
 
-                auto prim_state = shammath::cons_to_prim(conststate, gamma);
+                auto prim_state = shammath::cons_to_prim<Tvec,TgridVec>(conststate, gamma, solver_config.eos_config);
 
                 constexpr Tscal div = 1. / 3.;
 
-                Tscal cs    = sound_speed(prim_state, gamma);
+                Tscal cs    = sound_speed<Tvec, TgridVec>(prim_state, gamma, solver_config.eos_config);
                 Tscal vnorm = sycl::length(prim_state.vel);
                 Tscal dt    = C_safe * dx * div / (cs + vnorm);
 

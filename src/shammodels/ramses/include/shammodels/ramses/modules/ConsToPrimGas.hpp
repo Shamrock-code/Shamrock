@@ -20,6 +20,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shammodels/ramses//SolverConfig.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* ------------------- inputs ------------------- */                                           \
@@ -33,14 +34,16 @@
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_P)
 
 namespace shammodels::basegodunov::modules {
-    template<class Tvec>
+    template<class Tvec, class TgridVec>
     class NodeConsToPrimGas : public shamrock::solvergraph::INode {
         using Tscal = shambase::VecComponent<Tvec>;
         u32 block_size;
         Tscal gamma;
+        using Config = SolverConfig<Tvec, TgridVec>;
+        Config::EOSConfig &eos_config;
 
         public:
-        NodeConsToPrimGas(u32 block_size, Tscal gamma) : block_size(block_size), gamma(gamma) {}
+        NodeConsToPrimGas(u32 block_size, Tscal gamma, Config::EOSConfig &eos_config) : block_size(block_size), gamma(gamma), eos_config(eos_config) {}
 
         EXPAND_NODE_EDGES(NODE_EDGES)
 

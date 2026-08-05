@@ -330,7 +330,6 @@ namespace shammodels::basegodunov::modules {
         shamlog_debug_ln("[AMR cell graph]", "compute antecedent map");
         cell_graph_links.for_each([&](u64 id, OrientedAMRGraph &oriented_block_graph) {
             auto ptr       = shamsys::instance::get_compute_scheduler_ptr();
-            u32 cell_count = (edges.sizes.indexes.get(id)) * AMRBlock::block_size;
             for (u32 dir = 0; dir < 6; dir++) {
                 oriented_block_graph.graph_links[dir]->compute_antecedent(ptr);
             }

@@ -5,6 +5,7 @@ import numpy as np
 
 import shamrock
 
+shamrock.enable_experimental_features()
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
 
@@ -16,7 +17,7 @@ multy = 1
 multz = 1
 
 sz = 1 << 1
-base = 32
+base = 16
 
 cfg = model.gen_default_config()
 scale_fact = 2 / (sz * base * multx)
@@ -24,6 +25,7 @@ cfg.set_scale_factor(scale_fact)
 
 gamma = 1.4
 cfg.set_eos_gamma(gamma)
+cfg.set_eos_adiabatic(gamma=gamma)
 # cfg.set_riemann_solver_rusanov()
 cfg.set_riemann_solver_hll()
 
@@ -80,9 +82,9 @@ dt = 0.0000
 t = 0
 tend = 0.245
 
-for i in range(1):
+for i in range(1000):
     if i % freq == 0:
-        model.dump_vtk("test" + str(i // freq) + ".vtk")
+        model.dump_vtk("Test_Advection_Bug" + str(i // freq) + ".vtk")
 
     next_dt = model.evolve_once_override_time(t, dt)
 

@@ -40,6 +40,7 @@
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
@@ -252,6 +253,39 @@ namespace shammodels::basegodunov {
             /// Reset the timings logged in the storage
             void reset() { *this = {}; }
         } timings_details;
+
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi;
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_phi_new;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_z;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_rhs;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_p;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_Ap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_hadamard_prod;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rz_hadamard_prod;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> e_norm;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> new_val;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> old_val;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rhs_norm_value;
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rz_new_val;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> rz_old_val;
+
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_new;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> phi_g_old;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rho_next;
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> refs_rhov_next;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> refs_rhoe_next;
+
+        // for BICGSTAB
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_res_bis;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_s;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> phi_As;
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> wstab_val;
+
+        std::shared_ptr<shamrock::solvergraph::PatchDataFieldDDShared<Tscal>> phi_ghosts;
     };
 
 } // namespace shammodels::basegodunov

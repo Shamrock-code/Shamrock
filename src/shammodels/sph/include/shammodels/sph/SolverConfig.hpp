@@ -127,7 +127,7 @@ namespace shammodels::sph {
             u32 ndust;
         };
 
-        /// Variant type to store the EOS configuration
+        /// Variant type to store the Monofluid configuration
         using Variant = std::variant<None, MonofluidTVA, MonofluidComplete>;
 
         Variant current_mode = None{};

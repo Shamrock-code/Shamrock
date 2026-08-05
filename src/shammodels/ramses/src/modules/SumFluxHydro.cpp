@@ -122,6 +122,7 @@ struct KernelSumFluxHydro {
             graph_iter.for_each_object_link_id(id_a, [&](u32 id_b, u32 link_id) {
                 Tscal S_ij = KernelSumFluxHydro<Tvec, TgridVec>::get_face_surface(
                     id_a, id_b, cell0block_aabb_lower, block_cell_sizes, dxfact);
+
                 dtrho -= flux_rho[link_id] * S_ij;
                 dtrhov -= flux_rhov[link_id] * S_ij;
                 dtrhoe -= flux_rhoe[link_id] * S_ij;

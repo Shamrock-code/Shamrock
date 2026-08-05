@@ -21,6 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
+#include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
@@ -45,8 +46,11 @@ namespace shammodels::basegodunov::modules {
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi;
             const shamrock::solvergraph::IFieldSpan<Tscal> &spans_rho;
             const shamrock::solvergraph::ScalarEdge<Tscal> &mean_rho;
+
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_res;
             shamrock::solvergraph::IFieldSpan<Tscal> &spans_phi_p;
+            shamrock::solvergraph::Field<Tscal> &spans_rhs;
+            shamrock::solvergraph::Field<Tscal> &spans_phi_z;
         };
 
         inline void set_edges(
@@ -57,10 +61,12 @@ namespace shammodels::basegodunov::modules {
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_rho,
             std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> mean_rho,
             std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_res,
-            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_p) {
+            std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> spans_phi_p,
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_rhs,
+            std::shared_ptr<shamrock::solvergraph::Field<Tscal>> spans_phi_z) {
             __internal_set_ro_edges(
                 {sizes, cell_neigh_graph, spans_block_cell_sizes, spans_phi, spans_rho, mean_rho});
-            __internal_set_rw_edges({spans_phi_res, spans_phi_p});
+            __internal_set_rw_edges({spans_phi_res, spans_phi_p, spans_rhs, spans_phi_z});
         }
 
         inline Edges get_edges() {
@@ -72,11 +78,13 @@ namespace shammodels::basegodunov::modules {
                 get_ro_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(4),
                 get_ro_edge<shamrock::solvergraph::ScalarEdge<Tscal>>(5),
                 get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1)};
+                get_rw_edge<shamrock::solvergraph::IFieldSpan<Tscal>>(1),
+                get_rw_edge<shamrock::solvergraph::Field<Tscal>>(2),
+                get_rw_edge<shamrock::solvergraph::Field<Tscal>>(3)};
         }
 
         void _impl_evaluate_internal();
-        inline virtual std::string _impl_get_label() { return "CGInit"; };
-        virtual std::string _impl_get_tex();
+        inline virtual std::string _impl_get_label() const { return "CGInit"; };
+        virtual std::string _impl_get_tex() const;
     };
 } // namespace shammodels::basegodunov::modules

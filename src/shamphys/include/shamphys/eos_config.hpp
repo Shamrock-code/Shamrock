@@ -291,4 +291,34 @@ namespace shamphys {
                && (lhs.n_sinks == rhs.n_sinks);
     }
 
+
+    /**
+    */
+    template<class Tscal>
+    struct EOS_Config_Barotropic {
+
+        // critical density for transition from isothermal to adiabatic
+        Tscal  rho_critic;
+
+        // temperature
+        Tscal temp;
+
+        // mu
+        Tscal mu;
+
+        // adiabatic gas index
+        Tscal gamma;
+
+    };
+
+    template <class Tscal>
+    inline bool operator==(
+        const EOS_Config_Barotropic<Tscal> &lhs,
+        const EOS_Config_Barotropic<Tscal> &rhs
+    ){
+        return (lhs.rho_critic == rhs.rho_critic)&&(lhs.temp == rhs.temp)
+        &&(lhs.mu == rhs.mu) &&(lhs.gamma == rhs.gamma);
+    }
+
+
 } // namespace shamphys

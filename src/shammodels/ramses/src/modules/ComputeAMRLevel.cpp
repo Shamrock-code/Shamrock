@@ -20,6 +20,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shambackends/math.hpp"
+#include "shamcomm/logs.hpp"
 #include "shammodels/ramses/modules/ComputeAMRLevel.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -28,6 +29,7 @@ namespace shammodels::basegodunov::modules {
 
     template<class TgridVec>
     void ComputeAMRLevel<TgridVec>::_impl_evaluate_internal() {
+
         auto edges = get_edges();
 
         edges.block_min.check_sizes(edges.sizes.indexes);

@@ -1,0 +1,3 @@
+queue_rules:
+  - name: main queue
+    merge_method: squash

@@ -203,8 +203,8 @@ namespace shamtest::details {
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                STDSTRINGIFY(a) + " evaluated to false\n\n"                                        \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+                STDSTRINGIFY(a) + " evaluated to false\n\n" + " -> location : "                    \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         }                                                                                          \
     } while (0)
 
@@ -232,8 +232,8 @@ namespace shamtest::details {
                 eval,                                                                              \
                 assert_name + " evaluated to false\n\n" + " -> " #_a                               \
                     + shambase::format(" = {}", _______a) + "\n" + " -> " #_b                      \
-                    + shambase::format(" = {}", _______b) + "\n"                                   \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+                    + shambase::format(" = {}", _______b) + "\n" + " -> location : "               \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         }                                                                                          \
     } while (0)
 
@@ -276,8 +276,8 @@ namespace shamtest::details {
                 eval,                                                                              \
                 assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
                     + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
-                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
-                    + " -> location : " + SourceLocation{}.format_one_line());                     \
+                    + shambase::format(" -> " #prec " = {}", prec) + "\n" + " -> location : "      \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         }                                                                                          \
     } while (0)
 
@@ -368,7 +368,7 @@ namespace shamtest::details {
                 false,                                                                             \
                 "Expected throw of type " #exception_type ", but nothing was thrown\n"             \
                 " -> location : "                                                                  \
-                    + SourceLocation{}.format_one_line());                                         \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         } catch (const exception_type &ex) {                                                       \
             /* If wanted exception is thrown, assert that the test pass */                         \
             shamtest::asserts().assert_bool_with_log(                                              \
@@ -379,7 +379,8 @@ namespace shamtest::details {
                 #exception_type " was not thrown",                                                 \
                 false,                                                                             \
                 "Expected throw of type " #exception_type ", but got " + std::string(e.what())     \
-                    + "\n" + " -> location : " + SourceLocation{}.format_one_line());              \
+                    + "\n" + " -> location : "                                                     \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         } catch (...) {                                                                            \
             /* If an unknown exception is thrown, assert that the test failed */                   \
             shamtest::asserts().assert_bool_with_log(                                              \
@@ -387,6 +388,6 @@ namespace shamtest::details {
                 false,                                                                             \
                 "Expected throw of type " #exception_type ", but got unknown exception\n"          \
                 " -> location : "                                                                  \
-                    + SourceLocation{}.format_one_line());                                         \
+                    + shambase::format_one_line(std::source_location::current()));                 \
         }                                                                                          \
     } while (0)

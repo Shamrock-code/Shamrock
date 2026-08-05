@@ -155,7 +155,7 @@ namespace sham::benchmarks {
         }
 
         return {
-            .func_name = SourceLocation{}.loc.function_name(),
+            .func_name = std::source_location::current().function_name(),
             .seconds   = seconds,
             .bandwidth = double(N) * load_size * 3 / seconds / 1e9,
             .byte_used = u64(N) * u64(load_size) * 2_u64};

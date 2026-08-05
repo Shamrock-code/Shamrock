@@ -148,7 +148,7 @@ namespace sham::benchmarks {
         double flops        = flop_count / (sec);
 
         return {
-            .func_name  = SourceLocation{}.loc.function_name(),
+            .func_name  = std::source_location::current().function_name(),
             .seconds    = sec,
             .flops      = flops,
             .nrotations = nrotation};

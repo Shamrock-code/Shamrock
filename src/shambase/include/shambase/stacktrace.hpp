@@ -85,9 +85,14 @@ namespace shambase::details {
 
     /// Helper class to manage the call stack entry
     struct CallStackEntry {
-        inline CallStackEntry(SourceLocation &loc) {
+        inline CallStackEntry(const SourceLocation &loc) {
             // Push the source location to the call stack
             call_stack.emplace(loc);
+        }
+
+        inline CallStackEntry(const std::source_location &loc) {
+            // Push the source location to the call stack
+            call_stack.emplace(SourceLocation{loc});
         }
 
         // This class is not safe if copied or moved
@@ -138,7 +143,9 @@ namespace shambase::details {
          * @param loc Source location attached to the entry (default: SourceLocation{})
          */
         inline BasicStackEntry(
-            SourceLocation &callsite, bool do_timer = true, SourceLocation &&loc = SourceLocation{})
+            const SourceLocation &callsite,
+            bool do_timer        = true,
+            SourceLocation &&loc = SourceLocation{})
             : loc(loc), do_timer(do_timer), scoped_callstack_entry(callsite) {
 #ifdef SHAMROCK_USE_PROFILING
             if (do_timer) {
@@ -149,6 +156,12 @@ namespace shambase::details {
             }
 #endif
         }
+
+        inline BasicStackEntry(
+            const std::source_location &callsite,
+            bool do_timer              = true,
+            std::source_location &&loc = std::source_location::current())
+            : BasicStackEntry(SourceLocation{callsite}, do_timer, SourceLocation{loc}) {}
 
         /**
          * @brief Destroy the Basic Stack Entry object.

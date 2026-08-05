@@ -285,7 +285,7 @@ namespace sham {
             RefOut in_out,
             index_t n,
             Functor &&kernel_gen,
-            SourceLocation &&callsite = SourceLocation{}) {
+            std::source_location &&callsite = std::source_location::current()) {
 
             __shamrock_stack_entry_with_callsite(callsite);
 
@@ -324,7 +324,7 @@ namespace sham {
             RefOut in_out,
             index_t n,
             Functor &&func,
-            SourceLocation &&callsite = SourceLocation{}) {
+            std::source_location &&callsite = std::source_location::current()) {
 
             __shamrock_log_callsite(callsite);
 
@@ -517,7 +517,7 @@ namespace sham {
         RefOut in_out,
         u32 n,
         Functor &&func,
-        SourceLocation &&callsite = SourceLocation{}) {
+        std::source_location &&callsite = std::source_location::current()) {
 
         __shamrock_log_callsite(callsite);
 
@@ -533,7 +533,7 @@ namespace sham {
         RefOut in_out,
         u64 n,
         Functor &&func,
-        SourceLocation &&callsite = SourceLocation{}) {
+        std::source_location &&callsite = std::source_location::current()) {
 
         __shamrock_log_callsite(callsite);
 
@@ -549,7 +549,7 @@ namespace sham {
         RefOut in_out,
         u32 n,
         Functor &&kernel_gen,
-        SourceLocation &&callsite = SourceLocation{}) {
+        std::source_location &&callsite = std::source_location::current()) {
 
         __shamrock_log_callsite(callsite);
 
@@ -565,7 +565,7 @@ namespace sham {
         RefOut in_out,
         u64 n,
         Functor &&kernel_gen,
-        SourceLocation &&callsite = SourceLocation{}) {
+        std::source_location &&callsite = std::source_location::current()) {
 
         __shamrock_log_callsite(callsite);
 

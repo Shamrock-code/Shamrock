@@ -53,7 +53,7 @@ namespace sham {
                 "kern call",
                 "called DDMultiRef.get, id =",
                 id,
-                SourceLocation{}.format_one_line_func());
+                shambase::format_one_line_func(std::source_location::current()));
             return std::apply(
                 [id](auto &...args) {
                     return sham::MultiRef{args.get(id)...};

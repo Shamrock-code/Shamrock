@@ -7,3 +7,5 @@ queue_rules:
       trailers:
         - approved-by
         - merged-by
+    merge_conditions:
+      - check-success = all

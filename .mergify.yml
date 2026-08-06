@@ -18,5 +18,6 @@ queue_rules:
     merge_bot_account: mergify[bot]
     update_bot_account: mergify[bot]
     batch_size: 5
+    batch_max_wait_time: 10min
 merge_queue:
   max_parallel_checks: 2

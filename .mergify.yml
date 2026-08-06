@@ -14,3 +14,6 @@ queue_rules:
       - check-success = all_light
       - check-success = pre-commit.ci - pr
       - approved-reviews-by >= 1
+    draft_bot_account: mergify[bot]
+    merge_bot_account: mergify[bot]
+    update_bot_account: mergify[bot]

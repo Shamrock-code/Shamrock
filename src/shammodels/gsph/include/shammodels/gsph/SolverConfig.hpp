@@ -75,6 +75,26 @@ namespace shammodels::gsph {
         Tscal cfl_force = 0.25; ///< CFL condition for the force
     };
 
+    struct SmoothingLengthConfig {
+        struct DensityBased {};
+        struct DensityBasedNeighLim {
+            u32 max_neigh_count = 500;
+        };
+
+        using mode = std::variant<DensityBased, DensityBasedNeighLim>;
+
+        mode config = DensityBased{};
+
+        void set_density_based() { config = DensityBased{}; }
+        void set_density_based_neigh_lim(u32 max_neigh_count) {
+            config = DensityBasedNeighLim{max_neigh_count};
+        }
+
+        bool is_density_based_neigh_lim() const {
+            return std::holds_alternative<DensityBasedNeighLim>(config);
+        }
+    };
+
 } // namespace shammodels::gsph
 
 template<class Tvec, template<class> class SPHKernel>
@@ -275,15 +295,47 @@ struct shammodels::gsph::SolverConfig {
     // Tree config (END)
     //////////////////////////////////////////////////////////////////////////////////////////////
 
+
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config
     //////////////////////////////////////////////////////////////////////////////////////////////
 
-    Tscal htol_up_coarse_cycle = 1.1;  ///< Factor for neighbors search
-    Tscal htol_up_fine_cycle   = 1.1;  ///< Max smoothing length evolution per subcycle
-    Tscal epsilon_h            = 1e-6; ///< Convergence criteria for smoothing length
-    u32 h_iter_per_subcycles   = 50;   ///< Max iterations per subcycle
-    u32 h_max_subcycles_count  = 100;  ///< Max subcycles before crash
+    bool combined_dtdiv_divcurlv_compute = false; ///< Use the combined dtdivv and divcurlv compute
+    /// Factor applied to the smoothing length for neighbors search (and ghost zone size)
+    /// @note This value must be larger or equal to htol_up_fine_cycle
+    Tscal htol_up_coarse_cycle = 1.1; ///< Factor for neighbors search
+    /// Maximum factor of the smoothing length evolution per subcycles
+    Tscal htol_up_fine_cycle  = 1.1;
+    Tscal epsilon_h           = 1e-6; ///< Convergence criteria for the smoothing length
+    u32 h_iter_per_subcycles  = 50;   ///< Maximum number of iterations per subcycle
+    u32 h_max_subcycles_count = 100;  ///< Maximum number of subcycles before solver crash
+
+    SmoothingLengthConfig smoothing_length_config;
+
+    inline void set_smoothing_length_density_based() {
+        smoothing_length_config.set_density_based();
+    }
+    inline void set_smoothing_length_density_based_neigh_lim(u32 max_neigh_count) {
+        smoothing_length_config.set_density_based_neigh_lim(max_neigh_count);
+    }
+
+    bool enable_particle_reordering = false;
+    inline void set_enable_particle_reordering(bool enable) { enable_particle_reordering = enable; }
+    u64 particle_reordering_step_freq = 1000;
+    inline void set_particle_reordering_step_freq(u64 freq) {
+        if (freq == 0) {
+            shambase::throw_with_loc<std::invalid_argument>(
+                "particle_reordering_step_freq cannot be zero");
+        }
+        particle_reordering_step_freq = freq;
+    }
+
+    bool save_dt_to_fields = false;
+    inline void set_save_dt_to_fields(bool enable) { save_dt_to_fields = enable; }
+    inline bool should_save_dt_to_fields() const { return save_dt_to_fields; }
+
+    bool show_ghost_zone_graph = false;
+    inline void set_show_ghost_zone_graph(bool enable) { show_ghost_zone_graph = enable; }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // Solver behavior config (END)

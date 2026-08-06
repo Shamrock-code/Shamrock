@@ -11,6 +11,7 @@
 #include "sham/format/human_readable.hpp"
 #include "shamtest/shamtest.hpp"
 #include <string_view>
+#include <iostream>
 
 namespace {
     void throwing_format_std() {

@@ -16,6 +16,7 @@
 #include "shambase/WithUUID.hpp"
 #include "shamtest/shamtest.hpp"
 #include <unordered_set>
+#include <mutex>
 #include <thread>
 
 template<bool thread_safe>

@@ -9,3 +9,8 @@ queue_rules:
         - merged-by
     merge_conditions:
       - check-success = all
+    branch_protection_injection_mode: none
+    queue_conditions:
+      - check-success = all_light
+      - check-success = pre-commit.ci - pr
+      - approved-reviews-by >= 1

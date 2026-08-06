@@ -16,7 +16,7 @@
  *
  */
 
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shamrock::solvergraph {
 

@@ -17,8 +17,8 @@
  */
 
 #include "shambase/stacktrace.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {

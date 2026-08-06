@@ -22,8 +22,8 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/solvergraph/DeviceBufferEdge.hpp"
 #include "shamrock/solvergraph/Field.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <cmath>
 #include <memory>

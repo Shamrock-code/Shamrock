@@ -17,8 +17,8 @@
  */
 
 #include "shambase/exception.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/SolverGraph.hpp"
 
 namespace shamrock::solvergraph {
 

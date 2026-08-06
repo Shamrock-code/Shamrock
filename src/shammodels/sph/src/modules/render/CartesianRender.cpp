@@ -26,8 +26,8 @@
 #include "shamrock/solvergraph/DeviceBufferEdge.hpp"
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 
 namespace shammodels::sph::modules {
 

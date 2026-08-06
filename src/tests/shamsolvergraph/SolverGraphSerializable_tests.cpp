@@ -8,10 +8,10 @@
 // -------------------------------------------------------//
 
 #include "shamcomm/logs.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
-#include "shamrock/solvergraph/SolverGraphSerializable.hpp"
+#include "shamsolvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/SolverGraphSerializable.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include "shamtest/shamtest.hpp"
 #include <string>
 
@@ -48,7 +48,7 @@ class TestSerializableEdge : public shamrock::solvergraph::IEdge,
     }
 };
 
-NEW_TEST(Unittest, "shamrock/solvergraph/SolverGraphSerializable", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/SolverGraphSerializable", 1) {
     using namespace shamrock::solvergraph;
 
     JsonSerializable_registry::instance().register_type<TestSerializableEdge>(

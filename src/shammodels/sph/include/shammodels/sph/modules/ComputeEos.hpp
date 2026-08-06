@@ -22,7 +22,7 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 
 namespace shammodels::sph::modules {
 

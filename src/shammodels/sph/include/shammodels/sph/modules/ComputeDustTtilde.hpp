@@ -21,9 +21,9 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \

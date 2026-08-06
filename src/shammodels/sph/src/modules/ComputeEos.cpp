@@ -26,7 +26,7 @@
 #include "shamphys/eos.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal(

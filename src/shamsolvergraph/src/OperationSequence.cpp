@@ -14,7 +14,7 @@
  *
  */
 
-#include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include <sstream>
 
 namespace shamrock::solvergraph {

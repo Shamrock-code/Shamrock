@@ -101,6 +101,7 @@ src/
   shamcmdopt/        CLI argument parsing, env/tty detection utilities
   shamcomm/          MPI and SYCL comm layer for Shamrock
   shammath/          tensor and linear algebra math routines
+  shamsolvergraph/   core solver graph nodes, edges, and registry
   shammodels/        SPH, GSPH, Ramses, Zeus hydro model implementations
   shamphys/          physics utilities: EOS, MHD, orbits, collapse
   shamrock/          core hydrodynamics framework: solvers, mesh, AMR, I/O, scheduler, graph

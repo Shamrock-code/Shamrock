@@ -7,7 +7,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/solvergraph/IEdge.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
 #include "shamtest/shamtest.hpp"
 
 class TestEdge : public shamrock::solvergraph::IEdge {
@@ -17,7 +17,7 @@ class TestEdge : public shamrock::solvergraph::IEdge {
     void free_alloc() override {}
 };
 
-NEW_TEST(Unittest, "shamrock::solvergraph", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/edge/IEdge", 1) {
     TestEdge edge{};
 
     REQUIRE_EQUAL(edge.get_label(), "dot");

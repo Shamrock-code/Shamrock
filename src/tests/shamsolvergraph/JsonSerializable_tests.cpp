@@ -7,7 +7,7 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/solvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/JsonSerializable.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <string>
@@ -31,7 +31,7 @@ class TestClassSerialization : public shamrock::solvergraph::JsonSerializable {
     std::string type_name() const override { return "TestClassSerialization"; }
 };
 
-NEW_TEST(Unittest, "shamrock/solvergraph/JsonSerializable", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/JsonSerializable", 1) {
     using namespace shamrock::solvergraph;
 
     JsonSerializable_registry::instance().register_type<TestClassSerialization>(

@@ -7,13 +7,13 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamtest/shamtest.hpp"
 #include <memory>
 #include <string>
 
-NEW_TEST(Unittest, "shamrock/solvergraph/IDataEdgeSerializable", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/edge/IDataEdgeSerializable", 1) {
     using Edge = shamrock::solvergraph::IDataEdgeSerializable<f64>;
 
     Edge original("my_label", "my_tex");

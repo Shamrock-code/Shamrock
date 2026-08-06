@@ -19,8 +19,8 @@
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {

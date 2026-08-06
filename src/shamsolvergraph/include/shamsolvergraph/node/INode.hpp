@@ -19,7 +19,7 @@
 #include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
 #include <memory>
 #include <vector>
 

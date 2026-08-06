@@ -16,8 +16,8 @@
  * @date 2023-07-31
  */
 
-#include "shamrock/solvergraph/IEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 #define NODE_EDGES(X_RO, X_RW) X_RW(shamrock::solvergraph::IEdge, to_free)
 

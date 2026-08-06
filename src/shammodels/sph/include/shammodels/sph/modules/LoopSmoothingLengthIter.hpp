@@ -18,8 +18,8 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shammodels::sph::modules {

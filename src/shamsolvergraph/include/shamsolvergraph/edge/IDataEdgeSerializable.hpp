@@ -20,8 +20,8 @@
 #include "shambase/pre_main_call.hpp"
 #include "shambase/type_name_info.hpp"
 #include "nlohmann/json_fwd.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
-#include "shamrock/solvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/JsonSerializable.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include <stdexcept>
 
 namespace shamrock::solvergraph {

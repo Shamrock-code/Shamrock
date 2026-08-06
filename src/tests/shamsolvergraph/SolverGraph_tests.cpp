@@ -7,9 +7,9 @@
 //
 // -------------------------------------------------------//
 
-#include "shamrock/solvergraph/IEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include "shamtest/shamtest.hpp"
 
 class TestEdge : public shamrock::solvergraph::IEdge {
@@ -26,7 +26,7 @@ class TestNode : public shamrock::solvergraph::INode {
     std::string _impl_get_tex() const override { return "node_tex"; }
 };
 
-NEW_TEST(Unittest, "shamrock/solvergraph/SolverGraph", 1) {
+NEW_TEST(Unittest, "shamsolvergraph/SolverGraph", 1) {
     using namespace shamrock::solvergraph;
 
     {

@@ -18,8 +18,8 @@
 
 #include "shambase/exception.hpp"
 #include "shambase/memory.hpp"
-#include "shamrock/solvergraph/IEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/edge/IEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <unordered_map>
 #include <algorithm>
 #include <functional>

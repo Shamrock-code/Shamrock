@@ -1,3 +1,9 @@
 queue_rules:
   - name: main queue
     merge_method: squash
+    commit_message_format:
+      title: pr-title
+      body: pr-body
+      trailers:
+        - approved-by
+        - merged-by

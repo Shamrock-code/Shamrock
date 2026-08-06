@@ -17,3 +17,6 @@ queue_rules:
     draft_bot_account: mergify[bot]
     merge_bot_account: mergify[bot]
     update_bot_account: mergify[bot]
+    batch_size: 5
+merge_queue:
+  max_parallel_checks: 2

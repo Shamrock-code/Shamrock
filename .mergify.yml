@@ -20,4 +20,4 @@ queue_rules:
     batch_size: 5
     batch_max_wait_time: 10min
 merge_queue:
-  max_parallel_checks: 2
+  max_parallel_checks: 1

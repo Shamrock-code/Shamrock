@@ -3,16 +3,39 @@ name: Acpp/clang (Clang-tidy)
 
 on:
   workflow_call:
+    inputs:
+      run_full:
+        description: Run full clang-tidy and upload HTML report.
+        required: false
+        default: true
+        type: boolean
+      run_diff:
+        description: Run clang-tidy-diff on PR changes and upload report.
+        required: false
+        default: true
+        type: boolean
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      run_full:
+        description: Run full clang-tidy and upload HTML report.
+        required: false
+        default: true
+        type: boolean
+      run_diff:
+        description: Run clang-tidy-diff on PR changes and upload report.
+        required: false
+        default: true
+        type: boolean
 
 
 jobs:
 
   shamrock_acpp_omp_tidy:
     name: AdaptiveCpp omp tidy clang-${{ matrix.clang }}
-    runs-on: [self-hosted,  docker-runner]
+    if: inputs.run_full || inputs.run_diff
+    runs-on: ${{ inputs.run_full && fromJSON('["self-hosted", "docker-runner"]') || 'ubuntu-latest' }}
 
     container:
       image: ${{ matrix.container }}
@@ -91,6 +114,7 @@ jobs:
           python3 ../buildbot/make_clang_tidy_db.py
 
       - name: Run clang-tidy
+        if: inputs.run_full
         run: |
           export CLANGTIDYBINARY=clang-tidy-${{matrix.clang}}
           run-clang-tidy-${{matrix.clang}} \
@@ -102,6 +126,7 @@ jobs:
             | tee clang-tidy.log
 
       - name: Convert clang-tidy log to HTML with Monokai theme
+        if: inputs.run_full
         run: |
           python3 -m pip install --break-system-packages ansi2html
 
@@ -129,12 +154,14 @@ jobs:
 
 
       - uses: actions/upload-artifact@v4
+        if: inputs.run_full
         with:
           name: clang-tidy.html
           path: ./clang-tidy.html
 
       - name: Run clang-tidy-diff
         if: >
+          inputs.run_diff &&
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD |
@@ -142,12 +169,14 @@ jobs:
 
       - name : Generate diff
         if: >
+          inputs.run_diff &&
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: git diff > diff-clang-tidy && cat diff-clang-tidy
 
       - name: Print clang-tidy output
         if: >
+          inputs.run_diff &&
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         run: |
@@ -155,6 +184,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         if: >
+          inputs.run_diff &&
           (github.event_name == 'pull_request_target' ||
             github.event_name == 'pull_request')
         with:

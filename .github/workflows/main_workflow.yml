@@ -106,8 +106,9 @@ jobs:
   shamrock_linux_acpp_tidy:
     needs: [src_check]
     name: Tests
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
+    with:
+      run_full: ${{ !inputs.light_ci }}
 
   shamrock_linux_acpp_cov:
     needs: [src_check]

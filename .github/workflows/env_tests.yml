@@ -183,6 +183,7 @@ jobs:
         with:
           key: ${{ github.job }}-${{matrix.machine}}-${{matrix.ccache-key-extra}}
           verbose: 2
+          save: ${{ github.event_name == 'push' }}
 
       - name: Configure ccache
         shell: bash

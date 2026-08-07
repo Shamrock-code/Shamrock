@@ -42,12 +42,13 @@ jobs:
 
       - name: Checkout PR branch
         if: steps.can_push.outputs.can_push == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GHACTION_PAT }}
+          allow-unsafe-pr-checkout: true
 
       - name: Create and push empty commit
         if: steps.can_push.outputs.can_push == 'true'

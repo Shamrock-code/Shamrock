@@ -65,7 +65,69 @@ NEW_TEST(Unittest, "shambackends/kernel_call", 1) {
             P[i]  = r;
             cs[i] = u;
         });
+    sham::kernel_call(
+        dev_sched->get_queue(),
+        sham::MultiRef{rho_field_const, uint_field_const},
+        sham::MultiRef{P_field, cs_field},
+        size,
+        [](u32 i,
+           const T *__restrict rho,
+           const T *__restrict U,
+           T *__restrict P,
+           T *__restrict cs) {
+            T r = rho[i];
+            T u = U[i];
 
+            P[i]  = r;
+            cs[i] = u;
+        });
+    REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
+    REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
+
+    // MultiRefOpt with all buffers supplied
+    P_field.fill(0);
+    cs_field.fill(0);
+
+    sham::kernel_call(
+        dev_sched->get_queue(),
+        sham::MultiRefOpt{rho_field, uint_field},
+        sham::MultiRefOpt{P_field, cs_field},
+        size,
+        [](u32 i,
+           const T *__restrict rho,
+           const T *__restrict U,
+           T *__restrict P,
+           T *__restrict cs) {
+            T r = rho[i];
+            T u = U[i];
+
+            P[i]  = r;
+            cs[i] = u;
+        });
+    REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
+    REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
+
+    // MultiRefOpt with a nullopt (empty) buffer argument
+    P_field.fill(0);
+    cs_field.fill(0);
+
+    sham::kernel_call(
+        dev_sched->get_queue(),
+        sham::MultiRefOpt{rho_field, uint_field, sham::empty_buf_ref<T>()},
+        sham::MultiRefOpt{P_field, cs_field},
+        size,
+        [](u32 i,
+           const T *__restrict rho,
+           const T *__restrict U,
+           const T *__restrict should_be_nullptr /*unused*/,
+           T *__restrict P,
+           T *__restrict cs) {
+            T r = rho[i];
+            T u = U[i];
+
+            P[i]  = (should_be_nullptr == nullptr) ? r : 0;
+            cs[i] = (should_be_nullptr == nullptr) ? u : 0;
+        });
     REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
     REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
 }
@@ -122,6 +184,61 @@ NEW_TEST(Unittest, "shambackends/kernel_call_hndl", 1) {
             };
         });
 
+    REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
+    REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
+
+    // MultiRefOpt with all buffers supplied
+    P_field.fill(0);
+    cs_field.fill(0);
+
+    sham::kernel_call_hndl(
+        dev_sched->get_queue(),
+        sham::MultiRefOpt{rho_field, uint_field},
+        sham::MultiRefOpt{P_field, cs_field},
+        size,
+        [](u32 n,
+           const T *__restrict rho,
+           const T *__restrict U,
+           T *__restrict P,
+           T *__restrict cs) {
+            return [=](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{n}, [=](sycl::item<1> item) {
+                    T r = rho[item.get_linear_id()];
+                    T u = U[item.get_linear_id()];
+
+                    P[item.get_linear_id()]  = r;
+                    cs[item.get_linear_id()] = u;
+                });
+            };
+        });
+    REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
+    REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
+
+    // MultiRefOpt with a nullopt (empty) buffer argument
+    P_field.fill(0);
+    cs_field.fill(0);
+
+    sham::kernel_call_hndl(
+        dev_sched->get_queue(),
+        sham::MultiRefOpt{rho_field, uint_field, sham::empty_buf_ref<T>()},
+        sham::MultiRefOpt{P_field, cs_field},
+        size,
+        [](u32 n,
+           const T *__restrict rho,
+           const T *__restrict U,
+           const T *__restrict should_be_nullptr /*unused*/,
+           T *__restrict P,
+           T *__restrict cs) {
+            return [=](sycl::handler &cgh) {
+                cgh.parallel_for(sycl::range<1>{n}, [=](sycl::item<1> item) {
+                    T r = rho[item.get_linear_id()];
+                    T u = U[item.get_linear_id()];
+
+                    P[item.get_linear_id()]  = (should_be_nullptr == nullptr) ? r : 0;
+                    cs[item.get_linear_id()] = (should_be_nullptr == nullptr) ? u : 0;
+                });
+            };
+        });
     REQUIRE_EQUAL(P_field.copy_to_stdvec(), P_ref);
     REQUIRE_EQUAL(cs_field.copy_to_stdvec(), cs_ref);
 }

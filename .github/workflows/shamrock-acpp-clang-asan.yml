@@ -64,6 +64,7 @@ jobs:
         with:
           key: ${{ github.job }}-asan-acpp
           verbose: 2
+          save: ${{ github.event_name == 'push' }}
 
       - name: Configure ccache
         shell: bash

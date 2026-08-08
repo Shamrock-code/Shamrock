@@ -11,12 +11,37 @@ concurrency:
 
 jobs:
 
+  detect_ci_flags:
+    name: Detect CI flags
+    runs-on: ubuntu-latest
+    outputs:
+      check_cpp: ${{ steps.flags.outputs.check_cpp }}
+      run_sph_tests: ${{ steps.flags.outputs.run_sph_tests }}
+      run_ramses_tests: ${{ steps.flags.outputs.run_ramses_tests }}
+      run_zeus_tests: ${{ steps.flags.outputs.run_zeus_tests }}
+      run_gsph_tests: ${{ steps.flags.outputs.run_gsph_tests }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Diff against PR base
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD > pr.diff
+      - name: Detect flags
+        id: flags
+        run: python3 tools/detect_ci_flags.py --diff pr.diff --github-output "$GITHUB_OUTPUT"
+
   main_workflow:
     name: CI
+    needs: [detect_ci_flags]
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
       light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+      # check_cpp: ${{ needs.detect_ci_flags.outputs.check_cpp == 'true' }}
+      # run_sph_tests: ${{ needs.detect_ci_flags.outputs.run_sph_tests == 'true' }}
+      # run_ramses_tests: ${{ needs.detect_ci_flags.outputs.run_ramses_tests == 'true' }}
+      # run_zeus_tests: ${{ needs.detect_ci_flags.outputs.run_zeus_tests == 'true' }}
+      # run_gsph_tests: ${{ needs.detect_ci_flags.outputs.run_gsph_tests == 'true' }}
 
   light_ci:
     name: Notify Light CI

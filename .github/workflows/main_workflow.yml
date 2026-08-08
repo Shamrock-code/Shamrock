@@ -11,6 +11,31 @@ on:
         description: "Whether to run the light CI"
         required: true
         type: boolean
+      # check_cpp:
+      #   description: "Whether C++ sources changed in the PR diff"
+      #   required: false
+      #   default: true
+      #   type: boolean
+      # run_sph_tests:
+      #   description: "Whether to run SPH-related CI (core or shammodels/sph changes)"
+      #   required: false
+      #   default: true
+      #   type: boolean
+      # run_ramses_tests:
+      #   description: "Whether to run Ramses-related CI (core or shammodels/ramses changes)"
+      #   required: false
+      #   default: true
+      #   type: boolean
+      # run_zeus_tests:
+      #   description: "Whether to run Zeus-related CI (core or shammodels/zeus changes)"
+      #   required: false
+      #   default: true
+      #   type: boolean
+      # run_gsph_tests:
+      #   description: "Whether to run GSPH-related CI (core or shammodels/gsph changes)"
+      #   required: false
+      #   default: true
+      #   type: boolean
     secrets:
       CODECOV_TOKEN:
         description: "Codecov upload token"

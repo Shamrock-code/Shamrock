@@ -228,6 +228,16 @@ namespace shammodels::basegodunov {
                     self.amr_mode.old_amr = use_old_amr;
                 })
             .def(
+                "set_first_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interpo_mode = FIRST_ORDER;
+                })
+            .def(
+                "set_second_order_interpolation_mode",
+                [](TConfig &self) {
+                    self.amr_interpo_mode = SECOND_ORDER;
+                })
+            .def(
                 "set_gravity_mode_no_gravity",
                 [](TConfig &self) {
                     self.gravity_config.gravity_mode = NoGravity;

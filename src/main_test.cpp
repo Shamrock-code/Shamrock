@@ -26,8 +26,8 @@
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shamrock/banner.hpp"
 #include "shamrock/experimental_features.hpp"
-#include "shamrock/version.hpp"
 #include "shamsys/MicroBenchmark.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/SignalCatch.hpp"
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamcomm::world_rank() == 0) {
-        print_title_bar();
+        shamrock::print_title_bar();
 
         logger::print_faint_row();
         if (shamsys::instance::is_initialized()) {
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (shamsys::instance::is_initialized()) {
-        shamcomm::logs::code_init_done_log();
+        shamrock::code_init_done_log();
 
         if (opts::has_option("--pypath")) {
             shambindings::setpypath(std::string(opts::get_option("--pypath")));

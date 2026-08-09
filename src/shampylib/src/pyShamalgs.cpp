@@ -16,6 +16,7 @@
 #include "shambase/aliases_float.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/ImplControl.hpp"
+#include "shamalgs/collective/string_histogram.hpp"
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
 #include "shamalgs/primitives/is_all_true.hpp"
@@ -29,6 +30,7 @@
 #include "shamcomm/logs.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <pybind11/complex.h>
+#include <utility>
 
 ON_PYTHON_INIT {
     auto &m = root_module;
@@ -352,4 +354,23 @@ ON_PYTHON_INIT {
 
             return shambase::timeitfor(run);
         });
+
+    shamalgs_module.def(
+        "string_histogram",
+        [](const std::vector<std::string> &inputs, std::string delimiter, bool hash_based) {
+            return shamalgs::collective::string_histogram(inputs, std::move(delimiter), hash_based);
+        },
+        py::arg("inputs"),
+        py::arg("delimiter")  = "\n",
+        py::arg("hash_based") = false);
+
+    shamalgs_module.def(
+        "all_string_histogram",
+        [](const std::vector<std::string> &inputs, std::string delimiter, bool hash_based) {
+            return shamalgs::collective::all_string_histogram(
+                inputs, std::move(delimiter), hash_based);
+        },
+        py::arg("inputs"),
+        py::arg("delimiter")  = "\n",
+        py::arg("hash_based") = false);
 }

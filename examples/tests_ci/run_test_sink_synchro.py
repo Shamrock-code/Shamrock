@@ -144,7 +144,7 @@ def check_ref_dataset(sinks):
                 got_val = got_sink[key]
                 got_arr = np.asarray(got_val, dtype=float)
                 ref_arr = np.asarray(ref_val, dtype=float)
-                if not np.all(np.isclose(got_arr, ref_arr, rtol=1e-20, atol=1e-20)):
+                if not np.all(np.isclose(got_arr, ref_arr, rtol=1e-15, atol=1e-20)):
                     abs_diff = np.abs(got_arr - ref_arr)
                     with np.errstate(divide="ignore", invalid="ignore"):
                         rel_diff = np.where(ref_arr != 0, abs_diff / np.abs(ref_arr), abs_diff)

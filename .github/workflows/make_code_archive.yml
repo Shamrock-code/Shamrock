@@ -4,15 +4,15 @@ on:
   workflow_call:
 
 jobs:
-  extract_version:
-    name: Extract Version
-    uses: ./.github/workflows/extract_version.yml
-
   make_code_archive:
     name: Make code archive
     runs-on: ubuntu-latest
-    needs: extract_version
     steps:
+      - uses: actions/checkout@v7 # only to resolve the local action
+
+      - uses: ./.github/actions/extract_version
+        id: version
+
       - uses: Shamrock-code/action-make-code-archive@v1.1
         with:
-          output_name: shamrock-${{ needs.extract_version.outputs.version }}.tar.gz
+          output_name: shamrock-${{ steps.version.outputs.version }}.tar.gz

@@ -25,6 +25,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include <shambackends/sycl.hpp>
 
 template<class Tvec, template<class> class SPHKernel>
@@ -33,7 +34,9 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
-    if (storage.sinks.is_empty()) {
+    auto &sync = scheduler().synchronized_data;
+    auto edges = get_sink_edges<Tvec>(sync);
+    if (!edges.has_sinks()) {
         return;
     }
 
@@ -48,9 +51,6 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
     auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
     sham::DeviceQueue &q = shambase::get_check_ref(dev_sched).get_queue();
 
-    std::vector<Sink> &sink_parts = storage.sinks.get();
-
-    u32 sink_id        = 0;
     bool had_accretion = false;
     std::string log    = "sink accretion :";
 
@@ -59,12 +59,10 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         sham::DeviceBuffer<u32> accreted;
     };
 
-    for (size_t sink_id = 0; sink_id < sink_parts.size(); sink_id++) {
-        Sink &s = sink_parts[sink_id];
-
-        Tvec r_sink    = s.pos;
-        Tvec v_sink    = s.velocity;
-        Tscal acc_rad2 = s.accretion_radius * s.accretion_radius;
+    for (size_t sink_id = 0; sink_id < edges.size(); sink_id++) {
+        Tvec r_sink    = edges.pos[sink_id];
+        Tvec v_sink    = edges.vel[sink_id];
+        Tscal acc_rad2 = edges.accretion_radius[sink_id] * edges.accretion_radius[sink_id];
 
         // flags particles for accretion
         shambase::DistributedData<AccretionFlagBufs> accretion_flag_bufs{};
@@ -193,32 +191,35 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         Tvec sum_acc_maxyz = shamalgs::collective::allreduce_sum(s_acc_maxyz);
         Tvec sum_acc_lxyz  = shamalgs::collective::allreduce_sum(s_acc_lxyz);
 
-        // compute the new sink values
-        Tscal new_mass   = s.mass + sum_acc_mass;
-        Tvec new_pos     = (sum_acc_mxyz + s.pos * s.mass) / (s.mass + sum_acc_mass);
-        Tvec new_vel     = (sum_acc_pxyz + s.velocity * s.mass) / (s.mass + sum_acc_mass);
-        Tvec new_acc     = (sum_acc_maxyz + s.sph_acceleration * s.mass) / (s.mass + sum_acc_mass);
-        Tvec new_ang_mom = s.angular_momentum + sum_acc_lxyz
-                           - new_mass * sycl::cross(new_pos - s.pos, new_vel - s.velocity);
+        Tscal old_mass = edges.mass[sink_id];
+        Tvec old_pos   = edges.pos[sink_id];
+        Tvec old_vel   = edges.vel[sink_id];
+        Tvec old_acc   = edges.acc_sph[sink_id];
+        Tvec old_ang   = edges.angular_momentum[sink_id];
 
-        // write back the updated sink state
-        auto new_state             = s;
-        new_state.mass             = new_mass;
-        new_state.pos              = new_pos;
-        new_state.velocity         = new_vel;
-        new_state.angular_momentum = new_ang_mom;
-        new_state.sph_acceleration = new_acc;
+        // compute the new sink values
+        Tscal new_mass = old_mass + sum_acc_mass;
+        Tvec new_pos   = (sum_acc_mxyz + old_pos * old_mass) / (old_mass + sum_acc_mass);
+        Tvec new_vel   = (sum_acc_pxyz + old_vel * old_mass) / (old_mass + sum_acc_mass);
+        Tvec new_acc   = (sum_acc_maxyz + old_acc * old_mass) / (old_mass + sum_acc_mass);
+        Tvec new_ang_mom
+            = old_ang + sum_acc_lxyz - new_mass * sycl::cross(new_pos - old_pos, new_vel - old_vel);
+
+        // write back the update sink state
+        edges.mass[sink_id]             = new_mass;
+        edges.pos[sink_id]              = new_pos;
+        edges.vel[sink_id]              = new_vel;
+        edges.angular_momentum[sink_id] = new_ang_mom;
+        edges.acc_sph[sink_id]          = new_acc;
 
         had_accretion = true;
         log += shambase::format(
             "\n    id {} deltas : mass={} r={} v={} l={}",
             sink_id,
-            new_state.mass - s.mass,
-            new_state.pos - s.pos,
-            new_state.velocity - s.velocity,
-            new_state.angular_momentum - s.angular_momentum);
-
-        s = new_state;
+            new_mass - old_mass,
+            new_pos - old_pos,
+            new_vel - old_vel,
+            new_ang_mom - old_ang);
 
         // evict accreted particles from patches
         scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchDataLayer &pdat) {
@@ -251,20 +252,24 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::predictor_s
 
     StackEntry stack_loc{};
 
-    if (storage.sinks.is_empty()) {
+    auto &sync = scheduler().synchronized_data;
+    auto &pos  = get_sink_pos<Tvec>(sync);
+    if (pos.empty()) {
         return;
     }
 
+    auto &vel     = get_sink_vel<Tvec>(sync);
+    auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
+    auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
+
     compute_ext_forces();
 
-    std::vector<Sink> &sink_parts = storage.sinks.get();
-
-    for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * (s.sph_acceleration + s.ext_acceleration);
+    for (size_t i = 0; i < pos.size(); i++) {
+        vel[i] += (dt / 2) * (acc_sph[i] + acc_ext[i]);
     }
 
-    for (Sink &s : sink_parts) {
-        s.pos += (dt) *s.velocity;
+    for (size_t i = 0; i < pos.size(); i++) {
+        pos[i] += dt * vel[i];
     }
 }
 
@@ -273,14 +278,17 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_s
 
     StackEntry stack_loc{};
 
-    if (storage.sinks.is_empty()) {
+    auto &sync = scheduler().synchronized_data;
+    auto &vel  = get_sink_vel<Tvec>(sync);
+    if (vel.empty()) {
         return;
     }
 
-    std::vector<Sink> &sink_parts = storage.sinks.get();
+    auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
+    auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
 
-    for (Sink &s : sink_parts) {
-        s.velocity += (dt / 2) * (s.sph_acceleration + s.ext_acceleration);
+    for (size_t i = 0; i < vel.size(); i++) {
+        vel[i] += (dt / 2) * (acc_sph[i] + acc_ext[i]);
     }
 }
 
@@ -291,11 +299,15 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 
     Tscal gpart_mass = solver_config.gpart_mass;
 
-    if (storage.sinks.is_empty()) {
+    auto &sync = scheduler().synchronized_data;
+    auto &pos  = get_sink_pos<Tvec>(sync);
+    if (pos.empty()) {
         return;
     }
 
-    std::vector<Sink> &sink_parts = storage.sinks.get();
+    auto &mass             = get_sink_mass<Tvec>(sync);
+    auto &accretion_radius = get_sink_accretion_radius<Tvec>(sync);
+    auto &acc_sph          = get_sink_acc_sph<Tvec>(sync);
 
     Tscal G            = solver_config.get_constant_G();
     Tscal epsilon_grav = 1e-9;
@@ -312,7 +324,7 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 
     std::vector<Tvec> result_acc_sinks{};
 
-    for (Sink &s : sink_parts) {
+    for (size_t sink_id = 0; sink_id < pos.size(); sink_id++) {
 
         Tvec sph_acc_sink = {};
 
@@ -323,9 +335,9 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
 
                 sham::DeviceBuffer<Tvec> buf_sync_axyz(pdat.get_obj_cnt(), dev_sched);
 
-                Tscal sink_mass = s.mass;
-                Tscal sink_racc = s.accretion_radius;
-                Tvec sink_pos   = s.pos;
+                Tscal sink_mass = mass[sink_id];
+                Tscal sink_racc = accretion_radius[sink_id];
+                Tvec sink_pos   = pos[sink_id];
 
                 sham::EventList depends_list;
                 auto xyz       = buf_xyz.get_read_access(depends_list);
@@ -371,16 +383,13 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph
     shamalgs::collective::vector_allgatherv(
         result_acc_sinks, gathered_result_acc_sinks, MPI_COMM_WORLD);
 
-    u32 id_s = 0;
-    for (Sink &s : sink_parts) {
+    for (size_t id_s = 0; id_s < pos.size(); id_s++) {
 
-        s.sph_acceleration = {};
+        acc_sph[id_s] = {};
 
         for (u32 rid = 0; rid < shamcomm::world_size(); rid++) {
-            s.sph_acceleration += gathered_result_acc_sinks[rid * sink_parts.size() + id_s];
+            acc_sph[id_s] += gathered_result_acc_sinks[rid * pos.size() + id_s];
         }
-
-        id_s++;
     }
 }
 
@@ -389,27 +398,30 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ext
 
     StackEntry stack_loc{};
 
-    if (storage.sinks.is_empty()) {
+    auto &sync = scheduler().synchronized_data;
+    auto &pos  = get_sink_pos<Tvec>(sync);
+    if (pos.empty()) {
         return;
     }
 
-    std::vector<Sink> &sink_parts = storage.sinks.get();
+    auto &mass    = get_sink_mass<Tvec>(sync);
+    auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
 
-    for (Sink &s : sink_parts) {
-        s.ext_acceleration = Tvec{};
+    for (size_t i = 0; i < pos.size(); i++) {
+        acc_ext[i] = Tvec{};
     }
 
     Tscal G                 = solver_config.get_constant_G();
     Tscal epsilon_grav_sink = 1e-9;
 
-    for (Sink &s1 : sink_parts) {
+    for (size_t i = 0; i < pos.size(); i++) {
         Tvec sum{};
-        for (Sink &s2 : sink_parts) {
-            Tvec rij       = s1.pos - s2.pos;
+        for (size_t j = 0; j < pos.size(); j++) {
+            Tvec rij       = pos[i] - pos[j];
             Tscal rij_scal = sycl::length(rij);
-            sum -= G * s2.mass * rij / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
+            sum -= G * mass[j] * rij / (rij_scal * rij_scal * rij_scal + epsilon_grav_sink);
         }
-        s1.ext_acceleration = sum;
+        acc_ext[i] = sum;
     }
 }
 

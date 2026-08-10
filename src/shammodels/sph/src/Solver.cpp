@@ -80,6 +80,7 @@
 #include "shammodels/sph/modules/self_gravity/SGFMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGMMPlummer.hpp"
 #include "shammodels/sph/modules/self_gravity/SGSFMMPlummer.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamphys/mhd.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -2933,20 +2934,22 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                 cfl_detail.push_back({"all SPH", cfl_dt->get_native().compute_rank_min()});
             }
 
-            if (!storage.sinks.is_empty()) {
+            auto &sync = scheduler().synchronized_data;
+            auto &pos  = get_sink_pos<Tvec>(sync);
+            if (!pos.empty()) {
                 // sink sink CFL
 
                 Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
 
                 Tscal G = solver_config.get_constant_G();
 
-                std::vector<SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+                auto &mass    = get_sink_mass<Tvec>(sync);
+                auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
 
-                for (u32 i = 0; i < sink_parts.size(); i++) {
-                    SinkParticle<Tvec> &s_i = sink_parts[i];
-                    Tscal sink_sink_cfl_i   = shambase::get_infty<Tscal>();
+                for (u32 i = 0; i < pos.size(); i++) {
+                    Tscal sink_sink_cfl_i = shambase::get_infty<Tscal>();
 
-                    Tvec f_i = s_i.ext_acceleration;
+                    Tvec f_i = acc_ext[i];
 
                     Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
 
@@ -2954,17 +2957,15 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                         continue;
                     }
 
-                    for (u32 j = 0; j < sink_parts.size(); j++) {
-                        SinkParticle<Tvec> &s_j = sink_parts[j];
-
+                    for (u32 j = 0; j < pos.size(); j++) {
                         if (i == j) {
                             continue;
                         }
 
-                        Tvec rij       = s_i.pos - s_j.pos;
+                        Tvec rij       = pos[i] - pos[j];
                         Tscal rij_scal = sycl::length(rij);
 
-                        Tscal phi_ij  = G * s_j.mass / rij_scal;           // J / kg = m^2.s^-2
+                        Tscal phi_ij  = G * mass[j] / rij_scal;            // J / kg = m^2.s^-2
                         Tscal term_ij = sham::abs(phi_ij) / grad_phi_i_sq; // s^2
                         Tscal dt_ij   = C_force * eta_phi * sycl::sqrt(term_ij); // s
 

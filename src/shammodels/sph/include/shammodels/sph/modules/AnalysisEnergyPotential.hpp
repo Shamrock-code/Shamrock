@@ -60,9 +60,11 @@ namespace shammodels::sph::modules {
 
             std::vector<GravSource> grav_sources;
 
-            if (!solver.storage.sinks.is_empty()) {
-                for (const auto &sink : solver.storage.sinks.get()) {
-                    grav_sources.push_back({sink.pos, sink.mass});
+            auto &pos  = get_sink_pos<Tvec>(sched.synchronized_data);
+            auto &mass = get_sink_mass<Tvec>(sched.synchronized_data);
+            if (!pos.empty()) {
+                for (size_t i = 0; i < pos.size(); i++) {
+                    grav_sources.push_back({pos[i], mass[i]});
                 }
             }
 

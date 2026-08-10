@@ -19,6 +19,7 @@
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamsys/legacy/log.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
@@ -33,7 +34,6 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
 
     using namespace shamrock;
     using namespace shamrock::patch;
-    using Sink = SinkParticle<Tvec>;
 
     PatchDataLayerLayout &pdl = scheduler().pdl_old();
 
@@ -63,10 +63,12 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tvec sum_p = gpart_mass * shamalgs::collective::allreduce_sum(tmpp);
 
     if (shamcomm::world_rank() == 0) {
-        if (!storage.sinks.is_empty()) {
-            std::vector<Sink> &sink_parts = storage.sinks.get();
-            for (Sink &s : sink_parts) {
-                sum_p += s.mass * s.velocity;
+        auto &sync = scheduler().synchronized_data;
+        auto &mass = get_sink_mass<Tvec>(sync);
+        if (!mass.empty()) {
+            auto &vel = get_sink_vel<Tvec>(sync);
+            for (size_t i = 0; i < mass.size(); i++) {
+                sum_p += mass[i] * vel[i];
             }
         }
         cv_checks += shambase::format("    sum v = {}\n", sum_p);
@@ -83,10 +85,13 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tvec sum_a = gpart_mass * shamalgs::collective::allreduce_sum(tmpa);
 
     if (shamcomm::world_rank() == 0) {
-        if (!storage.sinks.is_empty()) {
-            std::vector<Sink> &sink_parts = storage.sinks.get();
-            for (Sink &s : sink_parts) {
-                sum_a += s.mass * (s.sph_acceleration + s.ext_acceleration);
+        auto &sync = scheduler().synchronized_data;
+        auto &mass = get_sink_mass<Tvec>(sync);
+        if (!mass.empty()) {
+            auto &acc_sph = get_sink_acc_sph<Tvec>(sync);
+            auto &acc_ext = get_sink_acc_ext<Tvec>(sync);
+            for (size_t i = 0; i < mass.size(); i++) {
+                sum_a += mass[i] * (acc_sph[i] + acc_ext[i]);
             }
         }
         cv_checks += shambase::format("    sum a = {}\n", sum_a);

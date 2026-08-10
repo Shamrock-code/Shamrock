@@ -244,6 +244,26 @@ namespace shamrock::solvergraph {
             return it->second;
         }
 
+        /**
+         * @brief Check whether a node with the given name exists.
+         *
+         * @param name Unique identifier for the node
+         * @return true if a node with that name is registered
+         */
+        inline bool has_node(const std::string &name) const {
+            return nodes.find(name) != nodes.end();
+        }
+
+        /**
+         * @brief Check whether an edge with the given name exists.
+         *
+         * @param name Unique identifier for the edge
+         * @return true if an edge with that name is registered
+         */
+        inline bool has_edge(const std::string &name) const {
+            return edges.find(name) != edges.end();
+        }
+
         ///////////////////////////////////////
         // generic getters
         ///////////////////////////////////////

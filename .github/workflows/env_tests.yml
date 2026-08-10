@@ -96,6 +96,7 @@ jobs:
             runtest: yes
             mpiargs: --oversubscribe
             ccache-key-extra: macos15
+            build_nproc: 4
 
           - machine: macos-generic.acpp
             runson: macos-15-intel
@@ -192,6 +193,8 @@ jobs:
         run : ls -la
 
       - name: Setup env
+        env:
+          SHAMROCK_BUILD_NPROC: ${{ matrix.build_nproc }}
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
 
       - name: Configure

@@ -206,5 +206,45 @@ def main():
 
     check_ref_dataset(model2.get_sinks())
 
+    dic = ctx2.collect_data()
+
+    if shamrock.sys.world_rank() > 0:
+        return
+
+    assert 2266 == len(dic["xyz"])
+
+    sum_pos = np.sum(dic["xyz"], axis=0)
+    sum_vel = np.sum(dic["vxyz"], axis=0)
+    sum_acc = np.sum(dic["axyz"], axis=0)
+    sum_hpart = np.sum(dic["hpart"], axis=0)
+
+    dat = np.concatenate([sum_pos, sum_vel, sum_acc, np.atleast_1d(sum_hpart)])
+    print("Current sums: ", [dat[i] for i in range(len(dat))])
+
+    ref_sums = [
+        65.79475628688992,
+        -15.508903903707498,
+        -1.0412208430674998,
+        22613.455824802637,
+        -5.195701678016285,
+        15.008486573476965,
+        -19336.888355004605,
+        -2117.975619213131,
+        5826.038830234707,
+        245.85176557074223,
+    ]
+
+    mismatch = False
+    for i in range(len(dat)):
+        if not np.isclose(dat[i], ref_sums[i], rtol=1e-12, atol=1e-18):
+            abs_diff = np.abs(dat[i] - ref_sums[i])
+            rel_diff = abs_diff / np.abs(ref_sums[i])
+            print(f"sum[{i}] mismatch: got {dat[i]}, expected {ref_sums[i]}")
+            print(f"  max abs diff={np.max(abs_diff)}")
+            print(f"  max rel diff={np.max(rel_diff)}")
+            mismatch = True
+    if mismatch:
+        raise RuntimeError("sums mismatch")
+
 
 main()

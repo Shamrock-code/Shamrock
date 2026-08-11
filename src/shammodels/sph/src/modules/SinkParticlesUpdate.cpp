@@ -261,7 +261,7 @@ namespace shammodels::common::modules {
                             sham::MultiRef{pos_data, vel_data, acc_data, id_list_accrete},
                             sham::MultiRef{pxyz_acc, mxyz_acc, maxyz_acc, lxyz_acc},
                             Naccrete,
-                            [gpart_mass, r_sink, v_sink, dt](
+                            [r_sink, v_sink, gpart_mass, dt](
                                 u32 id_a,
                                 const Tvec *__restrict xyz,
                                 const Tvec *__restrict vxyz,

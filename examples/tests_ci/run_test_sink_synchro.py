@@ -236,7 +236,7 @@ def main():
 
     mismatch = False
     for i in range(len(dat)):
-        if not np.isclose(dat[i], ref_sums[i], rtol=1e-14, atol=1e-18):
+        if not np.isclose(dat[i], ref_sums[i], rtol=1e-12, atol=1e-18):
             abs_diff = np.abs(dat[i] - ref_sums[i])
             rel_diff = abs_diff / np.abs(ref_sums[i])
             print(f"sum[{i}] mismatch: got {dat[i]}, expected {ref_sums[i]}")

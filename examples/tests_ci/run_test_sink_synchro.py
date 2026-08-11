@@ -207,6 +207,10 @@ def main():
     check_ref_dataset(model2.get_sinks())
 
     dic = ctx2.collect_data()
+
+    if shamrock.sys.world_rank() > 0:
+        return
+
     assert 2266 == len(dic["xyz"])
 
     sum_pos = np.sum(dic["xyz"], axis=0)

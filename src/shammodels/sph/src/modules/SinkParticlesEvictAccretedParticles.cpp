@@ -15,10 +15,10 @@
  */
 
 #include "shambase/narrowing.hpp"
-#include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <shambackends/sycl.hpp>
 

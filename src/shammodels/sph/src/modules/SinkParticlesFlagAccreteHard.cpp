@@ -15,8 +15,8 @@
  */
 
 #include "shambase/narrowing.hpp"
-#include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
 #include "shambackends/kernel_call.hpp"
+#include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <shambackends/sycl.hpp>
 

@@ -15,7 +15,6 @@
  */
 
 #include "shambase/narrowing.hpp"
-#include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
 #include "shamalgs/collective/reduction.hpp"
 #include "shamalgs/details/numeric/numeric.hpp"
 #include "shamalgs/primitives/reduction.hpp"
@@ -23,6 +22,7 @@
 #include "shambackends/kernel_call.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/worldInfo.hpp"
+#include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <shambackends/sycl.hpp>
 #include <string>

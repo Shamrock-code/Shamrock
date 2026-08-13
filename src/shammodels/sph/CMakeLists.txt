@@ -28,6 +28,9 @@ set(Sources
     src/modules/DiffOperator.cpp
     src/modules/DiffOperatorDtDivv.cpp
     src/modules/SinkParticlesUpdate.cpp
+    src/modules/SinkParticlesFlagAccreteHard.cpp
+    src/modules/SinkParticlesAccreteQuantities.cpp
+    src/modules/SinkParticlesEvictAccretedParticles.cpp
     src/modules/ConservativeCheck.cpp
     src/modules/ExternalForces.cpp
     src/modules/ComputeEos.cpp

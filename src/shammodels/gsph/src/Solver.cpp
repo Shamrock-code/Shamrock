@@ -39,13 +39,14 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
+#include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
-#include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
-#include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
-#include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
+#include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -784,7 +785,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
         set_omega_mask.set_edges(storage.part_counts, should_set_omega_mask, storage.omega);
         set_omega_mask.evaluate();
     }
-
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1098,7 +1098,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::reset_merge_ghosts_fields() {
     storage.merged_patchdata_ghost.reset();
 }
 
-/** 
+/**
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
     StackEntry stack_loc{};
@@ -2010,6 +2010,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     tstep.start();
 
     // Load balancing step
+    gsph::modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
     scheduler().scheduler_step(true, true);
     scheduler().scheduler_step(false, false);
 
@@ -2045,7 +2047,6 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Build serial patch tree first (needed for boundary application)
     gen_serial_patch_tree();
     apply_position_boundary(t_current + dt);
-
 
     {
         // update part counts and spans since particles have been moved and thus

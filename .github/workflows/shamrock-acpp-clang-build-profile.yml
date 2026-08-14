@@ -88,13 +88,13 @@ jobs:
           # files that took most time to generate code for
           fileCodegen = 10
           # functions that took most time to generate code for
-          function = 30
+          function = 10
           # header files that were most expensive to include
           header = 10
           # for each expensive header, this many include paths to it are shown
-          headerChain = 5
+          headerChain = 4
           # templates that took longest to instantiate
-          template = 30
+          template = 10
 
           # Minimum times (in ms) for things to be recorded into trace
           [minTimes]
@@ -105,7 +105,7 @@ jobs:
           [misc]
 
           # Maximum length of symbol names printed; longer names will get truncated
-          maxNameLength = 70
+          maxNameLength = 150
 
           # Only print "root" headers in expensive header report, i.e.
           # only headers that are directly included by at least one source file
@@ -123,5 +123,25 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: report_clang_build_analyzer
+          name: clang_build_analyzer_report.txt
           path: build/clang_build_analyzer_report.txt
+
+      - name: Write build profile metric JSON
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = Path("build/clang_build_analyzer_report.txt").read_text()
+          Path("metric__build_profile.json").write_text(
+              json.dumps({"data": report}, indent=3) + "\n"
+          )
+          PY
+          cat metric__build_profile.json
+
+      - name: Upload build profile metric
+        uses: actions/upload-artifact@v4
+        with:
+          name: metric__build_profile.json
+          path: metric__build_profile.json

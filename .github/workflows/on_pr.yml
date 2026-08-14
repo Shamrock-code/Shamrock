@@ -27,7 +27,6 @@ jobs:
   upload_metrics_history:
     name: Upload metrics history
     needs: [collect_metrics]
-    if: ${{ always() && !cancelled() && needs.collect_metrics.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write

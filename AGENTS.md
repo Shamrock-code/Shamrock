@@ -119,15 +119,41 @@ src/
 - `external/` submodules — upstream dependencies.
 - `LICENSE`, `LICENSE.en` — legal files.
 
-## Agent commit attribution
+## Git, commits & pull requests
+
+The upstream repo is `Shamrock-code/Shamrock`. Open pull requests against
+upstream `main` on that repo.
+
+### Commit authorship
+
+The user who initiated the agent must be the first author of every commit the
+agent creates. Use the git identity already configured in the environment for
+that user; do not override `user.name` or `user.email` unless the user
+explicitly asks you to.
+
+### Agent commit attribution
 
 Agent-made commits should use `Assisted-by: <agent_name>` instead of
 `Co-Authored-by`. Reserve `Co-Authored-by` for human collaborators only.
 
-## Upstream repo & PRs
+If a commit hook injects `Co-authored-by`, amend the commit so the message
+contains only `Assisted-by`.
 
-The upstream repo is `Shamrock-code/Shamrock`.
-PR lookups should target the upstream:
+### Opening pull requests
+
+Target upstream `Shamrock-code/Shamrock` and base branch `main`.
+
+If the agent environment can only open a PR on a fork, put an upstream compare
+link at the top of the PR description so the user can open the PR against
+upstream directly:
+
+```text
+https://github.com/Shamrock-code/Shamrock/compare/main...<fork-owner>:Shamrock:<branch>?expand=1
+```
+
+Replace `<fork-owner>` and `<branch>` with the fork owner and branch name.
+
+PR lookups should also target upstream:
 
 ```bash
 gh pr list --repo Shamrock-code/Shamrock

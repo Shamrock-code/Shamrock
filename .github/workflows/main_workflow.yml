@@ -114,7 +114,7 @@ jobs:
     name: Tests
     needs: [src_check]
     # temp to test
-    # if: ${{ !inputs.light_ci }}
+    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 
   shamrock_linux_acpp_conda:

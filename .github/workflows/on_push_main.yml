@@ -41,5 +41,11 @@ jobs:
   collect_metrics:
     name: Collect metrics
     needs: [main_workflow]
-    if: ${{ always() && !cancelled() }}
     uses: ./.github/workflows/collect_metrics.yml
+
+  upload_metrics_history:
+    name: Upload metrics history
+    needs: [collect_metrics]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/upload_metrics_history.yml

@@ -37,3 +37,9 @@ jobs:
     with:
       run_build_push_docker: true
       light_ci: false
+
+  collect_metrics:
+    name: Collect metrics
+    needs: [main_workflow]
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/collect_metrics.yml

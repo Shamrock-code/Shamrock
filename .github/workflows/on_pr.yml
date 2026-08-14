@@ -18,6 +18,12 @@ jobs:
       run_build_push_docker: true
       light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
 
+  collect_metrics:
+    name: Collect metrics
+    needs: [main_workflow]
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/collect_metrics.yml
+
   light_ci:
     name: Notify Light CI
     if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}

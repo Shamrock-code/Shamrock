@@ -37,6 +37,18 @@ jobs:
           name: report_light_ci
           path: ./report_______light_ci.md
 
+  # Mergify merge gate (merge_conditions: check-success = all). Skipped when the
+  # light-ci label is set — those PRs use all_light for queue entry instead.
+  #
+  # needs.main_workflow.result can be:
+  #   - success   : reusable workflow completed without failure
+  #   - failure   : at least one job in the called workflow failed
+  #   - cancelled : workflow or caller job was cancelled (e.g. concurrency)
+  #   - skipped   : caller job was skipped by its if: condition
+  #   - abandoned : undocumented by GitHub, but observed in practice when a
+  #                 workflow re-run is triggered while the current attempt is
+  #                 still finishing (e.g. Mergify CI auto-retry). Treat as
+  #                 non-success — do not whitelist only failure/cancelled.
   all:
     needs: [ main_workflow ]
     # run always except for cancel
@@ -45,14 +57,14 @@ jobs:
     steps:
     - name: Status summary
       run: |
-        if [ "${{ needs.main_workflow.result }}" == "failure" ] || [ "${{ needs.main_workflow.result }}" == "canceled" ]; then
-          echo "Tests failed."
+        if [ "${{ needs.main_workflow.result }}" != "success" ]; then
+          echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
           exit 1
-        else
-          exit 0
         fi
 
-  # this job notify the end of the build regardless of light-ci value
+  # Mergify merge-queue entry gate (queue_conditions: check-success = all_light).
+  # Runs regardless of the light-ci label.
+  # Same gate logic as all; see comment above for needs.main_workflow.result states.
   all_light:
     needs: [ main_workflow ]
     # run always except for cancel
@@ -61,9 +73,7 @@ jobs:
     steps:
     - name: Status summary
       run: |
-        if [ "${{ needs.main_workflow.result }}" == "failure" ] || [ "${{ needs.main_workflow.result }}" == "canceled" ]; then
-          echo "Tests failed."
+        if [ "${{ needs.main_workflow.result }}" != "success" ]; then
+          echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
           exit 1
-        else
-          exit 0
         fi

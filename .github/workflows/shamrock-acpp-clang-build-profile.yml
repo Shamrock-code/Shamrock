@@ -1,0 +1,127 @@
+name: Acpp/clang (Build profile)
+
+
+on:
+  workflow_call:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+
+jobs:
+
+  shamrock_acpp_generic_build_profile:
+    name: Build profiling (acpp SSCP)
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15
+
+    timeout-minutes: 120
+    steps:
+      #### Checkout part ####
+      # Checkout merge commit if PR otherwise default
+      - name : Reconfigure git
+        run:  |
+          git config --global --add safe.directory '*'
+          git config --global --list
+      - uses: actions/checkout@v4
+        if: github.event_name == 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          ref: "refs/pull/${{ github.event.number }}/merge"
+
+      - uses: actions/checkout@v4
+        if: github.event_name != 'pull_request_target'
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Show diff against main
+        if: github.event_name == 'pull_request_target'
+        run: git diff ${{ github.event.pull_request.base.sha }} HEAD
+      #### End Checkout part ####
+
+      - name: ls local
+        run : ls -la
+
+      - name: Install ClangBuildAnalyzer
+        run: |
+          git clone --depth 1 https://github.com/aras-p/ClangBuildAnalyzer.git /tmp/ClangBuildAnalyzer
+          cmake -S /tmp/ClangBuildAnalyzer -B /tmp/ClangBuildAnalyzer/build
+          cmake --build /tmp/ClangBuildAnalyzer/build -j$(nproc)
+          echo "/tmp/ClangBuildAnalyzer/build" >> $GITHUB_PATH
+
+      - name: Setup env
+        run: ./env/new-env --machine debian-generic.acpp --builddir build -- --backend generic
+
+      - name: Configure
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate
+          export SHAMROCK_CXX_FLAGS="${SHAMROCK_CXX_FLAGS} -ftime-trace"
+          shamconfigure
+
+      - name: Build with ClangBuildAnalyzer
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          export NINJA_STATUS="[%f/%t j=%r] "
+          source ./activate
+          ClangBuildAnalyzer --start .
+          shammake
+          ClangBuildAnalyzer --stop . capture_build.bin
+
+      - name: Write ClangBuildAnalyzer.ini
+        run: |
+          cat > build/ClangBuildAnalyzer.ini << 'EOF'
+          # ClangBuildAnalyzer reads ClangBuildAnalyzer.ini file from the working directory
+          # when invoked, and various aspects of reporting can be configured this way.
+
+          # How many of most expensive things are reported?
+          [counts]
+
+          # files that took most time to parse
+          fileParse = 10
+          # files that took most time to generate code for
+          fileCodegen = 10
+          # functions that took most time to generate code for
+          function = 30
+          # header files that were most expensive to include
+          header = 10
+          # for each expensive header, this many include paths to it are shown
+          headerChain = 5
+          # templates that took longest to instantiate
+          template = 30
+
+          # Minimum times (in ms) for things to be recorded into trace
+          [minTimes]
+
+          # parse/codegen for a file
+          file = 10
+
+          [misc]
+
+          # Maximum length of symbol names printed; longer names will get truncated
+          maxNameLength = 70
+
+          # Only print "root" headers in expensive header report, i.e.
+          # only headers that are directly included by at least one source file
+          onlyRootHeaders = true
+          EOF
+
+      - name: Analyze build profile
+        shell: bash # In docker container github action default to sh
+        run: |
+          set -o pipefail
+          cd build
+          ClangBuildAnalyzer --analyze capture_build.bin | tee clang_build_analyzer_report.txt
+
+      - name: Upload build profile report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: report_clang_build_analyzer
+          path: build/clang_build_analyzer_report.txt

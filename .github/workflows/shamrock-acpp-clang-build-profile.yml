@@ -64,12 +64,31 @@ jobs:
           export SHAMROCK_CXX_FLAGS="${SHAMROCK_CXX_FLAGS} -ftime-trace"
           shamconfigure
 
+      - name: Inject memlog compiler launcher
+        shell: bash # In docker container github action default to sh
+        run: |
+          cd build
+          source ./activate
+          cmake . -DCMAKE_CXX_COMPILER_LAUNCHER="$SHAMROCK_DIR/tools/memlog.sh"
+
+      - name: Install GNU time
+        run: |
+          if [ ! -x /usr/bin/time ]; then
+            if command -v sudo >/dev/null 2>&1; then
+              sudo apt-get update && sudo apt-get install -y time
+            else
+              apt-get update && apt-get install -y time
+            fi
+          fi
+
       - name: Build with ClangBuildAnalyzer
         shell: bash # In docker container github action default to sh
         run: |
           cd build
           export NINJA_STATUS="[%f/%t j=%r] "
           source ./activate
+          mkdir -p memlog
+          export MEMLOG_DIR="$PWD/memlog"
           ClangBuildAnalyzer --start .
           shammake
           ClangBuildAnalyzer --stop . capture_build.bin
@@ -117,14 +136,8 @@ jobs:
         run: |
           set -o pipefail
           cd build
+          source ./activate
           ClangBuildAnalyzer --analyze capture_build.bin | tee clang_build_analyzer_report.txt
-
-      - name: Upload build profile report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: clang_build_analyzer_report.txt
-          path: build/clang_build_analyzer_report.txt
 
       - name: Write build profile metric JSON
         shell: bash
@@ -133,12 +146,39 @@ jobs:
           import json
           from pathlib import Path
 
-          report = Path("build/clang_build_analyzer_report.txt").read_text()
+          # Load ClangBuildAnalyzer text and memlog RSS records.
+          report_path = Path("build/clang_build_analyzer_report.txt")
+          report = report_path.read_text()
+          compile_memory = json.loads(Path("build/memlog/compile_memory.json").read_text())
+          compile_memory_usage = [
+              {"rss_mb": item["rss_mb"], "path": item["src"] or item["obj"]}
+              for item in compile_memory
+          ]
+
+          # Append the top 10 peak-RSS files to the analyzer report.
+          records = sorted(compile_memory_usage, key=lambda item: -item["rss_mb"])
+          lines = ["**** Files with highest peak RSS (compiler process):"]
+          for item in records[:10]:
+              lines.append(f"{item['rss_mb']:8.1f} MB: {item['path']}")
+          if not report.endswith("\n"):
+              report += "\n"
+          report += "\n".join(lines) + "\n"
+          report_path.write_text(report)
+
+          # Write metric JSON: full report text plus the memlog array.
           Path("metric__build_profile.json").write_text(
-              json.dumps({"data": report}, indent=3) + "\n"
+              json.dumps({"data": report, "compile_memory_usage": compile_memory_usage}, indent=4)
+              + "\n"
           )
           PY
           cat metric__build_profile.json
+
+      - name: Upload build profile report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: clang_build_analyzer_report.txt
+          path: build/clang_build_analyzer_report.txt
 
       - name: Upload build profile metric
         uses: actions/upload-artifact@v4

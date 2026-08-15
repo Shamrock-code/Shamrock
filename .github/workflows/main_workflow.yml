@@ -113,7 +113,6 @@ jobs:
   shamrock_linux_acpp_build_profile:
     name: Tests
     needs: [src_check]
-    # temp to test
     if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 

@@ -1,0 +1,84 @@
+{
+   "datetime": "2026-08-15 12:17:37Z",
+   "sha": "0c5a329cd3559e515441fb2b99a0d35263421034",
+   "ref": "refs/heads/main",
+   "event_name": "push",
+   "repository": "Shamrock-code/Shamrock",
+   "workflow": "On Push",
+   "run_id": 31879269690,
+   "run_attempt": 1,
+   "metrics": {
+      "build_profile": {
+         "data": "Analyzing build trace from 'capture_build.bin'...\n**** Time summary:\nCompilation (434 times):\n  Parsing (frontend):         9395.6 s\n  Codegen & opts (backend):   7453.7 s\n\n**** Files that took longest to parse (compiler frontend):\n127941 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/pySPHModel.cpp.o\n 73355 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Solver.cpp.o\n 63510 ms: ./src/shammodels/gsph/CMakeFiles/shammodels_gsph.dir/src/pyGSPHModel.cpp.o\n 62234 ms: ./src/shammodels/gsph/CMakeFiles/shammodels_gsph.dir/src/Solver.cpp.o\n 62116 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/ComputeEos.cpp.o\n 56076 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataLayer.cpp.o\n 54276 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Model.cpp.o\n 51221 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/render/CartesianRender.cpp.o\n 50558 ms: ./src/shammodels/ramses/CMakeFiles/shammodels_ramses.dir/src/Solver.cpp.o\n 49117 ms: ./src/shammodels/ramses/CMakeFiles/shammodels_ramses.dir/src/pyRamsesModel.cpp.o\n\n**** Files that took longest to codegen (compiler backend):\n202994 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/pySPHModel.cpp.o\n195319 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Solver.cpp.o\n168192 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataField.cpp.o\n151652 ms: ./src/CMakeFiles/shamrock_test.dir/tests/shammath/sphkernelsTests.cpp.o\n142316 ms: ./src/shammodels/ramses/CMakeFiles/shammodels_ramses.dir/src/modules/InterpolateToFace.cpp.o\n117032 ms: ./src/shamalgs/CMakeFiles/shamalgs.dir/src/details/reduction/reduction.cpp.o\n 92279 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/ComputeEos.cpp.o\n 86868 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataLayer.cpp.o\n 79997 ms: ./src/shamalgs/CMakeFiles/shamalgs.dir/src/details/reduction/groupReduction_usm.cpp.o\n 77584 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Model.cpp.o\n\n**** Templates that took longest to instantiate:\n303439 ms: shamrock::patch::FieldVariant<shamrock::patch::PatchDataLayerLayout::FieldDescriptor>::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/... (2159 times, avg 140 ms)\n292438 ms: std::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/FieldVariant.hpp:71:17), std::variant<shamrock::patch::FieldDescrip... (2161 times, avg 135 ms)\n292318 ms: std::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDataLayer.hpp:431:21), std::variant<PatchDataField<float>, Pat... (124 times, avg 2357 ms)\n292068 ms: std::__do_visit<std::__detail::__variant::__deduce_visit_result<bool>, (lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDa... (124 times, avg 2355 ms)\n290130 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<bool> (*)((lambda... (124 times, avg 2339 ms)\n289962 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<bool> (*)((lambda... (124 times, avg 2338 ms)\n205165 ms: std::__do_visit<std::__detail::__variant::__deduce_visit_result<void>, (lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/FieldVa... (2161 times, avg 94 ms)\n196508 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<void> (*)((lambda... (2161 times, avg 90 ms)\n194132 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<void> (*)((lambda... (2161 times, avg 89 ms)\n152101 ms: nlohmann::basic_json<>::parse<const char *> (142 times, avg 1071 ms)\n\n**** Template sets that took longest to instantiate:\n755101 ms: std::visit<$> (4260 times, avg 177 ms)\n717621 ms: std::__do_visit<$> (5094 times, avg 140 ms)\n696973 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply (5094 times, avg 136 ms)\n692006 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply_all_alts<$> (5094 times, avg 135 ms)\n676843 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply_single_alt<$> (71199 times, avg 9 ms)\n547531 ms: shamrock::patch::FieldVariant<$>::visit<$> (3049 times, avg 179 ms)\n468530 ms: std::__detail::__variant::__gen_vtable_impl<$>::__visit_invoke (111858 times, avg 4 ms)\n442492 ms: std::__and_<$> (261676 times, avg 1 ms)\n414758 ms: shamrock::patch::PatchDataLayerLayout::add_field<$> (2159 times, avg 192 ms)\n307279 ms: std::unique_ptr<$> (13462 times, avg 22 ms)\n\n**** Functions that took longest to compile:\n  8212 ms: void test_karras_alg<unsigned long>() (/__w/Shamrock/Shamrock/src/tests/shamrock/tree/karrasTests.cpp)\n  8134 ms: test_func_91() (/__w/Shamrock/Shamrock/src/tests/shambackends/SYCL_MPI_types_tests.cpp)\n  7959 ms: void test_karras_alg<unsigned int>() (/__w/Shamrock/Shamrock/src/tests/shamrock/tree/karrasTests.cpp)\n  6241 ms: test_func_21() (/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataFieldSpanTests.cpp)\n  4903 ms: test_func_24() (/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeAABBTests.cpp)\n  4701 ms: test_func_241() (/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeAABBTests.cpp)\n  3935 ms: shammodels::basegodunov::Solver<hipsycl::sycl::vec<double, 3, hipsycl::sycl::detail::vec_storage<double, 3> >, hipsycl::sycl::vec<long, 3, hipsycl::... (/__w/Shamrock/Shamrock/src/shammodels/ramses/src/Solver.cpp)\n  3566 ms: shampylib::init_shamrock_math_sphkernels(pybind11::module_&) (/__w/Shamrock/Shamrock/src/shampylib/src/math/pySPHKernels.cpp)\n  3081 ms: test_func_460()::$_4::operator()() const (/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/reductionTests.cpp)\n  2485 ms: test_func_16() (/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/upper_boundTests.cpp)\n\n**** Function sets that took longest to compile / optimize:\n 74899 ms: fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp<$>, unsigned int, int, fmt::v11::detail::buffer<$>&, int&) (323 times, avg 231 ms)\n 46863 ms: hipsycl::sycl::event hipsycl::sycl::queue::submit<$>(hipsycl::sycl::property_list const&, hipsycl::sycl::vec<$>) (621 times, avg 75 ms)\n 34783 ms: fmt::v11::basic_appender<$> fmt::v11::detail::write_int_noinline<$>(fmt::v11::basic_appender<$>, fmt::v11::detail::write_int_arg<$>, fmt::v11::forma... (969 times, avg 35 ms)\n 26429 ms: void validate_kernel_3d<$>(shammath::SPHKernelGen<$>::Tscal, shammath::SPHKernelGen<$>::Tscal, shammath::SPHKernelGen<$>::Tscal) (40 times, avg 660 ms)\n 25750 ms: fmt::v11::basic_appender<$> fmt::v11::detail::do_write_float<$>(fmt::v11::basic_appender<$>, fmt::v11::detail::dragonbox::decimal_fp<$> const&, fmt:... (646 times, avg 39 ms)\n 17951 ms: void fmt::v11::detail::parse_format_string<$>(fmt::v11::basic_string_view<$>, fmt::v11::detail::format_handler<$>&&) (322 times, avg 55 ms)\n 17067 ms: hipsycl::sycl::accessor<$>::init_host_buffer(hipsycl::rt::runtime*, bool) (261 times, avg 65 ms)\n 16251 ms: fmt::v11::basic_appender<$> fmt::v11::detail::write_escaped_string<$>(fmt::v11::basic_appender<$>, fmt::v11::basic_string_view<$>) (323 times, avg 50 ms)\n 16172 ms: void test_karras_alg<$>() (2 times, avg 8086 ms)\n 16012 ms: PatchDataField<$>::get_obj_cnt() const (1299 times, avg 12 ms)\n\n**** Expensive headers:\n2948084 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/sycl.hpp (included 344 times, avg 8570 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  11x: math.hpp \n  10x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  ...\n\n1722850 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceBuffer.hpp (included 272 times, avg 6334 ms), included via:\n  29x: <direct include>\n  17x: reduction.hpp flatten.hpp \n  10x: random.hpp \n  8x: kernel_call.hpp \n  8x: random.hpp random.hpp \n  ...\n\n1687902 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/Device.hpp (included 299 times, avg 5645 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  16x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  ...\n\n1665536 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceQueue.hpp (included 294 times, avg 5665 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  16x: NodeInstance.hpp DeviceScheduler.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  ...\n\n1654969 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceScheduler.hpp (included 293 times, avg 5648 ms), included via:\n  28x: DeviceBuffer.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp \n  16x: NodeInstance.hpp \n  9x: random.hpp DeviceBuffer.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp \n  ...\n\n639355 ms: /__w/Shamrock/Shamrock/src/shambase/include/shambase/string.hpp (included 394 times, avg 1622 ms), included via:\n  44x: stacktrace.hpp \n  27x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp \n  26x: <direct include>\n  24x: memory.hpp \n  18x: time.hpp Timer.hpp \n  ...\n\n520127 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/math.hpp (included 238 times, avg 2185 ms), included via:\n  30x: <direct include>\n  21x: AABB.hpp \n  16x: sphkernels.hpp \n  6x: CoordRange.hpp intervals.hpp \n  6x: Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp \n  ...\n\n510162 ms: /__w/Shamrock/Shamrock/src/shamformat/include/sham/format/format.hpp (included 395 times, avg 1291 ms), included via:\n  44x: stacktrace.hpp string.hpp \n  26x: string.hpp \n  24x: memory.hpp string.hpp \n  24x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp string.hpp \n  18x: time.hpp Timer.hpp string.hpp \n  ...\n\n490602 ms: /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDataLayer.hpp (included 124 times, avg 3956 ms), included via:\n  7x: <direct include>\n  5x: patchdata.hpp sycl_vector_utils.hpp \n  3x: FindGhostLayerCandidates.hpp PatchDataLayerDDShared.hpp \n  3x: AMRGrid.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp \n  3x: SPHRenderTestCommon.hpp Field.hpp ComputeField.hpp PatchDataField.hpp PatchDataLayerRefs.hpp \n  ...\n\n424968 ms: /__w/Shamrock/Shamrock/src/shamalgs/include/shamalgs/collective/reduction.hpp (included 187 times, avg 2272 ms), included via:\n  17x: <direct include>\n  15x: PatchDataField.hpp numeric.hpp \n  7x: numeric.hpp \n  7x: PatchDataLayer.hpp PatchDataField.hpp numeric.hpp \n  5x: numeric.hpp numeric.hpp \n  ...\n\n  done in 13.4s.\n"
+      },
+      "doxygen_warn": {
+         "doxygen_warning_count": 8171
+      },
+      "loc": {
+         "*.cpp": {
+            "code": 103144,
+            "shammodels/sph": 21273,
+            "shammodels/ramses": 11689,
+            "shammodels/zeus": 5310,
+            "shammodels/gsph": 4180,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.hpp": {
+            "code": 98430,
+            "shammodels/sph": 14702,
+            "shammodels/ramses": 5828,
+            "shammodels/zeus": 1303,
+            "shammodels/gsph": 3569,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.py": {
+            "code": 15119,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "examples": 32839,
+            "doc": 894
+         },
+         "*.md": {
+            "code": 488,
+            "shammodels/sph": 18,
+            "shammodels/ramses": 16,
+            "shammodels/zeus": 13,
+            "shammodels/gsph": 16,
+            "examples": 0,
+            "doc": 6208
+         },
+         "*.rst": {
+            "code": 0,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "examples": 20,
+            "doc": 221
+         },
+         "CMakeLists.txt + *.cmake": {
+            "code": 2769,
+            "shammodels/sph": 97,
+            "shammodels/ramses": 70,
+            "shammodels/zeus": 49,
+            "shammodels/gsph": 46,
+            "examples": 0,
+            "doc": 0
+         },
+         "total": {
+            "code": 219950,
+            "shammodels/sph": 36090,
+            "shammodels/ramses": 17603,
+            "shammodels/zeus": 6675,
+            "shammodels/gsph": 7811,
+            "examples": 32859,
+            "doc": 7323,
+            "all": 260132
+         }
+      }
+   }
+}

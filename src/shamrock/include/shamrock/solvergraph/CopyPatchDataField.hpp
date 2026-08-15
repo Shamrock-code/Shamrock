@@ -20,7 +20,7 @@
 
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

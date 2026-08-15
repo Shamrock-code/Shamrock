@@ -18,15 +18,17 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/eos.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal(
@@ -371,15 +373,13 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
-        auto &sink_parts = storage.sinks.get();
-        std::vector<Tvec> sink_pos;
-        std::vector<Tscal> sink_mass;
-        u32 sink_cnt = 0;
+        auto &sink_pos  = get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &sink_mass = get_sink_mass<Tvec>(scheduler().synchronized_data);
+        u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
 
-        for (auto &s : sink_parts) {
-            sink_pos.push_back(s.pos);
-            sink_mass.push_back(s.mass);
-            sink_cnt++;
+        if (sink_cnt == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "No sinks found for the equation of state");
         }
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
@@ -514,14 +514,15 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
-        auto &sink_parts = storage.sinks.get();
+        auto &all_sink_pos  = get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &all_sink_mass = get_sink_mass<Tvec>(scheduler().synchronized_data);
         std::vector<Tvec> sink_pos;
         std::vector<Tscal> sink_mass;
         u32 sink_cnt = 0;
 
-        for (auto &s : sink_parts) {
-            sink_pos.push_back(s.pos);
-            sink_mass.push_back(s.mass);
+        for (size_t i = 0; i < all_sink_pos.size(); i++) {
+            sink_pos.push_back(all_sink_pos[i]);
+            sink_mass.push_back(all_sink_mass[i]);
             sink_cnt++;
             if (sink_pos.size() >= n_sinks) { // We only consider the first n_sinks sinks
                 break;

@@ -19,8 +19,8 @@
 #include "shambackends/vec.hpp"
 #include "shammodels/sph/solvergraph/NeighCache.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shammodels::sph::modules {

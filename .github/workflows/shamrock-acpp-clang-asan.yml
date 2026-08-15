@@ -64,17 +64,10 @@ jobs:
         with:
           key: ${{ github.job }}-asan-acpp
           verbose: 2
+          save: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+          evict-old-files: 4d
 
-      - name: Configure ccache
-        shell: bash
-        run: |
-          echo " ----- ccache configuration ----- "
-          echo " Old configuration: "
-          ccache -p
-          echo " ----- New configuration:   ----- "
-          ccache -o compiler_check='%compiler% -dumpmachine; %compiler% -dumpversion'
-          ccache -p
-          echo " ----- ccache configuration done ----- "
+      - uses: ./.github/actions/configure_ccache
 
 
       - name: configure Shamrock

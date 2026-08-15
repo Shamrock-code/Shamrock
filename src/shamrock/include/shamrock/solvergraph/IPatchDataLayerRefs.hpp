@@ -19,7 +19,7 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <functional>
 
 namespace shamrock::solvergraph {

@@ -20,8 +20,8 @@
 #include "shambase/memory.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

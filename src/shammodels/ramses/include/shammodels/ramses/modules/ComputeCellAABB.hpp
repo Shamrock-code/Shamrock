@@ -18,8 +18,8 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shammodels::basegodunov::modules {
 

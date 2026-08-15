@@ -23,9 +23,9 @@
 #include "shamcomm/logs.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <sycl/sycl.hpp>
 
 namespace shammodels::sph::modules {

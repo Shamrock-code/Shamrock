@@ -90,7 +90,7 @@ dt_dump = 1e-1
 next_dt_target = t_sum + dt_dump
 
 while next_dt_target <= t_target:
-    fname = "dump_{:04}.phfile".format(i_dump)
+    fname = f"dump_{i_dump:04}.phfile"
 
     model.evolve_until(next_dt_target)
     dump = model.make_phantom_dump()

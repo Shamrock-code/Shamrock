@@ -37,6 +37,7 @@
 #include "shammodels/sph/modules/AnalysisTotalMomentum.hpp"
 #include "shammodels/sph/modules/render/CartesianRender.hpp"
 #include "shammodels/sph/modules/render/RenderFieldGetter.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/SodTube.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include <pybind11/cast.h>
@@ -1048,18 +1049,18 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             [](T &self) {
                 py::list list_out;
 
-                if (!self.solver.storage.sinks.is_empty()) {
-                    for (auto &sink : self.solver.storage.sinks.get()) {
-                        py::dict sink_dic;
-                        sink_dic["pos"]              = sink.pos;
-                        sink_dic["velocity"]         = sink.velocity;
-                        sink_dic["sph_acceleration"] = sink.sph_acceleration;
-                        sink_dic["ext_acceleration"] = sink.ext_acceleration;
-                        sink_dic["mass"]             = sink.mass;
-                        sink_dic["angular_momentum"] = sink.angular_momentum;
-                        sink_dic["accretion_radius"] = sink.accretion_radius;
-                        list_out.append(sink_dic);
-                    }
+                auto edges = get_sink_edges<Tvec>(
+                    shambase::get_check_ref(self.ctx.sched).synchronized_data);
+                for (auto &sink : to_sink_particles(edges)) {
+                    py::dict sink_dic;
+                    sink_dic["pos"]              = sink.pos;
+                    sink_dic["velocity"]         = sink.velocity;
+                    sink_dic["sph_acceleration"] = sink.sph_acceleration;
+                    sink_dic["ext_acceleration"] = sink.ext_acceleration;
+                    sink_dic["mass"]             = sink.mass;
+                    sink_dic["angular_momentum"] = sink.angular_momentum;
+                    sink_dic["accretion_radius"] = sink.accretion_radius;
+                    list_out.append(sink_dic);
                 }
 
                 return list_out;

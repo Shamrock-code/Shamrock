@@ -18,7 +18,6 @@
 
 #include "shambackends/typeAliasVec.hpp"
 #include "shambackends/vec.hpp"
-#include "shammodels/sph/SinkPartStruct.hpp"
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
@@ -38,8 +37,6 @@ namespace shammodels::sph::modules {
         ShamrockCtx &context;
         Config &solver_config;
         Storage &storage;
-
-        using Sink = SinkParticle<Tvec>;
 
         SinkParticlesUpdate(ShamrockCtx &context, Config &solver_config, Storage &storage)
             : context(context), solver_config(solver_config), storage(storage) {}

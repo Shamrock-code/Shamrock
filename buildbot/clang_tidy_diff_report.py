@@ -64,9 +64,9 @@ fixes_lines = f_fixes.readlines()
 print(lines_buf)
 print(fixes_lines)
 
-no_relevant = not (lines_buf == ["No relevant changes found.\n"])
-print_warn = (not (lines_buf == ["\n"])) and no_relevant
-print_fixes = (not (fixes_lines == [])) and no_relevant
+no_relevant = lines_buf != ["No relevant changes found.\n"]
+print_warn = lines_buf != ["\n"] and no_relevant
+print_fixes = fixes_lines != [] and no_relevant
 
 
 buf = "# Clang-tidy diff report\n"

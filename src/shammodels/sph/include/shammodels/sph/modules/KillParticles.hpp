@@ -17,8 +17,8 @@
  */
 
 #include "shamrock/solvergraph/DistributedBuffers.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shammodels::sph::modules {
 

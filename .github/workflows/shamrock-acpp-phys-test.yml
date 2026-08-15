@@ -122,6 +122,10 @@ jobs:
             testfile: run_sg_compare_error_sph.py
           - worldsize: 1
             testfile: run_compare_shamrock_ph_disc.py
+          - worldsize: 1
+            testfile: run_test_sink_synchro.py
+          - worldsize: 2
+            testfile: run_test_sink_synchro.py
       fail-fast: false
 
     timeout-minutes: 60

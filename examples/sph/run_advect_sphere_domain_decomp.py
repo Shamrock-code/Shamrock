@@ -71,7 +71,7 @@ cfg.set_eos_adiabatic(1.00001)
 cfg.print_status()
 model.set_solver_config(cfg)
 
-model.init_scheduler(int(500), 50)
+model.init_scheduler(500, 50)
 # model.init_scheduler(int(300), 50)
 
 bmin = (-bsize, -bsize, -bsize)
@@ -210,7 +210,7 @@ plt.close(fig)
 # Convert PNG sequence to Image sequence in mpl
 ####################################################
 
-import matplotlib.animation as animation
+from matplotlib import animation
 from shamrock.utils.plot import show_image_sequence
 
 # If the animation is not returned only a static image will be shown in the doc

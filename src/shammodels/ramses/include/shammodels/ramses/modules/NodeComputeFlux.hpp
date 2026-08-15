@@ -23,9 +23,9 @@
 #include "shammodels/ramses/SolverConfig.hpp"
 #include "shammodels/ramses/solvegraph/NeighGraphLinkFieldEdge.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/OperationSequence.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 
 namespace shammodels::basegodunov::modules {
 

@@ -17,6 +17,7 @@
 
 #include "shambase/unique_name_macro.hpp"
 #include "details/Test.hpp"
+#include <optional>
 
 /**
  * @brief namespace containing stuff related to the test library

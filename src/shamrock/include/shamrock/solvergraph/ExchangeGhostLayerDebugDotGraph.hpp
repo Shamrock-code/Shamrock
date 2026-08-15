@@ -20,9 +20,9 @@
  */
 
 #include "shamalgs/collective/distributedDataComm.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shamrock::solvergraph {
 

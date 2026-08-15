@@ -55,15 +55,15 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
-#include "shamrock/solvergraph/NodeFreeAlloc.hpp"
-#include "shamrock/solvergraph/NodeSetEdge.hpp"
-#include "shamrock/solvergraph/OperationSequence.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/node/NodeFreeAlloc.hpp"
+#include "shamsolvergraph/node/NodeSetEdge.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include <memory>
 
 template<class Tvec, class TgridVec>

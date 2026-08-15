@@ -21,8 +21,8 @@
 #include "shamrock/solvergraph/CopyPatchDataField.hpp"
 #include "shamrock/solvergraph/DDSharedBuffers.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/PatchDataFieldDDShared.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shamrock::solvergraph {
 

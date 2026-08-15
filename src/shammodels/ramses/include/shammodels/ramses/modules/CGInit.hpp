@@ -22,9 +22,9 @@
 #include "shammodels/ramses/solvegraph/OrientedAMRGraphEdge.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shammodels::basegodunov::modules {

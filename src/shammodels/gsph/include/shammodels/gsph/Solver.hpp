@@ -182,7 +182,7 @@ namespace shammodels::gsph {
          */
         void copy_eos_to_patchdata();
 
-         /**
+        /**
          * @brief Compute SPH-summation density (and grad-h omega) for GSPH
          *
          * Unlike the plain SPH solver, which derives density analytically from
@@ -197,7 +197,6 @@ namespace shammodels::gsph {
          * before communicate_merge_ghosts_fields() / compute_eos_fields().
          */
         void compute_density();
-        
 
         /**
          * @brief Compute gradients for MUSCL reconstruction

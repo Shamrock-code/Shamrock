@@ -545,8 +545,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    auto dev_sched     = shamsys::instance::get_compute_scheduler_ptr();
-    const Tscal pmass  = solver_config.gpart_mass;
+    auto dev_sched               = shamsys::instance::get_compute_scheduler_ptr();
+    const Tscal pmass            = solver_config.gpart_mass;
     static constexpr Tscal Rkern = Kernel::Rkern;
 
     if (pmass == 0) {
@@ -2130,7 +2130,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Loop order:
     // 1. PREDICTOR: move particles using OLD accelerations
     // 2. BOUNDARY: apply periodic/free boundary conditions
-   // 3. PRESTEP: converge smoothing length h, then compute omega and density
+    // 3. PRESTEP: converge smoothing length h, then compute omega and density
     //    (density is now computed inside gsph_prestep(), on the same
     //    converged h / merged positions / neighbor cache - see compute_density())
     // 4. DENSITY/EOS: compute density, pressure, soundspeed on NEW positions
@@ -2162,7 +2162,6 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // merged positions, merged trees, rint field, neighbor cache) stays valid
     // and is reused below - no need to rebuild it a second time here.
     gsph_prestep(t_current, dt);
-
 
     // STEP 4a: GRADIENTS - compute for MUSCL reconstruction (if enabled)
     // Computed BEFORE ghost communication so gradients are included in ghost data

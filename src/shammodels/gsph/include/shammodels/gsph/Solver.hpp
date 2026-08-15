@@ -170,7 +170,6 @@ namespace shammodels::gsph {
         void communicate_merge_ghosts_fields();
         void reset_merge_ghosts_fields();
 
-        void compute_omega();
         void compute_eos_fields();
         void reset_eos_fields();
 
@@ -182,6 +181,23 @@ namespace shammodels::gsph {
          * state is preserved across simulation restarts and available for VTK output.
          */
         void copy_eos_to_patchdata();
+
+         /**
+         * @brief Compute SPH-summation density (and grad-h omega) for GSPH
+         *
+         * Unlike the plain SPH solver, which derives density analytically from
+         * the converged smoothing length via rho_h(pmass, h, hfact), GSPH needs
+         * an explicit summed density field (Sigma m_j W_ij) because the Riemann
+         * reconstruction and MUSCL gradients consume density directly, not just
+         * through h. This computes that summation into storage.density, using
+         * the neighbor cache and merged (local+ghost) positions built earlier
+         * in gsph_prestep().
+         *
+         * Must run after gsph_prestep() (h converged, neighbor cache valid) and
+         * before communicate_merge_ghosts_fields() / compute_eos_fields().
+         */
+        void compute_density();
+        
 
         /**
          * @brief Compute gradients for MUSCL reconstruction

@@ -539,6 +539,98 @@ void shammodels::gsph::Solver<Tvec, Kern>::reset_neighbors_cache() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    auto dev_sched     = shamsys::instance::get_compute_scheduler_ptr();
+    const Tscal pmass  = solver_config.gpart_mass;
+    static constexpr Tscal Rkern = Kernel::Rkern;
+
+    if (pmass == 0) {
+        shambase::throw_with_loc<std::runtime_error>(
+            "invalid gpart_mass 0 in compute_density, this configuration can not converge.");
+    }
+
+    shamrock::solvergraph::Field<Tscal> &density_field = shambase::get_check_ref(storage.density);
+
+    // Density is only needed for local particles here; it gets propagated to
+    // ghosts afterwards by communicate_merge_ghosts_fields().
+    shambase::DistributedData<u32> &counts = shambase::get_check_ref(storage.part_counts).indexes;
+    density_field.ensure_sizes(counts);
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
+
+    auto &merged_xyzh = storage.merged_xyzh.get();
+    auto &neigh_cache = storage.neigh_cache->neigh_cache;
+
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        auto &mfield = merged_xyzh.get(p.id_patch);
+        auto &pcache = neigh_cache.get(p.id_patch);
+
+        // Position from merged data (includes ghosts for neighbor search)
+        auto &buf_xyz   = mfield.template get_field_buf_ref<Tvec>(0);
+        auto &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+
+        auto &dens_field = density_field.get_field(p.id_patch);
+
+        sham::DeviceQueue &q = dev_sched->get_queue();
+        sham::EventList depends_list;
+
+        auto ploop_ptrs  = pcache.get_read_access(depends_list);
+        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
+        auto h_acc       = buf_hpart.get_read_access(depends_list);
+        auto density_acc = dens_field.get_buf().get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+            shambase::parallel_for(cgh, cnt, "gsph_compute_density", [=](u64 gid) {
+                u32 id_a = (u32) gid;
+
+                Tvec xyz_a = xyz_acc[id_a];
+                Tscal h_a  = h_acc[id_a];
+                Tscal dint = h_a * h_a * Rkern * Rkern;
+
+                // SPH density summation: rho_a = sum_b m_b W(|r_a - r_b|, h_a)
+                // (includes the self contribution b == a)
+                Tscal rho_sum = pmass * Kernel::W_3d(Tscal(0), h_a);
+
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    if (id_b == id_a) {
+                        return;
+                    }
+
+                    Tvec dr    = xyz_a - xyz_acc[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+
+                    if (rab2 > dint) {
+                        return;
+                    }
+
+                    Tscal rab = sycl::sqrt(rab2);
+                    rho_sum += pmass * Kernel::W_3d(rab, h_a);
+                });
+
+                density_acc[id_a] = sycl::max(rho_sum, Tscal(1e-30));
+            });
+        });
+
+        pcache.complete_event_state({e});
+        buf_xyz.complete_event_state(e);
+        buf_hpart.complete_event_state(e);
+        dens_field.get_buf().complete_event_state(e);
+    });
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
@@ -785,6 +877,12 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
         set_omega_mask.set_edges(storage.part_counts, should_set_omega_mask, storage.omega);
         set_omega_mask.evaluate();
     }
+
+    // NodeComputeOmega only produces the grad-h correction factor, not density
+    // itself (see Solver.hpp::compute_density() for why GSPH needs an explicit
+    // summed density field, unlike plain SPH). Compute it now, on the same
+    // converged h / neighbor cache / merged positions used above.
+    compute_density();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -2032,7 +2130,9 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Loop order:
     // 1. PREDICTOR: move particles using OLD accelerations
     // 2. BOUNDARY: apply periodic/free boundary conditions
-    // 3. TREE BUILD: build spatial trees on NEW positions
+   // 3. PRESTEP: converge smoothing length h, then compute omega and density
+    //    (density is now computed inside gsph_prestep(), on the same
+    //    converged h / merged positions / neighbor cache - see compute_density())
     // 4. DENSITY/EOS: compute density, pressure, soundspeed on NEW positions
     // 5. FORCES: compute accelerations using FRESH EOS
     // 6. CORRECTOR: refine velocities using average of old/new accelerations
@@ -2056,32 +2156,15 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
         solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
     }
 
+    // STEP 3: PRESTEP - converges h, builds ghost/tree/neighbor-cache state on
+    // the new positions, and computes omega + density (see gsph_prestep() /
+    // compute_density()). Everything it builds (ghost handler, ghost cache,
+    // merged positions, merged trees, rint field, neighbor cache) stays valid
+    // and is reused below - no need to rebuild it a second time here.
     gsph_prestep(t_current, dt);
 
-    // STEP 3: TREE BUILD - build trees on NEW positions
-    // Generate ghost handler for the new positions
-    gen_ghost_handler(t_current + dt);
 
-    // Build ghost cache for interface exchange
-    build_ghost_cache();
-
-    // Merge positions with ghosts
-    merge_position_ghost();
-
-    // Build trees over merged positions
-    build_merged_pos_trees();
-
-    // Compute interaction ranges
-    compute_presteps_rint();
-
-    // Build neighbor cache
-    start_neighbors_cache();
-
-    // STEP 4: DENSITY/OMEGA - compute on NEW positions
-    // Compute omega (grad-h correction factor) - needed for force computation
-    compute_omega();
-
-    // STEP 4b: GRADIENTS - compute for MUSCL reconstruction (if enabled)
+    // STEP 4a: GRADIENTS - compute for MUSCL reconstruction (if enabled)
     // Computed BEFORE ghost communication so gradients are included in ghost data
     // Gradients are computed on local particles using neighbor data
     compute_gradients();
@@ -2094,7 +2177,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // This MUST happen BEFORE compute_eos_fields so EOS can be computed for ghosts
     communicate_merge_ghosts_fields();
 
-    // STEP 4c: EOS - compute AFTER ghost communication (CRITICAL!)
+    // STEP 4b: EOS - compute AFTER ghost communication (CRITICAL!)
     // This ensures P and cs are computed for ALL particles (local + ghost)
     // Following SPH pattern: EOS is computed on merged_patchdata_ghost
     compute_eos_fields();

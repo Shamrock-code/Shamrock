@@ -2,10 +2,16 @@ name: Upload metrics history
 
 # Reusable workflow that commits aggregated metrics.json from the current
 # workflow run to the metrics-history orphan branch as
-# aggregated/<date_time>.json.
+# aggregated/<date_time>.json, then rebuilds the JS plot datasets in output/.
+# Set push to false to dry-run the commit without updating the remote branch.
 
 on:
   workflow_call:
+    inputs:
+      push:
+        description: "Whether to push the metrics-history commit to origin"
+        required: true
+        type: boolean
 
 jobs:
   upload_metrics_history:
@@ -22,6 +28,7 @@ jobs:
           fetch-depth: 0
 
       - uses: Shamrock-code/action-ensure-orphan-branch@c18ff0971932d59862ce52112925a5f5fc5c19f0
+        if: ${{ inputs.push }}
         with:
           branch_name: metrics-history
 
@@ -37,6 +44,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # tools/ disappears after checking out the data-only orphan branch.
+          cp tools/make_metrics_datasets.py /tmp/make_metrics_datasets.py
+
           git fetch origin metrics-history
           git checkout metrics-history
 
@@ -44,6 +54,15 @@ jobs:
           mkdir -p aggregated
           cp metrics.json "aggregated/${date_time}.json"
 
+          python3 /tmp/make_metrics_datasets.py . output
+
           git add "aggregated/${date_time}.json"
+          git add -A output
           git commit -m "Add aggregated metrics for ${date_time}"
-          git push origin metrics-history
+
+      - name: Show commit diff
+        run: git --no-pager show
+
+      - name: Push metrics-history
+        if: ${{ inputs.push }}
+        run: git push origin metrics-history

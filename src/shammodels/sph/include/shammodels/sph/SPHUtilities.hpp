@@ -86,7 +86,14 @@ namespace shammodels::sph {
             PatchField<flt> interactR_patch = sched.map_owned_to_patch_field_simple<flt>(
                 [&](const Patch p, PatchDataLayer &pdat) -> flt {
                     if (!pdat.is_empty()) {
+#if false
+                        auto tmp = pdat.get_field<flt>(ihpart).compute_max() * h_evol_max * Rkern;
+                        shamcomm::logs::raw_ln(
+                            shambase::format("patch {}, Rghost = {}", p.id_patch, tmp));
+                        return tmp;
+#else
                         return pdat.get_field<flt>(ihpart).compute_max() * h_evol_max * Rkern;
+#endif
                     } else {
                         return shambase::VectorProperties<flt>::get_min();
                     }

@@ -26,7 +26,7 @@
 #include "shammodels/ramses/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/SerialPatchTree.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
-#include "shamrock/solvergraph/IDataEdgeSerializable.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamunits/Constants.hpp"
 #include "shamunits/UnitSystem.hpp"
 #include <algorithm>

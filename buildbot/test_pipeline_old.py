@@ -113,10 +113,10 @@ print(
     + Style.RESET_ALL
     + "find "
     + abs_build_dir_src
-    + ' -iname "*.gcda" -exec rm {} \;'
+    + r' -iname "*.gcda" -exec rm {} \;'
     + "\n"
 )
-os.system("find " + abs_build_dir_src + ' -iname "*.gcda" -exec rm {} \;')
+os.system("find " + abs_build_dir_src + r' -iname "*.gcda" -exec rm {} \;')
 
 # running step
 for cid in range(len(config_names)):

@@ -71,9 +71,11 @@ namespace shammodels::sph::modules {
 
             Tscal tot_ekin = shamalgs::collective::allreduce_sum(ekin);
 
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &sink : solver.storage.sinks.get()) {
-                    tot_ekin += Tscal{0.5} * sink.mass * sham::dot(sink.velocity, sink.velocity);
+            auto &mass = get_sink_mass<Tvec>(sched.synchronized_data);
+            auto &vel  = get_sink_vel<Tvec>(sched.synchronized_data);
+            if (!mass.empty()) {
+                for (size_t i = 0; i < mass.size(); i++) {
+                    tot_ekin += Tscal{0.5} * mass[i] * sham::dot(vel[i], vel[i]);
                 }
             }
 

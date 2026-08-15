@@ -70,6 +70,30 @@ jobs:
           name: report_email
           path: ./report_______email.md
 
+  count_loc:
+    name: Lines of code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+
+      - name: Count lines of code
+        shell: bash
+        run: |
+          python3 tools/count_loc.py metric__loc.json
+          cat metric__loc.json
+
+      - name: Upload lines of code metric
+        uses: actions/upload-artifact@v4
+        with:
+          name: metric__loc.json
+          path: metric__loc.json
+
   src_check:
     name: Linting
     #needs: [detect_changes]
@@ -85,6 +109,12 @@ jobs:
     needs: [src_check]
     if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/env_tests.yml
+
+  shamrock_linux_acpp_build_profile:
+    name: Tests
+    needs: [src_check]
+    if: ${{ !inputs.light_ci }}
+    uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 
   shamrock_linux_acpp_conda:
     name: Tests
@@ -106,8 +136,9 @@ jobs:
   shamrock_linux_acpp_tidy:
     needs: [src_check]
     name: Tests
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-clang-tidy.yml
+    with:
+      run_full: ${{ !inputs.light_ci }}
 
   shamrock_linux_acpp_cov:
     needs: [src_check]

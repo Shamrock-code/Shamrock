@@ -21,7 +21,7 @@
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 
 namespace shammodels::sph::modules {
 

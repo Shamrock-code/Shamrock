@@ -19,9 +19,9 @@
 #include "shambase/exception.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

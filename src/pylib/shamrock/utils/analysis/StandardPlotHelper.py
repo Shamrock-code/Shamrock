@@ -10,8 +10,8 @@ from .UnitHelper import plot_codeu_to_unit
 
 try:
     import matplotlib
-    import matplotlib.animation as animation
     import matplotlib.pyplot as plt
+    from matplotlib import animation
 
     _HAS_MATPLOTLIB = True
 except ImportError:

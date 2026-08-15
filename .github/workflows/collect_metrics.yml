@@ -1,0 +1,102 @@
+name: Collect metrics
+
+# Reusable workflow that gathers every metric__* artifact from the current
+# workflow run, merges them into a single JSON document (with UTC date & time),
+# and uploads the result.
+#
+# Artifact collection follows the same list/filter/download pattern as
+# on_completed_pr_workflow.yml, targeting names that start with metric__.
+
+on:
+  workflow_call:
+
+jobs:
+  collect_metrics:
+    name: Aggregate metric artifacts
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+
+      - name: 'Download metric artifacts'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const runId = context.runId;
+
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              { owner, repo, run_id: runId, per_page: 100 }
+            );
+
+            console.log("artifacts:", artifacts);
+
+            console.log(
+              "All artifacts (id, name):",
+              artifacts.map((a) => ({ id: a.id, name: a.name }))
+            );
+
+            // Filter artifacts whose name starts with 'metric__'
+            let metricArtifacts = artifacts.filter((artifact) => {
+              return artifact.name.startsWith("metric__");
+            });
+
+            console.log(
+              "Metric artifacts (metric__*):",
+              metricArtifacts.map((a) => ({ id: a.id, name: a.name }))
+            );
+
+            const fs = require('fs');
+            const outDir = `${process.env.GITHUB_WORKSPACE}/collected_metrics_zips`;
+            fs.mkdirSync(outDir, { recursive: true });
+
+            for (const artifact of metricArtifacts) {
+              console.log(`Downloading artifact: ${artifact.name}`);
+
+              let download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+                archive_format: 'zip',
+              });
+
+              fs.writeFileSync(`${outDir}/${artifact.name}.zip`, Buffer.from(download.data));
+            }
+
+      - name: 'Unzip metric artifacts'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p collected_metrics
+          shopt -s nullglob
+          zips=(collected_metrics_zips/*.zip)
+          if [ ${#zips[@]} -eq 0 ]; then
+            echo "No metric__* artifacts were downloaded"
+            exit 0
+          fi
+          for file in "${zips[@]}"; do
+            echo "Unzipping: $file"
+            unzip -o "$file" -d collected_metrics
+          done
+
+      - name: 'List collected metric files'
+        run: |
+          ls -la collected_metrics || true
+          find collected_metrics -type f -print || true
+
+      - name: 'Aggregate metrics into a single JSON'
+        shell: bash
+        run: |
+          python3 tools/aggregate_metrics.py collected_metrics metrics.json
+          cat metrics.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metrics.json
+          path: metrics.json

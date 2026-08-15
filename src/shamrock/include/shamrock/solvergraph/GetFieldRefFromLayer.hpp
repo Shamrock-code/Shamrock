@@ -19,8 +19,8 @@
 
 #include "shambase/memory.hpp"
 #include "shamrock/solvergraph/FieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 namespace shamrock::solvergraph {

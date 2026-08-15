@@ -19,7 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambase/memory.hpp"
 #include "shammodels/common/amr/NeighGraph.hpp"
-#include "shamrock/solvergraph/IEdgeNamed.hpp"
+#include "shamsolvergraph/edge/IEdgeNamed.hpp"
 
 namespace shammodels::basegodunov::solvergraph {
 

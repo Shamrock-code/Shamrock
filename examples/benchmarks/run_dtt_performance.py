@@ -10,9 +10,9 @@ This example benchmarks the DTT performance for the different algorithms availab
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 import shamrock
 

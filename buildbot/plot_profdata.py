@@ -22,7 +22,7 @@ def load_dic(fname):
     dic = {}
 
     for entry in arr:
-        if not (entry["name"] in dic.keys()):
+        if not (entry["name"] in dic):
             dic[entry["name"]] = []
 
         dic[entry["name"]].append(entry["tend"] - entry["tstart"])
@@ -38,12 +38,12 @@ dic_labels = {}
 
 for dic in dic_lst:
     for k in dic.keys():
-        if not (k in dic_labels.keys()):
+        if not (k in dic_labels):
             dic_labels[k] = counter
             counter += 1
 
 # label list for the plot
-labels = [k for k in dic_labels.keys()]
+labels = [k for k in dic_labels]
 
 
 def rnd():

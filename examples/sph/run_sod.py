@@ -38,7 +38,7 @@ P_d = 0.1
 u_g = P_g / ((gamma - 1) * rho_g)
 u_d = P_d / ((gamma - 1) * rho_d)
 
-resol = int(os.environ.get("RESOL", 128))
+resol = int(os.environ.get("RESOL", "128"))
 
 sim_folder = f"_to_trash/sod_{resol}/"
 dump_folder = sim_folder + "dump/"

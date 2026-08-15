@@ -9,8 +9,8 @@ import shamrock.sys
 __all__ = []
 
 try:
-    import matplotlib.animation as animation
     import matplotlib.pyplot as plt
+    from matplotlib import animation
 
     _HAS_MATPLOTLIB = True
 except ImportError:

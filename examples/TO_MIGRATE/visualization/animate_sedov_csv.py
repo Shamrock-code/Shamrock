@@ -164,7 +164,7 @@ def load_snapshot(filename):
 
         # Read header and data
         f.seek(0)
-        lines = [l for l in f.readlines() if not l.startswith("#")]
+        lines = [l for l in f if not l.startswith("#")]
 
         if len(lines) < 2:
             return None

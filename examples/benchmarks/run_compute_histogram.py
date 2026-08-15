@@ -11,9 +11,9 @@ This example benchmarks the compute histogram performance for the different algo
 import random
 import time
 
-import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import colors
 
 import shamrock
 

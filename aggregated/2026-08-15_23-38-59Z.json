@@ -1,0 +1,1822 @@
+{
+   "datetime": "2026-08-15 23:38:59Z",
+   "sha": "5b4e0413f7199c9323498ecc8b6b4752f13cdf3c",
+   "ref": "refs/heads/main",
+   "event_name": "push",
+   "repository": "Shamrock-code/Shamrock",
+   "workflow": "On Push",
+   "run_id": 31910404808,
+   "run_attempt": 1,
+   "metrics": {
+      "build_profile": {
+         "data": "Analyzing build trace from 'capture_build.bin'...\n**** Time summary:\nCompilation (434 times):\n  Parsing (frontend):         7852.3 s\n  Codegen & opts (backend):   6618.3 s\n\n**** Files that took longest to parse (compiler frontend):\n107316 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/pySPHModel.cpp.o\n 57012 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Solver.cpp.o\n 53261 ms: ./src/shammodels/gsph/CMakeFiles/shammodels_gsph.dir/src/Solver.cpp.o\n 53116 ms: ./src/shammodels/gsph/CMakeFiles/shammodels_gsph.dir/src/pyGSPHModel.cpp.o\n 51638 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/ComputeEos.cpp.o\n 49850 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Model.cpp.o\n 45723 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataLayer.cpp.o\n 42713 ms: ./src/shammodels/ramses/CMakeFiles/shammodels_ramses.dir/src/Solver.cpp.o\n 41607 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/render/CartesianRender.cpp.o\n 41497 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/UpdateDerivs.cpp.o\n\n**** Files that took longest to codegen (compiler backend):\n178871 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/pySPHModel.cpp.o\n158046 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Solver.cpp.o\n147246 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataField.cpp.o\n128097 ms: ./src/shammodels/ramses/CMakeFiles/shammodels_ramses.dir/src/modules/InterpolateToFace.cpp.o\n115477 ms: ./src/CMakeFiles/shamrock_test.dir/tests/shammath/sphkernelsTests.cpp.o\n 96357 ms: ./src/shamalgs/CMakeFiles/shamalgs.dir/src/details/reduction/reduction.cpp.o\n 81904 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/modules/ComputeEos.cpp.o\n 79117 ms: ./src/shammodels/sph/CMakeFiles/shammodels_sph.dir/src/Model.cpp.o\n 76405 ms: ./src/shamalgs/CMakeFiles/shamalgs.dir/src/details/reduction/groupReduction_usm.cpp.o\n 74577 ms: ./src/shamrock/CMakeFiles/shamlib.dir/src/patch/PatchDataLayer.cpp.o\n\n**** Templates that took longest to instantiate:\n261966 ms: shamrock::patch::FieldVariant<shamrock::patch::PatchDataLayerLayout::FieldDescriptor>::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/... (2159 times, avg 121 ms)\n252360 ms: std::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/FieldVariant.hpp:71:17), std::variant<shamrock::patch::FieldDescrip... (2161 times, avg 116 ms)\n250354 ms: std::visit<(lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDataLayer.hpp:431:21), std::variant<PatchDataField<float>, Pat... (124 times, avg 2018 ms)\n250145 ms: std::__do_visit<std::__detail::__variant::__deduce_visit_result<bool>, (lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDa... (124 times, avg 2017 ms)\n248489 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<bool> (*)((lambda... (124 times, avg 2003 ms)\n248350 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<bool> (*)((lambda... (124 times, avg 2002 ms)\n178891 ms: std::__do_visit<std::__detail::__variant::__deduce_visit_result<void>, (lambda at /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/FieldVa... (2161 times, avg 82 ms)\n171044 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<void> (*)((lambda... (2161 times, avg 79 ms)\n168973 ms: std::__detail::__variant::__gen_vtable_impl<std::__detail::__variant::_Multi_array<std::__detail::__variant::__deduce_visit_result<void> (*)((lambda... (2161 times, avg 78 ms)\n129043 ms: nlohmann::basic_json<>::parse<const char *> (142 times, avg 908 ms)\n\n**** Template sets that took longest to instantiate:\n649964 ms: std::visit<$> (4260 times, avg 152 ms)\n618071 ms: std::__do_visit<$> (5094 times, avg 121 ms)\n599557 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply (5094 times, avg 117 ms)\n595213 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply_all_alts<$> (5094 times, avg 116 ms)\n581362 ms: std::__detail::__variant::__gen_vtable_impl<$>::_S_apply_single_alt<$> (71199 times, avg 8 ms)\n471254 ms: shamrock::patch::FieldVariant<$>::visit<$> (3049 times, avg 154 ms)\n400894 ms: std::__detail::__variant::__gen_vtable_impl<$>::__visit_invoke (111858 times, avg 3 ms)\n353227 ms: shamrock::patch::PatchDataLayerLayout::add_field<$> (2159 times, avg 163 ms)\n339980 ms: std::__and_<$> (184542 times, avg 1 ms)\n262287 ms: std::unique_ptr<$> (13462 times, avg 19 ms)\n\n**** Functions that took longest to compile:\n  7968 ms: test_func_91() (/__w/Shamrock/Shamrock/src/tests/shambackends/SYCL_MPI_types_tests.cpp)\n  7058 ms: void test_karras_alg<unsigned long>() (/__w/Shamrock/Shamrock/src/tests/shamrock/tree/karrasTests.cpp)\n  6500 ms: void test_karras_alg<unsigned int>() (/__w/Shamrock/Shamrock/src/tests/shamrock/tree/karrasTests.cpp)\n  5324 ms: test_func_21() (/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataFieldSpanTests.cpp)\n  4343 ms: test_func_24() (/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeAABBTests.cpp)\n  4016 ms: test_func_241() (/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeAABBTests.cpp)\n  2811 ms: shampylib::init_shamrock_math_sphkernels(pybind11::module_&) (/__w/Shamrock/Shamrock/src/shampylib/src/math/pySPHKernels.cpp)\n  2794 ms: shammodels::basegodunov::Solver<hipsycl::sycl::vec<double, 3, hipsycl::sycl::detail::vec_storage<double, 3> >, hipsycl::sycl::vec<long, 3, hipsycl::... (/__w/Shamrock/Shamrock/src/shammodels/ramses/src/Solver.cpp)\n  2754 ms: test_func_460()::$_4::operator()() const (/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/reductionTests.cpp)\n  2043 ms: test_func_157() (/__w/Shamrock/Shamrock/src/tests/shamtree/MortonReducedSetTests.cpp)\n\n**** Function sets that took longest to compile / optimize:\n 64874 ms: fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp<$>, unsigned int, int, fmt::v11::detail::buffer<$>&, int&) (323 times, avg 200 ms)\n 42038 ms: hipsycl::sycl::event hipsycl::sycl::queue::submit<$>(hipsycl::sycl::property_list const&, hipsycl::sycl::vec<$>) (621 times, avg 67 ms)\n 31523 ms: fmt::v11::basic_appender<$> fmt::v11::detail::write_int_noinline<$>(fmt::v11::basic_appender<$>, fmt::v11::detail::write_int_arg<$>, fmt::v11::forma... (969 times, avg 32 ms)\n 23688 ms: fmt::v11::basic_appender<$> fmt::v11::detail::do_write_float<$>(fmt::v11::basic_appender<$>, fmt::v11::detail::dragonbox::decimal_fp<$> const&, fmt:... (646 times, avg 36 ms)\n 20440 ms: void validate_kernel_3d<$>(shammath::SPHKernelGen<$>::Tscal, shammath::SPHKernelGen<$>::Tscal, shammath::SPHKernelGen<$>::Tscal) (40 times, avg 511 ms)\n 16292 ms: void fmt::v11::detail::parse_format_string<$>(fmt::v11::basic_string_view<$>, fmt::v11::detail::format_handler<$>&&) (322 times, avg 50 ms)\n 15110 ms: hipsycl::sycl::accessor<$>::init_host_buffer(hipsycl::rt::runtime*, bool) (261 times, avg 57 ms)\n 14978 ms: fmt::v11::basic_appender<$> fmt::v11::detail::write_escaped_string<$>(fmt::v11::basic_appender<$>, fmt::v11::basic_string_view<$>) (323 times, avg 46 ms)\n 14481 ms: PatchDataField<$>::get_obj_cnt() const (1299 times, avg 11 ms)\n 13559 ms: void test_karras_alg<$>() (2 times, avg 6779 ms)\n\n**** Expensive headers:\n2455927 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/sycl.hpp (included 344 times, avg 7139 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  11x: math.hpp \n  10x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp Device.hpp \n  ...\n\n1433485 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceBuffer.hpp (included 272 times, avg 5270 ms), included via:\n  29x: <direct include>\n  17x: reduction.hpp flatten.hpp \n  10x: random.hpp \n  8x: kernel_call.hpp \n  8x: random.hpp random.hpp \n  ...\n\n1407265 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/Device.hpp (included 299 times, avg 4706 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  16x: NodeInstance.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp DeviceQueue.hpp \n  ...\n\n1388027 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceQueue.hpp (included 294 times, avg 4721 ms), included via:\n  28x: DeviceBuffer.hpp DeviceScheduler.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  16x: NodeInstance.hpp DeviceScheduler.hpp \n  9x: random.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp DeviceScheduler.hpp \n  ...\n\n1379666 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/DeviceScheduler.hpp (included 293 times, avg 4708 ms), included via:\n  28x: DeviceBuffer.hpp \n  17x: reduction.hpp flatten.hpp DeviceBuffer.hpp \n  16x: NodeInstance.hpp \n  9x: random.hpp DeviceBuffer.hpp \n  8x: kernel_call.hpp DeviceBuffer.hpp \n  ...\n\n521314 ms: /__w/Shamrock/Shamrock/src/shambase/include/shambase/string.hpp (included 394 times, avg 1323 ms), included via:\n  44x: stacktrace.hpp \n  27x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp \n  26x: <direct include>\n  24x: memory.hpp \n  18x: time.hpp Timer.hpp \n  ...\n\n430998 ms: /__w/Shamrock/Shamrock/src/shambackends/include/shambackends/math.hpp (included 238 times, avg 1810 ms), included via:\n  30x: <direct include>\n  21x: AABB.hpp \n  16x: sphkernels.hpp \n  6x: CoordRange.hpp intervals.hpp \n  6x: Patch.hpp PatchCoord.hpp CoordRange.hpp intervals.hpp \n  ...\n\n417918 ms: /__w/Shamrock/Shamrock/src/shamformat/include/sham/format/format.hpp (included 395 times, avg 1058 ms), included via:\n  44x: stacktrace.hpp string.hpp \n  26x: string.hpp \n  24x: memory.hpp string.hpp \n  24x: shamtest.hpp Test.hpp TestResult.hpp TestAssertList.hpp string.hpp \n  18x: DeviceBuffer.hpp memory.hpp string.hpp \n  ...\n\n417317 ms: /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/patch/PatchDataLayer.hpp (included 124 times, avg 3365 ms), included via:\n  7x: <direct include>\n  5x: patchdata.hpp sycl_vector_utils.hpp \n  3x: FindGhostLayerCandidates.hpp PatchDataLayerDDShared.hpp \n  3x: AMRGrid.hpp PatchScheduler.hpp PatchDataLayerRefs.hpp \n  3x: SPHRenderTestCommon.hpp Field.hpp ComputeField.hpp PatchDataField.hpp PatchDataLayerRefs.hpp \n  ...\n\n361684 ms: /__w/Shamrock/Shamrock/src/shamrock/include/shamrock/scheduler/PatchScheduler.hpp (included 107 times, avg 3380 ms), included via:\n  3x: AMRGrid.hpp \n  3x: SolverConfig.hpp units_json.hpp SerialPatchTree.hpp \n  3x: Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp \n  3x: Model.hpp Solver.hpp SolverConfig.hpp units_json.hpp SerialPatchTree.hpp \n  3x: SPHUtilities.hpp BasicSPHGhosts.hpp ComputeField.hpp \n  ...\n\n  done in 12.2s.\n**** Files with highest peak RSS (compiler process):\n  2703.2 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/pySPHModel.cpp\n  1461.0 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/Solver.cpp\n  1327.0 MB: /__w/Shamrock/Shamrock/src/shammodels/gsph/src/pyGSPHModel.cpp\n  1280.4 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeEos.cpp\n  1279.7 MB: /__w/Shamrock/Shamrock/src/shammodels/gsph/src/Solver.cpp\n  1172.1 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/Model.cpp\n  1040.7 MB: /__w/Shamrock/Shamrock/src/shammodels/ramses/src/Solver.cpp\n  1030.3 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/CartesianRender.cpp\n  1030.0 MB: /__w/Shamrock/Shamrock/src/shamrock/src/patch/PatchDataLayer.cpp\n  1026.5 MB: /__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/UpdateDerivs.cpp\n",
+         "compile_memory_usage": [
+            {
+               "rss_mb": 95.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamterm/src/color.cpp"
+            },
+            {
+               "rss_mb": 104.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamterm/src/tty.cpp"
+            },
+            {
+               "rss_mb": 129.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamterm/src/env.cpp"
+            },
+            {
+               "rss_mb": 136.8,
+               "path": "/__w/Shamrock/Shamrock/external/fmt/src/os.cc"
+            },
+            {
+               "rss_mb": 151.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamformat/src/format_exception.cpp"
+            },
+            {
+               "rss_mb": 125.0,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/print.cpp"
+            },
+            {
+               "rss_mb": 84.4,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/term_colors.cpp"
+            },
+            {
+               "rss_mb": 124.6,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/popen.cpp"
+            },
+            {
+               "rss_mb": 169.8,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/exception.cpp"
+            },
+            {
+               "rss_mb": 159.3,
+               "path": "/__w/Shamrock/Shamrock/external/fmt/src/format.cc"
+            },
+            {
+               "rss_mb": 166.9,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/SourceLocation.cpp"
+            },
+            {
+               "rss_mb": 123.6,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/logs/reformat_message.cpp"
+            },
+            {
+               "rss_mb": 179.7,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/stacktrace.cpp"
+            },
+            {
+               "rss_mb": 94.0,
+               "path": "/__w/Shamrock/Shamrock/build/src/shambindings/configure_time_py_sys_path.cpp"
+            },
+            {
+               "rss_mb": 93.4,
+               "path": "/__w/Shamrock/Shamrock/build/src/shambindings/configure_time_pylib_paths.cpp"
+            },
+            {
+               "rss_mb": 93.8,
+               "path": "/__w/Shamrock/Shamrock/build/src/shambindings/run_ipython_src.cpp"
+            },
+            {
+               "rss_mb": 172.3,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/profiling/profiling.cpp"
+            },
+            {
+               "rss_mb": 180.4,
+               "path": "/__w/Shamrock/Shamrock/src/shambase/src/profiling/chrome.cpp"
+            },
+            {
+               "rss_mb": 170.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamcmdopt/src/details/generic_opts.cpp"
+            },
+            {
+               "rss_mb": 242.0,
+               "path": "/__w/Shamrock/Shamrock/src/shambindings/src/start_python.cpp"
+            },
+            {
+               "rss_mb": 123.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamcmdopt/src/ci_env.cpp"
+            },
+            {
+               "rss_mb": 99.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/mpiErrorCheck.cpp"
+            },
+            {
+               "rss_mb": 269.7,
+               "path": "/__w/Shamrock/Shamrock/src/shambindings/src/locate_pylib.cpp"
+            },
+            {
+               "rss_mb": 169.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamcmdopt/src/env.cpp"
+            },
+            {
+               "rss_mb": 125.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/io.cpp"
+            },
+            {
+               "rss_mb": 178.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamcmdopt/src/cmdopt.cpp"
+            },
+            {
+               "rss_mb": 124.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/local_rank.cpp"
+            },
+            {
+               "rss_mb": 171.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/worldInfo.cpp"
+            },
+            {
+               "rss_mb": 284.9,
+               "path": "/__w/Shamrock/Shamrock/src/shambindings/src/pybindings.cpp"
+            },
+            {
+               "rss_mb": 172.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/mpiInfo.cpp"
+            },
+            {
+               "rss_mb": 170.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/logs.cpp"
+            },
+            {
+               "rss_mb": 175.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamcomm/src/wrapper.cpp"
+            },
+            {
+               "rss_mb": 387.0,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/comm/details/CommunicationBufferImpl.cpp"
+            },
+            {
+               "rss_mb": 376.0,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/details/memoryHandle.cpp"
+            },
+            {
+               "rss_mb": 375.6,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/USMPtrHolder.cpp"
+            },
+            {
+               "rss_mb": 384.2,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/details/BufferEventHandler.cpp"
+            },
+            {
+               "rss_mb": 405.7,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/comm/CommunicationBuffer.cpp"
+            },
+            {
+               "rss_mb": 390.8,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/details/internal_alloc.cpp"
+            },
+            {
+               "rss_mb": 381.0,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/DeviceBuffer.cpp"
+            },
+            {
+               "rss_mb": 373.9,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/DeviceContext.cpp"
+            },
+            {
+               "rss_mb": 105.3,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/sysinfo.cpp"
+            },
+            {
+               "rss_mb": 202.5,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/SyclMpiTypes.cpp"
+            },
+            {
+               "rss_mb": 378.3,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/DeviceQueue.cpp"
+            },
+            {
+               "rss_mb": 382.8,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/EventList.cpp"
+            },
+            {
+               "rss_mb": 180.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamsolvergraph/src/OperationSequence.cpp"
+            },
+            {
+               "rss_mb": 454.1,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/Device.cpp"
+            },
+            {
+               "rss_mb": 404.6,
+               "path": "/__w/Shamrock/Shamrock/src/shambackends/src/DeviceScheduler.cpp"
+            },
+            {
+               "rss_mb": 390.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammath/src/CoordRange.cpp"
+            },
+            {
+               "rss_mb": 401.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammath/src/CoordRangeTransform.cpp"
+            },
+            {
+               "rss_mb": 380.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/container/BufferEventHandler.cpp"
+            },
+            {
+               "rss_mb": 404.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/numeric/exclusiveScanGPUGems39.cpp"
+            },
+            {
+               "rss_mb": 414.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/numeric/streamCompactExclScan.cpp"
+            },
+            {
+               "rss_mb": 404.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/numeric/numericFallback.cpp"
+            },
+            {
+               "rss_mb": 391.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/memory/memory.cpp"
+            },
+            {
+               "rss_mb": 469.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/numeric/numeric.cpp"
+            },
+            {
+               "rss_mb": 425.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/memory/avoidCopyMemory.cpp"
+            },
+            {
+               "rss_mb": 404.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/algorithm/bitonicSort_updated_xor_swap.cpp"
+            },
+            {
+               "rss_mb": 427.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/memory/fallbackMemory.cpp"
+            },
+            {
+               "rss_mb": 435.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/algorithm/bitonicSort_updated.cpp"
+            },
+            {
+               "rss_mb": 393.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/algorithm/bitonicSort_legacy.cpp"
+            },
+            {
+               "rss_mb": 496.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/algorithm/bitonicSort_updated_usm.cpp"
+            },
+            {
+               "rss_mb": 429.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/random/random.cpp"
+            },
+            {
+               "rss_mb": 553.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/algorithm/algorithm.cpp"
+            },
+            {
+               "rss_mb": 421.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/reduction/fallbackReduction_usm.cpp"
+            },
+            {
+               "rss_mb": 163.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/are_all_rank_true.cpp"
+            },
+            {
+               "rss_mb": 413.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/serialize.cpp"
+            },
+            {
+               "rss_mb": 421.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/sparseXchg.cpp"
+            },
+            {
+               "rss_mb": 452.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/distributedDataComm.cpp"
+            },
+            {
+               "rss_mb": 390.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/sort_by_keys.cpp"
+            },
+            {
+               "rss_mb": 178.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/mock_value.cpp"
+            },
+            {
+               "rss_mb": 405.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/reduction.cpp"
+            },
+            {
+               "rss_mb": 406.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/is_all_true.cpp"
+            },
+            {
+               "rss_mb": 423.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/scan_exclusive_sum_in_place.cpp"
+            },
+            {
+               "rss_mb": 477.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/dot_sum.cpp"
+            },
+            {
+               "rss_mb": 399.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/gen_buffer_index.cpp"
+            },
+            {
+               "rss_mb": 661.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/reduction/groupReduction_usm.cpp"
+            },
+            {
+               "rss_mb": 164.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/gather_str.cpp"
+            },
+            {
+               "rss_mb": 410.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/segmented_sort_in_place.cpp"
+            },
+            {
+               "rss_mb": 129.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamphys/src/HydroSoundwave.cpp"
+            },
+            {
+               "rss_mb": 110.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamphys/src/SedovTaylor.cpp"
+            },
+            {
+               "rss_mb": 194.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/string_histogram.cpp"
+            },
+            {
+               "rss_mb": 358.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamphys/src/SodTube.cpp"
+            },
+            {
+               "rss_mb": 406.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/collective/sparse_exchange.cpp"
+            },
+            {
+               "rss_mb": 775.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/details/reduction/reduction.cpp"
+            },
+            {
+               "rss_mb": 492.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamalgs/src/primitives/append_subset_to.cpp"
+            },
+            {
+               "rss_mb": 412.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/NodeInstance.cpp"
+            },
+            {
+               "rss_mb": 173.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/change_log_format.cpp"
+            },
+            {
+               "rss_mb": 377.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/SyclHelper.cpp"
+            },
+            {
+               "rss_mb": 385.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/SignalCatch.cpp"
+            },
+            {
+               "rss_mb": 164.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/stacktrace_log.cpp"
+            },
+            {
+               "rss_mb": 389.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/device_select.cpp"
+            },
+            {
+               "rss_mb": 399.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/shamrock_smi.cpp"
+            },
+            {
+               "rss_mb": 399.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/system_metrics.cpp"
+            },
+            {
+               "rss_mb": 407.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/legacy/sycl_handler.cpp"
+            },
+            {
+               "rss_mb": 478.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/MicroBenchmark.cpp"
+            },
+            {
+               "rss_mb": 418.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/RadixTreeMortonBuilder.cpp"
+            },
+            {
+               "rss_mb": 383.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/kernels/key_morton_sort.cpp"
+            },
+            {
+               "rss_mb": 374.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/kernels/compute_ranges.cpp"
+            },
+            {
+               "rss_mb": 486.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/MortonKernels.cpp"
+            },
+            {
+               "rss_mb": 366.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/kernels/karras_alg.cpp"
+            },
+            {
+               "rss_mb": 377.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/kernels/convert_ranges.cpp"
+            },
+            {
+               "rss_mb": 440.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/kernels/reduction_alg.cpp"
+            },
+            {
+               "rss_mb": 547.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamsys/src/legacy/sycl_mpi_interop.cpp"
+            },
+            {
+               "rss_mb": 398.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/MortonCodeSortedSet.cpp"
+            },
+            {
+               "rss_mb": 423.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/MortonCodeSet.cpp"
+            },
+            {
+               "rss_mb": 403.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/MortonReducedSet.cpp"
+            },
+            {
+               "rss_mb": 415.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/KarrasRadixTreeAABB.cpp"
+            },
+            {
+               "rss_mb": 415.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/KarrasRadixTree.cpp"
+            },
+            {
+               "rss_mb": 403.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/CompressedLeafBVH.cpp"
+            },
+            {
+               "rss_mb": 428.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/TreeStructure.cpp"
+            },
+            {
+               "rss_mb": 433.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/TreeMortonCodes.cpp"
+            },
+            {
+               "rss_mb": 486.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/TreeCellRanges.cpp"
+            },
+            {
+               "rss_mb": 680.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/RadixTree.cpp"
+            },
+            {
+               "rss_mb": 437.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/TreeReducedMortonCodes.cpp"
+            },
+            {
+               "rss_mb": 508.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtree/src/CLBVHDualTreeTraversal.cpp"
+            },
+            {
+               "rss_mb": 129.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/TestAssert.cpp"
+            },
+            {
+               "rss_mb": 232.4,
+               "path": "/__w/Shamrock/Shamrock/src/main_lib.cpp"
+            },
+            {
+               "rss_mb": 195.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/sysinfo.cpp"
+            },
+            {
+               "rss_mb": 171.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/DataNode.cpp"
+            },
+            {
+               "rss_mb": 161.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/TestData.cpp"
+            },
+            {
+               "rss_mb": 160.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/TestAssertList.cpp"
+            },
+            {
+               "rss_mb": 162.1,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/TestDataList.cpp"
+            },
+            {
+               "rss_mb": 474.7,
+               "path": "/__w/Shamrock/Shamrock/src/main.cpp"
+            },
+            {
+               "rss_mb": 477.8,
+               "path": "/__w/Shamrock/Shamrock/src/main_test.cpp"
+            },
+            {
+               "rss_mb": 176.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/phantom_read_test.cpp"
+            },
+            {
+               "rss_mb": 381.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/TestResult.cpp"
+            },
+            {
+               "rss_mb": 389.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/experimental/syclEventUSMTests.cpp"
+            },
+            {
+               "rss_mb": 379.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/Test.cpp"
+            },
+            {
+               "rss_mb": 486.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/shamtest.cpp"
+            },
+            {
+               "rss_mb": 395.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamtest/details/reporters/texTestReport.cpp"
+            },
+            {
+               "rss_mb": 414.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/algorithm/algorithmTests.cpp"
+            },
+            {
+               "rss_mb": 422.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/algorithm/DigitBinnerTests.cpp"
+            },
+            {
+               "rss_mb": 412.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/ErrorCheckerTests.cpp"
+            },
+            {
+               "rss_mb": 427.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/DynamicIdGeneratorTests.cpp"
+            },
+            {
+               "rss_mb": 441.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/distributedDataCommTests.cpp"
+            },
+            {
+               "rss_mb": 173.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/areAllRankTrueTests.cpp"
+            },
+            {
+               "rss_mb": 175.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/gather_str_tests.cpp"
+            },
+            {
+               "rss_mb": 401.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/InvariantParallelGenerator_tests.cpp"
+            },
+            {
+               "rss_mb": 399.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/ioTests.cpp"
+            },
+            {
+               "rss_mb": 178.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/string_histogram_tests.cpp"
+            },
+            {
+               "rss_mb": 508.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/algorithm/bitonicSortTests.cpp"
+            },
+            {
+               "rss_mb": 401.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/exchangeTests.cpp"
+            },
+            {
+               "rss_mb": 388.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/indexingTests.cpp"
+            },
+            {
+               "rss_mb": 657.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/fmmTests.cpp"
+            },
+            {
+               "rss_mb": 409.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/reductionTests.cpp"
+            },
+            {
+               "rss_mb": 426.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/sparseXchgTests.cpp"
+            },
+            {
+               "rss_mb": 422.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/collective/sparse_exchange_tests.cpp"
+            },
+            {
+               "rss_mb": 430.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/numeric/numericTests.cpp"
+            },
+            {
+               "rss_mb": 403.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/numeric/numericFallbackTests.cpp"
+            },
+            {
+               "rss_mb": 176.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/binary_range_searchTests.cpp"
+            },
+            {
+               "rss_mb": 529.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/memory/serializeTests.cpp"
+            },
+            {
+               "rss_mb": 427.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/equalsTests.cpp"
+            },
+            {
+               "rss_mb": 539.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/numeric/exclusiveScanTests.cpp"
+            },
+            {
+               "rss_mb": 414.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/dot_sumTests.cpp"
+            },
+            {
+               "rss_mb": 470.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/compute_histogram_tests.cpp"
+            },
+            {
+               "rss_mb": 404.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/scan_exclusive_sum_in_placeTests.cpp"
+            },
+            {
+               "rss_mb": 413.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/reductionTests.cpp"
+            },
+            {
+               "rss_mb": 400.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/gen_buffer_indexTests.cpp"
+            },
+            {
+               "rss_mb": 181.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/lower_boundTests.cpp"
+            },
+            {
+               "rss_mb": 406.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/is_all_trueTests.cpp"
+            },
+            {
+               "rss_mb": 187.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/upper_boundTests.cpp"
+            },
+            {
+               "rss_mb": 403.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/primitives/segmented_sort_in_placeTests.cpp"
+            },
+            {
+               "rss_mb": 384.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/floatsTests.cpp"
+            },
+            {
+               "rss_mb": 483.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/gpu_core_timelineTest.cpp"
+            },
+            {
+               "rss_mb": 433.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/DeviceBufferTests.cpp"
+            },
+            {
+               "rss_mb": 554.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamalgs/reduction/reductionTests.cpp"
+            },
+            {
+               "rss_mb": 411.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/group_op_Tests.cpp"
+            },
+            {
+               "rss_mb": 433.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/kernel_call_tests.cpp"
+            },
+            {
+               "rss_mb": 180.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/WithUUID_tests.cpp"
+            },
+            {
+               "rss_mb": 421.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/latency_test.cpp"
+            },
+            {
+               "rss_mb": 410.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/intrisicsTests.cpp"
+            },
+            {
+               "rss_mb": 182.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/FixedStackTests.cpp"
+            },
+            {
+               "rss_mb": 391.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/usmbufferTests.cpp"
+            },
+            {
+               "rss_mb": 382.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/ConstantsTests.cpp"
+            },
+            {
+               "rss_mb": 610.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/SYCL_MPI_types_tests.cpp"
+            },
+            {
+               "rss_mb": 399.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/mathTests.cpp"
+            },
+            {
+               "rss_mb": 169.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/DistributedData_tests.cpp"
+            },
+            {
+               "rss_mb": 430.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/kernel_call_distribTests.cpp"
+            },
+            {
+               "rss_mb": 164.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/numeric_limits.cpp"
+            },
+            {
+               "rss_mb": 164.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/narrowingTests.cpp"
+            },
+            {
+               "rss_mb": 184.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/DistributedDataShared_tests.cpp"
+            },
+            {
+               "rss_mb": 87.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/unique_name_macro_test2.cpp"
+            },
+            {
+               "rss_mb": 180.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/stacktraceTests.cpp"
+            },
+            {
+               "rss_mb": 171.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/pre_main_call_tests.cpp"
+            },
+            {
+               "rss_mb": 87.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/unique_name_macro_test.cpp"
+            },
+            {
+               "rss_mb": 441.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambackends/memoryBenchmark.cpp"
+            },
+            {
+               "rss_mb": 175.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/setsTests.cpp"
+            },
+            {
+               "rss_mb": 181.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/timeTests.cpp"
+            },
+            {
+               "rss_mb": 162.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamcomm/comm_test.cpp"
+            },
+            {
+               "rss_mb": 393.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/assertTests.cpp"
+            },
+            {
+               "rss_mb": 381.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/AABB_tests.cpp"
+            },
+            {
+               "rss_mb": 180.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamformat/format_tests.cpp"
+            },
+            {
+               "rss_mb": 177.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/DiscontinuousIteratorTests.cpp"
+            },
+            {
+               "rss_mb": 411.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamcomm/CommunicationBufferTests.cpp"
+            },
+            {
+               "rss_mb": 412.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shambase/syclUtilsTests.cpp"
+            },
+            {
+               "rss_mb": 392.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/matrixExpoTests.cpp"
+            },
+            {
+               "rss_mb": 402.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/matrixTests.cpp"
+            },
+            {
+               "rss_mb": 385.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/derivatives_test.cpp"
+            },
+            {
+               "rss_mb": 414.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/crystalLatticeTests.cpp"
+            },
+            {
+               "rss_mb": 386.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/riemannTests.cpp"
+            },
+            {
+               "rss_mb": 395.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHForceTests.cpp"
+            },
+            {
+               "rss_mb": 459.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/EOSConfigTests.cpp"
+            },
+            {
+               "rss_mb": 425.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/amr/AmrBlockTests.cpp"
+            },
+            {
+               "rss_mb": 385.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHReconstructionTests.cpp"
+            },
+            {
+               "rss_mb": 386.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHIntegrationTests.cpp"
+            },
+            {
+               "rss_mb": 163.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/hfactTest.cpp"
+            },
+            {
+               "rss_mb": 738.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHSolverConfigTests.cpp"
+            },
+            {
+               "rss_mb": 395.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHRiemannTests.cpp"
+            },
+            {
+               "rss_mb": 779.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/gsph/GSPHConfigJsonTests.cpp"
+            },
+            {
+               "rss_mb": 736.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/ramses/modules/ComputeAMRLevelTests.cpp"
+            },
+            {
+               "rss_mb": 777.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/ramses/modules/ResidualDotTests.cpp"
+            },
+            {
+               "rss_mb": 745.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/render/SPHAzymuthalIntegTests.cpp"
+            },
+            {
+               "rss_mb": 731.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/BallabioTsLimiterTests.cpp"
+            },
+            {
+               "rss_mb": 482.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/IterateSmoothingLengthDensityTests.cpp"
+            },
+            {
+               "rss_mb": 998.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/comp_phantom_sedov.cpp"
+            },
+            {
+               "rss_mb": 627.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammath/sphkernelsTests.cpp"
+            },
+            {
+               "rss_mb": 639.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/KillParticleTests.cpp"
+            },
+            {
+               "rss_mb": 434.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/io/LegacyVtkWriterTests.cpp"
+            },
+            {
+               "rss_mb": 711.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/amr/AMRTmpTests.cpp"
+            },
+            {
+               "rss_mb": 746.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/render/SPHColumnIntegTests.cpp"
+            },
+            {
+               "rss_mb": 433.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataFieldTests.cpp"
+            },
+            {
+               "rss_mb": 745.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shammodels/sph/modules/render/SPHInterpolationTests.cpp"
+            },
+            {
+               "rss_mb": 455.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/scheduler/test_patchtree.cpp"
+            },
+            {
+               "rss_mb": 314.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataLayerLayoutTests.cpp"
+            },
+            {
+               "rss_mb": 375.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/scheduler/test_hilbert_sfc.cpp"
+            },
+            {
+               "rss_mb": 642.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataTests.cpp"
+            },
+            {
+               "rss_mb": 695.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/scheduler/test_mpi_scheduler.cpp"
+            },
+            {
+               "rss_mb": 461.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/PatchDataFieldSpanTests.cpp"
+            },
+            {
+               "rss_mb": 694.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/scheduler/test_patchdata.cpp"
+            },
+            {
+               "rss_mb": 705.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/scheduler/test_scheduler_patch_list.cpp"
+            },
+            {
+               "rss_mb": 488.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/scheduler/LoadBalanceTests.cpp"
+            },
+            {
+               "rss_mb": 388.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/patchTests.cpp"
+            },
+            {
+               "rss_mb": 620.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/test_patchdata.cpp"
+            },
+            {
+               "rss_mb": 411.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/patch/legacy/test_patchdata_field.cpp"
+            },
+            {
+               "rss_mb": 387.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/sfc/sfcTests.cpp"
+            },
+            {
+               "rss_mb": 724.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/CopyPatchDataField_tests.cpp"
+            },
+            {
+               "rss_mb": 417.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/RadixTreeTests.cpp"
+            },
+            {
+               "rss_mb": 668.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/scheduler/SchedulerPatchDataTests.cpp"
+            },
+            {
+               "rss_mb": 754.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/CopyPatchDataFieldFromLayer_tests.cpp"
+            },
+            {
+               "rss_mb": 685.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/GetFieldRefFromLayer_tests.cpp"
+            },
+            {
+               "rss_mb": 697.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/CopyPatchDataLayerField_tests.cpp"
+            },
+            {
+               "rss_mb": 446.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/ExchangeGhostFieldTests.cpp"
+            },
+            {
+               "rss_mb": 420.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/TreeReducedMortonCodesTests.cpp"
+            },
+            {
+               "rss_mb": 425.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/TreeStructureTests.cpp"
+            },
+            {
+               "rss_mb": 430.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/TreeCellRangesTests.cpp"
+            },
+            {
+               "rss_mb": 421.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/TreeMortonCodesTests.cpp"
+            },
+            {
+               "rss_mb": 666.4,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/solvergraph/ExchangeGhostLayerTests.cpp"
+            },
+            {
+               "rss_mb": 405.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/key_pair_sortTests.cpp"
+            },
+            {
+               "rss_mb": 379.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/mortonTests.cpp"
+            },
+            {
+               "rss_mb": 251.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/JsonSerializable_tests.cpp"
+            },
+            {
+               "rss_mb": 285.0,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/SolverGraphSerializable_tests.cpp"
+            },
+            {
+               "rss_mb": 187.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp"
+            },
+            {
+               "rss_mb": 410.1,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/karrasTests.cpp"
+            },
+            {
+               "rss_mb": 174.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/edge/IEdge_tests.cpp"
+            },
+            {
+               "rss_mb": 199.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/SolverGraph_tests.cpp"
+            },
+            {
+               "rss_mb": 263.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsolvergraph/edge/IDataEdgeSerializable_tests.cpp"
+            },
+            {
+               "rss_mb": 163.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsys/stacktrace_log_tests.cpp"
+            },
+            {
+               "rss_mb": 652.9,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock/tree/radix_treeTests.cpp"
+            },
+            {
+               "rss_mb": 185.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsys/LogTests.cpp"
+            },
+            {
+               "rss_mb": 397.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsys/BandwithTests.cpp"
+            },
+            {
+               "rss_mb": 498.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamsys/syclLoopsTests.cpp"
+            },
+            {
+               "rss_mb": 439.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/DTTTesting_tests.cpp"
+            },
+            {
+               "rss_mb": 395.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/CompressedLeafBVH_tests.cpp"
+            },
+            {
+               "rss_mb": 799.3,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamrock_article_1Tests.cpp"
+            },
+            {
+               "rss_mb": 433.7,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/CellIteratorTests.cpp"
+            },
+            {
+               "rss_mb": 416.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeAABBTests.cpp"
+            },
+            {
+               "rss_mb": 465.5,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/CLBVHObjectIteratorTests.cpp"
+            },
+            {
+               "rss_mb": 273.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/test_pythonscript_handle.cpp"
+            },
+            {
+               "rss_mb": 407.6,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/MortonCodeSetTests.cpp"
+            },
+            {
+               "rss_mb": 409.2,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/MortonReducedSetTests.cpp"
+            },
+            {
+               "rss_mb": 404.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeTests.cpp"
+            },
+            {
+               "rss_mb": 88.2,
+               "path": "/__w/Shamrock/Shamrock/build/src/shamrock/compiler_id.cpp"
+            },
+            {
+               "rss_mb": 163.8,
+               "path": "/__w/Shamrock/Shamrock/build/src/shamrock/version.cpp"
+            },
+            {
+               "rss_mb": 426.8,
+               "path": "/__w/Shamrock/Shamrock/src/tests/shamtree/KarrasRadixTreeFieldTests.cpp"
+            },
+            {
+               "rss_mb": 160.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/experimental_features.cpp"
+            },
+            {
+               "rss_mb": 178.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/banner.cpp"
+            },
+            {
+               "rss_mb": 235.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/io/json_utils.cpp"
+            },
+            {
+               "rss_mb": 409.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/io/AsciiSplitDump.cpp"
+            },
+            {
+               "rss_mb": 759.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeSumOverV.cpp"
+            },
+            {
+               "rss_mb": 777.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeMass.cpp"
+            },
+            {
+               "rss_mb": 616.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/legacy/patch/base/patchdata.cpp"
+            },
+            {
+               "rss_mb": 792.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/SlopeLimitedGradient.cpp"
+            },
+            {
+               "rss_mb": 382.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/patch/Patch.cpp"
+            },
+            {
+               "rss_mb": 732.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/io/ShamrockDump.cpp"
+            },
+            {
+               "rss_mb": 421.9,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/math/integrators.cpp"
+            },
+            {
+               "rss_mb": 693.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/legacy/patch/utility/global_var.cpp"
+            },
+            {
+               "rss_mb": 547.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/patch/SimBox.cpp"
+            },
+            {
+               "rss_mb": 403.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/HilbertLoadBalance.cpp"
+            },
+            {
+               "rss_mb": 382.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/patch/PatchDataLayerLayout.cpp"
+            },
+            {
+               "rss_mb": 485.4,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/PatchTree.cpp"
+            },
+            {
+               "rss_mb": 704.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/SerialPatchTree.cpp"
+            },
+            {
+               "rss_mb": 669.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/SchedulerPatchData.cpp"
+            },
+            {
+               "rss_mb": 770.6,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/PatchScheduler.cpp"
+            },
+            {
+               "rss_mb": 476.7,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/scheduler/scheduler_patch_list.cpp"
+            },
+            {
+               "rss_mb": 707.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/CopyPatchDataField.cpp"
+            },
+            {
+               "rss_mb": 644.3,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/CopyPatchDataLayerFields.cpp"
+            },
+            {
+               "rss_mb": 641.8,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/ExchangeGhostLayer.cpp"
+            },
+            {
+               "rss_mb": 554.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/ExchangeGhostField.cpp"
+            },
+            {
+               "rss_mb": 1030.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/patch/PatchDataLayer.cpp"
+            },
+            {
+               "rss_mb": 431.0,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/ReplaceGhostField.cpp"
+            },
+            {
+               "rss_mb": 458.2,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/math/pyRay.cpp"
+            },
+            {
+               "rss_mb": 705.2,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/solvergraph/ExtractGhostField.cpp"
+            },
+            {
+               "rss_mb": 492.5,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/math/pyAABB.cpp"
+            },
+            {
+               "rss_mb": 486.7,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/math/pySPHKernels.cpp"
+            },
+            {
+               "rss_mb": 466.9,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/math/pySfc.cpp"
+            },
+            {
+               "rss_mb": 478.8,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamcomm.cpp"
+            },
+            {
+               "rss_mb": 913.5,
+               "path": "/__w/Shamrock/Shamrock/src/shamrock/src/patch/PatchDataField.cpp"
+            },
+            {
+               "rss_mb": 580.7,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamalgs.cpp"
+            },
+            {
+               "rss_mb": 587.6,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShambackends.cpp"
+            },
+            {
+               "rss_mb": 597.1,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamphys.cpp"
+            },
+            {
+               "rss_mb": 836.0,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/math/pyshammath.cpp"
+            },
+            {
+               "rss_mb": 505.1,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamtree.cpp"
+            },
+            {
+               "rss_mb": 496.5,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamsys.cpp"
+            },
+            {
+               "rss_mb": 474.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/EOSConfig.cpp"
+            },
+            {
+               "rss_mb": 541.5,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyUnits.cpp"
+            },
+            {
+               "rss_mb": 890.3,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pyShamrockCtx.cpp"
+            },
+            {
+               "rss_mb": 872.1,
+               "path": "/__w/Shamrock/Shamrock/src/shampylib/src/pySolverGraph.cpp"
+            },
+            {
+               "rss_mb": 435.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/modules/AddForcePaczynskiWiita.cpp"
+            },
+            {
+               "rss_mb": 836.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/pyAMRGrid.cpp"
+            },
+            {
+               "rss_mb": 435.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/modules/AddForceCentralGravPotential.cpp"
+            },
+            {
+               "rss_mb": 403.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/timestep_report.cpp"
+            },
+            {
+               "rss_mb": 855.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/pyAMRTestModel.cpp"
+            },
+            {
+               "rss_mb": 859.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/common/src/pyCommonUtils.cpp"
+            },
+            {
+               "rss_mb": 809.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/Model.cpp"
+            },
+            {
+               "rss_mb": 781.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/Solver.cpp"
+            },
+            {
+               "rss_mb": 794.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/GhostZones.cpp"
+            },
+            {
+               "rss_mb": 774.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/AMRTree.cpp"
+            },
+            {
+               "rss_mb": 894.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/pyAMRZeusModel.cpp"
+            },
+            {
+               "rss_mb": 744.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/ComputePressure.cpp"
+            },
+            {
+               "rss_mb": 759.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/FaceFlagger.cpp"
+            },
+            {
+               "rss_mb": 769.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/SourceStep.cpp"
+            },
+            {
+               "rss_mb": 745.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/DiffOperator.cpp"
+            },
+            {
+               "rss_mb": 740.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/WriteBack.cpp"
+            },
+            {
+               "rss_mb": 841.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/ValueLoader.cpp"
+            },
+            {
+               "rss_mb": 731.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/AnalysisSodTube.cpp"
+            },
+            {
+               "rss_mb": 779.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/zeus/src/modules/TransportStep.cpp"
+            },
+            {
+               "rss_mb": 880.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/Model.cpp"
+            },
+            {
+               "rss_mb": 1017.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/pyRamsesModel.cpp"
+            },
+            {
+               "rss_mb": 811.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/TimeIntegrator.cpp"
+            },
+            {
+               "rss_mb": 842.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/DragIntegrator.cpp"
+            },
+            {
+               "rss_mb": 971.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/NodeComputeFlux.cpp"
+            },
+            {
+               "rss_mb": 1040.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/Solver.cpp"
+            },
+            {
+               "rss_mb": 796.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/AnalysisSodTube.cpp"
+            },
+            {
+               "rss_mb": 862.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/AMRGridRefinementHandler.cpp"
+            },
+            {
+               "rss_mb": 789.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/AMRSortBlocks.cpp"
+            },
+            {
+               "rss_mb": 442.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ConsToPrimGas.cpp"
+            },
+            {
+               "rss_mb": 835.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/AMRSetup.cpp"
+            },
+            {
+               "rss_mb": 439.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ConsToPrimDust.cpp"
+            },
+            {
+               "rss_mb": 818.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeCFL.cpp"
+            },
+            {
+               "rss_mb": 440.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeCellAABB.cpp"
+            },
+            {
+               "rss_mb": 470.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/NodeBuildTrees.cpp"
+            },
+            {
+               "rss_mb": 463.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/FindBlockNeigh.cpp"
+            },
+            {
+               "rss_mb": 458.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/BlockNeighToCellNeigh.cpp"
+            },
+            {
+               "rss_mb": 431.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/CGInit.cpp"
+            },
+            {
+               "rss_mb": 430.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeAMRLevel.cpp"
+            },
+            {
+               "rss_mb": 752.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ResidualDot.cpp"
+            },
+            {
+               "rss_mb": 711.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/FindGhostLayerCandidates.cpp"
+            },
+            {
+               "rss_mb": 621.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ExtractGhostLayer.cpp"
+            },
+            {
+               "rss_mb": 719.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/FindGhostLayerIndices.cpp"
+            },
+            {
+               "rss_mb": 736.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/TransformGhostLayer.cpp"
+            },
+            {
+               "rss_mb": 616.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/FuseGhostLayer.cpp"
+            },
+            {
+               "rss_mb": 758.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/SumFluxHydro.cpp"
+            },
+            {
+               "rss_mb": 732.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/ComputeCoordinates.cpp"
+            },
+            {
+               "rss_mb": 827.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/render/GridRender.cpp"
+            },
+            {
+               "rss_mb": 749.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/SumFluxDust.cpp"
+            },
+            {
+               "rss_mb": 795.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/SolverConfig.cpp"
+            },
+            {
+               "rss_mb": 386.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/SolverLog.cpp"
+            },
+            {
+               "rss_mb": 751.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/BasicSPHGhosts.cpp"
+            },
+            {
+               "rss_mb": 700.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/ramses/src/modules/InterpolateToFace.cpp"
+            },
+            {
+               "rss_mb": 393.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/io/PhantomDumpEOSUtils.cpp"
+            },
+            {
+               "rss_mb": 802.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/SPHUtilities.cpp"
+            },
+            {
+               "rss_mb": 480.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/io/Phantom2Shamrock.cpp"
+            },
+            {
+               "rss_mb": 483.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/io/PhantomDump.cpp"
+            },
+            {
+               "rss_mb": 564.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/pyPhantomDump.cpp"
+            },
+            {
+               "rss_mb": 834.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/SolverConfig.cpp"
+            },
+            {
+               "rss_mb": 951.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/AnalysisBarycenter.cpp"
+            },
+            {
+               "rss_mb": 1172.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/Model.cpp"
+            },
+            {
+               "rss_mb": 768.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SolverStorage.cpp"
+            },
+            {
+               "rss_mb": 793.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/BuildTrees.cpp"
+            },
+            {
+               "rss_mb": 842.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/UpdateViscosity.cpp"
+            },
+            {
+               "rss_mb": 836.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/DiffOperator.cpp"
+            },
+            {
+               "rss_mb": 839.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/DiffOperatorDtDivv.cpp"
+            },
+            {
+               "rss_mb": 850.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SinkParticlesUpdate.cpp"
+            },
+            {
+               "rss_mb": 1461.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/Solver.cpp"
+            },
+            {
+               "rss_mb": 727.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SinkParticlesFlagAccreteHard.cpp"
+            },
+            {
+               "rss_mb": 724.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SinkParticlesAccreteQuantities.cpp"
+            },
+            {
+               "rss_mb": 715.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SinkParticlesEvictAccretedParticles.cpp"
+            },
+            {
+               "rss_mb": 777.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeLoadBalanceValue.cpp"
+            },
+            {
+               "rss_mb": 849.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ConservativeCheck.cpp"
+            },
+            {
+               "rss_mb": 980.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ExternalForces.cpp"
+            },
+            {
+               "rss_mb": 1026.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/UpdateDerivs.cpp"
+            },
+            {
+               "rss_mb": 828.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeLuminosity.cpp"
+            },
+            {
+               "rss_mb": 830.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeOmega.cpp"
+            },
+            {
+               "rss_mb": 1280.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeEos.cpp"
+            },
+            {
+               "rss_mb": 774.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ParticleReordering.cpp"
+            },
+            {
+               "rss_mb": 2703.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/pySPHModel.cpp"
+            },
+            {
+               "rss_mb": 790.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/AnalysisSodTube.cpp"
+            },
+            {
+               "rss_mb": 902.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NeighbourCache.cpp"
+            },
+            {
+               "rss_mb": 619.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/KillParticles.cpp"
+            },
+            {
+               "rss_mb": 635.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/GetParticlesOutsideSphere.cpp"
+            },
+            {
+               "rss_mb": 926.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/AnalysisDisc.cpp"
+            },
+            {
+               "rss_mb": 487.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/IterateSmoothingLengthDensity.cpp"
+            },
+            {
+               "rss_mb": 417.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/LoopSmoothingLengthIter.cpp"
+            },
+            {
+               "rss_mb": 453.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/ComputeNeighStats.cpp"
+            },
+            {
+               "rss_mb": 490.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/IterateSmoothingLengthDensityNeighLim.cpp"
+            },
+            {
+               "rss_mb": 494.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NodeUpdateDerivsVaryingAlphaAV.cpp"
+            },
+            {
+               "rss_mb": 496.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NodeUpdateDerivsVaryingAlphaAVDustTVA.cpp"
+            },
+            {
+               "rss_mb": 495.2,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NodeUpdateDerivsMonofluidTVA.cpp"
+            },
+            {
+               "rss_mb": 440.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NodeEvolveDustCOALASourceTerm.cpp"
+            },
+            {
+               "rss_mb": 486.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/NodeComputePressureGrad.cpp"
+            },
+            {
+               "rss_mb": 976.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/SPHSetup.cpp"
+            },
+            {
+               "rss_mb": 827.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/ModifierApplyDiscWarp.cpp"
+            },
+            {
+               "rss_mb": 795.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/GeneratorMCDisc.cpp"
+            },
+            {
+               "rss_mb": 766.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/ModifierOffset.cpp"
+            },
+            {
+               "rss_mb": 794.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/ModifierApplyCustomWarp.cpp"
+            },
+            {
+               "rss_mb": 800.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/ModifierFilter.cpp"
+            },
+            {
+               "rss_mb": 430.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/self_gravity/SGDirectPlummer.cpp"
+            },
+            {
+               "rss_mb": 782.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/setup/ModifierSplitPart.cpp"
+            },
+            {
+               "rss_mb": 496.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/self_gravity/SGMMPlummer.cpp"
+            },
+            {
+               "rss_mb": 497.8,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/self_gravity/SGFMMPlummer.cpp"
+            },
+            {
+               "rss_mb": 610.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/self_gravity/SGSFMMPlummer.cpp"
+            },
+            {
+               "rss_mb": 509.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/SPHInterpolation.cpp"
+            },
+            {
+               "rss_mb": 515.1,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/SPHColumnInteg.cpp"
+            },
+            {
+               "rss_mb": 512.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/SPHAzymuthalInteg.cpp"
+            },
+            {
+               "rss_mb": 1030.3,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/CartesianRender.cpp"
+            },
+            {
+               "rss_mb": 990.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/render/RenderFieldGetter.cpp"
+            },
+            {
+               "rss_mb": 741.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/SolverConfig.cpp"
+            },
+            {
+               "rss_mb": 948.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/sph/src/modules/io/VTKDump.cpp"
+            },
+            {
+               "rss_mb": 962.6,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/Model.cpp"
+            },
+            {
+               "rss_mb": 865.9,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/modules/UpdateDerivs.cpp"
+            },
+            {
+               "rss_mb": 745.4,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/modules/GSPHGhostHandler.cpp"
+            },
+            {
+               "rss_mb": 1327.0,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/pyGSPHModel.cpp"
+            },
+            {
+               "rss_mb": 782.5,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/modules/io/VTKDump.cpp"
+            },
+            {
+               "rss_mb": 1279.7,
+               "path": "/__w/Shamrock/Shamrock/src/shammodels/gsph/src/Solver.cpp"
+            }
+         ]
+      },
+      "doxygen_warn": {
+         "doxygen_warning_count": 8171
+      },
+      "loc": {
+         "*.cpp": {
+            "code": 103144,
+            "shammodels/sph": 21273,
+            "shammodels/ramses": 11689,
+            "shammodels/zeus": 5310,
+            "shammodels/gsph": 4180,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.hpp": {
+            "code": 98430,
+            "shammodels/sph": 14702,
+            "shammodels/ramses": 5828,
+            "shammodels/zeus": 1303,
+            "shammodels/gsph": 3569,
+            "examples": 0,
+            "doc": 0
+         },
+         "*.py": {
+            "code": 15197,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "examples": 32839,
+            "doc": 894
+         },
+         "*.md": {
+            "code": 488,
+            "shammodels/sph": 18,
+            "shammodels/ramses": 16,
+            "shammodels/zeus": 13,
+            "shammodels/gsph": 16,
+            "examples": 0,
+            "doc": 6220
+         },
+         "*.rst": {
+            "code": 0,
+            "shammodels/sph": 0,
+            "shammodels/ramses": 0,
+            "shammodels/zeus": 0,
+            "shammodels/gsph": 0,
+            "examples": 20,
+            "doc": 221
+         },
+         "CMakeLists.txt + *.cmake": {
+            "code": 2769,
+            "shammodels/sph": 97,
+            "shammodels/ramses": 70,
+            "shammodels/zeus": 49,
+            "shammodels/gsph": 46,
+            "examples": 0,
+            "doc": 0
+         },
+         "total": {
+            "code": 220028,
+            "shammodels/sph": 36090,
+            "shammodels/ramses": 17603,
+            "shammodels/zeus": 6675,
+            "shammodels/gsph": 7811,
+            "examples": 32859,
+            "doc": 7335,
+            "all": 260222
+         }
+      }
+   }
+}

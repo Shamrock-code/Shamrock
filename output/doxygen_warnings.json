@@ -1,0 +1,17 @@
+{
+   "name": "doxygen_warnings",
+   "data": [
+      {
+         "datetime": "2026-08-15T12:17:37Z",
+         "doxygen_warning_count": 8171
+      },
+      {
+         "datetime": "2026-08-15T18:30:03Z",
+         "doxygen_warning_count": 8171
+      },
+      {
+         "datetime": "2026-08-15T23:38:59Z",
+         "doxygen_warning_count": 8171
+      }
+   ]
+}

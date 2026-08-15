@@ -2148,14 +2148,6 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     gen_serial_patch_tree();
     apply_position_boundary(t_current + dt);
 
-    {
-        // update part counts and spans since particles have been moved and thus
-        // new patch can be non-empty/empty
-        using namespace shamrock::solvergraph;
-        SolverGraph &solver_graph = storage.solver_graph;
-        solver_graph.get_node_ref_base("attach fields to scheduler").evaluate();
-    }
-
     // STEP 3: PRESTEP - converges h, builds ghost/tree/neighbor-cache state on
     // the new positions, and computes omega + density (see gsph_prestep() /
     // compute_density()). Everything it builds (ghost handler, ghost cache,

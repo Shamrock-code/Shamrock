@@ -2,9 +2,16 @@
 
 import argparse
 import json
+import re
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+
+BUILD_PROFILE_SUMMARY_RE = re.compile(
+    r"Compilation \((\d+) times\):\s+"
+    r"Parsing \(frontend\):\s+([0-9.]+) s\s+"
+    r"Codegen & opts \(backend\):\s+([0-9.]+) s"
+)
 
 
 def load_snapshots(root):
@@ -39,6 +46,31 @@ def build_doxygen_warnings(snapshots):
     return data
 
 
+def parse_build_profile_summary(text):
+    match = BUILD_PROFILE_SUMMARY_RE.search(text)
+    if match is None:
+        raise ValueError("could not parse build profile summary")
+    parsing_time_s = float(match.group(2))
+    codegen_time_s = float(match.group(3))
+    return {
+        "translation_unit_count": int(match.group(1)),
+        "parsing_time_s": parsing_time_s,
+        "codegen_time_s": codegen_time_s,
+        "total_time_s": parsing_time_s + codegen_time_s,
+    }
+
+
+def build_build_time_total(snapshots):
+    data = []
+    for snapshot in snapshots:
+        profile = snapshot.get("metrics", {}).get("build_profile")
+        if profile is None:
+            continue
+        parsed = parse_build_profile_summary(profile["data"])
+        data.append({"datetime": to_iso8601(snapshot["datetime"]), **parsed})
+    return data
+
+
 def write_dataset(output_dir, name, data):
     path = output_dir / f"{name}.json"
     payload = {"name": name, "data": data}
@@ -54,6 +86,7 @@ def build_datasets(root, output_dir):
     output_dir.mkdir(parents=True)
 
     write_dataset(output_dir, "doxygen_warnings", build_doxygen_warnings(snapshots))
+    write_dataset(output_dir, "build_time_total", build_build_time_total(snapshots))
 
 
 def main():

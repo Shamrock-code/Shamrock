@@ -49,3 +49,5 @@ jobs:
     permissions:
       contents: write
     uses: ./.github/workflows/upload_metrics_history.yml
+    with:
+      push: true

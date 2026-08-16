@@ -48,13 +48,16 @@ jobs:
           sudo apt update && \
           sudo apt install -y -qq doxygen graphviz
 
-      - name : Modify texlive packages
+      - name : Install slim texlive packages
         run: |
           sudo apt install -y \
-            texlive-full \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            cm-super \
             dvipng \
-            ghostscript \
-            latexmk
+            ghostscript
 
       - name: create venv
         shell: bash

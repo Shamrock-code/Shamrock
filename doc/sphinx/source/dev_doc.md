@@ -11,6 +11,7 @@ Recommended order: set up the development environment, learn the solver graph
 
 dev_doc/ide-setup.md
 dev_doc/building-doc.md
+dev_doc/history-graphs.md
 dev_doc/testing.md
 dev_doc/types.md
 dev_doc/solvergraph_nodes.md

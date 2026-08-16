@@ -39,6 +39,7 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
+#include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
@@ -1763,6 +1764,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     tstep.start();
 
     // Load balancing step
+    gsph::modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
     scheduler().scheduler_step(true, true);
     scheduler().scheduler_step(false, false);
 

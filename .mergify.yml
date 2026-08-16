@@ -4,9 +4,7 @@ queue_rules:
     commit_message_format:
       title: pr-title
       body: pr-body
-      trailers:
-        - approved-by
-        - merged-by
+      trailers: []
     merge_conditions:
       - check-success = all
     branch_protection_injection_mode: none

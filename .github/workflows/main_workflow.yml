@@ -197,13 +197,13 @@ jobs:
           sudo apt update && \
           sudo apt install -y -qq doxygen graphviz
 
-      - name : Modify texlive packages
+      - name : Install bibtex for doxygen citations
         run: |
           sudo apt install -y \
-            texlive-full \
-            dvipng \
-            ghostscript \
-            latexmk
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended
 
       - name : Run doxygen
         run: |

@@ -17,6 +17,7 @@ set(Sources
     src/pyGSPHModel.cpp
     src/modules/UpdateDerivs.cpp
     src/modules/GSPHGhostHandler.cpp
+    src/modules/ComputeLoadBalanceValue.cpp
     src/modules/io/VTKDump.cpp
 )
 

@@ -1,0 +1,33 @@
+{
+   "name": "build_time_total",
+   "data": [
+      {
+         "datetime": "2026-08-15T12:17:37Z",
+         "translation_unit_count": 434,
+         "parsing_time_s": 9395.6,
+         "codegen_time_s": 7453.7,
+         "total_time_s": 16849.3
+      },
+      {
+         "datetime": "2026-08-15T18:30:03Z",
+         "translation_unit_count": 434,
+         "parsing_time_s": 5910.0,
+         "codegen_time_s": 5616.1,
+         "total_time_s": 11526.1
+      },
+      {
+         "datetime": "2026-08-15T23:38:59Z",
+         "translation_unit_count": 434,
+         "parsing_time_s": 7852.3,
+         "codegen_time_s": 6618.3,
+         "total_time_s": 14470.6
+      },
+      {
+         "datetime": "2026-08-16T17:04:41Z",
+         "translation_unit_count": 433,
+         "parsing_time_s": 5536.8,
+         "codegen_time_s": 5230.3,
+         "total_time_s": 10767.1
+      }
+   ]
+}

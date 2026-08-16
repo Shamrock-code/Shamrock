@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Doxygen warning count</title>
+    <title>Build time</title>
     <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
     <style>
       :root {
@@ -11,7 +11,6 @@
         --fg: #3c3836;
         --muted: #665c54;
         --grid: #d5c4a1;
-        --line: #076678;
       }
 
       html[data-theme="dark"] {
@@ -19,7 +18,6 @@
         --fg: #ebdbb2;
         --muted: #a89984;
         --grid: #504945;
-        --line: #83a598;
       }
 
       html,
@@ -56,13 +54,14 @@
     </style>
   </head>
   <body>
-    <div id="status">Loading Doxygen warning history…</div>
+    <div id="status">Loading build time history…</div>
     <div id="chart"></div>
     <script>
       const DATA_URLS = [
-        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/doxygen_warnings.json",
-        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/doxygen_warnings.json",
+        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/build_time_total.json",
+        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/build_time_total.json",
       ];
+      const SECONDS_PER_HOUR = 3600;
 
       function parentTheme() {
         try {
@@ -80,6 +79,20 @@
 
       function applyTheme(theme) {
         document.documentElement.setAttribute("data-theme", theme);
+      }
+
+      function seriesColors(theme) {
+        const dark = theme === "dark";
+        return {
+          parsing: dark ? "#83a598" : "#076678",
+          codegen: dark ? "#fe8019" : "#af3a03",
+          total: dark ? "#b8bb26" : "#79740e",
+          tus: dark ? "#d3869b" : "#8f3f71",
+        };
+      }
+
+      function hasTranslationUnits(series) {
+        return series.translation_unit_count.some((value) => value !== null);
       }
 
       function paddedRange(values, integer) {
@@ -113,12 +126,22 @@
         const fg = dark ? "#ebdbb2" : "#3c3836";
         const muted = dark ? "#a89984" : "#665c54";
         const grid = dark ? "#504945" : "#d5c4a1";
-        return {
-          title: { text: "Doxygen warning count", font: { color: fg, size: 18 } },
-          margin: { l: 64, r: 24, t: 48, b: 56 },
+        const showTu = hasTranslationUnits(series);
+        const tuColor = seriesColors(theme).tus;
+        const layout = {
+          title: { text: "Build time (ClangBuildAnalyzer)", font: { color: fg, size: 18 } },
+          margin: { l: 64, r: showTu ? 72 : 24, t: 48, b: 80 },
           paper_bgcolor: bg,
           plot_bgcolor: bg,
           font: { color: fg },
+          legend: {
+            orientation: "h",
+            x: 0,
+            y: -0.18,
+            font: { color: fg },
+            bgcolor: "rgba(0,0,0,0)",
+            borderwidth: 0,
+          },
           xaxis: {
             title: { text: "Date (UTC)" },
             type: "date",
@@ -128,17 +151,38 @@
             tickfont: { color: muted },
           },
           yaxis: {
-            title: { text: "Warning count" },
+            title: { text: "Time (hours)" },
             gridcolor: grid,
             zerolinecolor: grid,
             linecolor: muted,
             tickfont: { color: muted },
-            tickformat: "d",
             autorange: false,
-            range: paddedRange(series.y, true),
+            range: paddedRange(
+              [].concat(series.parsing_h, series.codegen_h, series.total_h)
+            ),
           },
           hovermode: "x unified",
         };
+        if (showTu) {
+          layout.yaxis2 = {
+            title: { text: "Translation units", font: { color: tuColor } },
+            overlaying: "y",
+            side: "right",
+            showgrid: false,
+            zerolinecolor: grid,
+            linecolor: tuColor,
+            tickfont: { color: tuColor },
+            tickformat: "d",
+            autorange: false,
+            range: paddedRange(series.translation_unit_count, true),
+          };
+        }
+        return layout;
+      }
+
+      function finiteNumber(value) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : null;
       }
 
       function toSeries(payload) {
@@ -146,18 +190,82 @@
           throw new Error("Unexpected dataset shape: missing data[]");
         }
         const rows = payload.data
-          .filter(
-            (row) =>
-              row &&
-              typeof row.datetime === "string" &&
-              Number.isFinite(Number(row.doxygen_warning_count))
-          )
+          .filter((row) => {
+            if (!row || typeof row.datetime !== "string") {
+              return false;
+            }
+            return (
+              finiteNumber(row.parsing_time_s) !== null &&
+              finiteNumber(row.codegen_time_s) !== null &&
+              finiteNumber(row.total_time_s) !== null
+            );
+          })
           .slice()
           .sort((a, b) => a.datetime.localeCompare(b.datetime));
         return {
           x: rows.map((row) => row.datetime),
-          y: rows.map((row) => Number(row.doxygen_warning_count)),
+          parsing_h: rows.map((row) => Number(row.parsing_time_s) / SECONDS_PER_HOUR),
+          codegen_h: rows.map((row) => Number(row.codegen_time_s) / SECONDS_PER_HOUR),
+          total_h: rows.map((row) => Number(row.total_time_s) / SECONDS_PER_HOUR),
+          parsing_s: rows.map((row) => Number(row.parsing_time_s)),
+          codegen_s: rows.map((row) => Number(row.codegen_time_s)),
+          total_s: rows.map((row) => Number(row.total_time_s)),
+          translation_unit_count: rows.map((row) => finiteNumber(row.translation_unit_count)),
         };
+      }
+
+      function traces(theme, series) {
+        const colors = seriesColors(theme);
+        const timeHover = "%{fullData.name}: %{y:.2f} h (%{customdata:.1f} s)<extra></extra>";
+        const result = [
+          {
+            type: "scatter",
+            mode: "lines+markers",
+            name: "parsing (frontend)",
+            x: series.x,
+            y: series.parsing_h,
+            customdata: series.parsing_s,
+            line: { color: colors.parsing, width: 2 },
+            marker: { color: colors.parsing, size: 8 },
+            hovertemplate: timeHover,
+          },
+          {
+            type: "scatter",
+            mode: "lines+markers",
+            name: "codegen & opts (backend)",
+            x: series.x,
+            y: series.codegen_h,
+            customdata: series.codegen_s,
+            line: { color: colors.codegen, width: 2 },
+            marker: { color: colors.codegen, size: 8 },
+            hovertemplate: timeHover,
+          },
+          {
+            type: "scatter",
+            mode: "lines+markers",
+            name: "total",
+            x: series.x,
+            y: series.total_h,
+            customdata: series.total_s,
+            line: { color: colors.total, width: 2 },
+            marker: { color: colors.total, size: 8 },
+            hovertemplate: timeHover,
+          },
+        ];
+        if (hasTranslationUnits(series)) {
+          result.push({
+            type: "scatter",
+            mode: "lines+markers",
+            name: "translation units",
+            x: series.x,
+            y: series.translation_unit_count,
+            yaxis: "y2",
+            line: { color: colors.tus, width: 2, dash: "dot" },
+            marker: { color: colors.tus, size: 8 },
+            hovertemplate: "%{fullData.name}: %{y}<extra></extra>",
+          });
+        }
+        return result;
       }
 
       async function fetchDataset() {
@@ -195,58 +303,26 @@
         try {
           payload = await fetchDataset();
         } catch (err) {
-          setStatus(`Could not load Doxygen warning history.\n${err.message}`);
+          setStatus(`Could not load build time history.\n${err.message}`);
           return;
         }
 
         const series = toSeries(payload);
         if (series.x.length === 0) {
-          setStatus("The Doxygen warning dataset is empty.");
+          setStatus("The build time dataset is empty.");
           return;
         }
 
-        const lineColor = theme === "dark" ? "#83a598" : "#076678";
-        await Plotly.newPlot(
-          chart,
-          [
-            {
-              type: "scatter",
-              mode: "lines+markers",
-              name: "doxygen_warning_count",
-              x: series.x,
-              y: series.y,
-              line: { color: lineColor, width: 2 },
-              marker: { color: lineColor, size: 8 },
-              hovertemplate:
-                "%{x|%Y-%m-%d %H:%M UTC}<br>warnings: %{y}<extra></extra>",
-            },
-          ],
-          chartLayout(theme, series),
-          { responsive: true, displaylogo: false }
-        );
+        await Plotly.newPlot(chart, traces(theme, series), chartLayout(theme, series), {
+          responsive: true,
+          displaylogo: false,
+        });
         setStatus("");
 
         const restyle = () => {
           theme = parentTheme();
           applyTheme(theme);
-          const nextLine = theme === "dark" ? "#83a598" : "#076678";
-          Plotly.react(
-            chart,
-            [
-              {
-                type: "scatter",
-                mode: "lines+markers",
-                name: "doxygen_warning_count",
-                x: series.x,
-                y: series.y,
-                line: { color: nextLine, width: 2 },
-                marker: { color: nextLine, size: 8 },
-                hovertemplate:
-                  "%{x|%Y-%m-%d %H:%M UTC}<br>warnings: %{y}<extra></extra>",
-              },
-            ],
-            chartLayout(theme, series)
-          );
+          Plotly.react(chart, traces(theme, series), chartLayout(theme, series));
         };
 
         window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);

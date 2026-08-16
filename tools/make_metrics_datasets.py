@@ -71,6 +71,41 @@ def build_build_time_total(snapshots):
     return data
 
 
+# Exclusive loc partitions from tools/count_loc.py. Nested shammodels/* counts
+# are subsets of "code" and must not be added into an extension total.
+LOC_PARTITION_KINDS = ("code", "examples", "doc")
+LOC_TOTAL_KEYS = ("totals", "total")
+
+
+def loc_extension_total(counts):
+    return sum(counts.get(kind, 0) for kind in LOC_PARTITION_KINDS)
+
+
+def flatten_loc_totals(totals):
+    flattened = {}
+    for key, value in totals.items():
+        flattened[key if key == "all" else f"all_{key}"] = value
+    return flattened
+
+
+def build_loc(snapshots):
+    data = []
+    for snapshot in snapshots:
+        loc = snapshot.get("metrics", {}).get("loc")
+        if loc is None:
+            continue
+        totals = next((loc[key] for key in LOC_TOTAL_KEYS if key in loc), None)
+        if totals is None:
+            continue
+        row = {"datetime": to_iso8601(snapshot["datetime"]), **flatten_loc_totals(totals)}
+        for key, counts in loc.items():
+            if key in LOC_TOTAL_KEYS:
+                continue
+            row[key] = loc_extension_total(counts)
+        data.append(row)
+    return data
+
+
 def write_dataset(output_dir, name, data):
     path = output_dir / f"{name}.json"
     payload = {"name": name, "data": data}
@@ -87,6 +122,7 @@ def build_datasets(root, output_dir):
 
     write_dataset(output_dir, "doxygen_warnings", build_doxygen_warnings(snapshots))
     write_dataset(output_dir, "build_time_total", build_build_time_total(snapshots))
+    write_dataset(output_dir, "loc", build_loc(snapshots))
 
 
 def main():

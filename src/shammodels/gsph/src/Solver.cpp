@@ -1767,6 +1767,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     gsph::modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
         .update_load_balancing();
     scheduler().scheduler_step(true, true);
+        gsph::modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
     scheduler().scheduler_step(false, false);
 
     /// patch_rank_owner is automatically updated since it is just a lambda

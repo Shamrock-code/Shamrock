@@ -72,7 +72,11 @@ def build_build_time_total(snapshots):
 
 
 COMPILE_MEMORY_TOP_N = 10
+PARSE_TIME_TOP_N = 10
 REPO_PATH_MARKER = "/Shamrock/Shamrock/"
+CMAKE_OBJ_RE = re.compile(r"^(?:\./)?(?P<root>.+)/CMakeFiles/[^/]+\.dir/(?P<rel>.+)\.o$")
+PARSE_FILE_LINE_RE = re.compile(r"^\s*([0-9.]+)\s+ms:\s+(\S+)\s*$", re.MULTILINE)
+PARSE_FILES_MARKER = "**** Files that took longest to parse (compiler frontend):"
 
 
 def normalize_compile_path(path):
@@ -164,6 +168,107 @@ def build_compile_memory_top10(snapshots):
     return traces
 
 
+def normalize_compile_obj_path(path):
+    path = (path or "").replace("\\", "/").strip()
+    idx = path.rfind(REPO_PATH_MARKER)
+    if idx != -1:
+        path = path[idx + len(REPO_PATH_MARKER) :]
+    path = path.removeprefix("./")
+    match = CMAKE_OBJ_RE.match(path)
+    if match:
+        return f"{match.group('root')}/{match.group('rel')}"
+    return path.removesuffix(".o")
+
+
+def parse_longest_parse_files(text, limit=PARSE_TIME_TOP_N):
+    start = text.find(PARSE_FILES_MARKER)
+    if start == -1:
+        return []
+    rest = text[start + len(PARSE_FILES_MARKER) :]
+    end = rest.find("\n**** ")
+    section = rest if end == -1 else rest[:end]
+    by_path = {}
+    for match in PARSE_FILE_LINE_RE.finditer(section):
+        time_ms = float(match.group(1))
+        path = normalize_compile_obj_path(match.group(2))
+        if not path:
+            continue
+        prev = by_path.get(path)
+        if prev is None or time_ms > prev:
+            by_path[path] = time_ms
+    ranked = sorted(by_path.items(), key=lambda item: (-item[1], item[0]))
+    return [(path, time_ms / 1000.0) for path, time_ms in ranked[:limit]]
+
+
+def parse_time_top10_layout():
+    return {
+        "title": {"text": "Top 10 files that took longest to parse"},
+        "margin": {"l": 72, "r": 24, "t": 56, "b": 180},
+        "xaxis": {
+            "title": {"text": "Date (UTC)"},
+            "type": "date",
+        },
+        "yaxis": {
+            "title": {"text": "Parse time (s)"},
+            "rangemode": "tozero",
+        },
+        "legend": {
+            "orientation": "h",
+            "yanchor": "top",
+            "y": -0.28,
+            "x": 0,
+            "xanchor": "left",
+            "font": {"size": 11},
+        },
+        "hovermode": "x unified",
+    }
+
+
+def build_parse_time_top10(snapshots):
+    # One trace per file that is in any snapshot's top 10. y is null when that
+    # file is outside the top 10 of a given commit, so Plotly drops it there.
+    dated_top = []
+    for snapshot in snapshots:
+        profile = snapshot.get("metrics", {}).get("build_profile") or {}
+        report = profile.get("data")
+        if not report:
+            continue
+        ranking = parse_longest_parse_files(report)
+        if not ranking:
+            continue
+        dated_top.append((to_iso8601(snapshot["datetime"]), ranking))
+
+    xs = [dt for dt, _ranking in dated_top]
+    time_by_file = {}
+    for dt_idx, (_dt, ranking) in enumerate(dated_top):
+        for path, parse_s in ranking:
+            series = time_by_file.setdefault(path, [None] * len(xs))
+            series[dt_idx] = parse_s
+
+    files = sorted(
+        time_by_file,
+        key=lambda path: (-max(v for v in time_by_file[path] if v is not None), path),
+    )
+
+    traces = []
+    for path in files:
+        traces.append(
+            {
+                "type": "scatter",
+                "mode": "lines+markers",
+                "name": path,
+                "x": xs,
+                "y": time_by_file[path],
+                "connectgaps": False,
+                "hovertemplate": (
+                    "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>"
+                    "Parse: %{y:.1f} s<extra></extra>"
+                ),
+            }
+        )
+    return traces
+
+
 # Exclusive loc partitions from tools/count_loc.py. Nested shammodels/* counts
 # are subsets of "code" and must not be added into an extension total.
 LOC_PARTITION_KINDS = ("code", "examples", "doc")
@@ -223,6 +328,12 @@ def build_datasets(root, output_dir):
         "compile_memory_top10",
         build_compile_memory_top10(snapshots),
         layout=compile_memory_top10_layout(),
+    )
+    write_dataset(
+        output_dir,
+        "parse_time_top10",
+        build_parse_time_top10(snapshots),
+        layout=parse_time_top10_layout(),
     )
 
 

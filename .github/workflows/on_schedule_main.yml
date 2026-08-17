@@ -7,14 +7,52 @@ on:
   workflow_dispatch:
 
   schedule:
-    # At 02:00 on Monday, Wednesday, and Friday.
-    - cron:  '0 2 * * 1,3,5'
+    # Daily at 02:00 UTC. CI jobs below are skipped when a commit already
+    # landed on main in the last 24 hours, since On Push covers that change.
+    - cron:  '0 2 * * *'
 
 
 jobs:
 
+  should_run:
+    name: Check if scheduled CI is needed
+    runs-on: ubuntu-latest
+    outputs:
+      run_ci: ${{ steps.check.outputs.run_ci }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Skip if a commit landed in the last 24 hours
+        id: check
+        run: |
+          set -euo pipefail
+
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "run_ci=true" >> "$GITHUB_OUTPUT"
+            echo "Event '${{ github.event_name }}' always runs CI."
+            exit 0
+          fi
+
+          commit_ts="$(git log -1 --format=%ct)"
+          now="$(date -u +%s)"
+          age="$((now - commit_ts))"
+
+          echo "Latest commit on default branch is ${age} seconds old."
+
+          if [ "$age" -lt 86400 ]; then
+            echo "run_ci=false" >> "$GITHUB_OUTPUT"
+            echo "A commit landed in the last 24 hours; skipping scheduled CI."
+          else
+            echo "run_ci=true" >> "$GITHUB_OUTPUT"
+            echo "No commit in the last 24 hours; running scheduled CI."
+          fi
+
   check_codecov_secret:
     name: Check Codecov secret
+    needs: [should_run]
+    if: ${{ needs.should_run.outputs.run_ci == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Debug Codecov token
@@ -27,6 +65,8 @@ jobs:
           fi
   main_workflow:
     name: CI
+    needs: [should_run]
+    if: ${{ needs.should_run.outputs.run_ci == 'true' }}
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true

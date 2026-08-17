@@ -63,11 +63,14 @@ jobs:
           else
             echo "TOKEN EXISTS"
           fi
+
   main_workflow:
     name: CI
     needs: [should_run]
     if: ${{ needs.should_run.outputs.run_ci == 'true' }}
     uses: ./.github/workflows/main_workflow.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
       run_build_push_docker: true
       light_ci: false

@@ -29,7 +29,7 @@ jobs:
             1 - Comment `pre-commit.ci run` to run pre-commit checks.
             2 - Comment `pre-commit.ci autofix` to apply fixes.
             3 - Add label `autofix.ci` to fix authorship & pre-commit for every commit made.
-            4 - Add label `light-ci` to only trigger a reduced & faster version of the CI (need the full one before merge).
+            4 - Add label `full-ci` to run the full test suite (default is light CI; full CI also runs on Mergify merge-queue branches).
             5 - Add label `trigger-ci` to create an empty commit to trigger the CI.
 
             Once the workflow completes a message will appear displaying informations related to the run.

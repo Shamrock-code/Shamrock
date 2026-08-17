@@ -136,6 +136,23 @@
          "*.md": 6810,
          "*.rst": 241,
          "CMakeLists.txt + *.cmake": 2770
+      },
+      {
+         "datetime": "2026-08-17T18:42:41Z",
+         "all_code": 220610,
+         "all_shammodels/sph": 36090,
+         "all_shammodels/ramses": 17603,
+         "all_shammodels/zeus": 6675,
+         "all_shammodels/gsph": 7907,
+         "all_examples": 32859,
+         "all_doc": 7483,
+         "all": 260952,
+         "*.cpp": 103432,
+         "*.hpp": 98553,
+         "*.py": 49100,
+         "*.md": 6856,
+         "*.rst": 241,
+         "CMakeLists.txt + *.cmake": 2770
       }
    ]
 }

@@ -1,0 +1,309 @@
+{
+   "name": "compile_memory_top10",
+   "data": [
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/pySPHModel.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            2693.9,
+            2703.2,
+            2694.8,
+            2703.8,
+            2701.7,
+            2701.7,
+            2706.9,
+            2685.7
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/Solver.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1457.9,
+            1461.0,
+            1457.0,
+            1461.9,
+            1458.8,
+            1460.8,
+            1463.2,
+            1454.9
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/gsph/src/pyGSPHModel.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1322.2,
+            1327.0,
+            1324.6,
+            1326.2,
+            1327.6,
+            1326.2,
+            1329.0,
+            1320.7
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/gsph/src/Solver.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1274.7,
+            1279.7,
+            1275.6,
+            1280.5,
+            1278.9,
+            1279.2,
+            1281.4,
+            1272.3
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/modules/ComputeEos.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1278.4,
+            1280.4,
+            1277.0,
+            1281.2,
+            1277.6,
+            1280.6,
+            1280.7,
+            1273.3
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/Model.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1167.7,
+            1172.1,
+            1169.1,
+            1171.7,
+            1171.4,
+            1173.6,
+            1174.1,
+            1166.1
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/ramses/src/Solver.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1035.7,
+            1040.7,
+            1037.2,
+            1040.6,
+            1038.7,
+            1039.6,
+            1042.8,
+            1034.2
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/modules/render/CartesianRender.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1029.7,
+            1030.3,
+            1029.9,
+            1031.7,
+            1031.1,
+            1032.2,
+            1032.6,
+            1026.3
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shamrock/src/patch/PatchDataLayer.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1026.2,
+            1030.0,
+            1027.1,
+            1030.6,
+            1030.4,
+            1030.3,
+            1032.5,
+            1022.9
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "src/shammodels/sph/src/modules/UpdateDerivs.cpp",
+         "x": [
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z"
+         ],
+         "y": [
+            1024.9,
+            1026.5,
+            1024.2,
+            1026.5,
+            1024.9,
+            1025.3,
+            1028.5,
+            1019.5
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{fullData.name}<br>%{x|%Y-%m-%d %H:%M UTC}<br>RSS: %{y:.1f} MB<extra></extra>"
+      }
+   ],
+   "layout": {
+      "title": {
+         "text": "Top 10 compile peak RSS"
+      },
+      "margin": {
+         "l": 72,
+         "r": 24,
+         "t": 56,
+         "b": 180
+      },
+      "xaxis": {
+         "title": {
+            "text": "Date (UTC)"
+         },
+         "type": "date"
+      },
+      "yaxis": {
+         "title": {
+            "text": "Peak RSS (MB)"
+         },
+         "rangemode": "tozero"
+      },
+      "legend": {
+         "orientation": "h",
+         "yanchor": "top",
+         "y": -0.28,
+         "x": 0,
+         "xanchor": "left",
+         "font": {
+            "size": 11
+         }
+      },
+      "hovermode": "x unified"
+   }
+}

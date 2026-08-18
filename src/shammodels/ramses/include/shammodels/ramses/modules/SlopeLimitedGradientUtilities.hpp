@@ -171,12 +171,6 @@ namespace {
                              : shambase::VectorProperties<Tfield>::get_zero();
         };
 
-        Tfield delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
-        Tfield delta_xm = get_gradient_dir(graph_iter_xm, Direction::xm);
-        Tfield delta_yp = get_gradient_dir(graph_iter_yp, Direction::yp);
-        Tfield delta_ym = get_gradient_dir(graph_iter_ym, Direction::ym);
-        Tfield delta_zp = get_gradient_dir(graph_iter_zp, Direction::zp);
-        Tfield delta_zm = get_gradient_dir(graph_iter_zm, Direction::zm);
         return {
             slope_function<Tfield, mode>(
                 get_gradient_dir(graph_iter_xm, Direction::xm),

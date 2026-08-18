@@ -147,7 +147,7 @@ namespace {
 
         auto cur_cell_block_id = cell_global_id / block_size;
 
-        auto get_gradiant_dir = [&](auto &graph_links, Direction dir) -> Tfield {
+        auto get_gradient_dir = [&](auto &graph_links, Direction dir) -> Tfield {
             Tfield acc            = shambase::VectorProperties<Tfield>::get_zero();
             auto cell_center_dist = cell_sizes[cur_cell_block_id];
 

@@ -172,21 +172,21 @@ namespace {
         };
 
         Tfield delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
-        Tfield delta_xm = get_gradiant_dir(graph_iter_xm, Direction::xm);
-        Tfield delta_yp = get_gradiant_dir(graph_iter_yp, Direction::yp);
-        Tfield delta_ym = get_gradiant_dir(graph_iter_ym, Direction::ym);
-        Tfield delta_zp = get_gradiant_dir(graph_iter_zp, Direction::zp);
-        Tfield delta_zm = get_gradiant_dir(graph_iter_zm, Direction::zm);
+        Tfield delta_xm = get_gradient_dir(graph_iter_xm, Direction::xm);
+        Tfield delta_yp = get_gradient_dir(graph_iter_yp, Direction::yp);
+        Tfield delta_ym = get_gradient_dir(graph_iter_ym, Direction::ym);
+        Tfield delta_zp = get_gradient_dir(graph_iter_zp, Direction::zp);
+        Tfield delta_zm = get_gradient_dir(graph_iter_zm, Direction::zm);
         return {
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_xm, Direction::xm),
-                get_gradiant_dir(graph_iter_xp, Direction::xp)),
+                get_gradient_dir(graph_iter_xm, Direction::xm),
+                get_gradient_dir(graph_iter_xp, Direction::xp)),
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_ym, Direction::ym),
-                get_gradiant_dir(graph_iter_yp, Direction::yp)),
+                get_gradient_dir(graph_iter_ym, Direction::ym),
+                get_gradient_dir(graph_iter_yp, Direction::yp)),
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_zm, Direction::zm),
-                get_gradiant_dir(graph_iter_zp, Direction::zp))};
+                get_gradient_dir(graph_iter_zm, Direction::zm),
+                get_gradient_dir(graph_iter_zp, Direction::zp))};
     }
 
     /**

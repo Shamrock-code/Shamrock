@@ -1711,9 +1711,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 child_center_offsets[7] = {c_offset, c_offset, c_offset};    /*(1,1,1)*/
 
                 auto cons_var_slopes = get_3d_grad_cons<Tvec, Minmod>(
-                    acc.cell_sizes,
-                    AMRBlock::block_size,
                     old_cell_idx,
+                    delta_cell,
                     acc.cell_graph_xp,
                     acc.cell_graph_xm,
                     acc.cell_graph_yp,

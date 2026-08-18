@@ -171,7 +171,7 @@ namespace {
             return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tfield>::get_zero();
         };
 
-        Tfield delta_xp = get_gradiant_dir(graph_iter_xp, Direction::xp);
+        Tfield delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
         Tfield delta_xm = get_gradiant_dir(graph_iter_xm, Direction::xm);
         Tfield delta_yp = get_gradiant_dir(graph_iter_yp, Direction::yp);
         Tfield delta_ym = get_gradiant_dir(graph_iter_ym, Direction::ym);

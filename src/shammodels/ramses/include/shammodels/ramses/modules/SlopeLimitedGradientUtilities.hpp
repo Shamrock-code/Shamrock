@@ -230,7 +230,7 @@ namespace {
         using Tscal            = shambase::VecComponent<Tvec>;
         auto cur_cell_block_id = cell_global_id / block_size;
 
-        auto get_gradiant_dir = [&](auto &graph_links, Direction dir) -> shammath::ConsState<Tvec> {
+        auto get_gradient_dir = [&](auto &graph_links, Direction dir) -> shammath::ConsState<Tvec> {
             Tscal acc_rho         = shambase::VectorProperties<Tscal>::get_zero();
             Tscal acc_rhoe        = shambase::VectorProperties<Tscal>::get_zero();
             Tvec acc_rho_vel      = shambase::VectorProperties<Tvec>::get_zero();

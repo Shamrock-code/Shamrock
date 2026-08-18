@@ -126,18 +126,16 @@ upstream `main` on that repo.
 
 ### Commit authorship
 
-The user who initiated the agent must be the first author of every commit the
-agent creates. Use the git identity already configured in the environment for
-that user; do not override `user.name` or `user.email` unless the user
-explicitly asks you to.
+Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often)
+with a model name). After every `git commit`, amend with `--no-verify`
+before pushing (a plain amend re-runs the hook):
 
-### Agent commit attribution
+- **Author** = the human who initiated the work. Use `--author`; do not
+  change gitconfig.
+- Trailer = `Assisted-by: <agent>` only. No model names. No
+  `Co-authored-by` (`Co-authored-by` is for extra human authors only).
 
-Agent-made commits should use `Assisted-by: <agent_name>` instead of
-`Co-Authored-by`. Reserve `Co-Authored-by` for human collaborators only.
-
-If a commit hook injects `Co-authored-by`, amend the commit so the message
-contains only `Assisted-by`.
+Check `git log -1 --format='Author: %an <%ae>%n%B'` before push.
 
 ### Opening pull requests
 

@@ -597,11 +597,11 @@ NEW_TEST(Unittest, "shammath/solve::least_squares", 1) {
     auto pfit                     = ls.first;
     auto R2                       = ls.second;
     std::vector<f64> res          = {pfit[0], pfit[1], pfit[2], R2};
-    std::vector<f64> ex_res       = {1.55, 4.08, 4.5154e2};
+    std::vector<f64> ex_res       = {1.55, 4.08, 4.5154e2, 0.997};
     std::vector<f64> ex_deviation = {2e-2, 4.7e-2, 4.7e-2, 1e-2};
 
     bool test_fit = true;
-    for (size_t i; i < 4; i++) {
+    for (size_t i = 0; i < 4; i++) {
         if (sham::abs(res[i] - ex_res[i]) > ex_deviation[i]) {
             test_fit = false;
         }

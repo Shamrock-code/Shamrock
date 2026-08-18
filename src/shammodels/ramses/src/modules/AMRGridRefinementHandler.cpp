@@ -1591,7 +1591,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Storage &storage,
             u64 &id_patch,
             shamrock::patch::PatchDataLayer &pdat,
-            AMRInterpoMode amr_ref_interp_mode) {
+            AMRInterpMode amr_ref_interp_mode) {
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);

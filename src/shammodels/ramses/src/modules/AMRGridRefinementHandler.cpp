@@ -1742,13 +1742,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                           + child_center_offsets[subdiv_lid][1] * cons_var_slopes[1]
                           + child_center_offsets[subdiv_lid][2] * cons_var_slopes[2];
 
-                    _rho_block[subdiv_lid] = acc.rho_old_snap[old_cell_idx]
-                                             + cons_var_interp.rho * acc.amr_ref_interp_mode;
-                    _rho_vel_block[subdiv_lid]
-                        = acc.rho_vel_old_snap[old_cell_idx]
-                          + cons_var_interp.rhovel * acc.amr_ref_interp_mode;
-                    _rhoE_block[subdiv_lid] = acc.rhoE_old_snap[old_cell_idx]
-                                              + cons_var_interp.rhoe * acc.amr_ref_interp_mode;
+                    _rho_block[subdiv_lid]     = acc.rho_old_snap[old_cell_idx]
+                                                 + cons_var_interp.rho * acc.amr_ref_interp_mode;
+                    _rho_vel_block[subdiv_lid] = acc.rho_vel_old_snap[old_cell_idx]
+                                                 + cons_var_interp.rhovel * acc.amr_ref_interp_mode;
+                    _rhoE_block[subdiv_lid]    = acc.rhoE_old_snap[old_cell_idx]
+                                                 + cons_var_interp.rhoe * acc.amr_ref_interp_mode;
 
                     const auto e_int
                         = _rhoE_block[subdiv_lid]
@@ -2603,7 +2602,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
         const AMRInterpMode amr_ref_interp_mode = solver_config.amr_interp_mode;
-        bool change_refine                        = internal_refine_grid_new<RefineCellAccessor>(
+        bool change_refine                      = internal_refine_grid_new<RefineCellAccessor>(
             std::move(refine_list), amr_ref_interp_mode);
 
         //////// apply derefine ////////

@@ -274,12 +274,12 @@ namespace {
             return res;
         };
 
-        shammath::ConsState<Tvec> delta_xp = get_gradiant_dir(graph_iter_xp, Direction::xp);
-        shammath::ConsState<Tvec> delta_xm = get_gradiant_dir(graph_iter_xm, Direction::xm);
-        shammath::ConsState<Tvec> delta_yp = get_gradiant_dir(graph_iter_yp, Direction::yp);
-        shammath::ConsState<Tvec> delta_ym = get_gradiant_dir(graph_iter_ym, Direction::ym);
-        shammath::ConsState<Tvec> delta_zp = get_gradiant_dir(graph_iter_zp, Direction::zp);
-        shammath::ConsState<Tvec> delta_zm = get_gradiant_dir(graph_iter_zm, Direction::zm);
+        shammath::ConsState<Tvec> delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
+        shammath::ConsState<Tvec> delta_xm = get_gradient_dir(graph_iter_xm, Direction::xm);
+        shammath::ConsState<Tvec> delta_yp = get_gradient_dir(graph_iter_yp, Direction::yp);
+        shammath::ConsState<Tvec> delta_ym = get_gradient_dir(graph_iter_ym, Direction::ym);
+        shammath::ConsState<Tvec> delta_zp = get_gradient_dir(graph_iter_zp, Direction::zp);
+        shammath::ConsState<Tvec> delta_zm = get_gradient_dir(graph_iter_zm, Direction::zm);
 
         shammath::ConsState<Tvec> lim_slope_x
             = {slope_function<Tscal, mode>(delta_xm.rho, delta_xp.rho),

@@ -10,7 +10,7 @@
 #pragma once
 
 /**
- * @file enum_AMRInterpoMode.hpp
+ * @file enum_AMRInterpMode.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
  * @brief AMR (refinement) prolongation mode enum + json serialization/deserialization
@@ -23,14 +23,14 @@
 
 namespace shammodels::basegodunov {
 
-    enum AMRInterpoMode {
+    enum AMRInterpMode {
         FIRST_ORDER  = 0, // first order
         SECOND_ORDER = 1, // second order (with Minmod slope limiter + conservative variables)
     };
 
     SHAMROCK_JSON_SERIALIZE_ENUM(
-        AMRInterpoMode,
-        {{AMRInterpoMode::FIRST_ORDER, "amr_first_order"},
-         {AMRInterpoMode::SECOND_ORDER, "amr_second_order"}});
+        AMRInterpMode,
+        {{AMRInterpMode::FIRST_ORDER, "amr_first_order"},
+         {AMRInterpMode::SECOND_ORDER, "amr_second_order"}});
 
 } // namespace shammodels::basegodunov

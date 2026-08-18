@@ -268,7 +268,7 @@ namespace {
                     shambase::VectorProperties<Tscal>::get_zero(),
                     shambase::VectorProperties<Tscal>::get_zero()}};
             if (cnt > 0) {
-                (res = {acc_rho, acc_rhoe, acc_rho_vel});
+                res = {acc_rho, acc_rhoe, acc_rho_vel};
                 res *= 1. / cnt;
             }
             return res;

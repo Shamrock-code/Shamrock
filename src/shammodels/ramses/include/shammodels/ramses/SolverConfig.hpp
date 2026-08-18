@@ -26,7 +26,7 @@
 #include "shambackends/vec.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammodels/common/amr/AMRBlock.hpp"
-#include "shammodels/ramses/config/enum_AMRInterpoMode.hpp"
+#include "shammodels/ramses/config/enum_AMRInterpMode.hpp"
 #include "shammodels/ramses/config/enum_DragSolverMode.hpp"
 #include "shammodels/ramses/config/enum_DustRiemannSolverMode.hpp"
 #include "shammodels/ramses/config/enum_GravityMode.hpp"
@@ -176,7 +176,7 @@ struct shammodels::basegodunov::SolverConfig {
     SlopeMode slope_config            = VanLeer_sym;
     bool face_half_time_interpolation = true;
 
-    AMRInterpoMode amr_interpo_mode = FIRST_ORDER;
+    AMRInterpMode amr_interp_mode = FIRST_ORDER;
 
     inline bool should_compute_rho_mean() { return is_gravity_on() && is_boundary_periodic(); }
 

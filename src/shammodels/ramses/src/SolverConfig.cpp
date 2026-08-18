@@ -74,7 +74,7 @@ namespace shammodels::basegodunov {
             {"drag_config", p.drag_config},
             {"bc_config", p.bc_config},
             {"amr_mode", p.amr_mode},
-            {"amr_interpo_mode", p.amr_interpo_mode}};
+            {"amr_interp_mode", p.amr_interp_mode}};
     }
 
     template<class Tvec, class TgridVec>
@@ -118,7 +118,7 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("drag_config", p.drag_config);
         _get_to_if_contains("bc_config", p.bc_config);
         _get_to_if_contains("amr_mode", p.amr_mode);
-        _get_to_if_contains("amr_interpo_mode", p.amr_interpo_mode);
+        _get_to_if_contains("amr_interp_mode", p.amr_interp_mode);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

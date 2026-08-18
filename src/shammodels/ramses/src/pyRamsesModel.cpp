@@ -230,12 +230,12 @@ namespace shammodels::basegodunov {
             .def(
                 "set_first_order_interpolation_mode",
                 [](TConfig &self) {
-                    self.amr_interpo_mode = FIRST_ORDER;
+                    self.amr_interp_mode = FIRST_ORDER;
                 })
             .def(
                 "set_second_order_interpolation_mode",
                 [](TConfig &self) {
-                    self.amr_interpo_mode = SECOND_ORDER;
+                    self.amr_interp_mode = SECOND_ORDER;
                 })
             .def(
                 "set_gravity_mode_no_gravity",

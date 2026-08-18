@@ -1179,7 +1179,7 @@ template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_refine_grid_new(
         shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags,
-        const AMRInterpoMode amr_refine_interpo_mode) {
+        const AMRInterpMode amr_refine_interp_mode) {
 
     u64 sum_block_count = 0;
 
@@ -1205,7 +1205,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interpo_mode);
+            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interp_mode);
             auto index_to_ref = stream_compaction_result.get_read_access(depends_list);
 
             // Refine the block (set the positions) and fill the corresponding fields
@@ -1257,7 +1257,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
             stream_compaction_result.complete_event_state(e);
-            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interpo_mode);
+            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interp_mode);
         }
 
         shamlog_debug_ln("AMRGrid", "patch ", id_patch, "new block count = ", pdat.get_obj_cnt());
@@ -1275,7 +1275,7 @@ template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_derefine_grid_new(
         shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
-        const AMRInterpoMode amr_refine_interpo_mode) {
+        const AMRInterpMode amr_refine_interp_mode) {
 
     using namespace shamrock::patch;
 
@@ -1301,7 +1301,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             sham::EventList depends_list;
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interpo_mode);
+            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interp_mode);
             auto index_to_deref = stream_compact_results.get_read_access(depends_list);
 
             // edit block content + make flag of blocks to keep
@@ -1353,7 +1353,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
-            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interpo_mode);
+            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interp_mode);
 
             stream_compact_results.complete_event_state(resulting_events);
 
@@ -1388,7 +1388,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_update_refinement_new(const AMRInterpoMode amr_refine_interpo_mode) {
+    internal_update_refinement_new(const AMRInterpMode amr_refine_interp_mode) {
 
     // Ensure that the blocks are sorted before refinement
     AMRSortBlocks block_sorter(context, solver_config, storage);
@@ -1402,14 +1402,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     //////// apply refine ////////
     // Note that this only add new blocks at the end of the patchdata
-    internal_refine_grid_new<UserAccSplit>(std::move(dd_refine_list), amr_refine_interpo_mode);
+    internal_refine_grid_new<UserAccSplit>(std::move(dd_refine_list), amr_refine_interp_mode);
 
     //////// apply derefine ////////
     // Note that this will perform the merge then remove the old blocks
     // This is ok to call straight after the refine without edditing the index list in derefine_list
     // since no permutations were applied in internal_refine_grid_new and no cells can be both
     // refined and derefined in the same pass
-    internal_derefine_grid_new<UserAccMerge>(std::move(dd_derefine_list), amr_refine_interpo_mode);
+    internal_derefine_grid_new<UserAccMerge>(std::move(dd_derefine_list), amr_refine_interp_mode);
 }
 
 template<class Tvec, class TgridVec>
@@ -1506,7 +1506,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         const f64_3 *rho_vel_old_snap;
         const f64 *rhoE_old_snap;
 
-        AMRInterpoMode amr_ref_interpo_mode;
+        AMRInterpMode amr_ref_interp_mode;
 
         // this will be needed for interpolation during refinement
         AMRGraphLinkiterator cell_graph_xp;
@@ -1521,7 +1521,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Storage &storage,
             u64 &id_patch,
             shamrock::patch::PatchDataLayer &pdat,
-            AMRInterpoMode _amr_ref_interpo_mode)
+            AMRInterpMode _amr_ref_interp_mode)
             : cell_graph_xp(
                   shambase::get_check_ref(storage.cell_graph_edge)
                       .get_refs_dir(Direction::xp)
@@ -1558,7 +1558,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                       .get(id_patch)
                       .get()
                       .get_read_access(depends_list)),
-              amr_ref_interpo_mode(_amr_ref_interpo_mode)
+              amr_ref_interp_mode(_amr_ref_interp_mode)
 
         {
             p_id = id_patch;
@@ -1591,7 +1591,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             Storage &storage,
             u64 &id_patch,
             shamrock::patch::PatchDataLayer &pdat,
-            AMRInterpoMode amr_ref_interpo_mode) {
+            AMRInterpoMode amr_ref_interp_mode) {
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
@@ -1743,12 +1743,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                           + child_center_offsets[subdiv_lid][2] * cons_var_slopes[2];
 
                     _rho_block[subdiv_lid] = acc.rho_old_snap[old_cell_idx]
-                                             + cons_var_interp.rho * acc.amr_ref_interpo_mode;
+                                             + cons_var_interp.rho * acc.amr_ref_interp_mode;
                     _rho_vel_block[subdiv_lid]
                         = acc.rho_vel_old_snap[old_cell_idx]
-                          + cons_var_interp.rhovel * acc.amr_ref_interpo_mode;
+                          + cons_var_interp.rhovel * acc.amr_ref_interp_mode;
                     _rhoE_block[subdiv_lid] = acc.rhoE_old_snap[old_cell_idx]
-                                              + cons_var_interp.rhoe * acc.amr_ref_interpo_mode;
+                                              + cons_var_interp.rhoe * acc.amr_ref_interp_mode;
 
                     const auto e_int
                         = _rhoE_block[subdiv_lid]
@@ -2602,9 +2602,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         enforce_two_to_one_derefinement_new(std::move(derefine_list), std::move(refine_list));
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
-        const AMRInterpoMode amr_ref_interpo_mode = solver_config.amr_interpo_mode;
+        const AMRInterpMode amr_ref_interp_mode = solver_config.amr_interp_mode;
         bool change_refine                        = internal_refine_grid_new<RefineCellAccessor>(
-            std::move(refine_list), amr_ref_interpo_mode);
+            std::move(refine_list), amr_ref_interp_mode);
 
         //////// apply derefine ////////
         // Note that this will perform the merge then remove the old blocks
@@ -2612,7 +2612,7 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         // derefine_list since no permutations were applied in internal_refine_grid_new and no cells
         // can be both refined and derefined in the same pass
         bool change_derefine = internal_derefine_grid_new<RefineCellAccessor>(
-            std::move(derefine_list), amr_ref_interpo_mode);
+            std::move(derefine_list), amr_ref_interp_mode);
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
 

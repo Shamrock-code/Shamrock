@@ -22,6 +22,25 @@ built.
 Raw JSON:
 [doxygen_warnings.json](https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/doxygen_warnings.json).
 
+## Compile peak RSS (top 10 files)
+
+CI records per-translation-unit compiler peak RSS. The chart keeps only the
+top 10 files of each commit: a file that drops out of that ranking is omitted
+at that date (`null` y, `connectgaps: false`).
+
+```{raw} html
+<iframe
+  src="../_static/compile_memory_top10.html"
+  title="Top 10 compile peak RSS over time"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
+Raw Plotly JSON:
+[compile_memory_top10.json](https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/compile_memory_top10.json).
+
 The org website (`https://shamrock-code.github.io/`) is same-origin with the
 published Sphinx docs, so it can embed this chart with:
 
@@ -63,6 +82,39 @@ The org website can embed this chart with:
   title="Build time and translation units over time"
   width="100%"
   height="640"
+  style="border: none;"
+></iframe>
+```
+
+## Parse time (top 10 files)
+
+CI records ClangBuildAnalyzer frontend parse times per translation unit. The
+chart keeps only the top 10 files of each commit: a file that drops out of that
+ranking is omitted at that date (`null` y, `connectgaps: false`). Object-file
+paths are mapped back to source paths. See
+[Profiling build performance / time](build-profiling.md).
+
+```{raw} html
+<iframe
+  src="../_static/parse_time_top10.html"
+  title="Top 10 files that took longest to parse"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
+Raw Plotly JSON:
+[parse_time_top10.json](https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/parse_time_top10.json).
+
+The org website can embed this chart with:
+
+```html
+<iframe
+  src="https://shamrock-code.github.io/Shamrock/sphinx/_static/parse_time_top10.html"
+  title="Top 10 files that took longest to parse"
+  width="100%"
+  height="700"
   style="border: none;"
 ></iframe>
 ```

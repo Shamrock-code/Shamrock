@@ -11,12 +11,14 @@ concurrency:
 
 jobs:
 
+  # Full CI runs when the `full-ci` label is set, or on Mergify merge-queue
+  # branches (e.g. mergify/merge-queue/7da018d0ff). Every other PR uses light CI.
   main_workflow:
     name: CI
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
-      light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+      light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
 
   collect_metrics:
     name: Collect metrics
@@ -33,7 +35,7 @@ jobs:
 
   light_ci:
     name: Notify Light CI
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    if: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Echo message
@@ -41,8 +43,9 @@ jobs:
           cat >> report_______light_ci.md <<'EOF'
 
 
-          Light CI is enabled. This will only run the basic tests and not the full tests.
-          Merging a PR require the job "on PR / all" to pass which is disabled in this case.
+          Light CI is enabled (the default for pull requests). This will only run the basic tests and not the full tests.
+          Full CI runs if the `full-ci` label is set, or automatically on Mergify merge-queue branches (`mergify/merge-queue/*`).
+          The merge gate job "on PR / all" is skipped in this case. Queue entry uses "on PR / all_light"; full CI runs in the merge queue.
           EOF
 
       - uses: actions/upload-artifact@v4
@@ -50,8 +53,9 @@ jobs:
           name: report_light_ci
           path: ./report_______light_ci.md
 
-  # Mergify merge gate (merge_conditions: check-success = all). Skipped when the
-  # light-ci label is set — those PRs use all_light for queue entry instead.
+  # Mergify merge gate (merge_conditions: check-success = all). Runs only when
+  # full CI ran (`full-ci` label or Mergify merge-queue branch). Other PRs use
+  # all_light for queue entry instead.
   #
   # needs.main_workflow.result / needs.upload_metrics_history.result can be:
   #   - success   : reusable workflow completed without failure
@@ -64,8 +68,8 @@ jobs:
   #                 non-success — do not whitelist only failure/cancelled.
   all:
     needs: [ main_workflow, upload_metrics_history ]
-    # run always except for cancel
-    if: ${{ always() && !cancelled() && !contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    # run always except for cancel, and only when full CI ran
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary
@@ -80,7 +84,7 @@ jobs:
         fi
 
   # Mergify merge-queue entry gate (queue_conditions: check-success = all_light).
-  # Runs regardless of the light-ci label.
+  # Runs for both light and full CI.
   # Same gate logic as all; see comment above for needs.*.result states.
   all_light:
     needs: [ main_workflow, upload_metrics_history ]

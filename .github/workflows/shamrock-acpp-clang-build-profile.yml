@@ -90,7 +90,7 @@ jobs:
           mkdir -p memlog
           export MEMLOG_DIR="$PWD/memlog"
           ClangBuildAnalyzer --start .
-          shammake
+          ninja -j "$(nproc)"
           ClangBuildAnalyzer --stop . capture_build.bin
 
       - name: Write ClangBuildAnalyzer.ini

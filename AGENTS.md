@@ -52,6 +52,27 @@ Always use something like `&& echo DONE` after the build command to avoid confus
 
 Check if `./shamrock`, `./shamrock_test` are present in the build dir, if yes it has succeeded.
 
+### Incremental builds
+
+A full `./shamenv_do shammake` compiles every target (~40min from a cold
+build) — do not run it after every small change. When you modify a single
+component, build only that component's target instead:
+
+```bash
+cd build
+./shamenv_do shammake <target>   # e.g. shammake shammodels_sph
+```
+
+List available targets with:
+
+```bash
+ninja -t targets all | grep ': phony$'
+```
+
+Only run a full `./shamenv_do shammake` (or build `shamrock`/`shamrock_test`
+specifically) when unit tests need to run or the binary needs to execute —
+those require the whole dependency graph to be up to date anyway.
+
 ## Testing
 
 **BEFORE running any unittest, always check that reference files exist.**
@@ -171,8 +192,14 @@ gh pr view <number> --repo Shamrock-code/Shamrock
 ./env/new-env --machine <machine> --builddir build-debug -- \
   <machine specific flags>
 
-# Build
-pwd && ls && cd build && ./shamenv_do shammake && echo "build done"
+# Build (only the target(s) you touched; see Incremental builds above)
+pwd && ls && cd build && ./shamenv_do shammake <target> && echo "build done"
+
+# List available build targets
+cd build && ninja -t targets all | grep ': phony$'
+
+# Full build (only when running tests or the binary)
+cd build && ./shamenv_do shammake && echo "build done"
 
 # Run pre-commit
 pre-commit run --all-files

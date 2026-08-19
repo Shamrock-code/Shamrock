@@ -46,4 +46,12 @@ namespace shambindings {
      */
     void expect_init_embed(SourceLocation loc = SourceLocation{});
 
+    /**
+     * @brief Return true if python bindings were initialized as a standalone library
+     *
+     * Lib mode is `import shamrock` from an external python3 process. Embed mode is the
+     * `shamrock` executable hosting the interpreter.
+     */
+    bool is_lib_mode();
+
 } // namespace shambindings

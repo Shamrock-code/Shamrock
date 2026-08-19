@@ -59,3 +59,5 @@ def get_acpp_target_env(args, version="git"):
             for b in backend_list:
                 print("     ", b)
             raise ValueError(f"unknown acpp backend: {args.backend}")
+
+    return backend

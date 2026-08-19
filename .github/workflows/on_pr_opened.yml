@@ -30,7 +30,8 @@ jobs:
             2 - Comment `pre-commit.ci autofix` to apply fixes.
             3 - Add label `autofix.ci` to fix authorship & pre-commit for every commit made.
             4 - Add label `full-ci` to run the full test suite (default is light CI; full CI also runs on Mergify merge-queue branches).
-            5 - Add label `trigger-ci` to create an empty commit to trigger the CI.
+            5 - Add label `profile-build` to run the compile-time build profile job even in light CI.
+            6 - Add label `trigger-ci` to create an empty commit to trigger the CI.
 
             Once the workflow completes a message will appear displaying informations related to the run.
 

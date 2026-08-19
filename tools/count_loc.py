@@ -48,6 +48,7 @@ CATEGORIES = {
     "*.py": ["*.py"],
     "*.md": ["*.md"],
     "*.rst": ["*.rst"],
+    "*.yml": ["*.yml"],
     "CMakeLists.txt + *.cmake": [
         "CMakeLists.txt",
         "**/CMakeLists.txt",

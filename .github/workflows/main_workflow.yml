@@ -11,6 +11,11 @@ on:
         description: "Whether to run the light CI"
         required: true
         type: boolean
+      run_build_profile:
+        description: "Run the build profile job even when light CI is enabled"
+        required: false
+        default: false
+        type: boolean
     secrets:
       CODECOV_TOKEN:
         description: "Codecov upload token"
@@ -107,13 +112,16 @@ jobs:
   env_tests:
     name: Tests
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/env_tests.yml
+    with:
+      light_ci: ${{ inputs.light_ci }}
 
   shamrock_linux_acpp_build_profile:
     name: Tests
     needs: [src_check]
-    if: ${{ !inputs.light_ci }}
+    # Full CI always runs this job. Light CI runs it when the caller requests it
+    # (on PRs: the `profile-build` label).
+    if: ${{ !inputs.light_ci || inputs.run_build_profile }}
     uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 
   shamrock_linux_acpp_conda:

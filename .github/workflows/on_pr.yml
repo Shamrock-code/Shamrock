@@ -13,12 +13,15 @@ jobs:
 
   # Full CI runs when the `full-ci` label is set, or on Mergify merge-queue
   # branches (e.g. mergify/merge-queue/7da018d0ff). Every other PR uses light CI.
+  # The `profile-build` label runs the compile-time build profile job in either
+  # mode (it is already part of full CI).
   main_workflow:
     name: CI
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
       light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+      run_build_profile: ${{ contains(github.event.pull_request.labels.*.name, 'profile-build') }}
 
   collect_metrics:
     name: Collect metrics

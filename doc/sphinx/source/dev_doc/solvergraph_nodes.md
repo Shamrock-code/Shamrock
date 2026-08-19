@@ -105,8 +105,35 @@ Absent optionals are stored as
 placeholders so slot indices stay stable. `get_ro_edge_optional` returns
 `std::nullopt` for those slots.
 
+## Composition nodes
+
+`OperationSequence` and `OperationIf` wrap other `INode`s. Nested nodes are
+passed to the constructor (graph structure). Data edges are still wired with
+`set_edges`.
+
+```cpp
+auto then_node = std::make_shared<MyNode>(...); // optional
+auto else_node = std::make_shared<MyNode>(...); // optional
+auto cond = IDataEdge<bool>::make_shared("do_step", "do_step");
+
+auto if_node = std::make_shared<OperationIf>("do step", then_node, else_node);
+if_node->set_edges(cond);
+
+cond->data = true;  // evaluate then_node (or skip if none)
+if_node->evaluate();
+
+cond->data = false; // evaluate else_node (or skip if none)
+if_node->evaluate();
+```
+
+To gate several nodes, wrap them in an `OperationSequence` and pass that as
+`then_node` / `else_node`. Else-only is `OperationIf("name", {}, else_node)`.
+
 ## Related files
 
 - [`INode.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/INode.hpp)
 - [`INullOptEdge.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/edge/INullOptEdge.hpp)
+- [`OperationIf.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationIf.hpp)
+- [`OperationSequence.hpp`](../../../src/shamsolvergraph/include/shamsolvergraph/node/OperationSequence.hpp)
 - [`OptionalEdges_tests.cpp`](../../../src/tests/shamsolvergraph/node/OptionalEdges_tests.cpp)
+- [`OperationIf_tests.cpp`](../../../src/tests/shamsolvergraph/node/OperationIf_tests.cpp)

@@ -22,7 +22,11 @@
 #include "shammodels/sph/SolverConfig.hpp"
 #include "shammodels/sph/modules/SolverStorage.hpp"
 #include "shamrock/scheduler/ShamrockCtx.hpp"
+#include "shamrock/solvergraph/IFieldSpan.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
+#include <memory>
+#include <optional>
 
 namespace shammodels::sph::modules {
 
@@ -53,17 +57,16 @@ namespace shammodels::sph::modules {
 
         private:
         void compute_eos_internal(
-            const shamrock::solvergraph::IDataEdge<Tscal> &hfactd,
-            const shamrock::solvergraph::IDataEdge<Tscal> &pmass,
-            const std::optional<
-                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_rho,
-            const std::optional<
-                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_h,
-            const std::optional<
-                std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>> spans_uint,
-            const shamrock::solvergraph::Indexes<u32> &sizes,
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_pressure,
-            shamrock::solvergraph::IFieldSpan<Tscal> &spans_soundspeed);
+            const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &hfactd,
+            const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &pmass,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>>
+                &spans_rho,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &spans_h,
+            const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>>
+                &spans_uint,
+            const std::shared_ptr<shamrock::solvergraph::Indexes<u32>> &sizes,
+            const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_pressure,
+            const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_soundspeed);
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

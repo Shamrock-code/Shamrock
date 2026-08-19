@@ -61,6 +61,10 @@
         "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/parse_time_top10.json",
         "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/parse_time_top10.json",
       ];
+      // Vertical markers on the date axis (ISO datetime, UTC).
+      const PLOT_EVENTS = [
+        { date: "2026-08-17T13:43:38Z", text: "force -j 4 in gh-runners" },
+      ];
 
       function parentTheme() {
         try {
@@ -80,7 +84,56 @@
         document.documentElement.setAttribute("data-theme", theme);
       }
 
-      function themedLayout(baseLayout, theme) {
+      function eventDecorations(theme, traces) {
+        const dark = theme === "dark";
+        const color = dark ? "#fabd2f" : "#b57614";
+        const bgcolor = dark ? "rgba(40, 40, 40, 0.9)" : "rgba(255, 255, 255, 0.9)";
+        let xMin = null;
+        let xMax = null;
+        const xs = traces && traces[0] && Array.isArray(traces[0].x) ? traces[0].x : [];
+        if (xs.length > 0) {
+          xMin = Date.parse(xs[0]);
+          xMax = Date.parse(xs[xs.length - 1]);
+        }
+        const shapes = [];
+        const annotations = [];
+        for (const event of PLOT_EVENTS) {
+          const eventMs = Date.parse(event.date);
+          const nearEnd =
+            xMin !== null && xMax !== null && xMax > xMin
+              ? (eventMs - xMin) / (xMax - xMin) > 0.7
+              : true;
+          shapes.push({
+            type: "line",
+            x0: event.date,
+            x1: event.date,
+            y0: 0,
+            y1: 1,
+            xref: "x",
+            yref: "paper",
+            line: { color, width: 1.5, dash: "dot" },
+          });
+          annotations.push({
+            x: event.date,
+            y: 0.98,
+            xref: "x",
+            yref: "paper",
+            text: event.text,
+            showarrow: false,
+            xanchor: nearEnd ? "right" : "left",
+            yanchor: "top",
+            xshift: nearEnd ? -8 : 8,
+            font: { color, size: 12 },
+            bgcolor,
+            bordercolor: color,
+            borderwidth: 1,
+            borderpad: 4,
+          });
+        }
+        return { shapes, annotations };
+      }
+
+      function themedLayout(baseLayout, theme, traces) {
         const dark = theme === "dark";
         const bg = dark ? "#282828" : "#fff";
         const fg = dark ? "#ebdbb2" : "#3c3836";
@@ -105,6 +158,9 @@
           linecolor: muted,
           tickfont: { color: muted },
         });
+        const events = eventDecorations(theme, traces);
+        layout.shapes = events.shapes;
+        layout.annotations = events.annotations;
         return layout;
       }
 
@@ -168,13 +224,13 @@
         }
 
         const config = { responsive: true, displaylogo: false };
-        await Plotly.newPlot(chart, traces, themedLayout(payload.layout, theme), config);
+        await Plotly.newPlot(chart, traces, themedLayout(payload.layout, theme, traces), config);
         setStatus("");
 
         const restyle = () => {
           theme = parentTheme();
           applyTheme(theme);
-          Plotly.react(chart, traces, themedLayout(payload.layout, theme));
+          Plotly.react(chart, traces, themedLayout(payload.layout, theme, traces));
         };
 
         window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);

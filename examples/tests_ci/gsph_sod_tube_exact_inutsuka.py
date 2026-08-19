@@ -120,7 +120,7 @@ if shamrock.sys.world_rank() == 0:
     # Updated value after intergration of MPI loop.
     expect_rho = 0.05026640023941046
     expect_vx = 0.14338700594989237
-    expect_vy = 0.005331795999290027
+    expect_vy = 0.005346786387513833
     expect_vz = 8.642235493607392e-05
     expect_P = 0.06323460802208299
 

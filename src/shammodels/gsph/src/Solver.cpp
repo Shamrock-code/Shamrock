@@ -2085,7 +2085,11 @@ bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_a
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {}
+void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {
+    modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
+    scheduler().scheduler_step(false, false);
+}
 
 template<class Tvec, template<class> class Kern>
 shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once() {

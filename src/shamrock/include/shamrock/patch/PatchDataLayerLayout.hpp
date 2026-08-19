@@ -19,9 +19,9 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
+#include "nlohmann/json_fwd.hpp"
 #include "shamrock/patch/FieldVariant.hpp"
 #include "shamsys/legacy/log.hpp"
-#include <nlohmann/json.hpp>
 #include <sstream>
 #include <variant>
 #include <vector>
@@ -84,6 +84,14 @@ namespace shamrock::patch {
         template<class T>
         void add_field(
             const std::string &field_name, u32 nvar, SourceLocation loc = SourceLocation{});
+
+        /**
+         * @brief Check whether a field with the given name already exists
+         *
+         * @param field_name field name to look up
+         * @return true if a field with that name is already in the layout
+         */
+        [[nodiscard]] bool has_field_name(const std::string &field_name) const;
 
         /**
          * @brief Get the field description id if matching name & type
@@ -291,17 +299,7 @@ namespace shamrock::patch {
     template<class T>
     inline void PatchDataLayerLayout::add_field(
         const std::string &field_name, u32 nvar, SourceLocation loc) {
-        bool found = false;
-
-        for (var_t &fvar : fields) {
-            fvar.visit([&](auto &arg) {
-                if (field_name == arg.name) {
-                    found = true;
-                }
-            });
-        }
-
-        if (found) {
+        if (has_field_name(field_name)) {
             throw shambase::make_except_with_loc<std::invalid_argument>(
                 "add_field -> the name already exists");
         }

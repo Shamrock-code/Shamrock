@@ -52,6 +52,27 @@ Always use something like `&& echo DONE` after the build command to avoid confus
 
 Check if `./shamrock`, `./shamrock_test` are present in the build dir, if yes it has succeeded.
 
+### Incremental builds
+
+A full `./shamenv_do shammake` compiles every target (~40min from a cold
+build) — do not run it after every small change. When you modify a single
+component, build only that component's target instead:
+
+```bash
+cd build
+./shamenv_do shammake <target>   # e.g. shammake shammodels_sph
+```
+
+List available targets with:
+
+```bash
+ninja -t targets all | grep ': phony$'
+```
+
+Only run a full `./shamenv_do shammake` (or build `shamrock`/`shamrock_test`
+specifically) when unit tests need to run or the binary needs to execute —
+those require the whole dependency graph to be up to date anyway.
+
 ## Testing
 
 **BEFORE running any unittest, always check that reference files exist.**
@@ -126,18 +147,16 @@ upstream `main` on that repo.
 
 ### Commit authorship
 
-The user who initiated the agent must be the first author of every commit the
-agent creates. Use the git identity already configured in the environment for
-that user; do not override `user.name` or `user.email` unless the user
-explicitly asks you to.
+Commit-msg hooks can rewrite the author and inject `Co-authored-by` (often)
+with a model name). After every `git commit`, amend with `--no-verify`
+before pushing (a plain amend re-runs the hook):
 
-### Agent commit attribution
+- **Author** = the human who initiated the work. Use `--author`; do not
+  change gitconfig.
+- Trailer = `Assisted-by: <agent>` only. No model names. No
+  `Co-authored-by` (`Co-authored-by` is for extra human authors only).
 
-Agent-made commits should use `Assisted-by: <agent_name>` instead of
-`Co-Authored-by`. Reserve `Co-Authored-by` for human collaborators only.
-
-If a commit hook injects `Co-authored-by`, amend the commit so the message
-contains only `Assisted-by`.
+Check `git log -1 --format='Author: %an <%ae>%n%B'` before push.
 
 ### Opening pull requests
 
@@ -173,8 +192,14 @@ gh pr view <number> --repo Shamrock-code/Shamrock
 ./env/new-env --machine <machine> --builddir build-debug -- \
   <machine specific flags>
 
-# Build
-pwd && ls && cd build && ./shamenv_do shammake && echo "build done"
+# Build (only the target(s) you touched; see Incremental builds above)
+pwd && ls && cd build && ./shamenv_do shammake <target> && echo "build done"
+
+# List available build targets
+cd build && ninja -t targets all | grep ': phony$'
+
+# Full build (only when running tests or the binary)
+cd build && ./shamenv_do shammake && echo "build done"
 
 # Run pre-commit
 pre-commit run --all-files

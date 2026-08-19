@@ -14,6 +14,18 @@ ClangBuildAnalyzer --stop . capture_build.bin
 ClangBuildAnalyzer --analyze capture_build.bin
 ```
 
+## Compiler peak RSS (memlog)
+
+To also record per-file compiler peak RSS (resident set size), wrap the compiler after `shamconfigure` (GNU `time` on Linux, BSD `/usr/bin/time` on macOS) and set `MEMLOG_DIR`:
+
+```bash
+cmake . -DCMAKE_CXX_COMPILER_LAUNCHER="$SHAMROCK_DIR/tools/memlog.sh"
+mkdir -p memlog
+export MEMLOG_DIR="$PWD/memlog"
+```
+
+Then run the same ClangBuildAnalyzer sequence as above. Each compile appends `{rss_mb, src, obj}` to `$MEMLOG_DIR/compile_memory.json`.
+
 ## Example output (2026-08-04)
 
 ```

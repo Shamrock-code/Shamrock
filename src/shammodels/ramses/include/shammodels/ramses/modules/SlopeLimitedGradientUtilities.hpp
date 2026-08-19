@@ -147,16 +147,13 @@ namespace {
 
         auto cur_cell_block_id = cell_global_id / block_size;
 
-        auto get_gradiant_dir = [&](auto &graph_links, Direction dir) -> Tfield {
+        auto get_gradient_dir = [&](auto &graph_links, Direction dir) -> Tfield {
             Tfield acc            = shambase::VectorProperties<Tfield>::get_zero();
             auto cell_center_dist = cell_sizes[cur_cell_block_id];
-            auto fac              = 1.;
+
             u32 cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
                 auto neigh_block_id = id_b / block_size;
-
-                int sign = 1 - 2 * (dir % 2);
-                acc += sign * (field_access(id_b) - field_access(cell_global_id));
-
+                auto fac            = 1.;
                 if (cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]) {
                     fac = (3. / 2.);
                 }
@@ -166,27 +163,24 @@ namespace {
                 if (cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]) {
                     fac = (3. / 4.);
                 }
+                const auto inv_dist = 1. / (fac * cell_center_dist);
+
+                int sign = 1 - 2 * (dir % 2);
+                acc += sign * inv_dist * (field_access(id_b) - field_access(cell_global_id));
             });
-            return (cnt > 0) ? acc / (cell_center_dist * fac * cnt)
-                             : shambase::VectorProperties<Tfield>::get_zero();
+            return (cnt > 0) ? acc / cnt : shambase::VectorProperties<Tfield>::get_zero();
         };
 
-        Tfield delta_xp = get_gradiant_dir(graph_iter_xp, Direction::xp);
-        Tfield delta_xm = get_gradiant_dir(graph_iter_xm, Direction::xm);
-        Tfield delta_yp = get_gradiant_dir(graph_iter_yp, Direction::yp);
-        Tfield delta_ym = get_gradiant_dir(graph_iter_ym, Direction::ym);
-        Tfield delta_zp = get_gradiant_dir(graph_iter_zp, Direction::zp);
-        Tfield delta_zm = get_gradiant_dir(graph_iter_zm, Direction::zm);
         return {
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_xm, Direction::xm),
-                get_gradiant_dir(graph_iter_xp, Direction::xp)),
+                get_gradient_dir(graph_iter_xm, Direction::xm),
+                get_gradient_dir(graph_iter_xp, Direction::xp)),
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_ym, Direction::ym),
-                get_gradiant_dir(graph_iter_yp, Direction::yp)),
+                get_gradient_dir(graph_iter_ym, Direction::ym),
+                get_gradient_dir(graph_iter_yp, Direction::yp)),
             slope_function<Tfield, mode>(
-                get_gradiant_dir(graph_iter_zm, Direction::zm),
-                get_gradiant_dir(graph_iter_zp, Direction::zp))};
+                get_gradient_dir(graph_iter_zm, Direction::zm),
+                get_gradient_dir(graph_iter_zp, Direction::zp))};
     }
 
     /**
@@ -198,8 +192,9 @@ namespace {
      * @tparam ACCField1
      * @tparam ACCField2
      * @tparam ACCField3
+     * @param cell_sizes
+     * @param block_size
      * @param cell_global_id
-     * @param delta_cell
      * @param graph_iter_xp
      * @param graph_iter_xm
      * @param graph_iter_yp
@@ -213,8 +208,9 @@ namespace {
      */
     template<class Tvec, SlopeMode mode, class ACCField1, class ACCField2, class ACCField3>
     inline std::array<shammath::ConsState<Tvec>, 3> get_3d_grad_cons(
+        const f64 *cell_sizes,
+        const u32 block_size,
         const u32 cell_global_id,
-        const shambase::VecComponent<Tvec> delta_cell,
         const AMRGraphLinkiterator &graph_iter_xp,
         const AMRGraphLinkiterator &graph_iter_xm,
         const AMRGraphLinkiterator &graph_iter_yp,
@@ -225,7 +221,52 @@ namespace {
         ACCField2 &&field_access_rho_vel,
         ACCField3 &&field_access_rhoe) {
 
-        using Tscal = shambase::VecComponent<Tvec>;
+        using Tscal            = shambase::VecComponent<Tvec>;
+        auto cur_cell_block_id = cell_global_id / block_size;
+
+        auto get_gradient_dir = [&](auto &graph_links, Direction dir) -> shammath::ConsState<Tvec> {
+            Tscal acc_rho         = shambase::VectorProperties<Tscal>::get_zero();
+            Tscal acc_rhoe        = shambase::VectorProperties<Tscal>::get_zero();
+            Tvec acc_rho_vel      = shambase::VectorProperties<Tvec>::get_zero();
+            auto cell_center_dist = cell_sizes[cur_cell_block_id];
+
+            auto cnt = graph_links.for_each_object_link_cnt(cell_global_id, [&](u32 id_b) {
+                auto neigh_block_id = id_b / block_size;
+                auto fac            = 1.;
+                if (cell_sizes[neigh_block_id] > cell_sizes[cur_cell_block_id]) {
+                    fac = (3. / 2.);
+                }
+                // This logic suppose that the last (4-th) cell at interface have same size with the
+                // other three cells. This is also consitent with 2:1 refinement.
+                // TODO: extended to anisotropic mesh
+                if (cell_sizes[neigh_block_id] < cell_sizes[cur_cell_block_id]) {
+                    fac = (3. / 4.);
+                }
+                const auto inv_dist = 1. / (fac * cell_center_dist);
+
+                int sign = 1 - 2 * (dir % 2);
+                acc_rho += sign * inv_dist
+                           * (field_access_rho(id_b) - field_access_rho(cell_global_id));
+                acc_rhoe += sign * inv_dist
+                            * (field_access_rhoe(id_b) - field_access_rhoe(cell_global_id));
+                acc_rho_vel
+                    += sign * inv_dist
+                       * (field_access_rho_vel(id_b) - field_access_rho_vel(cell_global_id));
+            });
+
+            shammath::ConsState<Tvec> res
+                = {shambase::VectorProperties<Tscal>::get_zero(),
+                   shambase::VectorProperties<Tscal>::get_zero(),
+
+                   {shambase::VectorProperties<Tscal>::get_zero(),
+                    shambase::VectorProperties<Tscal>::get_zero(),
+                    shambase::VectorProperties<Tscal>::get_zero()}};
+            if (cnt > 0) {
+                res = {acc_rho, acc_rhoe, acc_rho_vel};
+                res *= 1. / cnt;
+            }
+            return res;
+        };
 
         auto get_avg_neigh = [&](auto &graph_links) -> shammath::ConsState<Tvec> {
             Tscal acc_rho    = shambase::VectorProperties<Tscal>::get_zero();
@@ -253,44 +294,29 @@ namespace {
             return res;
         };
 
-        shammath::ConsState<Tvec> W_i
-            = {field_access_rho(cell_global_id),
-               field_access_rhoe(cell_global_id),
-               field_access_rho_vel(cell_global_id)};
+        shammath::ConsState<Tvec> delta_xp = get_gradient_dir(graph_iter_xp, Direction::xp);
+        shammath::ConsState<Tvec> delta_xm = get_gradient_dir(graph_iter_xm, Direction::xm);
+        shammath::ConsState<Tvec> delta_yp = get_gradient_dir(graph_iter_yp, Direction::yp);
+        shammath::ConsState<Tvec> delta_ym = get_gradient_dir(graph_iter_ym, Direction::ym);
+        shammath::ConsState<Tvec> delta_zp = get_gradient_dir(graph_iter_zp, Direction::zp);
+        shammath::ConsState<Tvec> delta_zm = get_gradient_dir(graph_iter_zm, Direction::zm);
 
-        shammath::ConsState<Tvec> W_xp = get_avg_neigh(graph_iter_xp);
-        shammath::ConsState<Tvec> W_xm = get_avg_neigh(graph_iter_xm);
-        shammath::ConsState<Tvec> W_yp = get_avg_neigh(graph_iter_yp);
-        shammath::ConsState<Tvec> W_ym = get_avg_neigh(graph_iter_ym);
-        shammath::ConsState<Tvec> W_zp = get_avg_neigh(graph_iter_zp);
-        shammath::ConsState<Tvec> W_zm = get_avg_neigh(graph_iter_zm);
+        shammath::ConsState<Tvec> lim_slope_x
+            = {slope_function<Tscal, mode>(delta_xm.rho, delta_xp.rho),
+               slope_function<Tscal, mode>(delta_xm.rhoe, delta_xp.rhoe),
+               slope_function<Tvec, mode>(delta_xm.rhovel, delta_xp.rhovel)};
 
-        shammath::ConsState<Tvec> delta_W_x_p = W_xp - W_i;
-        shammath::ConsState<Tvec> delta_W_y_p = W_yp - W_i;
-        shammath::ConsState<Tvec> delta_W_z_p = W_zp - W_i;
+        shammath::ConsState<Tvec> lim_slope_y
+            = {slope_function<Tscal, mode>(delta_ym.rho, delta_yp.rho),
+               slope_function<Tscal, mode>(delta_ym.rhoe, delta_yp.rhoe),
+               slope_function<Tvec, mode>(delta_ym.rhovel, delta_yp.rhovel)};
 
-        shammath::ConsState<Tvec> delta_W_x_m = W_i - W_xm;
-        shammath::ConsState<Tvec> delta_W_y_m = W_i - W_ym;
-        shammath::ConsState<Tvec> delta_W_z_m = W_i - W_zm;
+        shammath::ConsState<Tvec> lim_slope_z
+            = {slope_function<Tscal, mode>(delta_zm.rho, delta_zp.rho),
+               slope_function<Tscal, mode>(delta_zm.rhoe, delta_zp.rhoe),
+               slope_function<Tvec, mode>(delta_zm.rhovel, delta_zp.rhovel)};
 
-        Tscal fact = 1. / delta_cell;
-
-        shammath::ConsState<Tvec> lim_slope_W_x
-            = {slope_function<Tscal, mode>(delta_W_x_m.rho * fact, delta_W_x_p.rho * fact),
-               slope_function<Tscal, mode>(delta_W_x_m.rhoe * fact, delta_W_x_p.rhoe * fact),
-               slope_function<Tvec, mode>(delta_W_x_m.rhovel * fact, delta_W_x_p.rhovel * fact)};
-
-        shammath::ConsState<Tvec> lim_slope_W_y
-            = {slope_function<Tscal, mode>(delta_W_y_m.rho * fact, delta_W_y_p.rho * fact),
-               slope_function<Tscal, mode>(delta_W_y_m.rhoe * fact, delta_W_y_p.rhoe * fact),
-               slope_function<Tvec, mode>(delta_W_y_m.rhovel * fact, delta_W_y_p.rhovel * fact)};
-
-        shammath::ConsState<Tvec> lim_slope_W_z
-            = {slope_function<Tscal, mode>(delta_W_z_m.rho * fact, delta_W_z_p.rho * fact),
-               slope_function<Tscal, mode>(delta_W_z_m.rhoe * fact, delta_W_z_p.rhoe * fact),
-               slope_function<Tvec, mode>(delta_W_z_m.rhovel * fact, delta_W_z_p.rhovel * fact)};
-
-        return {lim_slope_W_x, lim_slope_W_y, lim_slope_W_z};
+        return {lim_slope_x, lim_slope_y, lim_slope_z};
     }
 
     /**

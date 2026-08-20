@@ -18,10 +18,12 @@
 
 #include "shambase/aliases_int.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/string.hpp"
+#include "sham/format/format.hpp"
+#include <array>
 #include <memory>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace shambase {
 

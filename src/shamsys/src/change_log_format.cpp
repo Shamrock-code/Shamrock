@@ -13,6 +13,7 @@
  * @brief
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/term_colors.hpp"
 #include "sham/term/tty.hpp"

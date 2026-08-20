@@ -14,10 +14,11 @@
  *
  */
 
-#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
+#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 

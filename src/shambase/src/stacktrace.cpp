@@ -16,6 +16,8 @@
 
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "sham/format/format.hpp"
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>

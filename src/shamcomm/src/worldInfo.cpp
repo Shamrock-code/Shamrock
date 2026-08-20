@@ -16,6 +16,7 @@
 #include "shambase/numeric_limits.hpp"
 #include "shambase/profiling/chrome.hpp"
 #include "shambase/stacktrace.hpp"
+#include "sham/format/format.hpp"
 #include "shamcomm/local_rank.hpp"
 #include "shamcomm/mpi.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"

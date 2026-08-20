@@ -12,8 +12,8 @@
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
 #include "shambase/stacktrace.hpp"
-#include "shambase/string.hpp"
 #include "shambase/type_traits.hpp"
+#include "sham/format/format.hpp"
 #include <limits>
 #include <stdexcept>
 

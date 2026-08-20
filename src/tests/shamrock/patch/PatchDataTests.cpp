@@ -193,3 +193,95 @@ NEW_TEST(Unittest, "shamrock/patch/PatchDataLayer::extract_elements", 1) {
         REQUIRE_EQUAL(pdat_source.is_empty(), false);
     }
 }
+
+NEW_TEST(Unittest, "shamrock/patch/PatchDataLayer::operator==", 1) {
+    using namespace shamrock::patch;
+
+    constexpr u32 obj_cnt = 16;
+    constexpr u64 seed    = 0x111;
+
+    { // Equal copies
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        pdl_ptr->add_field<f32>("a", 1);
+        pdl_ptr->add_field<f64>("b", 1);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_ptr);
+        PatchDataLayer b = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_ptr);
+
+        REQUIRE_NAMED("reflexive", a == a);
+        REQUIRE_NAMED("same seed equal", a == b);
+    }
+
+    { // Empty layouts
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+
+        PatchDataLayer a{pdl_ptr};
+        PatchDataLayer b{pdl_ptr};
+
+        REQUIRE_NAMED("empty layouts equal", a == b);
+    }
+
+    { // Different field count
+        std::shared_ptr<PatchDataLayerLayout> pdl_one = std::make_shared<PatchDataLayerLayout>();
+        pdl_one->add_field<f32>("a", 1);
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_two = std::make_shared<PatchDataLayerLayout>();
+        pdl_two->add_field<f32>("a", 1);
+        pdl_two->add_field<f64>("b", 1);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_one);
+        PatchDataLayer b = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_two);
+
+        REQUIRE_NAMED("field count mismatch", !(a == b));
+    }
+
+    { // Different Field_type at the same index
+        std::shared_ptr<PatchDataLayerLayout> pdl_f32 = std::make_shared<PatchDataLayerLayout>();
+        pdl_f32->add_field<f32>("x", 1);
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_f64 = std::make_shared<PatchDataLayerLayout>();
+        pdl_f64->add_field<f64>("x", 1);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_f32);
+        PatchDataLayer b = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_f64);
+
+        REQUIRE_NAMED("Field_type mismatch", !(a == b));
+    }
+
+    { // Different field name, same type
+        std::shared_ptr<PatchDataLayerLayout> pdl_foo = std::make_shared<PatchDataLayerLayout>();
+        pdl_foo->add_field<f32>("foo", 1);
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_bar = std::make_shared<PatchDataLayerLayout>();
+        pdl_bar->add_field<f32>("bar", 1);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_foo);
+        PatchDataLayer b = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_bar);
+
+        REQUIRE_NAMED("field name mismatch", !(a == b));
+    }
+
+    { // Different nvar, same type/name
+        std::shared_ptr<PatchDataLayerLayout> pdl_n1 = std::make_shared<PatchDataLayerLayout>();
+        pdl_n1->add_field<f32>("x", 1);
+
+        std::shared_ptr<PatchDataLayerLayout> pdl_n2 = std::make_shared<PatchDataLayerLayout>();
+        pdl_n2->add_field<f32>("x", 2);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_n1);
+        PatchDataLayer b = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_n2);
+
+        REQUIRE_NAMED("nvar mismatch", !(a == b));
+    }
+
+    { // Different object count
+        std::shared_ptr<PatchDataLayerLayout> pdl_ptr = std::make_shared<PatchDataLayerLayout>();
+        pdl_ptr->add_field<f32>("a", 1);
+
+        PatchDataLayer a = PatchDataLayer::mock_patchdata(seed, obj_cnt, pdl_ptr);
+        PatchDataLayer b{a};
+        b.resize(obj_cnt + 8);
+
+        REQUIRE_NAMED("object count mismatch", !(a == b));
+    }
+}

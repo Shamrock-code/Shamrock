@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Top 10 files that took longest to parse</title>
+    <title>Top 10 codegen time</title>
     <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
     <style>
       :root {
@@ -54,12 +54,12 @@
     </style>
   </head>
   <body>
-    <div id="status">Loading parse time history…</div>
+    <div id="status">Loading codegen time history…</div>
     <div id="chart"></div>
     <script>
       const DATA_URLS = [
-        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/parse_time_top10.json",
-        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/parse_time_top10.json",
+        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/codegen_time_top10.json",
+        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/codegen_time_top10.json",
       ];
       // Vertical markers on the date axis (ISO datetime, UTC).
       const PLOT_EVENTS = [
@@ -90,8 +90,8 @@
         const bgcolor = dark ? "rgba(40, 40, 40, 0.9)" : "rgba(255, 255, 255, 0.9)";
         let xMin = null;
         let xMax = null;
-        const xs = traces && traces[0] && Array.isArray(traces[0].x) ? traces[0].x : [];
-        if (xs.length > 0) {
+        const xs = traces && traces[0] && traces[0].x;
+        if (xs && xs.length > 0) {
           xMin = Date.parse(xs[0]);
           xMax = Date.parse(xs[xs.length - 1]);
         }
@@ -213,13 +213,13 @@
         try {
           payload = await fetchDataset();
         } catch (err) {
-          setStatus(`Could not load parse time history.\n${err.message}`);
+          setStatus(`Could not load codegen time history.\n${err.message}`);
           return;
         }
 
         const traces = plotlyTraces(payload);
         if (traces.length === 0) {
-          setStatus("The parse time dataset is empty.");
+          setStatus("The codegen time dataset is empty.");
           return;
         }
 

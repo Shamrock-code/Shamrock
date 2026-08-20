@@ -132,7 +132,7 @@ void shammodels::sph::modules::NodeUpdateDerivsMonofluidTVA<Tvec, SPHKernel>::
     // ensure that the output edges are of size part_counts (output without ghosts zones)
     edges.ds_j_dt.ensure_sizes(part_counts);
 
-    const Tscal pmass = edges.gpart_mass.value;
+    const Tscal pmass = edges.gpart_mass.data;
 
     using ComputeKernel = KernelUpdateDerivsMonofluidTVA<Tvec, SPHKernel>;
 

@@ -10,6 +10,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamsys/Log.hpp"
 #include "shamtest/shamtest.hpp"
+#include <iostream>
 
 NEW_TEST(Unittest, "shamsys/Log", 1) {
 

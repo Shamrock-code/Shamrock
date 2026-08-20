@@ -20,9 +20,9 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shammath/AABB.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/INode.hpp"
 #include "shamrock/solvergraph/IPatchDataLayerRefs.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \

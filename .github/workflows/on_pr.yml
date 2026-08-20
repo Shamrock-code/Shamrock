@@ -11,16 +11,34 @@ concurrency:
 
 jobs:
 
+  # Full CI runs when the `full-ci` label is set, or on Mergify merge-queue
+  # branches (e.g. mergify/merge-queue/7da018d0ff). Every other PR uses light CI.
+  # The `profile-build` label runs the compile-time build profile job in either
+  # mode (it is already part of full CI).
   main_workflow:
     name: CI
     uses: ./.github/workflows/main_workflow.yml
     with:
       run_build_push_docker: true
-      light_ci: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+      light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+      run_build_profile: ${{ contains(github.event.pull_request.labels.*.name, 'profile-build') }}
+
+  collect_metrics:
+    name: Collect metrics
+    needs: [main_workflow]
+    if: ${{ always() && !cancelled() }}
+    uses: ./.github/workflows/collect_metrics.yml
+
+  upload_metrics_history:
+    name: Upload metrics history
+    needs: [collect_metrics]
+    uses: ./.github/workflows/upload_metrics_history.yml
+    with:
+      push: false
 
   light_ci:
     name: Notify Light CI
-    if: ${{ contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    if: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Echo message
@@ -28,8 +46,9 @@ jobs:
           cat >> report_______light_ci.md <<'EOF'
 
 
-          Light CI is enabled. This will only run the basic tests and not the full tests.
-          Merging a PR require the job "on PR / all" to pass which is disabled in this case.
+          Light CI is enabled (the default for pull requests). This will only run the basic tests and not the full tests.
+          Full CI runs if the `full-ci` label is set, or automatically on Mergify merge-queue branches (`mergify/merge-queue/*`).
+          The merge gate job "on PR / all" is skipped in this case. Queue entry uses "on PR / all_light"; full CI runs in the merge queue.
           EOF
 
       - uses: actions/upload-artifact@v4
@@ -37,17 +56,116 @@ jobs:
           name: report_light_ci
           path: ./report_______light_ci.md
 
+  # Hang while any push/schedule jobs in the repo are queued or in_progress.
+  # Runs after CI/metrics, then "all" depends on it. Gives up with success
+  # after 1 hour.
+  wait_for_push_schedule:
+    name: Wait for push/schedule jobs
+    needs: [ main_workflow, upload_metrics_history ]
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for push/schedule jobs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export GH_PAGER=cat
+          started="$(date +%s)"
+
+          list_runs() {
+            gh run list --repo "$GH_REPO" --event "$1" --status "$2" --limit 100 \
+              --json databaseId,name,displayTitle,headBranch,status,event,url
+          }
+
+          while true; do
+            runs="$(
+              {
+                list_runs push in_progress
+                list_runs push queued
+                list_runs schedule in_progress
+                list_runs schedule queued
+              } | jq -s 'add | unique_by(.databaseId)'
+            )"
+
+            waiting="$(mktemp)"
+            jq -r '.[] | "\(.event) \(.status) \(.name) #\(.databaseId) (\(.headBranch)) \(.displayTitle)"' <<<"$runs" >>"$waiting"
+            while IFS= read -r id; do
+              [ -z "$id" ] && continue
+              gh run view "$id" --repo "$GH_REPO" --json jobs --jq \
+                '.jobs[] | select(.status=="queued" or .status=="in_progress") | "  \(.name): \(.status)"' >>"$waiting"
+            done < <(jq -r '.[].databaseId' <<<"$runs")
+
+            elapsed="$(( $(date +%s) - started ))"
+
+            if [ ! -s "$waiting" ]; then
+              rm -f "$waiting"
+              echo "No push/schedule jobs queued or in_progress."
+              exit 0
+            fi
+
+            echo "Currently waiting jobs (${elapsed}s elapsed):"
+            cat "$waiting"
+            rm -f "$waiting"
+            echo "--------------------"
+
+            if [ "$elapsed" -ge 3600 ]; then
+              echo "Timed out after ${elapsed}s; continuing with success."
+              exit 0
+            fi
+            sleep 30
+          done
+
+  # Mergify merge gate (merge_conditions: check-success = all). Runs only when
+  # full CI ran (`full-ci` label or Mergify merge-queue branch). Other PRs use
+  # all_light for queue entry instead.
+  #
+  # needs.main_workflow.result / needs.upload_metrics_history.result can be:
+  #   - success   : reusable workflow completed without failure
+  #   - failure   : at least one job in the called workflow failed
+  #   - cancelled : workflow or caller job was cancelled (e.g. concurrency)
+  #   - skipped   : caller job was skipped by its if: condition
+  #   - abandoned : undocumented by GitHub, but observed in practice when a
+  #                 workflow re-run is triggered while the current attempt is
+  #                 still finishing (e.g. Mergify CI auto-retry). Treat as
+  #                 non-success — do not whitelist only failure/cancelled.
   all:
-    needs: [ main_workflow ]
-    # run always except for cancel
-    if: ${{ always() && !cancelled() && !contains(github.event.pull_request.labels.*.name, 'light-ci') }}
+    needs: [ main_workflow, upload_metrics_history, wait_for_push_schedule ]
+    # run always except for cancel, and only when full CI ran
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
     runs-on: ubuntu-latest
     steps:
     - name: Status summary
       run: |
-        if [ "${{ needs.main_workflow.result }}" == "failure" ] || [ "${{ needs.main_workflow.result }}" == "canceled" ]; then
-          echo "Tests failed."
+        if [ "${{ needs.main_workflow.result }}" != "success" ]; then
+          echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
           exit 1
-        else
-          exit 0
+        fi
+        if [ "${{ needs.upload_metrics_history.result }}" != "success" ]; then
+          echo "Upload metrics history did not succeed (result: ${{ needs.upload_metrics_history.result }})."
+          exit 1
+        fi
+
+  # Mergify merge-queue entry gate (queue_conditions: check-success = all_light).
+  # Runs for both light and full CI.
+  # Same gate logic as all; see comment above for needs.*.result states.
+  all_light:
+    needs: [ main_workflow, upload_metrics_history ]
+    # run always except for cancel
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Status summary
+      run: |
+        if [ "${{ needs.main_workflow.result }}" != "success" ]; then
+          echo "CI did not succeed (result: ${{ needs.main_workflow.result }})."
+          exit 1
+        fi
+        if [ "${{ needs.upload_metrics_history.result }}" != "success" ]; then
+          echo "Upload metrics history did not succeed (result: ${{ needs.upload_metrics_history.result }})."
+          exit 1
         fi

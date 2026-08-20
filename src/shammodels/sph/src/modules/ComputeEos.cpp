@@ -18,29 +18,585 @@
 
 #include "shambase/DistributedData.hpp"
 #include "shambase/exception.hpp"
+#include "shambase/memory.hpp"
+#include "shambase/narrowing.hpp"
 #include "shambackends/kernel_call.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammath/sphkernels.hpp"
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeEos.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamphys/eos.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
+#include "shamrock/solvergraph/Field.hpp"
+#include "shamrock/solvergraph/FieldRefs.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+#include <memory>
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, cs)                                              \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class ComputeEOSIsothermal : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSIsothermal() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &cs, const Tscal &rho, Tscal &pressure, Tscal &soundspeed) noexcept {
+            using EOS  = shamphys::EOS_Isothermal<Tscal>;
+            Tscal P_a  = EOS::pressure(cs, rho);
+            pressure   = P_a;
+            soundspeed = cs;
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal cs     = edges.cs.data;
+            Tscal pmass  = edges.pmass.data;
+            Tscal hfactd = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [cs](u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
+                        Tscal rho_a = rho[gid];
+                        internal_eos(cs, rho_a, pressure[gid], soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [cs, pmass, hfactd](
+                        u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho = rho_h(pmass, h[gid], hfactd);
+                        internal_eos(cs, rho, pressure[gid], soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const { return "ComputeEOSIsothermal"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_uint)                                     \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class ComputeEOSAdiabatic : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSAdiabatic() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &gamma,
+            const Tscal &rho,
+            const Tscal &uint,
+            Tscal &pressure,
+            Tscal &soundspeed) noexcept {
+            using EOS  = shamphys::EOS_Adiabatic<Tscal>;
+            Tscal P_a  = EOS::pressure(gamma, rho, uint);
+            Tscal cs_a = EOS::cs_from_p(gamma, rho, P_a);
+            pressure   = P_a;
+            soundspeed = cs_a;
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal gamma  = edges.gamma.data;
+            Tscal pmass  = edges.pmass.data;
+            Tscal hfactd = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans(), edges.spans_uint.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [gamma](
+                        u32 gid,
+                        const Tscal *rho,
+                        const Tscal *uint,
+                        Tscal *pressure,
+                        Tscal *soundspeed) {
+                        Tscal rho_a  = rho[gid];
+                        Tscal uint_a = uint[gid];
+                        internal_eos(gamma, rho_a, uint_a, pressure[gid], soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans(), edges.spans_uint.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [gamma, pmass, hfactd](
+                        u32 gid,
+                        const Tscal *h,
+                        const Tscal *uint,
+                        Tscal *pressure,
+                        Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho    = rho_h(pmass, h[gid], hfactd);
+                        Tscal uint_a = uint[gid];
+                        internal_eos(gamma, rho, uint_a, pressure[gid], soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const { return "ComputeEOSAdiabatic"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, K)                                               \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class ComputeEOSPolytropic : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSPolytropic() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &K,
+            const Tscal &gamma,
+            const Tscal &rho,
+            Tscal &pressure,
+            Tscal &soundspeed) noexcept {
+            using EOS  = shamphys::EOS_Polytropic<Tscal>;
+            Tscal P_a  = EOS::pressure(gamma, K, rho);
+            Tscal cs_a = EOS::soundspeed(gamma, K, rho);
+            pressure   = P_a;
+            soundspeed = cs_a;
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal K      = edges.K.data;
+            Tscal gamma  = edges.gamma.data;
+            Tscal pmass  = edges.pmass.data;
+            Tscal hfactd = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [K, gamma](u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
+                        Tscal rho_a = rho[gid];
+                        internal_eos(K, gamma, rho_a, pressure[gid], soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [K, gamma, pmass, hfactd](
+                        u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho = rho_h(pmass, h[gid], hfactd);
+                        internal_eos(K, gamma, rho, pressure[gid], soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const { return "ComputeEOSPolytropic"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, spans_cs0)                                      \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class ComputeEOSLocallyIsothermal : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSLocallyIsothermal() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &cs0, const Tscal &rho, Tscal &pressure, Tscal &soundspeed) noexcept {
+            using EOS  = shamphys::EOS_LocallyIsothermal<Tscal>;
+            pressure   = EOS::pressure_from_cs(cs0 * cs0, rho);
+            soundspeed = cs0;
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal pmass  = edges.pmass.data;
+            Tscal hfactd = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans(), edges.spans_cs0.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [](u32 gid,
+                       const Tscal *rho,
+                       const Tscal *cs0,
+                       Tscal *pressure,
+                       Tscal *soundspeed) {
+                        Tscal rho_a = rho[gid];
+                        Tscal cs0_a = cs0[gid];
+                        internal_eos(cs0_a, rho_a, pressure[gid], soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans(), edges.spans_cs0.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [pmass, hfactd](
+                        u32 gid,
+                        const Tscal *h,
+                        const Tscal *cs0,
+                        Tscal *pressure,
+                        Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho   = rho_h(pmass, h[gid], hfactd);
+                        Tscal cs0_a = cs0[gid];
+                        internal_eos(cs0_a, rho, pressure[gid], soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const {
+            return "ComputeEOSLocallyIsothermal";
+        };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
+
+#define NODE_EDGES(X_RO, X_RW, X_RO_OPTIONAL, X_RW_OPTIONAL)                                       \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, mu_e)                                            \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, density_unit)                                    \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pressure_unit)                                   \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, velocity_unit)                                   \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_rho)                             \
+    X_RO_OPTIONAL(shamrock::solvergraph::IFieldSpan<Tscal>, spans_h)                               \
+    X_RO(shamrock::solvergraph::Indexes<u32>, sizes)                                               \
+                                                                                                   \
+    /* ------------------- outputs ------------------- */                                          \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_pressure)                                 \
+    X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, spans_soundspeed)
+
+namespace shammodels::common::modules {
+    template<class Tvec>
+    class ComputeEOSFermi : public shamrock::solvergraph::INode {
+
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        public:
+        ComputeEOSFermi() = default;
+
+        EXPAND_NODE_EDGES_OPTIONAL(NODE_EDGES)
+
+        inline static void internal_eos(
+            const Tscal &mu_e,
+            const Tscal &density_unit,
+            const Tscal &pressure_unit,
+            const Tscal &velocity_unit,
+            const Tscal &rho,
+            Tscal &pressure,
+            Tscal &soundspeed) noexcept {
+            using EOS      = shamphys::EOS_Fermi<Tscal>;
+            auto const res = EOS::pressure_and_soundspeed(mu_e, rho * density_unit);
+            pressure       = res.pressure / pressure_unit;
+            soundspeed     = res.soundspeed / velocity_unit;
+        }
+
+        inline void _impl_evaluate_internal() {
+
+            __shamrock_stack_entry();
+
+            auto edges = get_edges();
+
+            bool has_rho = edges.spans_rho.has_value();
+            bool has_h   = edges.spans_h.has_value();
+
+            // must have either rho or h
+            if ((has_rho && has_h) || (!has_rho && !has_h)) {
+                throw shambase::make_except_with_loc<std::invalid_argument>(
+                    "Must have either rho or h");
+            }
+
+            edges.spans_pressure.ensure_sizes(edges.sizes.indexes);
+            edges.spans_soundspeed.ensure_sizes(edges.sizes.indexes);
+
+            Tscal mu_e          = edges.mu_e.data;
+            Tscal density_unit  = edges.density_unit.data;
+            Tscal pressure_unit = edges.pressure_unit.data;
+            Tscal velocity_unit = edges.velocity_unit.data;
+            Tscal pmass         = edges.pmass.data;
+            Tscal hfactd        = edges.hfactd.data;
+
+            auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
+
+            auto out_refs = sham::DDMultiRef{
+                edges.spans_pressure.get_spans(), edges.spans_soundspeed.get_spans()};
+
+            if (has_rho) {
+                auto &spans_rho = edges.spans_rho.value().get();
+                spans_rho.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_rho.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [mu_e, density_unit, pressure_unit, velocity_unit](
+                        u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
+                        Tscal rho_a = rho[gid];
+                        internal_eos(
+                            mu_e,
+                            density_unit,
+                            pressure_unit,
+                            velocity_unit,
+                            rho_a,
+                            pressure[gid],
+                            soundspeed[gid]);
+                    });
+            } else if (has_h) {
+                auto &spans_h = edges.spans_h.value().get();
+                spans_h.check_sizes(edges.sizes.indexes);
+
+                sham::distributed_data_kernel_call(
+                    dev_sched,
+                    sham::DDMultiRef{spans_h.get_spans()},
+                    out_refs,
+                    edges.sizes.indexes,
+                    [mu_e, density_unit, pressure_unit, velocity_unit, pmass, hfactd](
+                        u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
+                        using namespace shamrock::sph;
+                        Tscal rho = rho_h(pmass, h[gid], hfactd);
+                        internal_eos(
+                            mu_e,
+                            density_unit,
+                            pressure_unit,
+                            velocity_unit,
+                            rho,
+                            pressure[gid],
+                            soundspeed[gid]);
+                    });
+            }
+        }
+
+        inline virtual std::string _impl_get_label() const { return "ComputeEOSFermi"; };
+
+        inline virtual std::string _impl_get_tex() const { return "TODO"; };
+    };
+} // namespace shammodels::common::modules
+
+#undef NODE_EDGES
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal(
-    const shamrock::solvergraph::IDataEdge<Tscal> &hfactd,
-    const shamrock::solvergraph::IDataEdge<Tscal> &pmass,
-    const std::optional<std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>>
-        spans_rho,
-    const std::optional<std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>>
-        spans_h,
-    const std::optional<std::reference_wrapper<const shamrock::solvergraph::IFieldSpan<Tscal>>>
-        spans_uint,
-    const shamrock::solvergraph::Indexes<u32> &sizes,
-    shamrock::solvergraph::IFieldSpan<Tscal> &spans_pressure,
-    shamrock::solvergraph::IFieldSpan<Tscal> &spans_soundspeed) {
+    const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &hfactd,
+    const std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> &pmass,
+    const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &spans_rho,
+    const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &spans_h,
+    const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &spans_uint,
+    const std::shared_ptr<shamrock::solvergraph::Indexes<u32>> &sizes,
+    const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_pressure,
+    const std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>> &spans_soundspeed) {
 
     shamrock::patch::PatchDataLayerLayout &ghost_layout
         = shambase::get_check_ref(storage.ghost_layout.get());
@@ -62,8 +618,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
     auto dev_sched       = shamsys::instance::get_compute_scheduler_ptr();
 
-    shambase::get_check_ref(storage.pressure).ensure_sizes(sizes.indexes);
-    shambase::get_check_ref(storage.soundspeed).ensure_sizes(sizes.indexes);
+    const auto &sizes_indexes = shambase::get_check_ref(sizes).indexes;
+
+    shambase::get_check_ref(storage.pressure).ensure_sizes(sizes_indexes);
+    shambase::get_check_ref(storage.soundspeed).ensure_sizes(sizes_indexes);
 
     bool has_rho = spans_rho.has_value();
     bool has_h   = spans_h.has_value();
@@ -73,218 +631,97 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         throw shambase::make_except_with_loc<std::invalid_argument>("Must have either rho or h");
     }
 
-    auto out_refs = sham::DDMultiRef{spans_pressure.get_spans(), spans_soundspeed.get_spans()};
+    auto map_opt_span
+        = [](const std::optional<std::shared_ptr<shamrock::solvergraph::IFieldSpan<Tscal>>> &opt)
+        -> std::optional<std::reference_wrapper<shamrock::solvergraph::IFieldSpan<Tscal>>> {
+        if (!opt.has_value()) {
+            return std::nullopt;
+        }
+        return std::ref(shambase::get_check_ref(opt.value()));
+    };
+
+    struct Edges {
+        const std::optional<std::reference_wrapper<shamrock::solvergraph::IFieldSpan<Tscal>>>
+            spans_rho;
+        const std::optional<std::reference_wrapper<shamrock::solvergraph::IFieldSpan<Tscal>>>
+            spans_h;
+        const std::optional<std::reference_wrapper<shamrock::solvergraph::IFieldSpan<Tscal>>>
+            spans_uint;
+    } edges{map_opt_span(spans_rho), map_opt_span(spans_h), map_opt_span(spans_uint)};
+
+    auto out_refs = sham::DDMultiRef{
+        shambase::get_check_ref(spans_pressure).get_spans(),
+        shambase::get_check_ref(spans_soundspeed).get_spans()};
 
     if (SolverEOS_Isothermal *eos_config
         = std::get_if<SolverEOS_Isothermal>(&solver_config.eos_config.config)) {
 
-        Tscal cs      = eos_config->cs;
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
+        auto cs  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("cs", "c_s");
+        cs->data = eos_config->cs;
 
-        using EOS = shamphys::EOS_Isothermal<Tscal>;
-
-        auto eos_internal = [](Tscal cs, Tscal rho, Tscal &pressure, Tscal &soundspeed) {
-            using EOS  = shamphys::EOS_Isothermal<Tscal>;
-            pressure   = EOS::pressure(cs, rho);
-            soundspeed = cs;
-        };
-
-        if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_rho_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [cs, eos_internal](u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
-                    Tscal rho_a = rho[gid];
-                    eos_internal(cs, rho_a, pressure[gid], soundspeed[gid]);
-                });
-        } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_h_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [cs, pmass_, hfactd_, eos_internal](
-                    u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
-                    using namespace shamrock::sph;
-                    Tscal rho = rho_h(pmass_, h[gid], hfactd_);
-                    eos_internal(cs, rho, pressure[gid], soundspeed[gid]);
-                });
-        }
+        shammodels::common::modules::ComputeEOSIsothermal<Tvec> node;
+        node.set_edges(
+            cs, hfactd, pmass, spans_rho, spans_h, sizes, spans_pressure, spans_soundspeed);
+        node.evaluate();
     } else if (
         SolverEOS_Adiabatic *eos_config
         = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
 
-        Tscal gamma   = eos_config->gamma;
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
+        auto gamma  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma", "\\gamma");
+        gamma->data = eos_config->gamma;
 
-        using EOS = shamphys::EOS_Adiabatic<Tscal>;
-
-        auto eos_internal
-            = [](Tscal gamma, Tscal rho, Tscal uint, Tscal &pressure, Tscal &soundspeed) {
-                  using EOS  = shamphys::EOS_Adiabatic<Tscal>;
-                  Tscal P_a  = EOS::pressure(gamma, rho, uint);
-                  Tscal cs_a = EOS::cs_from_p(gamma, rho, P_a);
-                  pressure   = P_a;
-                  soundspeed = cs_a;
-              };
-
-        if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_rho_.get_spans(), spans_uint.value().get().get_spans()},
-                out_refs,
-                sizes.indexes,
-                [gamma, pmass_, hfactd_, eos_internal](
-                    u32 gid,
-                    const Tscal *rho,
-                    const Tscal *uint,
-                    Tscal *pressure,
-                    Tscal *soundspeed) {
-                    Tscal rho_a  = rho[gid];
-                    Tscal uint_a = uint[gid];
-                    eos_internal(gamma, rho_a, uint_a, pressure[gid], soundspeed[gid]);
-                });
-        } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_h_.get_spans(), spans_uint.value().get().get_spans()},
-                out_refs,
-                sizes.indexes,
-                [gamma, pmass_, hfactd_, eos_internal](
-                    u32 gid,
-                    const Tscal *h,
-                    const Tscal *uint,
-                    Tscal *pressure,
-                    Tscal *soundspeed) {
-                    using namespace shamrock::sph;
-                    Tscal rho    = rho_h(pmass_, h[gid], hfactd_);
-                    Tscal uint_a = uint[gid];
-                    eos_internal(gamma, rho, uint_a, pressure[gid], soundspeed[gid]);
-                });
-        }
-
+        shammodels::common::modules::ComputeEOSAdiabatic<Tvec> node;
+        node.set_edges(
+            gamma,
+            hfactd,
+            pmass,
+            spans_rho,
+            spans_h,
+            spans_uint.value(),
+            sizes,
+            spans_pressure,
+            spans_soundspeed);
+        node.evaluate();
     } else if (
         SolverEOS_Polytropic *eos_config
         = std::get_if<SolverEOS_Polytropic>(&solver_config.eos_config.config)) {
 
-        using EOS = shamphys::EOS_Polytropic<Tscal>;
+        auto K      = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("K", "K");
+        auto gamma  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("gamma", "\\gamma");
+        K->data     = eos_config->K;
+        gamma->data = eos_config->gamma;
 
-        Tscal K       = eos_config->K;
-        Tscal gamma   = eos_config->gamma;
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
-
-        auto eos_internal
-            = [](Tscal K, Tscal gamma, Tscal rho_a, Tscal &pressure, Tscal &soundspeed) {
-                  using EOS  = shamphys::EOS_Polytropic<Tscal>;
-                  Tscal P_a  = EOS::pressure(gamma, K, rho_a);
-                  Tscal cs_a = EOS::soundspeed(gamma, K, rho_a);
-                  pressure   = P_a;
-                  soundspeed = cs_a;
-              };
-
-        if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_rho_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [K, gamma, pmass_, hfactd_, eos_internal](
-                    u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
-                    Tscal rho_a = rho[gid];
-                    eos_internal(K, gamma, rho_a, pressure[gid], soundspeed[gid]);
-                });
-        } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_h_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [K, gamma, pmass_, hfactd_, eos_internal](
-                    u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
-                    using namespace shamrock::sph;
-                    Tscal rho = rho_h(pmass_, h[gid], hfactd_);
-                    eos_internal(K, gamma, rho, pressure[gid], soundspeed[gid]);
-                });
-        }
-
+        shammodels::common::modules::ComputeEOSPolytropic<Tvec> node;
+        node.set_edges(
+            K, gamma, hfactd, pmass, spans_rho, spans_h, sizes, spans_pressure, spans_soundspeed);
+        node.evaluate();
     } else if (
-        SolverEOS_LocallyIsothermal *eos_config
+        [[maybe_unused]] SolverEOS_LocallyIsothermal *eos_config
         = std::get_if<SolverEOS_LocallyIsothermal>(&solver_config.eos_config.config)) {
-
-        using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
         u32 isoundspeed_interf = ghost_layout.get_field_idx<Tscal>("soundspeed");
 
-        shamrock::solvergraph::FieldRefs<Tscal> soundspeed_refs{"", ""};
+        auto soundspeed_refs
+            = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("cs0", "c_{s,0}");
         auto refs = storage.merged_patchdata_ghost.get()
                         .template map<shamrock::solvergraph::PatchDataFieldRef<Tscal>>(
                             [&](u64 id, PatchDataLayer &mpdat)
                                 -> shamrock::solvergraph::PatchDataFieldRef<Tscal> {
                                 return mpdat.get_field<Tscal>(isoundspeed_interf);
                             });
-        soundspeed_refs.set_refs(refs);
+        soundspeed_refs->set_refs(refs);
 
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
-
-        auto eos_internal = [](Tscal cs0, Tscal rho_a, Tscal &pressure, Tscal &soundspeed) {
-            using EOS  = shamphys::EOS_LocallyIsothermal<Tscal>;
-            pressure   = EOS::pressure_from_cs(cs0 * cs0, rho_a);
-            soundspeed = cs0;
-        };
-
-        if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_rho_.get_spans(), soundspeed_refs.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [eos_internal](
-                    u32 gid,
-                    const Tscal *rho,
-                    const Tscal *cs0,
-                    Tscal *pressure,
-                    Tscal *soundspeed) {
-                    Tscal rho_a = rho[gid];
-                    Tscal cs0_a = cs0[gid];
-                    eos_internal(cs0_a, rho_a, pressure[gid], soundspeed[gid]);
-                });
-        } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_h_.get_spans(), soundspeed_refs.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [pmass_, hfactd_, eos_internal](
-                    u32 gid, const Tscal *h, const Tscal *cs0, Tscal *pressure, Tscal *soundspeed) {
-                    using namespace shamrock::sph;
-                    Tscal rho   = rho_h(pmass_, h[gid], hfactd_);
-                    Tscal cs0_a = cs0[gid];
-                    eos_internal(cs0_a, rho, pressure[gid], soundspeed[gid]);
-                });
-        }
-
+        shammodels::common::modules::ComputeEOSLocallyIsothermal<Tvec> node;
+        node.set_edges(
+            hfactd,
+            pmass,
+            spans_rho,
+            spans_h,
+            soundspeed_refs,
+            sizes,
+            spans_pressure,
+            spans_soundspeed);
+        node.evaluate();
     } else if (
         SolverEOS_LocallyIsothermalLP07 *eos_config
         = std::get_if<SolverEOS_LocallyIsothermalLP07>(&solver_config.eos_config.config)) {
@@ -293,8 +730,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         Tscal r0sq = eos_config->r0 * eos_config->r0;
         Tscal mq   = -eos_config->q;
 
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
+        Tscal pmass_  = shambase::get_check_ref(pmass).data;
+        Tscal hfactd_ = shambase::get_check_ref(hfactd).data;
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
         auto refs
@@ -326,13 +763,13 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         };
 
         if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
+            auto &spans_rho_ = edges.spans_rho.value().get();
+            spans_rho_.check_sizes(sizes_indexes);
             sham::distributed_data_kernel_call(
                 dev_sched,
                 sham::DDMultiRef{spans_rho_.get_spans(), xyz_refs.get_spans()},
                 out_refs,
-                sizes.indexes,
+                sizes_indexes,
                 [cs0, r0sq, mq, eos_internal](
                     u32 gid,
                     const Tscal *rho,
@@ -344,13 +781,13 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                     eos_internal(R_a, cs0, r0sq, mq, rho_a, pressure[gid], soundspeed[gid]);
                 });
         } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
+            auto &spans_h_ = edges.spans_h.value().get();
+            spans_h_.check_sizes(sizes_indexes);
             sham::distributed_data_kernel_call(
                 dev_sched,
                 sham::DDMultiRef{spans_h_.get_spans(), xyz_refs.get_spans()},
                 out_refs,
-                sizes.indexes,
+                sizes_indexes,
                 [cs0, r0sq, mq, pmass_, hfactd_, eos_internal](
                     u32 gid, const Tscal *h, const Tvec *xyz, Tscal *pressure, Tscal *soundspeed) {
                     using namespace shamrock::sph;
@@ -366,20 +803,18 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
 
         Tscal G        = solver_config.get_constant_G();
         Tscal h_over_r = eos_config->h_over_r;
-        Tscal pmass_   = pmass.data;
-        Tscal hfactd_  = hfactd.data;
+        Tscal pmass_   = shambase::get_check_ref(pmass).data;
+        Tscal hfactd_  = shambase::get_check_ref(hfactd).data;
 
         using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
-        auto &sink_parts = storage.sinks.get();
-        std::vector<Tvec> sink_pos;
-        std::vector<Tscal> sink_mass;
-        u32 sink_cnt = 0;
+        auto &sink_pos  = get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &sink_mass = get_sink_mass<Tvec>(scheduler().synchronized_data);
+        u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
 
-        for (auto &s : sink_parts) {
-            sink_pos.push_back(s.pos);
-            sink_mass.push_back(s.mass);
-            sink_cnt++;
+        if (sink_cnt == 0) {
+            throw shambase::make_except_with_loc<std::runtime_error>(
+                "No sinks found for the equation of state");
         }
 
         shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
@@ -423,10 +858,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         };
 
         if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
+            auto &spans_rho_ = edges.spans_rho.value().get();
+            spans_rho_.check_sizes(sizes_indexes);
 
-            sizes.indexes.for_each([&](u64 id, u32 count) {
+            sizes_indexes.for_each([&](u64 id, u32 count) {
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
@@ -460,10 +895,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
             });
 
         } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
+            auto &spans_h_ = edges.spans_h.value().get();
+            spans_h_.check_sizes(sizes_indexes);
 
-            sizes.indexes.for_each([&](u64 id, u32 count) {
+            sizes_indexes.for_each([&](u64 id, u32 count) {
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
@@ -506,22 +941,23 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         Tscal cs0     = eos_config->cs0;
         Tscal r0      = eos_config->r0;
         Tscal q_      = eos_config->q;
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
+        Tscal pmass_  = shambase::get_check_ref(pmass).data;
+        Tscal hfactd_ = shambase::get_check_ref(hfactd).data;
         u32 n_sinks   = eos_config->n_sinks;
 
         Tscal inv_r0_q = 1. / sycl::pow(r0, q_);
 
         using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
 
-        auto &sink_parts = storage.sinks.get();
+        auto &all_sink_pos  = get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &all_sink_mass = get_sink_mass<Tvec>(scheduler().synchronized_data);
         std::vector<Tvec> sink_pos;
         std::vector<Tscal> sink_mass;
         u32 sink_cnt = 0;
 
-        for (auto &s : sink_parts) {
-            sink_pos.push_back(s.pos);
-            sink_mass.push_back(s.mass);
+        for (size_t i = 0; i < all_sink_pos.size(); i++) {
+            sink_pos.push_back(all_sink_pos[i]);
+            sink_mass.push_back(all_sink_mass[i]);
             sink_cnt++;
             if (sink_pos.size() >= n_sinks) { // We only consider the first n_sinks sinks
                 break;
@@ -577,10 +1013,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         };
 
         if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
+            auto &spans_rho_ = edges.spans_rho.value().get();
+            spans_rho_.check_sizes(sizes_indexes);
 
-            sizes.indexes.for_each([&](u64 id, u32 count) {
+            sizes_indexes.for_each([&](u64 id, u32 count) {
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
@@ -614,10 +1050,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
                     });
             });
         } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
+            auto &spans_h_ = edges.spans_h.value().get();
+            spans_h_.check_sizes(sizes_indexes);
 
-            sizes.indexes.for_each([&](u64 id, u32 count) {
+            sizes_indexes.for_each([&](u64 id, u32 count) {
                 sham::kernel_call(
                     q,
                     sham::MultiRef{
@@ -664,52 +1100,35 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos_internal
         Tscal length = unit_sys.template to<units::metre>();
         Tscal time   = unit_sys.template to<units::second>();
 
-        Tscal pressure_unit = mass / length / (time * time);
-        Tscal density_unit  = mass / (length * length * length);
-        Tscal velocity_unit = length / time;
+        auto mu_e  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("mu_e", "\\mu_e");
+        mu_e->data = eos_config->mu_e;
 
-        Tscal mu_e = eos_config->mu_e;
+        auto density_unit
+            = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("density_unit", "\\rho_u");
+        density_unit->data = mass / (length * length * length);
 
-        Tscal pmass_  = pmass.data;
-        Tscal hfactd_ = hfactd.data;
+        auto pressure_unit
+            = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("pressure_unit", "P_u");
+        pressure_unit->data = mass / length / (time * time);
 
-        auto eos_internal = [density_unit, pressure_unit, velocity_unit](
-                                Tscal mu_e, Tscal rho_a, Tscal &pressure, Tscal &soundspeed) {
-            using EOS      = shamphys::EOS_Fermi<Tscal>;
-            auto const res = EOS::pressure_and_soundspeed(mu_e, rho_a * density_unit);
-            pressure       = res.pressure / pressure_unit;
-            soundspeed     = res.soundspeed / velocity_unit;
-        };
+        auto velocity_unit
+            = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("velocity_unit", "v_u");
+        velocity_unit->data = length / time;
 
-        if (has_rho) {
-            auto &spans_rho_ = spans_rho.value().get();
-            spans_rho_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_rho_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [mu_e,
-                 eos_internal](u32 gid, const Tscal *rho, Tscal *pressure, Tscal *soundspeed) {
-                    Tscal rho_a = rho[gid];
-                    eos_internal(mu_e, rho_a, pressure[gid], soundspeed[gid]);
-                });
-        } else if (has_h) {
-            auto &spans_h_ = spans_h.value().get();
-            spans_h_.check_sizes(sizes.indexes);
-            sham::distributed_data_kernel_call(
-                dev_sched,
-                sham::DDMultiRef{spans_h_.get_spans()},
-                out_refs,
-                sizes.indexes,
-                [mu_e, pmass_, hfactd_, eos_internal](
-                    u32 gid, const Tscal *h, Tscal *pressure, Tscal *soundspeed) {
-                    using namespace shamrock::sph;
-                    Tscal rho_a = rho_h(pmass_, h[gid], hfactd_);
-                    eos_internal(mu_e, rho_a, pressure[gid], soundspeed[gid]);
-                });
-        }
-
+        shammodels::common::modules::ComputeEOSFermi<Tvec> node;
+        node.set_edges(
+            mu_e,
+            density_unit,
+            pressure_unit,
+            velocity_unit,
+            hfactd,
+            pmass,
+            spans_rho,
+            spans_h,
+            sizes,
+            spans_pressure,
+            spans_soundspeed);
+        node.evaluate();
     } else {
         shambase::throw_unimplemented();
     }
@@ -730,15 +1149,15 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
     u32 ihpart_interf = ghost_layout.get_field_idx<Tscal>("hpart");
     u32 iuint_interf  = ghost_layout.get_field_idx<Tscal>("uint");
 
-    shamrock::solvergraph::IDataEdge<Tscal> hfactd("hfactd", "hfactd");
-    shamrock::solvergraph::IDataEdge<Tscal> pmass("pmass", "pmass");
+    auto hfactd = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("hfactd", "hfactd");
+    auto pmass  = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("pmass", "pmass");
 
-    hfactd.data = Kernel::hfactd;
-    pmass.data  = gpart_mass;
+    hfactd->data = Kernel::hfactd;
+    pmass->data  = gpart_mass;
 
-    auto &sizes = shambase::get_check_ref(storage.part_counts_with_ghost);
+    auto sizes = storage.part_counts_with_ghost;
 
-    shamrock::solvergraph::FieldRefs<Tscal> h_refs{"", ""};
+    auto h_refs = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
     {
         auto refs = storage.merged_patchdata_ghost.get()
                         .template map<shamrock::solvergraph::PatchDataFieldRef<Tscal>>(
@@ -746,10 +1165,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                                 -> shamrock::solvergraph::PatchDataFieldRef<Tscal> {
                                 return mpdat.get_field<Tscal>(ihpart_interf);
                             });
-        h_refs.set_refs(refs);
+        h_refs->set_refs(refs);
     }
 
-    shamrock::solvergraph::FieldRefs<Tscal> uint_refs{"", ""};
+    auto uint_refs = shamrock::solvergraph::FieldRefs<Tscal>::make_shared("", "");
     {
         auto refs = storage.merged_patchdata_ghost.get()
                         .template map<shamrock::solvergraph::PatchDataFieldRef<Tscal>>(
@@ -757,7 +1176,7 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
                                 -> shamrock::solvergraph::PatchDataFieldRef<Tscal> {
                                 return mpdat.get_field<Tscal>(iuint_interf);
                             });
-        uint_refs.set_refs(refs);
+        uint_refs->set_refs(refs);
     }
 
     auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
@@ -767,13 +1186,11 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
         u32 iepsilon_interf = ghost_layout.get_field_idx<Tscal>("epsilon");
         u32 nvar_dust       = solver_config.dust_config.get_dust_nvar();
 
-        shamrock::solvergraph::Field<Tscal> rho_g
-            = shamrock::solvergraph::Field<Tscal>(1, "rho_g", "rho_g");
-        shamrock::solvergraph::Field<Tscal> uint_g
-            = shamrock::solvergraph::Field<Tscal>(1, "uint_g", "uint_g");
+        auto rho_g  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "rho_g", "rho_g");
+        auto uint_g = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "uint_g", "uint_g");
 
-        rho_g.ensure_sizes(sizes.indexes);
-        uint_g.ensure_sizes(sizes.indexes);
+        rho_g->ensure_sizes(shambase::get_check_ref(sizes).indexes);
+        uint_g->ensure_sizes(shambase::get_check_ref(sizes).indexes);
 
         shamrock::solvergraph::FieldRefs<Tscal> epsilon_refs{"", ""};
         auto refs = storage.merged_patchdata_ghost.get()
@@ -786,10 +1203,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
         sham::distributed_data_kernel_call(
             dev_sched,
-            sham::DDMultiRef{h_refs.get_spans(), uint_refs.get_spans(), epsilon_refs.get_spans()},
-            sham::DDMultiRef{rho_g.get_spans(), uint_g.get_spans()},
-            sizes.indexes,
-            [pmass = pmass.data, hfactd = hfactd.data, nvar_dust](
+            sham::DDMultiRef{h_refs->get_spans(), uint_refs->get_spans(), epsilon_refs.get_spans()},
+            sham::DDMultiRef{rho_g->get_spans(), uint_g->get_spans()},
+            shambase::get_check_ref(sizes).indexes,
+            [pmass = pmass->data, hfactd = hfactd->data, nvar_dust](
                 u32 gid,
                 const Tscal *h,
                 const Tscal *uint,
@@ -819,20 +1236,18 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             std::nullopt,
             uint_g,
             sizes,
-            shambase::get_check_ref(storage.pressure),
-            shambase::get_check_ref(storage.soundspeed));
+            storage.pressure,
+            storage.soundspeed);
     } else if (solver_config.dust_config.has_s_j_field()) {
 
         u32 is_j_interf = ghost_layout.get_field_idx<Tscal>("s_j");
         u32 nvar_dust   = solver_config.dust_config.get_dust_nvar();
 
-        shamrock::solvergraph::Field<Tscal> rho_g
-            = shamrock::solvergraph::Field<Tscal>(1, "rho_g", "rho_g");
-        shamrock::solvergraph::Field<Tscal> uint_g
-            = shamrock::solvergraph::Field<Tscal>(1, "uint_g", "uint_g");
+        auto rho_g  = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "rho_g", "rho_g");
+        auto uint_g = std::make_shared<shamrock::solvergraph::Field<Tscal>>(1, "uint_g", "uint_g");
 
-        rho_g.ensure_sizes(sizes.indexes);
-        uint_g.ensure_sizes(sizes.indexes);
+        rho_g->ensure_sizes(shambase::get_check_ref(sizes).indexes);
+        uint_g->ensure_sizes(shambase::get_check_ref(sizes).indexes);
 
         shamrock::solvergraph::FieldRefs<Tscal> s_j_refs{"", ""};
         auto refs = storage.merged_patchdata_ghost.get()
@@ -845,10 +1260,10 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
 
         sham::distributed_data_kernel_call(
             dev_sched,
-            sham::DDMultiRef{h_refs.get_spans(), uint_refs.get_spans(), s_j_refs.get_spans()},
-            sham::DDMultiRef{rho_g.get_spans(), uint_g.get_spans()},
-            sizes.indexes,
-            [pmass = pmass.data, hfactd = hfactd.data, nvar_dust](
+            sham::DDMultiRef{h_refs->get_spans(), uint_refs->get_spans(), s_j_refs.get_spans()},
+            sham::DDMultiRef{rho_g->get_spans(), uint_g->get_spans()},
+            shambase::get_check_ref(sizes).indexes,
+            [pmass = pmass->data, hfactd = hfactd->data, nvar_dust](
                 u32 gid,
                 const Tscal *h,
                 const Tscal *uint,
@@ -879,8 +1294,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             std::nullopt,
             uint_g,
             sizes,
-            shambase::get_check_ref(storage.pressure),
-            shambase::get_check_ref(storage.soundspeed));
+            storage.pressure,
+            storage.soundspeed);
     } else {
 
         compute_eos_internal(
@@ -890,8 +1305,8 @@ void shammodels::sph::modules::ComputeEos<Tvec, SPHKernel>::compute_eos() {
             h_refs,
             uint_refs,
             sizes,
-            shambase::get_check_ref(storage.pressure),
-            shambase::get_check_ref(storage.soundspeed));
+            storage.pressure,
+            storage.soundspeed);
     }
 }
 

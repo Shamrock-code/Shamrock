@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Top 10 files that took longest to parse</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #3c3836;
+        --muted: #665c54;
+        --grid: #d5c4a1;
+      }
+
+      html[data-theme="dark"] {
+        --bg: #282828;
+        --fg: #ebdbb2;
+        --muted: #a89984;
+        --grid: #504945;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, sans-serif;
+      }
+
+      #chart {
+        width: 100%;
+        height: 100%;
+      }
+
+      #status {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      #status[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">Loading parse time history…</div>
+    <div id="chart"></div>
+    <script>
+      const DATA_URLS = [
+        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/parse_time_top10.json",
+        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/parse_time_top10.json",
+      ];
+      // Vertical markers on the date axis (ISO datetime, UTC).
+      const PLOT_EVENTS = [
+        { date: "2026-08-17T13:43:38Z", text: "force -j 4 in gh-runners" },
+      ];
+
+      function parentTheme() {
+        try {
+          if (window.parent && window.parent !== window) {
+            const theme = window.parent.document.documentElement.getAttribute("data-theme");
+            if (theme === "dark" || theme === "light") {
+              return theme;
+            }
+          }
+        } catch (err) {
+          /* Cross-origin parent: fall back to prefers-color-scheme. */
+        }
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+
+      function eventDecorations(theme, traces) {
+        const dark = theme === "dark";
+        const color = dark ? "#fabd2f" : "#b57614";
+        const bgcolor = dark ? "rgba(40, 40, 40, 0.9)" : "rgba(255, 255, 255, 0.9)";
+        let xMin = null;
+        let xMax = null;
+        const xs = traces && traces[0] && Array.isArray(traces[0].x) ? traces[0].x : [];
+        if (xs.length > 0) {
+          xMin = Date.parse(xs[0]);
+          xMax = Date.parse(xs[xs.length - 1]);
+        }
+        const shapes = [];
+        const annotations = [];
+        for (const event of PLOT_EVENTS) {
+          const eventMs = Date.parse(event.date);
+          const nearEnd =
+            xMin !== null && xMax !== null && xMax > xMin
+              ? (eventMs - xMin) / (xMax - xMin) > 0.7
+              : true;
+          shapes.push({
+            type: "line",
+            x0: event.date,
+            x1: event.date,
+            y0: 0,
+            y1: 1,
+            xref: "x",
+            yref: "paper",
+            line: { color, width: 1.5, dash: "dot" },
+          });
+          annotations.push({
+            x: event.date,
+            y: 0.98,
+            xref: "x",
+            yref: "paper",
+            text: event.text,
+            showarrow: false,
+            xanchor: nearEnd ? "right" : "left",
+            yanchor: "top",
+            xshift: nearEnd ? -8 : 8,
+            font: { color, size: 12 },
+            bgcolor,
+            bordercolor: color,
+            borderwidth: 1,
+            borderpad: 4,
+          });
+        }
+        return { shapes, annotations };
+      }
+
+      function themedLayout(baseLayout, theme, traces) {
+        const dark = theme === "dark";
+        const bg = dark ? "#282828" : "#fff";
+        const fg = dark ? "#ebdbb2" : "#3c3836";
+        const muted = dark ? "#a89984" : "#665c54";
+        const grid = dark ? "#504945" : "#d5c4a1";
+        const layout = Object.assign({}, baseLayout || {});
+        const title = Object.assign({}, layout.title || {});
+        title.font = Object.assign({ size: 18 }, title.font || {}, { color: fg });
+        layout.title = title;
+        layout.paper_bgcolor = bg;
+        layout.plot_bgcolor = bg;
+        layout.font = Object.assign({}, layout.font || {}, { color: fg });
+        layout.xaxis = Object.assign({}, layout.xaxis || {}, {
+          gridcolor: grid,
+          zerolinecolor: grid,
+          linecolor: muted,
+          tickfont: { color: muted },
+        });
+        layout.yaxis = Object.assign({}, layout.yaxis || {}, {
+          gridcolor: grid,
+          zerolinecolor: grid,
+          linecolor: muted,
+          tickfont: { color: muted },
+        });
+        const events = eventDecorations(theme, traces);
+        layout.shapes = events.shapes;
+        layout.annotations = events.annotations;
+        return layout;
+      }
+
+      function plotlyTraces(payload) {
+        if (!payload || !Array.isArray(payload.data)) {
+          throw new Error("Unexpected dataset shape: missing Plotly data[]");
+        }
+        return payload.data.filter(
+          (trace) =>
+            trace &&
+            Array.isArray(trace.x) &&
+            Array.isArray(trace.y) &&
+            trace.x.length === trace.y.length &&
+            trace.x.length > 0
+        );
+      }
+
+      async function fetchDataset() {
+        const errors = [];
+        for (const url of DATA_URLS) {
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+            return await response.json();
+          } catch (err) {
+            errors.push(`${url}: ${err.message}`);
+          }
+        }
+        throw new Error(errors.join("; "));
+      }
+
+      function setStatus(message) {
+        const status = document.getElementById("status");
+        if (message) {
+          status.textContent = message;
+          status.hidden = false;
+        } else {
+          status.hidden = true;
+        }
+      }
+
+      async function main() {
+        const chart = document.getElementById("chart");
+        let theme = parentTheme();
+        applyTheme(theme);
+
+        let payload;
+        try {
+          payload = await fetchDataset();
+        } catch (err) {
+          setStatus(`Could not load parse time history.\n${err.message}`);
+          return;
+        }
+
+        const traces = plotlyTraces(payload);
+        if (traces.length === 0) {
+          setStatus("The parse time dataset is empty.");
+          return;
+        }
+
+        const config = { responsive: true, displaylogo: false };
+        await Plotly.newPlot(chart, traces, themedLayout(payload.layout, theme, traces), config);
+        setStatus("");
+
+        const restyle = () => {
+          theme = parentTheme();
+          applyTheme(theme);
+          Plotly.react(chart, traces, themedLayout(payload.layout, theme, traces));
+        };
+
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+
+        try {
+          if (window.parent && window.parent !== window) {
+            const observer = new MutationObserver(restyle);
+            observer.observe(window.parent.document.documentElement, {
+              attributes: true,
+              attributeFilter: ["data-theme"],
+            });
+          }
+        } catch (err) {
+          /* Ignore if the parent document is not readable. */
+        }
+      }
+
+      main();
+    </script>
+  </body>
+</html>

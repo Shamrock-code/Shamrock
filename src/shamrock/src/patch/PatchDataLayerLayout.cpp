@@ -15,6 +15,7 @@
  */
 
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include <nlohmann/json.hpp>
 
 namespace shamrock::patch {
     std::string PatchDataLayerLayout::get_description_str() const {
@@ -90,6 +91,17 @@ namespace shamrock::patch {
         }
 
         return ret;
+    }
+
+    bool PatchDataLayerLayout::has_field_name(const std::string &field_name) const {
+        for (const var_t &fvar : fields) {
+            if (fvar.visit_return([&](const auto &arg) {
+                    return field_name == arg.name;
+                })) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void to_json(nlohmann::json &j, const PatchDataLayerLayout &p) {

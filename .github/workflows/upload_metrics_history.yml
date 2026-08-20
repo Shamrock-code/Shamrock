@@ -1,0 +1,68 @@
+name: Upload metrics history
+
+# Reusable workflow that commits aggregated metrics.json from the current
+# workflow run to the metrics-history orphan branch as
+# aggregated/<date_time>.json, then rebuilds the JS plot datasets in output/.
+# Set push to false to dry-run the commit without updating the remote branch.
+
+on:
+  workflow_call:
+    inputs:
+      push:
+        description: "Whether to push the metrics-history commit to origin"
+        required: true
+        type: boolean
+
+jobs:
+  upload_metrics_history:
+    name: Commit aggregated metrics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reconfigure git
+        run: |
+          git config --global --add safe.directory '*'
+          git config --global --list
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: Shamrock-code/action-ensure-orphan-branch@c18ff0971932d59862ce52112925a5f5fc5c19f0
+        if: ${{ inputs.push }}
+        with:
+          branch_name: metrics-history
+
+      - name: Download metrics artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: metrics.json
+          path: .
+
+      - name: Commit aggregated metrics to metrics-history
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # tools/ disappears after checking out the data-only orphan branch.
+          cp tools/make_metrics_datasets.py /tmp/make_metrics_datasets.py
+
+          git fetch origin metrics-history
+          git checkout metrics-history
+
+          date_time=$(python3 -c "import json; dt=json.load(open('metrics.json'))['datetime']; print(dt.replace(' ', '_').replace(':', '-'))")
+          mkdir -p aggregated
+          cp metrics.json "aggregated/${date_time}.json"
+
+          python3 /tmp/make_metrics_datasets.py . output
+
+          git add "aggregated/${date_time}.json"
+          git add -A output
+          git commit -m "Add aggregated metrics for ${date_time}"
+
+      - name: Show commit diff
+        run: git --no-pager show
+
+      - name: Push metrics-history
+        if: ${{ inputs.push }}
+        run: git push origin metrics-history

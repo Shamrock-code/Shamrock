@@ -58,7 +58,7 @@ def setup(arg: SetupArg, envgen: EnvGen):
         CUDA_PATH = "/usr/lib/cuda"
 
         if args.ucxurl is None or args.ompiurl is None:
-            raise "ucxurl and ompiurl must be set if custom mpi on"
+            raise ValueError("ucxurl and ompiurl must be set if custom mpi on")
 
         envgen.ENV_SCRIPT_HEADER += "#### mpi setup ####\n"
         envgen.ENV_SCRIPT_HEADER += 'export UCX_URL="' + args.ucxurl + '"\n'

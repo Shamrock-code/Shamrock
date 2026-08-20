@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Doxygen warning count</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
+    <style>
+      :root {
+        --bg: #fff;
+        --fg: #3c3836;
+        --muted: #665c54;
+        --grid: #d5c4a1;
+        --line: #076678;
+      }
+
+      html[data-theme="dark"] {
+        --bg: #282828;
+        --fg: #ebdbb2;
+        --muted: #a89984;
+        --grid: #504945;
+        --line: #83a598;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: system-ui, sans-serif;
+      }
+
+      #chart {
+        width: 100%;
+        height: 100%;
+      }
+
+      #status {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        text-align: center;
+        color: var(--muted);
+      }
+
+      #status[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="status">Loading Doxygen warning history…</div>
+    <div id="chart"></div>
+    <script>
+      const DATA_URLS = [
+        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/doxygen_warnings.json",
+        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/doxygen_warnings.json",
+      ];
+
+      function parentTheme() {
+        try {
+          if (window.parent && window.parent !== window) {
+            const theme = window.parent.document.documentElement.getAttribute("data-theme");
+            if (theme === "dark" || theme === "light") {
+              return theme;
+            }
+          }
+        } catch (err) {
+          /* Cross-origin parent: fall back to prefers-color-scheme. */
+        }
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      }
+
+      function applyTheme(theme) {
+        document.documentElement.setAttribute("data-theme", theme);
+      }
+
+      function paddedRange(values, integer) {
+        const nums = values.filter((value) => typeof value === "number" && Number.isFinite(value));
+        if (nums.length === 0) {
+          return undefined;
+        }
+        const min = Math.min(...nums);
+        const max = Math.max(...nums);
+        const span = max - min;
+        const pad = span === 0 ? Math.max(Math.abs(min) * 0.05, integer ? 1 : 0.05) : span * 0.1;
+        let lo = min - pad;
+        let hi = max + pad;
+        if (integer) {
+          lo = Math.floor(lo);
+          hi = Math.ceil(hi);
+          if (lo === hi) {
+            lo -= 1;
+            hi += 1;
+          }
+        }
+        if (min >= 0) {
+          lo = Math.max(0, lo);
+        }
+        return [lo, hi];
+      }
+
+      function chartLayout(theme, series) {
+        const dark = theme === "dark";
+        const bg = dark ? "#282828" : "#fff";
+        const fg = dark ? "#ebdbb2" : "#3c3836";
+        const muted = dark ? "#a89984" : "#665c54";
+        const grid = dark ? "#504945" : "#d5c4a1";
+        return {
+          title: { text: "Doxygen warning count", font: { color: fg, size: 18 } },
+          margin: { l: 64, r: 24, t: 48, b: 56 },
+          paper_bgcolor: bg,
+          plot_bgcolor: bg,
+          font: { color: fg },
+          xaxis: {
+            title: { text: "Date (UTC)" },
+            type: "date",
+            gridcolor: grid,
+            zerolinecolor: grid,
+            linecolor: muted,
+            tickfont: { color: muted },
+          },
+          yaxis: {
+            title: { text: "Warning count" },
+            gridcolor: grid,
+            zerolinecolor: grid,
+            linecolor: muted,
+            tickfont: { color: muted },
+            tickformat: "d",
+            autorange: false,
+            range: paddedRange(series.y, true),
+          },
+          hovermode: "x unified",
+        };
+      }
+
+      function toSeries(payload) {
+        if (!payload || !Array.isArray(payload.data)) {
+          throw new Error("Unexpected dataset shape: missing data[]");
+        }
+        const rows = payload.data
+          .filter(
+            (row) =>
+              row &&
+              typeof row.datetime === "string" &&
+              Number.isFinite(Number(row.doxygen_warning_count))
+          )
+          .slice()
+          .sort((a, b) => a.datetime.localeCompare(b.datetime));
+        return {
+          x: rows.map((row) => row.datetime),
+          y: rows.map((row) => Number(row.doxygen_warning_count)),
+        };
+      }
+
+      async function fetchDataset() {
+        const errors = [];
+        for (const url of DATA_URLS) {
+          try {
+            const response = await fetch(url, { cache: "no-store" });
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+            return await response.json();
+          } catch (err) {
+            errors.push(`${url}: ${err.message}`);
+          }
+        }
+        throw new Error(errors.join("; "));
+      }
+
+      function setStatus(message) {
+        const status = document.getElementById("status");
+        if (message) {
+          status.textContent = message;
+          status.hidden = false;
+        } else {
+          status.hidden = true;
+        }
+      }
+
+      async function main() {
+        const chart = document.getElementById("chart");
+        let theme = parentTheme();
+        applyTheme(theme);
+
+        let payload;
+        try {
+          payload = await fetchDataset();
+        } catch (err) {
+          setStatus(`Could not load Doxygen warning history.\n${err.message}`);
+          return;
+        }
+
+        const series = toSeries(payload);
+        if (series.x.length === 0) {
+          setStatus("The Doxygen warning dataset is empty.");
+          return;
+        }
+
+        const lineColor = theme === "dark" ? "#83a598" : "#076678";
+        await Plotly.newPlot(
+          chart,
+          [
+            {
+              type: "scatter",
+              mode: "lines+markers",
+              name: "doxygen_warning_count",
+              x: series.x,
+              y: series.y,
+              line: { color: lineColor, width: 2 },
+              marker: { color: lineColor, size: 8 },
+              hovertemplate:
+                "%{x|%Y-%m-%d %H:%M UTC}<br>warnings: %{y}<extra></extra>",
+            },
+          ],
+          chartLayout(theme, series),
+          { responsive: true, displaylogo: false }
+        );
+        setStatus("");
+
+        const restyle = () => {
+          theme = parentTheme();
+          applyTheme(theme);
+          const nextLine = theme === "dark" ? "#83a598" : "#076678";
+          Plotly.react(
+            chart,
+            [
+              {
+                type: "scatter",
+                mode: "lines+markers",
+                name: "doxygen_warning_count",
+                x: series.x,
+                y: series.y,
+                line: { color: nextLine, width: 2 },
+                marker: { color: nextLine, size: 8 },
+                hovertemplate:
+                  "%{x|%Y-%m-%d %H:%M UTC}<br>warnings: %{y}<extra></extra>",
+              },
+            ],
+            chartLayout(theme, series)
+          );
+        };
+
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
+
+        try {
+          if (window.parent && window.parent !== window) {
+            const observer = new MutationObserver(restyle);
+            observer.observe(window.parent.document.documentElement, {
+              attributes: true,
+              attributeFilter: ["data-theme"],
+            });
+          }
+        } catch (err) {
+          /* Ignore if the parent document is not readable. */
+        }
+      }
+
+      main();
+    </script>
+  </body>
+</html>

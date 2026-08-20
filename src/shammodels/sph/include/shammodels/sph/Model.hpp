@@ -31,6 +31,7 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shammodels/sph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/sph/modules/SPHSetup.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shampylib/PatchDataToPy.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
@@ -180,14 +181,22 @@ namespace shammodels::sph {
             std::mt19937 eng);
 
         inline void add_sink(Tscal mass, Tvec pos, Tvec velocity, Tscal accretion_radius) {
-            if (solver.storage.sinks.is_empty()) {
-                solver.storage.sinks.set({});
+            if (!ctx.is_scheduler_initialized()) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "add_sink() requires that the scheduler has been initialized. "
+                    "Call init_scheduler(...) before add_sink().");
             }
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            if (!sched.synchronized_data.has_edge("sink_pos")) {
+                shambase::throw_with_loc<std::runtime_error>(
+                    "add_sink() requires that sink edges are registered. "
+                    "Call init_scheduler(...) before add_sink().");
+            }
+            auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
 
             shamlog_debug_ln("SPH", "add sink :", mass, pos, velocity, accretion_radius);
 
-            solver.storage.sinks.get().push_back(
-                {pos, velocity, {}, {}, mass, {}, accretion_radius});
+            shammodels::sph::add_sink(edges, mass, pos, velocity, accretion_radius);
         }
 
         template<class T>
@@ -794,9 +803,11 @@ namespace shammodels::sph {
             tot_mass = shamalgs::collective::allreduce_sum(tot_mass);
 
             // add the mass of the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    tot_mass += s.mass;
+            auto &sync = sched.synchronized_data;
+            auto &mass = get_sink_mass<Tvec>(sync);
+            if (!mass.empty()) {
+                for (size_t i = 0; i < mass.size(); i++) {
+                    tot_mass += mass[i];
                 }
             }
 
@@ -805,9 +816,10 @@ namespace shammodels::sph {
                                              : shambase::VectorProperties<Tvec>::get_zero();
 
             // apply the offset velocity to the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    s.velocity += offset_vel;
+            auto &vel = get_sink_vel<Tvec>(sync);
+            if (!vel.empty()) {
+                for (size_t i = 0; i < vel.size(); i++) {
+                    vel[i] += offset_vel;
                 }
             }
 
@@ -826,9 +838,10 @@ namespace shammodels::sph {
             u32 ixyz = sched.pdl_old().get_field_idx<Tvec>("xyz");
 
             // apply the position offset to the sinks
-            if (!solver.storage.sinks.is_empty()) {
-                for (auto &s : solver.storage.sinks.get()) {
-                    s.pos += offset;
+            auto &pos = get_sink_pos<Tvec>(sched.synchronized_data);
+            if (!pos.empty()) {
+                for (size_t i = 0; i < pos.size(); i++) {
+                    pos[i] += offset;
                 }
             }
 
@@ -904,13 +917,15 @@ namespace shammodels::sph {
             // std::cout << j << std::endl;
             j.at("solver_config").get_to(solver.solver_config);
 
-            if (!j.at("sinks").is_null()) {
+            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+
+            ensure_sink_edges<Tvec>(sched.synchronized_data);
+            if (j.contains("sinks") && !j.at("sinks").is_null()) {
                 std::vector<SinkParticle<Tvec>> out;
                 j.at("sinks").get_to(out);
-                solver.storage.sinks.set(std::move(out));
+                auto edges = get_sink_edges<Tvec>(sched.synchronized_data);
+                set_sink_particles(edges, out);
             }
-
-            PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
 
             // Migrate old dumps that stored time/dt/cfl in solver_config.time_state
             auto sync_names = sched.synchronized_data.get_edge_names();
@@ -968,12 +983,6 @@ namespace shammodels::sph {
 
             nlohmann::json metadata;
             metadata["solver_config"] = solver.solver_config;
-
-            if (solver.storage.sinks.is_empty()) {
-                metadata["sinks"] = nlohmann::json{};
-            } else {
-                metadata["sinks"] = solver.storage.sinks.get();
-            }
 
             // Dump the state of the SPH model to a file
             /// TODO: replace supplied metadata by solver config json

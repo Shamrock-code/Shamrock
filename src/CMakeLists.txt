@@ -13,6 +13,7 @@ set(as_subproject
     shamcomm
     shambackends
     shammath
+    shamsolvergraph
     shamalgs
     shamsys
     shamphys
@@ -46,6 +47,7 @@ add_subdirectory(shamcmdopt)
 add_subdirectory(shamcomm)
 add_subdirectory(shambackends)
 add_subdirectory(shammath)
+add_subdirectory(shamsolvergraph)
 add_subdirectory(shamalgs)
 add_subdirectory(shamphys)
 add_subdirectory(shamsys)

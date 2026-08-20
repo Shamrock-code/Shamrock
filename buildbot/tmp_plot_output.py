@@ -117,7 +117,7 @@ def loading_frames():
         tmp = []
 
         for i in file_list:
-            print("plotting : {}".format(i))
+            print(f"plotting : {i}")
             tmp.append(get_plot_patchdata(i))
 
         frame.append(tmp)
@@ -168,7 +168,7 @@ def make_gif_with_load():
         tmp = []
 
         for i in file_list:
-            print("plotting : {}".format(i))
+            print(f"plotting : {i}")
             tmp.append(get_plot_patchdata(i))
 
         idx = idx + 1
@@ -200,7 +200,7 @@ def make_movie_with_load():
         tmp = []
 
         for i in file_list:
-            print("plotting : {}".format(i))
+            print(f"plotting : {i}")
             tmp.append(get_plot_patchdata(i))
 
         idx = idx + 1

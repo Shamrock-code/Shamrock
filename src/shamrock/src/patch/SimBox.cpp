@@ -15,6 +15,7 @@
 
 #include "shamrock/patch/SimBox.hpp"
 #include "shambackends/type_convert.hpp"
+#include <nlohmann/json.hpp>
 
 /// from cppreference std::visit page
 /// helper type for the visitor #4

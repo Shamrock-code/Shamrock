@@ -170,15 +170,13 @@ def autocorrect(source, filename, path):
     i = 0
 
     splt = source.split("\n")
-    for l in splt:
-        if l_start > 0:
-            if not ("@author" in l):
-                break
+    for i, l in enumerate(splt):
+        if l_start > 0 and not ("@author" in l):
+            break
         if "@file" in l:
             l_start = i
         if "@author" in l:
             l_end = i
-        i += 1
 
     if l_end == 0:
         l_end = l_start
@@ -196,7 +194,7 @@ def autocorrect(source, filename, path):
         new_src += l + "\n"
     new_src = new_src[:-1]
 
-    do_replace = not (new_src == source)
+    do_replace = new_src != source
 
     if do_replace:
         print("autocorrect : ", filename)

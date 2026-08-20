@@ -5,9 +5,7 @@ def plot_codeu_to_unit(unit_system, name):
     si = shamrock.UnitSystem()
     si_cte = shamrock.Constants(shamrock.UnitSystem())
 
-    if name is None:
-        return "[unitless]", 1
-    elif name == "unitless":
+    if name is None or name == "unitless":
         return "[unitless]", 1
 
     elif name == "code_unit":

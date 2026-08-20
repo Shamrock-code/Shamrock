@@ -12,7 +12,14 @@ jobs:
 
   extract_version:
     name: Extract Version
-    uses: ./.github/workflows/extract_version.yml
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7 # only to resolve the local action
+
+      - uses: ./.github/actions/extract_version
+        id: version
 
 
   make_GitHubPage:

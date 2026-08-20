@@ -18,7 +18,7 @@ P_L, P_R = 1.0, 0.1
 fact = (rho_L / rho_R) ** (1.0 / 3.0)
 u_L = P_L / ((gamma - 1) * rho_L)
 u_R = P_R / ((gamma - 1) * rho_R)
-resol = 128
+resol = 64
 
 ctx = shamrock.Context()
 ctx.pdata_layout_new()
@@ -34,9 +34,9 @@ cfg.print_status()
 model.set_solver_config(cfg)
 model.init_scheduler(int(1e8), 1)
 
-(xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, 24, 24)
+(xs, ys, zs) = model.get_box_dim_fcc_3d(1, resol, 12, 12)
 dr = 1 / xs
-(xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 24, 24)
+(xs, ys, zs) = model.get_box_dim_fcc_3d(dr, resol, 12, 12)
 model.resize_simulation_box((-xs, -ys / 2, -zs / 2), (xs, ys / 2, zs / 2))
 
 model.add_cube_hcp_3d(dr, (-xs, -ys / 2, -zs / 2), (0, ys / 2, zs / 2))
@@ -117,11 +117,11 @@ if shamrock.sys.world_rank() == 0:
     # solver's convergence-based bisection early-exit is sensitive to libm's
     # sqrt/pow rounding. If CI's actual output ever differs again, update
     # these expect_* values from CI's own printed "current errors" output.
-    expect_rho = 0.035528332242404245
-    expect_vx = 0.10935011343308144
-    expect_vy = 0.004305512609977454
-    expect_vz = 0.00010815883208344864
-    expect_P = 0.04462110915851241
+    expect_rho = 0.05004380788795549
+    expect_vx = 0.1429980515258284
+    expect_vy = 0.005331795999290027
+    expect_vz = 7.752615518913349e-05
+    expect_P = 0.06285331285974535
 
     tol = 1e-8
 

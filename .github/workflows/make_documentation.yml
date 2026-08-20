@@ -48,13 +48,16 @@ jobs:
           sudo apt update && \
           sudo apt install -y -qq doxygen graphviz
 
-      - name : Modify texlive packages
+      - name : Install slim texlive packages
         run: |
           sudo apt install -y \
-            texlive-full \
+            texlive-latex-base \
+            texlive-latex-recommended \
+            texlive-latex-extra \
+            texlive-fonts-recommended \
+            cm-super \
             dvipng \
-            ghostscript \
-            latexmk
+            ghostscript
 
       - name: create venv
         shell: bash
@@ -90,3 +93,16 @@ jobs:
         with:
           name: doxygen_warning
           path: doc/_build/doxygen/warn_doxygen.txt
+
+      - name: Write doxygen warning count metric
+        shell: bash
+        run: |
+          warn_count=$(wc -l < doc/_build/doxygen/warn_doxygen.txt | tr -d '[:space:]')
+          printf '{"doxygen_warning_count":%s}\n' "${warn_count}" > metric__doxygen_warn.json
+          cat metric__doxygen_warn.json
+
+      - name: Upload doxygen warning count metric
+        uses: actions/upload-artifact@v4
+        with:
+          name: metric__doxygen_warn.json
+          path: metric__doxygen_warn.json

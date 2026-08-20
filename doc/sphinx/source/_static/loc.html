@@ -5,63 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Lines of code</title>
     <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.3/plotly.min.js"></script>
-    <style>
-      :root {
-        --bg: #fff;
-        --fg: #3c3836;
-        --muted: #665c54;
-        --grid: #d5c4a1;
-      }
-
-      html[data-theme="dark"] {
-        --bg: #282828;
-        --fg: #ebdbb2;
-        --muted: #a89984;
-        --grid: #504945;
-      }
-
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: var(--bg);
-        color: var(--fg);
-        font-family: system-ui, sans-serif;
-      }
-
-      #chart {
-        width: 100%;
-        height: 100%;
-      }
-
-      #status {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 1rem;
-        text-align: center;
-        color: var(--muted);
-      }
-
-      #status[hidden] {
-        display: none;
-      }
-    </style>
+    <link rel="stylesheet" href="css/metrics-chart.css" />
   </head>
   <body>
     <div id="status">Loading lines of code history…</div>
     <div id="chart"></div>
+    <script src="js/metrics-chart.js"></script>
     <script>
-      const DATA_URLS = [
-        "https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/loc.json",
-        "https://cdn.jsdelivr.net/gh/Shamrock-code/Shamrock@metrics-history/output/loc.json",
-      ];
-
       // Exclusive partitions (code, examples, doc) sum to "all". Nested
       // shammodels/* counts are subsets of code, not extra buckets.
       const AREA_SPECS = [
@@ -87,75 +37,27 @@
 
       const ALL_SPECS = AREA_SPECS.concat(FILETYPE_SPECS);
 
-      function parentTheme() {
-        try {
-          if (window.parent && window.parent !== window) {
-            const theme = window.parent.document.documentElement.getAttribute("data-theme");
-            if (theme === "dark" || theme === "light") {
-              return theme;
-            }
-          }
-        } catch (err) {
-          /* Cross-origin parent: fall back to prefers-color-scheme. */
-        }
-        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-      }
-
-      function applyTheme(theme) {
-        document.documentElement.setAttribute("data-theme", theme);
-      }
-
-      function palette(theme) {
-        return theme === "dark"
-          ? ["#83a598", "#fe8019", "#b8bb26", "#d3869b", "#fb4934", "#8ec07c", "#fabd2f", "#d65d0e"]
-          : ["#076678", "#af3a03", "#79740e", "#8f3f71", "#9d0006", "#427b58", "#b57614", "#d65d0e"];
-      }
-
-      // Plotly log-axis range is log10 of the linear limits.
-      function paddedLogRange(values) {
-        const nums = values.filter(
-          (value) => typeof value === "number" && Number.isFinite(value) && value > 0
-        );
-        if (nums.length === 0) {
-          return undefined;
-        }
-        const logMin = Math.log10(Math.min(...nums));
-        const logMax = Math.log10(Math.max(...nums));
-        const span = logMax - logMin;
-        const pad = span === 0 ? 0.1 : span * 0.1;
-        return [logMin - pad, logMax + pad];
-      }
-
       function hasValues(values) {
-        return values.some((value) => typeof value === "number" && Number.isFinite(value));
+        return values.some(function (value) {
+          return typeof value === "number" && Number.isFinite(value);
+        });
       }
 
       function collectedValues(series, specs) {
-        return specs.reduce((acc, spec) => acc.concat(series[spec.key] || []), []);
-      }
-
-      function axisStyle(muted, grid) {
-        return {
-          gridcolor: grid,
-          zerolinecolor: grid,
-          linecolor: muted,
-          tickfont: { color: muted },
-        };
+        return specs.reduce(function (acc, spec) {
+          return acc.concat(series[spec.key] || []);
+        }, []);
       }
 
       function chartLayout(theme, series) {
-        const dark = theme === "dark";
-        const bg = dark ? "#282828" : "#fff";
-        const fg = dark ? "#ebdbb2" : "#3c3836";
-        const muted = dark ? "#a89984" : "#665c54";
-        const grid = dark ? "#504945" : "#d5c4a1";
-        const axis = axisStyle(muted, grid);
+        const colors = MetricsChart.themeColors(theme);
+        const axis = MetricsChart.axisStyle(theme);
         return {
-          title: { text: "Lines of code", font: { color: fg, size: 18 } },
+          title: { text: "Lines of code", font: { color: colors.fg, size: 18 } },
           margin: { l: 72, r: 24, t: 48, b: 96 },
-          paper_bgcolor: bg,
-          plot_bgcolor: bg,
-          font: { color: fg },
+          paper_bgcolor: colors.bg,
+          plot_bgcolor: colors.bg,
+          font: { color: colors.fg },
           grid: {
             rows: 2,
             columns: 1,
@@ -167,43 +69,41 @@
             orientation: "h",
             x: 0,
             y: -0.12,
-            font: { color: fg },
+            font: { color: colors.fg },
             bgcolor: "rgba(0,0,0,0)",
             borderwidth: 0,
           },
-          xaxis: {
-            type: "date",
-            ...axis,
-          },
-          yaxis: {
-            title: { text: "By area" },
-            type: "log",
-            tickformat: ",d",
-            autorange: false,
-            range: paddedLogRange(collectedValues(series, AREA_SPECS)),
-            ...axis,
-          },
-          xaxis2: {
-            title: { text: "Date (UTC)" },
-            type: "date",
-            matches: "x",
-            ...axis,
-          },
-          yaxis2: {
-            title: { text: "By file type" },
-            type: "log",
-            tickformat: ",d",
-            autorange: false,
-            range: paddedLogRange(collectedValues(series, FILETYPE_SPECS)),
-            ...axis,
-          },
+          xaxis: Object.assign({ type: "date" }, axis),
+          yaxis: Object.assign(
+            {
+              title: { text: "By area" },
+              type: "log",
+              tickformat: ",d",
+              autorange: false,
+              range: MetricsChart.paddedLogRange(collectedValues(series, AREA_SPECS)),
+            },
+            axis
+          ),
+          xaxis2: Object.assign(
+            {
+              title: { text: "Date (UTC)" },
+              type: "date",
+              matches: "x",
+            },
+            axis
+          ),
+          yaxis2: Object.assign(
+            {
+              title: { text: "By file type" },
+              type: "log",
+              tickformat: ",d",
+              autorange: false,
+              range: MetricsChart.paddedLogRange(collectedValues(series, FILETYPE_SPECS)),
+            },
+            axis
+          ),
           hovermode: "x unified",
         };
-      }
-
-      function finiteNumber(value) {
-        const number = Number(value);
-        return Number.isFinite(number) ? number : null;
       }
 
       function toSeries(payload) {
@@ -211,18 +111,29 @@
           throw new Error("Unexpected dataset shape: missing data[]");
         }
         const rows = payload.data
-          .filter((row) => row && typeof row.datetime === "string")
+          .filter(function (row) {
+            return row && typeof row.datetime === "string";
+          })
           .slice()
-          .sort((a, b) => a.datetime.localeCompare(b.datetime));
-        const series = { x: rows.map((row) => row.datetime) };
-        ALL_SPECS.forEach((spec) => {
-          series[spec.key] = rows.map((row) => finiteNumber(row[spec.key]));
+          .sort(function (a, b) {
+            return a.datetime.localeCompare(b.datetime);
+          });
+        const series = {
+          x: rows.map(function (row) {
+            return row.datetime;
+          }),
+        };
+        ALL_SPECS.forEach(function (spec) {
+          series[spec.key] = rows.map(function (row) {
+            return MetricsChart.finiteNumber(row[spec.key]);
+          });
         });
         return series;
       }
 
       function traceFor(theme, series, spec, index, axis) {
-        const color = palette(theme)[index % palette(theme).length];
+        const palette = MetricsChart.themeColors(theme).palette;
+        const color = palette[index % palette.length];
         return {
           type: "scatter",
           mode: "lines+markers",
@@ -233,23 +144,23 @@
           yaxis: axis.y,
           legendgroup: spec.key,
           line: {
-            color,
+            color: color,
             width: spec.key === "all" ? 3 : 2,
             dash: spec.nested ? "dash" : "solid",
           },
-          marker: { color, size: 8 },
+          marker: { color: color, size: 8 },
           hovertemplate: "%{fullData.name}: %{y:,}<extra></extra>",
         };
       }
 
       function traces(theme, series) {
         const result = [];
-        AREA_SPECS.forEach((spec, index) => {
+        AREA_SPECS.forEach(function (spec, index) {
           if (hasValues(series[spec.key])) {
             result.push(traceFor(theme, series, spec, index, { x: "x", y: "y" }));
           }
         });
-        FILETYPE_SPECS.forEach((spec, index) => {
+        FILETYPE_SPECS.forEach(function (spec, index) {
           if (hasValues(series[spec.key])) {
             result.push(traceFor(theme, series, spec, index, { x: "x2", y: "y2" }));
           }
@@ -257,79 +168,20 @@
         return result;
       }
 
-      async function fetchDataset() {
-        const errors = [];
-        for (const url of DATA_URLS) {
-          try {
-            const response = await fetch(url, { cache: "no-store" });
-            if (!response.ok) {
-              throw new Error(`${response.status} ${response.statusText}`);
-            }
-            return await response.json();
-          } catch (err) {
-            errors.push(`${url}: ${err.message}`);
+      MetricsChart.mount({
+        urls: MetricsChart.metricsUrls("loc.json"),
+        loading: "Loading lines of code history…",
+        empty: "The lines of code dataset is empty.",
+        error: "Could not load lines of code history.",
+        makePlot: function (payload, theme) {
+          const series = toSeries(payload);
+          const plotTraces = traces(theme, series);
+          if (series.x.length === 0 || plotTraces.length === 0) {
+            return { traces: [] };
           }
-        }
-        throw new Error(errors.join("; "));
-      }
-
-      function setStatus(message) {
-        const status = document.getElementById("status");
-        if (message) {
-          status.textContent = message;
-          status.hidden = false;
-        } else {
-          status.hidden = true;
-        }
-      }
-
-      async function main() {
-        const chart = document.getElementById("chart");
-        let theme = parentTheme();
-        applyTheme(theme);
-
-        let payload;
-        try {
-          payload = await fetchDataset();
-        } catch (err) {
-          setStatus(`Could not load lines of code history.\n${err.message}`);
-          return;
-        }
-
-        const series = toSeries(payload);
-        if (series.x.length === 0 || traces(theme, series).length === 0) {
-          setStatus("The lines of code dataset is empty.");
-          return;
-        }
-
-        await Plotly.newPlot(chart, traces(theme, series), chartLayout(theme, series), {
-          responsive: true,
-          displaylogo: false,
-        });
-        setStatus("");
-
-        const restyle = () => {
-          theme = parentTheme();
-          applyTheme(theme);
-          Plotly.react(chart, traces(theme, series), chartLayout(theme, series));
-        };
-
-        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", restyle);
-
-        try {
-          if (window.parent && window.parent !== window) {
-            const observer = new MutationObserver(restyle);
-            observer.observe(window.parent.document.documentElement, {
-              attributes: true,
-              attributeFilter: ["data-theme"],
-            });
-          }
-        } catch (err) {
-          /* Ignore if the parent document is not readable. */
-        }
-      }
-
-      main();
+          return { traces: plotTraces, layout: chartLayout(theme, series) };
+        },
+      });
     </script>
   </body>
 </html>

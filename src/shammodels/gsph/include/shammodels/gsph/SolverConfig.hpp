@@ -400,6 +400,38 @@ namespace shammodels::gsph {
         j.at("cfl_force").get_to(p.cfl_force);
     }
 
+    // JSON serialization for SmoothingLengthConfig
+    inline void to_json(nlohmann::json &j, const SmoothingLengthConfig &p) {
+        if (const SmoothingLengthConfig::DensityBased *conf
+            = std::get_if<SmoothingLengthConfig::DensityBased>(&p.config)) {
+            j = {
+                {"type", "density_based"},
+            };
+
+        } else if (
+            const SmoothingLengthConfig::DensityBasedNeighLim *conf
+            = std::get_if<SmoothingLengthConfig::DensityBasedNeighLim>(&p.config)) {
+
+            j = {
+                {"type", "density_based_neigh_lim"},
+                {"max_neigh_count", conf->max_neigh_count},
+            };
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
+    inline void from_json(const nlohmann::json &j, SmoothingLengthConfig &p) {
+        if (j.at("type").get<std::string>() == "density_based") {
+            p.config = SmoothingLengthConfig::DensityBased{};
+        } else if (j.at("type").get<std::string>() == "density_based_neigh_lim") {
+            p.config
+                = SmoothingLengthConfig::DensityBasedNeighLim{j.at("max_neigh_count").get<u32>()};
+        } else {
+            shambase::throw_unimplemented();
+        }
+    }
+
     template<class Tvec, template<class> class SPHKernel>
     inline void to_json(nlohmann::json &j, const SolverConfig<Tvec, SPHKernel> &p) {
         using T       = SolverConfig<Tvec, SPHKernel>;
@@ -428,6 +460,11 @@ namespace shammodels::gsph {
             {"epsilon_h", p.epsilon_h},
             {"h_iter_per_subcycles", p.h_iter_per_subcycles},
             {"h_max_subcycles_count", p.h_max_subcycles_count},
+            {"combined_dtdiv_divcurlv_compute", p.combined_dtdiv_divcurlv_compute},
+            {"enable_particle_reordering", p.enable_particle_reordering},
+            {"particle_reordering_step_freq", p.particle_reordering_step_freq},
+            {"set_save_dt_to_fields", p.save_dt_to_fields},
+            {"show_ghost_zone_graph", p.show_ghost_zone_graph},
         };
     }
 

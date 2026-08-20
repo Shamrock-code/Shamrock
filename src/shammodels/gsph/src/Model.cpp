@@ -352,7 +352,6 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
         });
 
         sched.check_patchdata_locality_correctness();
-        sched.check_patchdata_locality_correctness();
         modules::ComputeLoadBalanceValue<Tvec, SPHKernel>(ctx, solver.solver_config, solver.storage)
             .update_load_balancing();
         post_insert_data<Tvec>(sched);

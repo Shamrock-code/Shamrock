@@ -21,6 +21,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -28,7 +29,7 @@
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_drift)                                        \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, cfl_density_threshold)                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, pmass)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, hfactd)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, s_j)                                            \
@@ -55,7 +56,7 @@ class ComputeCFLDustDrift : public shamrock::solvergraph::INode {
         Tscal C_drift               = edges.C_drift.value;
         Tscal cfl_density_threshold = edges.cfl_density_threshold.value;
 
-        Tscal pmass  = edges.pmass.value;
+        Tscal pmass  = edges.pmass.data;
         Tscal hfactd = edges.hfactd.value;
 
         sham::distributed_data_kernel_call(

@@ -43,7 +43,9 @@
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
+#include "shammodels/sph/modules/ComputeOmega.hpp"
 #include "shammodels/sph/modules/IterateSmoothingLengthDensity.hpp"
+#include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
 #include "shamrock/patch/Patch.hpp"
@@ -537,10 +539,350 @@ void shammodels::gsph::Solver<Tvec, Kern>::reset_neighbors_cache() {
 }
 
 template<class Tvec, template<class> class Kern>
+void shammodels::gsph::Solver<Tvec, Kern>::compute_density() {
+    StackEntry stack_loc{};
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    auto dev_sched               = shamsys::instance::get_compute_scheduler_ptr();
+    const Tscal pmass            = solver_config.gpart_mass;
+    static constexpr Tscal Rkern = Kernel::Rkern;
+
+    if (pmass == 0) {
+        shambase::throw_with_loc<std::runtime_error>(
+            "invalid gpart_mass 0 in compute_density, this configuration can not converge.");
+    }
+
+    shamrock::solvergraph::Field<Tscal> &density_field = shambase::get_check_ref(storage.density);
+
+    // Density is only needed for local particles here; it gets propagated to
+    // ghosts afterwards by communicate_merge_ghosts_fields().
+    shambase::DistributedData<u32> &counts = shambase::get_check_ref(storage.part_counts).indexes;
+    density_field.ensure_sizes(counts);
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
+
+    auto &merged_xyzh = storage.merged_xyzh.get();
+    auto &neigh_cache = storage.neigh_cache->neigh_cache;
+
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        u32 cnt = pdat.get_obj_cnt();
+        if (cnt == 0)
+            return;
+
+        auto &mfield = merged_xyzh.get(p.id_patch);
+        auto &pcache = neigh_cache.get(p.id_patch);
+
+        // Position from merged data (includes ghosts for neighbor search)
+        auto &buf_xyz   = mfield.template get_field_buf_ref<Tvec>(0);
+        auto &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+
+        auto &dens_field = density_field.get_field(p.id_patch);
+
+        sham::DeviceQueue &q = dev_sched->get_queue();
+        sham::EventList depends_list;
+
+        auto ploop_ptrs  = pcache.get_read_access(depends_list);
+        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
+        auto h_acc       = buf_hpart.get_read_access(depends_list);
+        auto density_acc = dens_field.get_buf().get_write_access(depends_list);
+
+        auto e = q.submit(depends_list, [&, pmass](sycl::handler &cgh) {
+            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
+
+            shambase::parallel_for(cgh, cnt, "gsph_compute_density", [=](u64 gid) {
+                u32 id_a = (u32) gid;
+
+                Tvec xyz_a = xyz_acc[id_a];
+                Tscal h_a  = h_acc[id_a];
+                Tscal dint = h_a * h_a * Rkern * Rkern;
+
+                // SPH density summation: rho_a = sum_b m_b W(|r_a - r_b|, h_a)
+                // (includes the self contribution b == a)
+                Tscal rho_sum = pmass * Kernel::W_3d(Tscal(0), h_a);
+
+                particle_looper.for_each_object(id_a, [&](u32 id_b) {
+                    if (id_b == id_a) {
+                        return;
+                    }
+
+                    Tvec dr    = xyz_a - xyz_acc[id_b];
+                    Tscal rab2 = sycl::dot(dr, dr);
+
+                    if (rab2 > dint) {
+                        return;
+                    }
+
+                    Tscal rab = sycl::sqrt(rab2);
+                    rho_sum += pmass * Kernel::W_3d(rab, h_a);
+                });
+
+                density_acc[id_a] = sycl::max(rho_sum, Tscal(1e-30));
+            });
+        });
+
+        pcache.complete_event_state({e});
+        buf_xyz.complete_event_state(e);
+        buf_hpart.complete_event_state(e);
+        dens_field.get_buf().complete_event_state(e);
+    });
+}
+
+template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt) {
     StackEntry stack_loc{};
 
     shamlog_debug_ln("GSPH", "Prestep at t =", time_val, "dt =", dt);
+
+    using namespace shamrock;
+    using namespace shamrock::patch;
+
+    using RTree    = shamtree::CompressedLeafBVH<u_morton, Tvec, 3>;
+    using SPHUtils = gsph::GSPHUtilities<Tvec, Kernel>;
+
+    SPHUtils sph_utils(scheduler());
+    shamrock::SchedulerUtility utility(scheduler());
+
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 ihpart          = pdl.get_field_idx<Tscal>("hpart");
+
+    ComputeField<Tscal> _epsilon_h, _h_old;
+
+    auto should_set_omega_mask = std::make_shared<shamrock::solvergraph::Field<u32>>(
+        1, "should_set_omega_mask", "should_set_omega_mask");
+
+    u32 hstep_cnt = 0;
+    u32 hstep_max = solver_config.h_max_subcycles_count;
+    for (; hstep_cnt < hstep_max; hstep_cnt++) {
+
+        gen_ghost_handler(time_val + dt);
+        build_ghost_cache();
+        merge_position_ghost();
+        build_merged_pos_trees();
+        compute_presteps_rint();
+        start_neighbors_cache();
+
+        _epsilon_h = utility.make_compute_field<Tscal>("epsilon_h", 1, Tscal(100));
+        _h_old     = utility.save_field<Tscal>(ihpart, "h_old");
+
+        Tscal max_eps_h;
+
+        if (solver_config.gpart_mass == 0) {
+            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                "invalid gpart_mass {}, this configuration can not converge.\n"
+                "Please set it using either model.set_particle_mass(pmass) or "
+                "cfg.set_particle_mass(pmass)",
+                solver_config.gpart_mass));
+        }
+
+        // sizes
+        std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
+            = std::make_shared<shamrock::solvergraph::Indexes<u32>>("", "");
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
+        });
+
+        // neigh cache
+        auto &neigh_cache = storage.neigh_cache;
+
+        // positions
+        auto &pos_merged = storage.positions_with_ghosts;
+
+        // old smoothing length field
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            auto &field = _h_old.get_field(p.id_patch);
+            hold_refs.add_obj(p.id_patch, std::ref(field));
+        });
+        hold->set_refs(hold_refs);
+
+        // new smoothing length field
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            auto &field = pdat.get_field<Tscal>(ihpart);
+            hnew_refs.add_obj(p.id_patch, std::ref(field));
+        });
+        hnew->set_refs(hnew_refs);
+
+        // epsilon field
+        std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
+            = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+        shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
+        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+            auto &field = _epsilon_h.get_field(p.id_patch);
+            eps_h_refs.add_obj(p.id_patch, std::ref(field));
+        });
+        eps_h->set_refs(eps_h_refs);
+
+        std::shared_ptr<shamrock::solvergraph::INode> smth_h_iter_ptr;
+
+        using h_conf_density_based = typename gsph::SmoothingLengthConfig::DensityBased;
+        using h_conf_neigh_lim     = typename gsph::SmoothingLengthConfig::DensityBasedNeighLim;
+
+        if (h_conf_density_based *conf
+            = std::get_if<h_conf_density_based>(&solver_config.smoothing_length_config.config)) {
+            std::shared_ptr<shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>
+                smth_h_iter = std::make_shared<
+                    shammodels::sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle);
+            smth_h_iter->set_edges(sizes, neigh_cache, pos_merged, hold, hnew, eps_h);
+            smth_h_iter_ptr = smth_h_iter;
+        } else if (
+            h_conf_neigh_lim *conf
+            = std::get_if<h_conf_neigh_lim>(&solver_config.smoothing_length_config.config)) {
+            std::shared_ptr<
+                shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>
+                smth_h_iter_neigh_lim = std::make_shared<
+                    shammodels::sph::modules::IterateSmoothingLengthDensityNeighLim<Tvec, Kernel>>(
+                    solver_config.gpart_mass,
+                    solver_config.htol_up_coarse_cycle,
+                    solver_config.htol_up_fine_cycle,
+                    conf->max_neigh_count);
+            smth_h_iter_neigh_lim->set_edges(
+                sizes, neigh_cache, pos_merged, hold, hnew, eps_h, should_set_omega_mask);
+            smth_h_iter_ptr = smth_h_iter_neigh_lim;
+        } else {
+            shambase::throw_with_loc<std::runtime_error>("Invalid smoothing length configuration");
+        }
+        // iterate smoothing length
+
+        std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
+            = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
+
+        shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
+            smth_h_iter_ptr, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
+        loop_smth_h_iter.set_edges(eps_h, is_converged);
+
+        loop_smth_h_iter.evaluate();
+
+        if (!is_converged->value) {
+
+            Tscal largest_h = 0;
+
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                largest_h = sham::max(largest_h, pdat.get_field<Tscal>(ihpart).compute_max());
+            });
+            Tscal global_largest_h = shamalgs::collective::allreduce_max(largest_h);
+
+            std::string add_info = "";
+            u64 cnt_unconverged  = 0;
+            scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+                auto res
+                    = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
+                          return access[id] == -1;
+                      });
+
+                if (hstep_cnt == hstep_max - 1) {
+                    if (std::get<0>(res)) {
+                        add_info += "\n    patch " + std::to_string(p.id_patch) + " ";
+                        add_info += "errored parts : \n";
+                        sycl::buffer<u32> &idx_err = *std::get<0>(res);
+
+                        sham::DeviceBuffer<Tvec> &xyz    = pdat.get_field_buf_ref<Tvec>(0);
+                        sham::DeviceBuffer<Tscal> &hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
+
+                        auto pos = xyz.copy_to_stdvec();
+                        auto h   = hpart.copy_to_stdvec();
+
+                        {
+                            sycl::host_accessor acc{idx_err};
+                            for (u32 i = 0; i < idx_err.size(); i++) {
+                                add_info += shambase::format(
+                                    "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
+                            }
+                        }
+                    }
+                }
+
+                cnt_unconverged += std::get<1>(res);
+            });
+
+            u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);
+
+            if (shamcomm::world_rank() == 0) {
+                logger::warn_ln(
+                    "Smoothinglength",
+                    "smoothing length is not converged, rerunning the iterator ...\n     largest h "
+                    "=",
+                    global_largest_h,
+                    "unconverged cnt =",
+                    global_cnt_unconverged,
+                    add_info);
+            }
+
+            reset_ghost_handler();
+            clear_ghost_cache();
+
+            shambase::get_check_ref(storage.part_counts).free_alloc();
+            shambase::get_check_ref(storage.part_counts_with_ghost).free_alloc();
+            shambase::get_check_ref(storage.positions_with_ghosts).free_alloc();
+            shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+
+            storage.merged_xyzh.reset();
+
+            clear_merged_pos_trees();
+            reset_presteps_rint();
+            reset_neighbors_cache();
+
+            // scheduler().for_each_patchdata_nonempty([&](Patch cur_p, PatchData &pdat) {
+            //     pdat.synchronize_buf();
+            // });
+
+            continue;
+        }
+
+        // The hpart is not valid anymore in ghost zones since we iterated it's value
+        shambase::get_check_ref(storage.hpart_with_ghosts).free_alloc();
+
+        _epsilon_h.reset();
+        _h_old.reset();
+        break;
+    }
+
+    if (hstep_cnt == hstep_max) {
+        logger::err_ln("GSPH", "the h iterator is not converged after", hstep_cnt, "iterations");
+    }
+
+    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew_edge
+        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("", "");
+    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
+    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
+        auto &field = pdat.get_field<Tscal>(ihpart);
+        hnew_refs.add_obj(p.id_patch, std::ref(field));
+    });
+    hnew_edge->set_refs(hnew_refs);
+
+    sph::modules::NodeComputeOmega<Tvec, Kern> compute_omega{solver_config.gpart_mass};
+    compute_omega.set_edges(
+        storage.part_counts,
+        storage.neigh_cache,
+        storage.positions_with_ghosts,
+        hnew_edge,
+        storage.omega);
+    compute_omega.evaluate();
+
+    if (solver_config.smoothing_length_config.is_density_based_neigh_lim()) {
+        // if the h limiter is triggered, omega does not hold it's sense of dh/dr anymore
+        // so we set it to 1, this effectively is equivalent of disabling the energy correction
+        // term corresponding to dh/dr
+        sph::modules::SetWhenMask<Tscal> set_omega_mask{1};
+        set_omega_mask.set_edges(storage.part_counts, should_set_omega_mask, storage.omega);
+        set_omega_mask.evaluate();
+    }
+
+    // NodeComputeOmega only produces the grad-h correction factor, not density
+    // itself (see Solver.hpp::compute_density() for why GSPH needs an explicit
+    // summed density field, unlike plain SPH). Compute it now, on the same
+    // converged h / neighbor cache / merged positions used above.
+    compute_density();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -852,295 +1194,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::communicate_merge_ghosts_fields() {
 template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::reset_merge_ghosts_fields() {
     storage.merged_patchdata_ghost.reset();
-}
-
-template<class Tvec, template<class> class Kern>
-void shammodels::gsph::Solver<Tvec, Kern>::compute_omega() {
-    StackEntry stack_loc{};
-
-    using namespace shamrock;
-    using namespace shamrock::patch;
-
-    const Tscal pmass = solver_config.gpart_mass;
-
-    // Verify particle mass is valid
-    if (shamcomm::world_rank() == 0) {
-        if (pmass <= Tscal(0) || pmass < Tscal(1e-100) || !std::isfinite(pmass)) {
-            logger::warn_ln("GSPH", "Invalid particle mass in compute_omega: pmass =", pmass);
-        }
-    }
-
-    shamrock::solvergraph::Field<Tscal> &omega_field   = shambase::get_check_ref(storage.omega);
-    shamrock::solvergraph::Field<Tscal> &density_field = shambase::get_check_ref(storage.density);
-
-    // Create sizes directly from scheduler to ensure we have all patches
-    std::shared_ptr<shamrock::solvergraph::Indexes<u32>> sizes
-        = std::make_shared<shamrock::solvergraph::Indexes<u32>>(edges::sizes, "N");
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        sizes->indexes.add_obj(p.id_patch, pdat.get_obj_cnt());
-    });
-
-    // Ensure fields are allocated for all patches with correct sizes
-    omega_field.ensure_sizes(sizes->indexes);
-    density_field.ensure_sizes(sizes->indexes);
-
-    // Get patchdata layout for hpart field
-    PatchDataLayerLayout &pdl = scheduler().pdl_old();
-    const u32 ihpart          = pdl.get_field_idx<Tscal>(gsph::names::common::hpart);
-
-    // =========================================================================
-    // OUTER-LOOP SMOOTHING LENGTH ITERATION (FIX FOR CACHE CONSISTENCY BUG)
-    // =========================================================================
-    // The original implementation had an inner-loop Newton-Raphson iteration
-    // inside a GPU kernel. This caused issues because:
-    // 1. Neighbor cache was built with OLD h values (+ 10% tolerance)
-    // 2. Inner iteration could change h by more than 10%
-    // 3. Particles that should be neighbors weren't found in the cache
-    // 4. Result: underestimated density at discontinuities -> wrong forces
-    //
-    // The fix uses the SPH-style outer-loop approach:
-    // 1. Create GSPH IterateSmoothingLengthDensity module (ONE step per call)
-    // 2. Wrap in LoopSmoothingLengthIter for multiple iterations
-    // 3. If h grows beyond tolerance, signal for cache rebuild
-    // =========================================================================
-
-    auto &merged_xyzh = storage.merged_xyzh.get();
-
-    // Create field references for the iteration module
-    // Position spans (from merged xyzh)
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> pos_merged
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>(edges::pos_merged, "r");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tvec> pos_refs = {};
-
-    // Old h spans (from merged xyzh - read only during iteration)
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hold
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_old, "h^{old}");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hold_refs = {};
-
-    // New h spans (local patchdata - written during iteration)
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> hnew
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::h_new, "h^{new}");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> hnew_refs = {};
-
-    // Get field indices from xyzh_ghost_layout for merged data access
-    const u32 ixyz_ghost
-        = storage.xyzh_ghost_layout->template get_field_idx<Tvec>(gsph::names::common::xyz);
-    const u32 ihpart_ghost
-        = storage.xyzh_ghost_layout->template get_field_idx<Tscal>(gsph::names::common::hpart);
-
-    // Populate field references
-    scheduler().for_each_patchdata_nonempty(
-        [&, ixyz_ghost, ihpart_ghost](const Patch p, PatchDataLayer &pdat) {
-            auto &mfield = merged_xyzh.get(p.id_patch);
-
-            // Position from merged data (includes ghosts for neighbor search)
-            pos_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tvec>(ixyz_ghost)));
-
-            // h_old from merged data
-            hold_refs.add_obj(p.id_patch, std::ref(mfield.template get_field<Tscal>(ihpart_ghost)));
-
-            // h_new to local patchdata (this is updated during iteration)
-            hnew_refs.add_obj(p.id_patch, std::ref(pdat.get_field<Tscal>(ihpart)));
-        });
-
-    pos_merged->set_refs(pos_refs);
-    hold->set_refs(hold_refs);
-    hnew->set_refs(hnew_refs);
-
-    // Initialize hnew with hold values
-    auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        u32 cnt = pdat.get_obj_cnt();
-        if (cnt == 0)
-            return;
-
-        auto &mfield           = merged_xyzh.get(p.id_patch);
-        auto &buf_hpart_merged = mfield.template get_field_buf_ref<Tscal>(1);
-        auto &buf_hpart_local  = pdat.get_field_buf_ref<Tscal>(ihpart);
-
-        sham::kernel_call(
-            dev_sched->get_queue(),
-            sham::MultiRef{buf_hpart_merged},
-            sham::MultiRef{buf_hpart_local},
-            cnt,
-            [](u32 i, const Tscal *h_old, Tscal *h_new) {
-                h_new[i] = h_old[i];
-            });
-    });
-
-    // Create epsilon field for convergence tracking
-    shamrock::SchedulerUtility utility(scheduler());
-    ComputeField<Tscal> _epsilon_h = utility.make_compute_field<Tscal>("epsilon_h", 1);
-
-    // Initialize epsilon to large value (not converged)
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        u32 cnt = pdat.get_obj_cnt();
-        if (cnt == 0)
-            return;
-
-        auto &eps_buf = _epsilon_h.get_buf_check(p.id_patch);
-
-        sham::kernel_call(
-            dev_sched->get_queue(),
-            sham::MultiRef{},
-            sham::MultiRef{eps_buf},
-            cnt,
-            [](u32 i, Tscal *eps) {
-                eps[i] = Tscal(1.0); // Start with large epsilon
-            });
-    });
-
-    // Create epsilon field references
-    std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> eps_h
-        = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>(edges::eps_h, "\\epsilon_h");
-    shamrock::solvergraph::DDPatchDataFieldRef<Tscal> eps_h_refs = {};
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        auto &field = _epsilon_h.get_field(p.id_patch);
-        eps_h_refs.add_obj(p.id_patch, std::ref(field));
-    });
-    eps_h->set_refs(eps_h_refs);
-
-    // Use SPH's IterateSmoothingLengthDensity module (reuse, no duplication)
-    std::shared_ptr<sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>> smth_h_iter
-        = std::make_shared<sph::modules::IterateSmoothingLengthDensity<Tvec, Kernel>>(
-            solver_config.gpart_mass,
-            solver_config.htol_up_coarse_cycle,
-            solver_config.htol_up_fine_cycle);
-
-    // SPH's module only iterates h, no density/omega outputs
-    smth_h_iter->set_edges(sizes, storage.neigh_cache, pos_merged, hold, hnew, eps_h);
-
-    // Create convergence flag
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("is_converged", "converged");
-
-    // Use LoopSmoothingLengthIter from SPH module for outer loop iteration
-    shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
-        smth_h_iter, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
-    loop_smth_h_iter.set_edges(eps_h, is_converged);
-
-    // Run the outer loop iteration
-    loop_smth_h_iter.evaluate();
-
-    // Check convergence
-    if (!is_converged->value) {
-        // Get convergence statistics
-        Tscal local_max_eps  = shamrock::solvergraph::get_rank_max(*eps_h);
-        Tscal global_max_eps = shamalgs::collective::allreduce_max(local_max_eps);
-
-        // Count particles that need cache rebuild (eps == -1)
-        u64 cnt_unconverged = 0;
-        scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-            auto res = _epsilon_h.get_field(p.id_patch).get_ids_buf_where([](auto access, u32 id) {
-                return access[id] < Tscal(0);
-            });
-            cnt_unconverged += std::get<1>(res);
-        });
-        u64 global_cnt_unconverged = shamalgs::collective::allreduce_sum(cnt_unconverged);
-
-        if (shamcomm::world_rank() == 0) {
-            if (global_cnt_unconverged > 0) {
-                logger::warn_ln(
-                    "GSPH",
-                    "Smoothing length iteration: ",
-                    global_cnt_unconverged,
-                    " particles need cache rebuild (h grew beyond tolerance)");
-            } else {
-                logger::warn_ln(
-                    "GSPH",
-                    "Smoothing length iteration did not converge, max eps =",
-                    global_max_eps);
-            }
-        }
-    }
-
-    // =========================================================================
-    // COMPUTE DENSITY AND OMEGA AFTER H CONVERGENCE
-    // =========================================================================
-    // Now that h has converged, compute the final density and omega values.
-    // This is done ONCE here instead of on every iteration (more efficient).
-    // =========================================================================
-
-    static constexpr Tscal Rkern = Kernel::Rkern;
-
-    auto &neigh_cache = storage.neigh_cache->neigh_cache;
-
-    scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
-        u32 cnt = pdat.get_obj_cnt();
-        if (cnt == 0)
-            return;
-
-        auto &mfield = merged_xyzh.get(p.id_patch);
-        auto &pcache = neigh_cache.get(p.id_patch);
-
-        // Get position and h from merged data (includes ghosts for neighbor search)
-        auto &buf_xyz   = mfield.template get_field_buf_ref<Tvec>(0);
-        auto &buf_hpart = pdat.get_field_buf_ref<Tscal>(ihpart);
-
-        // Get density and omega output fields
-        auto &dens_field = density_field.get_field(p.id_patch);
-        auto &omeg_field = omega_field.get_field(p.id_patch);
-
-        sham::DeviceQueue &q = dev_sched->get_queue();
-        sham::EventList depends_list;
-
-        auto ploop_ptrs  = pcache.get_read_access(depends_list);
-        auto xyz_acc     = buf_xyz.get_read_access(depends_list);
-        auto h_acc       = buf_hpart.get_read_access(depends_list);
-        auto density_acc = dens_field.get_buf().get_write_access(depends_list);
-        auto omega_acc   = omeg_field.get_buf().get_write_access(depends_list);
-
-        auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shamrock::tree::ObjectCacheIterator particle_looper(ploop_ptrs);
-
-            shambase::parallel_for(cgh, cnt, "gsph_compute_density_omega", [=](u64 gid) {
-                u32 id_a = (u32) gid;
-
-                Tvec xyz_a = xyz_acc[id_a];
-                Tscal h_a  = h_acc[id_a];
-                Tscal dint = h_a * h_a * Rkern * Rkern;
-
-                // SPH density summation
-                Tscal rho_sum = Tscal(0);
-                Tscal sumdWdh = Tscal(0);
-
-                particle_looper.for_each_object(id_a, [&](u32 id_b) {
-                    Tvec dr    = xyz_a - xyz_acc[id_b];
-                    Tscal rab2 = sycl::dot(dr, dr);
-
-                    if (rab2 > dint) {
-                        return;
-                    }
-
-                    Tscal rab = sycl::sqrt(rab2);
-
-                    rho_sum += pmass * Kernel::W_3d(rab, h_a);
-                    sumdWdh += pmass * Kernel::dhW_3d(rab, h_a);
-                });
-
-                // Store density
-                density_acc[id_a] = sycl::max(rho_sum, Tscal(1e-30));
-
-                // Compute omega (grad-h correction factor)
-                // Omega = 1 + h/(dim*rho) * (drho/dh)
-                // This matches SPH's ComputeOmega and is used in sph_pressure_symetric
-                // which divides by (rho^2 * omega), so we need Omega not 1/Omega
-                Tscal omega_val = Tscal(1);
-                if (rho_sum > Tscal(1e-30)) {
-                    omega_val = Tscal(1) + h_a / (Tscal(dim) * rho_sum) * sumdWdh;
-                    omega_val = sycl::clamp(omega_val, Tscal(0.5), Tscal(2.0));
-                }
-                omega_acc[id_a] = omega_val;
-            });
-        });
-
-        // Complete event states for all accessed buffers
-        pcache.complete_event_state({e});
-        buf_xyz.complete_event_state(e);
-        buf_hpart.complete_event_state(e);
-        dens_field.get_buf().complete_event_state(e);
-        omeg_field.get_buf().complete_event_state(e);
-    });
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1741,7 +1794,11 @@ bool shammodels::gsph::Solver<Tvec, Kern>::apply_corrector(Tscal dt, u64 Npart_a
 }
 
 template<class Tvec, template<class> class Kern>
-void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {}
+void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {
+    modules::ComputeLoadBalanceValue<Tvec, Kern>(context, solver_config, storage)
+        .update_load_balancing();
+    scheduler().scheduler_step(false, false);
+}
 
 template<class Tvec, template<class> class Kern>
 shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once() {
@@ -1788,7 +1845,9 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // Loop order:
     // 1. PREDICTOR: move particles using OLD accelerations
     // 2. BOUNDARY: apply periodic/free boundary conditions
-    // 3. TREE BUILD: build spatial trees on NEW positions
+    // 3. PRESTEP: converge smoothing length h, then compute omega and density
+    //    (density is now computed inside gsph_prestep(), on the same
+    //    converged h / merged positions / neighbor cache - see compute_density())
     // 4. DENSITY/EOS: compute density, pressure, soundspeed on NEW positions
     // 5. FORCES: compute accelerations using FRESH EOS
     // 6. CORRECTOR: refine velocities using average of old/new accelerations
@@ -1804,30 +1863,14 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     gen_serial_patch_tree();
     apply_position_boundary(t_current + dt);
 
-    // STEP 3: TREE BUILD - build trees on NEW positions
-    // Generate ghost handler for the new positions
-    gen_ghost_handler(t_current + dt);
+    // STEP 3: PRESTEP - converges h, builds ghost/tree/neighbor-cache state on
+    // the new positions, and computes omega + density (see gsph_prestep() /
+    // compute_density()). Everything it builds (ghost handler, ghost cache,
+    // merged positions, merged trees, rint field, neighbor cache) stays valid
+    // and is reused below - no need to rebuild it a second time here.
+    gsph_prestep(t_current, dt);
 
-    // Build ghost cache for interface exchange
-    build_ghost_cache();
-
-    // Merge positions with ghosts
-    merge_position_ghost();
-
-    // Build trees over merged positions
-    build_merged_pos_trees();
-
-    // Compute interaction ranges
-    compute_presteps_rint();
-
-    // Build neighbor cache
-    start_neighbors_cache();
-
-    // STEP 4: DENSITY/OMEGA - compute on NEW positions
-    // Compute omega (grad-h correction factor) - needed for force computation
-    compute_omega();
-
-    // STEP 4b: GRADIENTS - compute for MUSCL reconstruction (if enabled)
+    // STEP 4a: GRADIENTS - compute for MUSCL reconstruction (if enabled)
     // Computed BEFORE ghost communication so gradients are included in ghost data
     // Gradients are computed on local particles using neighbor data
     compute_gradients();
@@ -1840,7 +1883,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // This MUST happen BEFORE compute_eos_fields so EOS can be computed for ghosts
     communicate_merge_ghosts_fields();
 
-    // STEP 4c: EOS - compute AFTER ghost communication (CRITICAL!)
+    // STEP 4b: EOS - compute AFTER ghost communication (CRITICAL!)
     // This ensures P and cs are computed for ALL particles (local + ghost)
     // Following SPH pattern: EOS is computed on merged_patchdata_ghost
     compute_eos_fields();

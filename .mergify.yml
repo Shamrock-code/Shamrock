@@ -19,3 +19,10 @@ queue_rules:
     batch_max_wait_time: 10min
 merge_queue:
   max_parallel_checks: 1
+pull_request_rules:
+  - name: Keep PRs up to date
+    conditions:
+      - label = auto-update
+      - updated-at <= 1 days ago
+    actions:
+      update: null

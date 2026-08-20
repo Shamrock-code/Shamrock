@@ -56,6 +56,70 @@ jobs:
           name: report_light_ci
           path: ./report_______light_ci.md
 
+  # Hang while any push/schedule jobs in the repo are queued or in_progress.
+  # Runs after CI/metrics, then "all" depends on it. Gives up with success
+  # after 1 hour.
+  wait_for_push_schedule:
+    name: Wait for push/schedule jobs
+    needs: [ main_workflow, upload_metrics_history ]
+    if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for push/schedule jobs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export GH_PAGER=cat
+          started="$(date +%s)"
+
+          list_runs() {
+            gh run list --repo "$GH_REPO" --event "$1" --status "$2" --limit 100 \
+              --json databaseId,name,displayTitle,headBranch,status,event,url
+          }
+
+          while true; do
+            runs="$(
+              {
+                list_runs push in_progress
+                list_runs push queued
+                list_runs schedule in_progress
+                list_runs schedule queued
+              } | jq -s 'add | unique_by(.databaseId)'
+            )"
+
+            waiting="$(mktemp)"
+            jq -r '.[] | "\(.event) \(.status) \(.name) #\(.databaseId) (\(.headBranch)) \(.displayTitle)"' <<<"$runs" >>"$waiting"
+            while IFS= read -r id; do
+              [ -z "$id" ] && continue
+              gh run view "$id" --repo "$GH_REPO" --json jobs --jq \
+                '.jobs[] | select(.status=="queued" or .status=="in_progress") | "  \(.name): \(.status)"' >>"$waiting"
+            done < <(jq -r '.[].databaseId' <<<"$runs")
+
+            elapsed="$(( $(date +%s) - started ))"
+
+            if [ ! -s "$waiting" ]; then
+              rm -f "$waiting"
+              echo "No push/schedule jobs queued or in_progress."
+              exit 0
+            fi
+
+            echo "Currently waiting jobs (${elapsed}s elapsed):"
+            cat "$waiting"
+            rm -f "$waiting"
+            echo "--------------------"
+
+            if [ "$elapsed" -ge 3600 ]; then
+              echo "Timed out after ${elapsed}s; continuing with success."
+              exit 0
+            fi
+            sleep 30
+          done
+
   # Mergify merge gate (merge_conditions: check-success = all). Runs only when
   # full CI ran (`full-ci` label or Mergify merge-queue branch). Other PRs use
   # all_light for queue entry instead.
@@ -70,7 +134,7 @@ jobs:
   #                 still finishing (e.g. Mergify CI auto-retry). Treat as
   #                 non-success — do not whitelist only failure/cancelled.
   all:
-    needs: [ main_workflow, upload_metrics_history ]
+    needs: [ main_workflow, upload_metrics_history, wait_for_push_schedule ]
     # run always except for cancel, and only when full CI ran
     if: ${{ always() && !cancelled() && (contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
     runs-on: ubuntu-latest

@@ -19,6 +19,7 @@
 #include "shambase/endian.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"

@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "sham/format/format.hpp"
 #include "shambackends/DeviceContext.hpp"
 
 namespace sham {

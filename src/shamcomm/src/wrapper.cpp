@@ -14,9 +14,11 @@
  *
  */
 
+#include "shambase/exception.hpp"
 #include "shambase/profiling/profiling.hpp"
 #include "shambase/stacktrace.hpp"
 #include "shambase/time.hpp"
+#include "sham/format/format.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 #include "shamcomm/worldInfo.hpp"
 #include "shamcomm/wrapper.hpp"

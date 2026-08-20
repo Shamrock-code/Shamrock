@@ -15,6 +15,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamcmdopt/env.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamrock/io/ShamrockDump.hpp"

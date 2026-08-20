@@ -19,7 +19,6 @@
 #include "shambase/aliases_int.hpp"
 #include "shambase/logs/msgformat.hpp"
 #include "shambase/print.hpp"
-#include "shambase/string.hpp"
 
 namespace shambase::logs {
 

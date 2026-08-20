@@ -20,10 +20,6 @@
 #include "shambase/exception.hpp"
 #include "sham/format/format.hpp"
 #include "sham/format/human_readable.hpp"
-#include <fmt/base.h>
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <fmt/printf.h>
 #include <fmt/ranges.h>
 #include <string_view>
 #include <array>

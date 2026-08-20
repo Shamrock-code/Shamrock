@@ -119,6 +119,39 @@ The org website can embed this chart with:
 ></iframe>
 ```
 
+## Codegen time (top 10 files)
+
+CI records ClangBuildAnalyzer backend codegen time per translation unit. The
+chart keeps only the top 10 files of each commit: a file that drops out of
+that ranking is omitted at that date (`null` y, `connectgaps: false`).
+Object-file paths are mapped back to source paths. See
+[Profiling build performance / time](build-profiling.md).
+
+```{raw} html
+<iframe
+  src="../_static/codegen_time_top10.html"
+  title="Top 10 codegen time over time"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
+Raw Plotly JSON:
+[codegen_time_top10.json](https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/codegen_time_top10.json).
+
+The org website can embed this chart with:
+
+```html
+<iframe
+  src="https://shamrock-code.github.io/Shamrock/sphinx/_static/codegen_time_top10.html"
+  title="Top 10 codegen time over time"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
 ## Lines of code
 
 CI counts lines in tracked source files, excluding git submodules. Exclusive

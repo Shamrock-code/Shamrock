@@ -566,6 +566,10 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 std::make_shared<decltype(node_killer)>(std::move(node_killer)));
         }
 
+        // update part counts and spans since particles have been killed and thus
+        // patches can become empty
+        part_kill_sequence.push_back(solver_graph.get_node_ptr_base("attach fields to scheduler"));
+
         solver_graph.register_node(
             "part killing step",
             OperationSequence("part killing step", std::move(part_kill_sequence)));

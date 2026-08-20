@@ -27,6 +27,9 @@
 #include "shamrock/solvergraph/PatchDataLayerRefs.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+#include "shamsolvergraph/node/OperationIf.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include <memory>
 #include <vector>
 
@@ -35,9 +38,6 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
     StackEntry stack_loc{};
 
     auto &sync = scheduler().synchronized_data;
-    if (!has_sinks<Tvec>(sync)) {
-        return;
-    }
 
     using namespace shamrock;
     using namespace shamrock::patch;
@@ -92,13 +92,15 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
     auto sink_accr_radii = sync.template get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>(
         "sink_accretion_radius");
 
-    shammodels::sph::modules::SinkParticlesFlagAccreteHard<Tvec> flag_node;
-    flag_node.set_edges(
-        part_counts, positions, sink_positions, sink_accr_radii, sink_accretion_table);
-    flag_node.evaluate();
+    auto has_sinks_edge  = IDataEdge<bool>::make_shared("has_sinks", "has_sinks");
+    has_sinks_edge->data = has_sinks<Tvec>(sync);
 
-    shammodels::sph::modules::SinkParticlesAccreteQuantities<Tvec> qty_node;
-    qty_node.set_edges(
+    auto flag_node = std::make_shared<SinkParticlesFlagAccreteHard<Tvec>>();
+    flag_node->set_edges(
+        part_counts, positions, sink_positions, sink_accr_radii, sink_accretion_table);
+
+    auto qty_node = std::make_shared<SinkParticlesAccreteQuantities<Tvec>>();
+    qty_node->set_edges(
         gpart_mass,
         dt_edge,
         part_counts,
@@ -111,13 +113,23 @@ void shammodels::sph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::accrete_par
         sink_accelerations,
         sink_angmom,
         sink_mass);
-    qty_node.evaluate();
 
-    shammodels::sph::modules::SinkParticlesEvictAccretedParticles<Tvec> evict_node;
-    evict_node.set_edges(part_counts, sink_accretion_table, pdats);
-    evict_node.evaluate();
+    auto evict_node = std::make_shared<SinkParticlesEvictAccretedParticles<Tvec>>();
+    evict_node->set_edges(part_counts, sink_accretion_table, pdats);
 
-    flag_node.free_alloc();
+    auto accretion_seq = std::make_shared<OperationSequence>(
+        "sink accretion",
+        std::vector<std::shared_ptr<INode>>{
+            flag_node,
+            qty_node,
+            evict_node,
+        });
+
+    OperationIf if_node("sink accretion", accretion_seq);
+    if_node.set_edges(has_sinks_edge);
+    if_node.evaluate();
+
+    flag_node->free_alloc();
 }
 
 template<class Tvec, template<class> class SPHKernel>

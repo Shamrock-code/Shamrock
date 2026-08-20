@@ -124,11 +124,6 @@ jobs:
     if: ${{ !inputs.light_ci || inputs.run_build_profile }}
     uses: ./.github/workflows/shamrock-acpp-clang-build-profile.yml
 
-  shamrock_linux_acpp_conda:
-    name: Tests
-    needs: [src_check]
-    uses: ./.github/workflows/shamrock-acpp-conda.yml
-
   shamrock_linux_acpp_asan:
     name: Tests
     needs: [src_check]

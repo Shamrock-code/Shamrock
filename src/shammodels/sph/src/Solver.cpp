@@ -141,7 +141,7 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
     solver_graph.register_edge("part_counts", Indexes<u32>("Npart_patch", "N_{\\rm part}_p"));
 
     solver_graph.register_edge("dt_half", IDataEdge<Tscal>("dt_half", "\\frac{dt}{2}"));
-    solver_graph.register_edge("gpart_mass", ScalarEdge<Tscal>("m", "m"));
+    solver_graph.register_edge("gpart_mass", IDataEdge<Tscal>("m", "m"));
 
     solver_graph.register_edge("xyz", FieldRefs<Tvec>("xyz", "\\mathbf{r}"));
     solver_graph.register_edge("vxyz", FieldRefs<Tvec>("vxyz", "\\mathbf{v}"));
@@ -176,11 +176,11 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
 
     {
         auto set_gpart_mass = solver_graph.register_node(
-            "set_gpart_mass", NodeSetEdge<ScalarEdge<Tscal>>([&](ScalarEdge<Tscal> &gpart_mass) {
-                gpart_mass.value = solver_config.gpart_mass;
+            "set_gpart_mass", NodeSetEdge<IDataEdge<Tscal>>([&](IDataEdge<Tscal> &gpart_mass) {
+                gpart_mass.data = solver_config.gpart_mass;
             }));
         shambase::get_check_ref(set_gpart_mass)
-            .set_edges(solver_graph.get_edge_ptr<ScalarEdge<Tscal>>("gpart_mass"));
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<Tscal>>("gpart_mass"));
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -1685,7 +1685,7 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
         }
 
         auto gpart_mass
-            = storage.solver_graph.template get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>(
+            = storage.solver_graph.template get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>(
                 "gpart_mass");
         auto t_j_field
             = storage.solver_graph.template get_edge_ptr<shamrock::solvergraph::Field<Tscal>>(
@@ -2827,7 +2827,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 auto pmass_edge
                     = storage.solver_graph
-                          .template get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                          .template get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>(
                               "gpart_mass");
 
                 s_j_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
@@ -2884,7 +2884,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 auto pmass_edge
                     = storage.solver_graph
-                          .template get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                          .template get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>(
                               "gpart_mass");
 
                 compute_cfl_dust_drift->set_edges(

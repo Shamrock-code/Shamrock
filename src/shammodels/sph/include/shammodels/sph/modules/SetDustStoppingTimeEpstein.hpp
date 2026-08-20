@@ -25,13 +25,14 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <vector>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gpart_mass)                                      \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gamma)                                          \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, sgrain_j)                          \
     X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, rho_grain_j)                       \
@@ -93,7 +94,7 @@ namespace shammodels::sph::modules {
 
             auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
-            const Tscal pmass = edges.gpart_mass.value;
+            const Tscal pmass = edges.gpart_mass.data;
             const Tscal gamma = edges.gamma.value;
 
             part_counts.for_each([&](u64 id, u32 count) {

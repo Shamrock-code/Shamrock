@@ -117,11 +117,12 @@ if shamrock.sys.world_rank() == 0:
     # solver's convergence-based bisection early-exit is sensitive to libm's
     # sqrt/pow rounding. If CI's actual output ever differs again, update
     # these expect_* values from CI's own printed "current errors" output.
-    expect_rho = 0.05004380788795549
-    expect_vx = 0.1429980515258284
-    expect_vy = 0.005331795999290027
-    expect_vz = 7.752615518913349e-05
-    expect_P = 0.06285331285974535
+    # Updated value after intergration of MPI loop.
+    expect_rho = 0.05026640023941046
+    expect_vx = 0.14338700594989237
+    expect_vy = 0.005346786387513833
+    expect_vz = 8.642235493607392e-05
+    expect_P = 0.06323460802208299
 
     tol = 1e-8
 

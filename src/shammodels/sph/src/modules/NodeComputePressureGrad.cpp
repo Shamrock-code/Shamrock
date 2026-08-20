@@ -114,7 +114,7 @@ void shammodels::sph::modules::NodeComputePressureGrad<Tvec, SPHKernel>::_impl_e
     // ensure that the output edges are of size part_counts (output without ghosts zones)
     edges.grad_P_on_rho.ensure_sizes(part_counts);
 
-    const Tscal pmass = edges.gpart_mass.value;
+    const Tscal pmass = edges.gpart_mass.data;
 
     using ComputeKernel = KernelComputePressureGrad<Tvec, SPHKernel>;
 

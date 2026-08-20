@@ -21,13 +21,14 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_1_fluid)                                      \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, pmass)                                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
     X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, hfactd)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, soundspeed)                                     \
@@ -53,7 +54,7 @@ class ComputeCFLDust1Fluid : public shamrock::solvergraph::INode {
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
         Tscal C_1_fluid = edges.C_1_fluid.value;
-        Tscal pmass     = edges.pmass.value;
+        Tscal pmass     = edges.pmass.data;
         Tscal hfactd    = edges.hfactd.value;
 
         sham::distributed_data_kernel_call(

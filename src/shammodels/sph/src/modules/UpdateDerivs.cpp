@@ -45,6 +45,7 @@
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include <memory>
 #include <vector>
 
@@ -374,7 +375,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     auto axyz_refs  = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tvec>>("axyz");
     auto duint_refs = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("duint");
     auto gpart_mass
-        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>("gpart_mass");
 
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
@@ -499,7 +500,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     auto axyz_refs  = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tvec>>("axyz");
     auto duint_refs = solver_graph.get_edge_ptr<shamrock::solvergraph::FieldRefs<Tscal>>("duint");
     auto gpart_mass
-        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>("gpart_mass");
 
     std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
         = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
@@ -1149,7 +1150,7 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_dust
 
     shamrock::solvergraph::SolverGraph &solver_graph = storage.solver_graph;
     auto gpart_mass
-        = solver_graph.get_edge_ptr<shamrock::solvergraph::ScalarEdge<Tscal>>("gpart_mass");
+        = solver_graph.get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>("gpart_mass");
 
     std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> vxyz_refs
         = std::make_shared<shamrock::solvergraph::FieldRefs<Tvec>>("vxyz", "v");

@@ -1734,6 +1734,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 std::array<f64_3, AMRBlock::block_size> _rho_vel_block;
                 std::array<f64, AMRBlock::block_size> _rhoE_block;
 
+                int mul_second_order
+                    = (acc.amr_ref_interp_mode == AMRInterpMode::SECOND_ORDER) ? 1 : 0;
+
                 bool do_second_order = true;
 
                 for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
@@ -1742,12 +1745,12 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                           + child_center_offsets[subdiv_lid][1] * cons_var_slopes[1]
                           + child_center_offsets[subdiv_lid][2] * cons_var_slopes[2];
 
-                    _rho_block[subdiv_lid]     = acc.rho_old_snap[old_cell_idx]
-                                                 + cons_var_interp.rho * acc.amr_ref_interp_mode;
+                    _rho_block[subdiv_lid]
+                        = acc.rho_old_snap[old_cell_idx] + cons_var_interp.rho * mul_second_order;
                     _rho_vel_block[subdiv_lid] = acc.rho_vel_old_snap[old_cell_idx]
-                                                 + cons_var_interp.rhovel * acc.amr_ref_interp_mode;
-                    _rhoE_block[subdiv_lid]    = acc.rhoE_old_snap[old_cell_idx]
-                                                 + cons_var_interp.rhoe * acc.amr_ref_interp_mode;
+                                                 + cons_var_interp.rhovel * mul_second_order;
+                    _rhoE_block[subdiv_lid]
+                        = acc.rhoE_old_snap[old_cell_idx] + cons_var_interp.rhoe * mul_second_order;
 
                     const auto e_int
                         = _rhoE_block[subdiv_lid]

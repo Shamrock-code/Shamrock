@@ -28,6 +28,7 @@
 #include "shammodels/gsph/Model.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/DataInserterUtility.hpp"
+#include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shamrock/scheduler/PatchScheduler.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"

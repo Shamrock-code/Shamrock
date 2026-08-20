@@ -14,6 +14,7 @@
  */
 
 #include "shambackends/SyclMpiTypes.hpp"
+#include "shambase/exception.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpiErrorCheck.hpp"
 

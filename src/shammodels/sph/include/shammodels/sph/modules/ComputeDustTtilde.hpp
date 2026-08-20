@@ -22,13 +22,13 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gpart_mass)                                     \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gpart_mass)                                      \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -74,7 +74,7 @@ namespace shammodels::sph::modules {
             // ensure that the output edges are of size part_counts (output without ghosts zones)
             edges.Ttilde_sj.ensure_sizes(part_counts);
 
-            const Tscal pmass = edges.gpart_mass.value;
+            const Tscal pmass = edges.gpart_mass.data;
 
             auto total_specie_count = part_counts.template map<u32>([&](u64 id, u32 count) {
                 return count * ndust;

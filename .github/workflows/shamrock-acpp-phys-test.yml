@@ -182,6 +182,8 @@ jobs:
             artifact_name: gallery_ramses_run_toro_shocks
           - testfile: "examples/ramses/run_sod_amr_reflective.py"
             artifact_name: gallery_ramses_run_sod_amr_reflective
+          - testfile: "examples/ramses/run_compare_amr_refine_sod.py"
+            artifact_name: gallery_ramses_run_compare_amr_refine_sod
 
           # GSPH examples
           - testfile: "examples/gsph/run_sod.py"

@@ -12,7 +12,7 @@
 /**
  * @file enum_AMRInterpMode.hpp
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
- * @author Timothée David--Cléris (tim.shamrock@proton.me) --no git blame--
+ * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief AMR (refinement) prolongation mode enum + json serialization/deserialization
  *
  */

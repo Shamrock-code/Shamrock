@@ -79,7 +79,7 @@ namespace shamcomm::mpi {
 
     void check_tag_value(i32 tag) {
         if (tag > mpi_max_tag_value()) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "mpi_max_tag_value ({}) exceeded with tag {}", mpi_max_tag_value(), tag));
         }
     }

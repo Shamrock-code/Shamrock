@@ -310,12 +310,12 @@ std::string print_member(const T &a);
 
 template<>
 std::string print_member(const u8 &a) {
-    return shambase::format_printf("%d", u32(a));
+    return sham::format_printf("%d", u32(a));
 }
 
 template<>
 std::string print_member(const u32 &a) {
-    return shambase::format_printf("%d", a);
+    return sham::format_printf("%d", a);
 }
 
 template<class u_morton, class vec3>

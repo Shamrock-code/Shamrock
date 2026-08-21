@@ -137,7 +137,7 @@ namespace shammodels::sph::modules {
             shambase::replace_all(tex, "{ds_j_dt}", ds_j_dt_edge);
             shambase::replace_all(tex, "{rhodust_eps}", rhodust_eps_edge);
             shambase::replace_all(tex, "{part_counts}", part_counts_edge);
-            shambase::replace_all(tex, "{nbins}", shambase::format("{}", nbins));
+            shambase::replace_all(tex, "{nbins}", sham::format("{}", nbins));
 
             return tex;
         }

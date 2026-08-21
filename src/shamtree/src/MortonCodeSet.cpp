@@ -74,7 +74,7 @@ namespace shamtree {
         morton_codes.resize(morton_count);
 
         if (morton_count < cnt_obj) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "MortonCodeSet: morton_count < cnt_obj\n morton_count: {}, cnt_obj: {}",
                 morton_count,
                 cnt_obj));

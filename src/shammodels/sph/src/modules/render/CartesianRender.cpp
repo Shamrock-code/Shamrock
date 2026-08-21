@@ -65,7 +65,7 @@ namespace shammodels::sph::modules {
         Tvec e_z  = sycl::cross(delta_x, delta_y);
         Tscal len = sycl::length(e_z);
         if (!(len > 0)) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "The cross product of delta_x and delta_y is zero\n"
                 "  args :"
                 "    center  = {}\n"
@@ -111,7 +111,7 @@ namespace shammodels::sph::modules {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
-                shambase::format(
+                sham::format(
                     "compute_slice field_name: {}, positions count: {}",
                     field_name,
                     positions.get_size()));
@@ -131,8 +131,7 @@ namespace shammodels::sph::modules {
         t.stop();
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
-                "sph::CartesianRender",
-                shambase::format("compute_slice took {}", t.get_time_str()));
+                "sph::CartesianRender", sham::format("compute_slice took {}", t.get_time_str()));
         }
 
         return ret;
@@ -148,7 +147,7 @@ namespace shammodels::sph::modules {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
-                shambase::format(
+                sham::format(
                     "compute_column_integ field_name: {}, rays count: {}",
                     field_name,
                     rays.get_size()));
@@ -169,7 +168,7 @@ namespace shammodels::sph::modules {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
-                shambase::format("compute_column_integ took {}", t.get_time_str()));
+                sham::format("compute_column_integ took {}", t.get_time_str()));
         }
 
         return ret;
@@ -185,7 +184,7 @@ namespace shammodels::sph::modules {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
-                shambase::format(
+                sham::format(
                     "compute_azymuthal_integ field_name: {}, ring_rays count: {}",
                     field_name,
                     ring_rays.get_size()));
@@ -206,7 +205,7 @@ namespace shammodels::sph::modules {
         if (shamcomm::world_rank() == 0) {
             logger::info_ln(
                 "sph::CartesianRender",
-                shambase::format("compute_azymuthal_integ took {}", t.get_time_str()));
+                sham::format("compute_azymuthal_integ took {}", t.get_time_str()));
         }
 
         return ret;

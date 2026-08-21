@@ -247,7 +247,7 @@ namespace shambase {
     template<int n, class T>
     inline std::array<T, n> convert_to_array(std::vector<T> &in) {
         if (in.size() != n) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "you've input values with the wrong size, input size = {}, wanted = {}",
                 in.size(),
                 n));

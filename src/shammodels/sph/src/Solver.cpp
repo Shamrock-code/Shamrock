@@ -714,7 +714,7 @@ namespace shammodels::sph {
 
         dump.override_magic_number();
         dump.iversion = 1;
-        dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
+        dump.fileid   = sham::format("{:100s}", "FT:Phantom Shamrock writer");
 
         u32 Ntot = info.nobj;
         dump.table_header_fort_int.add("nparttot", Ntot);
@@ -981,7 +981,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         Tscal max_eps_h;
 
         if (solver_config.gpart_mass == 0) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            shambase::throw_with_loc<std::runtime_error>(sham::format(
                 "invalid gpart_mass {}, this configuration can not converge.\n"
                 "Please set it using either model.set_particle_mass(pmass) or "
                 "cfg.set_particle_mass(pmass)",
@@ -1106,7 +1106,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
                         {
                             sycl::host_accessor acc{idx_err};
                             for (u32 i = 0; i < idx_err.size(); i++) {
-                                add_info += shambase::format(
+                                add_info += sham::format(
                                     "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
                             }
                         }
@@ -1847,7 +1847,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     if (shamcomm::world_rank() == 0) {
         shamcomm::logs::raw_ln(
-            shambase::format("---------------- t = {}, dt = {} ----------------", t_current, dt));
+            sham::format("---------------- t = {}, dt = {} ----------------", t_current, dt));
     }
 
     shambase::Timer tstep;
@@ -2489,7 +2489,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             if (shamcomm::world_rank() == 0) {
                 logger::warn_ln(
                     "BasicGasSPH",
-                    shambase::format(
+                    sham::format(
                         "the corrector tolerance are broken the step will "
                         "be re rerunned\n    eps_v = {}",
                         eps_v));
@@ -2999,7 +2999,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
                     table.add_double_rule();
                     for (auto &[key, value] : cfl_detail) {
                         table.add_data(
-                            {key, shambase::format("{:.2e}", value)}, shambase::table::right);
+                            {key, sham::format("{:.2e}", value)}, shambase::table::right);
                     }
                     table.add_rule();
                     logger::info_ln("sph::Model", "CFL detail :", table.render());

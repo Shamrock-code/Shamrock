@@ -343,7 +343,7 @@ void dtt_test(
     __shamrock_stack_entry();
 
     logger::raw_ln(
-        shambase::format(
+        sham::format(
             "dtt test --- Npart : {}, reduction_level : {}, theta_crit : {}, ordered_result : {}, "
             "allow_leaf_lowering : {}",
             Npart,

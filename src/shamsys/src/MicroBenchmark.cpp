@@ -152,7 +152,7 @@ void shamsys::microbench::p2p_bandwidth(u32 wr_sender, u32 wr_receiv) {
     if (shamcomm::world_rank() == 0) {
         auto hr_bw = sham::to_human_readable<false>(bw);
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 " - p2p bandwidth    : {:.2f} {}B.s^-1 (ranks : {} -> {}) (loops : {})",
                 hr_bw.value,
                 hr_bw.prefix,
@@ -217,7 +217,7 @@ void shamsys::microbench::p2p_latency(u32 wr1, u32 wr2) {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 " - p2p latency     : {:.4e} s (ranks : {} <-> {}) (loops : {})",
                 latency,
                 wr1,
@@ -325,7 +325,7 @@ void shamsys::microbench::saxpy() {
     if (shamcomm::world_rank() == 0) {
         auto hr_bw = sham::to_human_readable<false>(sum_bw);
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 " - saxpy ({})   : {:.2f} {}B.s^-1 (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
                 "({:.1e} ms, {})",
                 type_name,
@@ -386,7 +386,7 @@ void shamsys::microbench::fma_chains_rotation() {
     if (shamcomm::world_rank() == 0) {
         auto hr_flop = sham::to_human_readable<false>(sum_flop * flops_multiplier);
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 " - fma_chains ({}) : {:.2f} {}flops (min = {:.1e}, max = {:.1e}, avg = {:.1e}) "
                 "({:.1e} ms, rotations = {})",
                 type_name,
@@ -434,7 +434,7 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
 
     if (shamcomm::world_rank() == 0) {
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 " - vector_allgather (u64, n={:4}) : {:.3e} s (min = {:.2e}, max = {:.2e}, loops = "
                 "{})",
                 el_per_rank,

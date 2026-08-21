@@ -670,7 +670,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
         Tscal max_eps_h;
 
         if (solver_config.gpart_mass == 0) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            shambase::throw_with_loc<std::runtime_error>(sham::format(
                 "invalid gpart_mass {}, this configuration can not converge.\n"
                 "Please set it using either model.set_particle_mass(pmass) or "
                 "cfg.set_particle_mass(pmass)",
@@ -795,7 +795,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::gsph_prestep(Tscal time_val, Tscal dt
                         {
                             sycl::host_accessor acc{idx_err};
                             for (u32 i = 0; i < idx_err.size(); i++) {
-                                add_info += shambase::format(
+                                add_info += sham::format(
                                     "{} - pos : {}, hpart : {}\n", acc[i], pos[acc[i]], h[acc[i]]);
                             }
                         }
@@ -1813,8 +1813,7 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     if (shamcomm::world_rank() == 0) {
         shamcomm::logs::raw_ln(
-            shambase::format(
-                "---------------- GSPH t = {}, dt = {} ----------------", t_current, dt));
+            sham::format("---------------- GSPH t = {}, dt = {} ----------------", t_current, dt));
     }
 
     shambase::Timer tstep;

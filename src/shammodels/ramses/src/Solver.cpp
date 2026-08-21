@@ -164,7 +164,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             using Block = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
 
             if (Block::block_size != block_size) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                shambase::throw_with_loc<std::runtime_error>(sham::format(
                     "block_size mismatch, got {} expected {}", Block::block_size, block_size));
             }
 
@@ -1532,7 +1532,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     Tscal dt_input  = get_dt();
 
     if (shamcomm::world_rank() == 0) {
-        logger::normal_ln("amr::Godunov", shambase::format("t = {}, dt = {}", t_current, dt_input));
+        logger::normal_ln("amr::Godunov", sham::format("t = {}, dt = {}", t_current, dt_input));
     }
 
     if (solver_config.face_half_time_interpolation) {

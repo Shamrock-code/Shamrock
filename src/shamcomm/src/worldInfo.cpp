@@ -55,7 +55,7 @@ namespace shamcomm {
         std::optional<u32> local_rank = node_local_rank();
 
         shambase::set_callstack_process_identifier(
-            shambase::format(
+            sham::format(
                 "{} (world rank: {}, local rank: {})",
                 _mpi_process_name,
                 world_rank(),

@@ -112,7 +112,7 @@ namespace shammodels::sph::modules {
 
             shambase::replace_all(tex, "{t_j_0}", t_j_0);
             shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
+            shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
             shambase::replace_all(tex, "{t_j}", t_j);
 
             return tex;

@@ -134,7 +134,7 @@ namespace shamrock {
 
                 if (nvar != loc_nvar) {
                     shambase::throw_with_loc<std::runtime_error>(
-                        shambase::format("mismatch in nvar excepted={} found={}", *nvar, loc_nvar));
+                        sham::format("mismatch in nvar excepted={} found={}", *nvar, loc_nvar));
                 }
             });
 

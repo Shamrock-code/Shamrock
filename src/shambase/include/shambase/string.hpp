@@ -56,13 +56,13 @@ namespace shambase {
 
             if (i % column_count == 0) {
                 if (i == 0) {
-                    accum += shambase::format("{:8} : ", i);
+                    accum += sham::format("{:8} : ", i);
                 } else {
-                    accum += shambase::format("\n{:8} : ", i);
+                    accum += sham::format("\n{:8} : ", i);
                 }
             }
 
-            accum += shambase::format(fmt, iter[i]);
+            accum += sham::format(fmt, iter[i]);
         }
 
         return accum;
@@ -198,7 +198,7 @@ namespace shambase {
             throw make_except_with_loc<std::invalid_argument>(
                 "the string is too short to be shortened"
                 "\n args : "
-                + shambase::format("{} : {} \n {} : {}", "str", str, "len", len));
+                + sham::format("{} : {} \n {} : {}", "str", str, "len", len));
         }
         return str.substr(0, str.size() - len);
     }

@@ -311,7 +311,7 @@ namespace shammodels::sph {
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
                     "SPH",
-                    shambase::format(
+                    sham::format(
                         "evolve_until (target_time = {:.2f}s, niter_max = {}, max_walltime = "
                         "{:.2f}s)",
                         target_time,
@@ -375,7 +375,7 @@ namespace shammodels::sph {
                         if (shamcomm::world_rank() == 0) {
                             logger::info_ln(
                                 "SPH",
-                                shambase::format(
+                                sham::format(
                                     "stopping evolve until because of "
                                     "max_walltime = {:.2f}s > {:.2f}s",
                                     global_walltime,
@@ -411,7 +411,7 @@ namespace shammodels::sph {
                     if (shamcomm::world_rank() == 0) {
                         logger::info_ln(
                             "SPH",
-                            shambase::format(
+                            sham::format(
                                 "next walltime check in {:.2f}s (niter = {}) global walltime = "
                                 "{:.2f}s (max_walltime = {:.2f}s)",
                                 iters_to_next_check * sec_per_iter,

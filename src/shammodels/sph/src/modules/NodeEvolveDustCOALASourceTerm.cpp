@@ -220,7 +220,7 @@ namespace shammodels::sph::modules {
         shambase::replace_all(tex, "{s_j}", s_j);
         shambase::replace_all(tex, "{delta_v_j}", delta_v_j);
         shambase::replace_all(tex, "{S_coag}", S_coag);
-        shambase::replace_all(tex, "{nbins}", shambase::format("{}", nbins));
+        shambase::replace_all(tex, "{nbins}", sham::format("{}", nbins));
 
         return tex;
     }

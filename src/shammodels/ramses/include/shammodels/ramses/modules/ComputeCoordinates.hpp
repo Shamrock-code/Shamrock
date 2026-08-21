@@ -58,7 +58,7 @@ namespace shammodels::basegodunov::modules {
 
             if (block_nside != 2) {
                 shambase::throw_with_loc<std::runtime_error>(
-                    shambase::format("this module assume block_nside=2, got {}", block_nside));
+                    sham::format("this module assume block_nside=2, got {}", block_nside));
             }
         }
 

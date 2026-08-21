@@ -166,11 +166,11 @@ namespace shammodels::sph::modules {
             shambase::replace_all(tex, "{sgrain_j}", sgrain_j);
             shambase::replace_all(tex, "{rho_grain_j}", rho_grain_j);
             shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
+            shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
             shambase::replace_all(tex, "{hpart}", hpart);
             shambase::replace_all(tex, "{cs}", cs);
             shambase::replace_all(tex, "{t_j}", t_j);
-            shambase::replace_all(tex, "{hfact}", shambase::format("{}", Kernel::hfactd));
+            shambase::replace_all(tex, "{hfact}", sham::format("{}", Kernel::hfactd));
 
             return tex;
         };

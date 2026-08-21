@@ -71,7 +71,7 @@ namespace shammodels::sph::modules {
             if (shamcomm::world_rank() == 0) {
                 std::string log = "";
                 log += "smoothing length iteration converged\n";
-                log += shambase::format(
+                log += sham::format(
                     "  eps min = {}, max = {}\n  iterations = {}", min_eps_h, max_eps_h, iter_h);
 
                 logger::info_ln("Smoothinglength", log);

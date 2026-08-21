@@ -94,7 +94,7 @@ namespace shamrock {
 
         shamlog_debug_ln(
             "ShamrockDump",
-            shambase::format(
+            sham::format(
                 "table sizes {} {} {}", metadata_patch.size(), metadata_user.size(), sout.size()));
 
         if (/*do check*/ true) {
@@ -103,7 +103,7 @@ namespace shamrock {
                 if (out != s.size() * shamcomm::world_size()) {
                     logger::err_ln(
                         "ShamrockDump",
-                        shambase::format(
+                        sham::format(
                             "string size mismatch between all processes,\n    size : {}\nthe "
                             "string : {}\n",
                             s.size(),
@@ -152,7 +152,7 @@ namespace shamrock {
             size_t max_head = all_offsets[plist_len - 1] + all_bytecounts[plist_len - 1] + head_ptr;
             logger::info_ln(
                 "Shamrock Dump",
-                shambase::format(
+                sham::format(
                     "dump to {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),
@@ -263,7 +263,7 @@ namespace shamrock {
             size_t max_head = all_offsets[plist_len - 1] + all_bytecounts[plist_len - 1] + head_ptr;
             logger::info_ln(
                 "Shamrock Dump",
-                shambase::format(
+                sham::format(
                     "load dump from {}\n              - took {}, bandwidth = {}/s",
                     fname,
                     timer.get_time_str(),

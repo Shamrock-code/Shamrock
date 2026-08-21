@@ -171,7 +171,7 @@ namespace shamrock::solvergraph {
             // if the type is already registered, throw an error
             if (!inserted) {
                 throw std::runtime_error(
-                    shambase::format(
+                    sham::format(
                         "Type {} already registered (called from {})",
                         name,
                         shambase::format_one_line_func(loc)));

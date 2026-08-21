@@ -59,7 +59,7 @@ namespace shamalgs::primitives {
             return REDUCTION_IMPL::GROUP_REDUCTION256;
 #endif
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "invalid implementation : {}, possible implementations : {}",
             impl,
             impl::get_default_impl_list_reduction()));
@@ -78,7 +78,7 @@ namespace shamalgs::primitives {
 #endif
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknown reduction implementation : {}", u32(impl)));
+            sham::format("unknown reduction implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_reduction() {
@@ -122,7 +122,7 @@ namespace shamalgs::primitives {
 #endif
         default:
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+                sham::format("unimplemented case : {}", u32(reduction_impl)));
         }
     }
 
@@ -147,7 +147,7 @@ namespace shamalgs::primitives {
 #endif
         default:
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+                sham::format("unimplemented case : {}", u32(reduction_impl)));
         }
     }
 
@@ -172,7 +172,7 @@ namespace shamalgs::primitives {
 #endif
         default:
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(reduction_impl)));
+                sham::format("unimplemented case : {}", u32(reduction_impl)));
         }
     }
 

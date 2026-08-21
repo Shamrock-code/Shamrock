@@ -60,7 +60,7 @@ namespace shammodels::sph {
          * @param val the value of the entry
          */
         void add(std::string s, T val) {
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
             entries.push_back({s, val});
         }
 
@@ -306,7 +306,7 @@ namespace shammodels::sph {
         template<class T>
         void fill_vec(std::string field_name, std::vector<T> &vec) {
 
-            field_name = shambase::format("{:16s}", field_name);
+            field_name = sham::format("{:16s}", field_name);
 
             for (auto &tmp : blocks_fort_int) {
                 tmp.fill_vec(field_name, vec);
@@ -435,7 +435,7 @@ namespace shammodels::sph {
          */
         inline bool has_header_entry(std::string s) const {
 
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
 
             if (auto tmp = table_header_fort_int.fetch(s); tmp) {
                 return true;
@@ -477,7 +477,7 @@ namespace shammodels::sph {
         template<class T>
         inline T read_header_float(std::string s) const {
 
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
 
             if (auto tmp = table_header_fort_real.fetch(s); tmp) {
                 return *tmp;
@@ -506,7 +506,7 @@ namespace shammodels::sph {
         inline std::vector<T> read_header_floats(std::string s) {
             std::vector<T> vec{};
 
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
 
             table_header_fort_real.fetch_multiple(vec, s);
             table_header_f32.fetch_multiple(vec, s);
@@ -527,7 +527,7 @@ namespace shammodels::sph {
         template<class T>
         inline T read_header_int(std::string s) const {
 
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
 
             if (auto tmp = table_header_fort_int.fetch(s); tmp) {
                 return *tmp;
@@ -562,7 +562,7 @@ namespace shammodels::sph {
         inline std::vector<T> read_header_ints(std::string s) {
             std::vector<T> vec{};
 
-            s = shambase::format("{:16s}", s);
+            s = sham::format("{:16s}", s);
 
             table_header_fort_int.fetch_multiple(vec, s);
             table_header_i8.fetch_multiple(vec, s);

@@ -46,7 +46,7 @@ namespace shamrock::solvergraph {
 
         inline bool check_node(const std::shared_ptr<INode> &node) const {
             if (!bool(node)) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                     "node == nullptr is not allowed, please pass a shared pointer with a valid "
                     "node"));
             }
@@ -58,7 +58,7 @@ namespace shamrock::solvergraph {
 
         inline bool check_edge(const std::shared_ptr<IEdge> &edge) const {
             if (!bool(edge)) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                     "edge == nullptr is not allowed, please pass a shared pointer with a valid "
                     "edge"));
             }
@@ -148,7 +148,7 @@ namespace shamrock::solvergraph {
             const std::string &name, std::shared_ptr<INode> node) {
 
             if (!constraint.check_node(node)) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "Solvergraph constraint '{}' rejected node '{}' (label='{}', uuid={})",
                     constraint.name,
                     name,
@@ -159,7 +159,7 @@ namespace shamrock::solvergraph {
             const auto [it, inserted] = nodes.try_emplace(name, std::move(node));
             if (!inserted) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node already exists: {}", name));
+                    sham::format("Node already exists: {}", name));
             }
             return it->second;
         }
@@ -176,7 +176,7 @@ namespace shamrock::solvergraph {
             const std::string &name, std::shared_ptr<IEdge> edge) {
 
             if (!constraint.check_edge(edge)) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "Solvergraph constraint '{}' rejected edge '{}' (label='{}', uuid={})",
                     constraint.name,
                     name,
@@ -187,7 +187,7 @@ namespace shamrock::solvergraph {
             const auto [it, inserted] = edges.try_emplace(name, std::move(edge));
             if (!inserted) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge already exists: {}", name));
+                    sham::format("Edge already exists: {}", name));
             }
             return it->second;
         }
@@ -203,7 +203,7 @@ namespace shamrock::solvergraph {
             auto it = nodes.find(name);
             if (it == nodes.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node does not exist: {}", name));
+                    sham::format("Node does not exist: {}", name));
             }
             return it->second;
         }
@@ -213,7 +213,7 @@ namespace shamrock::solvergraph {
             auto it = nodes.find(name);
             if (it == nodes.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node does not exist: {}", name));
+                    sham::format("Node does not exist: {}", name));
             }
             return it->second;
         }
@@ -229,7 +229,7 @@ namespace shamrock::solvergraph {
             auto it = edges.find(name);
             if (it == edges.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge does not exist: {}", name));
+                    sham::format("Edge does not exist: {}", name));
             }
             return it->second;
         }
@@ -239,7 +239,7 @@ namespace shamrock::solvergraph {
             auto it = edges.find(name);
             if (it == edges.end()) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge does not exist: {}", name));
+                    sham::format("Edge does not exist: {}", name));
             }
             return it->second;
         }
@@ -360,7 +360,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node exists but is not from the requested type: {}", name));
+                    sham::format("Node exists but is not from the requested type: {}", name));
             }
             return tmp;
         }
@@ -371,7 +371,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_node_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Node exists but is not from the requested type: {}", name));
+                    sham::format("Node exists but is not from the requested type: {}", name));
             }
             return tmp;
         }
@@ -392,7 +392,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge exists but is not from the requested type: {}", name));
+                    sham::format("Edge exists but is not from the requested type: {}", name));
             }
             return tmp;
         }
@@ -403,7 +403,7 @@ namespace shamrock::solvergraph {
             auto tmp = std::dynamic_pointer_cast<T>(get_edge_ptr_base(name));
             if (!bool(tmp)) {
                 shambase::throw_with_loc<std::invalid_argument>(
-                    shambase::format("Edge exists but is not from the requested type: {}", name));
+                    sham::format("Edge exists but is not from the requested type: {}", name));
             }
             return tmp;
         }

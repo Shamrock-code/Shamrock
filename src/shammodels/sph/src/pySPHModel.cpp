@@ -1695,7 +1695,7 @@ ON_PYTHON_INIT {
         .def_readwrite("reach_max_walltime", &EvolveUntilResults::reach_max_walltime)
         .def_readwrite("iter_count", &EvolveUntilResults::iter_count)
         .def("__repr__", [](const EvolveUntilResults &self) {
-            return shambase::format(
+            return sham::format(
                 "EvolveUntilResults(reach_target_time={}, reach_niter_max={}, "
                 "reach_max_walltime={}, iter_count={})",
                 self.reach_target_time,

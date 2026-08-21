@@ -106,8 +106,8 @@ namespace shammodels::basegodunov::modules {
         shambase::replace_all(tex, "{rho}", rho);
         shambase::replace_all(tex, "{rhov}", rhov);
         shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
-        shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
+        shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
     }

@@ -41,7 +41,7 @@ void register_field(py::module &m, const char *class_name) {
         .def(
             "__repr__",
             [=](Field<T> &self) {
-                return shambase::format(
+                return sham::format(
                     "{}(label={}, tex_symbol={}, nvar={})",
                     class_name,
                     self.get_label(),

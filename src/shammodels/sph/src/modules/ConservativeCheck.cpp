@@ -71,7 +71,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 sum_p += mass[i] * vel[i];
             }
         }
-        cv_checks += shambase::format("    sum v = {}\n", sum_p);
+        cv_checks += sham::format("    sum v = {}\n", sum_p);
     }
 
     ///////////////////////////////////
@@ -94,7 +94,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
                 sum_a += mass[i] * (acc_sph[i] + acc_ext[i]);
             }
         }
-        cv_checks += shambase::format("    sum a = {}\n", sum_a);
+        cv_checks += sham::format("    sum a = {}\n", sum_a);
     }
 
     ///////////////////////////////////
@@ -109,7 +109,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal sum_e = gpart_mass * shamalgs::collective::allreduce_sum(tmpe);
 
     if (shamcomm::world_rank() == 0) {
-        cv_checks += shambase::format("    sum e = {}\n", sum_e);
+        cv_checks += sham::format("    sum e = {}\n", sum_e);
     }
 
     Tscal pmass  = gpart_mass;
@@ -175,7 +175,7 @@ void shammodels::sph::modules::ConservativeCheck<Tvec, SPHKernel>::check_conserv
     Tscal de = shamalgs::collective::allreduce_sum(tmp_de);
 
     if (shamcomm::world_rank() == 0) {
-        cv_checks += shambase::format("    sum de = {}", de);
+        cv_checks += sham::format("    sum de = {}", de);
     }
 
     if (shamcomm::world_rank() == 0) {

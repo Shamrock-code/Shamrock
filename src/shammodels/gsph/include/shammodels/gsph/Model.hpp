@@ -228,7 +228,7 @@ namespace shammodels::gsph {
 
                     // Validate ivar parameter to prevent out-of-bounds access
                     if (ivar >= nvar) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "set_field_in_box: ivar ({}) >= f.get_nvar ({}) for field {}",
                             ivar,
                             nvar,

@@ -174,7 +174,7 @@ namespace shammodels::sph::modules {
             sink_accelerations[i_sink] = new_acc;
 
             had_accretion = true;
-            log += shambase::format(
+            log += sham::format(
                 "\n    id {} deltas : mass={} r={} v={} l={}",
                 i_sink,
                 new_mass - old_mass,

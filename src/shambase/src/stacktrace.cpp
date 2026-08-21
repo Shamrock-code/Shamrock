@@ -40,7 +40,7 @@ namespace shambase::details {
 
     std::string ChromeProfileEntry::format(u32 world_rank) {
         if (is_start) {
-            return shambase::format_printf(
+            return sham::format_printf(
                 R"({
                 "cat": "%s",
                 "pid": %d,
@@ -58,7 +58,7 @@ namespace shambase::details {
                 name.c_str());
 
         } else {
-            return shambase::format_printf(
+            return sham::format_printf(
                 R"({
                 "cat": "%s",
                 "pid": %d,
@@ -164,7 +164,7 @@ namespace shambase::details {
          * @return std::string JSON string representation of the profile entry
          */
         std::string format() {
-            return shambase::format_printf(
+            return sham::format_printf(
                 R"({"tstart": %f, "tend": %f, "name": "%s"})", time_start, time_end, entry_name);
         }
     };
@@ -259,7 +259,7 @@ namespace shambase {
         }
 
         for (u32 i = 0; i < lines.size(); i++) {
-            ss << shambase::format(" {:2} : {}\n", i, lines[i]);
+            ss << sham::format(" {:2} : {}\n", i, lines[i]);
         }
 
         for (auto &generator : _callstack_gen_info_generators) {

@@ -268,8 +268,8 @@ struct shammodels::basegodunov::SolverConfig {
 
     inline void check_config() {
         if (grid_coord_to_pos_fact <= 0) {
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
-                "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
+            shambase::throw_with_loc<std::runtime_error>(
+                sham::format("grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
         }
 
         if (is_dust_on()) {
@@ -281,7 +281,7 @@ struct shammodels::basegodunov::SolverConfig {
             u32 mode = gravity_config.gravity_mode;
 
             shamrock::experimental_feature_check(
-                shambase::format(
+                sham::format(
                     "self gravity mode is not enabled but gravity mode is set to {} (> 0 whith 0 "
                     "== "
                     "NoGravity mode)",
@@ -290,13 +290,13 @@ struct shammodels::basegodunov::SolverConfig {
 
         if (!(eos_gamma > 1.0)) {
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
+                sham::format("Gamma must be > 1, currently Gamma = {}", eos_gamma));
         }
 
         if (is_gas_passive_scalar_on()) {
             ON_RANK_0(logger::warn_ln("Ramses::SolverConfig", "Passive scalars are experimental"));
             shamrock::experimental_feature_check(
-                shambase::format(
+                sham::format(
                     "gas passive scalars mode is not enabled but gas passive scalars mode is set "
                     "to {}"
                     "> 0",

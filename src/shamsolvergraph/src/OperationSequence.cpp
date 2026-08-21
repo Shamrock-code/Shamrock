@@ -39,7 +39,7 @@ namespace shamrock::solvergraph {
                << nodes[i + 1]->get_dot_graph_node_start() << " [weight=3];\n";
         }
 
-        ss << shambase::format("label = \"{}\";\n", _impl_get_label());
+        ss << sham::format("label = \"{}\";\n", _impl_get_label());
         ss << "}\n";
 
         return ss.str();

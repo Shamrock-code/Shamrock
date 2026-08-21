@@ -7,9 +7,10 @@ on:
   workflow_dispatch:
 
   schedule:
-    # Daily at 02:00 UTC. CI jobs below are skipped when a commit already
-    # landed on main in the last 24 hours, since On Push covers that change.
-    - cron:  '0 2 * * *'
+    # Every 3 hours. CI jobs below are skipped whenever a push or schedule
+    # workflow run in the repo is already queued or in_progress, to avoid
+    # stacking a new scheduled CI run on top of one already running.
+    - cron:  '0 */3 * * *'
 
 
 jobs:
@@ -17,17 +18,19 @@ jobs:
   should_run:
     name: Check if scheduled CI is needed
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
     outputs:
       run_ci: ${{ steps.check.outputs.run_ci }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Skip if a commit landed in the last 24 hours
+      - name: Skip if a CI job is already running
         id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          export GH_PAGER=cat
 
           if [ "${{ github.event_name }}" != "schedule" ]; then
             echo "run_ci=true" >> "$GITHUB_OUTPUT"
@@ -35,18 +38,27 @@ jobs:
             exit 0
           fi
 
-          commit_ts="$(git log -1 --format=%ct)"
-          now="$(date -u +%s)"
-          age="$((now - commit_ts))"
+          list_runs() {
+            gh run list --repo "$GH_REPO" --event "$1" --status "$2" --limit 100 \
+              --json databaseId,name,event,headBranch
+          }
 
-          echo "Latest commit on default branch is ${age} seconds old."
+          runs="$(
+            {
+              list_runs push in_progress
+              list_runs push queued
+              list_runs schedule in_progress
+              list_runs schedule queued
+            } | jq -s 'add | unique_by(.databaseId) | map(select(.databaseId != ${{ github.run_id }}))'
+          )"
 
-          if [ "$age" -lt 86400 ]; then
-            echo "run_ci=false" >> "$GITHUB_OUTPUT"
-            echo "A commit landed in the last 24 hours; skipping scheduled CI."
-          else
+          if [ "$(jq 'length' <<<"$runs")" -eq 0 ]; then
             echo "run_ci=true" >> "$GITHUB_OUTPUT"
-            echo "No commit in the last 24 hours; running scheduled CI."
+            echo "No other push/schedule CI job queued or in_progress; running scheduled CI."
+          else
+            echo "run_ci=false" >> "$GITHUB_OUTPUT"
+            echo "A push/schedule CI job is already queued or in_progress; skipping scheduled CI."
+            jq -r '.[] | "\(.event) \(.name) #\(.databaseId) (\(.headBranch))"' <<<"$runs"
           fi
 
   check_codecov_secret:
@@ -72,5 +84,7 @@ jobs:
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     with:
-      run_build_push_docker: true
+      # This workflow only re-tests already-published commits, so it never
+      # touches the images; On Push publishes for any actual change.
+      run_build_push_docker: false
       light_ci: false

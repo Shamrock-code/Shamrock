@@ -2,6 +2,12 @@ name: Acpp/clang
 
 on:
   workflow_call:
+    inputs:
+      fail_fast:
+        description: "Cancel remaining matrix jobs when one fails"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
 
@@ -126,7 +132,7 @@ jobs:
             testfile: run_test_sink_synchro.py
           - worldsize: 2
             testfile: run_test_sink_synchro.py
-      fail-fast: false
+      fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:
@@ -235,7 +241,7 @@ jobs:
           - testfile: "examples/tests_ci/run_compare_shamrock_ph_disc.py"
             artifact_name: gallery_tests_ci_run_compare_shamrock_ph_disc
 
-      fail-fast: false
+      fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60
     steps:

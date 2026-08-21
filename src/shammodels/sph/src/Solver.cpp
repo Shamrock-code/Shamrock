@@ -1699,9 +1699,9 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
             ConstantStoppingTimes *cfg_drag
             = std::get_if<ConstantStoppingTimes>(&cfg.dust_drag_mode)) {
 
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_t_j
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-            input_t_j->value = cfg_drag->stopping_times;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<Tscal>>> input_t_j
+                = shamrock::solvergraph::IDataEdge<std::vector<Tscal>>::make_shared("", "");
+            input_t_j->data = cfg_drag->stopping_times;
 
             std::shared_ptr<modules::SetDustStoppingTimeConstant<Tvec>> node_set_tj
                 = std::make_shared<modules::SetDustStoppingTimeConstant<Tvec>>(ndust);
@@ -1712,17 +1712,17 @@ void shammodels::sph::Solver<Tvec, Kern>::update_derivs(Tscal dt_hydro) {
 
         } else if (EpsteinDrag *cfg_drag = std::get_if<EpsteinDrag>(&cfg.dust_drag_mode)) {
 
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> input_gamma
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("", "");
-            input_gamma->value = cfg_drag->gamma;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> input_gamma
+                = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
+            input_gamma->data = cfg_drag->gamma;
 
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_sgrain_j
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-            input_sgrain_j->value = cfg_drag->grains_sizes;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<Tscal>>> input_sgrain_j
+                = shamrock::solvergraph::IDataEdge<std::vector<Tscal>>::make_shared("", "");
+            input_sgrain_j->data = cfg_drag->grains_sizes;
 
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>> input_rho_grain_j
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>>("", "");
-            input_rho_grain_j->value = cfg_drag->grains_densities;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<std::vector<Tscal>>> input_rho_grain_j
+                = shamrock::solvergraph::IDataEdge<std::vector<Tscal>>::make_shared("", "");
+            input_rho_grain_j->data = cfg_drag->grains_densities;
 
             std::shared_ptr<modules::SetDustStoppingTimeEpstein<Tvec, Kern>> node_set_tj
                 = std::make_shared<modules::SetDustStoppingTimeEpstein<Tvec, Kern>>(ndust);

@@ -24,7 +24,6 @@
 #include "shamphys/Dust.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
@@ -33,9 +32,9 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gpart_mass)                                      \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, gamma)                                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, sgrain_j)                          \
-    X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, rho_grain_j)                       \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, gamma)                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, sgrain_j)                           \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, rho_grain_j)                        \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -70,8 +69,8 @@ namespace shammodels::sph::modules {
             auto edges = get_edges();
 
             auto &part_counts                            = edges.part_counts.indexes;
-            const std::vector<Tscal> &inputs_sgrain_j    = edges.sgrain_j.value;
-            const std::vector<Tscal> &inputs_rho_grain_j = edges.rho_grain_j.value;
+            const std::vector<Tscal> &inputs_sgrain_j    = edges.sgrain_j.data;
+            const std::vector<Tscal> &inputs_rho_grain_j = edges.rho_grain_j.data;
             SHAM_ASSERT(inputs_sgrain_j.size() == ndust);
             SHAM_ASSERT(inputs_rho_grain_j.size() == ndust);
 
@@ -95,7 +94,7 @@ namespace shammodels::sph::modules {
             auto &q = shamsys::instance::get_compute_scheduler().get_queue();
 
             const Tscal pmass = edges.gpart_mass.data;
-            const Tscal gamma = edges.gamma.value;
+            const Tscal gamma = edges.gamma.data;
 
             part_counts.for_each([&](u64 id, u32 count) {
                 // call the kernel for each patches with part_counts.get(id_patch) threads of patch

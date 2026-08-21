@@ -22,14 +22,14 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <vector>
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* scalars */                                                                                  \
-    X_RO(shamrock::solvergraph::ScalarEdge<std::vector<Tscal>>, t_j_0)                             \
+    X_RO(shamrock::solvergraph::IDataEdge<std::vector<Tscal>>, t_j_0)                              \
                                                                                                    \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
@@ -59,7 +59,7 @@ namespace shammodels::sph::modules {
             auto edges = get_edges();
 
             auto &part_counts                   = edges.part_counts.indexes;
-            const std::vector<Tscal> &inputs_tj = edges.t_j_0.value;
+            const std::vector<Tscal> &inputs_tj = edges.t_j_0.data;
             SHAM_ASSERT(inputs_tj.size() == ndust);
 
             // ensure that the output edges are of size part_counts

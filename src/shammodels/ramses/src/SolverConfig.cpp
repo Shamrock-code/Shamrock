@@ -11,7 +11,7 @@
  * @file SolverConfig.cpp
  * @author Anass Serhani (anass.serhani@cnrs.fr) --no git blame--
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr) --no git blame--
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Noé Brucy (noe.brucy@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--

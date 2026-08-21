@@ -2896,17 +2896,15 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             Tscal C_force = solver_config.cfl_config.cfl_force * get_cfl_multipler();
             Tscal eta_phi = solver_config.cfl_config.eta_sink;
 
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_cour_edge
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("C_cour", "C_{cour}");
-            C_cour_edge->value = C_cour;
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_force_edge
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                    "C_force", "C_{force}");
-            C_force_edge->value = C_force;
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> eta_phi_edge
-                = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                    "eta_phi", "\\eta_{\\phi}");
-            eta_phi_edge->value = eta_phi;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_cour_edge
+                = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_cour", "C_{cour}");
+            C_cour_edge->data = C_cour;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_force_edge
+                = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_force", "C_{force}");
+            C_force_edge->data = C_force;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> eta_phi_edge
+                = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("eta_phi", "\\eta_{\\phi}");
+            eta_phi_edge->data = eta_phi;
 
             std::shared_ptr<ComputeCFLCourant<Tscal>> compute_cfl_courant
                 = std::make_shared<ComputeCFLCourant<Tscal>>();
@@ -2927,7 +2925,7 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
             std::shared_ptr<ComputeCFLDust1Fluid<Tvec>> compute_cfl_dust1_fluid;
             std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> s_j_refs;
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> hfactd_edge;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> hfactd_edge;
 
             if (solver_config.dust_config.has_s_j_field()) {
                 u32 ndust = solver_config.dust_config.get_dust_nvar();
@@ -2945,16 +2943,16 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 s_j_refs = std::make_shared<shamrock::solvergraph::FieldRefs<Tscal>>("s_j", "s_j");
 
-                hfactd_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                    "hfactd", "hfactd");
-                hfactd_edge->value = Kernel::hfactd;
+                hfactd_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("hfactd", "hfactd");
+                hfactd_edge->data = Kernel::hfactd;
 
                 map_field_refs(scheduler(), is_j, *s_j_refs);
 
-                std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_1fluid_edge
-                    = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
+                std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_1fluid_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
                         "C_1fluid", "C_{1fluid}");
-                C_1fluid_edge->value
+                C_1fluid_edge->data
                     = solver_config.dust_config.get_monofluid_tva().C_1_fluid * get_cfl_multipler();
 
                 compute_cfl_dust1_fluid->set_edges(
@@ -2970,8 +2968,8 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
             }
 
             std::shared_ptr<ComputeCFLDustDrift<Tvec>> compute_cfl_dust_drift;
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> C_drift_edge;
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> cfl_density_threshold_edge;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> C_drift_edge;
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> cfl_density_threshold_edge;
             std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> delta_v_refs;
 
             if (solver_config.dust_config.has_s_j_field()) {
@@ -2986,14 +2984,13 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
                 auto &cfg_monofluid_tva = solver_config.dust_config.get_monofluid_tva();
 
-                C_drift_edge = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                    "C_drift", "C_{drift}");
-                C_drift_edge->value = cfg_monofluid_tva.C_drift * get_cfl_multipler();
+                C_drift_edge
+                    = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("C_drift", "C_{drift}");
+                C_drift_edge->data = cfg_monofluid_tva.C_drift * get_cfl_multipler();
 
-                cfl_density_threshold_edge
-                    = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>(
-                        "cfl_density_threshold", "cfl_density_threshold");
-                cfl_density_threshold_edge->value = cfg_monofluid_tva.cfl_density_threshold;
+                cfl_density_threshold_edge = shamrock::solvergraph::IDataEdge<Tscal>::make_shared(
+                    "cfl_density_threshold", "cfl_density_threshold");
+                cfl_density_threshold_edge->data = cfg_monofluid_tva.cfl_density_threshold;
 
                 auto pmass_edge
                     = storage.solver_graph

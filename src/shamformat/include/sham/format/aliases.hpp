@@ -15,7 +15,7 @@
  * @brief Type aliases for fmt types used throughout shamformat
  */
 
-#include <fmt/base.h>
+#include <fmt/format.h>
 
 namespace sham {
 

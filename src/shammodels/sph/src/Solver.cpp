@@ -72,6 +72,9 @@
 #include "shammodels/sph/modules/ParticleReordering.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeConstant.hpp"
 #include "shammodels/sph/modules/SetDustStoppingTimeEpstein.hpp"
+#include "shammodels/sph/modules/SinkParticlesAccreteQuantities.hpp"
+#include "shammodels/sph/modules/SinkParticlesEvictAccretedParticles.hpp"
+#include "shammodels/sph/modules/SinkParticlesFlagAccreteHard.hpp"
 #include "shammodels/sph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/sph/modules/UpdateDerivs.hpp"
 #include "shammodels/sph/modules/UpdateViscosity.hpp"
@@ -105,6 +108,7 @@
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsolvergraph/SolverGraph.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdgeSerializable.hpp"
 #include "shamsolvergraph/node/NodeFreeAlloc.hpp"
 #include "shamsolvergraph/node/NodeMapEdge.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
@@ -642,6 +646,115 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
         = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.ghost_layout);
     storage.exchange_gz_positions
         = std::make_shared<shamrock::solvergraph::ExchangeGhostLayer>(storage.xyzh_ghost_layout);
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // sink accretion
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        solver_graph.register_edge("has_sinks", IDataEdge<bool>("has_sinks", "has_sinks"));
+
+        auto set_has_sinks = solver_graph.register_node(
+            "set_has_sinks", NodeSetEdge<IDataEdge<bool>>([&](IDataEdge<bool> &has_sinks_edge) {
+                has_sinks_edge.data = has_sinks<Tvec>(sync_data);
+            }));
+        shambase::get_check_ref(set_has_sinks)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_sinks"));
+
+        auto free_xyz = solver_graph.register_node("free_xyz_refs", NodeFreeAlloc{});
+        shambase::get_check_ref(free_xyz).set_edges(
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"));
+
+        auto free_vxyz = solver_graph.register_node("free_vxyz_refs", NodeFreeAlloc{});
+        shambase::get_check_ref(free_vxyz).set_edges(
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"));
+
+        auto free_axyz = solver_graph.register_node("free_axyz_refs", NodeFreeAlloc{});
+        shambase::get_check_ref(free_axyz).set_edges(
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"));
+
+        // sink synchronized edges, kept around as they are used by several nodes below
+        auto sink_positions
+            = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_pos");
+        auto sink_velocities
+            = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_vel");
+        auto sink_accelerations
+            = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>("sink_acc_sph");
+        auto sink_angmom = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tvec>>>(
+            "sink_angular_momentum");
+        auto sink_mass
+            = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>("sink_mass");
+        auto sink_accr_radii = sync_data.get_edge_ptr<IDataEdgeSerializable<std::vector<Tscal>>>(
+            "sink_accretion_radius");
+
+        solver_graph.register_edge(
+            "sink_accretion_table", Field<u32>(1, "sink_accretion_table", "\\mathrm{acc}"));
+
+        auto flag_node = solver_graph.register_node(
+            "flag_accrete_hard", modules::SinkParticlesFlagAccreteHard<Tvec>{});
+        shambase::get_check_ref(flag_node).set_edges(
+            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
+            sink_positions,
+            sink_accr_radii,
+            solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"));
+
+        auto qty_node = solver_graph.register_node(
+            "accrete_quantities", modules::SinkParticlesAccreteQuantities<Tvec>{});
+        shambase::get_check_ref(qty_node).set_edges(
+            solver_graph.get_edge_ptr<IDataEdge<Tscal>>("gpart_mass"),
+            sync_data.get_edge_ptr<IDataEdge<Tscal>>("dt"),
+            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("vxyz"),
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("axyz"),
+            solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
+            sink_positions,
+            sink_velocities,
+            sink_accelerations,
+            sink_angmom,
+            sink_mass);
+
+        auto evict_node = solver_graph.register_node(
+            "evict_accreted_particles", modules::SinkParticlesEvictAccretedParticles<Tvec>{});
+        shambase::get_check_ref(evict_node)
+            .set_edges(
+                solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                solver_graph.get_edge_ptr<Field<u32>>("sink_accretion_table"),
+                solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"));
+
+        auto if_has_sinks = solver_graph.register_node(
+            "if_has_sinks",
+            OperationSequence(
+                "if_has_sinks",
+                {
+                    // the "time_step" sequence (set_gpart_mass, attach fields to scheduler, ...)
+                    // has not run yet at this stage of the timestep
+                    solver_graph.get_node_ptr_base("set_gpart_mass"),
+                    solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
+                    solver_graph.get_node_ptr_base("attach_part_counts"),
+                    solver_graph.get_node_ptr_base("attach_xyz"),
+                    solver_graph.get_node_ptr_base("attach_vxyz"),
+                    solver_graph.get_node_ptr_base("attach_axyz"),
+                    // Actually perform the accretion
+                    flag_node,
+                    qty_node,
+                    evict_node,
+                    // free the refs since the particle counts may have changed
+                    free_xyz,
+                    free_vxyz,
+                    free_axyz,
+                }));
+
+        // register the actual node that will be used
+        solver_graph.register_node(
+            "sink accretion",
+            OperationSequence(
+                "sink accretion",
+                {
+                    set_has_sinks,
+                    if_has_sinks,
+                }));
+    }
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1895,10 +2008,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
 
     shamrock::SchedulerUtility utility(scheduler());
 
+    storage.solver_graph.get_node_ref_base("sink accretion").evaluate();
+
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-
-    sink_update.accrete_particles(dt);
     ext_forces.point_mass_accrete_particles();
 
     sink_update.predictor_step(dt);

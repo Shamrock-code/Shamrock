@@ -1,0 +1,3423 @@
+{
+   "name": "function_sets_top10",
+   "data": [
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::format_dragon",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            74.899,
+            58.337,
+            64.874,
+            55.192,
+            66.944,
+            66.968,
+            66.689,
+            72.194,
+            25.0,
+            47.364,
+            49.508,
+            43.27,
+            33.937,
+            47.881,
+            48.777,
+            35.745,
+            48.582,
+            47.756,
+            47.639,
+            33.951,
+            34.102,
+            26.231,
+            48.738,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               323,
+               231
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               323,
+               180
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               323,
+               200
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               323,
+               170
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               324,
+               206
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               324,
+               206
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               324,
+               205
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               324,
+               222
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               76
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               145
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               151
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               132
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               104
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               146
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               149
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               109
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               149
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               146
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               146
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               104
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               104
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               80
+            ],
+            [
+               "fmt::v11::detail::format_dragon(fmt::v11::detail::basic_fp&lt;$&gt;, unsigned int, int, fmt::v11::detail::buffer&lt;$&gt;&amp;, int&amp;)",
+               326,
+               149
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::queue::submit<$> #1",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            46.863,
+            37.409,
+            42.038,
+            33.926,
+            42.185,
+            41.819,
+            42.766,
+            46.126,
+            15.652,
+            29.746,
+            30.948,
+            27.033,
+            21.136,
+            30.217,
+            31.007,
+            21.902,
+            30.431,
+            30.836,
+            30.622,
+            21.948,
+            21.836,
+            16.669,
+            30.968,
+            23.531,
+            30.04
+         ],
+         "customdata": [
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               75
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               60
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               67
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               54
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               67
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               67
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               68
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               74
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               25
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               47
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               43
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               34
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               621,
+               35
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               48
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               34
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               34
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               26
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               49
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               37
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, hipsycl::sycl::vec&lt;$&gt;)",
+               632,
+               47
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::write_int_noinline<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            34.783,
+            26.424,
+            31.523,
+            24.782,
+            31.862,
+            30.868,
+            31.754,
+            35.212,
+            12.417,
+            22.618,
+            23.646,
+            20.86,
+            16.263,
+            22.746,
+            23.686,
+            16.533,
+            23.41,
+            22.873,
+            22.843,
+            16.29,
+            16.457,
+            13.086,
+            23.414,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               969,
+               35
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               969,
+               27
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               969,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               969,
+               25
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               972,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               972,
+               31
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               972,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               972,
+               36
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               12
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               24
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               21
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               16
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               24
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               16
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               16
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               16
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               13
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_int_noinline&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::write_int_arg&lt;$&gt;, fmt::v11::forma...",
+               978,
+               23
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "validate_kernel_3d<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            26.429,
+            20.715,
+            20.44,
+            19.337,
+            23.255,
+            23.126,
+            23.9,
+            24.372,
+            7.69,
+            14.801,
+            15.472,
+            14.113,
+            10.791,
+            14.553,
+            14.757,
+            11.17,
+            14.979,
+            14.638,
+            14.74,
+            10.946,
+            10.723,
+            8.523,
+            15.818,
+            10.752,
+            13.496
+         ],
+         "customdata": [
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               660
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               517
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               511
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               483
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               581
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               578
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               597
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               609
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               192
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               370
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               386
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               352
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               269
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               363
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               368
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               279
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               374
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               365
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               368
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               273
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               268
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               213
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               395
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               268
+            ],
+            [
+               "void validate_kernel_3d&lt;$&gt;(shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal, shammath::SPHKernelGen&lt;$&gt;::Tscal)",
+               40,
+               337
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::do_write_float<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            25.75,
+            20.193,
+            23.688,
+            18.777,
+            23.805,
+            23.375,
+            23.638,
+            26.242,
+            9.157,
+            16.921,
+            17.699,
+            15.505,
+            12.055,
+            16.964,
+            17.463,
+            12.603,
+            17.394,
+            17.004,
+            17.044,
+            12.119,
+            12.257,
+            9.67,
+            17.41,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               646,
+               39
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               646,
+               31
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               646,
+               36
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               646,
+               29
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               648,
+               36
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               648,
+               36
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               648,
+               36
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               648,
+               40
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               14
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               25
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               27
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               18
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               19
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               18
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               18
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               14
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::do_write_float&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::detail::dragonbox::decimal_fp&lt;$&gt; const&amp;, fmt:...",
+               652,
+               26
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::parse_format_string<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            17.951,
+            14.147,
+            16.292,
+            12.654,
+            16.327,
+            16.205,
+            16.469,
+            17.804,
+            6.229,
+            11.474,
+            11.924,
+            10.503,
+            8.243,
+            11.616,
+            11.928,
+            8.571,
+            11.805,
+            11.586,
+            11.592,
+            8.23,
+            8.311,
+            6.518,
+            11.778,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               322,
+               55
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               322,
+               43
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               322,
+               50
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               322,
+               39
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               323,
+               50
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               323,
+               50
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               323,
+               50
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               323,
+               55
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               19
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               35
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               36
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               32
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               25
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               35
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               36
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               26
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               36
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               35
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               35
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               25
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               25
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               20
+            ],
+            [
+               "void fmt::v11::detail::parse_format_string&lt;$&gt;(fmt::v11::basic_string_view&lt;$&gt;, fmt::v11::detail::format_handler&lt;$&gt;&amp;&amp;)",
+               325,
+               36
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::accessor<$>::init_host_buffer",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            17.067,
+            13.624,
+            15.11,
+            12.134,
+            16.097,
+            15.463,
+            16.659,
+            17.388,
+            5.674,
+            11.147,
+            11.409,
+            10.02,
+            7.913,
+            10.954,
+            11.542,
+            7.909,
+            11.36,
+            11.204,
+            11.155,
+            7.961,
+            7.894,
+            5.977,
+            11.426,
+            8.393,
+            11.115
+         ],
+         "customdata": [
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               65
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               52
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               57
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               46
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               61
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               59
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               63
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               66
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               21
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               42
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               43
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               38
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               30
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               41
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               44
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               30
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               43
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               42
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               261,
+               42
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               30
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               30
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               22
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               43
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               31
+            ],
+            [
+               "hipsycl::sycl::accessor&lt;$&gt;::init_host_buffer(hipsycl::rt::runtime*, bool)",
+               263,
+               42
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "PatchDataField<$>::get_obj_cnt",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            16.012,
+            12.535,
+            14.481,
+            11.802,
+            14.821,
+            13.788,
+            14.424,
+            16.548,
+            5.637,
+            10.125,
+            10.735,
+            9.324,
+            7.309,
+            10.141,
+            10.684,
+            7.673,
+            10.68,
+            10.086,
+            10.096,
+            7.408,
+            7.479,
+            6.014,
+            10.389,
+            6.11,
+            7.3
+         ],
+         "customdata": [
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1299,
+               12
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1299,
+               9
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1299,
+               11
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1299,
+               9
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               11
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               10
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               10
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               12
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               4
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               8
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               5
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               8
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               5
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               8
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               5
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               5
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               4
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               7
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               4
+            ],
+            [
+               "PatchDataField&lt;$&gt;::get_obj_cnt() const",
+               1317,
+               5
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::write_escaped_string<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            16.251,
+            12.677,
+            14.978,
+            11.493,
+            14.761,
+            14.82,
+            14.893,
+            15.428,
+            5.732,
+            10.532,
+            11.01,
+            9.612,
+            7.495,
+            10.617,
+            10.921,
+            7.778,
+            10.9,
+            10.627,
+            10.614,
+            7.51,
+            7.601,
+            6.061,
+            10.922,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               323,
+               50
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               323,
+               39
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               323,
+               46
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               323,
+               35
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               324,
+               45
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               324,
+               45
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               324,
+               45
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               324,
+               47
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               17
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               33
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               29
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               22
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               33
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               33
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               32
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               23
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               18
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_escaped_string&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::basic_string_view&lt;$&gt;)",
+               326,
+               33
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "test_karras_alg<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            16.172,
+            null,
+            13.559,
+            null,
+            14.004,
+            14.368,
+            12.96,
+            null,
+            5.425,
+            null,
+            9.462,
+            9.97,
+            6.612,
+            null,
+            9.743,
+            null,
+            null,
+            null,
+            null,
+            6.621,
+            7.131,
+            6.007,
+            9.774,
+            5.966,
+            7.351
+         ],
+         "customdata": [
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               8086
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               6779
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               7002
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               7184
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               6480
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               2712
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               4731
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               4985
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               3306
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               4871
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               3310
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               3565
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               3003
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               4887
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               2983
+            ],
+            [
+               "void test_karras_alg&lt;$&gt;()",
+               2,
+               3675
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::range_formatter<$>::format<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            10.986,
+            null,
+            null,
+            null,
+            null,
+            null,
+            14.426,
+            null,
+            8.995,
+            null,
+            null,
+            null,
+            9.015,
+            null,
+            6.518,
+            null,
+            9.017,
+            8.995,
+            null,
+            null,
+            null,
+            null,
+            6.903,
+            8.735
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               248,
+               44
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               57
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               36
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               36
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               26
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               36
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               36
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               27
+            ],
+            [
+               "decltype(fp0.out()) fmt::v11::range_formatter&lt;$&gt;::format&lt;$&gt;(std::vector&lt;$&gt; const&amp;, fmt::v11::context&amp;) const",
+               249,
+               35
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::write_significand<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            10.013,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_significand&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, char const*, int, int, fmt::v11::detail::digit_group...",
+               323,
+               31
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "fmt::v11::detail::write_padded<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            9.176,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "fmt::v11::basic_appender&lt;$&gt; fmt::v11::detail::write_padded&lt;$&gt;(fmt::v11::basic_appender&lt;$&gt;, fmt::v11::format_specs const&amp;, unsigned long, unsigned lo...",
+               652,
+               14
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::queue::submit<$> #2",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            6.685,
+            8.567
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
+               180,
+               37
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, unsigned int)",
+               180,
+               47
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::queue::submit<$> #3",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            6.202,
+            7.905
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               38
+            ],
+            [
+               "hipsycl::sycl::event hipsycl::sycl::queue::submit&lt;$&gt;(hipsycl::sycl::property_list const&amp;, double)",
+               162,
+               48
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "test_comm<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            5.6,
+            7.217
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "void test_comm&lt;$&gt;()",
+               60,
+               93
+            ],
+            [
+               "void test_comm&lt;$&gt;()",
+               60,
+               120
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "hipsycl::sycl::queue::execute_submission<$>",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            6.485
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "std::shared_ptr&lt;$&gt; hipsycl::sycl::queue::execute_submission&lt;$&gt;(hipsycl::sycl::vec&lt;$&gt;, hipsycl::sycl::handler&amp;)",
+               632,
+               10
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      },
+      {
+         "type": "scatter",
+         "mode": "lines+markers",
+         "name": "pybind11::cpp_function::initialize_generic",
+         "x": [
+            "2026-08-15T12:17:37Z",
+            "2026-08-15T18:30:03Z",
+            "2026-08-15T23:38:59Z",
+            "2026-08-16T17:04:41Z",
+            "2026-08-16T19:02:01Z",
+            "2026-08-17T00:34:05Z",
+            "2026-08-17T03:58:48Z",
+            "2026-08-17T08:05:26Z",
+            "2026-08-17T18:42:41Z",
+            "2026-08-17T23:57:01Z",
+            "2026-08-18T03:05:25Z",
+            "2026-08-18T12:55:21Z",
+            "2026-08-18T20:08:58Z",
+            "2026-08-18T22:10:05Z",
+            "2026-08-19T01:44:00Z",
+            "2026-08-19T15:21:03Z",
+            "2026-08-19T22:28:50Z",
+            "2026-08-20T04:05:51Z",
+            "2026-08-20T09:52:59Z",
+            "2026-08-20T14:48:57Z",
+            "2026-08-21T02:30:02Z",
+            "2026-08-21T05:04:21Z",
+            "2026-08-21T10:39:25Z",
+            "2026-08-21T14:23:46Z",
+            "2026-08-21T17:58:42Z"
+         ],
+         "y": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            5.117,
+            null
+         ],
+         "customdata": [
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               null,
+               null,
+               null
+            ],
+            [
+               "pybind11::cpp_function::initialize_generic(std::unique_ptr&lt;$&gt;&amp;&amp;, char const*, std::type_info const* const*, unsigned long)",
+               39,
+               131
+            ],
+            [
+               null,
+               null,
+               null
+            ]
+         ],
+         "connectgaps": false,
+         "hovertemplate": "%{customdata[0]}<br>%{x|%Y-%m-%d %H:%M UTC}<br>time: %{y:.1f} s (%{customdata[1]} times, avg %{customdata[2]} ms)<extra></extra>"
+      }
+   ],
+   "layout": {
+      "title": {
+         "text": "Top 10 function sets (compile / optimize)"
+      },
+      "margin": {
+         "l": 72,
+         "r": 24,
+         "t": 56,
+         "b": 180
+      },
+      "xaxis": {
+         "title": {
+            "text": "Date (UTC)"
+         },
+         "type": "date"
+      },
+      "yaxis": {
+         "title": {
+            "text": "Compile / optimize time (s)"
+         },
+         "rangemode": "tozero"
+      },
+      "legend": {
+         "orientation": "h",
+         "yanchor": "top",
+         "y": -0.28,
+         "x": 0,
+         "xanchor": "left",
+         "font": {
+            "size": 11
+         }
+      },
+      "hovermode": "x unified"
+   }
+}

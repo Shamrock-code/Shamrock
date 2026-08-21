@@ -20,6 +20,7 @@
 #include "shambase/exception.hpp"
 #include "shambase/string.hpp"
 #include "nlohmann/json_fwd.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/patch/FieldVariant.hpp"
 #include "shamsys/legacy/log.hpp"
 #include <sstream>
@@ -187,9 +188,7 @@ namespace shamrock::patch {
         template<class Functor>
         inline void for_each_field_any(Functor &&func) const {
             for (auto &f : fields) {
-                f.visit([&](auto &arg) {
-                    func(arg);
-                });
+                f.visit(func);
             }
         }
 
@@ -296,24 +295,15 @@ namespace shamrock::patch {
     // out of line implementation of the PatchDataLayerLayout
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    template<class T>
-    inline void PatchDataLayerLayout::add_field(
-        const std::string &field_name, u32 nvar, SourceLocation loc) {
-        if (has_field_name(field_name)) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(
-                "add_field -> the name already exists");
-        }
-
-        shamlog_debug_ln(
-            "PatchDataLayerLayout",
-            "adding field :",
-            field_name,
-            nvar,
-            "loc :",
-            loc.format_one_line());
-
-        fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
-    }
+#ifndef DOXYGEN
+    // Explicit instantiations live in PatchDataLayerLayout.cpp so TUs that call add_field
+    // do not instantiate FieldVariant construction for every enabled field type.
+    #define X(type)                                                                                \
+        extern template void PatchDataLayerLayout::add_field<type>(                                \
+            const std::string &field_name, u32 nvar, SourceLocation loc);
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
+#endif
 
     template<class T>
     inline PatchDataLayerLayout::FieldDescriptor<T> PatchDataLayerLayout::get_field(

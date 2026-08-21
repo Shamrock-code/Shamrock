@@ -7,6 +7,7 @@
 //
 // -------------------------------------------------------//
 
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
 #include "shamtest/shamtest.hpp"
 #include <nlohmann/json.hpp>
@@ -43,4 +44,21 @@ NEW_TEST(Unittest, "shamrock/patch/PatchDataLayerLayout::serialize_json", 1) {
     PatchDataLayerLayout pdl_out = j.get<PatchDataLayerLayout>();
 
     REQUIRE(pdl == pdl_out);
+}
+
+NEW_TEST(Unittest, "shamrock/patch/PatchDataLayerLayout::add_field", 1) {
+    using namespace shamrock::patch;
+
+    PatchDataLayerLayout pdl;
+
+    u32 nfields = 0;
+#define X(type)                                                                                    \
+    pdl.add_field<type>(#type, 1);                                                                 \
+    nfields++;
+    XMAC_LIST_ENABLED_FIELD
+#undef X
+
+    REQUIRE_EQUAL(pdl.get_field_names().size(), nfields);
+
+    REQUIRE_EXCEPTION_THROW(pdl.add_field<f32>("f32", 1), std::invalid_argument);
 }

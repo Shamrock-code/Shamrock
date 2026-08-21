@@ -57,6 +57,108 @@ namespace shamrock::patch {
         });
     }
 
+    PatchDataLayer::PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
+
+        NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
+
+        for (auto &field_var : other.fields) {
+
+            field_var.visit([&](auto &field) {
+                using base_t = typename std::remove_reference<decltype(field)>::type::Field_type;
+                fields.emplace_back(PatchDataField<base_t>(field));
+            });
+        }
+    }
+
+    u32 PatchDataLayer::get_obj_cnt() const {
+
+        if (!fields.empty()) {
+            return fields[0].visit_return([](const auto &field) {
+                return field.get_obj_cnt();
+            });
+        }
+
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "this PatchDataLayer does not contain any fields");
+    }
+
+    u64 PatchDataLayer::memsize() {
+        u64 sum = 0;
+
+        for (auto &field_var : fields) {
+
+            field_var.visit([&](auto &field) {
+                sum += field.memsize();
+            });
+        }
+
+        return sum;
+    }
+
+    void PatchDataLayer::synchronize_buf() {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.synchronize_buf();
+            });
+        }
+    }
+
+    void PatchDataLayer::check_field_obj_cnt_match() {
+        u32 cnt = get_obj_cnt();
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.get_obj_cnt() != cnt) {
+                    throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
+                }
+            });
+        }
+    }
+
+    bool PatchDataLayer::has_nan() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_nan_or_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan_or_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
     void PatchDataLayer::extract_element(u32 pidx, PatchDataLayer &out_pdat) {
         StackEntry stack_loc{};
 

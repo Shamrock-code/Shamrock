@@ -79,19 +79,7 @@ namespace shamrock::patch {
             init_fields();
         }
 
-        inline PatchDataLayer(const PatchDataLayer &other) : pdl_ptr(other.get_layout_ptr()) {
-
-            NamedStackEntry stack_loc{"PatchDataLayer::copy_constructor", true};
-
-            for (auto &field_var : other.fields) {
-
-                field_var.visit([&](auto &field) {
-                    using base_t =
-                        typename std::remove_reference<decltype(field)>::type::Field_type;
-                    fields.emplace_back(PatchDataField<base_t>(field));
-                });
-            };
-        }
+        PatchDataLayer(const PatchDataLayer &other);
 
         /**
          * @brief PatchDataLayer move constructor
@@ -120,18 +108,14 @@ namespace shamrock::patch {
         template<class Functor>
         inline void for_each_field_any(Functor &&func) {
             for (auto &f : fields) {
-                f.visit([&](auto &arg) {
-                    func(arg);
-                });
+                f.visit(func);
             }
         }
 
         template<class Functor>
         inline void for_each_field_any(Functor &&func) const {
             for (auto &f : fields) {
-                f.visit([&](const auto &arg) {
-                    func(arg);
-                });
+                f.visit(func);
             }
         }
 
@@ -234,42 +218,13 @@ namespace shamrock::patch {
         void append_subset_to(
             const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const;
 
-        inline u32 get_obj_cnt() const {
+        u32 get_obj_cnt() const;
 
-            bool is_empty = fields.empty();
-
-            if (!is_empty) {
-                return fields[0].visit_return([](const auto &field) {
-                    return field.get_obj_cnt();
-                });
-            }
-
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "this PatchDataLayer does not contain any fields");
-        }
-
-        inline u64 memsize() {
-            u64 sum = 0;
-
-            for (auto &field_var : fields) {
-
-                field_var.visit([&](auto &field) {
-                    sum += field.memsize();
-                });
-            }
-
-            return sum;
-        }
+        u64 memsize();
 
         inline bool is_empty() { return get_obj_cnt() == 0; }
 
-        void synchronize_buf() {
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    field.synchronize_buf();
-                });
-            }
-        }
+        void synchronize_buf();
 
         void overwrite(PatchDataLayer &pdat, u32 obj_cnt);
 
@@ -389,17 +344,7 @@ namespace shamrock::patch {
          * @brief check that all contained field have the same obj cnt
          *
          */
-        inline void check_field_obj_cnt_match() {
-            u32 cnt = get_obj_cnt();
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.get_obj_cnt() != cnt) {
-                        throw shambase::make_except_with_loc<std::runtime_error>(
-                            "mismatch in obj cnt");
-                    }
-                });
-            }
-        }
+        void check_field_obj_cnt_match();
 
         // template<class T> inline std::vector<PatchDataField<T> & > get_field_list(){
         //     std::vector<PatchDataField<T> & > ret;
@@ -431,48 +376,9 @@ namespace shamrock::patch {
 
         void fields_raz();
 
-        bool has_nan() {
-            StackEntry stack_loc{};
-
-            bool ret = false;
-
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_nan()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
-        bool has_inf() {
-            StackEntry stack_loc{};
-
-            bool ret = false;
-
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_inf()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
-        bool has_nan_or_inf() {
-            StackEntry stack_loc{};
-
-            bool ret = false;
-
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_nan_or_inf()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
+        bool has_nan();
+        bool has_inf();
+        bool has_nan_or_inf();
 
         /**
          * @brief

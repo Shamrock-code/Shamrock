@@ -18,6 +18,7 @@
 
 #include "shambase/exception.hpp"
 #include "shambackends/typeAliasVec.hpp"
+#include <utility>
 #include <variant>
 
 namespace shamrock::patch {
@@ -65,49 +66,36 @@ namespace shamrock::patch {
                 "the type asked is not correct");
         }
 
+        /**
+         * @brief Apply a visitor to the held alternative.
+         *
+         * The functor is forwarded to std::visit unchanged. Wrapping it in an extra
+         * generic lambda would give every call site a unique visitor type, and
+         * libstdc++ builds a visit vtable for each of those types.
+         */
         template<class Func>
         void visit(Func &&f) {
-            std::visit(
-                [&](auto &arg) {
-                    f(arg);
-                },
-                value);
+            std::visit(std::forward<Func>(f), value);
         }
 
         template<class Func>
         auto visit_return(Func &&f) {
-            return std::visit(
-                [&](auto &arg) {
-                    return f(arg);
-                },
-                value);
+            return std::visit(std::forward<Func>(f), value);
         }
 
         template<class Func>
         void visit(Func &&f) const {
-            std::visit(
-                [&](auto &arg) {
-                    f(arg);
-                },
-                value);
+            std::visit(std::forward<Func>(f), value);
         }
 
         template<class Func>
         auto visit_return(Func &&f) const {
-            return std::visit(
-                [&](auto &arg) {
-                    return f(arg);
-                },
-                value);
+            return std::visit(std::forward<Func>(f), value);
         }
 
         template<template<class> class Container2, class Func>
         FieldVariant<Container2> convert(Func &&f) {
-            return std::visit(
-                [&](auto &arg) {
-                    return f(arg);
-                },
-                value);
+            return std::visit(std::forward<Func>(f), value);
         }
     };
 

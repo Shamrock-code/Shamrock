@@ -15,6 +15,8 @@
  */
 
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
+#include "shamrock/legacy/patch/base/enabled_fields.hpp"
+#include "shamsys/legacy/log.hpp"
 #include <nlohmann/json.hpp>
 
 namespace shamrock::patch {
@@ -196,5 +198,32 @@ namespace shamrock::patch {
 
         return ret;
     }
+
+    template<class T>
+    void PatchDataLayerLayout::add_field(
+        const std::string &field_name, u32 nvar, SourceLocation loc) {
+        if (has_field_name(field_name)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "add_field -> the name already exists");
+        }
+
+        shamlog_debug_ln(
+            "PatchDataLayerLayout",
+            "adding field :",
+            field_name,
+            nvar,
+            "loc :",
+            loc.format_one_line());
+
+        fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
+    }
+
+#ifndef DOXYGEN
+    #define X(type)                                                                                \
+        template void PatchDataLayerLayout::add_field<type>(                                       \
+            const std::string &field_name, u32 nvar, SourceLocation loc);
+    XMAC_LIST_ENABLED_FIELD
+    #undef X
+#endif
 
 } // namespace shamrock::patch

@@ -179,8 +179,8 @@ void shammodels::sph::modules::NodeUpdateDerivsVaryingAlphaAVDustTVA<Tvec, SPHKe
     edges.duint.ensure_sizes(part_counts);
 
     const Tscal pmass   = edges.gpart_mass.data;
-    const Tscal alpha_u = edges.alpha_u.value;
-    const Tscal beta_AV = edges.beta_AV.value;
+    const Tscal alpha_u = edges.alpha_u.data;
+    const Tscal beta_AV = edges.beta_AV.data;
 
     using ComputeKernel = KernelUpdateDerivsVaryingAlphaAVDustTVA<Tvec, SPHKernel>;
 

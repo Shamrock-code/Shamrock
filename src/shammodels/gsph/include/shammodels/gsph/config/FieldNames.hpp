@@ -45,6 +45,9 @@ namespace shammodels::gsph::names {
         /// 3-acceleration field
         inline constexpr const char *axyz = "axyz";
 
+        /// 3-acceleration field due to external forces
+        inline constexpr const char *axyz_ext = "axyz_ext";
+
         /// Specific internal energy u
         inline constexpr const char *uint = "uint";
 

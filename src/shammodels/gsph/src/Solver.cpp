@@ -39,8 +39,10 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
+#include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
+#include "shammodels/gsph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
 #include "shammodels/gsph/modules/io/VTKDump.hpp"
 #include "shammodels/sph/modules/ComputeOmega.hpp"
@@ -1618,7 +1620,11 @@ template<class Tvec, template<class> class Kern>
 void shammodels::gsph::Solver<Tvec, Kern>::update_derivs() {
     StackEntry stack_loc{};
     // GSPH derivative update using Riemann solver
-    gsph::modules::UpdateDerivs<Tvec, Kern>(context, solver_config, storage).update_derivs();
+    gsph::modules::UpdateDerivs<Tvec, Kern> derivs(context, solver_config, storage);
+    derivs.update_derivs();
+
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+    ext_forces.add_ext_forces();
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1723,6 +1729,55 @@ typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tv
     }
 
     return global_min_dt;
+}
+
+template<class Tvec, template<class> class Kern>
+typename shammodels::gsph::Solver<Tvec, Kern>::Tscal shammodels::gsph::Solver<Tvec, Kern>::
+    compute_sink_cfl() {
+    StackEntry stack_loc{};
+
+    Tscal C_force = solver_config.cfl_config.cfl_force;
+    Tscal eta_phi = solver_config.cfl_config.eta_sink;
+
+    Tscal sink_sink_cfl = shambase::get_infty<Tscal>();
+
+    Tscal G = solver_config.get_constant_G();
+
+    std::vector<sph::SinkParticle<Tvec>> &sink_parts = storage.sinks.get();
+
+    if (storage.sinks.is_empty()) {
+        return sink_sink_cfl;
+    }
+
+    for (u32 i = 0; i < sink_parts.size(); i++) {
+        sph::SinkParticle<Tvec> &s_i = sink_parts[i];
+        Tscal sink_sink_cfl_i        = shambase::get_infty<Tscal>();
+
+        Tvec f_i = s_i.ext_acceleration;
+
+        Tscal grad_phi_i_sq = sham::dot(f_i, f_i); // m^2.s^-4
+
+        if (grad_phi_i_sq == 0) {
+            continue;
+        }
+
+        for (u32 j = 0; j < sink_parts.size(); j++) {
+            sph::SinkParticle<Tvec> &s_j = sink_parts[j];
+            if (i == j) {
+                continue;
+            }
+            Tvec rij        = s_i.pos - s_j.pos;
+            Tscal rij_scal  = sycl::length(rij);
+            Tscal phi_ij    = G * s_j.mass / rij_scal;                 // J / kg = m^2.s^-2
+            Tscal term_ij   = sham::abs(phi_ij) / grad_phi_i_sq;       // s^2
+            Tscal dt_ij     = C_force * eta_phi * sycl::sqrt(term_ij); // s
+            sink_sink_cfl_i = sham::min(sink_sink_cfl_i, dt_ij);
+        }
+
+        sink_sink_cfl = sham::min(sink_sink_cfl, sink_sink_cfl_i);
+    }
+
+    return sink_sink_cfl;
 }
 
 template<class Tvec, template<class> class Kern>
@@ -1853,9 +1908,21 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // 7. CFL: compute next timestep
     // =========================================================================
 
+    modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
+    modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
+
+    // STEP 0: SINK PARTICLES
+    sink_update.accrete_particles(dt);
+    ext_forces.point_mass_accrete_particles();
+
+    sink_update.predictor_step(dt);
+
     // STEP 1: PREDICTOR - move particles using OLD accelerations
     // (On first iteration, accelerations are zero, so this is just position drift)
     do_predictor_leapfrog(dt);
+
+    sink_update.compute_ext_forces();
+    ext_forces.compute_ext_forces_indep_v();
 
     // STEP 2: BOUNDARY - apply boundary conditions to NEW positions
     // Build serial patch tree first (needed for boundary application)
@@ -1896,12 +1963,15 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // STEP 6: CORRECTOR - refine velocities
     apply_corrector(dt, Npart_all);
+    sink_update.corrector_step(dt);
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();
+    Tscal dt_cfl  = compute_dt_cfl();
 
     // Ensure dt doesn't grow too fast (max 2x per step), but allow any value if dt was 0
     if (dt > Tscal(0)) {
+        dt_next = sham::min(dt_next, dt_cfl);
         dt_next = sham::min(dt_next, Tscal(2) * dt);
     }
 

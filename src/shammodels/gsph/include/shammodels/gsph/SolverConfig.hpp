@@ -73,6 +73,7 @@ namespace shammodels::gsph {
     struct CFLConfig {
         Tscal cfl_cour  = 0.3;  ///< CFL condition for the courant factor
         Tscal cfl_force = 0.25; ///< CFL condition for the force
+        Tscal eta_sink  = 0.05;
     };
 
     struct SmoothingLengthConfig {
@@ -130,6 +131,16 @@ struct shammodels::gsph::SolverConfig {
             return ctes.G();
         } else {
             return shamunits::Constants<Tscal>{*unit_sys}.G();
+        }
+    }
+
+    inline Tscal get_constant_c() const {
+        if (!unit_sys) {
+            ON_RANK_0(logger::warn_ln("gsph::Config", "the unit system is not set"));
+            shamunits::Constants<Tscal> ctes{shamunits::UnitSystem<Tscal>{}};
+            return ctes.c();
+        } else {
+            return shamunits::Constants<Tscal>{*unit_sys}.c();
         }
     }
 
@@ -233,6 +244,29 @@ struct shammodels::gsph::SolverConfig {
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
 
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }
+
+    /**
+     * `@brief` Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     *
+     * `@param` h_over_r Disc aspect ratio
+     */
+    inline void set_eos_locally_isothermalFA2014(Tscal h_over_r) {
+        eos_config.set_locally_isothermalFA2014(h_over_r);
+    }
+
+    /**
+     * @brief Set the EOS configuration to a locally isothermal equation of state from Farris 2014
+     * extended to q != 1/2
+     *
+     * @param cs0 Soundspeed at the reference radius
+     * @param q Power exponent of the soundspeed profile
+     * @param r0 Reference radius
+     * @param n_sinks Number of sinks to consider for the equation of state
+     */
+    inline void set_eos_locally_isothermalFA2014_extended(
+        Tscal cs0, Tscal q, Tscal r0, u32 n_sinks) {
+        eos_config.set_locally_isothermalFA2014_extended(cs0, q, r0, n_sinks);
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     // EOS Config (END)

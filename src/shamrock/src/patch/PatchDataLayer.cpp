@@ -330,6 +330,97 @@ namespace shamrock::patch {
         });
     }
 
+    u32 PatchDataLayer::get_obj_cnt() const {
+
+        bool is_empty = fields.empty();
+
+        if (!is_empty) {
+            return fields[0].visit_return([](const auto &field) {
+                return field.get_obj_cnt();
+            });
+        }
+
+        throw shambase::make_except_with_loc<std::runtime_error>(
+            "this PatchDataLayer does not contain any fields");
+    }
+
+    u64 PatchDataLayer::memsize() {
+        u64 sum = 0;
+
+        for (auto &field_var : fields) {
+
+            field_var.visit([&](auto &field) {
+                sum += field.memsize();
+            });
+        }
+
+        return sum;
+    }
+
+    void PatchDataLayer::synchronize_buf() {
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                field.synchronize_buf();
+            });
+        }
+    }
+
+    void PatchDataLayer::check_field_obj_cnt_match() {
+        u32 cnt = get_obj_cnt();
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.get_obj_cnt() != cnt) {
+                    throw shambase::make_except_with_loc<std::runtime_error>("mismatch in obj cnt");
+                }
+            });
+        }
+    }
+
+    bool PatchDataLayer::has_nan() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
+    bool PatchDataLayer::has_nan_or_inf() {
+        StackEntry stack_loc{};
+
+        bool ret = false;
+
+        for (auto &field_var : fields) {
+            field_var.visit([&](auto &field) {
+                if (field.has_nan_or_inf()) {
+                    ret = true;
+                }
+            });
+        }
+        return ret;
+    }
+
     template<class T>
     void PatchDataLayer::split_patchdata(
         std::array<std::reference_wrapper<PatchDataLayer>, 8> pdats,

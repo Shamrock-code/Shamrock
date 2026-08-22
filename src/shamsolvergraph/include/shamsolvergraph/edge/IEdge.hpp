@@ -19,7 +19,9 @@
 #include "shambase/WithUUID.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shamsolvergraph/IFreeable.hpp"
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace shamrock::solvergraph {
 
@@ -32,6 +34,15 @@ namespace shamrock::solvergraph {
 
         virtual std::string _impl_get_dot_label() const  = 0;
         virtual std::string _impl_get_tex_symbol() const = 0;
+
+        /**
+         * @brief Get the edges aggregated by this edge, if any.
+         *
+         * Container edges (see `EdgeList`) hold other edges, so a node reading a single container
+         * slot really depends on all the contained edges. Returning them here lets the graph
+         * tooling see through the container. Regular edges aggregate nothing and keep the default.
+         */
+        inline virtual std::vector<std::shared_ptr<IEdge>> get_sub_edges() const { return {}; }
 
         inline virtual ~IEdge() {}
     };

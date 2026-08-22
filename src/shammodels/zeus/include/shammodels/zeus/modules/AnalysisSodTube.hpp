@@ -18,7 +18,11 @@
 
 #include "shambackends/vec.hpp"
 #include "shammodels/zeus/SolverConfig.hpp"
+#include "shammodels/zeus/modules/SolverStorage.hpp"
 #include "shamphys/SodTube.hpp"
+#include "shamrock/scheduler/PatchScheduler.hpp"
+#include "shamrock/scheduler/ShamrockCtx.hpp"
+
 namespace shammodels::zeus::modules {
 
     template<class Tvec, class TgridVec>

@@ -18,7 +18,7 @@
 
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldRefs.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include <memory>
 
@@ -47,12 +47,12 @@ namespace shammodels::sph::modules {
 
         struct Edges {
             const shamrock::solvergraph::IFieldRefs<Tscal> &eps_h;
-            shamrock::solvergraph::ScalarEdge<bool> &is_converged;
+            shamrock::solvergraph::IDataEdge<bool> &is_converged;
         };
 
         inline void set_edges(
             std::shared_ptr<shamrock::solvergraph::IFieldRefs<Tscal>> eps_h,
-            std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged) {
+            std::shared_ptr<shamrock::solvergraph::IDataEdge<bool>> is_converged) {
             __internal_set_ro_edges({eps_h});
             __internal_set_rw_edges({is_converged});
         }
@@ -60,7 +60,7 @@ namespace shammodels::sph::modules {
         inline Edges get_edges() {
             return Edges{
                 get_ro_edge<shamrock::solvergraph::IFieldRefs<Tscal>>(0),
-                get_rw_edge<shamrock::solvergraph::ScalarEdge<bool>>(0),
+                get_rw_edge<shamrock::solvergraph::IDataEdge<bool>>(0),
             };
         }
 

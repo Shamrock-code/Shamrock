@@ -44,7 +44,6 @@
 #include "shamrock/solvergraph/FieldRefs.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include <memory>
 #include <vector>
@@ -377,15 +376,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_mm97
     auto gpart_mass
         = solver_graph.get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>("gpart_mass");
 
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
+    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> alpha_u
+        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("alpha_u", "alpha_u");
     {
-        shambase::get_check_ref(alpha_u).value = cfg.alpha_u;
+        shambase::get_check_ref(alpha_u).data = cfg.alpha_u;
     }
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("beta_AV", "beta_AV");
+    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> beta_AV
+        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("beta_AV", "beta_AV");
     {
-        shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
+        shambase::get_check_ref(beta_AV).data = cfg.beta_AV;
     }
 
     std::shared_ptr<NodeUpdateDerivsVaryingAlphaAV<Tvec, SPHKernel>> node
@@ -502,15 +501,15 @@ void shammodels::sph::modules::UpdateDerivs<Tvec, SPHKernel>::update_derivs_cd10
     auto gpart_mass
         = solver_graph.get_edge_ptr<shamrock::solvergraph::IDataEdge<Tscal>>("gpart_mass");
 
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> alpha_u
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("alpha_u", "alpha_u");
+    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> alpha_u
+        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("alpha_u", "alpha_u");
     {
-        shambase::get_check_ref(alpha_u).value = cfg.alpha_u;
+        shambase::get_check_ref(alpha_u).data = cfg.alpha_u;
     }
-    std::shared_ptr<shamrock::solvergraph::ScalarEdge<Tscal>> beta_AV
-        = std::make_shared<shamrock::solvergraph::ScalarEdge<Tscal>>("beta_AV", "beta_AV");
+    std::shared_ptr<shamrock::solvergraph::IDataEdge<Tscal>> beta_AV
+        = std::make_shared<shamrock::solvergraph::IDataEdge<Tscal>>("beta_AV", "beta_AV");
     {
-        shambase::get_check_ref(beta_AV).value = cfg.beta_AV;
+        shambase::get_check_ref(beta_AV).data = cfg.beta_AV;
     }
 
     if (solver_config.dust_config.should_use_dust_av()) {

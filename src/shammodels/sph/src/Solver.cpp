@@ -1178,8 +1178,8 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
         }
         // iterate smoothing length
 
-        std::shared_ptr<shamrock::solvergraph::ScalarEdge<bool>> is_converged
-            = std::make_shared<shamrock::solvergraph::ScalarEdge<bool>>("", "");
+        std::shared_ptr<shamrock::solvergraph::IDataEdge<bool>> is_converged
+            = shamrock::solvergraph::IDataEdge<bool>::make_shared("", "");
 
         shammodels::sph::modules::LoopSmoothingLengthIter<Tvec> loop_smth_h_iter(
             smth_h_iter_ptr, solver_config.epsilon_h, solver_config.h_iter_per_subcycles, false);
@@ -1187,7 +1187,7 @@ void shammodels::sph::Solver<Tvec, Kern>::sph_prestep(Tscal time_val, Tscal dt) 
 
         loop_smth_h_iter.evaluate();
 
-        if (!is_converged->value) {
+        if (!is_converged->data) {
 
             Tscal largest_h = 0;
 

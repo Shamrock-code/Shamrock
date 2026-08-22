@@ -60,10 +60,10 @@ namespace shammodels::sph::modules {
 
         bool local_is_converged = local_is_h_below_tol && (!local_should_rerun_gz);
 
-        is_converged.value
+        is_converged.data
             = shamalgs::collective::are_all_rank_true(local_is_converged, MPI_COMM_WORLD);
 
-        if (is_converged.value && print_info) {
+        if (is_converged.data && print_info) {
 
             Tscal min_eps_h = shamalgs::collective::allreduce_min(local_min_eps_h);
             Tscal max_eps_h = shamalgs::collective::allreduce_max(local_max_eps_h);

@@ -20,6 +20,7 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
+#include "shammodels/common/modules/AddForce1PN.hpp"
 #include "shammodels/common/modules/AddForceCentralGravPotential.hpp"
 #include "shammodels/common/modules/AddForceLenseThirring.hpp"
 #include "shammodels/common/modules/AddForcePaczynskiWiita.hpp"
@@ -365,6 +366,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
     using SolverConfigExtForce = typename Config::ExtForceConfig;
     using EF_PointMass         = typename SolverConfigExtForce::PointMass;
     using EF_PN_PW             = typename SolverConfigExtForce::PN_PW;
+    using EF_PN_1PN            = typename SolverConfigExtForce::PN_1PN;
     using EF_LenseThirring     = typename SolverConfigExtForce::LenseThirring;
 
     using namespace shamrock::solvergraph;
@@ -384,6 +386,9 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 
         } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
+            is_G_needed = true;
+            is_c_needed = true;
+        } else if (EF_PN_1PN *ext_force = std::get_if<EF_PN_1PN>(&var_force.val)) {
             is_G_needed = true;
             is_c_needed = true;
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
@@ -473,10 +478,51 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
         } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
 
+        } else if (EF_PN_1PN *ext_force = std::get_if<EF_PN_1PN>(&var_force.val)) {
+
+            std::string prefix_cmass       = prefix + "cmass_";
+            std::string prefix_central_pos = prefix + "central_pos_";
+            std::string prefix_central_vel = prefix + "central_vel_";
+            std::string prefix_1pn         = prefix + "1pn_";
+
+            auto set_cmass = register_constant_set<Tscal>(solver_graph, prefix_cmass, [&]() {
+                return ext_force->central_mass;
+            });
+
+            auto set_central_pos
+                = register_constant_set<Tvec>(solver_graph, prefix_central_pos, [&]() {
+                      return ext_force->central_pos;
+                  });
+
+            auto set_central_vel
+                = register_constant_set<Tvec>(solver_graph, prefix_central_vel, [&]() {
+                      return ext_force->central_vel;
+                  });
+
+            auto add_force_1pn = solver_graph.register_node(
+                prefix_1pn, shammodels::common::modules::AddForce1PN<Tvec>());
+            shambase::get_check_ref(add_force_1pn)
+                .set_edges(
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("constant_G"),
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>("constant_c"),
+                    solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_cmass),
+                    solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_pos),
+                    solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_vel),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_xyz"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_vxyz"),
+                    solver_graph.get_edge_ptr<Indexes<u32>>("field_sizes"),
+                    solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_axyz"));
+
+            add_ext_forces_seq.push_back(set_cmass);
+            add_ext_forces_seq.push_back(set_central_pos);
+            add_ext_forces_seq.push_back(set_central_vel);
+            add_ext_forces_seq.push_back(solver_graph.get_node_ptr_base(prefix_1pn));
+
         } else if (EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
 
             std::string prefix_cmass       = prefix + "cmass_";
             std::string prefix_central_pos = prefix + "central_pos_";
+            std::string prefix_central_vel = prefix + "central_vel_";
             std::string prefix_a_spin      = prefix + "a_spin_";
             std::string prefix_dir_spin    = prefix + "dir_spin_";
             std::string prefix_lt          = prefix + "lt_";
@@ -487,7 +533,12 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             auto set_central_pos
                 = register_constant_set<Tvec>(solver_graph, prefix_central_pos, [&]() {
-                      return Tvec{0, 0, 0}; // no support for offset yet
+                      return ext_force->central_pos;
+                  });
+
+            auto set_central_vel
+                = register_constant_set<Tvec>(solver_graph, prefix_central_vel, [&]() {
+                      return ext_force->central_vel;
                   });
 
             auto set_a_spin = register_constant_set<Tscal>(solver_graph, prefix_a_spin, [&]() {
@@ -506,6 +557,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>("constant_c"),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_cmass),
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_pos),
+                    solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_central_vel),
                     solver_graph.get_edge_ptr<IDataEdge<Tscal>>(prefix_a_spin),
                     solver_graph.get_edge_ptr<IDataEdge<Tvec>>(prefix_dir_spin),
                     solver_graph.get_edge_ptr<IFieldSpan<Tvec>>("field_xyz"),
@@ -515,6 +567,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
             add_ext_forces_seq.push_back(set_cmass);
             add_ext_forces_seq.push_back(set_central_pos);
+            add_ext_forces_seq.push_back(set_central_vel);
             add_ext_forces_seq.push_back(set_a_spin);
             add_ext_forces_seq.push_back(set_dir_spin);
             add_ext_forces_seq.push_back(solver_graph.get_node_ptr_base(prefix_lt));

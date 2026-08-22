@@ -44,11 +44,19 @@ namespace shammodels {
             Tscal Racc;
         };
 
+        struct PN_1PN {
+            Tscal central_mass;
+            Tvec central_pos;
+            Tvec central_vel;
+        };
+
         struct LenseThirring {
             Tscal central_mass;
             Tscal Racc;
             Tscal a_spin;
             Tvec dir_spin;
+            Tvec central_pos;
+            Tvec central_vel;
         };
 
         /**
@@ -89,6 +97,7 @@ namespace shammodels {
         using VariantForce = std::variant<
             PointMass,
             PN_PW,
+            PN_1PN,
             LenseThirring,
             ShearingBoxForce,
             VerticalDiscPotential,
@@ -104,6 +113,7 @@ namespace shammodels {
 
         using PointMass             = typename ExtForceVariant<Tvec>::PointMass;
         using PN_PW                 = typename ExtForceVariant<Tvec>::PN_PW;
+        using PN_1PN                = typename ExtForceVariant<Tvec>::PN_1PN;
         using LenseThirring         = typename ExtForceVariant<Tvec>::LenseThirring;
         using ShearingBoxForce      = typename ExtForceVariant<Tvec>::ShearingBoxForce;
         using VerticalDiscPotential = typename ExtForceVariant<Tvec>::VerticalDiscPotential;
@@ -119,14 +129,24 @@ namespace shammodels {
             ext_forces.push_back(ExtForceVariant<Tvec>{PN_PW{central_mass, central_pos, Racc}});
         }
 
+        inline void add_1pn(Tscal central_mass, Tvec central_pos, Tvec central_vel) {
+            ext_forces.push_back(
+                ExtForceVariant<Tvec>{PN_1PN{central_mass, central_pos, central_vel}});
+        }
+
         inline void add_lense_thirring(
-            Tscal central_mass, Tscal Racc, Tscal a_spin, Tvec dir_spin) {
+            Tscal central_mass,
+            Tscal Racc,
+            Tscal a_spin,
+            Tvec dir_spin,
+            Tvec central_pos = Tvec{},
+            Tvec central_vel = Tvec{}) {
             if (sham::abs(sycl::length(dir_spin) - 1) > 1e-8) {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "the sping direction should be a unit vector");
             }
-            ext_forces.push_back(
-                ExtForceVariant<Tvec>{LenseThirring{central_mass, Racc, a_spin, dir_spin}});
+            ext_forces.push_back(ExtForceVariant<Tvec>{
+                LenseThirring{central_mass, Racc, a_spin, dir_spin, central_pos, central_vel}});
         }
 
         /**
@@ -156,6 +176,7 @@ namespace shammodels {
 
         using PointMass             = typename T::PointMass;
         using PN_PW                 = typename T::PN_PW;
+        using PN_1PN                = typename T::PN_1PN;
         using LenseThirring         = typename T::LenseThirring;
         using ShearingBoxForce      = typename T::ShearingBoxForce;
         using VerticalDiscPotential = typename T::VerticalDiscPotential;
@@ -171,6 +192,11 @@ namespace shammodels {
                    {"central_mass", v->central_mass},
                    {"central_pos", v->central_pos},
                    {"Racc", v->Racc}};
+        } else if (const PN_1PN *v = std::get_if<PN_1PN>(&p.val)) {
+            j = {{"force_type", "1pn"},
+                 {"central_mass", v->central_mass},
+                 {"central_pos", v->central_pos},
+                 {"central_vel", v->central_vel}};
         } else if (const LenseThirring *v = std::get_if<LenseThirring>(&p.val)) {
             j = {
                 {"force_type", "lense_thirring"},
@@ -178,6 +204,8 @@ namespace shammodels {
                 {"Racc", v->Racc},
                 {"a_spin", v->a_spin},
                 {"dir_spin", v->dir_spin},
+                {"central_pos", v->central_pos},
+                {"central_vel", v->central_vel},
             };
         } else if (const ShearingBoxForce *v = std::get_if<ShearingBoxForce>(&p.val)) {
             j = {
@@ -214,6 +242,7 @@ namespace shammodels {
 
         using PointMass             = typename T::PointMass;
         using PN_PW                 = typename T::PN_PW;
+        using PN_1PN                = typename T::PN_1PN;
         using LenseThirring         = typename T::LenseThirring;
         using ShearingBoxForce      = typename T::ShearingBoxForce;
         using VerticalDiscPotential = typename T::VerticalDiscPotential;
@@ -230,12 +259,20 @@ namespace shammodels {
                 j.at("central_pos").get<Tvec>(),
                 j.at("Racc").get<Tscal>(),
             };
+        } else if (force_type == "1pn") {
+            p.val = PN_1PN{
+                j.at("central_mass").get<Tscal>(),
+                j.value("central_pos", Tvec{}),
+                j.value("central_vel", Tvec{}),
+            };
         } else if (force_type == "lense_thirring") {
             p.val = LenseThirring{
                 j.at("central_mass").get<Tscal>(),
                 j.at("Racc").get<Tscal>(),
                 j.at("a_spin").get<Tscal>(),
                 j.at("dir_spin").get<Tvec>(),
+                j.value("central_pos", Tvec{}),
+                j.value("central_vel", Tvec{}),
             };
         } else if (force_type == "shearing_box_force") {
             p.val = ShearingBoxForce{

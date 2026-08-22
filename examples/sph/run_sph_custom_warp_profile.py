@@ -202,8 +202,8 @@ warp = setup.make_modifier_custom_warp(
     psi_profile=psi_profile,
     k_profile=k_profile,
 )
-# Print the dot graph of the setup
-print(warp.get_dot())
+# Show the dot graph of the setup
+shamrock.utils.plot.DotGraph(warp.get_dot())
 
 # %%
 # Apply the setup

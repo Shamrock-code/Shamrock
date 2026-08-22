@@ -21,7 +21,7 @@
 #include "shambackends/vec.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include <experimental/mdspan>
@@ -29,8 +29,8 @@
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     /* counts */                                                                                   \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, rhodust_eps)                                    \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, dt_hydro)                                       \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, rhodust_eps)                                     \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, dt_hydro)                                        \
                                                                                                    \
     /* fields */                                                                                   \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, S)                                              \
@@ -63,7 +63,7 @@ namespace shammodels::sph::modules {
             edges.s_j.check_sizes(edges.part_counts.indexes);
             edges.ds_j_dt.check_sizes(edges.part_counts.indexes);
 
-            auto rhodust_eps = edges.rhodust_eps.value;
+            auto rhodust_eps = edges.rhodust_eps.data;
 
             shambase::DistributedData<u32> counts = edges.part_counts.indexes.template map<u32>(
                 [nbins = this->nbins](u64 /**/, u32 count) -> u32 {
@@ -71,7 +71,7 @@ namespace shammodels::sph::modules {
                 });
 
             auto epsilon  = sycl::sqrt(rhodust_eps);
-            auto dt_hydro = edges.dt_hydro.value;
+            auto dt_hydro = edges.dt_hydro.data;
 
             sham::distributed_data_kernel_call(
                 shamsys::instance::get_compute_scheduler_ptr(),

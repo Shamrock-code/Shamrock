@@ -139,10 +139,10 @@ namespace shammodels::sph::modules {
         edges.S_coag.ensure_sizes(counts);
         auto S_coag_spans = edges.S_coag.get_spans();
 
-        Tscal rho_eps                                 = edges.rhodust_eps.value;
-        Tscal dv_max                                  = edges.dv_max.value;
-        const std::vector<Tscal> &massgrid            = edges.massgrid.value;
-        const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.value;
+        Tscal rho_eps                                 = edges.rhodust_eps.data;
+        Tscal dv_max                                  = edges.dv_max.data;
+        const std::vector<Tscal> &massgrid            = edges.massgrid.data;
+        const std::vector<Tscal> &tensor_tabflux_coag = edges.tensor_tabflux_coag.data;
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
         auto &q        = shambase::get_check_ref(dev_sched).get_queue();

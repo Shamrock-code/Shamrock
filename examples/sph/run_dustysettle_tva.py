@@ -20,6 +20,7 @@ LZ=96 ./shamrock --sycl-cfg 0:0 --smi --loglevel 1 --rscript ../examples/sph/run
 
 import json
 import os
+from enum import Enum
 
 import matplotlib as mpl
 import matplotlib.colors as mcolors
@@ -84,6 +85,18 @@ epsilon_base = 0.01
 rho_grains_si_edges = np.array([2.3 * 1000 for i in range(ndust + 1)])
 grain_size_si_edges = np.logspace(-5, -3, ndust + 1)
 
+
+class DustLimiter(Enum):
+    NONE = "none"
+    SMOOTH = "smooth"
+    BALLABIO = "ballabio"
+    HARD = "hard"
+
+
+_dust_limiter_env = os.environ.get("DUST_LIMITER", "hard")
+limiter = DustLimiter(_dust_limiter_env)
+print(f"limiter = {limiter} (DUST_LIMITER={_dust_limiter_env!r})")
+
 # Resolution (lattice size)
 lx = 12
 ly = 12
@@ -123,7 +136,7 @@ reference_Nz = 4000
 reference_zrange = 3.5  # in units of H
 
 # Paths
-sim_folder = f"_to_trash/dusty_settle_{lz}/"
+sim_folder = f"_to_trash/dusty_settle_{limiter.value}_{lz}/"
 dump_folder = sim_folder + "dump/"
 
 # Plotting
@@ -572,7 +585,7 @@ def get_max_v():
 # ------------------------------------------
 
 
-def analyse_and_plot(j):
+def analyse_state(j):
 
     pmass = model.get_particle_mass()
     hfact = model.get_hfact()
@@ -598,63 +611,48 @@ def analyse_and_plot(j):
     print("compute original rho")
     estimated_rho = [func_rho_t(dic["xyz"][kk]) for kk in range(len(dic["xyz"]))]
 
-    sz = 1
-
-    fig = plt.figure(figsize=(12, 7), dpi=dpi)
-    gs = fig.add_gridspec(2, 2, height_ratios=[1.7, 1], wspace=0.2)
-
-    ax_rho = fig.add_subplot(gs[0, 0])  # Top left
-    ax_epsilon = fig.add_subplot(gs[0, 1])  # Top right
-    ax_delta_v = fig.add_subplot(gs[1, :])  # Bottom spans both columns
-
     time = model.get_time() - tinject
-    fig.suptitle(f"t = {time:.2f} [yr]")
-
-    fig.subplots_adjust(left=0.08, right=1.05, wspace=0.35)
 
     to_dens = codeu.to("kg") * codeu.to("m") ** -3
     to_speed = codeu.to("m") / codeu.to("s")
 
-    dust_cmap = plt.colormaps[cmap]
-    dust_norm = mcolors.LogNorm(
-        vmin=mrn_distribution.grain_size_si.min(), vmax=mrn_distribution.grain_size_si.max() * 10
-    )
-    dust_colors = dust_cmap(dust_norm(mrn_distribution.grain_size_si))
+    grain_size_si = mrn_distribution.grain_size_si
 
     rho_dust_all = np.zeros(len(z))
     epsilon_dust_all = np.zeros(len(z))
 
     l2_error_all = [np.nan for _ in range(ndust)]
 
-    for i in range(ndust):
-        c = dust_colors[i]
-        ax_rho.scatter(z, s_j[:, i] ** 2 * to_dens, s=sz, color=c, edgecolors="none")
-        ax_epsilon.scatter(z, s_j[:, i] ** 2 / rho, s=sz, color=c, edgecolors="none")
+    reference_plots = None
+    if reference_dusty_settle is not None:
+        reference_plots = []
 
+    for i in range(ndust):
         rho_dust_all += s_j[:, i] ** 2 * to_dens
         epsilon_dust_all += s_j[:, i] ** 2 / rho
 
         if reference_dusty_settle is not None:
-            ax_rho.plot(
-                reference_dusty_settle.soluces[i].zbar,
-                reference_dusty_settle.soluces[i].rho * reference_dusty_settle.rhoscale,
-                "--",
-                color="0.0",
-            )
-
             ana_epsilon = (
                 reference_dusty_settle.soluces[i].rho
                 * reference_dusty_settle.rhoscale
                 / reference_dusty_settle.soluces[i].rhog
             )
             print(ana_epsilon.max(), ana_epsilon.min())
-            ax_epsilon.plot(reference_dusty_settle.soluces[i].zbar, ana_epsilon, "--", color="0.0")
 
             L2_error = compute_L2_error(
                 z, s_j[:, i] ** 2 / rho, reference_dusty_settle.soluces[i].zbar, ana_epsilon
             )
 
             l2_error_all[i] = L2_error
+
+            reference_plots.append(
+                {
+                    "zbar": reference_dusty_settle.soluces[i].zbar,
+                    "rho": reference_dusty_settle.soluces[i].rho * reference_dusty_settle.rhoscale,
+                    "epsilon": ana_epsilon,
+                    "v": reference_dusty_settle.soluces[i].v * reference_dusty_settle.vscale,
+                }
+            )
 
     save_analysis_data("l2_error.json", "l2_error", l2_error_all, j)
 
@@ -667,7 +665,84 @@ def analyse_and_plot(j):
 
     save_analysis_data("dust_mass.json", "dust_mass", dust_mass, j)
 
-    ax_rho.scatter(z, rho * to_dens, s=sz, color="0.0", edgecolors="none")
+    snapshot_data = {
+        "x": x,
+        "y": y,
+        "z": z,
+        "s_j": s_j,
+        "ds_j_dt": ds_j_dt,
+        "cs": cs,
+        "delta_v": delta_v,
+        "hpart": hpart,
+        "rho": rho,
+        "estimated_rho": estimated_rho,
+        "time": time,
+        "to_dens": to_dens,
+        "to_speed": to_speed,
+        "grain_size_si": grain_size_si,
+        "rho_dust_all": rho_dust_all,
+        "epsilon_dust_all": epsilon_dust_all,
+        "l2_error_all": l2_error_all,
+        "dust_mass": dust_mass,
+        "reference_plots": reference_plots,
+    }
+
+    return snapshot_data
+
+
+def plot_state(j, snapshot_data):
+
+    z = snapshot_data["z"]
+    s_j = snapshot_data["s_j"]
+    ds_j_dt = snapshot_data["ds_j_dt"]
+    delta_v = snapshot_data["delta_v"]
+    rho = snapshot_data["rho"]
+    time = snapshot_data["time"]
+    to_dens = snapshot_data["to_dens"]
+    to_speed = snapshot_data["to_speed"]
+    grain_size_si = snapshot_data["grain_size_si"]
+    rho_dust_all = snapshot_data["rho_dust_all"]
+    epsilon_dust_all = snapshot_data["epsilon_dust_all"]
+    reference_plots = snapshot_data["reference_plots"]
+
+    sz = 1
+
+    fig = plt.figure(figsize=(12, 7), dpi=dpi)
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.7, 1], wspace=0.2)
+
+    ax_rho = fig.add_subplot(gs[0, 0])  # Top left
+    ax_epsilon = fig.add_subplot(gs[0, 1])  # Top right
+    ax_delta_v = fig.add_subplot(gs[1, :])  # Bottom spans both columns
+
+    fig.suptitle(f"t = {time:.2f} [yr]")
+
+    fig.subplots_adjust(left=0.08, right=1.05, wspace=0.35)
+
+    dust_cmap = plt.colormaps[cmap]
+    dust_norm = mcolors.LogNorm(vmin=grain_size_si.min(), vmax=grain_size_si.max() * 10)
+    dust_colors = dust_cmap(dust_norm(grain_size_si))
+
+    for i in range(ndust):
+        c = dust_colors[i]
+        ax_rho.scatter(z, s_j[:, i] ** 2 * to_dens, s=sz, color=c, edgecolors="none")
+        ax_epsilon.scatter(z, s_j[:, i] ** 2 / rho, s=sz, color=c, edgecolors="none")
+
+        if reference_plots is not None:
+            ax_rho.plot(
+                reference_plots[i]["zbar"],
+                reference_plots[i]["rho"],
+                "--",
+                color="0.0",
+            )
+
+            ax_epsilon.plot(
+                reference_plots[i]["zbar"],
+                reference_plots[i]["epsilon"],
+                "--",
+                color="0.0",
+            )
+
+    ax_rho.scatter(z, rho * to_dens - rho_dust_all, s=sz, color="0.0", edgecolors="none")
     ax_rho.scatter(z, rho_dust_all, s=sz, color="0.5", edgecolors="none")
     ax_epsilon.scatter(z, 1 - epsilon_dust_all, s=sz, color="0.0", edgecolors="none")
     ax_epsilon.scatter(z, epsilon_dust_all, s=sz, color="0.5", edgecolors="none")
@@ -696,10 +771,10 @@ def analyse_and_plot(j):
         c = dust_colors[i]
         ax_delta_v.scatter(z, delta_v[:, i, 2] * to_speed, s=sz, color=c, edgecolors="none")
 
-        if reference_dusty_settle is not None:
+        if reference_plots is not None:
             ax_delta_v.plot(
-                reference_dusty_settle.soluces[i].zbar,
-                reference_dusty_settle.soluces[i].v * reference_dusty_settle.vscale,
+                reference_plots[i]["zbar"],
+                reference_plots[i]["v"],
                 "--",
                 color="0.0",
             )
@@ -748,7 +823,6 @@ def analyse_and_plot(j):
     plt.close()
 
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(12, 5), dpi=dpi)
-    time = model.get_time() - tinject
     fig.suptitle(f"t = {time:.2f} [yr]")
 
     fig.subplots_adjust(left=0.07, right=1.05, wspace=0.35)
@@ -806,9 +880,33 @@ def setup_model():
         beta_AV=av_beta_AV,
     )
 
-    cfg.set_dust_mode_monofluid_tva(
-        nvar=ndust, C_1_fluid=0.1, C_drift=1.0, cfl_density_threshold=1e-50
-    )
+    common_kwargs = {
+        "nvar": ndust,
+        "C_1_fluid": 0.1,
+        "C_drift": 1.0,
+        "cfl_density_threshold": 1e-50,
+    }
+
+    if limiter == DustLimiter.NONE:
+        cfg.set_dust_mode_monofluid_tva(
+            **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
+        )
+    elif limiter == DustLimiter.SMOOTH:
+        cfg.set_dust_mode_monofluid_tva(
+            **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=True
+        )
+    elif limiter == DustLimiter.BALLABIO:
+        cfg.set_dust_mode_monofluid_tva(
+            **common_kwargs, ensure_s_j_positivity=False, smooth_s_positivity_limiter=False
+        )
+        cfg.set_dust_ballabio_ts_limiter(True)
+    elif limiter == DustLimiter.HARD:
+        cfg.set_dust_mode_monofluid_tva(
+            **common_kwargs, ensure_s_j_positivity=True, smooth_s_positivity_limiter=False
+        )
+    else:
+        raise ValueError(f"Invalid dust limiter: {limiter}")
+
     cfg.set_dust_drag_epstein(gamma, mrn_distribution.grain_size, mrn_distribution.rho_grains)
     cfg.add_ext_force_vertical_disc_potential(central_mass=1, R0=1)
     cfg.add_ext_force_velocity_dissipation(eta=vel_dissipation_eta)
@@ -909,9 +1007,12 @@ class Simulation(SimulationRunner):
         if reference_dusty_settle is not None:
             reference_dusty_settle.evolve_until(model_time - tinject)
 
-        analyse_and_plot(j)
+        snapshot_data = analyse_state(j)
+        # save snapshot_data using numpy
+        np.save(f"{dump_folder}/snapshot_data_{j:04d}.npy", snapshot_data)
+        plot_state(j, snapshot_data)
 
-    @callback(walltime_interval=30.0)  # Checkpoint the simulation every 30 seconds
+    @callback(walltime_interval=10.0, at_tsim=[t_end])  # Checkpoint the simulation every 30 seconds
     def checkpoint(self, icheckpoint):
         self.do_checkpoint(icheckpoint, purge_old_dumps=True, keep_first=1, keep_last=3)
 
@@ -929,8 +1030,8 @@ Simulation(model).run()
 glob_str = f"{dump_folder}/plots/vert_slice_dens_*.png"
 ani = show_image_sequence(glob_str)
 
-writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_tva.gif", writer=writer)
+# writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+# ani.save("_to_trash/dustysettle_vert_slice_tva.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     plt.show()
@@ -940,8 +1041,8 @@ if shamrock.sys.world_rank() == 0:
 glob_str = f"{dump_folder}/plots/vert_slice_s_*.png"
 ani = show_image_sequence(glob_str)
 
-writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
-ani.save("_to_trash/dustysettle_vert_slice_s_tva.gif", writer=writer)
+# writer = PillowWriter(fps=15, metadata=dict(artist="Me"), bitrate=1800)
+# ani.save("_to_trash/dustysettle_vert_slice_s_tva.gif", writer=writer)
 
 if shamrock.sys.world_rank() == 0:
     plt.show()

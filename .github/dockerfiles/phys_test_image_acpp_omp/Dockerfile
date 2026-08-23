@@ -23,9 +23,10 @@ RUN wget https://apt.llvm.org/llvm.sh && \
 RUN sudo apt install -y \
     gfortran \
     ffmpeg \
-    ccache
+    ccache \
+    graphviz
 
-RUN pip3 install matplotlib numpy scipy h5py
+RUN pip3 install matplotlib numpy scipy h5py graphviz
 
 # ----------------------------
 # ccache configuration

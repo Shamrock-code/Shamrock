@@ -23,11 +23,11 @@
 #include "shammodels/common/modules/AddForceCentralGravPotential.hpp"
 #include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/SinkParticlesUpdate.hpp"
-#include "shamrock/solvergraph/IDataEdge.hpp"
-#include "shamrock/solvergraph/INode.hpp"
-#include "shamrock/solvergraph/NodeSetEdge.hpp"
-#include "shamrock/solvergraph/OperationSequence.hpp"
-#include "shamrock/solvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
+#include "shamsolvergraph/node/INode.hpp"
+#include "shamsolvergraph/node/NodeSetEdge.hpp"
+#include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/legacy/log.hpp"
 #include "shamunits/Constants.hpp"
 
@@ -194,6 +194,7 @@ std::shared_ptr<shamrock::solvergraph::INode> register_constant_set(
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces() {
 
+    logger::raw_ln("111111111111111111111 Adding external forces ...");
     StackEntry stack_loc{};
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();

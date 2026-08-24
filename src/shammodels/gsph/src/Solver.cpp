@@ -39,8 +39,8 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/SolverConfig.hpp"
 #include "shammodels/gsph/config/FieldNames.hpp"
-#include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/ComputeLoadBalanceValue.hpp"
+#include "shammodels/gsph/modules/ExternalForces.hpp"
 #include "shammodels/gsph/modules/GSPHUtilities.hpp"
 #include "shammodels/gsph/modules/SinkParticlesUpdate.hpp"
 #include "shammodels/gsph/modules/UpdateDerivs.hpp"
@@ -1909,6 +1909,8 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
     // 7. CFL: compute next timestep
     // =========================================================================
 
+    shamrock::SchedulerUtility utility(scheduler());
+
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
 
@@ -1918,12 +1920,12 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     sink_update.predictor_step(dt);
 
+    sink_update.compute_ext_forces();
+    ext_forces.compute_ext_forces_indep_v();
+
     // STEP 1: PREDICTOR - move particles using OLD accelerations
     // (On first iteration, accelerations are zero, so this is just position drift)
     do_predictor_leapfrog(dt);
-
-    sink_update.compute_ext_forces();
-    ext_forces.compute_ext_forces_indep_v();
 
     // STEP 2: BOUNDARY - apply boundary conditions to NEW positions
     // Build serial patch tree first (needed for boundary application)

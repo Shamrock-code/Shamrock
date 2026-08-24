@@ -48,6 +48,8 @@ namespace shambase {
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forces_indep_v() {
 
+    logger::raw_ln("############### in add ext forces indep v ###########");
+
     StackEntry stack_loc{};
 
     sham::DeviceQueue &q = shamsys::instance::get_compute_scheduler().get_queue();
@@ -70,6 +72,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
     sink_update.compute_sph_forces();
 
     if (solver_config.ext_force_config.ext_forces.empty()) {
+        logger::raw_ln("######### ext forces not exist !!!!!!!!!! #######");
         return;
     }
 
@@ -131,8 +134,12 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_forc
 
     std::vector<std::shared_ptr<shamrock::solvergraph::INode>> add_ext_forces_seq{};
 
+    logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@ before force variant @@@@@@@@@@@@@@@@");
+
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
+        logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@ in force variant @@@@@@@@@@@@@@@@");
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+            logger::raw_ln("222222222222222222 in PointMass variant 222222222222222222");
 
             auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");

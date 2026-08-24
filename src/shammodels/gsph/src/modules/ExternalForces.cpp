@@ -61,9 +61,11 @@ void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_for
         field.field_raz();
     });
 
+    // here the force of sinks onto SPH particles is computed and added to axyz_ext
     sink_update.compute_sph_forces();
 
     if (solver_config.ext_force_config.ext_forces.empty()) {
+        logger::raw_ln("######### ext forces not exist !!!!!!!!!! #######");
         return;
     }
 
@@ -127,7 +129,7 @@ void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_for
 
     for (auto var_force : solver_config.ext_force_config.ext_forces) {
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
-
+            logger::raw_ln("222222222222222222 in PointMass variant 222222222222222222");
             auto central_mass = shamrock::solvergraph::IDataEdge<Tscal>::make_shared("", "");
             auto central_pos  = shamrock::solvergraph::IDataEdge<Tvec>::make_shared("", "");
 

@@ -1,4 +1,4 @@
-# Smoothing Length Tolerance in SPH
+# Smoothing length tolerance in SPH
 
 ## Overview
 
@@ -16,14 +16,14 @@ The coarse cycle tolerance must be greater than or equal to the fine cycle toler
 htol_up_coarse_cycle >= htol_up_fine_cycle
 ```
 
-### Default Values
+### Default values
 
 ```cpp
 Tscal htol_up_coarse_cycle = 1.1;  // Default: 1.1
 Tscal htol_up_fine_cycle  = 1.1;  // Default: 1.1
 ```
 
-## Setting the Right Tolerance
+## Setting the right tolerance
 
 This is, in principle, not too difficult. Using `1.1` results in a moderate excess of neighbors while allowing the smoothing length to converge in a single coarse cycle during most simulations. If your simulation has very fast advecting components with large density contrasts, you will see warnings like:
 ```
@@ -33,6 +33,6 @@ Warning: smoothing length is not converged, rerunning the iterator ...          
 in the logs. If this happens, you can try increasing the tolerance to something like `1.15` or `1.2`, which should solve the issue at the cost of a slight performance slowdown.
 
 The tolerance can be set in the runscript using
-```py
+```python
 model.change_htolerances(coarse=1.1, fine=1.05)
 ```

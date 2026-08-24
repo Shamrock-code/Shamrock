@@ -1,22 +1,22 @@
 # Shearing box in SPH
 
-Following [Stone & Gardiner 2010](https://ui.adsabs.harvard.edu/abs/2010ApJS..189..142S/abstract):
+Following [Stone & Gardiner 2010](https://ui.adsabs.harvard.edu/abs/2010ApJS..189..142S/abstract), the shearing box force is:
 
-\[
+$$
     \mathbf{f} =
         2\Omega_0 \left(  q \Omega_0 x +  v_y \right) \mathbf{e}_{x} -2\Omega_0
     v_x \mathbf{e}_{y} - \Omega_0^2 z \mathbf{e}_{z}
-\]
+$$
 
-Shear speed :
+Shear speed:
 
 $$
 \omega = q \Omega_0 L_x
 $$
 
-To add it :
+To add it in a runscript:
 
-```py linenums="1"
+```python
 xm,ym,zm = bmin
 xM,yM,zM = bmax
 

@@ -1256,7 +1256,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
             uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
         }
 
-        using SolverConfigEOS     = typename Config::EOSConfig;
+        using SolverConfigEOS = typename Config::EOSConfig;
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
@@ -1266,10 +1266,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                 Tscal rho = density[i];
                 rho       = sycl::max(rho, Tscal(1e-30));
 
-
-
-                if (solver_config.is_eos_adiabatic()){
-                                        // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
+                if (solver_config.is_eos_adiabatic()) {
+                    // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
                     u       = sycl::max(u, Tscal(1e-30));
@@ -1283,7 +1281,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                     soundspeed[i] = cs;
                 }
 
-                 else if (solver_config.is_eos_isothermal()){
+                else if (solver_config.is_eos_isothermal()) {
                     // Isothermal case
                     Tscal cs = cs0;
                     Tscal P  = cs * cs * rho;

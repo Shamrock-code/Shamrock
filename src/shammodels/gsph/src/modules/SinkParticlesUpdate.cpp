@@ -286,7 +286,6 @@ void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::corrector_
 
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sph_forces() {
-    logger::raw_ln("$$$$$$$$$$$$$$ in compute sph forces $$$$$$$$$$$$$$");
 
     StackEntry stack_loc{};
 
@@ -314,7 +313,6 @@ void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sp
     std::vector<Tvec> result_acc_sinks{};
 
     for (Sink &s : sink_parts) {
-        logger::raw_ln("$$$$$$$$$$$$$$ in sink loop $$$$$$$$$$$$$$");
 
         Tvec sph_acc_sink = {};
 
@@ -333,8 +331,6 @@ void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sp
                 auto xyz       = buf_xyz.get_read_access(depends_list);
                 auto axyz_ext  = buf_axyz_ext.get_write_access(depends_list);
                 auto axyz_sync = buf_sync_axyz.get_write_access(depends_list);
-
-                logger::raw_ln("$$$$$$$$$$$$$$ before even submission $$$$$$$$$$$$$$");
 
                 auto e = q.submit(
                     depends_list,
@@ -371,8 +367,6 @@ void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_sp
         result_acc_sinks.push_back(sph_acc_sink);
     }
 
-    logger::raw_ln("$$$$$$$$$$$$$$ added to axyz_ext $$$$$$$$$$$$$$");
-
     std::vector<Tvec> gathered_result_acc_sinks{};
     shamalgs::collective::vector_allgatherv(
         result_acc_sinks, gathered_result_acc_sinks, MPI_COMM_WORLD);
@@ -405,9 +399,7 @@ void shammodels::gsph::modules::SinkParticlesUpdate<Tvec, SPHKernel>::compute_ex
         s.ext_acceleration = Tvec{};
     }
 
-    Tscal G = solver_config.get_constant_G();
-    logger::raw_ln("########################");
-    logger::raw_ln("@@@@@@@@@@@@@@@@@@@@@@@@ G = ", G);
+    Tscal G                 = solver_config.get_constant_G();
     Tscal epsilon_grav_sink = 1e-9;
 
     for (Sink &s1 : sink_parts) {

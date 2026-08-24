@@ -41,7 +41,7 @@ jobs:
           show_full_output: true
 
           claude_args: |
-            --model qwen3.6 --append-system-prompt "Always post responses as GitHub comments in the context where you were invoked (pull request or issue)."
+            --model qwen3.8 --append-system-prompt "Always post responses as GitHub comments in the context where you were invoked (pull request or issue)."
 
           # Optional: Customize the trigger phrase (default: @claude)
           # trigger_phrase: "/claude"

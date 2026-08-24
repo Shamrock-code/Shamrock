@@ -263,7 +263,7 @@ inline void post_insert_data(PatchScheduler &sched) {
     }
 
     // sched.for_each_local_patchdata([&](const Patch p, PatchData &pdat) {
-    //     log += shambase::format(
+    //     log += sham::format(
     //         "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
     // });
     //
@@ -309,7 +309,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle(
             return;
         }
 
-        log += shambase::format(
+        log += sham::format(
             "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
             shamcomm::world_rank(),
             p.id_patch,
@@ -405,7 +405,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::push_particle_mhd(
             return;
         }
 
-        log += shambase::format(
+        log += sham::format(
             "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
             shamcomm::world_rank(),
             p.id_patch,
@@ -530,7 +530,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
                     return;
                 }
 
-                log += shambase::format(
+                log += sham::format(
                     "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                     shamcomm::world_rank(),
                     p.id_patch,
@@ -976,7 +976,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_big_disc_3d(
                     return;
                 }
 
-                log += shambase::format(
+                log += sham::format(
                     "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                     shamcomm::world_rank(),
                     p.id_patch,
@@ -1154,7 +1154,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,
@@ -1335,7 +1335,7 @@ void shammodels::sph::Model<Tvec, SPHKernel>::init_from_phantom_dump(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,
@@ -1501,7 +1501,7 @@ shammodels::sph::PhantomDump shammodels::sph::Model<Tvec, SPHKernel>::make_phant
 
     dump.override_magic_number();
     dump.iversion = 1;
-    dump.fileid   = shambase::format("{:100s}", "FT:Phantom Shamrock writer");
+    dump.fileid   = sham::format("{:100s}", "FT:Phantom Shamrock writer");
 
     u32 Ntot = get_total_part_count();
     dump.table_header_fort_int.add("nparttot", Ntot);

@@ -103,7 +103,7 @@ namespace shamrock::solvergraph {
             }
 
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                shambase::format("Edge is not from the requested type: {}", slot));
+                sham::format("Edge is not from the requested type: {}", slot));
         }
 
         /// Get a read write edge and cast it to the type T, return an optional
@@ -121,7 +121,7 @@ namespace shamrock::solvergraph {
             }
 
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                shambase::format("Edge is not from the requested type: {}", slot));
+                sham::format("Edge is not from the requested type: {}", slot));
         }
 
         /// Get a reference to a read only edge
@@ -165,16 +165,16 @@ namespace shamrock::solvergraph {
 
         /// print the node info
         inline virtual std::string print_node_info() const {
-            std::string node_info = shambase::format("Node info :\n");
-            node_info += shambase::format(" - Node type : {}\n", typeid(*this).name());
-            node_info += shambase::format(" - Node UUID : {}\n", get_uuid());
-            node_info += shambase::format(" - Node label : {}\n", _impl_get_label());
+            std::string node_info = sham::format("Node info :\n");
+            node_info += sham::format(" - Node type : {}\n", typeid(*this).name());
+            node_info += sham::format(" - Node UUID : {}\n", get_uuid());
+            node_info += sham::format(" - Node label : {}\n", _impl_get_label());
 
             auto append_edges_info = [&](const char *title, const auto &edges) {
-                node_info += shambase::format(" - {}: {}\n", title, edges.size());
+                node_info += sham::format(" - {}: {}\n", title, edges.size());
                 for (const auto &edge : edges) {
                     const auto &e = *edge; // necessary to avoid -Wpotentially-evaluated-expression
-                    node_info += shambase::format(
+                    node_info += sham::format(
                         "     - Edge ptr = {}, uuid = {}, label = {},\n          type = {} \n",
                         static_cast<void *>(edge.get()),
                         edge->get_uuid(),
@@ -243,34 +243,34 @@ namespace shamrock::solvergraph {
 
     inline std::string INode::_impl_get_dot_graph_partial() const {
         std::string node_str
-            = shambase::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
+            = sham::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
 
         std::string edge_str = "";
         for (auto &in : ro_edges) {
-            edge_str += shambase::format(
+            edge_str += sham::format(
                 "e_{} -> n_{} [style=\"dashed\", color=green];\n",
                 in->get_uuid(),
                 this->get_uuid());
-            edge_str += shambase::format(
+            edge_str += sham::format(
                 "e_{} [label=\"{}\",shape=rect, style=filled];\n", in->get_uuid(), in->get_label());
         }
         for (auto &out : rw_edges) {
-            edge_str += shambase::format(
+            edge_str += sham::format(
                 "n_{} -> e_{} [style=\"dashed\", color=red];\n", this->get_uuid(), out->get_uuid());
-            edge_str += shambase::format(
+            edge_str += sham::format(
                 "e_{} [label=\"{}\",shape=rect, style=filled];\n",
                 out->get_uuid(),
                 out->get_label());
         }
 
-        return shambase::format("{}{}", node_str, edge_str);
+        return sham::format("{}{}", node_str, edge_str);
     };
 
     inline std::string INode::_impl_get_dot_graph_node_start() const {
-        return shambase::format("n_{}", this->get_uuid());
+        return sham::format("n_{}", this->get_uuid());
     }
     inline std::string INode::_impl_get_dot_graph_node_end() const {
-        return shambase::format("n_{}", this->get_uuid());
+        return sham::format("n_{}", this->get_uuid());
     }
 
 } // namespace shamrock::solvergraph

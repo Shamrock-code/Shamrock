@@ -37,7 +37,7 @@ namespace shamalgs::collective {
         u32 receiver        = comm_ranks.y();
 
         if (message_size == 0) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "Message size is 0 for rank {}, sender = {}, receiver = {}",
                 shamcomm::world_rank(),
                 sender,
@@ -65,7 +65,7 @@ namespace shamalgs::collective {
             size_t message_size = messages_send[i].message_size;
 
             if (sender != shamcomm::world_rank()) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                     "You are trying to send a message from a rank that does not posses it\n"
                     "    sender = {}, receiver = {}, world_rank = {}",
                     sender,
@@ -143,12 +143,11 @@ namespace shamalgs::collective {
                 // offset logic (& buffer selection)
                 if (sender == shamcomm::world_rank()) {
                     if (message_info.message_size > max_alloc_size) {
-                        throw shambase::make_except_with_loc<std::invalid_argument>(
-                            shambase::format(
-                                "Message size is greater than the max alloc size\n"
-                                "    message_size = {}, max_alloc_size = {}",
-                                message_info.message_size,
-                                max_alloc_size));
+                        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                            "Message size is greater than the max alloc size\n"
+                            "    message_size = {}, max_alloc_size = {}",
+                            message_info.message_size,
+                            max_alloc_size));
                     }
 
                     if (send_buf_sizes.size() == 0) {
@@ -173,12 +172,11 @@ namespace shamalgs::collective {
                 if (receiver == shamcomm::world_rank()) {
 
                     if (message_info.message_size > max_alloc_size) {
-                        throw shambase::make_except_with_loc<std::invalid_argument>(
-                            shambase::format(
-                                "Message size is greater than the max alloc size\n"
-                                "    message_size = {}, max_alloc_size = {}",
-                                message_info.message_size,
-                                max_alloc_size));
+                        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
+                            "Message size is greater than the max alloc size\n"
+                            "    message_size = {}, max_alloc_size = {}",
+                            message_info.message_size,
+                            max_alloc_size));
                     }
 
                     if (recv_buf_sizes.size() == 0) {
@@ -310,7 +308,7 @@ namespace shamalgs::collective {
         }
 
         if (comm_table.send_total_sizes.size() != bytebuffer_send.size()) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "The send total size is greater than the send buffer size\n"
                 "    send_total_sizes = {}, send_buffer_size = {}",
                 comm_table.send_total_sizes.size(),
@@ -318,7 +316,7 @@ namespace shamalgs::collective {
         }
 
         if (comm_table.recv_total_sizes.size() != bytebuffer_recv.size()) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "The recv total size is greater than the recv buffer size\n"
                 "    recv_total_sizes = {}, recv_buffer_size = {}",
                 comm_table.recv_total_sizes.size(),
@@ -327,7 +325,7 @@ namespace shamalgs::collective {
 
         for (size_t i = 0; i < comm_table.send_total_sizes.size(); i++) {
             if (comm_table.send_total_sizes[i] > bytebuffer_send[i]->get_size()) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                     "The send total size is greater than the send buffer size\n"
                     "    send_total_sizes = {}, send_buffer_size = {}, buf_id = {}",
                     comm_table.send_total_sizes[i],
@@ -338,7 +336,7 @@ namespace shamalgs::collective {
 
         for (size_t i = 0; i < comm_table.recv_total_sizes.size(); i++) {
             if (comm_table.recv_total_sizes[i] > bytebuffer_recv[i]->get_size()) {
-                throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+                throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                     "The recv total size is greater than the recv buffer size\n"
                     "    recv_total_sizes = {}, recv_buffer_size = {}, buf_id = {}",
                     comm_table.recv_total_sizes[i],

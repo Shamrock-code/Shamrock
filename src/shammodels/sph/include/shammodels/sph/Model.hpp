@@ -217,7 +217,7 @@ namespace shammodels::sph {
 
                     auto f_nvar = f.get_nvar();
                     if (offset >= f_nvar) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "offset ({}) is out of bounds for field '{}' with nvar {}",
                             offset,
                             field_name,
@@ -254,7 +254,7 @@ namespace shammodels::sph {
 
                     auto f_nvar = f.get_nvar();
                     if (offset >= f_nvar) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "offset ({}) is out of bounds for field '{}' with nvar {}",
                             offset,
                             field_name,
@@ -264,7 +264,7 @@ namespace shammodels::sph {
                     auto result = field_compute(shamrock::pdat_to_dic(pdat));
 
                     if (result.size() != f.get_obj_cnt()) {
-                        throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                        throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                             "result.size() != f.get_obj_cnt() ({} != {})",
                             result.size(),
                             f.get_obj_cnt()));
@@ -399,7 +399,7 @@ namespace shammodels::sph {
                     vec_cs.push_back(o.cs);
                 }
 
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_pos.size());
 
                 PatchDataLayer tmp(sched.get_layout_ptr_old());
@@ -484,7 +484,7 @@ namespace shammodels::sph {
 
             log = "";
             sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
 
@@ -565,7 +565,7 @@ namespace shammodels::sph {
                         vec_u.push_back(U(cs));
                     });
 
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, add N={} particles", ptch.id_patch, vec_acc.size());
 
                 PatchDataLayer tmp(sched.get_layout_ptr_old());
@@ -640,7 +640,7 @@ namespace shammodels::sph {
 
             log = "";
             sched.for_each_local_patchdata([&](const Patch &p, PatchDataLayer &pdat) {
-                log += shambase::format(
+                log += sham::format(
                     "\n    patch id={}, N={} particles", p.id_patch, pdat.get_obj_cnt());
             });
 
@@ -679,7 +679,7 @@ namespace shammodels::sph {
                         = pdat.template get_field<T>(sched.pdl_old().get_field_idx<T>(field_name));
 
                     if (ivar >= f.get_nvar()) {
-                        shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                        shambase::throw_with_loc<std::invalid_argument>(sham::format(
                             "You are trying to set value in a box for field ({}) with "
                             "ivar ({}) >= f.get_nvar ({})",
                             field_name,
@@ -883,7 +883,7 @@ namespace shammodels::sph {
 
         inline void change_htolerances(Tscal in_coarse, Tscal in_fine) {
             if (in_coarse < in_fine) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "in_coarse ({}) must be greater than in_fine ({})", in_coarse, in_fine));
             }
             solver.solver_config.htol_up_coarse_cycle = in_coarse;

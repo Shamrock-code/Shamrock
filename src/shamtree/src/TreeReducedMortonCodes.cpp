@@ -50,7 +50,7 @@ namespace shamrock::tree {
             " | after :",
             tree_leaf_count,
             ") ratio :",
-            shambase::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count)));
+            sham::format_printf("%2.2f", f32(obj_cnt) / f32(tree_leaf_count)));
 
         if (tree_leaf_count > 1) {
 

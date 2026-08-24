@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shamsolvergraph/edge/IEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include <functional>

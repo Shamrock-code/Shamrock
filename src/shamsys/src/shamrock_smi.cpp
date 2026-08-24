@@ -80,7 +80,7 @@ namespace shamsys {
             f64 mem            = device.prop.global_mem_size;
             std::string memstr = shambase::readable_sizeof(mem);
 
-            nodeconfig += shambase::format(
+            nodeconfig += sham::format(
                               "| {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} | {:>5} | ",
                               key_global,
                               devname,
@@ -98,8 +98,8 @@ namespace shamsys {
             std::string print = "Available devices :\n";
             for (auto &[node_conf, count] : nodeconfig_histogram) {
                 std::string arr = "";
-                add_array(arr, shambase::format("{} x Shamrock process: ", count), node_conf);
-                print += shambase::format("\n{}\n", arr);
+                add_array(arr, sham::format("{} x Shamrock process: ", count), node_conf);
+                print += sham::format("\n{}\n", arr);
             }
             printf("%s", print.data());
         }
@@ -128,7 +128,7 @@ namespace shamsys {
             f64 mem            = device.prop.global_mem_size;
             std::string memstr = shambase::readable_sizeof(mem);
 
-            print_buf += shambase::format(
+            print_buf += sham::format(
                              "| {:>4} | {:>2} | {:>25.25} | {:>22.22} | {:>6} | {:>12} | {:>5} | ",
                              rank,
                              key_global,
@@ -182,7 +182,7 @@ namespace shamsys {
                 }
             };
 
-            std::string dev_with_id = shambase::format(
+            std::string dev_with_id = sham::format(
                 R"({} (id={})
           - default_work_group_size = {}
           - global_mem_size = {}
@@ -204,7 +204,7 @@ namespace shamsys {
             if (!dev.prop.warnings.empty()) {
                 dev_with_id += "\n      - Warnings:";
                 for (auto &warning : dev.prop.warnings) {
-                    dev_with_id += shambase::format("\n          - {}", warning);
+                    dev_with_id += sham::format("\n          - {}", warning);
                 }
             }
 
@@ -224,7 +224,7 @@ namespace shamsys {
                                     "ranks per device)\n";
 
                 for (auto &[key, value] : devicename_histogram) {
-                    print += shambase::format("  - {} x {}", value, key) + "\n";
+                    print += sham::format("  - {} x {}", value, key) + "\n";
                 }
                 print += "  Total memory : " + shambase::readable_sizeof(total_mem) + "\n";
                 print += "  Total compute units : " + std::to_string(n_compute_units) + "\n";

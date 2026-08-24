@@ -45,8 +45,8 @@ namespace {
         auto min_hash = shamalgs::collective::allreduce_min(hash);
 
         if (max_hash != min_hash) {
-            std::string msg = shambase::format(
-                "hash mismatch {} != {}, local hash = {}", max_hash, min_hash, hash);
+            std::string msg
+                = sham::format("hash mismatch {} != {}, local hash = {}", max_hash, min_hash, hash);
             logger::err_ln("Sparse comm", msg);
             shamcomm::mpi::Barrier(MPI_COMM_WORLD);
             shambase::throw_with_loc<std::runtime_error>(msg);
@@ -68,7 +68,7 @@ namespace {
                 }
             }
 
-            shambase::throw_with_loc<std::runtime_error>(shambase::format(
+            shambase::throw_with_loc<std::runtime_error>(sham::format(
                 "payload size {} is too large for MPI (max i32 is {})\n"
                 "message sizes to send: {}",
                 payload_sz,
@@ -95,14 +95,14 @@ namespace {
                   if (!rqs.is_event_ready(i)) {
 
                       if (rqs_infos[i].is_send) {
-                          err_msg += shambase::format(
+                          err_msg += sham::format(
                               "communication timeout : send {} -> {} tag {} size {}\n",
                               rqs_infos[i].sender,
                               rqs_infos[i].receiver,
                               rqs_infos[i].tag,
                               rqs_infos[i].size);
                       } else {
-                          err_msg += shambase::format(
+                          err_msg += sham::format(
                               "communication timeout : recv {} -> {} tag {} size {}\n",
                               rqs_infos[i].sender,
                               rqs_infos[i].receiver,
@@ -111,7 +111,7 @@ namespace {
                       }
                   }
               }
-              std::string msg = shambase::format("communication timeout : \n{}", err_msg);
+              std::string msg = sham::format("communication timeout : \n{}", err_msg);
               logger::err_ln("Sparse comm", msg);
               std::this_thread::sleep_for(std::chrono::seconds(2));
               shambase::throw_with_loc<std::runtime_error>(msg);
@@ -148,7 +148,7 @@ namespace {
                       shamcomm::mpi::Test(&rq, &ready, MPI_STATUS_IGNORE);
                       if (!ready) {
                           loc_done = false;
-                          // logger::raw_ln(shambase::format(
+                          // logger::raw_ln(sham::format(
                           //     "communication pending : send {} -> {} tag {} size {}",
                           //     rqs_infos[i].sender,
                           //     rqs_infos[i].receiver,
@@ -157,7 +157,7 @@ namespace {
                       } else {
                           done_map[i] = true;
                           done_count++;
-                          // logger::raw_ln(shambase::format(
+                          // logger::raw_ln(sham::format(
                           //     "communication done : send {} -> {} tag {} size {}",
                           //     rqs_infos[i].sender,
                           //     rqs_infos[i].receiver,
@@ -175,7 +175,7 @@ namespace {
                   if (twait.elapsed_sec() > t_last_print + 10) {
 
                       std::string msg
-                          = shambase::format("Sparse comm : {} / {} done", done_count, rqs.size());
+                          = sham::format("Sparse comm : {} / {} done", done_count, rqs.size());
                       logger::warn_ln("Sparse comm", msg);
 
                       t_last_print = twait.elapsed_sec();
@@ -187,14 +187,14 @@ namespace {
                           if (!done_map[i]) {
 
                               if (rqs_infos[i].is_send) {
-                                  err_msg += shambase::format(
+                                  err_msg += sham::format(
                                       "communication timeout : send {} -> {} tag {} size {}\n",
                                       rqs_infos[i].sender,
                                       rqs_infos[i].receiver,
                                       rqs_infos[i].tag,
                                       rqs_infos[i].size);
                               } else {
-                                  err_msg += shambase::format(
+                                  err_msg += sham::format(
                                       "communication timeout : recv {} -> {} tag {} size {}\n",
                                       rqs_infos[i].sender,
                                       rqs_infos[i].receiver,
@@ -203,7 +203,7 @@ namespace {
                               }
                           }
                       }
-                      std::string msg = shambase::format("communication timeout : \n{}", err_msg);
+                      std::string msg = sham::format("communication timeout : \n{}", err_msg);
                       logger::err_ln("Sparse comm", msg);
                       std::this_thread::sleep_for(std::chrono::seconds(2));
                       shambase::throw_with_loc<std::runtime_error>(msg);
@@ -222,7 +222,7 @@ auto get_SHAM_SPARSE_COMM_INFLIGHT_LIM = []() {
     } catch (...) {
         logger::err_ln(
             "Sparse comm",
-            shambase::format(
+            sham::format(
                 "Invalid value for SHAM_SPARSE_COMM_INFLIGHT_LIM {}, using default value {}",
                 val,
                 ret));
@@ -257,7 +257,7 @@ namespace shamalgs::collective {
                 u32_2 comm_ranks = sham::unpack32(global_comm_ranks[i]);
 
                 if (comm_ranks.x() == shamcomm::world_rank()) {
-                    accum += shambase::format(
+                    accum += sham::format(
                         "{} # {} # {}\n",
                         comm_ranks.x(),
                         comm_ranks.y(),
@@ -285,7 +285,7 @@ namespace shamalgs::collective {
             StackEntry stack_loc{};
             sham::MemPerfInfos mem_perf_infos_end = sham::details::get_mem_perf_info();
 
-            std::string accum = shambase::format(
+            std::string accum = sham::format(
                 "rank = {} maxmem = {}\n",
                 shamcomm::world_rank(),
                 shambase::readable_sizeof(mem_perf_infos_end.max_allocated_byte_device));
@@ -336,7 +336,7 @@ namespace shamalgs::collective {
 
                 int send_sz = check_payload_size_is_int(payload->get_size(), global_comm_ranks);
 
-                // logger::raw_ln(shambase::format(
+                // logger::raw_ln(sham::format(
                 //     "[{}] send {} bytes to rank {}, tag {}",
                 //     shamcomm::world_rank(),
                 //     payload->get_bytesize(),
@@ -370,7 +370,7 @@ namespace shamalgs::collective {
 
                 payload.payload = std::make_unique<shamcomm::CommunicationBuffer>(cnt, dev_sched);
 
-                // logger::raw_ln(shambase::format(
+                // logger::raw_ln(sham::format(
                 //     "[{}] recv {} bytes from rank {}, tag {}",
                 //     shamcomm::world_rank(),
                 //     cnt,
@@ -476,7 +476,7 @@ namespace shamalgs::collective {
 
                 SHAM_ASSERT(payload->get_size() == comm_sizes_loc[send_idx]);
 
-                // logger::raw_ln(shambase::format(
+                // logger::raw_ln(sham::format(
                 //     "[{}] send {} bytes to rank {}, tag {}",
                 //     shamcomm::world_rank(),
                 //     payload->get_bytesize(),
@@ -510,7 +510,7 @@ namespace shamalgs::collective {
                      .is_send  = false,
                      .is_recv  = true});
 
-                // logger::raw_ln(shambase::format(
+                // logger::raw_ln(sham::format(
                 //     "[{}] recv {} bytes from rank {}, tag {}",
                 //     shamcomm::world_rank(),
                 //     cnt,
@@ -563,7 +563,7 @@ namespace shamalgs::collective {
 
         // shamcomm::mpi::Barrier(MPI_COMM_WORLD);
         // if (shamcomm::world_rank() == 0) {
-        //     logger::raw_ln(shambase::format("sparse comm done"));
+        //     logger::raw_ln(sham::format("sparse comm done"));
         // }
         // shamcomm::mpi::Barrier(MPI_COMM_WORLD);
     }

@@ -36,7 +36,7 @@ namespace shamcomm::logs {
             raw_ln("If you've seen spam in your life i can garantee you, this is worst");
         }
 
-        raw_ln(shambase::format(" - Loglevel: {}, enabled log types :", u32(get_loglevel())));
+        raw_ln(sham::format(" - Loglevel: {}, enabled log types :", u32(get_loglevel())));
 
 // logger::raw_ln(terminal_effects::faint + "----------------------" + terminal_effects::reset);
 

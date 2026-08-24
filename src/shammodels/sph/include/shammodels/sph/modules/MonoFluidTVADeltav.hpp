@@ -164,7 +164,7 @@ namespace shammodels::sph::modules {
 
             shambase::replace_all(tex, "{gpart_mass}", gpart_mass);
             shambase::replace_all(tex, "{part_counts}", part_counts);
-            shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
+            shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
             shambase::replace_all(tex, "{hpart}", hpart);
             shambase::replace_all(tex, "{grad_p_on_rho}", grad_p_on_rho);
             shambase::replace_all(tex, "{s_j}", s_j);

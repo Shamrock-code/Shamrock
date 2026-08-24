@@ -108,7 +108,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     logger::raw_ln("ref data : ");
     for (RefBuff &ref : tests.elements) {
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 "[{:2}] {} -> {} ({})",
                 wrank,
                 ref.sender_rank,
@@ -119,7 +119,7 @@ void sparse_comm_test(std::string prefix, std::shared_ptr<sham::DeviceScheduler>
     logger::raw_ln("recv data : ");
     for (RefBuff &ref : recv_data) {
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 "[{:2}] {} -> {} ({})",
                 wrank,
                 ref.sender_rank,

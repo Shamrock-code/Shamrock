@@ -75,7 +75,7 @@ namespace shamalgs::primitives {
         } else if (impl == "sum_reduction") {
             return IS_ALL_TRUE_IMPL::SUM_REDUCTION;
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "invalid implementation : {}, possible implementations : {}",
             impl,
             impl::get_default_impl_list_is_all_true()));
@@ -88,7 +88,7 @@ namespace shamalgs::primitives {
             return {.impl_name = "sum_reduction", .params = ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknown is_all_true implementation : {}", u32(impl)));
+            sham::format("unknown is_all_true implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_is_all_true() {
@@ -113,7 +113,7 @@ namespace shamalgs::primitives {
         case IS_ALL_TRUE_IMPL::SUM_REDUCTION: return is_all_true_sum_reduction(buf, cnt);
         default:
             shambase::throw_with_loc<std::invalid_argument>(
-                shambase::format("unimplemented case : {}", u32(is_all_true_impl)));
+                sham::format("unimplemented case : {}", u32(is_all_true_impl)));
         }
     }
 

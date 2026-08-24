@@ -19,6 +19,7 @@
 #include "shambase/endian.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambase/time.hpp"
 #include "shamalgs/collective/io.hpp"
 #include "shamalgs/collective/reduction.hpp"
@@ -425,7 +426,7 @@ namespace shamrock {
             if (len > 0) {
                 sycl::buffer<T> &buf_ref = shambase::get_check_ref(buf);
                 if (buf_ref.size() < len) {
-                    shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                    shambase::throw_with_loc<std::runtime_error>(sham::format(
                         "the buffer is smaller than expected write field size\n    buf size = {}, "
                         "cnt = {}",
                         buf_ref.size(),
@@ -445,7 +446,7 @@ namespace shamrock {
             if (shamcomm::world_rank() == 0) {
                 logger::info_ln(
                     "VTK Dump",
-                    shambase::format(
+                    sham::format(
                         "dump to {}\n              - took {}, bandwidth = {}/s",
                         fname,
                         timer.get_time_str(),

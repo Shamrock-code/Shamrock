@@ -46,8 +46,7 @@ namespace shamalgs::primitives {
         inline void set_config(const sham::DeviceScheduler_ptr &dev_sched, const std::string &cfg) {
             logger::info_ln(
                 "Algs",
-                shambase::format(
-                    "switching config for alg {} to cfg={}", impl_get_alg_name(), cfg));
+                sham::format("switching config for alg {} to cfg={}", impl_get_alg_name(), cfg));
             impl_set_config(dev_sched, cfg);
         }
 

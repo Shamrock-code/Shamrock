@@ -112,16 +112,15 @@ namespace shamrock::solvergraph {
                 )graph";
 
                 u32 current_subgraph = 0;
-                log += shambase::format("subgraph cluster_{0} {{\n", current_subgraph);
+                log += sham::format("subgraph cluster_{0} {{\n", current_subgraph);
 
                 for (u64_3 &info : collected_object_counts) {
                     if (info.z() != current_subgraph) {
                         log += "}\n";
                         current_subgraph = info.z();
-                        log += shambase::format("subgraph cluster_{0} {{\n", current_subgraph);
+                        log += sham::format("subgraph cluster_{0} {{\n", current_subgraph);
                     }
-                    log += shambase::format(
-                        "p_{0} [label=\"Patch {0} N={1}\"];\n", info.x(), info.y());
+                    log += sham::format("p_{0} [label=\"Patch {0} N={1}\"];\n", info.x(), info.y());
                 }
                 log += "}\n";
 
@@ -137,7 +136,7 @@ namespace shamrock::solvergraph {
                         edge_color = "blue";
                     }
 
-                    log += shambase::format(
+                    log += sham::format(
                         "p_{0} -> p_{1} [xlabel={2}, color={3}, fontcolor={3}];\n",
                         info.x(),
                         info.y(),

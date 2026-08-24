@@ -20,17 +20,16 @@
 #include "shammodels/sph/math/density.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_drift)                                        \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, cfl_density_threshold)                          \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, C_drift)                                         \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, cfl_density_threshold)                           \
     X_RO(shamrock::solvergraph::IDataEdge<Tscal>, pmass)                                           \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, hfactd)                                         \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, hfactd)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, s_j)                                            \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, delta_v)                                         \
@@ -53,11 +52,11 @@ class ComputeCFLDustDrift : public shamrock::solvergraph::INode {
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-        Tscal C_drift               = edges.C_drift.value;
-        Tscal cfl_density_threshold = edges.cfl_density_threshold.value;
+        Tscal C_drift               = edges.C_drift.data;
+        Tscal cfl_density_threshold = edges.cfl_density_threshold.data;
 
         Tscal pmass  = edges.pmass.data;
-        Tscal hfactd = edges.hfactd.value;
+        Tscal hfactd = edges.hfactd.data;
 
         sham::distributed_data_kernel_call(
             dev_sched,

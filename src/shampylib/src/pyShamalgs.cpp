@@ -52,13 +52,13 @@ ON_PYTHON_INIT {
         .def(
             "__str__",
             [](const shamalgs::impl_param &impl_param) {
-                return shambase::format(
+                return sham::format(
                     "impl_param(impl_name=\"{}\", params=\"{}\")",
                     impl_param.impl_name,
                     impl_param.params);
             })
         .def("__repr__", [](const shamalgs::impl_param &impl_param) {
-            return shambase::format(
+            return sham::format(
                 "impl_param(impl_name=\"{}\", params=\"{}\")",
                 impl_param.impl_name,
                 impl_param.params);

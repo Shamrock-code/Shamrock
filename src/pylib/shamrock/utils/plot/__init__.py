@@ -25,6 +25,14 @@ except ImportError:
     _HAS_PIL = False
     # print("Warning: PIL is not installed, some Shamrock functions will not be available")
 
+try:
+    import graphviz
+
+    _HAS_GRAPHVIZ = True
+except ImportError:
+    _HAS_GRAPHVIZ = False
+    # print("Warning: graphviz is not installed, some Shamrock functions will not be available")
+
 if _HAS_MATPLOTLIB and _HAS_PIL:
     __all__.append("show_image_sequence")
 
@@ -99,3 +107,45 @@ if _HAS_MATPLOTLIB and _HAS_PIL:
         )
 
         return ani
+
+
+__all__.append("DotGraph")
+
+
+class DotGraph:
+    """
+    Wrap a Graphviz DOT graph source so it renders as inline SVG.
+
+    Meant to display the solver graphs produced by e.g.
+    ``model.get_solver_dot_graph()`` or ``setup_node.get_dot()`` in the
+    sphinx-gallery generated examples: sphinx-gallery captures the
+    ``_repr_html_`` of an expression left bare as the last statement of a
+    code block (the same mechanism Jupyter uses for rich display), so no
+    custom scraper is needed. See https://stackoverflow.com/a/65117672 for
+    the technique this is based on.
+
+    ``_repr_html_`` is only defined if the graphviz python package (and the
+    Graphviz ``dot`` executable) are installed; otherwise this falls back to
+    ``__repr__``, i.e. the raw DOT source.
+
+    Parameters
+    ----------
+    dot_source : str
+        Source of the graph in the DOT language.
+    """
+
+    def __init__(self, dot_source):
+        self.dot_source = dot_source
+
+    def _repr_html_(self):
+        source = self.dot_source
+        if not source.lstrip().startswith("digraph"):
+            source = "digraph G {\n" + source + "\n}"
+        return graphviz.Source(source).pipe(format="svg").decode("utf-8")
+
+    def __repr__(self):
+        return self.dot_source
+
+
+if not _HAS_GRAPHVIZ:
+    del DotGraph._repr_html_

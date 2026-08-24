@@ -35,7 +35,7 @@ namespace {
         if (acc != expected_acc) {
             auto &ctx    = shambase::get_check_ref(q.ctx);
             auto &device = shambase::get_check_ref(ctx.device);
-            throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+            throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                 "The chosen SYCL queue (name={}, device={}) cannot execute a basic kernel\n"
                 "  expected acc = {}\n"
                 "  actual acc = {}",
@@ -63,7 +63,7 @@ namespace sham {
         shamcomm::logs::raw_ln("  Queue list:");
         for (auto &q : queues) {
             std::string tmp
-                = shambase::format("   - name : {:20s} in order : {}", q->queue_name, q->in_order);
+                = sham::format("   - name : {:20s} in order : {}", q->queue_name, q->in_order);
             shamcomm::logs::raw_ln(tmp);
         }
     }

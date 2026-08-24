@@ -55,7 +55,7 @@ namespace shamrock::solvergraph {
             // we use raw pointer to avoir the cost of creating a new shared pointer
             auto *serializable = dynamic_cast<const JsonSerializable *>(edge_ptr.get());
             if (serializable == nullptr) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "Edge '{}' is registered in SolverGraphSerializable but is not "
                     "JsonSerializable",
                     name));
@@ -94,7 +94,7 @@ namespace shamrock::solvergraph {
             std::shared_ptr<JsonSerializable> serializable = JsonSerializable::from_json(edge_json);
             auto edge = std::dynamic_pointer_cast<IEdge>(serializable);
             if (!bool(edge)) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "Deserialized type for edge '{}' does not inherit from IEdge", name));
             }
 

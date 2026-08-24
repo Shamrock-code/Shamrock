@@ -153,7 +153,7 @@ namespace shambase {
                     id_list.push_back(id);
                 });
 
-                throw make_except_with_loc<std::runtime_error>(shambase::format(
+                throw make_except_with_loc<std::runtime_error>(sham::format(
                     "The querried id {} does not exist, current id list is {}", id, id_list));
             }
         }
@@ -170,7 +170,7 @@ namespace shambase {
                     id_list.push_back(id);
                 });
 
-                throw make_except_with_loc<std::runtime_error>(shambase::format(
+                throw make_except_with_loc<std::runtime_error>(sham::format(
                     "The querried id {} does not exist, current id list is {}", id, id_list));
             }
         }
@@ -219,8 +219,7 @@ namespace shambase {
         template<typename... Tf>
         inline void print_data(fmt::format_string<Tf...> fmt) const {
             for_each([&](u64 id_patch, const T &ref) {
-                shambase::println(
-                    shambase::format("{} -> {}", id_patch, shambase::format(fmt, ref)));
+                shambase::println(sham::format("{} -> {}", id_patch, sham::format(fmt, ref)));
             });
         }
 

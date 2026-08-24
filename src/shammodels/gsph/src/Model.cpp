@@ -11,7 +11,7 @@
  * @file Model.cpp
  * @author Guo Yansong (guo.yansong.ngy@gmail.com)
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
+ * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr)
  * @brief GSPH Model implementation
  */
 
@@ -217,7 +217,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_fcc_3d(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,
@@ -322,7 +322,7 @@ void shammodels::gsph::Model<Tvec, SPHKernel>::add_cube_hcp_3d(
                 return;
             }
 
-            log += shambase::format(
+            log += sham::format(
                 "\n  rank = {}  patch id={}, add N={} particles, coords = {} {}",
                 shamcomm::world_rank(),
                 p.id_patch,

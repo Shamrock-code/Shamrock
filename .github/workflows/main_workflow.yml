@@ -16,6 +16,11 @@ on:
         required: false
         default: false
         type: boolean
+      is_merge_queue:
+        description: "Whether this run is a Mergify merge-queue CI"
+        required: false
+        default: false
+        type: boolean
     secrets:
       CODECOV_TOKEN:
         description: "Codecov upload token"
@@ -169,6 +174,8 @@ jobs:
     needs: [src_check]
     if: ${{ !inputs.light_ci }}
     uses: ./.github/workflows/shamrock-acpp-phys-test.yml
+    with:
+      fail_fast: ${{ inputs.is_merge_queue }}
 
   shamrock_linux_acpp_pylib:
     needs: [src_check]

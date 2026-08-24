@@ -316,7 +316,7 @@ namespace sham {
         // with acpp 8 bit is returned for most backends so we default to 8 bytes (64 bits)
         if (*mem_base_addr_align && mem_base_addr_align == 8) {
             warnings.push_back(
-                shambase::format(
+                sham::format(
                     "mem_base_addr_align for is {} bits. I will assume that this is an "
                     "issue and default to 64 bits (8 bytes) instead.",
                     *mem_base_addr_align));
@@ -328,7 +328,7 @@ namespace sham {
         if (!sub_group_sizes) {
             sub_group_sizes = std::vector<size_t>{default_work_group_size};
             warnings.push_back(
-                shambase::format(
+                sham::format(
                     "cannot fetch sub_group_sizes, defaulting to {}", default_work_group_size));
         }
         default_work_group_size = shambase::get_check_ref(sub_group_sizes)[0];
@@ -342,7 +342,7 @@ namespace sham {
                 max_alloc_host       = max_alloc;
             } catch (const std::exception &e) {
                 warnings.push_back(
-                    shambase::format(
+                    sham::format(
                         "Could not parse SHAM_MAX_ALLOC_SIZE value '{}'. Error: {}. "
                         "Ignoring override.",
                         SHAM_MAX_ALLOC_SIZE.value(),

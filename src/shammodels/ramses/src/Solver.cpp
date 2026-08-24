@@ -164,7 +164,7 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
             using Block = shammodels::amr::AMRBlock<Tvec, TgridVec, 1>;
 
             if (Block::block_size != block_size) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                shambase::throw_with_loc<std::runtime_error>(sham::format(
                     "block_size mismatch, got {} expected {}", Block::block_size, block_size));
             }
 
@@ -397,6 +397,17 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
     if (!solver_config.amr_mode.old_amr) { // TODO disable also if amr is none
         storage.rho_primitive = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
             AMRBlock::block_size, "rho-prim", "rho-prim");
+    }
+
+    // will be filled only if valid refinement criterion is provided
+    using AMRmode_None = typename AMRMode<Tvec, TgridVec>::None;
+    if (std::get_if<AMRmode_None>(&solver_config.amr_mode.config) == nullptr) {
+        storage.rho_snap = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rho_snap", "rho_snap");
+        storage.rhoe_snap = std::make_shared<shamrock::solvergraph::Field<Tscal>>(
+            AMRBlock::block_size, "rhoe_snap", "rhoe_snap");
+        storage.rho_vel_snap = std::make_shared<shamrock::solvergraph::Field<Tvec>>(
+            AMRBlock::block_size, "rhov_snap", "rhov_snap");
     }
 
     if (solver_config.is_dust_on()) {
@@ -1521,7 +1532,7 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
     Tscal dt_input  = get_dt();
 
     if (shamcomm::world_rank() == 0) {
-        logger::normal_ln("amr::Godunov", shambase::format("t = {}, dt = {}", t_current, dt_input));
+        logger::normal_ln("amr::Godunov", sham::format("t = {}, dt = {}", t_current, dt_input));
     }
 
     if (solver_config.face_half_time_interpolation) {
@@ -1641,6 +1652,20 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::evolve_once() {
         if (solver_config.amr_mode.old_amr) {
             refinement.update_refinement_old();
         } else {
+            using AMRmode_None = typename AMRMode<Tvec, TgridVec>::None;
+            if (std::get_if<AMRmode_None>(&solver_config.amr_mode.config) == nullptr) {
+                shamrock::solvergraph::CopyPatchDataField<Tscal> node_cpy_rho_snap{};
+                node_cpy_rho_snap.set_edges(storage.refs_rho, storage.rho_snap);
+                node_cpy_rho_snap.evaluate();
+                shamrock::solvergraph::CopyPatchDataField<Tscal> node_cpy_rhoe_snap{};
+                node_cpy_rhoe_snap.set_edges(storage.refs_rhoe, storage.rhoe_snap);
+                node_cpy_rhoe_snap.evaluate();
+                shamrock::solvergraph::CopyPatchDataField<Tvec> node_cpy_rho_vel_snap{};
+                node_cpy_rho_vel_snap.set_edges(storage.refs_rhov, storage.rho_vel_snap);
+                node_cpy_rho_vel_snap.evaluate();
+            }
+
+            // Then refinement pass
             refinement.update_refinement_new();
         }
     }

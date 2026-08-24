@@ -232,8 +232,8 @@ namespace shamtest::details {
                 assert_name,                                                                       \
                 eval,                                                                              \
                 assert_name + " evaluated to false\n\n" + " -> " #_a                               \
-                    + shambase::format(" = {}", _______a) + "\n" + " -> " #_b                      \
-                    + shambase::format(" = {}", _______b) + "\n"                                   \
+                    + sham::format(" = {}", _______a) + "\n" + " -> " #_b                          \
+                    + sham::format(" = {}", _______b) + "\n"                                       \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)
@@ -275,9 +275,9 @@ namespace shamtest::details {
             shamtest::asserts().assert_bool_with_log(                                              \
                 assert_name,                                                                       \
                 eval,                                                                              \
-                assert_name + " evaluated to false\n\n" + shambase::format(" -> " #_a " = {}", a)  \
-                    + "\n" + shambase::format(" -> " #_b " = {}", b) + "\n"                        \
-                    + shambase::format(" -> " #prec " = {}", prec) + "\n"                          \
+                assert_name + " evaluated to false\n\n" + sham::format(" -> " #_a " = {}", a)      \
+                    + "\n" + sham::format(" -> " #_b " = {}", b) + "\n"                            \
+                    + sham::format(" -> " #prec " = {}", prec) + "\n"                              \
                     + " -> location : " + SourceLocation{}.format_one_line());                     \
         }                                                                                          \
     } while (0)

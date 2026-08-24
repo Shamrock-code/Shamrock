@@ -78,18 +78,17 @@ namespace {
                 if (use_krome) {
                     logger::raw_ln("KROME eos: initial gamma = 1.666667");
                 } else {
-                    logger::raw_ln(shambase::format("adiabatic eos: gamma = {}", eos.gamma));
+                    logger::raw_ln(sham::format("adiabatic eos: gamma = {}", eos.gamma));
                 }
             } else {
                 logger::raw_ln(
-                    shambase::format(
+                    sham::format(
                         "setting isothermal sound speed^2 (polyk) = {}, gamma = {}",
                         eos.polyk,
                         eos.gamma));
                 if (eos.polyk <= std::numeric_limits<f64>::epsilon()) {
                     logger::raw_ln(
-                        shambase::format(
-                            "WARNING! sound speed zero in dump!, polyk = {}", eos.polyk));
+                        sham::format("WARNING! sound speed zero in dump!, polyk = {}", eos.polyk));
                 }
             }
         }
@@ -101,7 +100,7 @@ namespace {
 
         if (std::abs(eos.gamma - 1.0) > std::numeric_limits<f64>::epsilon() && maxvxyzu < 4) {
             logger::raw_ln(
-                shambase::format(
+                sham::format(
                     "WARNING! compiled for isothermal equation of state but gamma /= 1, gamma={}",
                     eos.gamma));
         }
@@ -109,10 +108,10 @@ namespace {
         if (ieos == 3 || ieos == 6 || ieos == 7) {
             if (eos.qfacdisc <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(shambase::format("ERROR: qfacdisc <= 0"));
+                    logger::raw_ln(sham::format("ERROR: qfacdisc <= 0"));
             } else {
                 if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(shambase::format("qfacdisc = {}", eos.qfacdisc));
+                    logger::raw_ln(sham::format("qfacdisc = {}", eos.qfacdisc));
             }
         }
 
@@ -123,10 +122,10 @@ namespace {
             eos.z0      = hdr.read_header_float<f64>("z0");
             if (std::abs(eos.qfacdisc2) <= std::numeric_limits<f64>::epsilon()) {
                 if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(shambase::format("ERROR: qfacdisc2 == 0"));
+                    logger::raw_ln(sham::format("ERROR: qfacdisc2 == 0"));
             } else {
                 if (shamcomm::world_rank() == 0)
-                    logger::raw_ln(shambase::format("qfacdisc2 = {}", eos.qfacdisc2));
+                    logger::raw_ln(sham::format("qfacdisc2 = {}", eos.qfacdisc2));
             }
         }
 
@@ -143,7 +142,7 @@ namespace shammodels::sph::phdump {
     inline void assert_ieos_val(const PhantomDump &dump, int ieos) {
         i64 ieos_dump = dump.read_header_int<i64>("ieos");
         if (ieos_dump != ieos) {
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+            shambase::throw_with_loc<std::invalid_argument>(sham::format(
                 "You are querying phantom dump eos {} parameters, even though ieos is {}",
                 ieos,
                 ieos_dump));

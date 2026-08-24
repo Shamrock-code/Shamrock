@@ -44,7 +44,7 @@ namespace shamtree {
             " | after :",
             res.morton_leaf_count,
             ") ratio :",
-            shambase::format_printf(
+            sham::format_printf(
                 "%2.2f", f32(morton_codes_set.cnt_obj) / f32(res.morton_leaf_count)));
 
         if (res.morton_leaf_count == 0) {

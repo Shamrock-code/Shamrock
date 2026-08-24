@@ -141,7 +141,7 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
     gen_ghost.ghost_gen_infos.for_each([&](u64 sender, u64 receiver, InterfaceBuildInfos &build) {
         std::string log;
 
-        log = shambase::format(
+        log = sham::format(
             "{} -> {} : off = {}, {} -> {}",
             sender,
             receiver,
@@ -182,14 +182,14 @@ void shammodels::zeus::modules::GhostZones<Tvec, TgridVec>::build_ghost_cache() 
         auto resut = shamalgs::numeric::stream_compact(q.q, is_in_interf, src.get_obj_cnt());
         f64 ratio  = f64(std::get<1>(resut)) / f64(src.get_obj_cnt());
 
-        std::string s = shambase::format(
+        std::string s = sham::format(
             "{} -> {} : off = {}, test volume = {} -> {}",
             sender,
             receiver,
             build.offset,
             build.volume_target.lower,
             build.volume_target.upper);
-        s += shambase::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
+        s += sham::format("\n    found N = {}, ratio = {} %", std::get<1>(resut), ratio);
 
         shamlog_debug_ln("AMR interf", s);
 

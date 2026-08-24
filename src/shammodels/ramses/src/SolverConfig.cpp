@@ -11,7 +11,7 @@
  * @file SolverConfig.cpp
  * @author Anass Serhani (anass.serhani@cnrs.fr) --no git blame--
  * @author Benoit Commercon (benoit.commercon@ens-lyon.fr) --no git blame--
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
  * @author Noé Brucy (noe.brucy@ens-lyon.fr) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @author Yona Lapeyre (yona.lapeyre@ens-lyon.fr) --no git blame--
@@ -73,7 +73,8 @@ namespace shammodels::basegodunov {
             {"unit_sys", p.unit_sys},
             {"drag_config", p.drag_config},
             {"bc_config", p.bc_config},
-            {"amr_mode", p.amr_mode}};
+            {"amr_mode", p.amr_mode},
+            {"amr_interp_mode", p.amr_interp_mode}};
     }
 
     template<class Tvec, class TgridVec>
@@ -117,6 +118,7 @@ namespace shammodels::basegodunov {
         _get_to_if_contains("drag_config", p.drag_config);
         _get_to_if_contains("bc_config", p.bc_config);
         _get_to_if_contains("amr_mode", p.amr_mode);
+        _get_to_if_contains("amr_interp_mode", p.amr_interp_mode);
 
         if (has_used_defaults || has_updated_config) {
             if (shamcomm::world_rank() == 0) {

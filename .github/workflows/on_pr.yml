@@ -22,6 +22,7 @@ jobs:
       run_build_push_docker: true
       light_ci: ${{ !(contains(github.event.pull_request.labels.*.name, 'full-ci') || startsWith(github.head_ref, 'mergify/merge-queue/')) }}
       run_build_profile: ${{ contains(github.event.pull_request.labels.*.name, 'profile-build') }}
+      is_merge_queue: ${{ startsWith(github.head_ref, 'mergify/merge-queue/') }}
 
   collect_metrics:
     name: Collect metrics

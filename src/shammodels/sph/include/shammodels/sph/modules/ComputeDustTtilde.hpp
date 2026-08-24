@@ -172,8 +172,8 @@ namespace shammodels::sph::modules {
             shambase::replace_all(tex, "{s_j}", s_j);
             shambase::replace_all(tex, "{t_j}", t_j);
             shambase::replace_all(tex, "{Ttilde_sj}", Ttilde_sj);
-            shambase::replace_all(tex, "{ndust}", shambase::format("{}", ndust));
-            shambase::replace_all(tex, "{hfact}", shambase::format("{}", Kernel::hfactd));
+            shambase::replace_all(tex, "{ndust}", sham::format("{}", ndust));
+            shambase::replace_all(tex, "{hfact}", sham::format("{}", Kernel::hfactd));
 
             return tex;
         };

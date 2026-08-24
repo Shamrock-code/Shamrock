@@ -521,7 +521,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             f64 part_per_sec = f64(sum_push) / f64(timer_gen.elapsed_sec());
             logger::normal_ln(
                 "SPH setup",
-                shambase::format(
+                sham::format(
                     "Nstep = {} ( {:.1e} ) Ntotal = {} ( {:.1e} rank min = {:.1e} max = {:.1e}) "
                     "rate = {:e} N.s^-1",
                     sum_push,
@@ -568,7 +568,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         if (shamcomm::world_rank() == 0) {
             logger::normal_ln(
                 "SPH setup",
-                shambase::format(
+                sham::format(
                     "injected {:12} / {:} => {:5.1f}% | ranks with patchs = {:d} / {:d} {}",
                     injected_parts - sum_all,
                     injected_parts,
@@ -905,7 +905,7 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
         if (was_sync_limited) {
             log_suffix += " (sync limited)";
         }
-        log_suffix += shambase::format(" (msg count : {})", recv_msg.size());
+        log_suffix += sham::format(" (msg count : {})", recv_msg.size());
         log_inject_status(" <- global loop ->" + log_suffix);
 
         f64 worst_time_get_index_per_ranks
@@ -979,35 +979,35 @@ void shammodels::sph::modules::SPHSetup<Tvec, SPHKernel>::apply_setup_new(
             table.add_double_rule();
             for (u32 i = 0; i < shamcomm::world_size(); i++) {
                 table.add_data(
-                    {shambase::format("{:<4}", i),
-                     shambase::format(
+                    {sham::format("{:<4}", i),
+                     sham::format(
                          "{:.2f}s / {:.2f}s",
                          time_rank_getter_all_ranks[i],
                          max_time_rank_getter_all_ranks[i]),
-                     shambase::format("{:.2f}s", mpi_timer_all_ranks[i]),
-                     shambase::format(
+                     sham::format("{:.2f}s", mpi_timer_all_ranks[i]),
+                     sham::format(
                          "{:>.1f}% {:<.1f}%",
                          100 * (alloc_time_device_all_ranks[i] / time_part_inject_sec),
                          100 * (alloc_time_host_all_ranks[i] / time_part_inject_sec)),
-                     shambase::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
-                     shambase::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i]))},
+                     sham::format("{}", shambase::readable_sizeof(max_mem_device_all_ranks[i])),
+                     sham::format("{}", shambase::readable_sizeof(max_mem_host_all_ranks[i]))},
                     Table::right);
             }
             if (shamcomm::world_size() > 1) {
                 table.add_rulled_data({"", "<avg> / <max>", "<avg>", "<avg>", "<sum>", "<sum>"});
                 table.add_data(
                     {"all",
-                     shambase::format(
+                     sham::format(
                          "{:.2f}s / {:.2f}s",
                          sum_time_rank_getter / shamcomm::world_size(),
                          max_time_rank_getter),
-                     shambase::format("{:.2f}s", sum_mpi / shamcomm::world_size()),
-                     shambase::format(
+                     sham::format("{:.2f}s", sum_mpi / shamcomm::world_size()),
+                     sham::format(
                          "{:>.1f}% {:<.1f}%",
                          100 * (sum_alloc_device / sum_t),
                          100 * (sum_alloc_host / sum_t)),
-                     shambase::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
-                     shambase::format("{}", shambase::readable_sizeof(sum_mem_host_total))},
+                     sham::format("{}", shambase::readable_sizeof(sum_mem_device_total)),
+                     sham::format("{}", shambase::readable_sizeof(sum_mem_host_total))},
                     Table::right);
             }
             table.add_rule();

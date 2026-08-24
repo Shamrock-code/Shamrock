@@ -125,7 +125,7 @@ namespace shamalgs::primitives {
             } else if (impl == "multi_std_sort") {
                 return SEGMENTED_SORT_IN_PLACE_IMPL::MULTI_STD_SORT;
             }
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "invalid implementation : {}, possible implementations : {}",
                 impl,
                 impl::get_default_impl_list_segmented_sort_in_place()));
@@ -139,7 +139,7 @@ namespace shamalgs::primitives {
                 return {.impl_name = "multi_std_sort", .params = ""};
             }
             throw shambase::make_except_with_loc<std::invalid_argument>(
-                shambase::format("unknown segmented sort in place implementation : {}", u32(impl)));
+                sham::format("unknown segmented sort in place implementation : {}", u32(impl)));
         }
 
         /// Get list of available segmented sort in place implementations
@@ -185,8 +185,8 @@ namespace shamalgs::primitives {
             details::segmented_sort_in_place_multi_std_sort(buf, offsets, comp);
             break;
         default:
-            shambase::throw_with_loc<std::invalid_argument>(shambase::format(
-                "unimplemented case : {}", u32(impl::segmented_sort_in_place_impl)));
+            shambase::throw_with_loc<std::invalid_argument>(
+                sham::format("unimplemented case : {}", u32(impl::segmented_sort_in_place_impl)));
         }
     }
 

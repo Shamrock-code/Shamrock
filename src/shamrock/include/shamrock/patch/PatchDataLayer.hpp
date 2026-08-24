@@ -234,42 +234,24 @@ namespace shamrock::patch {
         void append_subset_to(
             const sham::DeviceBuffer<u32> &idxs_buf, u32 sz, PatchDataLayer &pdat) const;
 
-        inline u32 get_obj_cnt() const {
+        /**
+         * @brief get the number of objects (particles) stored in this layer
+         *
+         * @return u32 the object count
+         */
+        u32 get_obj_cnt() const;
 
-            bool is_empty = fields.empty();
-
-            if (!is_empty) {
-                return fields[0].visit_return([](const auto &field) {
-                    return field.get_obj_cnt();
-                });
-            }
-
-            throw shambase::make_except_with_loc<std::runtime_error>(
-                "this PatchDataLayer does not contain any fields");
-        }
-
-        inline u64 memsize() {
-            u64 sum = 0;
-
-            for (auto &field_var : fields) {
-
-                field_var.visit([&](auto &field) {
-                    sum += field.memsize();
-                });
-            }
-
-            return sum;
-        }
+        /**
+         * @brief get the memory size in bytes used by all fields
+         *
+         * @return u64 the memory size in bytes
+         */
+        u64 memsize();
 
         inline bool is_empty() { return get_obj_cnt() == 0; }
 
-        void synchronize_buf() {
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    field.synchronize_buf();
-                });
-            }
-        }
+        /// synchronize the host/device buffers of all fields
+        void synchronize_buf();
 
         void overwrite(PatchDataLayer &pdat, u32 obj_cnt);
 
@@ -389,17 +371,7 @@ namespace shamrock::patch {
          * @brief check that all contained field have the same obj cnt
          *
          */
-        inline void check_field_obj_cnt_match() {
-            u32 cnt = get_obj_cnt();
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.get_obj_cnt() != cnt) {
-                        throw shambase::make_except_with_loc<std::runtime_error>(
-                            "mismatch in obj cnt");
-                    }
-                });
-            }
-        }
+        void check_field_obj_cnt_match();
 
         // template<class T> inline std::vector<PatchDataField<T> & > get_field_list(){
         //     std::vector<PatchDataField<T> & > ret;
@@ -431,48 +403,26 @@ namespace shamrock::patch {
 
         void fields_raz();
 
-        bool has_nan() {
-            StackEntry stack_loc{};
+        /**
+         * @brief check whether any field contains a NaN value
+         *
+         * @return bool true if a NaN was found
+         */
+        bool has_nan();
 
-            bool ret = false;
+        /**
+         * @brief check whether any field contains an infinite value
+         *
+         * @return bool true if an infinite value was found
+         */
+        bool has_inf();
 
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_nan()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
-        bool has_inf() {
-            StackEntry stack_loc{};
-
-            bool ret = false;
-
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_inf()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
-        bool has_nan_or_inf() {
-            StackEntry stack_loc{};
-
-            bool ret = false;
-
-            for (auto &field_var : fields) {
-                field_var.visit([&](auto &field) {
-                    if (field.has_nan_or_inf()) {
-                        ret = true;
-                    }
-                });
-            }
-            return ret;
-        }
+        /**
+         * @brief check whether any field contains a NaN or infinite value
+         *
+         * @return bool true if a NaN or infinite value was found
+         */
+        bool has_nan_or_inf();
 
         /**
          * @brief

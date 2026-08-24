@@ -141,7 +141,7 @@ namespace shamalgs::collective {
                                   std::vector<std::reference_wrapper<DataTmp>> &sources) {
                 if (byte_sz.get_total_size() > max_comm_size) {
                     throw shambase::make_except_with_loc<std::runtime_error>(
-                        shambase::format("comm size too large: {}", byte_sz.get_total_size()));
+                        sham::format("comm size too large: {}", byte_sz.get_total_size()));
                 }
 
                 auto [sender_rank, receiver_rank] = key;
@@ -406,7 +406,7 @@ namespace shamalgs::collective {
             }
 
             throw make_except_with_loc<std::runtime_error>(
-                shambase::format("message send mismatch : {} != {}", tmp1, tmp2));
+                sham::format("message send mismatch : {} != {}", tmp1, tmp2));
         }
 
         if (comm_table2.messages_send.size() != messages_send.size()) {
@@ -420,7 +420,7 @@ namespace shamalgs::collective {
                 tmp2.push_back(messages_send[i].message_size);
             }
             throw make_except_with_loc<std::runtime_error>(
-                shambase::format("message send mismatch : {} != {}", tmp1, tmp2));
+                sham::format("message send mismatch : {} != {}", tmp1, tmp2));
         }
 
         for (size_t i = 0; i < comm_table2.messages_send.size(); i++) {
@@ -488,7 +488,7 @@ namespace shamalgs::collective {
                         i32 supposed_sender_rank = rank_getter(sender);
                         i32 real_sender_rank     = recv.sender_ranks;
                         if (supposed_sender_rank != real_sender_rank) {
-                            throw make_except_with_loc<std::runtime_error>(shambase::format(
+                            throw make_except_with_loc<std::runtime_error>(sham::format(
                                 "the rank do not matches {} != {}",
                                 supposed_sender_rank,
                                 real_sender_rank));

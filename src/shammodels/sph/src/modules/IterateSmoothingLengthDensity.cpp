@@ -15,6 +15,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/sphkernels.hpp"
@@ -156,8 +157,8 @@ std::string IterateSmoothingLengthDensity<Tvec, SPHKernel>::_impl_get_tex() cons
     shambase::replace_all(tex, "{old_h}", old_h);
     shambase::replace_all(tex, "{new_h}", new_h);
     shambase::replace_all(tex, "{eps_h}", eps_h);
-    shambase::replace_all(tex, "{hfact}", shambase::format("{}", SPHKernel::hfactd));
-    shambase::replace_all(tex, "{Rkern}", shambase::format("{}", SPHKernel::Rkern));
+    shambase::replace_all(tex, "{hfact}", sham::format("{}", SPHKernel::hfactd));
+    shambase::replace_all(tex, "{Rkern}", sham::format("{}", SPHKernel::Rkern));
 
     return tex;
 }

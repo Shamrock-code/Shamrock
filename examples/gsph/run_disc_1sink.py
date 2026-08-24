@@ -1,16 +1,16 @@
+"""
+Disc with sink in GSPH
+====================================================================
+
+"""
+
 import os
 
 import numpy as np
 
 import shamrock
 
-"""
-cd build
-source ./activate
-./shamrock --sycl-cfg 0:0 --loglevel 1 --rscript santabarnara2.py   --pypath-from-bin ../../MyShamrock/build/myvenv/bin/python3
-"""
-
-outputdir = "gsph_onesink/"
+outputdir = "_to_trash/gsph_onesink/"
 os.system("mkdir -p " + outputdir)
 ####################################################
 # Setup parameters
@@ -77,22 +77,6 @@ bmax = (rout * 2, rout * 2, rout * 2)
 G = ucte.G()
 
 print("GM =", G * center_mass)
-
-"""
-def sigma_profile(r):
-    sigma_0 = 1
-    return sigma_0 * ((1 - delta_0)*np.exp(- (Rcav / r)**12) + delta_0)
-
-def kep_profile(r):
-    return (G * center_mass / r)**0.5
-
-def omega_k(r):
-    return kep_profile(r) / r
-
-def cs_profile(r):
-    cs_in = (H_r_in * rin) * omega_k(rin)
-    return ((r / rin)**(-q))*cs_in
-"""
 
 
 def sigma_profile(r):
@@ -477,13 +461,10 @@ if idump_last_dump is not None:
     model.load_from_dump(get_dump_name(idump_last_dump))
 else:
     cfg = model.gen_default_config()
-    # cfg.set_artif_viscosity_ConstantDisc(alpha_u = alpha_u, alpha_AV = alpha_AV, beta_AV = beta_AV)
-    # cfg.set_eos_locally_isothermalLP07(cs0 = cs0, q = q, r0 = r0)
     cfg.set_eos_locally_isothermalFA2014(h_over_r=H_r_in)
     cfg.set_riemann_exact()
     cfg.set_force_inutsuka_v2()
     cfg.set_reconstruct_piecewise_constant()
-    # cfg.set_eos_isothermal(cs0)
     cfg.print_status()
     cfg.set_units(codeu)
     model.set_solver_config(cfg)
@@ -497,40 +478,6 @@ else:
     ]
 
     print(f"sink_list = {sink_list}")
-
-    """
-    for split in split_list:
-        index_split = split["index"]
-        mass_ratio = split["mass_ratio"]
-        asplit = split["a"]
-        esplit = split["e"]
-        euler_angle_split = split["euler_angle"]
-
-        print(f"splitting sink {split}")
-
-        new_sink_list = []
-
-        for i in range(len(sink_list)):
-            if i == index_split:
-                smass = sink_list[i]["mass"]
-
-                s1, s2 = split_as_binary(
-                    sink_list[i],
-                    smass * mass_ratio,
-                    smass * (1 - mass_ratio),
-                    asplit,
-                    esplit,
-                    euler_angle_split,
-                )
-
-                new_sink_list.append(s1)
-                new_sink_list.append(s2)
-            else:
-                new_sink_list.append(sink_list[i])
-
-        sink_list = new_sink_list
-        print(f"sink_list = {sink_list}")
-    """
 
     sum_mass = sum(s["mass"] for s in sink_list)
     vel_bary = (

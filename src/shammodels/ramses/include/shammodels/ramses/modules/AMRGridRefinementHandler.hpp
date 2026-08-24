@@ -126,14 +126,16 @@ namespace shammodels::basegodunov::modules {
 
         template<class UserAcc>
         bool internal_refine_grid_new(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags);
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags,
+            const AMRInterpMode amr_refine_interp_mode);
 
         template<class UserAcc>
         bool internal_derefine_grid_new(
-            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags);
+            shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
+            const AMRInterpMode amr_refine_interp_mode);
 
         template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
-        void internal_update_refinement_new();
+        void internal_update_refinement_new(const AMRInterpMode amr_refine_interp_mode);
 
         inline PatchScheduler &scheduler() { return shambase::get_check_ref(context.sched); }
     };

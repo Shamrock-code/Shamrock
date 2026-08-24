@@ -1450,8 +1450,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                               "    -> calling this is replaced internally by "
                               ".change_htolerances(coarse=val, fine=min(val, 1.1))\n"
                               "    see: "
-                              "https://shamrock-code.github.io/Shamrock/mkdocs/models/sph/"
-                              "smoothing_length_tolerance"););
+                              "https://shamrock-code.github.io/Shamrock/sphinx/user_guide/sph/"
+                              "smoothing_length_tolerance.html"););
                 self.change_htolerances(in, std::min(in, (Tscal) 1.1));
             })
         .def(
@@ -1695,7 +1695,7 @@ ON_PYTHON_INIT {
         .def_readwrite("reach_max_walltime", &EvolveUntilResults::reach_max_walltime)
         .def_readwrite("iter_count", &EvolveUntilResults::iter_count)
         .def("__repr__", [](const EvolveUntilResults &self) {
-            return shambase::format(
+            return sham::format(
                 "EvolveUntilResults(reach_target_time={}, reach_niter_max={}, "
                 "reach_max_walltime={}, iter_count={})",
                 self.reach_target_time,

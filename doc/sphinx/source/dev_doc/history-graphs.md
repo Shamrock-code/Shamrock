@@ -152,6 +152,38 @@ The org website can embed this chart with:
 ></iframe>
 ```
 
+## Function sets (top 10 compile / optimize)
+
+CI records ClangBuildAnalyzer function-set compile/optimize times. The chart
+keeps only the top 10 function sets of each commit: a set that drops out of
+that ranking is omitted at that date (`null` y, `connectgaps: false`).
+See [Profiling build performance / time](build-profiling.md).
+
+```{raw} html
+<iframe
+  src="../_static/function_sets_top10.html"
+  title="Top 10 function sets compile / optimize time over time"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
+Raw Plotly JSON:
+[function_sets_top10.json](https://raw.githubusercontent.com/Shamrock-code/Shamrock/refs/heads/metrics-history/output/function_sets_top10.json).
+
+The org website can embed this chart with:
+
+```html
+<iframe
+  src="https://shamrock-code.github.io/Shamrock/sphinx/_static/function_sets_top10.html"
+  title="Top 10 function sets compile / optimize time over time"
+  width="100%"
+  height="700"
+  style="border: none;"
+></iframe>
+```
+
 ## Lines of code
 
 CI counts lines in tracked source files, excluding git submodules. Exclusive

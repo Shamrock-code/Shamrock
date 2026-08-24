@@ -63,7 +63,7 @@ namespace shamsys::instance::details {
             std::string platname = shambase::trunc_str(PlatformName, 24);
             std::string devtype  = shambase::trunc_str(shambase::getDevice_type(dev), 6);
 
-            print_buf += shambase::format(
+            print_buf += sham::format(
                              "| {:>4} | {:>2} | {:>29.29} | {:>24.24} | {:>6} |",
                              rank,
                              key_global,
@@ -173,14 +173,14 @@ namespace shamsys::instance {
 
         std::optional<u32> loc = shamcomm::node_local_rank();
         if (loc) {
-            print_buf = shambase::format(
+            print_buf = sham::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 *loc,
                 shambase::get_check_ref(syclinit::device_alt).device_id,
                 shambase::get_check_ref(syclinit::device_compute).device_id);
         } else {
-            print_buf = shambase::format(
+            print_buf = sham::format(
                 "| {:>4} | {:>8} | {:>12} | {:>16} |\n",
                 rank,
                 "???",
@@ -271,7 +271,7 @@ namespace shamsys::instance {
 
         shamlog_debug_ln(
             "Sys",
-            shambase::format(
+            sham::format(
                 "[{:03}]: \x1B[32mMPI_Init : node n {:03} | world size : {} | name = {}\033[0m",
                 shamcomm::world_rank(),
                 shamcomm::world_rank(),
@@ -410,18 +410,17 @@ namespace shamsys::instance {
         if (shamcomm::world_rank() == 0) {
             if (num_dgpu_use == shamcomm::world_size()) {
                 logger::raw_ln(
-                    shambase::format(
-                        " - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
+                    sham::format(" - MPI use Direct Comm : {}", col8b_green() + "Yes" + reset()));
             } else if (num_dgpu_use > 0) {
                 logger::raw_ln(
-                    shambase::format(
+                    sham::format(
                         " - MPI use Direct Comm : {} ({} of {})",
                         col8b_yellow() + "Partial" + reset(),
                         num_dgpu_use,
                         shamcomm::world_size()));
             } else {
                 logger::raw_ln(
-                    shambase::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));
+                    sham::format(" - MPI use Direct Comm : {}", col8b_red() + "No" + reset()));
             }
         }
     }

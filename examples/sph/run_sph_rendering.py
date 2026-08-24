@@ -209,9 +209,11 @@ gen_disc = setup.make_generator_disc_mc(
     init_h_factor=0.03,
 )
 
-# Print the dot graph of the setup
-print(gen_disc.get_dot())
+# %%
+# Show the dot graph of the setup
+shamrock.utils.plot.DotGraph(gen_disc.get_dot())
 
+# %%
 # Apply the setup
 setup.apply_setup(gen_disc)
 

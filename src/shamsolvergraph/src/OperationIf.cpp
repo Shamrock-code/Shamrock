@@ -34,43 +34,42 @@ namespace shamrock::solvergraph {
         std::stringstream ss;
 
         ss << "subgraph cluster_" + std::to_string(get_uuid()) + " {\n";
-        ss << shambase::format(
-            "n_{} [label=\"{}\", shape=diamond];\n", get_uuid(), _impl_get_label());
+        ss << sham::format("n_{} [label=\"{}\", shape=diamond];\n", get_uuid(), _impl_get_label());
 
         if (then_node) {
             ss << then_node->get_dot_graph_partial();
-            ss << shambase::format(
+            ss << sham::format(
                 "n_{} -> {} [label=\"true\"];\n",
                 get_uuid(),
                 then_node->get_dot_graph_node_start());
             ss << then_node->get_dot_graph_node_end() << " -> "
-               << shambase::format("n_{}_end", get_uuid()) << ";\n";
+               << sham::format("n_{}_end", get_uuid()) << ";\n";
         } else {
-            ss << shambase::format(
+            ss << sham::format(
                 "n_{} -> n_{}_end [label=\"true\", style=dashed];\n", get_uuid(), get_uuid());
         }
 
         if (else_node) {
             ss << else_node->get_dot_graph_partial();
-            ss << shambase::format(
+            ss << sham::format(
                 "n_{} -> {} [label=\"false\"];\n",
                 get_uuid(),
                 else_node->get_dot_graph_node_start());
             ss << else_node->get_dot_graph_node_end() << " -> "
-               << shambase::format("n_{}_end", get_uuid()) << ";\n";
+               << sham::format("n_{}_end", get_uuid()) << ";\n";
         } else {
-            ss << shambase::format(
+            ss << sham::format(
                 "n_{} -> n_{}_end [label=\"false\", style=dashed];\n", get_uuid(), get_uuid());
         }
 
-        ss << shambase::format("n_{}_end [label=\"\", shape=point, width=0.15];\n", get_uuid());
-        ss << shambase::format("label = \"{}\";\n", _impl_get_label());
+        ss << sham::format("n_{}_end [label=\"\", shape=point, width=0.15];\n", get_uuid());
+        ss << sham::format("label = \"{}\";\n", _impl_get_label());
         ss << "}\n";
 
         auto &cond = get_ro_edge_base(0);
-        ss << shambase::format(
+        ss << sham::format(
             "e_{} -> n_{} [style=\"dashed\", color=green];\n", cond.get_uuid(), get_uuid());
-        ss << shambase::format(
+        ss << sham::format(
             "e_{} [label=\"{}\",shape=rect, style=filled];\n", cond.get_uuid(), cond.get_label());
 
         return ss.str();

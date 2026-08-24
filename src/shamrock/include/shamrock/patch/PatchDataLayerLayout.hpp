@@ -354,7 +354,7 @@ namespace shamrock::patch {
             }
         }
 
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "the requested field does not exists\n    the function : {}\n    the field name : {}\n "
             "   current table : \n{}",
             __PRETTY_FUNCTION__,

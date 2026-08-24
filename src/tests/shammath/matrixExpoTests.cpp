@@ -44,7 +44,7 @@ NEW_TEST(Unittest, "shammath/matrix_exp", 1) {
 
     for (size_t i = 0; i < A.data.size(); i++) {
         logger::raw_ln(
-            shambase::format(
+            sham::format(
                 "A[{}] = {} != ex_res[{}] = {} delta: {}",
                 i,
                 A.data[i],

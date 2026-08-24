@@ -199,7 +199,7 @@ namespace sycl_handler {
                     std::string devtype  = shambase::trunc_str(getDeviceTypeName(Device), 6);
 
                     logger::raw_ln(
-                        shambase::format_printf(
+                        sham::format_printf(
                             "| %-3s | %02d | %-29s | %-24s | %-6s |",
                             selected.c_str(),
                             key_global,

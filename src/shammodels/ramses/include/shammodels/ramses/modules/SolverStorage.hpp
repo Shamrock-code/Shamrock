@@ -89,6 +89,12 @@ namespace shammodels::basegodunov {
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tscal>> refs_rho_dust;
         std::shared_ptr<shamrock::solvergraph::FieldRefs<Tvec>> refs_rhov_dust;
 
+        /* Field to save a snapshot of conservative variables before start refinement if 2nd order
+         * prolongation is required.*/
+        std::shared_ptr<shamrock::solvergraph::Field<Tvec>> rho_vel_snap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rho_snap;
+        std::shared_ptr<shamrock::solvergraph::Field<Tscal>> rhoe_snap;
+
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel;
         std::shared_ptr<shamrock::solvergraph::Field<Tscal>> press;
         std::shared_ptr<shamrock::solvergraph::Field<Tvec>> vel_dust;

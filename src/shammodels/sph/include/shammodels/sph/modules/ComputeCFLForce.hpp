@@ -19,13 +19,13 @@
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 #include "shamrock/solvergraph/Indexes.hpp"
-#include "shamrock/solvergraph/ScalarEdge.hpp"
+#include "shamsolvergraph/edge/IDataEdge.hpp"
 #include "shamsolvergraph/node/INode.hpp"
 #include "shamsys/NodeInstance.hpp"
 
 #define NODE_EDGES(X_RO, X_RW)                                                                     \
     X_RO(shamrock::solvergraph::Indexes<u32>, part_counts)                                         \
-    X_RO(shamrock::solvergraph::ScalarEdge<Tscal>, C_force)                                        \
+    X_RO(shamrock::solvergraph::IDataEdge<Tscal>, C_force)                                         \
     X_RO(shamrock::solvergraph::IFieldSpan<Tscal>, hpart)                                          \
     X_RO(shamrock::solvergraph::IFieldSpan<Tvec>, axyz)                                            \
     X_RW(shamrock::solvergraph::IFieldSpan<Tscal>, cfl_dt)
@@ -45,7 +45,7 @@ class ComputeCFLForce : public shamrock::solvergraph::INode {
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
 
-        Tscal C_force = edges.C_force.value;
+        Tscal C_force = edges.C_force.data;
 
         sham::distributed_data_kernel_call(
             dev_sched,

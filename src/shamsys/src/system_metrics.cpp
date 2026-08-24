@@ -165,7 +165,7 @@ namespace shamsys {
         } else if (reporter_name == "noop" || reporter_name == "none" || reporter_name == "") {
             return std::make_unique<NoopSystemMetricReporter>();
         } else {
-            throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+            throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
                 "Unknown system metrics reporter: {}, valid reporters are: aurora, aurora-linked, "
                 "intel-rapl, noop",
                 reporter_name));
@@ -303,8 +303,8 @@ namespace shamsys {
                 if (wall_time > 0._f64 && energy.value() > 0._f64) {
                     f64 consumed_energy = energy.value();
                     f64 power           = consumed_energy / wall_time;
-                    out_power           = shambase::format("{:.1f} W", power);
-                    out_energy          = shambase::format("{:.1f} J", consumed_energy);
+                    out_power           = sham::format("{:.1f} W", power);
+                    out_energy          = sham::format("{:.1f} J", consumed_energy);
                 } else {
                     out_power  = "N/A";
                     out_energy = "N/A";
@@ -313,7 +313,7 @@ namespace shamsys {
         };
 
         FormattedSystemMetrics ret{
-            .wall_time             = shambase::format("{:.1f} s", input.wall_time),
+            .wall_time             = sham::format("{:.1f} s", input.wall_time),
             .rank_energy_consummed = std::nullopt,
             .gpu_energy_consummed  = std::nullopt,
             .cpu_energy_consummed  = std::nullopt,

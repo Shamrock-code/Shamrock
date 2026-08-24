@@ -969,8 +969,6 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     auto get_coord = [](u32 i) -> std::array<u32, dim> {
                         constexpr u32 NsideBlockPow = 1;
                         constexpr u32 Nside         = 1U << NsideBlockPow;
-                        constexpr u32 side_size     = Nside;
-                        constexpr u32 block_size    = shambase::pow_constexpr<dim>(Nside);
 
                         if constexpr (dim == 3) {
                             const u32 tmp = i >> NsideBlockPow;
@@ -1179,7 +1177,9 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_refine_grid_new(shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags) {
+    internal_refine_grid_new(
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_refine_flags,
+        const AMRInterpMode amr_refine_interp_mode) {
 
     u64 sum_block_count = 0;
 
@@ -1205,7 +1205,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, storage, id_patch, pdat);
+            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interp_mode);
             auto index_to_ref = stream_compaction_result.get_read_access(depends_list);
 
             // Refine the block (set the positions) and fill the corresponding fields
@@ -1252,12 +1252,12 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                     });
             });
 
-            sham::EventList resulting_events;
+            sham::EventList resulting_events{e};
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
             stream_compaction_result.complete_event_state(e);
-            uacc.finalize_new(resulting_events, storage, id_patch, pdat);
+            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interp_mode);
         }
 
         shamlog_debug_ln("AMRGrid", "patch ", id_patch, "new block count = ", pdat.get_obj_cnt());
@@ -1274,7 +1274,8 @@ template<class Tvec, class TgridVec>
 template<class UserAcc>
 bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
     internal_derefine_grid_new(
-        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags) {
+        shambase::DistributedData<sham::DeviceBuffer<u32>> &&dd_derefine_flags,
+        const AMRInterpMode amr_refine_interp_mode) {
 
     using namespace shamrock::patch;
 
@@ -1300,7 +1301,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             sham::EventList depends_list;
             auto block_bound_low  = buf_cell_min.get_write_access(depends_list);
             auto block_bound_high = buf_cell_max.get_write_access(depends_list);
-            UserAcc uacc(depends_list, storage, id_patch, pdat);
+            UserAcc uacc(depends_list, storage, id_patch, pdat, amr_refine_interp_mode);
             auto index_to_deref = stream_compact_results.get_read_access(depends_list);
 
             // edit block content + make flag of blocks to keep
@@ -1352,7 +1353,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
             buf_cell_min.complete_event_state(resulting_events);
             buf_cell_max.complete_event_state(resulting_events);
-            uacc.finalize_new(resulting_events, storage, id_patch, pdat);
+            uacc.finalize_new(resulting_events, storage, id_patch, pdat, amr_refine_interp_mode);
 
             stream_compact_results.complete_event_state(resulting_events);
 
@@ -1387,7 +1388,7 @@ bool shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 template<class Tvec, class TgridVec>
 template<class UserAccCrit, class UserAccSplit, class UserAccMerge>
 void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>::
-    internal_update_refinement_new() {
+    internal_update_refinement_new(const AMRInterpMode amr_refine_interp_mode) {
 
     // Ensure that the blocks are sorted before refinement
     AMRSortBlocks block_sorter(context, solver_config, storage);
@@ -1401,14 +1402,14 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
     //////// apply refine ////////
     // Note that this only add new blocks at the end of the patchdata
-    internal_refine_grid_new<UserAccSplit>(std::move(dd_refine_list));
+    internal_refine_grid_new<UserAccSplit>(std::move(dd_refine_list), amr_refine_interp_mode);
 
     //////// apply derefine ////////
     // Note that this will perform the merge then remove the old blocks
     // This is ok to call straight after the refine without edditing the index list in derefine_list
     // since no permutations were applied in internal_refine_grid_new and no cells can be both
     // refined and derefined in the same pass
-    internal_derefine_grid_new<UserAccMerge>(std::move(dd_derefine_list));
+    internal_derefine_grid_new<UserAccMerge>(std::move(dd_derefine_list), amr_refine_interp_mode);
 }
 
 template<class Tvec, class TgridVec>
@@ -1499,7 +1500,13 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         f64_3 *rho_vel;
         f64 *rhoE;
         u64 p_id;
-        // f64* cell_sizes;
+        f64 *cell_sizes;
+
+        const f64 *rho_old_snap;
+        const f64_3 *rho_vel_old_snap;
+        const f64 *rhoE_old_snap;
+
+        AMRInterpMode amr_ref_interp_mode;
 
         // this will be needed for interpolation during refinement
         AMRGraphLinkiterator cell_graph_xp;
@@ -1513,7 +1520,8 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
             sham::EventList &depends_list,
             Storage &storage,
             u64 &id_patch,
-            shamrock::patch::PatchDataLayer &pdat)
+            shamrock::patch::PatchDataLayer &pdat,
+            AMRInterpMode _amr_ref_interp_mode)
             : cell_graph_xp(
                   shambase::get_check_ref(storage.cell_graph_edge)
                       .get_refs_dir(Direction::xp)
@@ -1549,23 +1557,41 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                       .get_refs_dir(Direction::zm)
                       .get(id_patch)
                       .get()
-                      .get_read_access(depends_list))
+                      .get_read_access(depends_list)),
+              amr_ref_interp_mode(_amr_ref_interp_mode)
 
         {
-            p_id    = id_patch;
-            rho     = pdat.get_field<f64>(2).get_buf().get_write_access(depends_list);
-            rho_vel = pdat.get_field<f64_3>(3).get_buf().get_write_access(depends_list);
-            rhoE    = pdat.get_field<f64>(4).get_buf().get_write_access(depends_list);
-            // cell_sizes = shambase::get_check_ref(storage.block_cell_sizes)
-            //                 .get_buf(id_patch)
-            //                 .get_write_access(depends_list);
+            p_id = id_patch;
+
+            // old conservatives variables
+            rho_old_snap     = shambase::get_check_ref(storage.rho_snap)
+                                   .get(id_patch)
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+            rhoE_old_snap    = shambase::get_check_ref(storage.rhoe_snap)
+                                   .get(id_patch)
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+            rho_vel_old_snap = shambase::get_check_ref(storage.rho_vel_snap)
+                                   .get(id_patch)
+                                   .get_buf()
+                                   .get_read_access(depends_list);
+
+            // new conservative variables
+            rho        = pdat.get_field<f64>(2).get_buf().get_write_access(depends_list);
+            rho_vel    = pdat.get_field<f64_3>(3).get_buf().get_write_access(depends_list);
+            rhoE       = pdat.get_field<f64>(4).get_buf().get_write_access(depends_list);
+            cell_sizes = shambase::get_check_ref(storage.block_cell_sizes)
+                             .get_buf(id_patch)
+                             .get_write_access(depends_list);
         }
 
         void finalize_new(
             sham::EventList &resulting_events,
             Storage &storage,
             u64 &id_patch,
-            shamrock::patch::PatchDataLayer &pdat) {
+            shamrock::patch::PatchDataLayer &pdat,
+            AMRInterpMode amr_ref_interp_mode) {
             pdat.get_field<f64>(2).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64_3>(3).get_buf().complete_event_state(resulting_events);
             pdat.get_field<f64>(4).get_buf().complete_event_state(resulting_events);
@@ -1601,9 +1627,23 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                 .get()
                 .complete_event_state(resulting_events);
 
-            // shambase::get_check_ref(storage.block_cell_sizes)
-            //     .get_buf(id_patch)
-            //     .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.block_cell_sizes)
+                .get_buf(id_patch)
+                .complete_event_state(resulting_events);
+
+            // old conservative variables
+            shambase::get_check_ref(storage.rho_snap)
+                .get(id_patch)
+                .get_buf()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.rhoe_snap)
+                .get(id_patch)
+                .get_buf()
+                .complete_event_state(resulting_events);
+            shambase::get_check_ref(storage.rho_vel_snap)
+                .get(id_patch)
+                .get_buf()
+                .complete_event_state(resulting_events);
         }
 
         void apply_refine_new(
@@ -1652,60 +1692,74 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
                             glid[2] % AMRBlock::Nside});
             };
 
-            std::array<f64, AMRBlock::block_size> old_rho_block;
-            std::array<f64_3, AMRBlock::block_size> old_rho_vel_block;
-            std::array<f64, AMRBlock::block_size> old_rhoE_block;
-
-            // save old block
-            for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
-
-                auto [lx, ly, lz]         = get_coord_ref(loc_id);
-                u32 old_cell_idx          = cur_idx * AMRBlock::block_size + loc_id;
-                old_rho_block[loc_id]     = acc.rho[old_cell_idx];
-                old_rho_vel_block[loc_id] = acc.rho_vel[old_cell_idx];
-                old_rhoE_block[loc_id]    = acc.rhoE[old_cell_idx];
-            }
-
             for (u32 loc_id = 0; loc_id < AMRBlock::block_size; loc_id++) {
 
                 auto [lx, ly, lz] = get_coord_ref(loc_id);
                 u32 old_cell_idx  = cur_idx * AMRBlock::block_size + loc_id;
 
-                // // // cell size in the refined block
-                // // Tscal delta_cell = cell_sizes[cur_idx];
-                // // Tscal c_offset   = delta_cell * 0.25;
-                // // std::array<f64_3, AMRBlock::block_size> child_center_offsets;
-                // //  child_center_offsets[0] = {-c_offset, -c_offset, -c_offset}; /*(0,0,0) */
-                // // child_center_offsets[1] = {c_offset, -c_offset, -c_offset};   /*(1,0,0)*/
-                // // child_center_offsets[2] = {-c_offset, c_offset, -c_offset};  /* (0,1,0)*/
-                // // child_center_offsets[3] = {c_offset, c_offset, -c_offset};   /*(1,1,0)*/
-                // // child_center_offsets[4] = {-c_offset, -c_offset, c_offset}; /*(0,0,1)*/
-                // // child_center_offsets[5] = {c_offset, -c_offset, c_offset}; /*(1,0,1)*/
-                // // child_center_offsets[6] = {-c_offset, c_offset, c_offset};  /*(0,1,1)*/
-                // // child_center_offsets[7] = {c_offset, c_offset, c_offset};   /*(1,1,1)*/
+                // // cell size in the refined block
+                Tscal delta_cell = cell_sizes[cur_idx];
+                Tscal c_offset   = delta_cell * 0.25;
+                std::array<f64_3, AMRBlock::block_size> child_center_offsets;
+                child_center_offsets[0] = {-c_offset, -c_offset, -c_offset}; /*(0,0,0) */
+                child_center_offsets[1] = {c_offset, -c_offset, -c_offset};  /*(1,0,0)*/
+                child_center_offsets[2] = {-c_offset, c_offset, -c_offset};  /* (0,1,0)*/
+                child_center_offsets[3] = {c_offset, c_offset, -c_offset};   /*(1,1,0)*/
+                child_center_offsets[4] = {-c_offset, -c_offset, c_offset};  /*(0,0,1)*/
+                child_center_offsets[5] = {c_offset, -c_offset, c_offset};   /*(1,0,1)*/
+                child_center_offsets[6] = {-c_offset, c_offset, c_offset};   /*(0,1,1)*/
+                child_center_offsets[7] = {c_offset, c_offset, c_offset};    /*(1,1,1)*/
 
-                // auto cons_var_slopes = get_3d_grad_cons<Tvec, Minmod>(
-                //     old_cell_idx,
-                //     delta_cell,
-                //     cell_graph_xp,
-                //     cell_graph_xm,
-                //     cell_graph_yp,
-                //     cell_graph_ym,
-                //     cell_graph_zp,
-                //     cell_graph_zm,
-                //     [=](u32 id){
-                //         return acc.rho[id];
-                //     },
-                //     [=](u32 id){
-                //         return acc.rho_vel[id];
-                //     },
-                //     [=](u32 id){
-                //         return acc.rhoE[id];
-                //     });
+                auto cons_var_slopes = get_3d_grad_cons<Tvec, Minmod>(
+                    cell_sizes,
+                    AMRBlock::block_size,
+                    old_cell_idx,
+                    acc.cell_graph_xp,
+                    acc.cell_graph_xm,
+                    acc.cell_graph_yp,
+                    acc.cell_graph_ym,
+                    acc.cell_graph_zp,
+                    acc.cell_graph_zm,
+                    [=](u32 id) {
+                        return acc.rho_old_snap[id];
+                    },
+                    [=](u32 id) {
+                        return acc.rho_vel_old_snap[id];
+                    },
+                    [=](u32 id) {
+                        return acc.rhoE_old_snap[id];
+                    });
 
-                Tscal rho_block    = old_rho_block[loc_id];
-                Tvec rho_vel_block = old_rho_vel_block[loc_id];
-                Tscal rhoE_block   = old_rhoE_block[loc_id];
+                std::array<f64, AMRBlock::block_size> _rho_block;
+                std::array<f64_3, AMRBlock::block_size> _rho_vel_block;
+                std::array<f64, AMRBlock::block_size> _rhoE_block;
+
+                int mul_second_order
+                    = (acc.amr_ref_interp_mode == AMRInterpMode::SECOND_ORDER) ? 1 : 0;
+
+                bool do_second_order = true;
+
+                for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
+                    shammath::ConsState<Tvec> cons_var_interp
+                        = child_center_offsets[subdiv_lid][0] * cons_var_slopes[0]
+                          + child_center_offsets[subdiv_lid][1] * cons_var_slopes[1]
+                          + child_center_offsets[subdiv_lid][2] * cons_var_slopes[2];
+
+                    _rho_block[subdiv_lid]
+                        = acc.rho_old_snap[old_cell_idx] + cons_var_interp.rho * mul_second_order;
+                    _rho_vel_block[subdiv_lid] = acc.rho_vel_old_snap[old_cell_idx]
+                                                 + cons_var_interp.rhovel * mul_second_order;
+                    _rhoE_block[subdiv_lid]
+                        = acc.rhoE_old_snap[old_cell_idx] + cons_var_interp.rhoe * mul_second_order;
+
+                    const auto e_int
+                        = _rhoE_block[subdiv_lid]
+                          - 0.5 * sham::dot(_rho_vel_block[subdiv_lid], _rho_vel_block[subdiv_lid])
+                                / (_rho_block[subdiv_lid]);
+                    do_second_order
+                        = do_second_order && (_rho_block[subdiv_lid] > 0.0) && (e_int > 0.0);
+                }
+
                 for (u32 subdiv_lid = 0; subdiv_lid < 8; subdiv_lid++) {
 
                     auto [sx, sy, sz] = get_coord_ref(subdiv_lid);
@@ -1714,18 +1768,13 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
 
                     u32 new_cell_idx = get_gid_write(glid);
 
-                    // shammath::ConsState<Tvec> cons_var_interp =
-                    // child_center_offsets[subdiv_lid][0] * cons_var_slopes[0] +
-                    // child_center_offsets[subdiv_lid][1] * cons_var_slopes[1] +
-                    // child_center_offsets[subdiv_lid][2] * cons_var_slopes[2];
-
-                    // // acc.rho[new_cell_idx]     = rho_block + cons_var_interp.rho ;
-                    // // acc.rho_vel[new_cell_idx] = rho_vel_block + cons_var_interp.rhovel;
-                    // // acc.rhoE[new_cell_idx]    = rhoE_block + cons_var_interp.rhoe;
-
-                    acc.rho[new_cell_idx]     = rho_block;
-                    acc.rho_vel[new_cell_idx] = rho_vel_block;
-                    acc.rhoE[new_cell_idx]    = rhoE_block;
+                    acc.rho[new_cell_idx]     = (do_second_order) ? _rho_block[subdiv_lid]
+                                                                  : acc.rho_old_snap[old_cell_idx];
+                    acc.rho_vel[new_cell_idx] = (do_second_order)
+                                                    ? _rho_vel_block[subdiv_lid]
+                                                    : acc.rho_vel_old_snap[old_cell_idx];
+                    acc.rhoE[new_cell_idx]    = (do_second_order) ? _rhoE_block[subdiv_lid]
+                                                                  : acc.rhoE_old_snap[old_cell_idx];
                 }
             }
         }
@@ -2555,15 +2604,17 @@ void shammodels::basegodunov::modules::AMRGridRefinementHandler<Tvec, TgridVec>:
         enforce_two_to_one_derefinement_new(std::move(derefine_list), std::move(refine_list));
         //////// apply refine ////////
         // Note that this only add new blocks at the end of the patchdata
-        bool change_refine = internal_refine_grid_new<RefineCellAccessor>(std::move(refine_list));
+        const AMRInterpMode amr_ref_interp_mode = solver_config.amr_interp_mode;
+        bool change_refine                      = internal_refine_grid_new<RefineCellAccessor>(
+            std::move(refine_list), amr_ref_interp_mode);
 
         //////// apply derefine ////////
         // Note that this will perform the merge then remove the old blocks
         // This is ok to call straight after the refine without edditing the index list in
         // derefine_list since no permutations were applied in internal_refine_grid_new and no cells
         // can be both refined and derefined in the same pass
-        bool change_derefine
-            = internal_derefine_grid_new<RefineCellAccessor>(std::move(derefine_list));
+        bool change_derefine = internal_derefine_grid_new<RefineCellAccessor>(
+            std::move(derefine_list), amr_ref_interp_mode);
 
         has_cell_order_changed = has_cell_order_changed || (change_refine || change_derefine);
 

@@ -124,7 +124,7 @@ namespace shamcmdopt {
             }
 
             shambase::println(
-                shambase::format(
+                sham::format(
                     "  tty size = {}x{}",
                     sham::term::get_tty_lines(),
                     sham::term::get_tty_columns()));

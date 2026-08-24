@@ -467,7 +467,7 @@ void shammodels::sph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces()
 
         auto &var_force = solver_config.ext_force_config.ext_forces[i];
 
-        std::string prefix = shambase::format("ext_force_{}_", i);
+        std::string prefix = sham::format("ext_force_{}_", i);
 
         if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
 

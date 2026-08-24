@@ -145,7 +145,7 @@ namespace shamalgs {
             SHAM_ASSERT(off == align_repr(len * Helper::szrepr));
 
             if (head_device + off > storage.get_size()) {
-                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                     "Serializer device buffer overflow: cannot move device head.\n"
                     "    storage size : {}\n"
                     "    current head_device : {}\n"
@@ -169,7 +169,7 @@ namespace shamalgs {
             SHAM_ASSERT(off == align_repr(len * Helper::szrepr));
 
             if (head_host + off > storage_header.size()) {
-                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                     "Serializer host buffer overflow: cannot move host head.\n"
                     "    storage_header size : {}\n"
                     "    current head_host : {}\n"
@@ -382,7 +382,7 @@ namespace shamalgs {
             check_head_move_device<T>(offset, len);
 
             if (buf.get_size() < len) {
-                shambase::throw_with_loc<std::invalid_argument>(shambase::format(
+                shambase::throw_with_loc<std::invalid_argument>(sham::format(
                     "SerializeHelper::load_buf: (buf.get_size() < len)\n  buf.get_size()={}\n  "
                     "len={}",
                     buf.get_size(),

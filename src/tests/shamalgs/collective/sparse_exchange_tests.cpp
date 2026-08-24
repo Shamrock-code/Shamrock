@@ -186,16 +186,16 @@ struct fmt::formatter<shamalgs::collective::CommMessageInfo> {
 
 void print_comm_table(const shamalgs::collective::CommTable &comm_table) {
     std::stringstream ss;
-    ss << shambase::format(
+    ss << sham::format(
         "messages_send : [\n    {}\n]\n", fmt::join(comm_table.messages_send, "\n    "));
-    ss << shambase::format(
+    ss << sham::format(
         "messages_recv : [\n    {}\n]\n", fmt::join(comm_table.messages_recv, "\n    "));
-    ss << shambase::format(
+    ss << sham::format(
         "message_all : [\n    {}\n]\n", fmt::join(comm_table.message_all, "\n    "));
-    ss << shambase::format("send_message_global_ids : {}\n", comm_table.send_message_global_ids);
-    ss << shambase::format("recv_message_global_ids : {}\n", comm_table.recv_message_global_ids);
-    ss << shambase::format("send_total_sizes : {}\n", comm_table.send_total_sizes);
-    ss << shambase::format("recv_total_sizes : {}\n", comm_table.recv_total_sizes);
+    ss << sham::format("send_message_global_ids : {}\n", comm_table.send_message_global_ids);
+    ss << sham::format("recv_message_global_ids : {}\n", comm_table.recv_message_global_ids);
+    ss << sham::format("send_total_sizes : {}\n", comm_table.send_total_sizes);
+    ss << sham::format("recv_total_sizes : {}\n", comm_table.recv_total_sizes);
     logger::info_ln(
         "sparse exchange test", "rank :", shamcomm::world_rank(), "comm table :", "\n" + ss.str());
 }
@@ -293,12 +293,12 @@ void test_sparse_exchange(std::vector<TestElement> test_elements, size_t max_all
         std::stringstream ss;
         ss << "send bufs :\n";
         for (size_t i = 0; i < send_bufs.size(); i++) {
-            ss << "buf " << i << " : " << shambase::format("{}", send_bufs[i]->copy_to_stdvec())
+            ss << "buf " << i << " : " << sham::format("{}", send_bufs[i]->copy_to_stdvec())
                << "\n";
         }
         ss << "recv bufs :\n";
         for (size_t i = 0; i < recv_bufs.size(); i++) {
-            ss << "buf " << i << " : " << shambase::format("{}", recv_bufs[i]->copy_to_stdvec())
+            ss << "buf " << i << " : " << sham::format("{}", recv_bufs[i]->copy_to_stdvec())
                << "\n";
         }
         logger::info_ln("sparse exchange test", "rank :", shamcomm::world_rank(), ss.str());

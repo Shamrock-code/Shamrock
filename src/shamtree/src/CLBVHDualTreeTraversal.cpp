@@ -31,7 +31,7 @@ namespace shamtree {
         } else if (impl == "scan_multipass") {
             return DTTImpl::SCAN_MULTIPASS;
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "invalid implementation : {}, possible implementations : {}",
             impl,
             impl::get_default_impl_list_clbvh_dual_tree_traversal()));
@@ -46,7 +46,7 @@ namespace shamtree {
             return {.impl_name = "scan_multipass", .params = ""};
         }
         throw shambase::make_except_with_loc<std::invalid_argument>(
-            shambase::format("unknown dtt implementation : {}", u32(impl)));
+            sham::format("unknown dtt implementation : {}", u32(impl)));
     }
 
     std::vector<shamalgs::impl_param> impl::get_default_impl_list_clbvh_dual_tree_traversal() {

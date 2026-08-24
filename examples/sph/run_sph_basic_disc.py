@@ -165,8 +165,8 @@ gen_disc = setup.make_generator_disc_mc(
     random_seed=666,
 )
 
-# Print the dot graph of the setup
-print(gen_disc.get_dot())
+# Show the dot graph of the setup
+shamrock.utils.plot.DotGraph(gen_disc.get_dot())
 
 # %%
 # Apply the setup

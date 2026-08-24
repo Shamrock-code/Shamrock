@@ -16,6 +16,7 @@
  */
 
 #include "shambase/stacktrace.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shammodels/sph/SPHUtilities.hpp"
 #include "shammodels/sph/math/forces.hpp"

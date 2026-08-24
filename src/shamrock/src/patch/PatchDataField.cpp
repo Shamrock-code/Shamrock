@@ -253,7 +253,7 @@ template<class T>
 void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len) {
 
     if (len != get_obj_cnt()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "the match of the new index map does not match with the patchdatafield obj count: {} "
             "!= {}",
             len,
@@ -266,7 +266,7 @@ void PatchDataField<T>::index_remap(sham::DeviceBuffer<u32> &index_map, u32 len)
 template<class T>
 void PatchDataField<T>::permut_vars(const std::vector<u32> &permut) {
     if (permut.size() != get_nvar()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "the number of permut is not equal to the patchdatafield nvar: {} != {}",
             permut.size(),
             get_nvar()));
@@ -303,7 +303,7 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
     auto &q        = dev_sched->get_queue();
 
     if (len > get_obj_cnt()) {
-        throw shambase::make_except_with_loc<std::invalid_argument>(shambase::format(
+        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
             "the number of ids to remove is greater than the patchdatafield obj count: {} > {}",
             len,
             get_obj_cnt()));
@@ -349,7 +349,7 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
         // compute keep flags sum
         u32 keep_flags_sum = std::accumulate(keep_flags_vec.begin(), keep_flags_vec.end(), u32(0));
 
-        std::string log = shambase::format(
+        std::string log = sham::format(
             "the number of remaining ids {} is different from the expected {}",
             keep_ids.get_size(),
             remaining);
@@ -360,7 +360,7 @@ void PatchDataField<T>::remove_ids(const sham::DeviceBuffer<u32> &ids_to_rem, u3
         } else {
             log += "  ids_to_rem has duplicates = false\n";
         }
-        log += shambase::format("  keep flags sum = {}\n", keep_flags_sum);
+        log += sham::format("  keep flags sum = {}\n", keep_flags_sum);
 
         throw shambase::make_except_with_loc<std::invalid_argument>(log);
     }

@@ -14,10 +14,11 @@
  *
  */
 
-#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
+#include "shambase/string.hpp"
 #include "shambackends/kernel_call_distrib.hpp"
 #include "shamcomm/logs.hpp"
 #include "shammath/riemann.hpp"
+#include "shammodels/ramses/modules/ComputeSumOverV.hpp"
 #include "shamrock/patch/PatchDataField.hpp"
 #include "shamsys/NodeInstance.hpp"
 
@@ -63,7 +64,7 @@ namespace shammodels::basegodunov::modules {
         shambase::replace_all(tex, "{field}", field);
         shambase::replace_all(tex, "{mean}", mean);
         shambase::replace_all(tex, "{block_count}", block_count);
-        shambase::replace_all(tex, "{block_size}", shambase::format("{}", block_size));
+        shambase::replace_all(tex, "{block_size}", sham::format("{}", block_size));
 
         return tex;
     }

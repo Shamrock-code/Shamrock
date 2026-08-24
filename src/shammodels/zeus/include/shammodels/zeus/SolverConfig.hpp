@@ -48,7 +48,7 @@ namespace shammodels::zeus {
 
         inline void check_config() {
             if (grid_coord_to_pos_fact <= 0) {
-                shambase::throw_with_loc<std::runtime_error>(shambase::format(
+                shambase::throw_with_loc<std::runtime_error>(sham::format(
                     "grid_coord_to_pos_fact must be > 0, got {}", grid_coord_to_pos_fact));
             }
         }

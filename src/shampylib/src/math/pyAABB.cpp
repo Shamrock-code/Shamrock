@@ -44,10 +44,10 @@ namespace shampylib {
             .def(
                 "__str__",
                 [](const shammath::AABB<T> &aabb) {
-                    return shambase::format("AABB(lower={}, upper={})", aabb.lower, aabb.upper);
+                    return sham::format("AABB(lower={}, upper={})", aabb.lower, aabb.upper);
                 })
             .def("__repr__", [](const shammath::AABB<T> &aabb) {
-                return shambase::format("AABB(lower={}, upper={})", aabb.lower, aabb.upper);
+                return sham::format("AABB(lower={}, upper={})", aabb.lower, aabb.upper);
             });
     }
 

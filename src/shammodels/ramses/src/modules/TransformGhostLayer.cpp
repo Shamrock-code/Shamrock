@@ -56,7 +56,7 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
 
     if (ghost_layer.patchdatas.get_element_count()
         != ghost_layers_candidates.values.get_element_count()) {
-        shambase::throw_with_loc<std::runtime_error>(shambase::format(
+        shambase::throw_with_loc<std::runtime_error>(sham::format(
             "ghost_layer.patchdatas.get_element_count() != "
             "ghost_layers_candidates.values.get_element_count()\n "
             "ghost_layer.patchdatas.get_element_count(): {}\n"
@@ -162,7 +162,7 @@ void shammodels::basegodunov::modules::TransformGhostLayer<Tvec, TgridVec>::
             } else if (nvar == 1) {
                 // do nothing
             } else {
-                throw shambase::make_except_with_loc<std::runtime_error>(shambase::format(
+                throw shambase::make_except_with_loc<std::runtime_error>(sham::format(
                     "the number of variables is not equal to the expected number of variables: {} "
                     "!= {}, field name: {}, layout: {}",
                     nvar,

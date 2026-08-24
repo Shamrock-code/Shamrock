@@ -241,6 +241,14 @@ struct shammodels::gsph::SolverConfig {
         return Tscal{1.4}; // Default for non-gamma EOS types
     }
 
+    inline Tscal get_eos_cs0() const {
+        using Isothermal = typename EOSConfig::Isothermal;
+        if (const auto *eos = std::get_if<Isothermal>(&eos_config.config)) {
+            return eos->cs;
+        }
+        return Tscal{0.0}; // Default for non-gamma EOS types
+    }
+
     inline void set_eos_adiabatic(Tscal gamma) { eos_config.set_adiabatic(gamma); }
 
     inline void set_eos_isothermal(Tscal cs) { eos_config.set_isothermal(cs); }

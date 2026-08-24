@@ -1211,6 +1211,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
+    const Tscal cs0     = solver_config.get_eos_cs0();
     const bool has_uint = solver_config.has_field_uint();
 
     // Get ghost layout field indices
@@ -1255,6 +1256,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
             uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
         }
 
+        using SolverConfigEOS     = typename Config::EOSConfig;
+
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
             shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
                 u32 i = (u32) gid;
@@ -1263,8 +1266,10 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                 Tscal rho = density[i];
                 rho       = sycl::max(rho, Tscal(1e-30));
 
-                if (has_uint && uint_ptr != nullptr) {
-                    // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
+
+
+                if (solver_config.is_eos_adiabatic()){
+                                        // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
                     u       = sycl::max(u, Tscal(1e-30));
@@ -1274,15 +1279,13 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                     // c = sqrt(\gamma * (\gamma - 1) * u)
                     Tscal cs = sycl::sqrt(gamma * (gamma - Tscal(1.0)) * u);
 
-                    // Clamp to reasonable values
-                    P  = sycl::clamp(P, Tscal(1e-30), Tscal(1e30));
-                    cs = sycl::clamp(cs, Tscal(1e-10), Tscal(1e10));
-
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                } else {
+                }
+
+                 else if (solver_config.is_eos_isothermal()){
                     // Isothermal case
-                    Tscal cs = Tscal(1.0);
+                    Tscal cs = cs0;
                     Tscal P  = cs * cs * rho;
 
                     pressure[i]   = P;

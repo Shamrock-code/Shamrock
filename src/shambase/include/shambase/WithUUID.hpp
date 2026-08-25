@@ -16,6 +16,7 @@
  */
 
 #include <atomic>
+#include <limits>
 
 namespace shambase {
 
@@ -32,6 +33,9 @@ namespace shambase {
      *    ...
      *    std::cout << "Instance1 UUID: " << A1{}.get_uuid() << std::endl;
      * @endcode
+     *
+     * Copy is deleted (would duplicate the uuid). Move transfers the uuid and invalidates the
+     * source, so check `is_alive()` rather than assuming a moved-from instance still has one.
      */
     template<typename T, class Tint, bool thread_safe = true>
     class WithUUID {
@@ -43,12 +47,22 @@ namespace shambase {
         Tint uuid;
 
         public:
+        /// Sentinel marking an invalidated/moved-from instance (0 is a valid uuid, so max is used
+        /// instead).
+        static constexpr Tint invalid_uuid = std::numeric_limits<Tint>::max();
+
         /**
          * @brief Get the uuid of the class
          *
          * @return The uuid of the class
          */
         inline Tint get_uuid() const { return uuid; }
+
+        /// Whether this instance still holds a valid uuid (false once moved from).
+        inline bool is_alive() const { return uuid != invalid_uuid; }
+
+        /// Marks this instance's uuid as invalid, e.g. to give up identity outside of a move.
+        inline void invalidate() { uuid = invalid_uuid; }
 
         /**
          * @brief Constructor of the class
@@ -67,6 +81,21 @@ namespace shambase {
                 static Tint _uuid = 0;
                 uuid              = _uuid++;
             }
+        }
+
+        WithUUID(const WithUUID &)            = delete; ///< would duplicate the uuid
+        WithUUID &operator=(const WithUUID &) = delete; ///< would duplicate the uuid
+
+        /// Move constructor: transfers the uuid to `this` and invalidates `other`.
+        inline WithUUID(WithUUID &&other) noexcept : uuid(other.uuid) { other.invalidate(); }
+
+        /// Move assignment: transfers the uuid to `this` and invalidates `other`.
+        inline WithUUID &operator=(WithUUID &&other) noexcept {
+            if (this != &other) {
+                uuid = other.uuid;
+                other.invalidate();
+            }
+            return *this;
         }
     };
 

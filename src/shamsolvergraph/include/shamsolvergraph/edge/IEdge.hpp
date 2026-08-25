@@ -27,6 +27,16 @@ namespace shamrock::solvergraph {
 
     class IEdge : public shambase::WithUUID<IEdge, u64>, public IFreeable {
         public:
+        IEdge() = default;
+
+        IEdge(const IEdge &)            = delete; /// would duplicate the uuid
+        IEdge &operator=(const IEdge &) = delete; /// would duplicate the uuid
+
+        /// Declared explicitly: the destructor below would otherwise suppress implicit move
+        /// generation, and copy is deleted, leaving IEdge neither movable nor copyable.
+        IEdge(IEdge &&) noexcept            = default;
+        IEdge &operator=(IEdge &&) noexcept = default;
+
         inline std::string get_label() const { return _impl_get_dot_label(); }
         inline std::string get_tex_symbol() const { return _impl_get_tex_symbol(); }
 

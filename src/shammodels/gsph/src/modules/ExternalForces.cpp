@@ -171,26 +171,6 @@ void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::compute_ext_for
     }
 }
 
-template<class T>
-std::shared_ptr<shamrock::solvergraph::INode> register_constant_set(
-    shamrock::solvergraph::SolverGraph &solver_graph, std::string name, std::function<T()> getter) {
-    solver_graph.register_edge(name, shamrock::solvergraph::IDataEdge<T>("", ""));
-
-    solver_graph.register_node(
-        "set_" + name,
-        shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<T>>(
-            [getter](shamrock::solvergraph::IDataEdge<T> &edge) {
-                edge.data = getter();
-            }));
-
-    solver_graph
-        .get_node_ref<shamrock::solvergraph::NodeSetEdge<shamrock::solvergraph::IDataEdge<T>>>(
-            "set_" + name)
-        .set_edges(solver_graph.get_edge_ptr_base(name));
-
-    return solver_graph.get_node_ptr_base("set_" + name);
-}
-
 template<class Tvec, template<class> class SPHKernel>
 void shammodels::gsph::modules::ExternalForces<Tvec, SPHKernel>::add_ext_forces() {
 

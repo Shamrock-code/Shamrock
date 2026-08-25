@@ -75,11 +75,10 @@ namespace shammodels::gsph::modules {
             std::function<Tscal(Tvec)> cs_profile,
             std::mt19937_64 eng,
             Tscal init_h_factor)
-            : context(context), solver_config(solver_config),
+            : context(context), solver_config(solver_config), pmass(part_mass),
               generator(
                   make_generator(part_mass, disc_mass, r_in, r_out, sigma_profile, H_profile, eng)),
-              init_h_factor(init_h_factor), pmass(part_mass), vel_profile(vel_profile),
-              cs_profile(cs_profile) {}
+              init_h_factor(init_h_factor), vel_profile(vel_profile), cs_profile(cs_profile) {}
 
         bool is_done();
 
@@ -142,9 +141,8 @@ class shammodels::gsph::modules::GeneratorMCDisc<Tvec, SPHKernel>::DiscIterator 
         std::function<Tscal(Tscal)> H_profile,
         std::mt19937_64 eng,
         u64 Npart)
-        : part_mass(part_mass), disc_mass(disc_mass), Npart(Npart), r_in(r_in), r_out(r_out),
-          sigma_profile(sigma_profile), H_profile(H_profile), generator(eng, Npart),
-          current_index(0) {
+        : current_index(0), part_mass(part_mass), disc_mass(disc_mass), Npart(Npart), r_in(r_in),
+          r_out(r_out), sigma_profile(sigma_profile), H_profile(H_profile), generator(eng, Npart) {
 
         shamlog_debug_ln(
             "GeneratorMCDisc",

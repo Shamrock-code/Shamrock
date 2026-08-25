@@ -1264,7 +1264,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         using SolverConfigEOS = typename Config::EOSConfig;
 
         auto e = q.submit(depends_list, [&](sycl::handler &cgh) {
-            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [=](u64 gid) {
+            shambase::parallel_for(cgh, total_elements, "compute_eos_gsph", [&](u64 gid) {
                 u32 i = (u32) gid;
 
                 // Use SPH-summation density (from compute_omega, communicated to ghosts)

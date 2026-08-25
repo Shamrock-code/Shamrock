@@ -1226,6 +1226,9 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     u32 iuint_interf
         = has_uint ? ghost_layout.get_field_idx<Tscal>(gsph::names::newtonian::uint) : 0;
 
+    PatchDataLayerLayout &pdl = scheduler().pdl_old();
+    const u32 ixyz            = pdl.get_field_idx<Tvec>(gsph::names::common::xyz);
+
     shamrock::solvergraph::Field<Tscal> &pressure_field = shambase::get_check_ref(storage.pressure);
     shamrock::solvergraph::Field<Tscal> &soundspeed_field
         = shambase::get_check_ref(storage.soundspeed);
@@ -1249,6 +1252,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto &pressure_buf                     = pressure_field.get_field(id).get_buf();
         auto &soundspeed_buf                   = soundspeed_field.get_field(id).get_buf();
 
+        PatchDataField<Tvec> &xyz = mpdat.get_field<Tvec>(ixyz);
+
         sham::DeviceQueue &q = dev_sched->get_queue();
         sham::EventList depends_list;
 
@@ -1256,10 +1261,24 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
         auto pressure   = pressure_buf.get_write_access(depends_list);
         auto soundspeed = soundspeed_buf.get_write_access(depends_list);
 
+        auto &sink_pos  = sph::get_sink_pos<Tvec>(scheduler().synchronized_data);
+        auto &sink_mass = sph::get_sink_mass<Tvec>(scheduler().synchronized_data);
+        u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
+
+        sham::DeviceBuffer<Tvec> sink_pos_buf(sink_pos.size(), dev_sched);
+        sham::DeviceBuffer<Tscal> sink_mass_buf(sink_mass.size(), dev_sched);
+
+        sink_pos_buf.copy_from_stdvec(sink_pos);
+        sink_mass_buf.copy_from_stdvec(sink_mass);
+
         const Tscal *uint_ptr = nullptr;
         if (has_uint) {
             uint_ptr = mpdat.get_field_buf_ref<Tscal>(iuint_interf).get_read_access(depends_list);
         }
+
+        auto xyz_acc       = xyz.get_buf().get_read_access(depends_list);
+        auto sink_pos_acc  = sink_pos_buf.get_read_access(depends_list);
+        auto sink_mass_acc = sink_mass_buf.get_read_access(depends_list);
 
         using SolverConfigEOS = typename Config::EOSConfig;
 
@@ -1269,7 +1288,7 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                 // Use SPH-summation density (from compute_omega, communicated to ghosts)
                 Tscal rho = density[i];
-                rho       = sycl::max(rho, Tscal(1e-30));
+                Tvec pos  = xyz_acc[i];
 
                 if (SolverEOS_Adiabatic *eos_config
                     = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
@@ -1299,59 +1318,34 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                     = std::get_if<SolverEOS_LocallyIsothermalFA2014>(
                         &solver_config.eos_config.config)) {
                     Tscal G        = solver_config.get_constant_G();
-                    Tscal h_over_r = eos_config->h_over_r;
                     Tscal pmass_   = solver_config.gpart_mass;
                     Tscal hfactd_  = Kernel::hfactd;
+                    Tscal h_over_r = eos_config->h_over_r;
+
+                    Tscal R = sycl::length(pos);
 
                     using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
-
-                    auto &sink_pos  = sph::get_sink_pos<Tvec>(scheduler().synchronized_data);
-                    auto &sink_mass = sph::get_sink_mass<Tvec>(scheduler().synchronized_data);
-                    u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
 
                     if (sink_cnt == 0) {
                         throw shambase::make_except_with_loc<std::runtime_error>(
                             "No sinks found for the equation of state");
                     }
 
-                    shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
-                    auto refs = storage.merged_xyzh.get()
-                                    .template map<shamrock::solvergraph::PatchDataFieldRef<Tvec>>(
-                                        [&](u64 id, PatchDataLayer &mpdat)
-                                            -> shamrock::solvergraph::PatchDataFieldRef<Tvec> {
-                                            return mpdat.get_field<Tvec>(0);
-                                        });
-                    xyz_refs.set_refs(refs);
+                    Tscal mpotential = 0;
+                    for (u32 i = 0; i < sink_cnt; i++) {
 
-                    sham::DeviceBuffer<Tvec> sink_pos_buf(sink_pos.size(), dev_sched);
-                    sham::DeviceBuffer<Tscal> sink_mass_buf(sink_mass.size(), dev_sched);
+                        Tvec s_r      = sink_pos[i] - R;
+                        Tscal s_m     = sink_mass[i];
+                        Tscal s_r_abs = sycl::length(s_r);
+                        mpotential += G * s_m / s_r_abs;
+                    }
 
-                    sink_pos_buf.copy_from_stdvec(sink_pos);
-                    sink_mass_buf.copy_from_stdvec(sink_mass);
+                    Tscal cs_out = h_over_r * sycl::sqrt(mpotential);
+                    Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho);
 
-                    auto eos_internal = [](Tvec R,
-                                           Tscal rho_a,
-                                           u32 scount,
-                                           auto spos,
-                                           auto smass,
-                                           Tscal G,
-                                           Tscal h_over_r,
-                                           Tscal &pressure,
-                                           Tscal &soundspeed) {
-                        Tscal mpotential = 0;
-                        for (u32 i = 0; i < scount; i++) {
-                            Tvec s_r      = spos[i] - R;
-                            Tscal s_m     = smass[i];
-                            Tscal s_r_abs = sycl::length(s_r);
-                            mpotential += G * s_m / s_r_abs;
-                        }
+                    pressure[i]   = P_a;
+                    soundspeed[i] = cs_out;
 
-                        Tscal cs_out = h_over_r * sycl::sqrt(mpotential);
-                        Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
-
-                        pressure   = P_a;
-                        soundspeed = cs_out;
-                    };
                 } else {
                     throw std::runtime_error("Unknown EOS type in SolverConfig");
                 }

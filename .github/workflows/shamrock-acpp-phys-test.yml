@@ -132,6 +132,10 @@ jobs:
             testfile: run_test_sink_synchro.py
           - worldsize: 2
             testfile: run_test_sink_synchro.py
+          - worldsize: 1
+            testfile: run_test_ext_forces_accretion.py
+          - worldsize: 2
+            testfile: run_test_ext_forces_accretion.py
       fail-fast: ${{ inputs.fail_fast }}
 
     timeout-minutes: 60

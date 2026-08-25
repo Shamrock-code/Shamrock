@@ -225,6 +225,11 @@ struct shammodels::gsph::SolverConfig {
         return bool(std::get_if<T>(&eos_config.config));
     }
 
+    inline bool is_eos_FA2014() const {
+        using T = typename EOSConfig::LocallyIsothermalFA2014;
+        return bool(std::get_if<T>(&eos_config.config));
+    }
+
     /**
      * @brief Get the adiabatic index (gamma) from the EOS config
      *

@@ -37,6 +37,7 @@
 #include "shammodels/gsph/Solver.hpp"
 #include "shammodels/gsph/modules/GSPHSetup.hpp"
 #include "shammodels/sph/math/density.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
 #include "shamrock/io/ShamrockDump.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/scheduler/ReattributeDataUtility.hpp"
@@ -380,6 +381,11 @@ namespace shammodels::gsph {
             j.at("solver_config").get_to(solver.solver_config);
 
             PatchScheduler &sched = shambase::get_check_ref(ctx.sched);
+            if (!j.at("sinks").is_null()) {
+                std::vector<sph::SinkParticle<Tvec>> out;
+                j.at("sinks").get_to(out);
+                solver.storage.sinks.set(std::move(out));
+            }
 
             // Migrate old dumps that stored time/dt in solver_config.time_state (before PR #1933)
             auto sync_names = sched.synchronized_data.get_edge_names();

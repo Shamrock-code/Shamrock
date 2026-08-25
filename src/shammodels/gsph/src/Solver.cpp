@@ -50,6 +50,8 @@
 #include "shammodels/sph/modules/IterateSmoothingLengthDensityNeighLim.hpp"
 #include "shammodels/sph/modules/LoopSmoothingLengthIter.hpp"
 #include "shammodels/sph/modules/NeighbourCache.hpp"
+#include "shammodels/sph/sink_edges_helper.hpp"
+#include "shamphys/eos.hpp"
 #include "shamrock/patch/Patch.hpp"
 #include "shamrock/patch/PatchDataLayer.hpp"
 #include "shamrock/patch/PatchDataLayerLayout.hpp"
@@ -1206,9 +1208,11 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
     using namespace shamrock;
     using namespace shamrock::patch;
 
-    // GSPH EOS: Following reference implementation (g_pre_interaction.cpp)
-    // P = (\gamma - 1) * \rho * u  where \rho is from SPH summation
-    // c = sqrt(\gamma * (\gamma - 1) * u)  -- from internal energy, not from P/\rho
+    using SolverConfigEOS                   = typename Config::EOSConfig;
+    using SolverEOS_Isothermal              = typename SolverConfigEOS::Isothermal;
+    using SolverEOS_Adiabatic               = typename SolverConfigEOS::Adiabatic;
+    using SolverEOS_LocallyIsothermal       = typename SolverConfigEOS::LocallyIsothermal;
+    using SolverEOS_LocallyIsothermalFA2014 = typename SolverConfigEOS::LocallyIsothermalFA2014;
 
     auto dev_sched      = shamsys::instance::get_compute_scheduler_ptr();
     const Tscal gamma   = solver_config.get_eos_gamma();
@@ -1267,7 +1271,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
                 Tscal rho = density[i];
                 rho       = sycl::max(rho, Tscal(1e-30));
 
-                if (solver_config.is_eos_adiabatic()) {
+                if (SolverEOS_Adiabatic *eos_config
+                    = std::get_if<SolverEOS_Adiabatic>(&solver_config.eos_config.config)) {
                     // Adiabatic EOS (reference: g_pre_interaction.cpp line 107)
                     // P = (\gamma - 1) * \rho * u
                     Tscal u = uint_ptr[i];
@@ -1280,19 +1285,78 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_eos_fields() {
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
-                }
-
-                else if (solver_config.is_eos_isothermal()) {
+                } else if (
+                    SolverEOS_Isothermal *eos_config
+                    = std::get_if<SolverEOS_Isothermal>(&solver_config.eos_config.config)) {
                     // Isothermal case
                     Tscal cs = cs0;
                     Tscal P  = cs * cs * rho;
 
                     pressure[i]   = P;
                     soundspeed[i] = cs;
+                } else if (
+                    SolverEOS_LocallyIsothermalFA2014 *eos_config
+                    = std::get_if<SolverEOS_LocallyIsothermalFA2014>(
+                        &solver_config.eos_config.config)) {
+                    Tscal G        = solver_config.get_constant_G();
+                    Tscal h_over_r = eos_config->h_over_r;
+                    Tscal pmass_   = solver_config.gpart_mass;
+                    Tscal hfactd_  = Kernel::hfactd;
+
+                    using EOS = shamphys::EOS_LocallyIsothermal<Tscal>;
+
+                    auto &sink_pos  = sph::get_sink_pos<Tvec>(scheduler().synchronized_data);
+                    auto &sink_mass = sph::get_sink_mass<Tvec>(scheduler().synchronized_data);
+                    u32 sink_cnt    = shambase::narrow_or_throw<u32>(sink_pos.size());
+
+                    if (sink_cnt == 0) {
+                        throw shambase::make_except_with_loc<std::runtime_error>(
+                            "No sinks found for the equation of state");
+                    }
+
+                    shamrock::solvergraph::FieldRefs<Tvec> xyz_refs{"", ""};
+                    auto refs = storage.merged_xyzh.get()
+                                    .template map<shamrock::solvergraph::PatchDataFieldRef<Tvec>>(
+                                        [&](u64 id, PatchDataLayer &mpdat)
+                                            -> shamrock::solvergraph::PatchDataFieldRef<Tvec> {
+                                            return mpdat.get_field<Tvec>(0);
+                                        });
+                    xyz_refs.set_refs(refs);
+
+                    sham::DeviceBuffer<Tvec> sink_pos_buf(sink_pos.size(), dev_sched);
+                    sham::DeviceBuffer<Tscal> sink_mass_buf(sink_mass.size(), dev_sched);
+
+                    sink_pos_buf.copy_from_stdvec(sink_pos);
+                    sink_mass_buf.copy_from_stdvec(sink_mass);
+
+                    auto eos_internal = [](Tvec R,
+                                           Tscal rho_a,
+                                           u32 scount,
+                                           auto spos,
+                                           auto smass,
+                                           Tscal G,
+                                           Tscal h_over_r,
+                                           Tscal &pressure,
+                                           Tscal &soundspeed) {
+                        Tscal mpotential = 0;
+                        for (u32 i = 0; i < scount; i++) {
+                            Tvec s_r      = spos[i] - R;
+                            Tscal s_m     = smass[i];
+                            Tscal s_r_abs = sycl::length(s_r);
+                            mpotential += G * s_m / s_r_abs;
+                        }
+
+                        Tscal cs_out = h_over_r * sycl::sqrt(mpotential);
+                        Tscal P_a    = EOS::pressure_from_cs(cs_out * cs_out, rho_a);
+
+                        pressure   = P_a;
+                        soundspeed = cs_out;
+                    };
+                } else {
+                    throw std::runtime_error("Unknown EOS type in SolverConfig");
                 }
             });
         });
-
         // Complete all buffer event states
         buf_density.complete_event_state(e);
         if (has_uint) {
@@ -1421,8 +1485,8 @@ void shammodels::gsph::Solver<Tvec, Kern>::compute_gradients() {
 
     // Compute gradients following reference implementation (g_pre_interaction.cpp)
     // grad_d = \sigma_j m_j \nabla W_ij
-    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla W_ij
-    // grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
+    // grad_p = (grad_d * u_i + du) * (\gamma - 1)  where du = \sigma_j m_j (u_j - u_i) \nabla
+    // W_ij grad_v = \sigma_j m_j (v_j - v_i) \nabla W_ij / \rho_i
     scheduler().for_each_patchdata_nonempty([&](const Patch p, PatchDataLayer &pdat) {
         u32 cnt = pdat.get_obj_cnt();
         if (cnt == 0)
@@ -1859,7 +1923,6 @@ void shammodels::gsph::Solver<Tvec, Kern>::update_sync_load_values() {
 
 template<class Tvec, template<class> class Kern>
 shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once() {
-
     // Validate configuration before running
     solver_config.check_config_runtime();
 
@@ -1971,13 +2034,9 @@ shammodels::gsph::TimestepLog shammodels::gsph::Solver<Tvec, Kern>::evolve_once(
 
     // STEP 7: CFL - compute next timestep
     Tscal dt_next = compute_dt_cfl();
-    Tscal dt_cfl  = compute_dt_cfl();
+    Tscal dt_sink = compute_sink_cfl();
 
-    // Ensure dt doesn't grow too fast (max 2x per step), but allow any value if dt was 0
-    if (dt > Tscal(0)) {
-        dt_next = sham::min(dt_next, dt_cfl);
-        dt_next = sham::min(dt_next, Tscal(2) * dt);
-    }
+    dt_next = sycl::min(dt_sink, dt_next);
 
     // Copy EOS fields to patchdata for persistence and VTKDump access
     copy_eos_to_patchdata();

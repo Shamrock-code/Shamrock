@@ -21,16 +21,9 @@ disc_mass = 0.001  # sol mass
 rout = 350
 rin = 90
 
-# alpha_ss ~ alpha_AV * 0.08
-alpha_AV = 0.3
-alpha_u = 1
-beta_AV = 2
 
 q = 0.15
 p = 1.0
-r0 = 1
-Rcav = 2.5
-delta_0 = 1e-5
 
 C_cour = 0.3
 C_force = 0.25
@@ -215,9 +208,8 @@ print(f"t_stop = {t_stop}")
 
 idump = 0
 istop = 0
-c = 0
 for ttarg in t_stop:
-    if ttarg >= t_start and c < 10:
+    if ttarg >= t_start:
         # model.evolve_until(ttarg)
         model.evolve_once()
 
@@ -225,4 +217,3 @@ for ttarg in t_stop:
         model.dump(get_dump_name(idump))
 
         idump += 1
-        c += 1

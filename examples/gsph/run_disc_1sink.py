@@ -124,33 +124,6 @@ def get_dump_name(idump):
 def get_vtk_dump_name(idump):
     return outputdir + dump_prefix + f"{idump:04}" + ".vtk"
 
-
-def get_last_dump():
-    import glob
-
-    res = glob.glob(dump_prefix + "*.sham")
-
-    f_max = ""
-    num_max = -1
-
-    for f in res:
-        try:
-            dump_num = int(f[len(dump_prefix) : -5])
-            if dump_num > num_max:
-                f_max = f
-                num_max = dump_num
-        except:
-            pass
-
-    if num_max == -1:
-        return None
-    else:
-        return num_max
-
-
-idump_last_dump = get_last_dump()
-
-
 ####################################################
 ####################################################
 ####################################################
@@ -160,80 +133,69 @@ ctx.pdata_layout_new()
 
 model = shamrock.get_Model_GSPH(context=ctx, vector_type="f64_3", sph_kernel="M4")
 
-idump_last_dump = None
-if idump_last_dump is not None:
-    model.load_from_dump(get_dump_name(idump_last_dump))
-else:
-    cfg = model.gen_default_config()
-    cfg.set_eos_locally_isothermalFA2014(h_over_r=H_r_in)
-    cfg.set_riemann_exact()
-    cfg.set_force_inutsuka_v2()
-    cfg.set_reconstruct_piecewise_constant()
-    cfg.print_status()
-    cfg.set_units(codeu)
-    model.set_solver_config(cfg)
+cfg = model.gen_default_config()
+cfg.set_eos_locally_isothermalFA2014(h_over_r=H_r_in)
+cfg.set_riemann_exact()
+cfg.set_force_inutsuka_v2()
+cfg.set_reconstruct_piecewise_constant()
+cfg.print_status()
+cfg.set_units(codeu)
+model.set_solver_config(cfg)
 
-    model.init_scheduler(int(8e5), 1)
+model.init_scheduler(int(8e5), 1)
 
-    model.resize_simulation_box(bmin, bmax)
+model.resize_simulation_box(bmin, bmax)
 
-    sink_list = [
-        {"mass": center_mass, "racc": center_racc, "pos": (0, 0, 0), "vel": (0, 0, 0)},
-    ]
+sink_list = [
+    {"mass": center_mass, "racc": center_racc, "pos": (0, 0, 0), "vel": (0, 0, 0)},
+]
+print(f"sink_list = {sink_list}")
 
-    print(f"sink_list = {sink_list}")
+sum_mass = sum(s["mass"] for s in sink_list)
+vel_bary = (
+    sum(s["mass"] * s["vel"][0] for s in sink_list) / sum_mass,
+    sum(s["mass"] * s["vel"][1] for s in sink_list) / sum_mass,
+    sum(s["mass"] * s["vel"][2] for s in sink_list) / sum_mass,
+)
+pos_bary = (
+    sum(s["mass"] * s["pos"][0] for s in sink_list) / sum_mass,
+    sum(s["mass"] * s["pos"][1] for s in sink_list) / sum_mass,
+    sum(s["mass"] * s["pos"][2] for s in sink_list) / sum_mass,
+)
+print(f"sinks baryenceter : velocity {vel_bary} position {pos_bary}")
 
-    sum_mass = sum(s["mass"] for s in sink_list)
-    vel_bary = (
-        sum(s["mass"] * s["vel"][0] for s in sink_list) / sum_mass,
-        sum(s["mass"] * s["vel"][1] for s in sink_list) / sum_mass,
-        sum(s["mass"] * s["vel"][2] for s in sink_list) / sum_mass,
-    )
-    pos_bary = (
-        sum(s["mass"] * s["pos"][0] for s in sink_list) / sum_mass,
-        sum(s["mass"] * s["pos"][1] for s in sink_list) / sum_mass,
-        sum(s["mass"] * s["pos"][2] for s in sink_list) / sum_mass,
-    )
-    print(f"sinks baryenceter : velocity {vel_bary} position {pos_bary}")
+model.set_particle_mass(pmass)
+for s in sink_list:
+    mass = s["mass"]
+    x, y, z = s["pos"]
+    vx, vy, vz = s["vel"]
+    racc = s["racc"]
+    x -= pos_bary[0]
+    y -= pos_bary[1]
+    z -= pos_bary[2]
+    vx -= vel_bary[0]
+    vy -= vel_bary[1]
+    vz -= vel_bary[2]
+    print(f"add sink : mass {mass} pos {(x, y, z)} vel {(vx, vy, vz)} racc {racc}")
+    model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
 
-    # plot_sim_orbit(sink_list)
-    # plot_sim_orbit2(sink_list)
+setup = model.get_setup()
+gen_disc = setup.make_generator_disc_mc(
+    part_mass=pmass,
+    disc_mass=disc_mass,
+    r_in=rin,
+    r_out=rout,
+    sigma_profile=sigma_profile,
+    H_profile=H_profile,
+    rot_profile=rot_profile,
+    cs_profile=cs_profile,
+    random_seed=666,
+)
 
-    model.set_particle_mass(pmass)
-    for s in sink_list:
-        mass = s["mass"]
-        x, y, z = s["pos"]
-        vx, vy, vz = s["vel"]
-        racc = s["racc"]
+setup.apply_setup(gen_disc)
 
-        x -= pos_bary[0]
-        y -= pos_bary[1]
-        z -= pos_bary[2]
-
-        vx -= vel_bary[0]
-        vy -= vel_bary[1]
-        vz -= vel_bary[2]
-
-        print(f"add sink : mass {mass} pos {(x, y, z)} vel {(vx, vy, vz)} racc {racc}")
-        model.add_sink(mass, (x, y, z), (vx, vy, vz), racc)
-
-    setup = model.get_setup()
-    gen_disc = setup.make_generator_disc_mc(
-        part_mass=pmass,
-        disc_mass=disc_mass,
-        r_in=rin,
-        r_out=rout,
-        sigma_profile=sigma_profile,
-        H_profile=H_profile,
-        rot_profile=rot_profile,
-        cs_profile=cs_profile,
-        random_seed=666,
-    )
-    # print(comb.get_dot())
-    setup.apply_setup(gen_disc)
-
-    model.set_cfl_cour(C_cour)
-    model.set_cfl_force(C_force)
+model.set_cfl_cour(C_cour)
+model.set_cfl_force(C_force)
 
 sink_history = []
 

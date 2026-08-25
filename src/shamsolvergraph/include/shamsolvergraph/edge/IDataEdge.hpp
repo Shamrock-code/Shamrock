@@ -35,7 +35,8 @@ namespace shamrock::solvergraph {
 
         inline virtual void free_alloc() { data = {}; }
 
-        virtual ~IDataEdge() {}
+        // No destructor here on purpose: IEdge's is already virtual, and declaring one would
+        // suppress implicit move generation, leaving IDataEdge neither movable nor copyable.
 
         static std::shared_ptr<IDataEdge<T>> make_shared(std::string name, std::string texsymbol) {
             return std::make_shared<IDataEdge<T>>(name, texsymbol);

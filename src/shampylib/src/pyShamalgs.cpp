@@ -234,11 +234,9 @@ ON_PYTHON_INIT {
                 return timer.elapsed_sec();
             });
 
-        shamalgs_module.def(
-            "set_impl_segmented_sort_in_place",
-            [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl, param);
-            });
+        shamalgs_module.def("set_impl_segmented_sort_in_place", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_segmented_sort_in_place(impl);
+        });
 
         shamalgs_module.def("get_current_impl_segmented_sort_in_place", []() {
             return shamalgs::primitives::impl::get_current_impl_segmented_sort_in_place();

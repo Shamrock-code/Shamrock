@@ -16,9 +16,9 @@
  *
  */
 
-#include "shambase/WithUUID.hpp"
 #include "shambase/memory.hpp"
 #include "shambase/stacktrace.hpp"
+#include "shamsolvergraph/LifetimeTracker.hpp"
 #include "shamsolvergraph/edge/IEdge.hpp"
 #include "shamsolvergraph/edge/INullOptEdge.hpp"
 #include <memory>
@@ -27,13 +27,16 @@
 namespace shamrock::solvergraph {
 
     /// Inode is node between data edges, takes multiple inputs, multiple outputs
-    class INode : public std::enable_shared_from_this<INode>,
-                  public shambase::WithUUID<INode, u64> {
+    class INode : public std::enable_shared_from_this<INode> {
 
         /// Read only edges
         std::vector<std::shared_ptr<IEdge>> ro_edges;
         /// Read write edges
         std::vector<std::shared_ptr<IEdge>> rw_edges;
+
+        /// Tracks the lifetime of the node and holds its UUID.
+        /// Held as a plain value member so trace_state_update() can take a `T&` to this object.
+        LifetimeTracker<INode> tracker;
 
         public:
         INode() = default;
@@ -46,6 +49,9 @@ namespace shamrock::solvergraph {
 
         /// Move assignment - automatically delegates to base classes and members
         INode &operator=(INode &&) noexcept = default;
+
+        /// Get the UUID of the node
+        inline u64 get_uuid() const { return tracker.get_uuid(); }
 
         /// Get a shared pointer to this node
         inline std::shared_ptr<INode> getptr_shared() { return shared_from_this(); }
@@ -70,8 +76,11 @@ namespace shamrock::solvergraph {
         template<class Func>
         void on_edge_rw_edges(Func &&f);
 
-        /// Destructor (virtual) & reset the edges
+        /// Destructor (virtual) & reset the edges.
+        /// trace_destroy() fires first so the edges below are cleared as already-dead, silencing
+        /// their state-update notifications during destruction.
         virtual ~INode() {
+            tracker.trace_destroy();
             __internal_set_ro_edges({});
             __internal_set_rw_edges({});
         }
@@ -143,7 +152,16 @@ namespace shamrock::solvergraph {
         }
 
         /// Evaluate the node
-        inline void evaluate() { _impl_evaluate_internal(); }
+        inline void evaluate() {
+            // if solvergraph tracing is not enabled the .trace_event has the perf of a if statement
+            tracker.trace_event([]() {
+                return "evaluate_begin";
+            });
+            _impl_evaluate_internal();
+            tracker.trace_event([]() {
+                return "evaluate_end";
+            });
+        }
 
         /// Get the dot graph of the node (Currently only an alias to get_dot_graph_partial)
         inline std::string get_dot_graph() { return get_dot_graph_partial(); };
@@ -190,6 +208,15 @@ namespace shamrock::solvergraph {
         };
 
         protected:
+        /// Fire a self state_update for this node. Meant to be called at the end of a derived
+        /// class's own constructor, once that class's members are fully initialized -- never
+        /// from INode's own constructor. typeid() during a base class's constructor body
+        /// reports the class currently under construction (INode), not the object's final
+        /// derived type, so a state_update fired from there would misreport its dynamic type.
+        /// This lets meta nodes that own no ro/rw edges of their own (e.g. OperationSequence)
+        /// still record a state_update before they can be evaluated.
+        inline void notify_self_state_update() { tracker.trace_state_update(*this); }
+
         /// evaluate the node
         virtual void _impl_evaluate_internal() = 0;
 
@@ -215,6 +242,7 @@ namespace shamrock::solvergraph {
         for (auto e : ro_edges) {
             // shambase::get_check_ref(e).parent = getptr_weak();
         }
+        tracker.trace_state_update(*this);
     }
 
     inline void INode::__internal_set_rw_edges(std::vector<std::shared_ptr<IEdge>> new_rw_edges) {
@@ -225,6 +253,7 @@ namespace shamrock::solvergraph {
         for (auto e : rw_edges) {
             // shambase::get_check_ref(e).child = getptr_weak();
         }
+        tracker.trace_state_update(*this);
     }
 
     template<class Func>

@@ -46,6 +46,7 @@ jobs:
               "imagename": "Ubuntu 22 LLVM 15",
               "runtest": true,
               "runtestpy": true,
+              "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "omp"
             },
@@ -57,6 +58,7 @@ jobs:
               "imagename": "Ubuntu 22 LLVM 15",
               "runtest": true,
               "runtestpy": true,
+              "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "generic"
             },
@@ -103,6 +105,7 @@ jobs:
               "imagename": "ArchLinux",
               "runtest": true,
               "runtestpy": true,
+              "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "generic"
             }
@@ -340,7 +343,7 @@ jobs:
           ../tools/test_sequence.sh
 
       - name: Create Python test script for next tests
-        if: matrix.runtest
+        if: matrix.runtest || matrix.runtestpy || matrix.runtestpypip
         run: |
           cat > /tmp/test_rscript.py << 'EOF'
           import shamrock
@@ -383,28 +386,29 @@ jobs:
           python3 /tmp/test_rscript.py
 
       - name: Rm CMake cache
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           cd build
           rm -rf CMakeCache.txt
 
-
       - name: Create a Python venv
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
-          python3 -m venv venv
+          PYTHON_EXECUTABLE="$(python3 -c "import sys; print(sys.executable)")"
+          which "${PYTHON_EXECUTABLE}" || true
+          "${PYTHON_EXECUTABLE}" -m venv venv
           . venv/bin/activate
           pip install -U pip setuptools
 
       - name: Try pip install Shamrock
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           cd build
           pip install --verbose .
 
       - name: Try shamrock startup (pip install)
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -412,7 +416,7 @@ jobs:
           python3 /tmp/test_rscript.py
 
       - name: Try shamrock startup (pip install)
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           ACPP_VISIBILITY_MASK=omp \
@@ -420,7 +424,7 @@ jobs:
           shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
 
       - name: Try pip uninstall Shamrock
-        if: matrix.runtestpy
+        if: matrix.runtestpypip
         run: |
           . venv/bin/activate
           pip uninstall -y shamrock

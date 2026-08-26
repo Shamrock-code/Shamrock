@@ -246,6 +246,21 @@ namespace shamrock::solvergraph {
             = sham::format("n_{} [label=\"{}\"];\n", this->get_uuid(), _impl_get_label());
 
         std::string edge_str = "";
+
+        /// Draw the edges aggregated by a container edge (see `EdgeList`) feeding into it
+        auto declare_sub_edges = [&](const std::shared_ptr<IEdge> &edge) {
+            for (auto &sub : edge->get_sub_edges()) {
+                edge_str += sham::format(
+                    "e_{} -> e_{} [style=\"dotted\", color=gray];\n",
+                    sub->get_uuid(),
+                    edge->get_uuid());
+                edge_str += sham::format(
+                    "e_{} [label=\"{}\",shape=rect, style=filled];\n",
+                    sub->get_uuid(),
+                    sub->get_label());
+            }
+        };
+
         for (auto &in : ro_edges) {
             edge_str += sham::format(
                 "e_{} -> n_{} [style=\"dashed\", color=green];\n",
@@ -253,6 +268,7 @@ namespace shamrock::solvergraph {
                 this->get_uuid());
             edge_str += sham::format(
                 "e_{} [label=\"{}\",shape=rect, style=filled];\n", in->get_uuid(), in->get_label());
+            declare_sub_edges(in);
         }
         for (auto &out : rw_edges) {
             edge_str += sham::format(
@@ -261,6 +277,7 @@ namespace shamrock::solvergraph {
                 "e_{} [label=\"{}\",shape=rect, style=filled];\n",
                 out->get_uuid(),
                 out->get_label());
+            declare_sub_edges(out);
         }
 
         return sham::format("{}{}", node_str, edge_str);

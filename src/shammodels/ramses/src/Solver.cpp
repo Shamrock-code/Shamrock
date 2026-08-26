@@ -55,89 +55,69 @@
 #include "shamrock/solvergraph/Field.hpp"
 #include "shamrock/solvergraph/FieldSpan.hpp"
 #include "shamrock/solvergraph/GetFieldRefFromLayer.hpp"
+#include "shamrock/solvergraph/IFieldRefs.hpp"
+#include "shamrock/solvergraph/IFieldRefsAny.hpp"
+#include "shamrock/solvergraph/Indexes.hpp"
 #include "shamrock/solvergraph/PatchDataLayerDDShared.hpp"
 #include "shamrock/solvergraph/PatchDataLayerEdge.hpp"
 #include "shamrock/solvergraph/RankGetter.hpp"
 #include "shamrock/solvergraph/ScalarEdge.hpp"
 #include "shamrock/solvergraph/ScalarsEdge.hpp"
 #include "shamsolvergraph/SolverGraph.hpp"
+#include "shamsolvergraph/edge/EdgeList.hpp"
 #include "shamsolvergraph/node/NodeFreeAlloc.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
 #include "shamsolvergraph/node/OperationSequence.hpp"
 #include <memory>
 
+#define NODE_EDGES(X_RO, X_RW)                                                                     \
+    /* ------------------- inputs ------------------- */                                           \
+    X_RO(shamrock::solvergraph::IDataEdge<std::string>, filename)                                  \
+    X_RO(shamrock::solvergraph::Indexes<u32>, block_counts)                                        \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, block_min)                                   \
+    X_RO(shamrock::solvergraph::IFieldRefs<TgridVec>, block_max)                                   \
+    X_RO(shamrock::solvergraph::EdgeList<shamrock::solvergraph::IFieldRefsAny>, fields)
+
+/**
+ * @brief Dump AMR blocks as VTK voxel cells, together with an arbitrary list of fields.
+ *
+ * The fields to dump are given explicitly as a list rather than being deduced from a layout, so a
+ * dump can pick any field from any layer without having to match the solver layout or copy
+ * everything into a dump specific one. The name of a field in the dump is the label of its edge.
+ *
+ * @warning `LegacyVtkWriter::write_field` is collective, so the `fields` list must hold the same
+ * entries in the same order on every rank. Build it from the solver config, never from
+ * data dependent state.
+ */
 template<class Tvec, class TgridVec>
-class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
+class AMRBlocksToVtk : public shamrock::solvergraph::INode {
     bool write_id_patch;
     bool write_world_rank;
     using Tscal = shambase::VecComponent<Tvec>;
     u32 block_size;
 
     public:
-    PatchDataLayerToVtk(bool write_id_patch, bool write_world_rank, u32 block_size)
+    AMRBlocksToVtk(bool write_id_patch, bool write_world_rank, u32 block_size)
         : write_id_patch(write_id_patch), write_world_rank(write_world_rank),
           block_size(block_size) {}
 
-    struct Edges {
-        // inputs
-        const shamrock::solvergraph::IDataEdge<std::string> &filename;
-        const shamrock::solvergraph::IPatchDataLayerRefs &patch_data_layers;
-    };
-
-    inline void set_edges(
-        std::shared_ptr<shamrock::solvergraph::IDataEdge<std::string>> filename,
-        std::shared_ptr<shamrock::solvergraph::IPatchDataLayerRefs> patch_data_layers) {
-        __internal_set_ro_edges({filename, patch_data_layers});
-        __internal_set_rw_edges({});
-    }
-
-    inline Edges get_edges() {
-        return Edges{
-            get_ro_edge<shamrock::solvergraph::IDataEdge<std::string>>(0),
-            get_ro_edge<shamrock::solvergraph::IPatchDataLayerRefs>(1),
-        };
-    }
+    EXPAND_NODE_EDGES(NODE_EDGES)
 
     void _impl_evaluate_internal() {
         __shamrock_stack_entry();
 
         auto edges = get_edges();
 
-        auto &filename          = edges.filename;
-        auto &patch_data_layers = edges.patch_data_layers;
+        auto &filename     = edges.filename;
+        auto &block_counts = edges.block_counts.indexes;
 
-        // Compute the number of fields to generate
-        auto get_field_count = [&]() {
-            u32 field_count = 0;
-
-            {
-                u64 id_patch = patch_data_layers.get_const_refs().get_ids().front();
-                auto &pdat   = patch_data_layers.get(id_patch);
-
-                pdat.for_each_field_any([&](auto &field) {
-                    field_count++;
-                });
-            }
-
-            if (write_id_patch) {
-                field_count++;
-            }
-            if (write_world_rank) {
-                field_count++;
-            }
-
-            return field_count - 2; // to remove the block infos
-        };
-
-        auto get_layout = [&]() -> const shamrock::patch::PatchDataLayerLayout & {
-            u64 id_patch = patch_data_layers.get_const_refs().get_ids().front();
-            const shamrock::patch::PatchDataLayer &pdat = patch_data_layers.get(id_patch);
-            return pdat.pdl();
-        };
+        edges.block_min.check_sizes(block_counts);
+        edges.block_max.check_sizes(block_counts);
 
         shamrock::LegacyVtkWriter writer(filename.data, true, shamrock::UnstructuredGrid);
 
-        u32 field_count = get_field_count();
+        u32 field_count
+            = edges.fields.size() + (write_id_patch ? 1 : 0) + (write_world_rank ? 1 : 0);
 
         auto dev_sched = shamsys::instance::get_compute_scheduler_ptr();
         auto &q        = shambase::get_check_ref(dev_sched).get_queue();
@@ -145,14 +125,10 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
         sham::DeviceBuffer<TgridVec> pos_min_block(0, dev_sched);
         sham::DeviceBuffer<TgridVec> pos_max_block(0, dev_sched);
 
-        patch_data_layers.get_const_refs().for_each(
-            [&](u64 id_patch, const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
-                auto &pdat_ref    = pdat.get();
-                auto &buf_pos_min = pdat_ref.get_field_buf_ref<TgridVec>(0);
-                auto &buf_pos_max = pdat_ref.get_field_buf_ref<TgridVec>(1);
-                pos_min_block.append(buf_pos_min);
-                pos_max_block.append(buf_pos_max);
-            });
+        block_counts.for_each([&](u64 id_patch, u32 block_count) {
+            pos_min_block.append(edges.block_min.get_field(id_patch).get_buf());
+            pos_max_block.append(edges.block_max.get_field(id_patch).get_buf());
+        });
 
         u64 num_obj = pos_min_block.get_size();
 
@@ -203,77 +179,74 @@ class PatchDataLayerToVtk : public shamrock::solvergraph::INode {
         writer.add_cell_data_section();
         writer.add_field_data_section(field_count);
 
-        const shamrock::patch::PatchDataLayerLayout &layout = get_layout();
+        edges.fields.for_each([&](u32 i, const shamrock::solvergraph::IFieldRefsAny &any_field) {
+            shamrock::solvergraph::visit_field_refs(any_field, [&](const auto &field) {
+                using f_t = typename std::remove_reference_t<decltype(field)>::field_T;
 
-        layout.for_each_field_any([&](auto &field_desc) {
-            using f_t = typename std::remove_reference<decltype(field_desc)>::type::field_T;
-            u32 nvar  = field_desc.nvar;
-            std::string field_name = field_desc.name;
+                field.check_sizes(block_counts);
 
-            u32 idx = layout.get_field_idx<f_t>(field_name);
-
-            if (nvar == 1) {
-                // this the block info and i'll skip it for now
-            } else if (nvar != block_size) {
-                shambase::throw_unimplemented();
-            } else {
                 sham::DeviceBuffer<f_t> data(0, dev_sched);
 
-                patch_data_layers.get_const_refs().for_each(
-                    [&](u64 id_patch,
-                        const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
-                        auto &pdat_ref  = pdat.get();
-                        auto &buf_field = pdat_ref.get_field_buf_ref<f_t>(idx);
-                        data.append(buf_field);
-                    });
+                block_counts.for_each([&](u64 id_patch, u32 block_count) {
+                    const auto &patch_field = field.get_field(id_patch);
+
+                    if (patch_field.get_nvar() != block_size) {
+                        shambase::throw_with_loc<std::runtime_error>(sham::format(
+                            "field '{}' has nvar = {}, expected the block size {}",
+                            field.get_label(),
+                            patch_field.get_nvar(),
+                            block_size));
+                    }
+
+                    data.append(patch_field.get_buf());
+                });
 
                 auto tmp_buf = data.copy_to_sycl_buffer();
-                writer.write_field(field_name, tmp_buf, num_obj * block_size);
-            }
+                writer.write_field(field.get_label(), tmp_buf, num_obj * block_size);
+            });
         });
 
-        if (write_id_patch) {
-            using f_t = u32;
+        /// Write a per block constant field, broadcast over the cells of each block
+        auto write_per_block_constant = [&](const std::string &name, auto get_value) {
+            using f_t = decltype(get_value(u64{}));
             sham::DeviceBuffer<f_t> data(0, dev_sched);
 
-            patch_data_layers.get_const_refs().for_each(
-                [&](u64 id_patch,
-                    const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
-                    auto buf_field
-                        = sham::DeviceBuffer<f_t>(pdat.get().get_obj_cnt() * block_size, dev_sched);
-                    buf_field.fill(id_patch);
-                    data.append(buf_field);
-                });
+            block_counts.for_each([&](u64 id_patch, u32 block_count) {
+                auto buf_field = sham::DeviceBuffer<f_t>(block_count * block_size, dev_sched);
+                buf_field.fill(get_value(id_patch));
+                data.append(buf_field);
+            });
 
             auto tmp_buf = data.copy_to_sycl_buffer();
-            writer.write_field("id_patch", tmp_buf, num_obj * block_size);
+            writer.write_field(name, tmp_buf, num_obj * block_size);
+        };
+
+        if (write_id_patch) {
+            write_per_block_constant("id_patch", [](u64 id_patch) {
+                return static_cast<u32>(id_patch);
+            });
         }
         if (write_world_rank) {
-            using f_t = u32;
-            sham::DeviceBuffer<f_t> data(0, dev_sched);
-
-            patch_data_layers.get_const_refs().for_each(
-                [&](u64 id_patch,
-                    const std::reference_wrapper<shamrock::patch::PatchDataLayer> &pdat) {
-                    auto buf_field
-                        = sham::DeviceBuffer<f_t>(pdat.get().get_obj_cnt() * block_size, dev_sched);
-                    buf_field.fill(shamcomm::world_rank());
-                    data.append(buf_field);
-                });
-            auto tmp_buf = data.copy_to_sycl_buffer();
-            writer.write_field("world_rank", tmp_buf, num_obj * block_size);
+            write_per_block_constant("world_rank", [](u64 id_patch) {
+                return static_cast<u32>(shamcomm::world_rank());
+            });
         }
     }
 
-    std::string _impl_get_label() { return "PatchDataLayerToVtk"; }
+    std::string _impl_get_label() const { return "AMRBlocksToVtk"; }
 
-    std::string _impl_get_tex() { return "TODO"; }
+    std::string _impl_get_tex() const { return "TODO"; }
 };
+
+#undef NODE_EDGES
 
 template<class Tvec, class TgridVec>
 void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
 
     bool enable_mem_free = false;
+
+    /// enable this to dump the fused ghost layer to debug_fuse.vtk at every ghost zone exchange
+    bool enable_gz_debug_dump = false;
 
     auto get_optional_free_mem = [&](auto &bind_to, auto &add_to) {
         if (enable_mem_free) {
@@ -820,19 +793,6 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             gz_xchg_sequence.push_back(std::move(fuse_gz_node));
         }
 
-        // enable this to debug GZ
-        //{
-        //    auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
-        //        "debug_fuse.vtk", "debug_fuse.vtk");
-        //    filename_edge->data = "debug_fuse.vtk";
-        //
-        //    auto patch_data_layer_to_vtk_node
-        //        = std::make_shared<PatchDataLayerToVtk<Tvec, TgridVec>>(true, true, 8);
-        //    patch_data_layer_to_vtk_node->set_edges(filename_edge,
-        //    storage.merged_patchdata_ghost);
-        //    gz_xchg_sequence.push_back(std::move(patch_data_layer_to_vtk_node));
-        //}
-
         shamrock::solvergraph::OperationSequence seq(
             "Ghost zone exchange", std::move(gz_xchg_sequence));
         solver_sequence.push_back(std::make_shared<decltype(seq)>(std::move(seq)));
@@ -906,6 +866,31 @@ void shammodels::basegodunov::Solver<Tvec, TgridVec>::init_solver_graph() {
             attach_rhov_dust.set_edges(storage.merged_patchdata_ghost, storage.refs_rhov_dust);
             solver_sequence.push_back(
                 std::make_shared<decltype(attach_rhov_dust)>(std::move(attach_rhov_dust)));
+        }
+
+        // enable this to debug GZ, it dumps the fused ghost layer after every exchange
+        if (enable_gz_debug_dump) {
+            auto filename_edge = std::make_shared<shamrock::solvergraph::IDataEdge<std::string>>(
+                "debug_fuse.vtk", "debug\\_fuse.vtk");
+            filename_edge->data = "debug_fuse.vtk";
+
+            // the list must be identical on every rank, write_field is collective.
+            // only fields with nvar == block_size can be listed, which leaves out the dust
+            // fields (nvar = ndust * block_size).
+            auto fields = shamrock::solvergraph::EdgeList<
+                shamrock::solvergraph::IFieldRefsAny>::make_shared("gz_debug_fields", "gz");
+
+            fields->set_entries({storage.refs_rho, storage.refs_rhov, storage.refs_rhoe});
+
+            auto dump_node = std::make_shared<AMRBlocksToVtk<Tvec, TgridVec>>(
+                true, true, AMRBlock::block_size);
+            dump_node->set_edges(
+                filename_edge,
+                storage.block_counts_with_ghost,
+                storage.refs_block_min,
+                storage.refs_block_max,
+                fields);
+            solver_sequence.push_back(std::move(dump_node));
         }
     }
 

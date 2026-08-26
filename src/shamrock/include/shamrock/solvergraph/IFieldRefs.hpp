@@ -19,6 +19,7 @@
 #include "shambase/DistributedData.hpp"
 #include "shambackends/math.hpp"
 #include "shamrock/patch/PatchDataFieldSpan.hpp"
+#include "shamrock/solvergraph/IFieldRefsAny.hpp"
 #include "shamrock/solvergraph/IFieldSpan.hpp"
 
 namespace shamrock::solvergraph {
@@ -40,7 +41,13 @@ namespace shamrock::solvergraph {
      * @tparam T The primitive type of the field
      */
     template<class T>
-    class IFieldRefs : public IFieldSpan<T> {
+    class IFieldRefs : public IFieldSpan<T>, public IFieldRefsAny {
+
+        static_assert(
+            is_enabled_field_type_v<T>,
+            "IFieldRefs must be one of the field types enabled in the scheduler, "
+            "see XMAC_LIST_ENABLED_FIELD");
+
         public:
         using IFieldSpan<T>::IFieldSpan;
 
@@ -52,6 +59,12 @@ namespace shamrock::solvergraph {
 
         /// Get the underlying PatchDataField at the given id
         inline PatchDataField<T> &get_field(u64 id) const { return get_refs().get(id).get(); }
+
+        /// Dispatch to the visitor overload matching T
+        inline void accept(IFieldRefsVisitor &visitor) override { visitor.visit(*this); }
+
+        /// Const variant of accept
+        inline void accept(IFieldRefsConstVisitor &visitor) const override { visitor.visit(*this); }
     };
 
     template<class T>

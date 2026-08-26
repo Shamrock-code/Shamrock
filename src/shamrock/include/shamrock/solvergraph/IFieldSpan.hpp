@@ -37,6 +37,9 @@ namespace shamrock::solvergraph {
     template<class T>
     class IFieldSpan : public IEdgeNamed {
         public:
+        /// The primitive type of the field
+        using field_T = T;
+
         using IEdgeNamed::IEdgeNamed;
 
         /// Get the DistributedData of spans attached to the underlying field

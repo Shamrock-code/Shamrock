@@ -16,16 +16,21 @@
  *
  */
 
-#include "shambase/WithUUID.hpp"
 #include "shambase/aliases_int.hpp"
 #include "shamsolvergraph/IFreeable.hpp"
+#include "shamsolvergraph/LifetimeTracker.hpp"
 #include <string>
 
 namespace shamrock::solvergraph {
 
     class INode;
 
-    class IEdge : public shambase::WithUUID<IEdge, u64>, public IFreeable {
+    class IEdge : public IFreeable {
+
+        /// Tracks the lifetime of the edge and holds its UUID.
+        /// Held as a plain value member so trace_state_update() can take a `T&` to this object.
+        LifetimeTracker<IEdge> tracker;
+
         public:
         IEdge() = default;
 
@@ -42,6 +47,9 @@ namespace shamrock::solvergraph {
 
         virtual std::string _impl_get_dot_label() const  = 0;
         virtual std::string _impl_get_tex_symbol() const = 0;
+
+        /// Get the UUID of the edge
+        inline u64 get_uuid() const { return tracker.get_uuid(); }
 
         inline virtual ~IEdge() {}
     };

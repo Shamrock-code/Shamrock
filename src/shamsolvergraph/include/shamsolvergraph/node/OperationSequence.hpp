@@ -31,6 +31,11 @@ namespace shamrock::solvergraph {
                 shambase::throw_with_loc<std::invalid_argument>(
                     "OperationSequence must have at least one node");
             }
+            // A sequence owns no ro/rw edges of its own, so it never goes through
+            // __internal_set_ro_edges/__internal_set_rw_edges. Fire the self state_update
+            // manually so a sequence is on record as up to date before it can be evaluated,
+            // same as any other node.
+            notify_self_state_update();
         }
         void _impl_evaluate_internal();
 

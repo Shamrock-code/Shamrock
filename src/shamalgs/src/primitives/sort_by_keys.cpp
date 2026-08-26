@@ -14,15 +14,21 @@
  *
  */
 
-#include "shamalgs/primitives/sort_by_keys.hpp"
+#include "shambase/exception.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include "shamalgs/primitives/sort_by_keys.hpp"
 
 namespace shamalgs::primitives {
 
     template<class Tkey, class Tval>
     void sort_by_key_pow2_len(
         sycl::queue &q, sycl::buffer<Tkey> &buf_key, sycl::buffer<Tval> &buf_values, u32 len) {
+
+        if (!shambase::is_pow_of_two(len)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "Length must be a power of 2");
+        }
 
         if (len < 5e3) {
             shamalgs::algorithm::details::sort_by_key_bitonic_fallback(q, buf_key, buf_values, len);
@@ -38,6 +44,12 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len) {
+
+        if (!shambase::is_pow_of_two(len)) {
+            throw shambase::make_except_with_loc<std::invalid_argument>(
+                "Length must be a power of 2");
+        }
+
         shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
             sched, buf_key, buf_values, len);
     }

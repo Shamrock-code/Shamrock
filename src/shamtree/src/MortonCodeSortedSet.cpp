@@ -37,7 +37,7 @@ namespace shamtree {
         map_morton_id_to_obj_id.resize(morton_count);
         shamalgs::primitives::fill_buffer_index(map_morton_id_to_obj_id, morton_count);
 
-        shamalgs::algorithm::sort_by_key(
+        shamalgs::algorithm::sort_by_key_pow2_len(
             dev_sched, morton_codes_to_sort, map_morton_id_to_obj_id, morton_count);
 
         return MortonCodeSortedSet<Tmorton, Tvec, dim>(

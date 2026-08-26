@@ -287,7 +287,8 @@ namespace shamalgs::numeric {
 
             // how to be a patate? Resize buffers to diligently become powers of 2, and don't update
             // the variable holding their length
-            shamalgs::algorithm::sort_by_key(sched, valid_keys, valid_values, pow2_len_key);
+            shamalgs::algorithm::sort_by_key_pow2_len(
+                sched, valid_keys, valid_values, pow2_len_key);
         }
 
         return {std::move(valid_values), std::move(offsets_bins)};

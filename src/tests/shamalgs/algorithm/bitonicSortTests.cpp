@@ -234,7 +234,7 @@ NEW_TEST(Benchmark, "shamalgs/algorithm/details/bitonicSorts:benchmark", 1) {
     if(false){
         TestSortByKey<u32, u32>test (
         (TestSortByKey<u32, u32>::vFunctionCall)
-            shamalgs::algorithm::sort_by_key
+            shamalgs::algorithm::sort_by_key_pow2_len
         );
 
         auto result = test.benchmark();

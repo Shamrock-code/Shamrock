@@ -16,6 +16,8 @@
 #include "shamalgs/primitives/is_all_true.hpp"
 #include "shambase/StlContainerConversion.hpp"
 #include "shambase/memory.hpp"
+#include "shambase/overloaded.hpp"
+#include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/primitives/reduction.hpp"
 #include "shambackends/kernel_call.hpp"
 
@@ -66,55 +68,66 @@ namespace {
 
 namespace shamalgs::primitives {
 
-    enum class IS_ALL_TRUE_IMPL : u32 { HOST, SUM_REDUCTION };
-    IS_ALL_TRUE_IMPL is_all_true_impl = IS_ALL_TRUE_IMPL::HOST;
+    /// namespace to control implementation behavior
+    namespace impl {
 
-    inline IS_ALL_TRUE_IMPL is_all_true_impl_from_params(const std::string &impl) {
-        if (impl == "host") {
-            return IS_ALL_TRUE_IMPL::HOST;
-        } else if (impl == "sum_reduction") {
-            return IS_ALL_TRUE_IMPL::SUM_REDUCTION;
+        /// Check all elements on host after copying the buffer back
+        struct Host {
+            static constexpr std::string_view variant_type_name = "host";
+        };
+
+        /// Check all elements via a sum reduction on device
+        struct SumReduction {
+            static constexpr std::string_view variant_type_name = "sum_reduction";
+        };
+
+        shamalgs::ImplVariantGlobal<Host, SumReduction> is_all_true_impl;
+
+        /// Get list of available is_all_true implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_is_all_true() {
+            return decltype(is_all_true_impl)::get_default_config_list();
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
-            "invalid implementation : {}, possible implementations : {}",
-            impl,
-            impl::get_default_impl_list_is_all_true()));
-    }
 
-    inline shamalgs::impl_param is_all_true_impl_to_params(const IS_ALL_TRUE_IMPL &impl) {
-        if (impl == IS_ALL_TRUE_IMPL::HOST) {
-            return {.impl_name = "host", .params = ""};
-        } else if (impl == IS_ALL_TRUE_IMPL::SUM_REDUCTION) {
-            return {.impl_name = "sum_reduction", .params = ""};
+        /// Get the current implementation for is_all_true, as a config json string
+        std::string get_current_impl_is_all_true() { return is_all_true_impl.get_current_config(); }
+
+        /// Check if an implementation has been selected for is_all_true
+        bool is_impl_set_is_all_true() { return is_all_true_impl.is_set(); }
+
+        /// Set the implementation for is_all_true, from a config json string
+        void set_impl_is_all_true(const std::string &impl) {
+            shamlog_info_ln("algs", "setting is_all_true implementation to impl :", impl);
+            is_all_true_impl.set(impl);
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            sham::format("unknown is_all_true implementation : {}", u32(impl)));
-    }
 
-    std::vector<shamalgs::impl_param> impl::get_default_impl_list_is_all_true() {
-        std::vector<shamalgs::impl_param> impl_list{
-            {.impl_name = "host", .params = ""}, {.impl_name = "sum_reduction", .params = ""}};
-        return impl_list;
-    }
+        /// Select the default implementation for is_all_true
+        void autoselect_impl_is_all_true() {
+            is_all_true_impl.set(Host{});
+            shamlog_info_ln(
+                "algs",
+                "defaulting is_all_true implementation to impl :",
+                get_current_impl_is_all_true());
+        }
 
-    void impl::set_impl_is_all_true(const std::string &impl, const std::string &param) {
-        shamlog_info_ln("tree", "setting is_all_true implementation to impl :", impl);
-        is_all_true_impl = is_all_true_impl_from_params(impl);
-    }
-
-    shamalgs::impl_param impl::get_current_impl_is_all_true() {
-        return is_all_true_impl_to_params(is_all_true_impl);
-    }
+    } // namespace impl
 
     template<class T>
     bool is_all_true(sham::DeviceBuffer<T> &buf, u32 cnt) {
-        switch (is_all_true_impl) {
-        case IS_ALL_TRUE_IMPL::HOST         : return is_all_true_host(buf, cnt);
-        case IS_ALL_TRUE_IMPL::SUM_REDUCTION: return is_all_true_sum_reduction(buf, cnt);
-        default:
-            shambase::throw_with_loc<std::invalid_argument>(
-                sham::format("unimplemented case : {}", u32(is_all_true_impl)));
+
+        if (!impl::is_all_true_impl.is_set()) {
+            impl::autoselect_impl_is_all_true();
         }
+
+        return std::visit(
+            shambase::overloaded{
+                [&](impl::Host) {
+                    return is_all_true_host(buf, cnt);
+                },
+                [&](impl::SumReduction) {
+                    return is_all_true_sum_reduction(buf, cnt);
+                },
+            },
+            impl::is_all_true_impl.get());
     }
 
     template bool is_all_true(sham::DeviceBuffer<u8> &buf, u32 cnt);

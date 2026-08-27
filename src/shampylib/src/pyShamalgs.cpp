@@ -120,10 +120,9 @@ ON_PYTHON_INIT {
             return timer.elapsed_sec();
         });
 
-        shamalgs_module.def(
-            "set_impl_is_all_true", [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_is_all_true(impl, param);
-            });
+        shamalgs_module.def("set_impl_is_all_true", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_is_all_true(impl);
+        });
 
         shamalgs_module.def("get_current_impl_is_all_true", []() {
             return shamalgs::primitives::impl::get_current_impl_is_all_true();
@@ -131,6 +130,14 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("get_default_impl_list_is_all_true", []() {
             return shamalgs::primitives::impl::get_default_impl_list_is_all_true();
+        });
+
+        shamalgs_module.def("is_impl_set_is_all_true", []() {
+            return shamalgs::primitives::impl::is_impl_set_is_all_true();
+        });
+
+        shamalgs_module.def("autoselect_impl_is_all_true", []() {
+            shamalgs::primitives::impl::autoselect_impl_is_all_true();
         });
     }
 

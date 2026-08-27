@@ -7,6 +7,7 @@ This example benchmarks the scan exclusive sum in place performance for the diff
 
 # sphinx_gallery_multi_image = "single"
 
+import json
 import time
 
 import matplotlib.pyplot as plt
@@ -73,6 +74,9 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
+if not shamrock.algs.is_impl_set_scan_exclusive_sum_in_place():
+    shamrock.algs.autoselect_impl_scan_exclusive_sum_in_place()
+
 current_impl = shamrock.algs.get_current_impl_scan_exclusive_sum_in_place()
 
 print(current_impl)
@@ -87,14 +91,16 @@ print(all_default_impls)
 # Run the performance benchmarks for all implementations
 
 for impl in all_default_impls:
-    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl.impl_name, impl.params)
+    shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl)
+
+    impl_name = json.loads(impl)["implementation"]
 
     print(f"Running ex-scan in place performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_u32 = run_performance_sweep()
 
-    plt.plot(particle_counts, results_u32, "--.", label=impl.impl_name + " (u32)")
+    plt.plot(particle_counts, results_u32, "--.", label=impl_name + " (u32)")
 
 
 Nobj = np.array(particle_counts)

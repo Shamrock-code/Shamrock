@@ -192,11 +192,9 @@ ON_PYTHON_INIT {
                 return timer.elapsed_sec();
             });
 
-        shamalgs_module.def(
-            "set_impl_scan_exclusive_sum_in_place",
-            [](const std::string &impl, const std::string &param = "") {
-                shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl, param);
-            });
+        shamalgs_module.def("set_impl_scan_exclusive_sum_in_place", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_scan_exclusive_sum_in_place(impl);
+        });
 
         shamalgs_module.def("get_current_impl_scan_exclusive_sum_in_place", []() {
             return shamalgs::primitives::impl::get_current_impl_scan_exclusive_sum_in_place();
@@ -204,6 +202,14 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("get_default_impl_list_scan_exclusive_sum_in_place", []() {
             return shamalgs::primitives::impl::get_default_impl_list_scan_exclusive_sum_in_place();
+        });
+
+        shamalgs_module.def("is_impl_set_scan_exclusive_sum_in_place", []() {
+            return shamalgs::primitives::impl::is_impl_set_scan_exclusive_sum_in_place();
+        });
+
+        shamalgs_module.def("autoselect_impl_scan_exclusive_sum_in_place", []() {
+            shamalgs::primitives::impl::autoselect_impl_scan_exclusive_sum_in_place();
         });
     }
 

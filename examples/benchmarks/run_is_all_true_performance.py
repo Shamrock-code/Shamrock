@@ -7,6 +7,7 @@ This example benchmarks the is_all_true performance for the different algorithms
 
 # sphinx_gallery_multi_image = "single"
 
+import json
 import random
 import time
 
@@ -102,6 +103,9 @@ def run_performance_sweep():
 
 # %%
 # List current implementation
+if not shamrock.algs.is_impl_set_is_all_true():
+    shamrock.algs.autoselect_impl_is_all_true()
+
 current_impl = shamrock.algs.get_current_impl_is_all_true()
 
 print(current_impl)
@@ -116,16 +120,18 @@ print(all_default_impls)
 # Run the performance benchmarks for all implementations
 
 for impl in all_default_impls:
-    shamrock.algs.set_impl_is_all_true(impl.impl_name, impl.params)
+    shamrock.algs.set_impl_is_all_true(impl)
+
+    impl_name = json.loads(impl)["implementation"]
 
     print(f"Running is_all_true performance benchmarks for {impl}...")
 
     # Run the performance sweep
     particle_counts, results_random, results_ones, results_zeros = run_performance_sweep()
 
-    plt.plot(particle_counts, results_random, "--", label=impl.impl_name + " (random set)")
-    plt.plot(particle_counts, results_ones, "--+", label=impl.impl_name + " (all ones)")
-    plt.plot(particle_counts, results_zeros, "--o", label=impl.impl_name + " (all zeros)")
+    plt.plot(particle_counts, results_random, "--", label=impl_name + " (random set)")
+    plt.plot(particle_counts, results_ones, "--+", label=impl_name + " (all ones)")
+    plt.plot(particle_counts, results_zeros, "--o", label=impl_name + " (all zeros)")
 
 
 Nobj = np.array(particle_counts)

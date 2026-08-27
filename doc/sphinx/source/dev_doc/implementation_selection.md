@@ -146,6 +146,24 @@ up to each call site to decide what to do when unset: the lazy-default pattern a
 `scan_exclusive_sum_in_place` do, but picking a default eagerly, right where the selector is
 declared, is just as valid when there is no reason to defer it.
 
+`autoselect_impl_<algo>` isn't required to take no arguments — `void autoselect_impl_my_algo()` is
+just the common case, when the default only depends on compile-time information (a `#ifdef`
+backend/platform check, e.g. `scan_exclusive_sum_in_place`'s). When the default instead depends on
+something only known at runtime, pass it in as a parameter and thread it through from every call
+site, including the dispatching function itself and the Python binding. `compute_histogram` does
+this: its default depends on the device type of the `sham::DeviceScheduler_ptr` it runs on (a GPU
+device picks a different default than a CPU one), so its autoselect function is
+`autoselect_impl_compute_histogram(const sham::DeviceScheduler_ptr &dev_sched)`, called as
+`impl::autoselect_impl_compute_histogram(dev_sched)` from within `compute_histogram(...)` (which
+already has `dev_sched` on hand), and the Python binding supplies it explicitly:
+
+```cpp
+shamalgs_module.def("autoselect_impl_compute_histogram", []() {
+    shamalgs::primitives::impl::autoselect_impl_compute_histogram(
+        shamsys::instance::get_compute_scheduler_ptr());
+});
+```
+
 An alternative with tunable fields (not currently used by any real algorithm, but supported)
 specializes `shamalgs::ImplVariantParams<Alt>` to control how those fields serialize to/from the
 `"parameters"` JSON — see the doc comment at the top of `ImplVariant.hpp` for a worked example

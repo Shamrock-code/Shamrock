@@ -15,7 +15,6 @@
 
 #include "shambase/aliases_float.hpp"
 #include "shambase/time.hpp"
-#include "shamalgs/ImplControl.hpp"
 #include "shamalgs/collective/string_histogram.hpp"
 #include "shamalgs/details/random/random.hpp"
 #include "shamalgs/primitives/compute_histogram.hpp"
@@ -260,43 +259,29 @@ ON_PYTHON_INIT {
         });
     }
 
-    py::class_<shamalgs::primitives::ImplControl>(shamalgs_module, "ImplControl")
-        .def(
-            "get_alg_name",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_alg_name();
-            })
-        .def(
-            "was_configured",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.was_configured(shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def(
-            "get_config",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_config(shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def(
-            "set_config",
-            [](shamalgs::primitives::ImplControl &impl_control, const std::string &config) {
-                impl_control.set_config(shamsys::instance::get_compute_scheduler_ptr(), config);
-            })
-        .def(
-            "get_default_config",
-            [](shamalgs::primitives::ImplControl &impl_control) {
-                return impl_control.get_default_config(
-                    shamsys::instance::get_compute_scheduler_ptr());
-            })
-        .def("get_avail_configs", [](shamalgs::primitives::ImplControl &impl_control) {
-            return impl_control.get_avail_configs(shamsys::instance::get_compute_scheduler_ptr());
+    { // compute_histogram
+
+        shamalgs_module.def("set_impl_compute_histogram", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_compute_histogram(impl);
         });
 
-    shamalgs_module.def(
-        "compute_histogram_impl",
-        []() -> shamalgs::primitives::ImplControl & {
-            return shamalgs::primitives::impl::compute_histogram_impl_control;
-        },
-        py::return_value_policy::reference);
+        shamalgs_module.def("get_current_impl_compute_histogram", []() {
+            return shamalgs::primitives::impl::get_current_impl_compute_histogram();
+        });
+
+        shamalgs_module.def("get_default_impl_list_compute_histogram", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_compute_histogram();
+        });
+
+        shamalgs_module.def("is_impl_set_compute_histogram", []() {
+            return shamalgs::primitives::impl::is_impl_set_compute_histogram();
+        });
+
+        shamalgs_module.def("autoselect_impl_compute_histogram", []() {
+            shamalgs::primitives::impl::autoselect_impl_compute_histogram(
+                shamsys::instance::get_compute_scheduler_ptr());
+        });
+    }
 
     shamalgs_module.def(
         "compute_histogram_basic_f64",

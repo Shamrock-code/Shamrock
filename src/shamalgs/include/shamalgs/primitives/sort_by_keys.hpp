@@ -20,10 +20,15 @@
  *
  * `sort_by_key_pow2_len` only supports buffer lengths that are a power of 2
  * (callers must round up beforehand, e.g. with `shambase::roundup_pow2`).
+ *
+ * `sort_by_keys` supports any buffer length and selects its implementation
+ * through the generic implementation selector mechanism (see ImplVariant.hpp).
  */
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
+#include <string>
+#include <vector>
 
 namespace shamalgs::primitives {
 
@@ -87,5 +92,47 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len);
+
+    /**
+     * @brief Sort key-value pairs using USM buffers (general length)
+     *
+     * Performs an in-place sort of key-value pairs where the values are
+     * reordered according to the sorted order of their corresponding keys.
+     * Unlike `sort_by_key_pow2_len`, `len` does not need to be a power of 2.
+     *
+     * The implementation used is selected through the `impl` sub-namespace
+     * below (see ImplVariant.hpp for the generic mechanism).
+     *
+     * @tparam Tkey Key type - must be comparable (supports < operator)
+     * @tparam Tval Value type - can be any copyable type
+     * @param buf_key Device buffer containing the keys to sort by
+     * @param buf_values Device buffer containing the values to reorder
+     * @param len Length of both buffers
+     *
+     * @note The function modifies both buffers in-place
+     */
+    template<class Tkey, class Tval>
+    void sort_by_keys(
+        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len);
+
+    /// namespace to control implementation behavior
+    namespace impl {
+
+        /// Get list of available sort by keys implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_sort_by_keys();
+
+        /// Get the current implementation for sort by keys, as a config json string
+        std::string get_current_impl_sort_by_keys();
+
+        /// Check if an implementation has been selected for sort by keys
+        bool is_impl_set_sort_by_keys();
+
+        /// Set the implementation for sort by keys, from a config json string
+        void set_impl_sort_by_keys(const std::string &impl);
+
+        /// Select the default implementation for sort by keys
+        void autoselect_impl_sort_by_keys();
+
+    } // namespace impl
 
 } // namespace shamalgs::primitives

@@ -112,6 +112,7 @@
 #include "shamsolvergraph/node/NodeFreeAlloc.hpp"
 #include "shamsolvergraph/node/NodeMapEdge.hpp"
 #include "shamsolvergraph/node/NodeSetEdge.hpp"
+#include "shamsolvergraph/node/OperationIf.hpp"
 #include "shamsolvergraph/node/OperationSequence.hpp"
 #include "shamsys/NodeInstance.hpp"
 #include "shamsys/legacy/log.hpp"
@@ -753,6 +754,135 @@ void shammodels::sph::Solver<Tvec, Kern>::init_solver_graph() {
                 {
                     set_has_sinks,
                     if_has_sinks,
+                }));
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // external force (point mass) accretion
+    ////////////////////////////////////////////////////////////////////////////////////////
+    {
+        using EF_PointMass     = typename Config::ExtForceConfig::PointMass;
+        using EF_PN_PW         = typename Config::ExtForceConfig::PN_PW;
+        using EF_LenseThirring = typename Config::ExtForceConfig::LenseThirring;
+
+        // Collect the accretion centers and radii of every external force able to accrete.
+        // This is re-done at every timestep, hence a lambda rather than a one shot list.
+        auto collect_accretors = [&]() {
+            std::vector<Tvec> positions{};
+            std::vector<Tscal> radii{};
+            for (auto &var_force : solver_config.ext_force_config.ext_forces) {
+                if (EF_PointMass *ext_force = std::get_if<EF_PointMass>(&var_force.val)) {
+                    positions.push_back({0, 0, 0}); // no support for offset yet
+                    radii.push_back(ext_force->Racc);
+                } else if (EF_PN_PW *ext_force = std::get_if<EF_PN_PW>(&var_force.val)) {
+                    positions.push_back({0, 0, 0}); // no support for offset yet
+                    radii.push_back(ext_force->Racc);
+                } else if (
+                    EF_LenseThirring *ext_force = std::get_if<EF_LenseThirring>(&var_force.val)) {
+                    positions.push_back({0, 0, 0}); // no support for offset yet
+                    radii.push_back(ext_force->Racc);
+                }
+            }
+            return std::pair{std::move(positions), std::move(radii)};
+        };
+
+        solver_graph.register_edge(
+            "ext_force_accretion_pos",
+            IDataEdge<std::vector<Tvec>>("ext_force_accretion_pos", "\\mathbf{r}_{\\rm acc, ext}"));
+        solver_graph.register_edge(
+            "ext_force_accretion_racc",
+            IDataEdge<std::vector<Tscal>>("ext_force_accretion_racc", "R_{\\rm acc, ext}"));
+        solver_graph.register_edge(
+            "ext_force_accretion_table",
+            Field<u32>(1, "ext_force_accretion_table", "\\mathrm{acc}"));
+        solver_graph.register_edge(
+            "has_ext_force_accretion",
+            IDataEdge<bool>("has_ext_force_accretion", "\\rm has\\_ext\\_force\\_accretion"));
+
+        auto set_accretion_pos = solver_graph.register_node(
+            "set_ext_force_accretion_pos",
+            NodeSetEdge<IDataEdge<std::vector<Tvec>>>(
+                [collect_accretors](IDataEdge<std::vector<Tvec>> &accretion_pos) {
+                    accretion_pos.data = std::get<0>(collect_accretors());
+                }));
+        shambase::get_check_ref(set_accretion_pos)
+            .set_edges(
+                solver_graph.get_edge_ptr<IDataEdge<std::vector<Tvec>>>("ext_force_accretion_pos"));
+
+        auto set_accretion_racc = solver_graph.register_node(
+            "set_ext_force_accretion_racc",
+            NodeSetEdge<IDataEdge<std::vector<Tscal>>>(
+                [collect_accretors](IDataEdge<std::vector<Tscal>> &accretion_racc) {
+                    accretion_racc.data = std::get<1>(collect_accretors());
+                }));
+        shambase::get_check_ref(set_accretion_racc)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<std::vector<Tscal>>>(
+                "ext_force_accretion_racc"));
+
+        auto set_has_accretion = solver_graph.register_node(
+            "set_has_ext_force_accretion",
+            NodeMapEdge<IDataEdge<std::vector<Tvec>>, IDataEdge<bool>>{
+                [](const IDataEdge<std::vector<Tvec>> &accretion_pos,
+                   IDataEdge<bool> &has_ext_force_accretion) {
+                    has_ext_force_accretion.data = !accretion_pos.data.empty();
+                }});
+        shambase::get_check_ref(set_has_accretion)
+            .set_edges(
+                solver_graph.get_edge_ptr<IDataEdge<std::vector<Tvec>>>("ext_force_accretion_pos"),
+                solver_graph.get_edge_ptr<IDataEdge<bool>>("has_ext_force_accretion"));
+
+        // reuse the sink accretion nodes, without the quantity accretion step since external
+        // forces have no dynamical state to conserve onto
+        auto flag_node = solver_graph.register_node(
+            "ext_force_flag_accrete_hard", modules::SinkParticlesFlagAccreteHard<Tvec>{});
+        shambase::get_check_ref(flag_node).set_edges(
+            solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+            solver_graph.get_edge_ptr<FieldRefs<Tvec>>("xyz"),
+            solver_graph.get_edge_ptr<IDataEdge<std::vector<Tvec>>>("ext_force_accretion_pos"),
+            solver_graph.get_edge_ptr<IDataEdge<std::vector<Tscal>>>("ext_force_accretion_racc"),
+            solver_graph.get_edge_ptr<Field<u32>>("ext_force_accretion_table"));
+
+        auto evict_node = solver_graph.register_node(
+            "ext_force_evict_accreted", modules::SinkParticlesEvictAccretedParticles<Tvec>{});
+        shambase::get_check_ref(evict_node)
+            .set_edges(
+                solver_graph.get_edge_ptr<Indexes<u32>>("part_counts"),
+                solver_graph.get_edge_ptr<Field<u32>>("ext_force_accretion_table"),
+                solver_graph.get_edge_ptr<PatchDataLayerRefs>("scheduler_patchdata"));
+
+        auto accretion_body = solver_graph.register_node(
+            "ext_force_accretion_body",
+            OperationSequence(
+                "ext force accretion",
+                {
+                    // the "time_step" sequence (attach fields to scheduler, ...) has not run
+                    // yet at this stage of the timestep
+                    solver_graph.get_node_ptr_base("set_scheduler_patchdata"),
+                    solver_graph.get_node_ptr_base("attach_part_counts"),
+                    solver_graph.get_node_ptr_base("attach_xyz"),
+                    // Actually perform the accretion
+                    flag_node,
+                    evict_node,
+                    // free the refs since the particle counts may have changed
+                    solver_graph.get_node_ptr_base("free_xyz_refs"),
+                }));
+
+        auto if_has_accretion = solver_graph.register_node(
+            "if_has_ext_force_accretion",
+            OperationIf("if_has_ext_force_accretion", accretion_body));
+        shambase::get_check_ref(if_has_accretion)
+            .set_edges(solver_graph.get_edge_ptr<IDataEdge<bool>>("has_ext_force_accretion"));
+
+        // register the actual node that will be used
+        solver_graph.register_node(
+            "point mass accretion",
+            OperationSequence(
+                "point mass accretion",
+                {
+                    set_accretion_pos,
+                    set_accretion_racc,
+                    set_has_accretion,
+                    if_has_accretion,
                 }));
     }
 }
@@ -2009,10 +2139,10 @@ shammodels::sph::TimestepLog shammodels::sph::Solver<Tvec, Kern>::evolve_once() 
     shamrock::SchedulerUtility utility(scheduler());
 
     storage.solver_graph.get_node_ref_base("sink accretion").evaluate();
+    storage.solver_graph.get_node_ref_base("point mass accretion").evaluate();
 
     modules::SinkParticlesUpdate<Tvec, Kern> sink_update(context, solver_config, storage);
     modules::ExternalForces<Tvec, Kern> ext_forces(context, solver_config, storage);
-    ext_forces.point_mass_accrete_particles();
 
     sink_update.predictor_step(dt);
 

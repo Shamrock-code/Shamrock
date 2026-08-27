@@ -55,8 +55,6 @@ namespace shammodels::sph::modules {
          */
         void add_ext_forces();
 
-        void point_mass_accrete_particles();
-
         private:
         using SolverConfigExtForce     = typename Config::ExtForceConfig;
         using EF_PointMass             = typename SolverConfigExtForce::PointMass;

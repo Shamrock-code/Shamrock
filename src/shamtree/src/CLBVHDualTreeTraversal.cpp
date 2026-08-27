@@ -14,58 +14,64 @@
  */
 
 #include "shambase/exception.hpp"
+#include "shambase/overloaded.hpp"
+#include "shamalgs/ImplVariant.hpp"
 #include "shamtree/details/dtt_parallel_select.hpp"
 #include "shamtree/details/dtt_reference.hpp"
 #include "shamtree/details/dtt_scan_multipass.hpp"
 
 namespace shamtree {
 
-    enum class DTTImpl : u32 { REFERENCE, PARALLEL_SELECT, SCAN_MULTIPASS };
-    DTTImpl dtt_impl = DTTImpl::SCAN_MULTIPASS;
+    /// namespace to control implementation behavior
+    namespace impl {
 
-    inline DTTImpl dtt_impl_from_params(const std::string &impl) {
-        if (impl == "reference") {
-            return DTTImpl::REFERENCE;
-        } else if (impl == "parallel_select") {
-            return DTTImpl::PARALLEL_SELECT;
-        } else if (impl == "scan_multipass") {
-            return DTTImpl::SCAN_MULTIPASS;
+        /// Naive reference CPU implementation of the dual tree traversal
+        struct Reference {
+            static constexpr std::string_view variant_type_name = "reference";
+        };
+
+        /// Parallel-select implementation of the dual tree traversal
+        struct ParallelSelect {
+            static constexpr std::string_view variant_type_name = "parallel_select";
+        };
+
+        /// Scan-multipass implementation of the dual tree traversal
+        struct ScanMultipass {
+            static constexpr std::string_view variant_type_name = "scan_multipass";
+        };
+
+        /// Currently selected dual tree traversal implementation
+        shamalgs::ImplVariantGlobal<Reference, ParallelSelect, ScanMultipass> dtt_impl;
+
+        /// Get list of available dual tree traversal implementations
+        std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {
+            return decltype(dtt_impl)::get_default_config_list();
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
-            "invalid implementation : {}, possible implementations : {}",
-            impl,
-            impl::get_default_impl_list_clbvh_dual_tree_traversal()));
-    }
 
-    inline shamalgs::impl_param dtt_impl_to_params(const DTTImpl &impl) {
-        if (impl == DTTImpl::REFERENCE) {
-            return {.impl_name = "reference", .params = ""};
-        } else if (impl == DTTImpl::PARALLEL_SELECT) {
-            return {.impl_name = "parallel_select", .params = ""};
-        } else if (impl == DTTImpl::SCAN_MULTIPASS) {
-            return {.impl_name = "scan_multipass", .params = ""};
+        /// Get the current implementation for dual tree traversal
+        std::string get_current_impl_clbvh_dual_tree_traversal_impl() {
+            return dtt_impl.get_current_config();
         }
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            sham::format("unknown dtt implementation : {}", u32(impl)));
-    }
 
-    std::vector<shamalgs::impl_param> impl::get_default_impl_list_clbvh_dual_tree_traversal() {
-        std::vector<shamalgs::impl_param> impl_list{
-            {.impl_name = "reference", .params = ""},
-            {.impl_name = "parallel_select", .params = ""},
-            {.impl_name = "scan_multipass", .params = ""}};
-        return impl_list;
-    }
+        /// Check if an implementation has been selected for dual tree traversal
+        bool is_impl_set_clbvh_dual_tree_traversal() { return dtt_impl.is_set(); }
 
-    void impl::set_impl_clbvh_dual_tree_traversal(
-        const std::string &impl, const std::string &param) {
-        shamlog_info_ln("tree", "setting dtt implementation to impl :", impl);
-        dtt_impl = dtt_impl_from_params(impl);
-    }
+        /// Set the implementation for dual tree traversal
+        void set_impl_clbvh_dual_tree_traversal(const std::string &impl) {
+            shamlog_info_ln("tree", "setting dtt implementation to impl :", impl);
+            dtt_impl.set(impl);
+        }
 
-    shamalgs::impl_param impl::get_current_impl_clbvh_dual_tree_traversal_impl() {
-        return dtt_impl_to_params(dtt_impl);
-    }
+        /// Select the default implementation for dual tree traversal
+        void autoselect_impl_clbvh_dual_tree_traversal() {
+            dtt_impl.set(ScanMultipass{});
+            shamlog_info_ln(
+                "tree",
+                "defaulting dtt implementation to impl :",
+                get_current_impl_clbvh_dual_tree_traversal_impl());
+        }
+
+    } // namespace impl
 
     template<class Tmorton, class Tvec, u32 dim>
     DTTResult clbvh_dual_tree_traversal(
@@ -84,15 +90,26 @@ namespace shamtree {
         using ImplPar = details::DTTParallelSelect<Tmorton, Tvec, dim>;
         using ImplSca = details::DTTScanMultipass<Tmorton, Tvec, dim>;
 
+        if (!impl::dtt_impl.is_set()) {
+            impl::autoselect_impl_clbvh_dual_tree_traversal();
+        }
+
         bool ord  = ordered_result;
         bool llow = allow_leaf_lowering;
 
-        switch (dtt_impl) {
-        case DTTImpl::REFERENCE      : return ImplRef::dtt(dev_sched, bvh, theta_crit, ord, llow);
-        case DTTImpl::PARALLEL_SELECT: return ImplPar::dtt(dev_sched, bvh, theta_crit, ord, llow);
-        case DTTImpl::SCAN_MULTIPASS : return ImplSca::dtt(dev_sched, bvh, theta_crit, ord, llow);
-        default                      : shambase::throw_unimplemented();
-        }
+        return std::visit(
+            shambase::overloaded{
+                [&](impl::Reference) {
+                    return ImplRef::dtt(dev_sched, bvh, theta_crit, ord, llow);
+                },
+                [&](impl::ParallelSelect) {
+                    return ImplPar::dtt(dev_sched, bvh, theta_crit, ord, llow);
+                },
+                [&](impl::ScanMultipass) {
+                    return ImplSca::dtt(dev_sched, bvh, theta_crit, ord, llow);
+                },
+            },
+            impl::dtt_impl.get());
     }
 
     template DTTResult clbvh_dual_tree_traversal<u64, f64_3, 3>(

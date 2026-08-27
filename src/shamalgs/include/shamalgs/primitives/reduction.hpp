@@ -15,9 +15,10 @@
  * @brief
  */
 
-#include "shamalgs/impl_utils.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceScheduler.hpp"
+#include <string>
+#include <vector>
 
 namespace shamalgs::primitives {
 
@@ -138,14 +139,20 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        /// Get list of available reduction implementations
-        std::vector<shamalgs::impl_param> get_default_impl_list_reduction();
+        /// Get list of available reduction implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_reduction();
 
-        /// Get the current implementation for reduction
-        shamalgs::impl_param get_current_impl_reduction();
+        /// Get the current implementation for reduction, as a config json string
+        std::string get_current_impl_reduction();
 
-        /// Set the implementation for reduction
-        void set_impl_reduction(const std::string &impl, const std::string &param = "");
+        /// Check if an implementation has been selected for reduction
+        bool is_impl_set_reduction();
+
+        /// Set the implementation for reduction, from a config json string
+        void set_impl_reduction(const std::string &impl);
+
+        /// Select the default implementation for reduction
+        void autoselect_impl_reduction();
 
     } // namespace impl
 

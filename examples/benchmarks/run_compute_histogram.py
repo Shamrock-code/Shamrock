@@ -8,6 +8,7 @@ This example benchmarks the compute histogram performance for the different algo
 # sphinx_gallery_multi_image = "single"
 # sphinx_gallery_thumbnail_number = 2
 
+import json
 import random
 import time
 
@@ -30,18 +31,15 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 
 
 # %%
-impl_control = shamrock.algs.compute_histogram_impl()
+if not shamrock.algs.is_impl_set_compute_histogram():
+    shamrock.algs.autoselect_impl_compute_histogram()
 
-print(impl_control.get_alg_name())
+default_config = shamrock.algs.get_current_impl_compute_histogram()
+avail_configs = shamrock.algs.get_default_impl_list_compute_histogram()
 
-# %%
-impl_control.was_configured()
-
-# %%
-default_config = impl_control.get_default_config()
-print(f"Current config: {impl_control.get_config()}")
+print(f"Current config: {shamrock.algs.get_current_impl_compute_histogram()}")
 print(f"Default config: {default_config}")
-print(f"Available configs: {impl_control.get_avail_configs()}")
+print(f"Available configs: {avail_configs}")
 
 # %%
 bin_edges = np.linspace(0, 1, 2049)
@@ -81,18 +79,18 @@ buf_positions_f32.copy_from_stdvec(positions_f32)
 # %%
 results_f64 = {}
 results_f32 = {}
-avail_configs = impl_control.get_avail_configs()
 for config in avail_configs:
-    impl_control.set_config(config)
+    shamrock.algs.set_impl_compute_histogram(config)
+    impl_name = json.loads(config)["implementation"]
     time_f64 = shamrock.algs.benchmark_compute_histogram_basic_f64(
         buf_bin_edge_inf, buf_bin_edge_sup, buf_positions
     )
     time_f32 = shamrock.algs.benchmark_compute_histogram_basic_f32(
         buf_bin_edge_inf_f32, buf_bin_edge_sup_f32, buf_positions_f32
     )
-    print(f"Config: {config}, Time f64: {time_f64 * 1000}ms, Time f32: {time_f32 * 1000}ms")
-    results_f64[config] = time_f64 * 1000
-    results_f32[config] = time_f32 * 1000
+    print(f"Config: {impl_name}, Time f64: {time_f64 * 1000}ms, Time f32: {time_f32 * 1000}ms")
+    results_f64[impl_name] = time_f64 * 1000
+    results_f32[impl_name] = time_f32 * 1000
 
 # %%
 # plot the histogram
@@ -114,8 +112,9 @@ bar_w = 0.35
 plt.bar(x - bar_w / 2, vals_f64, bar_w, label="f64")
 plt.bar(x + bar_w / 2, vals_f32, bar_w, label="f32")
 plt.xticks(x, configs, rotation=45, ha="right")
+default_impl_name = json.loads(default_config)["implementation"]
 for tick_label, cfg in zip(plt.gca().get_xticklabels(), configs):
-    if cfg == default_config:
+    if cfg == default_impl_name:
         tick_label.set_color("red")
 
 plt.ylabel("Time (ms)")

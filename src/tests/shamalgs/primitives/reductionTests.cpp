@@ -152,17 +152,19 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/sum", 1) {
         }
     };
 
+    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
+        shamalgs::primitives::impl::autoselect_impl_reduction();
+    }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl.impl_name, impl.params);
+    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
+        shamalgs::primitives::impl::set_impl_reduction(impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
+    shamalgs::primitives::impl::set_impl_reduction(current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/min", 1) {
@@ -298,17 +300,19 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/min", 1) {
         }
     };
 
+    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
+        shamalgs::primitives::impl::autoselect_impl_reduction();
+    }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl.impl_name, impl.params);
+    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
+        shamalgs::primitives::impl::set_impl_reduction(impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
+    shamalgs::primitives::impl::set_impl_reduction(current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/max", 1) {
@@ -444,17 +448,19 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/max", 1) {
         }
     };
 
+    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
+        shamalgs::primitives::impl::autoselect_impl_reduction();
+    }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl.impl_name, impl.params);
+    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
+        shamalgs::primitives::impl::set_impl_reduction(impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
+    shamalgs::primitives::impl::set_impl_reduction(current_impl);
 }
 
 NEW_TEST(Unittest, "shamalgs/primitives/reduction/edge_cases", 1) {
@@ -647,15 +653,17 @@ NEW_TEST(Unittest, "shamalgs/primitives/reduction/edge_cases", 1) {
         }
     };
 
+    if (!shamalgs::primitives::impl::is_impl_set_reduction()) {
+        shamalgs::primitives::impl::autoselect_impl_reduction();
+    }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_reduction();
 
-    for (shamalgs::impl_param impl :
-         shamalgs::primitives::impl::get_default_impl_list_reduction()) {
-        shamalgs::primitives::impl::set_impl_reduction(impl.impl_name, impl.params);
+    for (const std::string &impl : shamalgs::primitives::impl::get_default_impl_list_reduction()) {
+        shamalgs::primitives::impl::set_impl_reduction(impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_run();
     }
 
     // reset to default
-    shamalgs::primitives::impl::set_impl_reduction(current_impl.impl_name, current_impl.params);
+    shamalgs::primitives::impl::set_impl_reduction(current_impl);
 }

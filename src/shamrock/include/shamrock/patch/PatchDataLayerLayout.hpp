@@ -18,10 +18,8 @@
 
 #include "shambase/SourceLocation.hpp"
 #include "shambase/exception.hpp"
-#include "shambase/string.hpp"
 #include "nlohmann/json_fwd.hpp"
 #include "shamrock/patch/FieldVariant.hpp"
-#include "shamsys/legacy/log.hpp"
 #include <sstream>
 #include <variant>
 #include <vector>
@@ -297,25 +295,6 @@ namespace shamrock::patch {
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     template<class T>
-    inline void PatchDataLayerLayout::add_field(
-        const std::string &field_name, u32 nvar, SourceLocation loc) {
-        if (has_field_name(field_name)) {
-            throw shambase::make_except_with_loc<std::invalid_argument>(
-                "add_field -> the name already exists");
-        }
-
-        shamlog_debug_ln(
-            "PatchDataLayerLayout",
-            "adding field :",
-            field_name,
-            nvar,
-            "loc :",
-            loc.format_one_line());
-
-        fields.push_back(var_t{FieldDescriptor<T>(field_name, nvar)});
-    }
-
-    template<class T>
     inline PatchDataLayerLayout::FieldDescriptor<T> PatchDataLayerLayout::get_field(
         const std::string &field_name) {
 
@@ -341,40 +320,6 @@ namespace shamrock::patch {
         throw shambase::make_except_with_loc<std::invalid_argument>(
             "the required type does no match at index " + std::to_string(idx)
             + "\n    current table : " + get_description_str());
-    }
-
-    template<class T>
-    inline u32 PatchDataLayerLayout::get_field_idx(const std::string &field_name) const {
-        for (u32 i = 0; i < fields.size(); i++) {
-            if (const FieldDescriptor<T> *pval
-                = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
-                if (pval->name == field_name) {
-                    return i;
-                }
-            }
-        }
-
-        throw shambase::make_except_with_loc<std::invalid_argument>(sham::format(
-            "the requested field does not exists\n    the function : {}\n    the field name : {}\n "
-            "   current table : \n{}",
-            __PRETTY_FUNCTION__,
-            field_name,
-            get_description_str()));
-    }
-
-    template<class T>
-    inline u32 PatchDataLayerLayout::get_field_idx(const std::string &field_name, u32 nvar) const {
-        for (u32 i = 0; i < fields.size(); i++) {
-            if (const FieldDescriptor<T> *pval
-                = std::get_if<FieldDescriptor<T>>(&fields[i].value)) {
-                if ((pval->name == field_name) && (pval->nvar == nvar)) {
-                    return i;
-                }
-            }
-        }
-
-        throw shambase::make_except_with_loc<std::invalid_argument>(
-            "the requested field does not exists\n    current table : " + get_description_str());
     }
 
     template<class T>

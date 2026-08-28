@@ -137,15 +137,18 @@ NEW_TEST(Unittest, "shamalgs/primitives/is_all_true:USM", 1) {
         }
     };
 
+    if (!shamalgs::primitives::impl::is_impl_set_is_all_true()) {
+        shamalgs::primitives::impl::autoselect_impl_is_all_true();
+    }
     auto current_impl = shamalgs::primitives::impl::get_current_impl_is_all_true();
 
-    for (shamalgs::impl_param impl :
+    for (const std::string &impl :
          shamalgs::primitives::impl::get_default_impl_list_is_all_true()) {
-        shamalgs::primitives::impl::set_impl_is_all_true(impl.impl_name, impl.params);
+        shamalgs::primitives::impl::set_impl_is_all_true(impl);
         shamlog_info_ln("tests", "testing implementation:", impl);
         test_impl();
     }
 
     // reset to current impl
-    shamalgs::primitives::impl::set_impl_is_all_true(current_impl.impl_name, current_impl.params);
+    shamalgs::primitives::impl::set_impl_is_all_true(current_impl);
 }

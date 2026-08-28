@@ -31,6 +31,7 @@ set(Sources
     src/collective/distributedDataComm.cpp
     src/collective/sparseXchg.cpp
     src/collective/are_all_rank_true.cpp
+    src/primitives/sort_by_key_pow2_len.cpp
     src/primitives/sort_by_keys.cpp
     src/primitives/is_all_true.cpp
     src/primitives/mock_value.cpp

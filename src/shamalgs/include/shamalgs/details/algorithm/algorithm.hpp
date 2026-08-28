@@ -16,7 +16,7 @@
  *
  */
 
-#include "shamalgs/primitives/sort_by_keys.hpp"
+#include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
 #include "shambackends/sycl.hpp"

@@ -11,7 +11,7 @@
 
 /**
  * @file riemann_hll.hpp
- * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr)
+ * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
  * @brief HLL Riemann solver for the gas equations

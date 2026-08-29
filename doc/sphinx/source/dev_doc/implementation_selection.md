@@ -110,7 +110,7 @@ namespace shamalgs::primitives {
         shamalgs::ImplVariantGlobal<AltA, AltB> my_algo_impl;
 
         std::vector<std::string> get_default_impl_list_my_algo() {
-            return decltype(my_algo_impl)::get_default_config_list();
+            return my_algo_impl.get_default_config_list();
         }
 
         std::string get_current_impl_my_algo() { return my_algo_impl.get_current_config(); }

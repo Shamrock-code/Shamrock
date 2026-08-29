@@ -146,6 +146,25 @@ namespace shamalgs {
     }
 
     /**
+     * @brief Non-template virtual interface exposed by ImplVariantGlobal, for code that needs
+     * to hold or pass around an implementation selector without knowing its alternative types.
+     */
+    class IImplVariant {
+        public:
+        virtual ~IImplVariant() = default;
+
+        /// Get the currently selected implementation as a single config json string, or a json
+        /// null if no implementation has been selected yet
+        virtual std::string get_current_config() const = 0;
+
+        /// List the available implementations as config json strings, one per alternative
+        virtual std::vector<std::string> get_default_config_list() const = 0;
+
+        /// Select an implementation from a {"implementation": ..., "parameters": ...} json string
+        virtual void set(std::string_view config_json) = 0;
+    };
+
+    /**
      * @brief Drop-in replacement for the hand-rolled "global variable + enum + name mapping
      * + 3 free functions" implementation-selection pattern.
      *
@@ -167,7 +186,7 @@ namespace shamalgs {
      * `static constexpr std::string_view variant_type_name`
      */
     template<class... Alts>
-    class ImplVariantGlobal {
+    class ImplVariantGlobal : public IImplVariant {
         public:
         using Variant = std::variant<Alts...>;
 
@@ -179,7 +198,7 @@ namespace shamalgs {
 
         /// Get the currently selected implementation as a single config json string, or a json
         /// null if no implementation has been selected yet (see is_set())
-        inline std::string get_current_config() const {
+        inline std::string get_current_config() const override {
             if (!is_set()) {
                 return nlohmann::json(nullptr).dump();
             }
@@ -187,7 +206,7 @@ namespace shamalgs {
         }
 
         /// List the available implementations as config json strings, one per alternative
-        static inline std::vector<std::string> get_default_config_list() {
+        inline std::vector<std::string> get_default_config_list() const override {
             return {variant_to_config_string<Variant>(Variant{Alts{}})...};
         }
 
@@ -195,7 +214,7 @@ namespace shamalgs {
         inline void set(Variant v) { current = std::move(v); }
 
         /// Select an implementation from a {"implementation": ..., "parameters": ...} json string
-        inline void set(std::string_view config_json) {
+        inline void set(std::string_view config_json) override {
             current = variant_from_config_string<Variant>(config_json);
         }
 

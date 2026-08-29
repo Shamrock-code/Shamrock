@@ -53,7 +53,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available sort by key (pow2 len) implementations
         std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len() {
-            return decltype(sort_by_key_pow2_len_impl)::get_default_config_list();
+            return sort_by_key_pow2_len_impl.get_default_config_list();
         }
 
         /// Get the current implementation for sort by key (pow2 len)

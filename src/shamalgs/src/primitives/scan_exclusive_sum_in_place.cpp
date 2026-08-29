@@ -155,7 +155,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available scan_exclusive_sum_in_place implementations
         std::vector<std::string> get_default_impl_list_scan_exclusive_sum_in_place() {
-            return decltype(scan_exclusive_sum_in_place_impl)::get_default_config_list();
+            return scan_exclusive_sum_in_place_impl.get_default_config_list();
         }
 
         /// Get the current implementation for scan_exclusive_sum_in_place

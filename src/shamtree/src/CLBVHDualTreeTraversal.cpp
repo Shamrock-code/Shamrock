@@ -45,7 +45,7 @@ namespace shamtree {
 
         /// Get list of available dual tree traversal implementations
         std::vector<std::string> get_default_impl_list_clbvh_dual_tree_traversal() {
-            return decltype(dtt_impl)::get_default_config_list();
+            return dtt_impl.get_default_config_list();
         }
 
         /// Get the current implementation for dual tree traversal

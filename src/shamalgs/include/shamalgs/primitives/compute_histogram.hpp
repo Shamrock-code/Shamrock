@@ -58,7 +58,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available compute_histogram implementations
         inline std::vector<std::string> get_default_impl_list_compute_histogram() {
-            return decltype(compute_histogram_impl)::get_default_config_list();
+            return compute_histogram_impl.get_default_config_list();
         }
 
         /// Get the current implementation for compute_histogram

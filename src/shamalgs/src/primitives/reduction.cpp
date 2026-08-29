@@ -68,7 +68,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available reduction implementations, as config json strings
         std::vector<std::string> get_default_impl_list_reduction() {
-            return decltype(reduction_impl)::get_default_config_list();
+            return reduction_impl.get_default_config_list();
         }
 
         /// Get the current implementation for reduction, as a config json string

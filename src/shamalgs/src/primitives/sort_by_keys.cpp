@@ -133,7 +133,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available sort by keys implementations
         std::vector<std::string> get_default_impl_list_sort_by_keys() {
-            return decltype(sort_by_keys_impl)::get_default_config_list();
+            return sort_by_keys_impl.get_default_config_list();
         }
 
         /// Get the current implementation for sort by keys

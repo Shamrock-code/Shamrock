@@ -85,7 +85,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available is_all_true implementations, as config json strings
         std::vector<std::string> get_default_impl_list_is_all_true() {
-            return decltype(is_all_true_impl)::get_default_config_list();
+            return is_all_true_impl.get_default_config_list();
         }
 
         /// Get the current implementation for is_all_true, as a config json string

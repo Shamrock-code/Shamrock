@@ -122,7 +122,7 @@ namespace shamalgs::primitives {
 
         /// Get list of available segmented sort in place implementations
         std::vector<std::string> get_default_impl_list_segmented_sort_in_place() {
-            return decltype(segmented_sort_in_place_impl)::get_default_config_list();
+            return segmented_sort_in_place_impl.get_default_config_list();
         }
 
         /// Get the current implementation for segmented sort in place

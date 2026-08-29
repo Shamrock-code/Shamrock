@@ -14,6 +14,7 @@
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
+ * @author mergify[bot] (37929162+mergify[bot]@users.noreply.github.com)
  * @brief Gas conservative/primitive states and axis-transform helpers shared
  *        by every gas Riemann solver
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)

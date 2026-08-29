@@ -23,6 +23,7 @@
 #include "shamalgs/primitives/reduction.hpp"
 #include "shamalgs/primitives/scan_exclusive_sum_in_place.hpp"
 #include "shamalgs/primitives/segmented_sort_in_place.hpp"
+#include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamalgs/random.hpp"
 #include "shambindings/pybind11_stl.hpp"
@@ -313,6 +314,28 @@ ON_PYTHON_INIT {
 
         shamalgs_module.def("autoselect_impl_sort_by_keys", []() {
             shamalgs::primitives::impl::autoselect_impl_sort_by_keys();
+        });
+    }
+
+    { // sort_by_key_pow2_len
+        shamalgs_module.def("set_impl_sort_by_key_pow2_len", [](const std::string &impl) {
+            shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(impl);
+        });
+
+        shamalgs_module.def("get_current_impl_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::get_current_impl_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("get_default_impl_list_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::get_default_impl_list_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("is_impl_set_sort_by_key_pow2_len", []() {
+            return shamalgs::primitives::impl::is_impl_set_sort_by_key_pow2_len();
+        });
+
+        shamalgs_module.def("autoselect_impl_sort_by_key_pow2_len", []() {
+            shamalgs::primitives::impl::autoselect_impl_sort_by_key_pow2_len();
         });
     }
 

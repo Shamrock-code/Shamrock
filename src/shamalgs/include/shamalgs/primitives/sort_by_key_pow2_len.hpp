@@ -20,10 +20,16 @@
  *
  * `sort_by_key_pow2_len` only supports buffer lengths that are a power of 2
  * (callers must round up beforehand, e.g. with `shambase::roundup_pow2`).
+ *
+ * The USM (`sham::DeviceBuffer`) overload selects its implementation through
+ * the generic implementation selector mechanism (see ImplVariant.hpp), via
+ * the `impl` sub-namespace below.
  */
 
 #include "shambackends/DeviceBuffer.hpp"
 #include "shambackends/DeviceQueue.hpp"
+#include <string>
+#include <vector>
 
 namespace shamalgs::primitives {
 
@@ -87,5 +93,25 @@ namespace shamalgs::primitives {
         sham::DeviceBuffer<Tkey> &buf_key,
         sham::DeviceBuffer<Tval> &buf_values,
         u32 len);
+
+    /// namespace to control implementation behavior
+    namespace impl {
+
+        /// Get list of available sort by key (pow2 len) implementations, as config json strings
+        std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len();
+
+        /// Get the current implementation for sort by key (pow2 len), as a config json string
+        std::string get_current_impl_sort_by_key_pow2_len();
+
+        /// Check if an implementation has been selected for sort by key (pow2 len)
+        bool is_impl_set_sort_by_key_pow2_len();
+
+        /// Set the implementation for sort by key (pow2 len), from a config json string
+        void set_impl_sort_by_key_pow2_len(const std::string &impl);
+
+        /// Select the default implementation for sort by key (pow2 len)
+        void autoselect_impl_sort_by_key_pow2_len();
+
+    } // namespace impl
 
 } // namespace shamalgs::primitives

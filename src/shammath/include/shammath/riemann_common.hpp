@@ -14,8 +14,8 @@
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief Gas conservative/primitive states and axis-transform helpers shared
- *        by every gas Riemann solver
+ * @brief Gas and dust conservative/primitive states and axis-transform helpers
+ *        shared by every gas and dust Riemann solver
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */
 
@@ -224,6 +224,155 @@ namespace shammath {
         cprime.rhovel[1] = -c.rhovel[1];
         cprime.rhovel[2] = -c.rhovel[2];
         return cprime;
+    }
+
+    template<class Tvec_>
+    struct DustConsState {
+        using Tvec  = Tvec_;
+        using Tscal = shambase::VecComponent<Tvec>;
+
+        Tscal rho{};
+        Tvec rhovel{};
+
+        const DustConsState &operator+=(const DustConsState &);
+        const DustConsState &operator-=(const DustConsState &);
+        const DustConsState &operator*=(const Tscal);
+    };
+
+    template<class Tvec_>
+    struct DustPrimState {
+        using Tvec  = Tvec_;
+        using Tscal = shambase::VecComponent<Tvec>;
+        Tscal rho{};
+        Tvec vel{};
+    };
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator+=(const DustConsState<Tvec> &d_cst) {
+        rho += d_cst.rho;
+        rhovel += d_cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator+(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(lhs) += rhs;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator-=(const DustConsState<Tvec> &d_cst) {
+        rho -= d_cst.rho;
+        rhovel -= d_cst.rhovel;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator-(
+        const DustConsState<Tvec> &lhs, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(lhs) -= rhs;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> &DustConsState<Tvec>::operator*=(
+        const typename DustConsState<Tvec>::Tscal factor) {
+        rho *= factor;
+        rhovel *= factor;
+        return *this;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator*(
+        const DustConsState<Tvec> &lhs, const typename DustConsState<Tvec>::Tscal factor) {
+        return DustConsState<Tvec>(lhs) *= factor;
+    }
+
+    template<class Tvec>
+    const DustConsState<Tvec> operator*(
+        const typename DustConsState<Tvec>::Tscal factor, const DustConsState<Tvec> &rhs) {
+        return DustConsState<Tvec>(rhs) *= factor;
+    }
+
+    template<class Tvec_>
+    struct DustFluxes {
+        using Tvec  = Tvec_;
+        using Tscal = shambase::VecComponent<Tvec>;
+        std::array<DustConsState<Tvec>, 3> F;
+    };
+
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_prim_to_cons(const DustPrimState<Tvec> d_prim) {
+        DustConsState<Tvec> d_cons;
+        d_cons.rho    = d_prim.rho;
+        d_cons.rhovel = (d_prim.vel * d_prim.rho);
+        return d_cons;
+    }
+
+    template<class Tvec>
+    inline constexpr DustPrimState<Tvec> d_cons_to_prim(const DustConsState<Tvec> d_cons) {
+        DustPrimState<Tvec> d_prim;
+        d_prim.rho = d_cons.rho;
+        d_prim.vel = (d_cons.rhovel * (1 / d_cons.rho));
+        return d_prim;
+    }
+
+    template<class Tvec>
+    inline constexpr DustConsState<Tvec> d_hydro_flux_x(const DustConsState<Tvec> d_cons) {
+        DustConsState<Tvec> d_flux;
+        const DustPrimState<Tvec> d_prim = d_cons_to_prim<Tvec>(d_cons);
+        const typename DustConsState<Tvec>::Tscal x_vel{d_prim.vel[0]};
+        d_flux.rho    = d_cons.rhovel[0];
+        d_flux.rhovel = d_prim.vel * (d_cons.rho * x_vel);
+        return d_flux;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_x_to_y(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = -c.rhovel[1];
+        d_cst.rhovel[1] = c.rhovel[0];
+        d_cst.rhovel[2] = c.rhovel[2];
+
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_y_to_x(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = c.rhovel[1];
+        d_cst.rhovel[1] = -c.rhovel[0];
+        d_cst.rhovel[2] = c.rhovel[2];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_x_to_z(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = -c.rhovel[2];
+        d_cst.rhovel[1] = c.rhovel[1];
+        d_cst.rhovel[2] = c.rhovel[0];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_z_to_x(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho       = c.rho;
+        d_cst.rhovel[0] = c.rhovel[2];
+        d_cst.rhovel[1] = c.rhovel[1];
+        d_cst.rhovel[2] = -c.rhovel[0];
+        return d_cst;
+    }
+
+    template<class Tcons>
+    inline constexpr Tcons d_invert_axis(const Tcons c) {
+        Tcons d_cst;
+        d_cst.rho    = c.rho;
+        d_cst.rhovel = -(c.rhovel);
+        return d_cst;
     }
 
 } // namespace shammath

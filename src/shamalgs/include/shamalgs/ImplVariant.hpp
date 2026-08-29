@@ -36,7 +36,7 @@
 
 #include "shambase/exception.hpp"
 #include "sham/format/format.hpp"
-#include "shamalgs/impl_utils.hpp"
+#include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
 #include <string_view>
 #include <optional>
@@ -150,11 +150,9 @@ namespace shamalgs {
      * + 3 free functions" implementation-selection pattern.
      *
      * Holds the currently selected implementation as a std::variant<Alts...> and exposes it
-     * through two interchangeable string-based ABIs, so that an algorithm's
+     * through a single config json string ABI, so that an algorithm's
      * get_default_impl_list_X / get_current_impl_X / set_impl_X free functions become
      * one-liners:
-     *   - get_current_impl_param() / get_default_impl_list() : the split (impl_name, params)
-     *     shamalgs::impl_param ABI, with `params` carrying the dumped parameters json.
      *   - get_current_config() / get_default_config_list() / set(string_view) : a single
      *     `{"implementation": ..., "parameters": ...}` json string ABI.
      *
@@ -162,9 +160,8 @@ namespace shamalgs {
      * is_set() reports whether one has been picked yet. It is up to each call site to decide
      * what to do when unset - typically checking is_set() and calling set() with that
      * algorithm's own default right before dispatching (see e.g.
-     * segmented_sort_in_place.cpp). get() and get_current_impl_param() assume is_set();
-     * get_current_config() is the one exception and safely returns a json null instead of
-     * dereferencing an unset selection.
+     * segmented_sort_in_place.cpp). get() assumes is_set(); get_current_config() is the one
+     * exception and safely returns a json null instead of dereferencing an unset selection.
      *
      * @tparam Alts the alternative types, each requiring a
      * `static constexpr std::string_view variant_type_name`
@@ -179,25 +176,6 @@ namespace shamalgs {
 
         /// Get the currently selected implementation. Requires is_set()
         inline const Variant &get() const { return *current; }
-
-        /// Get the currently selected implementation as a shamalgs::impl_param. Requires is_set()
-        inline impl_param get_current_impl_param() const {
-            return std::visit(
-                [](const auto &alt) -> impl_param {
-                    using Alt = std::decay_t<decltype(alt)>;
-                    return {
-                        .impl_name = std::string(Alt::variant_type_name),
-                        .params    = ImplVariantParams<Alt>::to_json(alt).dump()};
-                },
-                get());
-        }
-
-        /// List the available implementations, one shamalgs::impl_param per alternative
-        static inline std::vector<impl_param> get_default_impl_list() {
-            return {impl_param{
-                .impl_name = std::string(Alts::variant_type_name),
-                .params    = ImplVariantParams<Alts>::to_json(Alts{}).dump()}...};
-        }
 
         /// Get the currently selected implementation as a single config json string, or a json
         /// null if no implementation has been selected yet (see is_set())

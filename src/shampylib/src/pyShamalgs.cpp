@@ -318,6 +318,37 @@ ON_PYTHON_INIT {
     }
 
     { // sort_by_key_pow2_len
+        shamalgs_module.def(
+            "sort_by_key_pow2_len",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                shamalgs::primitives::sort_by_key_pow2_len(
+                    shamsys::instance::get_compute_scheduler_ptr(), buf_key, buf_values, len);
+            });
+
+        shamalgs_module.def(
+            "benchmark_sort_by_key_pow2_len",
+            [](sham::DeviceBuffer<u32> &buf_key, sham::DeviceBuffer<u32> &buf_values, u32 len) {
+                auto buf_key_copy    = buf_key.copy();
+                auto buf_values_copy = buf_values.copy();
+
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                shambase::Timer timer;
+                timer.start();
+
+                shamalgs::primitives::sort_by_key_pow2_len(
+                    shamsys::instance::get_compute_scheduler_ptr(),
+                    buf_key_copy,
+                    buf_values_copy,
+                    len);
+                buf_key_copy.synchronize();
+                buf_values_copy.synchronize();
+
+                timer.stop();
+                return timer.elapsed_sec();
+            });
+
         shamalgs_module.def("set_impl_sort_by_key_pow2_len", [](const std::string &impl) {
             shamalgs::primitives::impl::set_impl_sort_by_key_pow2_len(impl);
         });

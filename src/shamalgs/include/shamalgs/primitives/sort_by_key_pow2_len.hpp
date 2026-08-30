@@ -97,19 +97,19 @@ namespace shamalgs::primitives {
     /// namespace to control implementation behavior
     namespace impl {
 
-        /// Get list of available sort by key (pow2 len) implementations, as config json strings
+        /// Get list of available sort by key pow2 len implementations, as config json strings
         std::vector<std::string> get_default_impl_list_sort_by_key_pow2_len();
 
-        /// Get the current implementation for sort by key (pow2 len), as a config json string
+        /// Get the current implementation for sort by key pow2 len, as a config json string
         std::string get_current_impl_sort_by_key_pow2_len();
 
-        /// Check if an implementation has been selected for sort by key (pow2 len)
+        /// Check if an implementation has been selected for sort by key pow2 len
         bool is_impl_set_sort_by_key_pow2_len();
 
-        /// Set the implementation for sort by key (pow2 len), from a config json string
+        /// Set the implementation for sort by key pow2 len, from a config json string
         void set_impl_sort_by_key_pow2_len(const std::string &impl);
 
-        /// Select the default implementation for sort by key (pow2 len)
+        /// Select the default implementation for sort by key pow2 len
         void autoselect_impl_sort_by_key_pow2_len();
 
     } // namespace impl

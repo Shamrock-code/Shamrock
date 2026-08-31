@@ -18,6 +18,7 @@
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/batcherOddEvenSort.hpp"
+#include "shamalgs/details/algorithm/tiled_merge_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamcomm/logs.hpp"
 #include <algorithm>
@@ -73,6 +74,41 @@ namespace shamalgs::primitives::details {
         buf_values.copy_from_stdvec(val_stdvec);
     }
 
+    /// Default tile size (elements sorted per work item in the tile pass) of the tiled merge sort
+    static constexpr u32 tiled_merge_default_tile_size = 8;
+
+    /// Sort the zipped key/value pairs on device using the tiled merge sort
+    template<class Tkey, class Tval>
+    inline void sort_by_keys_tiled_merge(
+        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
+
+        shamalgs::algorithm::sort_by_key_tiled_merge<Tkey, Tval, tiled_merge_default_tile_size>(
+            buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+    }
+
+    /// Copy both buffers to host, sort the zipped key/value pairs with the host serial reference
+    /// of the tiled merge sort, and copy back
+    template<class Tkey, class Tval>
+    inline void sort_by_keys_tiled_merge_host_serial(
+        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
+
+        std::vector<Tkey> key_stdvec = buf_key.copy_to_stdvec();
+        std::vector<Tval> val_stdvec = buf_values.copy_to_stdvec();
+
+        std::vector<Tkey> key_sub(key_stdvec.begin(), key_stdvec.begin() + len);
+        std::vector<Tval> val_sub(val_stdvec.begin(), val_stdvec.begin() + len);
+
+        shamalgs::algorithm::
+            tiled_merge_sort_host_serial<Tkey, Tval, tiled_merge_default_tile_size>(
+                key_sub, val_sub);
+
+        std::copy(key_sub.begin(), key_sub.end(), key_stdvec.begin());
+        std::copy(val_sub.begin(), val_sub.end(), val_stdvec.begin());
+
+        buf_key.copy_from_stdvec(key_stdvec);
+        buf_values.copy_from_stdvec(val_stdvec);
+    }
+
 } // namespace shamalgs::primitives::details
 
 namespace shamalgs::primitives {
@@ -95,7 +131,23 @@ namespace shamalgs::primitives {
             static constexpr std::string_view variant_type_name = "batcher_odd_even";
         };
 
-        shamalgs::ImplVariantGlobal<StdSort, BatcherOddEvenHostSerial, BatcherOddEven>
+        /// Tiled merge sort running on the device (see tiled_merge_sort.hpp)
+        struct TiledMergeSort {
+            static constexpr std::string_view variant_type_name = "tiled_merge_sort";
+        };
+
+        /// Copy the buffers to host, sort with the host serial reference of the tiled merge
+        /// sort, and copy back
+        struct TiledMergeHostSerial {
+            static constexpr std::string_view variant_type_name = "tiled_merge_host_serial";
+        };
+
+        shamalgs::ImplVariantGlobal<
+            StdSort,
+            BatcherOddEvenHostSerial,
+            BatcherOddEven,
+            TiledMergeSort,
+            TiledMergeHostSerial>
             sort_by_keys_impl;
 
         /// Get list of available sort by keys implementations
@@ -147,6 +199,12 @@ namespace shamalgs::primitives {
                 [&](impl::BatcherOddEven) {
                     algorithm::details::sort_by_key_batcher_odd_even(
                         buf_key.get_dev_scheduler_ptr(), buf_key, buf_values, len);
+                },
+                [&](impl::TiledMergeSort) {
+                    details::sort_by_keys_tiled_merge(buf_key, buf_values, len);
+                },
+                [&](impl::TiledMergeHostSerial) {
+                    details::sort_by_keys_tiled_merge_host_serial(buf_key, buf_values, len);
                 },
             },
             impl::sort_by_keys_impl.get());

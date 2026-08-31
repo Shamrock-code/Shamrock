@@ -300,7 +300,7 @@ namespace sham {
         FETCH_PROP(partition_type_property, sycl::info::partition_property)
         FETCH_PROP(partition_type_affinity_domain, sycl::info::partition_affinity_domain)
 
-        auto physmem = sham::getPhysicalMemory();
+        auto physmem = sham::getHostPhysicalMemory();
 
 // On acpp 2^64-1 is returned, so we need to correct it
 // see : https://github.com/AdaptiveCpp/AdaptiveCpp/issues/1573

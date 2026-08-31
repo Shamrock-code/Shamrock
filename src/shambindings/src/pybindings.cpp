@@ -130,16 +130,17 @@ namespace shambindings {
                 &py_func_printer_normal, &py_func_printer_ln, &py_func_flush_func);
         }
 
-        if (static_init_shamrock_pybind) {
-            for (auto fct : *static_init_shamrock_pybind) {
-                fct(m);
-            }
-        }
-
+        // Set before ON_PYTHON_INIT callbacks so they can query is_lib_mode().
         if (is_lib_mode) {
             init_state = Lib;
         } else {
             init_state = Embed;
+        }
+
+        if (static_init_shamrock_pybind) {
+            for (auto fct : *static_init_shamrock_pybind) {
+                fct(m);
+            }
         }
     }
 
@@ -172,5 +173,7 @@ namespace shambindings {
                 loc);
         }
     }
+
+    bool is_lib_mode() { return init_state == Lib; }
 
 } // namespace shambindings

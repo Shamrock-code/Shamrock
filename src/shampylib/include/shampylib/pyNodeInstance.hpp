@@ -15,7 +15,9 @@
  * @brief
  */
 
+#include "shambase/print.hpp"
 #include "shambindings/pybindaliases.hpp"
+#include "shambindings/pybindings.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcomm/mpiInfo.hpp"
 #include "shamcomm/wrapper.hpp"
@@ -27,6 +29,24 @@ namespace shamsys::instance {
     void register_pymodules(py::module &m) {
 
         using namespace shamsys::instance;
+
+        // Python lib mode never runs main.cpp's close() after the script. On macOS
+        // + AdaptiveCpp/OpenMP that leaves sycl::queue alive into __cxa_finalize,
+        // which then throws std::system_error("mutex lock failed: Invalid argument")
+        // and aborts. Register atexit only in lib mode: embed mode already closes
+        // from main / shamtest, and shamtest finalizes the interpreter while MPI
+        // is still required.
+        if (shambindings::is_lib_mode()) {
+            py::module_ atexit = py::module_::import("atexit");
+            atexit.attr("register")(py::cpp_function([]() {
+                shambase::reset_std_behavior();
+                try {
+                    close();
+                } catch (...) {
+                    // atexit must not throw; libc++ terminate() aborts the process.
+                }
+            }));
+        }
 
         m.def(
             "init",
@@ -47,7 +67,10 @@ namespace shamsys::instance {
             },
             R"pbdoc(
 
-            The close function for shamrock node instance
+            The close function for shamrock node instance.
+
+            Safe to call more than once. In library mode this is also invoked
+            automatically at Python interpreter exit.
 
             )pbdoc");
 

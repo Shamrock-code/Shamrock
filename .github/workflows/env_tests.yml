@@ -23,6 +23,8 @@ jobs:
 
   # matrix is not available in job-level if; filter here instead (same pattern as shamrock-dpcpp.yml).
   # Entries with "light_ci": true are kept when inputs.light_ci is true.
+  # Temporary: macos-26 is tagged so light CI can track the python-module shutdown crash.
+  # runtestpypip is left off there: pip install currently rebuilds the whole tree on that runner.
   set_matrix:
     name: Set env tests matrix
     runs-on: ubuntu-latest
@@ -147,6 +149,8 @@ jobs:
               "runson": "macos-26",
               "imagename": "MacOS-26",
               "runtest": true,
+              "runtestpy": true,
+              "light_ci": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos26"
             }

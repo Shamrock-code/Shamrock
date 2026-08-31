@@ -30,6 +30,7 @@
 #include "shambackends/typeAliasVec.hpp"
 #include "shamcmdopt/cmdopt.hpp"
 #include "shamcmdopt/env.hpp"
+#include "shamcomm/MPIInitGuard.hpp"
 #include "shamcomm/local_rank.hpp"
 #include "shamcomm/logs.hpp"
 #include "shamcomm/mpi.hpp"
@@ -147,18 +148,27 @@ namespace syclinit {
     void finalize() {
         initialized = false;
 
-        device_compute.reset();
-        device_alt.reset();
+        // Drop schedulers first so DeviceQueue / sycl::queue destructors run while
+        // AdaptiveCpp (and the MPI runtime) are still alive. Resetting devices or
+        // contexts first only drops aliases; the queues still die with the
+        // schedulers, and doing that during process-exit static destruction races
+        // AdaptiveCpp's own teardown (mutex lock EINVAL on macOS + OpenMP).
+        sched_compute.reset();
+        sched_alt.reset();
 
         ctx_compute.reset();
         ctx_alt.reset();
 
-        sched_compute.reset();
-        sched_alt.reset();
+        device_compute.reset();
+        device_alt.reset();
     }
 }; // namespace syclinit
 
 namespace shamsys::instance {
+
+    namespace {
+        std::unique_ptr<shamcomm::MPIInitGuard> mpi_init_guard;
+    } // namespace
 
     u32 compute_queue_eu_count = 64;
 
@@ -244,9 +254,13 @@ namespace shamsys::instance {
 
     void start_mpi(MPIInitInfo mpi_info) {
 
+        if (mpi_init_guard) {
+            throw ShamsysInstanceException("MPI is already initialized");
+        }
+
         shamcomm::fetch_mpi_capabilities(mpi_info.forced_state);
 
-        mpi::init(&mpi_info.argc, &mpi_info.argv);
+        mpi_init_guard = std::make_unique<shamcomm::MPIInitGuard>(&mpi_info.argc, &mpi_info.argv);
 
         shamcomm::fetch_world_info();
 
@@ -343,6 +357,10 @@ namespace shamsys::instance {
     }
 
     void close_mpi() {
+        if (!mpi_init_guard) {
+            return;
+        }
+
         mpidtypehandler::free_mpidtype();
 
         free_sycl_mpi_types();
@@ -353,14 +371,16 @@ namespace shamsys::instance {
             logger::raw_ln(" Hopefully it was quick :')\n");
         }
 
-        mpi::finalize();
+        mpi_init_guard.reset();
     }
 
     void close() {
 
         close_mpi();
 
-        syclinit::finalize();
+        if (syclinit::initialized) {
+            syclinit::finalize();
+        }
     }
 
     ////////////////////////////

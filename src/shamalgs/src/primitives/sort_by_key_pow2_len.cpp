@@ -19,38 +19,11 @@
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/bitonicSort.hpp"
 #include "shamalgs/details/algorithm/bitonicSort_updated_usm.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamcomm/logs.hpp"
 
 namespace shamalgs::primitives {
-
-    namespace details {
-        /// Copy both buffers to host, std::sort the zipped key/value pairs, and copy back
-        template<class Tkey, class Tval>
-        inline void sort_by_keys_std_sort(
-            sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
-
-            std::vector<Tkey> key_stdvec = buf_key.copy_to_stdvec();
-            std::vector<Tval> val_stdvec = buf_values.copy_to_stdvec();
-
-            std::vector<std::pair<Tkey, Tval>> zipped(len);
-            for (u32 i = 0; i < len; ++i) {
-                zipped[i] = std::make_pair(key_stdvec[i], val_stdvec[i]);
-            }
-
-            std::sort(zipped.begin(), zipped.end(), [](const auto &a, const auto &b) {
-                return a.first < b.first;
-            });
-
-            for (u32 i = 0; i < len; ++i) {
-                key_stdvec[i] = zipped[i].first;
-                val_stdvec[i] = zipped[i].second;
-            }
-
-            buf_key.copy_from_stdvec(key_stdvec);
-            buf_values.copy_from_stdvec(val_stdvec);
-        }
-    } // namespace details
 
     template<class Tkey, class Tval>
     void sort_by_key_pow2_len(
@@ -138,7 +111,7 @@ namespace shamalgs::primitives {
                         sched, buf_key, buf_values, len);
                 },
                 [&](impl::StdSort) {
-                    details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                    device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
                 },
             },
             impl::sort_by_key_pow2_len_impl.get());

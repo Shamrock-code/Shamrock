@@ -18,39 +18,13 @@
 #include "shambase/overloaded.hpp"
 #include "shamalgs/ImplVariant.hpp"
 #include "shamalgs/details/algorithm/batcherOddEvenSort.hpp"
+#include "shamalgs/primitives/device/details/sort_by_keys_std_sort.hpp"
 #include "shamalgs/primitives/sort_by_keys.hpp"
 #include "shamcomm/logs.hpp"
 #include <algorithm>
-#include <utility>
 #include <vector>
 
 namespace shamalgs::primitives::details {
-
-    /// Copy both buffers to host, std::sort the zipped key/value pairs, and copy back
-    template<class Tkey, class Tval>
-    inline void sort_by_keys_std_sort(
-        sham::DeviceBuffer<Tkey> &buf_key, sham::DeviceBuffer<Tval> &buf_values, u32 len) {
-
-        std::vector<Tkey> key_stdvec = buf_key.copy_to_stdvec();
-        std::vector<Tval> val_stdvec = buf_values.copy_to_stdvec();
-
-        std::vector<std::pair<Tkey, Tval>> zipped(len);
-        for (u32 i = 0; i < len; ++i) {
-            zipped[i] = std::make_pair(key_stdvec[i], val_stdvec[i]);
-        }
-
-        std::sort(zipped.begin(), zipped.end(), [](const auto &a, const auto &b) {
-            return a.first < b.first;
-        });
-
-        for (u32 i = 0; i < len; ++i) {
-            key_stdvec[i] = zipped[i].first;
-            val_stdvec[i] = zipped[i].second;
-        }
-
-        buf_key.copy_from_stdvec(key_stdvec);
-        buf_values.copy_from_stdvec(val_stdvec);
-    }
 
     /// Copy both buffers to host, sort the zipped key/value pairs with
     /// batcher_odd_even_host_serial, and copy back
@@ -139,7 +113,7 @@ namespace shamalgs::primitives {
         std::visit(
             shambase::overloaded{
                 [&](impl::StdSort) {
-                    details::sort_by_keys_std_sort(buf_key, buf_values, len);
+                    device::details::sort_by_keys_std_sort(buf_key, buf_values, len);
                 },
                 [&](impl::BatcherOddEvenHostSerial) {
                     details::sort_by_keys_batcher_odd_even_host_serial(buf_key, buf_values, len);

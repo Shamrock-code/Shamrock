@@ -445,6 +445,9 @@ void shamsys::microbench::vector_allgather(u32 el_per_rank) {
     }
 }
 
-const std::unordered_map<std::string, double> &shamsys::get_microbench_results() {
+const std::unordered_map<std::string, double> &shamsys::get_microbench_results(bool allow_run) {
+    if (allow_run && microbench_results.empty()) {
+        run_micro_benchmark();
+    }
     return microbench_results;
 }

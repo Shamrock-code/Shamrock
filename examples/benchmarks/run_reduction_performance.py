@@ -28,6 +28,13 @@ if not shamrock.sys.is_initialized():
 # Use shamrock documentation style for matplotlib
 shamrock.matplotlib.set_shamrock_mpl_style()
 
+# %%
+# Recover microbenchmark results
+microbench_results = shamrock.sys.get_microbench_results(allow_run=True)
+if len(microbench_results) == 0:
+    print("no microbench results, please run with --benchmark-mpi")
+    raise ValueError("no microbench results")
+
 
 # %%
 # Main benchmark functions
@@ -104,6 +111,7 @@ print(all_default_impls)
 # %%
 # Run the performance benchmarks for all implementations
 
+dic_bench = {}
 for impl in all_default_impls:
     shamrock.algs.set_impl_reduction(impl)
 
@@ -114,17 +122,102 @@ for impl in all_default_impls:
     # Run the performance sweep
     particle_counts, results_f32, results_f64 = run_performance_sweep()
 
-    (line,) = plt.plot(particle_counts, results_f64, "--.", label=impl_name + " (f64)")
-    plt.plot(particle_counts, results_f32, ":", color=line.get_color(), label=impl_name + " (f32)")
+    dic_bench[impl_name] = {
+        "particle_counts": particle_counts,
+        "results_f32": results_f32,
+        "results_f64": results_f64,
+    }
 
 
-Nobj = np.array(particle_counts)
-Time100M = Nobj / 1e8
-plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
+# %%
+# Plot results (time)
+
+print_ref = True
+for label, item in dic_bench.items():
+    if print_ref:
+        Nobj = np.array(item["particle_counts"])
+        Time100M = Nobj / 1e8
+        plt.plot(
+            item["particle_counts"],
+            Time100M,
+            color="grey",
+            linestyle="-",
+            alpha=0.7,
+            label="100M obj/sec",
+        )
+        print_ref = False
+
+    (line,) = plt.plot(item["particle_counts"], item["results_f64"], "--.", label=label + " (f64)")
+    plt.plot(
+        item["particle_counts"],
+        item["results_f32"],
+        ":",
+        color=line.get_color(),
+        label=label + " (f32)",
+    )
 
 
 plt.xlabel("Number of elements")
 plt.ylabel("Time (s)")
+plt.title("reduction performance benchmarks")
+
+plt.xscale("log")
+plt.yscale("log")
+
+plt.grid(True)
+
+plt.legend(fontsize=10)
+plt.show()
+
+# %%
+# Plot results (bandwidth)
+
+peak_bw_f32 = microbench_results["saxpy_f32"]
+peak_bw_f64 = microbench_results["saxpy_f64"]
+
+for label, item in dic_bench.items():
+    Nobj = np.array(item["particle_counts"])
+    last_x = item["particle_counts"][-1]
+
+    Bytes_f64 = 8 * Nobj  # 1 read f64 (sizeof = 8)
+    BW_f64 = Bytes_f64 / np.array(item["results_f64"])
+    (line,) = plt.plot(item["particle_counts"], BW_f64, "--.", label=label + " (f64)")
+    plt.text(
+        last_x,
+        BW_f64[-1],
+        f"{BW_f64[-1] / 1e9:.2f} GB.s^-1",
+        color=line.get_color(),
+        va="bottom",
+        ha="right",
+    )
+
+    Bytes_f32 = 4 * Nobj  # 1 read f32 (sizeof = 4)
+    BW_f32 = Bytes_f32 / np.array(item["results_f32"])
+    plt.plot(item["particle_counts"], BW_f32, ":", color=line.get_color(), label=label + " (f32)")
+    plt.text(
+        last_x,
+        BW_f32[-1],
+        f"{BW_f32[-1] / 1e9:.2f} GB.s^-1",
+        color=line.get_color(),
+        va="bottom",
+        ha="right",
+    )
+
+plt.axhline(
+    y=peak_bw_f64,
+    color="black",
+    linestyle=":",
+    label=f"microbenchmark peak BW f64 ({peak_bw_f64 / 1e9:.2f} GB.s^-1)",
+)
+plt.axhline(
+    y=peak_bw_f32,
+    color="black",
+    linestyle="--",
+    label=f"microbenchmark peak BW f32 ({peak_bw_f32 / 1e9:.2f} GB.s^-1)",
+)
+
+plt.xlabel("Number of elements")
+plt.ylabel("Bandwidth (B.s^-1)")
 plt.title("reduction performance benchmarks")
 
 plt.xscale("log")

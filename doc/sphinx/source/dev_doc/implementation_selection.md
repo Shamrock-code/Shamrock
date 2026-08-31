@@ -48,9 +48,7 @@ print(current)
 # two ways of selecting an implementation manually:
 
 # 1. pick a specific one
-shamrock.algs.set_impl_scan_exclusive_sum_in_place(
-    '{"implementation":"std_scan","parameters":{}}'
-)
+shamrock.algs.set_impl_scan_exclusive_sum_in_place('{"implementation":"std_scan","parameters":{}}')
 
 # 2. or fall back to the algorithm's own default
 if not shamrock.algs.is_impl_set_scan_exclusive_sum_in_place():

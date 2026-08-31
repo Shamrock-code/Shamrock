@@ -361,6 +361,7 @@ namespace sham {
             .global_mem_cache_size      = shambase::get_check_ref(global_mem_cache_size),
             .local_mem_size             = shambase::get_check_ref(local_mem_size),
             .max_compute_units          = shambase::get_check_ref(max_compute_units),
+            .max_work_group_size        = shambase::get_check_ref(max_work_group_size),
             .max_mem_alloc_size_dev     = max_alloc_dev,
             .max_mem_alloc_size_host    = max_alloc_host,
             // the SYCL standard returns the alignment in bits, we convert to bytes for convenience

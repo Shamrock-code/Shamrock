@@ -26,6 +26,13 @@ if not shamrock.sys.is_initialized():
 # Use shamrock documentation style for matplotlib
 shamrock.matplotlib.set_shamrock_mpl_style()
 
+# %%
+# Recover microbenchmark results
+microbench_results = shamrock.sys.get_microbench_results(allow_run=True)
+if len(microbench_results) == 0:
+    print("no microbench results, please run with --benchmark-mpi")
+    raise ValueError("no microbench results")
+
 
 # %%
 # Main benchmark functions
@@ -90,6 +97,7 @@ print(all_default_impls)
 # %%
 # Run the performance benchmarks for all implementations
 
+dic_bench = {}
 for impl in all_default_impls:
     shamrock.algs.set_impl_scan_exclusive_sum_in_place(impl)
 
@@ -100,16 +108,75 @@ for impl in all_default_impls:
     # Run the performance sweep
     particle_counts, results_u32 = run_performance_sweep()
 
-    plt.plot(particle_counts, results_u32, "--.", label=impl_name + " (u32)")
+    label = impl_name + " (u32)"
+
+    dic_bench[label] = {"particle_counts": particle_counts, "results_u32": results_u32}
 
 
-Nobj = np.array(particle_counts)
-Time100M = Nobj / 1e8
-plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
+# %%
+# Plot results (time)
+
+print_ref = True
+for label, item in dic_bench.items():
+    if print_ref:
+        Nobj = np.array(item["particle_counts"])
+        Time100M = Nobj / 1e8
+        plt.plot(
+            item["particle_counts"],
+            Time100M,
+            color="grey",
+            linestyle="-",
+            alpha=0.7,
+            label="100M obj/sec",
+        )
+        print_ref = False
+
+    plt.plot(item["particle_counts"], item["results_u32"], "--.", label=label)
 
 
 plt.xlabel("Number of elements")
 plt.ylabel("Time (s)")
+plt.title("ex-scan in place performance benchmarks")
+
+plt.xscale("log")
+plt.yscale("log")
+
+plt.grid(True)
+
+plt.legend()
+plt.show()
+
+# %%
+# Plot results (bandwidth)
+
+peak_bw = microbench_results["saxpy_f32"]
+
+for label, item in dic_bench.items():
+    Nobj = np.array(item["particle_counts"])
+    Bytes = 2 * 4 * Nobj  # 1 read, 1 write u32 (sizeof = 4)
+    BW = Bytes / item["results_u32"]
+    (line,) = plt.plot(item["particle_counts"], BW, "--.", label=label)
+
+    last_x = item["particle_counts"][-1]
+    last_bw_GBs = BW[-1] / 1e9
+    plt.text(
+        last_x,
+        BW[-1],
+        f"{last_bw_GBs:.2f} GB.s^-1",
+        color=line.get_color(),
+        va="bottom",
+        ha="right",
+    )
+
+plt.axhline(
+    y=peak_bw,
+    color="black",
+    linestyle=":",
+    label=f"microbenchmark peak BW ({peak_bw / 1e9:.2f} GB.s^-1)",
+)
+
+plt.xlabel("Number of elements")
+plt.ylabel("Bandwidth (B.s^-1)")
 plt.title("ex-scan in place performance benchmarks")
 
 plt.xscale("log")

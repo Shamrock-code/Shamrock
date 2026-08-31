@@ -229,6 +229,39 @@ plt.legend()
 plt.show()
 
 # %%
+# Plot the sort by keys performance benchmarks (bandwidth)
+# Note: no microbenchmark peak-bandwidth reference here, since a sort will never
+# reach the raw memory-bandwidth ceiling.
+
+for impl_name, (particle_counts, results_u32) in results_by_impl.items():
+    Nobj = np.array(particle_counts)
+    Bytes = 2 * 4 * Nobj  # 2 u32 moved per element, key + value (sizeof = 4)
+    BW = Bytes / np.array(results_u32)
+    (line,) = plt.plot(particle_counts, BW, "--.", label=impl_name + " (u32)")
+
+    last_x = particle_counts[-1]
+    plt.text(
+        last_x,
+        BW[-1],
+        f"{BW[-1] / 1e9:.2f} GB.s^-1",
+        color=line.get_color(),
+        va="bottom",
+        ha="right",
+    )
+
+plt.xlabel("Number of elements")
+plt.ylabel("Bandwidth (B.s^-1)")
+plt.title("sort by keys performance benchmarks")
+
+plt.xscale("log")
+plt.yscale("log")
+
+plt.grid(True)
+
+plt.legend()
+plt.show()
+
+# %%
 # Plot the sort by key (power-of-2 length) performance benchmarks (second figure)
 
 plt.figure()
@@ -249,6 +282,39 @@ plt.plot(
 
 plt.xlabel("Number of elements")
 plt.ylabel("Time (s)")
+plt.title("sort by key (power-of-2 length) performance benchmarks")
+
+plt.xscale("log")
+plt.yscale("log")
+
+plt.grid(True)
+
+plt.legend()
+plt.show()
+
+# %%
+# Plot the sort by key (power-of-2 length) performance benchmarks (bandwidth)
+# Note: no microbenchmark peak-bandwidth reference here, since a sort will never
+# reach the raw memory-bandwidth ceiling.
+
+for impl_name, (particle_counts_pow2, results_u32_pow2) in results_by_impl_pow2_len.items():
+    Nobj_pow2 = np.array(particle_counts_pow2)
+    Bytes_pow2 = 2 * 4 * Nobj_pow2  # 2 u32 moved per element, key + value (sizeof = 4)
+    BW_pow2 = Bytes_pow2 / np.array(results_u32_pow2)
+    (line,) = plt.plot(particle_counts_pow2, BW_pow2, "--.", label=impl_name + " (u32)")
+
+    last_x_pow2 = particle_counts_pow2[-1]
+    plt.text(
+        last_x_pow2,
+        BW_pow2[-1],
+        f"{BW_pow2[-1] / 1e9:.2f} GB.s^-1",
+        color=line.get_color(),
+        va="bottom",
+        ha="right",
+    )
+
+plt.xlabel("Number of elements")
+plt.ylabel("Bandwidth (B.s^-1)")
 plt.title("sort by key (power-of-2 length) performance benchmarks")
 
 plt.xscale("log")

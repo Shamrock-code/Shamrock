@@ -21,7 +21,7 @@ on:
 
 jobs:
 
-  # matrix is not available in job-level if; filter here instead (same pattern as shamrock-dpcpp.yml).
+  # matrix is not available in job-level if; filter here instead.
   # Entries with "light_ci": true are kept when inputs.light_ci is true.
   set_matrix:
     name: Set env tests matrix
@@ -42,9 +42,10 @@ jobs:
               "machine": "debian-generic.acpp",
               "args": "--backend omp",
               "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Ubuntu 22 LLVM 15",
               "runtest": true,
+              "runtest_rscript": true,
               "runtestpy": true,
               "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
@@ -54,9 +55,10 @@ jobs:
               "machine": "debian-generic.acpp",
               "args": "--backend generic",
               "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Ubuntu 22 LLVM 15",
               "runtest": true,
+              "runtest_rscript": true,
               "runtestpy": true,
               "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
@@ -66,7 +68,7 @@ jobs:
               "machine": "debian-generic.acpp",
               "args": "--backend cuda.explicit-multipass --arch sm_80",
               "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Ubuntu 22 LLVM 15 CUDA 11",
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "cuda.explicit-multipass"
@@ -75,7 +77,7 @@ jobs:
               "machine": "debian-generic.acpp",
               "args": "--backend cuda.integrated-multipass --arch sm_80",
               "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15cuda11",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Ubuntu 22 LLVM 15 CUDA 11",
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "cuda.integrated-multipass"
@@ -84,7 +86,7 @@ jobs:
               "machine": "debian-generic.acpp",
               "args": "--backend hip --arch gfx906",
               "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22llvm15rocm543",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Ubuntu 22 LLVM 15 ROCM 5.4.3",
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
               "ccache-key-extra": "hip"
@@ -101,9 +103,10 @@ jobs:
               "machine": "archlinux.acpp",
               "args": "--backend generic",
               "container": "archlinux/archlinux:base-devel",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "ArchLinux",
               "runtest": true,
+              "runtest_rscript": true,
               "runtestpy": true,
               "runtestpypip": true,
               "mpiargs": "--allow-run-as-root --bind-to none --oversubscribe",
@@ -119,34 +122,38 @@ jobs:
           [
             {
               "machine": "macos-generic.acpp",
-              "runson": "macos-14",
+              "runson": "[\"macos-14\"]",
               "imagename": "MacOS-14",
               "runtest": true,
+              "runtest_rscript": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos14"
             },
             {
               "machine": "macos-generic.acpp",
-              "runson": "macos-15",
+              "runson": "[\"macos-15\"]",
               "imagename": "MacOS-15",
               "runtest": true,
+              "runtest_rscript": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos15",
               "build_nproc": 4
             },
             {
               "machine": "macos-generic.acpp",
-              "runson": "macos-15-intel",
+              "runson": "[\"macos-15-intel\"]",
               "imagename": "MacOS-15 (intel)",
               "runtest": true,
+              "runtest_rscript": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos15-intel"
             },
             {
               "machine": "macos-generic.acpp",
-              "runson": "macos-26",
+              "runson": "[\"macos-26\"]",
               "imagename": "MacOS-26",
               "runtest": true,
+              "runtest_rscript": true,
               "mpiargs": "--oversubscribe",
               "ccache-key-extra": "macos26"
             }
@@ -162,9 +169,10 @@ jobs:
               "machine": "conda.acpp",
               "args": "--backend omp --arch none",
               "container": "continuumio/anaconda3",
-              "runson": "ubuntu-latest",
+              "runson": "[\"ubuntu-latest\"]",
               "imagename": "Anaconda3",
               "runtest": true,
+              "runtest_rscript": true,
               "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
               "ccache-key-extra": "omp",
               "shell": "bash -el {0}",
@@ -173,7 +181,44 @@ jobs:
           ]
           JSON
 
-          jq -s '{include: add}' ubuntu.json arch.json macos.json conda.json > matrix.json
+          ##########################################################################################
+          # Intel/LLVM (DPC++)
+          ##########################################################################################
+          # On older self-hosted runners the container must be started with --shm-size=512m,
+          # otherwise we get bus errors with intel mpi.
+          cat > dpcpp.json <<'JSON'
+          [
+            {
+              "machine": "ci.intel-llvm.cuda",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22cuda12dpcpp",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Ubuntu 22 CUDA 12 DPC++",
+              "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
+              "ccache-key-extra": "cuda"
+            },
+            {
+              "machine": "ci.intel-llvm.rocm",
+              "container": "ghcr.io/shamrock-code/shamrock-ci:ubuntu22rocm543dpcpp",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Ubuntu 22 ROCM 5.4.3 DPC++",
+              "mpiargs": "--allow-run-as-root --bind-to socket:overload-allowed --oversubscribe",
+              "ccache-key-extra": "rocm"
+            },
+            {
+              "machine": "docker.intel_oneapi",
+              "container": "intel/oneapi",
+              "docker_options": "--shm-size=512m",
+              "runson": "[\"self-hosted\", \"docker-runner\"]",
+              "imagename": "Intel oneAPI",
+              "runtest": true,
+              "mpiargs": "",
+              "ccache-key-extra": "oneapi",
+              "light_ci": true
+            }
+          ]
+          JSON
+
+          jq -s '{include: add}' ubuntu.json arch.json macos.json conda.json dpcpp.json > matrix.json
 
           if [[ "${{ inputs.light_ci }}" == "true" ]]; then
             jq '{include: [.include[] | select(.light_ci == true)]}' matrix.json > matrix.filtered.json
@@ -195,10 +240,11 @@ jobs:
     needs: [set_matrix]
     # Empty include lists fail strategy.matrix evaluation; skip instead.
     if: ${{ needs.set_matrix.outputs.has_jobs == 'true' }}
-    runs-on: ${{ matrix.runson }}
+    runs-on: ${{ fromJSON(matrix.runson) }}
 
     container:
       image: ${{ matrix.container }}
+      options: ${{ matrix.docker_options }}
 
     strategy:
       matrix: ${{ fromJSON(needs.set_matrix.outputs.matrix) }}
@@ -278,7 +324,7 @@ jobs:
           sudo pacman -Sy --noconfirm ccache
 
       - name: Install ccache
-        if: matrix.machine == 'conda.acpp'
+        if: matrix.machine == 'conda.acpp' || matrix.machine == 'docker.intel_oneapi'
         run: |
           apt update
           apt install -y ccache
@@ -303,6 +349,10 @@ jobs:
         env:
           SHAMROCK_BUILD_NPROC: ${{ matrix.build_nproc }}
         run : ./env/new-env --machine ${{ matrix.machine }} --builddir build -- ${{ matrix.args }}
+
+      - name: Cat activate file
+        run: |
+          cat build/activate
 
       - name: Show current conda env
         if: matrix.machine == 'conda.acpp'
@@ -343,7 +393,7 @@ jobs:
           ../tools/test_sequence.sh
 
       - name: Create Python test script for next tests
-        if: matrix.runtest || matrix.runtestpy || matrix.runtestpypip
+        if: matrix.runtest_rscript || matrix.runtestpy || matrix.runtestpypip
         run: |
           cat > /tmp/test_rscript.py << 'EOF'
           import shamrock
@@ -360,7 +410,7 @@ jobs:
           cat /tmp/test_rscript.py
 
       - name: Try starting Shamrock (build dir)
-        if: matrix.runtest
+        if: matrix.runtest_rscript
         run: |
           cd build
           source ./activate
@@ -372,7 +422,11 @@ jobs:
           cd build
           source ./activate
           cd install_test/bin
-          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0 --rscript /tmp/test_rscript.py
+          RSCRIPT_ARGS=""
+          if [ "${{ matrix.runtest_rscript }}" = "true" ]; then
+            RSCRIPT_ARGS="--rscript /tmp/test_rscript.py"
+          fi
+          LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH ./shamrock --smi --sycl-cfg 0:0 $RSCRIPT_ARGS
 
       - name: Try starting Shamrock (installed python libs)
         if: matrix.runtestpy

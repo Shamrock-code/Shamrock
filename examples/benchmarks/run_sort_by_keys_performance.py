@@ -15,6 +15,7 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
+from shamrock.utils.plot import make_std_bench_plot
 
 import shamrock
 
@@ -209,23 +210,37 @@ for impl in all_default_impls_pow2_len:
 # %%
 # Plot the sort by keys performance benchmarks (first figure)
 
-for impl_name, (particle_counts, results_u32) in results_by_impl.items():
-    plt.plot(particle_counts, results_u32, "--.", label=impl_name + " (u32)")
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-Nobj = np.array(particle_counts)
-Time100M = Nobj / 1e8
-plt.plot(particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
+plot_data = {}
+for i, (impl_name, (particle_counts, results_u32)) in enumerate(results_by_impl.items()):
+    plot_data[impl_name] = {
+        "x": particle_counts,
+        "y": results_u32,
+        "color": color_cycle[i % len(color_cycle)],
+        "label": impl_name + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
 
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("sort by keys performance benchmarks")
 
-plt.xscale("log")
-plt.yscale("log")
+def before_plot(ax_plot):
+    particle_counts = next(iter(results_by_impl.values()))[0]
+    Nobj = np.array(particle_counts)
+    Time100M = Nobj / 1e8
+    ax_plot.plot(
+        particle_counts, Time100M, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec"
+    )
 
-plt.grid(True)
 
-plt.legend()
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="sort by keys performance benchmarks",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
+)
 plt.show()
 
 # %%
@@ -233,63 +248,72 @@ plt.show()
 # Note: no microbenchmark peak-bandwidth reference here, since a sort will never
 # reach the raw memory-bandwidth ceiling.
 
-for impl_name, (particle_counts, results_u32) in results_by_impl.items():
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (impl_name, (particle_counts, results_u32)) in enumerate(results_by_impl.items()):
     Nobj = np.array(particle_counts)
     Bytes = 2 * 4 * Nobj  # 2 u32 moved per element, key + value (sizeof = 4)
     BW = Bytes / np.array(results_u32)
-    (line,) = plt.plot(particle_counts, BW, "--.", label=impl_name + " (u32)")
+    plot_data[impl_name] = {
+        "x": particle_counts,
+        "y": BW,
+        "color": color_cycle[i % len(color_cycle)],
+        "label": impl_name + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
 
-    last_x = particle_counts[-1]
-    plt.text(
-        last_x,
-        BW[-1],
-        f"{BW[-1] / 1e9:.2f} GB.s^-1",
-        color=line.get_color(),
-        va="bottom",
-        ha="right",
-    )
-
-plt.xlabel("Number of elements")
-plt.ylabel("Bandwidth (B.s^-1)")
-plt.title("sort by keys performance benchmarks")
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend()
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Bandwidth (B.s^-1)",
+    title="sort by keys performance benchmarks",
+    end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
+)
 plt.show()
 
 # %%
 # Plot the sort by key (power-of-2 length) performance benchmarks (second figure)
 
-plt.figure()
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-for impl_name, (particle_counts_pow2, results_u32_pow2) in results_by_impl_pow2_len.items():
-    plt.plot(particle_counts_pow2, results_u32_pow2, "--.", label=impl_name + " (u32)")
+plot_data = {}
+for i, (impl_name, (particle_counts_pow2, results_u32_pow2)) in enumerate(
+    results_by_impl_pow2_len.items()
+):
+    plot_data[impl_name] = {
+        "x": particle_counts_pow2,
+        "y": results_u32_pow2,
+        "color": color_cycle[i % len(color_cycle)],
+        "label": impl_name + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
 
-Nobj_pow2 = np.array(particle_counts_pow2)
-Time100M_pow2 = Nobj_pow2 / 1e8
-plt.plot(
-    particle_counts_pow2,
-    Time100M_pow2,
-    color="grey",
-    linestyle="-",
-    alpha=0.7,
-    label="100M obj/sec",
+
+def before_plot(ax_plot):
+    particle_counts_pow2 = next(iter(results_by_impl_pow2_len.values()))[0]
+    Nobj_pow2 = np.array(particle_counts_pow2)
+    Time100M_pow2 = Nobj_pow2 / 1e8
+    ax_plot.plot(
+        particle_counts_pow2,
+        Time100M_pow2,
+        color="grey",
+        linestyle="-",
+        alpha=0.7,
+        label="100M obj/sec",
+    )
+
+
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="sort by key (power-of-2 length) performance benchmarks",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
 )
-
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("sort by key (power-of-2 length) performance benchmarks")
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend()
 plt.show()
 
 # %%
@@ -297,58 +321,80 @@ plt.show()
 # Note: no microbenchmark peak-bandwidth reference here, since a sort will never
 # reach the raw memory-bandwidth ceiling.
 
-for impl_name, (particle_counts_pow2, results_u32_pow2) in results_by_impl_pow2_len.items():
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (impl_name, (particle_counts_pow2, results_u32_pow2)) in enumerate(
+    results_by_impl_pow2_len.items()
+):
     Nobj_pow2 = np.array(particle_counts_pow2)
     Bytes_pow2 = 2 * 4 * Nobj_pow2  # 2 u32 moved per element, key + value (sizeof = 4)
     BW_pow2 = Bytes_pow2 / np.array(results_u32_pow2)
-    (line,) = plt.plot(particle_counts_pow2, BW_pow2, "--.", label=impl_name + " (u32)")
+    plot_data[impl_name] = {
+        "x": particle_counts_pow2,
+        "y": BW_pow2,
+        "color": color_cycle[i % len(color_cycle)],
+        "label": impl_name + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
 
-    last_x_pow2 = particle_counts_pow2[-1]
-    plt.text(
-        last_x_pow2,
-        BW_pow2[-1],
-        f"{BW_pow2[-1] / 1e9:.2f} GB.s^-1",
-        color=line.get_color(),
-        va="bottom",
-        ha="right",
-    )
-
-plt.xlabel("Number of elements")
-plt.ylabel("Bandwidth (B.s^-1)")
-plt.title("sort by key (power-of-2 length) performance benchmarks")
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend()
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Bandwidth (B.s^-1)",
+    title="sort by key (power-of-2 length) performance benchmarks",
+    end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
+)
 plt.show()
 
 # %%
 # Plot both benchmarks overlaid (third figure), using different markers to distinguish the
 # generic (non power-of-2 length) and the pow2_len-only implementations
 
-plt.figure()
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
+plot_data = {}
+color_idx = 0
 for impl_name, (particle_counts, results_u32) in results_by_impl.items():
-    plt.plot(particle_counts, results_u32, "--.", label=impl_name + " (generic)")
+    plot_data[impl_name + " (generic)"] = {
+        "x": particle_counts,
+        "y": results_u32,
+        "color": color_cycle[color_idx % len(color_cycle)],
+        "label": impl_name + " (generic)",
+        "linestyle": "--",
+        "marker": ".",
+    }
+    color_idx += 1
 
 for impl_name, (particle_counts_pow2, results_u32_pow2) in results_by_impl_pow2_len.items():
-    plt.plot(particle_counts_pow2, results_u32_pow2, "--x", label=impl_name + " (pow2_len)")
+    plot_data[impl_name + " (pow2_len)"] = {
+        "x": particle_counts_pow2,
+        "y": results_u32_pow2,
+        "color": color_cycle[color_idx % len(color_cycle)],
+        "label": impl_name + " (pow2_len)",
+        "linestyle": "--",
+        "marker": "x",
+    }
+    color_idx += 1
 
-Nobj_all = np.array(sorted(set(particle_counts) | set(particle_counts_pow2)))
-Time100M_all = Nobj_all / 1e8
-plt.plot(Nobj_all, Time100M_all, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec")
 
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("sort by keys (general vs pow2 len)")
+def before_plot(ax_plot):
+    particle_counts = next(iter(results_by_impl.values()))[0]
+    particle_counts_pow2 = next(iter(results_by_impl_pow2_len.values()))[0]
+    Nobj_all = np.array(sorted(set(particle_counts) | set(particle_counts_pow2)))
+    Time100M_all = Nobj_all / 1e8
+    ax_plot.plot(
+        Nobj_all, Time100M_all, color="grey", linestyle="-", alpha=0.7, label="100M obj/sec"
+    )
 
-plt.xscale("log")
-plt.yscale("log")
 
-plt.grid(True)
-
-plt.legend()
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="sort by keys (general vs pow2 len)",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
+)
 plt.show()

@@ -14,6 +14,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
+from shamrock.utils.plot import make_std_bench_plot
 
 import shamrock
 
@@ -132,42 +133,53 @@ for impl in all_default_impls:
 # %%
 # Plot results (time)
 
-print_ref = True
-for label, item in dic_bench.items():
-    if print_ref:
-        Nobj = np.array(item["particle_counts"])
-        Time100M = Nobj / 1e8
-        plt.plot(
-            item["particle_counts"],
-            Time100M,
-            color="grey",
-            linestyle="-",
-            alpha=0.7,
-            label="100M obj/sec",
-        )
-        print_ref = False
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
 
-    (line,) = plt.plot(item["particle_counts"], item["results_f64"], "--.", label=label + " (f64)")
-    plt.plot(
-        item["particle_counts"],
-        item["results_f32"],
-        ":",
-        color=line.get_color(),
-        label=label + " (f32)",
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
+    plot_data[label + " (f64)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_f64"],
+        "color": color,
+        "label": label + " (f64)",
+        "linestyle": "--",
+        "marker": ".",
+    }
+    plot_data[label + " (f32)"] = {
+        "x": item["particle_counts"],
+        "y": item["results_f32"],
+        "color": color,
+        "label": label + " (f32)",
+        "linestyle": ":",
+        "marker": None,
+    }
+
+
+def before_plot(ax_plot):
+    particle_counts = next(iter(dic_bench.values()))["particle_counts"]
+    Nobj = np.array(particle_counts)
+    Time100M = Nobj / 1e8
+    ax_plot.plot(
+        particle_counts,
+        Time100M,
+        color="grey",
+        linestyle="-",
+        alpha=0.7,
+        label="100M obj/sec",
     )
 
 
-plt.xlabel("Number of elements")
-plt.ylabel("Time (s)")
-plt.title("reduction performance benchmarks")
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend(fontsize=10)
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Time (s)",
+    title="reduction performance benchmarks",
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
+)
 plt.show()
+
 
 # %%
 # Plot results (bandwidth)
@@ -175,55 +187,57 @@ plt.show()
 peak_bw_f32 = microbench_results["saxpy_f32"]
 peak_bw_f64 = microbench_results["saxpy_f64"]
 
-for label, item in dic_bench.items():
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
     Nobj = np.array(item["particle_counts"])
-    last_x = item["particle_counts"][-1]
 
     Bytes_f64 = 8 * Nobj  # 1 read f64 (sizeof = 8)
     BW_f64 = Bytes_f64 / np.array(item["results_f64"])
-    (line,) = plt.plot(item["particle_counts"], BW_f64, "--.", label=label + " (f64)")
-    plt.text(
-        last_x,
-        BW_f64[-1],
-        f"{BW_f64[-1] / 1e9:.2f} GB.s^-1",
-        color=line.get_color(),
-        va="bottom",
-        ha="right",
-    )
+    plot_data[label + " (f64)"] = {
+        "x": item["particle_counts"],
+        "y": BW_f64,
+        "color": color,
+        "label": label + " (f64)",
+        "linestyle": "-",
+        "marker": "x",
+    }
 
     Bytes_f32 = 4 * Nobj  # 1 read f32 (sizeof = 4)
     BW_f32 = Bytes_f32 / np.array(item["results_f32"])
-    plt.plot(item["particle_counts"], BW_f32, ":", color=line.get_color(), label=label + " (f32)")
-    plt.text(
-        last_x,
-        BW_f32[-1],
-        f"{BW_f32[-1] / 1e9:.2f} GB.s^-1",
-        color=line.get_color(),
-        va="bottom",
-        ha="right",
+    plot_data[label + " (f32)"] = {
+        "x": item["particle_counts"],
+        "y": BW_f32,
+        "color": color,
+        "label": label + " (f32)",
+        "linestyle": ":",
+        "marker": "x",
+    }
+
+
+def before_plot(ax_plot):
+    ax_plot.axhline(
+        y=peak_bw_f64,
+        color="black",
+        linestyle=":",
+        label="microbenchmark peak BW f64",
+    )
+    ax_plot.axhline(
+        y=peak_bw_f32,
+        color="black",
+        linestyle="--",
+        label="microbenchmark peak BW f32",
     )
 
-plt.axhline(
-    y=peak_bw_f64,
-    color="black",
-    linestyle=":",
-    label=f"microbenchmark peak BW f64 ({peak_bw_f64 / 1e9:.2f} GB.s^-1)",
+
+make_std_bench_plot(
+    plot_data,
+    xlabel="Number of elements",
+    ylabel="Bandwidth (B.s^-1)",
+    title="reduction performance benchmarks",
+    end_label_fmt=lambda y: f"{y / 1e9:.2f} GB.s^-1",
+    before_plot_func=before_plot,
 )
-plt.axhline(
-    y=peak_bw_f32,
-    color="black",
-    linestyle="--",
-    label=f"microbenchmark peak BW f32 ({peak_bw_f32 / 1e9:.2f} GB.s^-1)",
-)
-
-plt.xlabel("Number of elements")
-plt.ylabel("Bandwidth (B.s^-1)")
-plt.title("reduction performance benchmarks")
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend(fontsize=10)
 plt.show()

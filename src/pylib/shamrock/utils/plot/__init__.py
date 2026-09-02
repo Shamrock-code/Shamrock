@@ -33,6 +33,11 @@ except ImportError:
     _HAS_GRAPHVIZ = False
     # print("Warning: graphviz is not installed, some Shamrock functions will not be available")
 
+if _HAS_MATPLOTLIB:
+    from .benchmark import add_end_labels, make_std_bench_plot
+
+    __all__.extend(["add_end_labels", "make_std_bench_plot"])
+
 if _HAS_MATPLOTLIB and _HAS_PIL:
     __all__.append("show_image_sequence")
 

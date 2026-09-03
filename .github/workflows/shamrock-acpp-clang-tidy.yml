@@ -74,6 +74,11 @@ jobs:
         run: git diff ${{ github.event.pull_request.base.sha }} HEAD
       #### End Checkout part ####
 
+      # Avoids git clone failing with exit code 128 on the GitHub runner
+      - name: Authenticate git for github.com
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: ls local
         run : ls -la
 

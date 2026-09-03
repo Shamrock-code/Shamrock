@@ -51,6 +51,11 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      # Avoids git clone failing with exit code 128 on the GitHub runner
+      - name: Authenticate git for github.com
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Create repository archive
         run: |
           tar -czf repo.tar.gz -C repo .

@@ -14,7 +14,7 @@
  * @author Léodasce Sewanou (leodasce.sewanou@ens-lyon.fr) --no git blame--
  * @author Thomas Guillet (T.A.Guillet@exeter.ac.uk) --no git blame--
  * @author Timothée David--Cléris (tim.shamrock@proton.me)
- * @brief HLLC Riemann solver for the gas equations
+ * @brief HLLC Riemann solvers for the gas equations
  * From original version by Thomas Guillet (T.A.Guillet@exeter.ac.uk)
  */
 
@@ -25,14 +25,15 @@ namespace shammath {
     /**
      * @brief HLLC solver based on section 10.4 from Toro 3rd Edition , Springer 2009.
      *         The wave speeds estimates are based on Bernd Einfeldt (SIAM, 1988), On Godunov-Type
-     *          Methods for Gas Dynamics
+     *          Methods for Gas Dynamics, using the pressure in the star region estimated through
+     *          the primitive variable solver (valid for an adiabatic equation of state).
      * @tparam Tcons
      * @param cL left  conservative state
      * @param cR right conservative state
      * @param gamma adiabatic index
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+    inline constexpr Tcons hllc_adiab_toro_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
         Tcons flux;
         using Tscal = typename Tcons::Tscal;
         using Tvec  = typename Tcons::Tvec;
@@ -145,43 +146,175 @@ namespace shammath {
     }
 
     /**
-     * @brief HLLC flux in the +y direction
+     * @brief HLLC flux in the +y direction (adiabatic p* wave speed estimate)
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_y(hllc_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    inline constexpr Tcons hllc_adiab_toro_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(hllc_adiab_toro_flux_x(y_to_x(cL), y_to_x(cR), gamma));
     }
 
     /**
-     * @brief HLLC flux in the +z direction
+     * @brief HLLC flux in the +z direction (adiabatic p* wave speed estimate)
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return x_to_z(hllc_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    inline constexpr Tcons hllc_adiab_toro_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(hllc_adiab_toro_flux_x(z_to_x(cL), z_to_x(cR), gamma));
     }
 
     /**
-     * @brief HLLC flux in the -x direction
+     * @brief HLLC flux in the -x direction (adiabatic p* wave speed estimate)
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_adiab_toro_flux_mx(
+        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_adiab_toro_flux_x(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     /**
-     * @brief HLLC flux in the -y direction
+     * @brief HLLC flux in the -y direction (adiabatic p* wave speed estimate)
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_adiab_toro_flux_my(
+        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_adiab_toro_flux_y(invert_axis(cL), invert_axis(cR), gamma));
     }
 
     /**
-     * @brief HLLC flux in the -z direction
+     * @brief HLLC flux in the -z direction (adiabatic p* wave speed estimate)
      */
     template<class Tcons>
-    inline constexpr Tcons hllc_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
-        return invert_axis(hllc_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    inline constexpr Tcons hllc_adiab_toro_flux_mz(
+        Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_adiab_toro_flux_z(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC solver based on section 10.4 from Toro 3rd Edition , Springer 2009, using the
+     *        Davis (1988) wave speed estimate instead of the pressure based (p*) estimate, i.e.
+     *          SL = min(velxL - csL, velxR - csR)
+     *          SR = max(velxL + csL, velxR + csR)
+     *        This estimate does not rely on an adiabatic equation of state for the pressure in
+     *        the star region and can therefore be used for other equations of state.
+     * @tparam Tcons
+     * @param cL left  conservative state
+     * @param cR right conservative state
+     * @param gamma adiabatic index
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_x(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        Tcons flux;
+        using Tscal = typename Tcons::Tscal;
+        using Tvec  = typename Tcons::Tvec;
+
+        // const to prim
+        const auto primL = cons_to_prim(cL, gamma);
+        const auto primR = cons_to_prim(cR, gamma);
+
+        // sound speeds
+        const auto csL = sound_speed(primL, gamma);
+        const auto csR = sound_speed(primR, gamma);
+
+        // Left and right state fluxes
+        const auto FL = hydro_flux_x(cL, gamma);
+        const auto FR = hydro_flux_x(cR, gamma);
+
+        // Left variables
+        const auto rhoL   = primL.rho;
+        const auto pressL = primL.press;
+        const auto velxL  = primL.vel[0];
+
+        // Right variables
+        const auto rhoR   = primR.rho;
+        const auto pressR = primR.press;
+        const auto velxR  = primR.vel[0];
+
+        // Davis estimate, but we'll see later
+        Tscal SL = sham::min(velxL - csL, velxR - csR);
+        Tscal SR = sham::max(velxL + csL, velxR + csR);
+
+        // lagrangian sound speed
+        const Tscal var_L = rhoL * (SL - velxL);
+        const Tscal var_R = rhoR * (SR - velxR);
+
+        // S* speed estimate
+        // Equation (10.37) from Toro 3rd Edition , Springer 2009
+        const Tscal S_star
+            = (primR.press - primL.press + velxL * var_L - velxR * var_R) / (var_L - var_R);
+
+        // New pressure estimate in the star region as average the pressure estimate at right
+        // and left of S_star in the star region
+        // Equation (10.42) from Toro 3rd Edition , Springer 2009
+        const Tscal press_LR
+            = 0.5 * (pressL + pressR + var_L * (S_star - velxL) + var_R * (S_star - velxR));
+        Tvec D{1, 0, 0};
+        Tcons D_star{0, S_star, D};
+
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Left intermediate conservative state in the star region
+        Tcons cL_star = (SL * cL - FL + press_LR * D_star) * (1.0 / (SL - S_star));
+
+        // Equation (10.40) from Toro 3rd Edition , Springer 2009
+        // Right intermediate conservative state in the star region
+        Tcons cR_star = (SR * cR - FR + press_LR * D_star) * (1.0 / (SR - S_star));
+
+        // intemediate Flux in the star region
+        // Equation (10.38) from Toro 3rd Edition , Springer 2009
+        Tcons FL_star = FL + SL * (cL_star - cL);
+        Tcons FR_star = FR + SR * (cR_star - cR);
+
+        // HLLC flux
+        auto hllc_flux = [=]() {
+            if (SL >= 0) {
+                return FL;
+            } else if (S_star >= 0) {
+                return FL_star;
+            } else if (SR >= 0) {
+                return FR_star;
+            } else
+                return FR;
+        };
+
+        return hllc_flux();
+    }
+
+    /**
+     * @brief HLLC flux in the +y direction (Davis wave speed estimate)
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_y(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_y(hllc_davis_flux_x(y_to_x(cL), y_to_x(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the +z direction (Davis wave speed estimate)
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_z(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return x_to_z(hllc_davis_flux_x(z_to_x(cL), z_to_x(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -x direction (Davis wave speed estimate)
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_mx(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_x(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -y direction (Davis wave speed estimate)
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_my(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_y(invert_axis(cL), invert_axis(cR), gamma));
+    }
+
+    /**
+     * @brief HLLC flux in the -z direction (Davis wave speed estimate)
+     */
+    template<class Tcons>
+    inline constexpr Tcons hllc_davis_flux_mz(Tcons cL, Tcons cR, typename Tcons::Tscal gamma) {
+        return invert_axis(hllc_davis_flux_z(invert_axis(cL), invert_axis(cR), gamma));
     }
 
 } // namespace shammath

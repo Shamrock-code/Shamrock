@@ -84,22 +84,22 @@ namespace shammodels::basegodunov::modules {
 
             if constexpr (mode == RiemannSolverMode::HLLC) {
                 if constexpr (dir == Direction::xp) {
-                    return shammath::hllc_flux_x(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_x(cL, cR, gamma);
                 }
                 if constexpr (dir == Direction::yp) {
-                    return shammath::hllc_flux_y(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_y(cL, cR, gamma);
                 }
                 if constexpr (dir == Direction::zp) {
-                    return shammath::hllc_flux_z(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_z(cL, cR, gamma);
                 }
                 if constexpr (dir == Direction::xm) {
-                    return shammath::hllc_flux_mx(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_mx(cL, cR, gamma);
                 }
                 if constexpr (dir == Direction::ym) {
-                    return shammath::hllc_flux_my(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_my(cL, cR, gamma);
                 }
                 if constexpr (dir == Direction::zm) {
-                    return shammath::hllc_flux_mz(cL, cR, gamma);
+                    return shammath::hllc_adiab_toro_flux_mz(cL, cR, gamma);
                 }
             }
         }

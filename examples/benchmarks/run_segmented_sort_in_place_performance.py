@@ -14,6 +14,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import colors
+from shamrock.utils.plot import make_std_bench_plot
 
 import shamrock
 
@@ -103,6 +104,8 @@ print(all_default_impls)
 
 # %%
 # Run the performance benchmarks for all implementations
+
+dic_bench = {}
 for impl in all_default_impls:
     shamrock.algs.set_impl_segmented_sort_in_place(impl)
 
@@ -113,33 +116,49 @@ for impl in all_default_impls:
     # Run the performance sweep
     particle_counts, slice_sizes, results_u32_balanced = run_performance_sweep_balanced()
 
-    plt.plot(
+    dic_bench[impl_name] = {
+        "slice_sizes": slice_sizes,
+        "results_u32_balanced": results_u32_balanced,
+    }
+
+
+# %%
+# Plot results
+
+color_cycle = plt.rcParams["axes.prop_cycle"].by_key()["color"]
+
+plot_data = {}
+for i, (label, item) in enumerate(dic_bench.items()):
+    color = color_cycle[i % len(color_cycle)]
+    plot_data[label + " (u32)"] = {
+        "x": item["slice_sizes"],
+        "y": item["results_u32_balanced"],
+        "color": color,
+        "label": label + " (u32)",
+        "linestyle": "--",
+        "marker": ".",
+    }
+
+
+def before_plot(ax_plot):
+    slice_sizes = next(iter(dic_bench.values()))["slice_sizes"]
+    Time100M = particle_counts / 1e8
+    ax_plot.plot(
         slice_sizes,
-        results_u32_balanced,
-        "--.",
-        label=impl_name + " (u32)",
+        [Time100M for _ in slice_sizes],
+        color="grey",
+        linestyle="-",
+        alpha=0.7,
+        label="100M obj/sec",
     )
 
 
-Time100M = particle_counts / 1e8
-plt.plot(
-    slice_sizes,
-    [Time100M for _ in slice_sizes],
-    color="grey",
-    linestyle="-",
-    alpha=0.7,
-    label="100M obj/sec",
+make_std_bench_plot(
+    plot_data,
+    xlabel="Slice size",
+    ylabel="Time (s)",
+    title="segmented sort in place benchmarks, N=" + str(particle_counts),
+    end_label_fmt=lambda y: f"{y:.2e} s",
+    before_plot_func=before_plot,
 )
-
-
-plt.xlabel("Slice size")
-plt.ylabel("Time (s)")
-plt.title("segmented sort in place benchmarks, N=" + str(particle_counts))
-
-plt.xscale("log")
-plt.yscale("log")
-
-plt.grid(True)
-
-plt.legend()
 plt.show()

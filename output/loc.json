@@ -942,6 +942,24 @@
          "*.rst": 241,
          "*.yml": 3870,
          "CMakeLists.txt + *.cmake": 2811
+      },
+      {
+         "datetime": "2026-09-03T12:47:06Z",
+         "all_code": 228430,
+         "all_shammodels/sph": 36536,
+         "all_shammodels/ramses": 17763,
+         "all_shammodels/zeus": 6675,
+         "all_shammodels/gsph": 8096,
+         "all_examples": 34019,
+         "all_doc": 7972,
+         "all": 270421,
+         "*.cpp": 105915,
+         "*.hpp": 99368,
+         "*.py": 50969,
+         "*.md": 7247,
+         "*.rst": 241,
+         "*.yml": 3870,
+         "CMakeLists.txt + *.cmake": 2811
       }
    ]
 }

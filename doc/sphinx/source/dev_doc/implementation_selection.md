@@ -162,10 +162,36 @@ shamalgs_module.def("autoselect_impl_compute_histogram", []() {
 });
 ```
 
-An alternative with tunable fields (not currently used by any real algorithm, but supported)
-specializes `shamalgs::ImplVariantParams<Alt>` to control how those fields serialize to/from the
-`"parameters"` JSON — see the doc comment at the top of `ImplVariant.hpp` for a worked example
-(a `group_size` field).
+An alternative with tunable fields specializes `shamalgs::ImplVariantParams<Alt>` to control how
+those fields serialize to/from the `"parameters"` JSON — see the doc comment at the top of
+`ImplVariant.hpp` for a worked example (a `group_size` field), or
+`shamalgs::primitives::impl::AtomicEarlyExit` in `is_all_true.cpp` for a real one.
+
+### Exposing more than one default per alternative
+
+By default, `get_default_impl_list_<algo>()` lists exactly one instance per alternative type
+(the default-constructed one). An alternative with tunable fields can opt into listing several
+of its own instances instead — e.g. the same kernel at a few different group sizes — by adding a
+static `variant_custom_defaults()` method returning a `std::vector<Alt>`:
+
+```cpp
+struct AtomicEarlyExit {
+    static constexpr std::string_view variant_type_name = "atomic_early_exit";
+    u32 group_size = 256;
+
+    static std::vector<AtomicEarlyExit> variant_custom_defaults() {
+        return {AtomicEarlyExit{128}, AtomicEarlyExit{256}};
+    }
+};
+```
+
+`ImplVariantGlobal`/`get_default_config_list()` detects this automatically (via the
+`HasCustomDefaults` concept in `ImplVariant.hpp`) and lists one config string per returned
+instance instead of just one; alternatives that don't define `variant_custom_defaults()` are
+unaffected. Because all of them still share the same `variant_type_name`, only `"parameters"`
+tells them apart in the resulting config strings, so any code keying results off
+`json.loads(impl)["implementation"]` alone (see the benchmark script note below) needs to fold
+`"parameters"` into the key too, or entries collide.
 
 Once the selector and dispatch are in place, wire it up end to end:
 

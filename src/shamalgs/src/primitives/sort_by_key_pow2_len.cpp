@@ -23,6 +23,55 @@
 #include "shamalgs/primitives/sort_by_key_pow2_len.hpp"
 #include "shamcomm/logs.hpp"
 
+namespace shamalgs::primitives::impl {
+
+    /// Max stencil size (tile width) used by the updated USM bitonic sort kernel
+    /// Sizes 2, 4 and 8 are currently disabled (kept for easy re-enabling if needed)
+    enum class MaxStencilSize : u32 {
+        // Size2  = 2,
+        // Size4  = 4,
+        // Size8  = 8,
+        Size16 = 16,
+        Size32 = 32,
+    };
+
+    /// Bitonic sort, updated USM kernel (see bitonicSort_updated_usm.hpp)
+    struct BitonicSort {
+        static constexpr std::string_view variant_type_name = "bitonic_sort";
+        MaxStencilSize stencil_size                         = MaxStencilSize::Size16;
+
+        /// Expose the stencil sizes worth benchmarking as separate default implementations
+        static std::vector<BitonicSort> variant_custom_defaults() {
+            return {
+                // BitonicSort{MaxStencilSize::Size8},
+                BitonicSort{MaxStencilSize::Size16},
+                BitonicSort{MaxStencilSize::Size32},
+            };
+        }
+    };
+
+    /// Copy the buffers to host, std::sort the zipped key/value pairs, and copy back
+    struct StdSort {
+        static constexpr std::string_view variant_type_name = "std_sort";
+    };
+
+} // namespace shamalgs::primitives::impl
+
+template<>
+struct shamalgs::ImplVariantParams<shamalgs::primitives::impl::BitonicSort> {
+    static nlohmann::json to_json(const shamalgs::primitives::impl::BitonicSort &p) {
+        return {{"stencil_size", static_cast<u32>(p.stencil_size)}};
+    }
+    static shamalgs::primitives::impl::BitonicSort from_json(const nlohmann::json &j) {
+        shamalgs::primitives::impl::BitonicSort p{};
+        if (j.contains("stencil_size")) {
+            p.stencil_size = static_cast<shamalgs::primitives::impl::MaxStencilSize>(
+                j.at("stencil_size").get<u32>());
+        }
+        return p;
+    }
+};
+
 namespace shamalgs::primitives {
 
     template<class Tkey, class Tval>
@@ -44,16 +93,6 @@ namespace shamalgs::primitives {
 
     /// namespace to control implementation behavior
     namespace impl {
-
-        /// Bitonic sort, updated USM kernel (see bitonicSort_updated_usm.hpp)
-        struct BitonicSort {
-            static constexpr std::string_view variant_type_name = "bitonic_sort";
-        };
-
-        /// Copy the buffers to host, std::sort the zipped key/value pairs, and copy back
-        struct StdSort {
-            static constexpr std::string_view variant_type_name = "std_sort";
-        };
 
         shamalgs::ImplVariantGlobal<BitonicSort, StdSort> sort_by_key_pow2_len_impl;
 
@@ -86,6 +125,42 @@ namespace shamalgs::primitives {
                 get_current_impl_sort_by_key_pow2_len());
         }
 
+        /// Dispatch to the updated USM bitonic sort kernel, picking its MaxStencilSize
+        /// non-type template parameter at runtime from the enum value stored in BitonicSort
+        template<class Tkey, class Tval>
+        void sort_by_key_pow2_len_bitonic_dispatch(
+            const sham::DeviceScheduler_ptr &sched,
+            sham::DeviceBuffer<Tkey> &buf_key,
+            sham::DeviceBuffer<Tval> &buf_values,
+            u32 len,
+            MaxStencilSize stencil_size) {
+
+            switch (stencil_size) {
+            // case MaxStencilSize::Size2:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 2>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            // case MaxStencilSize::Size4:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 4>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            // case MaxStencilSize::Size8:
+            //     shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 8>(
+            //         sched, buf_key, buf_values, len);
+            //     return;
+            case MaxStencilSize::Size16:
+                shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
+                    sched, buf_key, buf_values, len);
+                return;
+            case MaxStencilSize::Size32:
+                shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 32>(
+                    sched, buf_key, buf_values, len);
+                return;
+            }
+
+            throw shambase::make_except_with_loc<std::invalid_argument>("invalid MaxStencilSize");
+        }
+
     } // namespace impl
 
     template<class Tkey, class Tval>
@@ -106,9 +181,9 @@ namespace shamalgs::primitives {
 
         std::visit(
             shambase::overloaded{
-                [&](impl::BitonicSort) {
-                    shamalgs::algorithm::details::sort_by_key_bitonic_updated_usm<Tkey, Tval, 16>(
-                        sched, buf_key, buf_values, len);
+                [&](impl::BitonicSort cfg) {
+                    impl::sort_by_key_pow2_len_bitonic_dispatch(
+                        sched, buf_key, buf_values, len, cfg.stencil_size);
                 },
                 [&](impl::StdSort) {
                     device::details::sort_by_keys_std_sort(buf_key, buf_values, len);

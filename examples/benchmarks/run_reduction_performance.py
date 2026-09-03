@@ -116,7 +116,14 @@ dic_bench = {}
 for impl in all_default_impls:
     shamrock.algs.set_impl_reduction(impl)
 
-    impl_name = json.loads(impl)["implementation"]
+    impl_json = json.loads(impl)
+    impl_name = impl_json["implementation"]
+    impl_params = impl_json.get("parameters", {})
+    if impl_params:
+        # Disambiguate implementations that expose multiple default parameter sets
+        # (e.g. several group sizes) under the same "implementation" name
+        params_str = ", ".join(f"{k}={v}" for k, v in impl_params.items())
+        impl_name = f"{impl_name} ({params_str})"
 
     print(f"Running reduction performance benchmarks for {impl}...")
 

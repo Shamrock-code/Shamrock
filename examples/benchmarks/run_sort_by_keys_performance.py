@@ -32,6 +32,20 @@ shamrock.matplotlib.set_shamrock_mpl_style()
 
 
 # %%
+# Turn a config json string into a display name, disambiguating implementations that expose
+# multiple default parameter sets (e.g. several bitonic sort stencil sizes) under the same
+# "implementation" name
+def impl_display_name(impl):
+    impl_json = json.loads(impl)
+    name = impl_json["implementation"]
+    params = impl_json.get("parameters", {})
+    if params:
+        params_str = ", ".join(f"{k}={v}" for k, v in params.items())
+        name = f"{name} ({params_str})"
+    return name
+
+
+# %%
 # Main benchmark functions
 def benchmark_u32(N, nb_repeat=10, max_cumulated_time=2.0):
     random.seed(111)
@@ -110,7 +124,7 @@ results_by_impl = {}
 for impl in all_default_impls:
     shamrock.algs.set_impl_sort_by_keys(impl)
 
-    impl_name = json.loads(impl)["implementation"]
+    impl_name = impl_display_name(impl)
 
     print(f"Running sort by keys performance benchmarks for {impl}...")
 
@@ -197,7 +211,7 @@ results_by_impl_pow2_len = {}
 for impl in all_default_impls_pow2_len:
     shamrock.algs.set_impl_sort_by_key_pow2_len(impl)
 
-    impl_name = json.loads(impl)["implementation"]
+    impl_name = impl_display_name(impl)
 
     print(f"Running sort by key (pow2 len) performance benchmarks for {impl}...")
 

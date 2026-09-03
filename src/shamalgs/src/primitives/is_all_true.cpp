@@ -177,6 +177,12 @@ namespace shamalgs::primitives::impl {
     struct AtomicEarlyExit {
         static constexpr std::string_view variant_type_name = "atomic_early_exit";
         u32 group_size                                      = 256;
+
+        /// Expose both group sizes worth benchmarking as separate default implementations,
+        /// instead of only the default-constructed group_size = 256
+        static std::vector<AtomicEarlyExit> variant_custom_defaults() {
+            return {AtomicEarlyExit{64}, AtomicEarlyExit{256}};
+        }
     };
 } // namespace shamalgs::primitives::impl
 

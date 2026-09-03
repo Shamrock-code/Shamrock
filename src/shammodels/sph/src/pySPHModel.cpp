@@ -276,7 +276,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                Tscal cfl_density_threshold,
                bool ensure_s_j_positivity,
                bool smooth_s_positivity_limiter,
-               bool dust_corrected_av) {
+               bool dust_corrected_av,
+               std::optional<Tscal> clamp_dust_frac) {
                 self.dust_config.set_monofluid_tva(
                     nvar,
                     pure_diffusion_mode,
@@ -285,7 +286,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
                     cfl_density_threshold,
                     ensure_s_j_positivity,
                     smooth_s_positivity_limiter,
-                    dust_corrected_av);
+                    dust_corrected_av,
+                    clamp_dust_frac);
             },
             py::kw_only(),
             py::arg("nvar"),
@@ -295,7 +297,8 @@ void add_instance(py::module &m, std::string name_config, std::string name_model
             py::arg("cfl_density_threshold")       = shambase::get_epsilon<Tscal>(),
             py::arg("ensure_s_j_positivity")       = true,
             py::arg("smooth_s_positivity_limiter") = false,
-            py::arg("dust_corrected_av")           = false)
+            py::arg("dust_corrected_av")           = false,
+            py::arg("clamp_dust_frac")             = std::nullopt)
         .def(
             "set_dust_mode_monofluid_complete",
             [](TConfig &self, u32 ndust) {

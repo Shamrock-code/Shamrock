@@ -73,19 +73,19 @@ namespace shamalgs::collective {
     };
 
     void sparse_comm_debug_infos(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         const std::vector<SendPayload> &message_send,
         std::vector<RecvPayload> &message_recv,
         const SparseCommTable &comm_table);
 
     void sparse_comm_isend_probe_count_irecv(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         const std::vector<SendPayload> &message_send,
         std::vector<RecvPayload> &message_recv,
         const SparseCommTable &comm_table);
 
     void sparse_comm_allgather_isend_irecv(
-        std::shared_ptr<sham::DeviceScheduler> dev_sched,
+        const std::shared_ptr<sham::DeviceScheduler> &dev_sched,
         const std::vector<SendPayload> &message_send,
         std::vector<RecvPayload> &message_recv,
         const SparseCommTable &comm_table);

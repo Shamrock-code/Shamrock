@@ -132,15 +132,12 @@ namespace shammodels::sph {
             bool dust_corrected_av = false;
 
             // Fraction of rho(h) that the dust density (per-species and summed) is clamped to.
-            // The clamp runs whenever this is set, or whenever it is unset and
-            // ensure_s_j_positivity is true (using the default fraction below).
+            // The clamp runs only when this is set.
             std::optional<Tscal> clamp_dust_frac = std::nullopt;
 
             static constexpr Tscal default_clamp_dust_frac = 0.99;
 
-            inline bool should_clamp_dust_density() const {
-                return clamp_dust_frac.has_value() || ensure_s_j_positivity;
-            }
+            inline bool should_clamp_dust_density() const { return clamp_dust_frac.has_value(); }
 
             inline Tscal get_clamp_dust_frac() const {
                 return clamp_dust_frac.value_or(default_clamp_dust_frac);

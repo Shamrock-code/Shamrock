@@ -25,7 +25,7 @@ NEW_TEST(Unittest, "shammodels/sph/modules/NodeMonofluidTVADustDensityClamp", 1)
     u32 N     = 3;
 
     // rho(h) = pmass * (hfactd / h)^3 = 1.0 * (1.2 / 1.0)^3 = 1.728 for every particle
-    // 99% of that threshold is 1.71072
+    // clamp_frac is the max dust-to-gas ratio eps_max = 0.99 (dimensionless, not scaled by rho_a)
     Tscal pmass  = 1.0;
     Tscal hfactd = 1.2;
     Tscal tol    = 1e-9;
@@ -52,15 +52,16 @@ NEW_TEST(Unittest, "shammodels/sph/modules/NodeMonofluidTVADustDensityClamp", 1)
 
     // particle 0 : well below the threshold, left untouched
     // particle 1 : species 0 alone exceeds the threshold (species 1 is 0), individual clamp only
-    // particle 2 : neither species exceeds the threshold alone, but their sum does -> rescaled
-    s_j->get_buf(0).copy_from_stdvec({0.1, 0.2, 2.0, 0.0, 1.3145341380123985, 1.3145341380123985});
+    // particle 2 : each species has eps = 0.6 individually (< eps_max = 0.99), but their sum
+    //              (1.2) does -> rescaled in pass 2
+    s_j->get_buf(0).copy_from_stdvec({0.1, 0.2, 2.0, 0.0, 1.0182337649086284, 1.0182337649086284});
 
     NodeMonofluidTVADustDensityClamp<Tvec> node(ndust);
     node.set_edges(part_counts, gpart_mass, hfactd_edge, clamp_frac_edge, hpart, s_j);
     node.evaluate();
 
     std::vector<Tscal> expected
-        = {0.1, 0.2, 1.719338291320239, 0.0, 1.2157557649462327, 1.2157557649462327};
+        = {0.1, 0.2, 1.3079449529701164, 0.0, 0.9248567456638892, 0.9248567456638892};
 
     std::vector<Tscal> got = s_j->get_buf(0).copy_to_stdvec();
     for (u32 i = 0; i < expected.size(); i++) {

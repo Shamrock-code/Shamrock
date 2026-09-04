@@ -74,31 +74,31 @@ namespace shammodels::sph::modules {
                     u32 id_a, const Tscal *__restrict hpart, Tscal *__restrict s_j) {
                     u32 id_a_d = id_a * ndust;
 
-                    Tscal h_a         = hpart[id_a];
-                    Tscal rho_a       = shamrock::sph::rho_h(pmass, h_a, hfactd);
-                    Tscal max_rho_d_j = clamp_frac * rho_a;
+                    Tscal h_a     = hpart[id_a];
+                    Tscal rho_a   = shamrock::sph::rho_h(pmass, h_a, hfactd);
+                    Tscal eps_max = clamp_frac;
 
                     // pass 1 : clamp each species individually, accumulate the (post-clamp) sum
-                    Tscal rho_d_sum = 0;
+                    Tscal eps_sum = 0;
                     for (u32 j = 0; j < ndust; j++) {
-                        Tscal sj     = s_j[id_a_d + j];
-                        Tscal rho_dj = sj * sj / rho_a;
-                        if (rho_dj > max_rho_d_j) {
-                            rho_dj          = max_rho_d_j;
-                            s_j[id_a_d + j] = sycl::sqrt(rho_dj * rho_a);
+                        Tscal sj    = s_j[id_a_d + j];
+                        Tscal eps_j = sj * sj / rho_a;
+                        if (eps_j > eps_max) {
+                            eps_j           = eps_max;
+                            s_j[id_a_d + j] = sycl::sqrt(eps_j * rho_a);
                         }
-                        rho_d_sum += rho_dj;
+                        eps_sum += eps_j;
                     }
 
-                    // pass 2 : if the summed dust density still exceeds the threshold, scale
+                    // pass 2 : if the summed dust fraction still exceeds the threshold, scale
                     // every species down by the same factor so the sum lands at the threshold
-                    if (rho_d_sum > max_rho_d_j && rho_d_sum > 0) {
-                        Tscal scale = max_rho_d_j / rho_d_sum;
+                    if (eps_sum > eps_max && eps_sum > 0) {
+                        Tscal scale = eps_max / eps_sum;
                         for (u32 j = 0; j < ndust; j++) {
                             Tscal sj        = s_j[id_a_d + j];
-                            Tscal rho_dj    = sj * sj / rho_a;
-                            Tscal rho_dj_sc = rho_dj * scale;
-                            s_j[id_a_d + j] = sycl::sqrt(rho_dj_sc * rho_a);
+                            Tscal eps_j     = sj * sj / rho_a;
+                            Tscal eps_j_sc  = eps_j * scale;
+                            s_j[id_a_d + j] = sycl::sqrt(eps_j_sc * rho_a);
                         }
                     }
                 });
@@ -122,18 +122,19 @@ namespace shammodels::sph::modules {
 
                 For gas particle $a$ and dust bin $j$, with
                 $\rho_a = \rho({hpart}_a)$ the total density implied by the
-                smoothing length and $f = {clamp_frac}$ the clamp fraction:
+                smoothing length and $f = {clamp_frac}$ the clamp fraction
+                (the maximum allowed dust-to-gas ratio $\epsilon_{\max}$):
 
                 \begin{align}
-                {\rho_d}_{j,a} &= \min\left({s_j}_{j,a}^2 / \rho_a,\ f\,\rho_a\right) \\
-                {\rho_d}_a &= \sum_j {\rho_d}_{j,a} \\
-                {\rho_d}_{j,a} &\leftarrow
+                \epsilon_{j,a} &= \min\left({s_j}_{j,a}^2 / \rho_a,\ f\right) \\
+                \epsilon_a &= \sum_j \epsilon_{j,a} \\
+                \epsilon_{j,a} &\leftarrow
                     \begin{cases}
-                        {\rho_d}_{j,a} \cdot f\,\rho_a / {\rho_d}_a
-                            & {\rho_d}_a > f\,\rho_a \\
-                        {\rho_d}_{j,a} & \text{otherwise}
+                        \epsilon_{j,a} \cdot f / \epsilon_a
+                            & \epsilon_a > f \\
+                        \epsilon_{j,a} & \text{otherwise}
                     \end{cases} \\
-                {s_j}_{j,a} &\leftarrow \sqrt{{\rho_d}_{j,a}\, \rho_a}
+                {s_j}_{j,a} &\leftarrow \sqrt{\epsilon_{j,a}\, \rho_a}
                 \end{align}
 
                 $a \in [0,{part_counts})$, $j \in [0,{ndust})$.
